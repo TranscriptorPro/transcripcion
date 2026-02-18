@@ -1427,6 +1427,170 @@
     </header>
 
     <main class="main-container">
+        <!-- Modals moved to top for early DOM parsing -->
+        <!-- Onboarding / Welcome Modal -->
+        <div class="modal-overlay" id="onboardingOverlay">
+            <div class="modal" style="max-width: 500px;">
+                <div class="modal-header">
+                    <h2>🩺 ¡Bienvenido/a a Transcriptor Pro!</h2>
+                </div>
+                <div class="modal-body">
+                    <p style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
+                        Para comenzar, por favor completa tu perfil profesional. Estos datos se usarán para personalizar
+                        tus reportes y habilitar tu cuenta.
+                    </p>
+                    <form id="onboardingForm">
+                        <div class="help-section">
+                            <label class="sidebar-label">Nombre y Apellido:</label>
+                            <input type="text" id="profName" class="toolbar-input" style="width: 100%;"
+                                placeholder="Ej: Dr. Juan Pérez" required>
+                        </div>
+                        <div class="help-section">
+                            <label class="sidebar-label">Matrícula (MN/MP):</label>
+                            <input type="text" id="profMatricula" class="toolbar-input" style="width: 100%;"
+                                placeholder="Ej: MN 12345" required>
+                        </div>
+                        <div class="help-section">
+                            <label class="sidebar-label">Especialidades (selecciona las que aplicas):</label>
+                            <div id="specialtiesGrid"
+                                style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem;">
+                                <label class="audio-option"><input type="checkbox" name="specialty" value="Cardiología">
+                                    Cardiología</label>
+                                <label class="audio-option"><input type="checkbox" name="specialty" value="Ecografía">
+                                    Ecografía</label>
+                                <label class="audio-option"><input type="checkbox" name="specialty"
+                                        value="Gastroenterología"> Gastroenterología</label>
+                                <label class="audio-option"><input type="checkbox" name="specialty" value="ORL">
+                                    ORL</label>
+                                <label class="audio-option"><input type="checkbox" name="specialty" value="General">
+                                    Medicina General</label>
+                                <label class="audio-option"><input type="checkbox" name="specialty" value="Quirúrgico">
+                                    Quirúrgico</label>
+                            </div>
+                        </div>
+                        <div class="help-section" id="onboardingStudiesSection" style="display: none;">
+                            <label class="sidebar-label">Estudios que realiza:</label>
+                            <div id="studiesGrid"
+                                style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem; background: rgba(0,0,0,0.02); padding: 0.5rem; border-radius: 4px;">
+                            </div>
+                        </div>
+                        <div class="help-section">
+                            <label class="sidebar-label">Lugares de Trabajo (uno por línea o separados por
+                                coma):</label>
+                            <textarea id="profWorkplace" class="config-textarea" style="width: 100%; min-height: 60px;"
+                                placeholder="Ej: Hospital Italiano, Sanatorio Parque, Consultorio 2"
+                                required></textarea>
+                        </div>
+                        <div
+                            style="background: rgba(15, 118, 110, 0.05); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                            <p style="font-size: 0.75rem; color: var(--primary-dark);">
+                                ⚠️ <strong>IMPORTANTE:</strong> Los datos de Nombre y Matrícula no podrán ser
+                                modificados posteriormente.
+                            </p>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full">Activar Mi Licencia</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- PDF Config Modal -->
+        <div class="modal-overlay" id="pdfModalOverlay">
+            <div class="modal" style="max-width: 600px;">
+                <div class="modal-header">
+                    <h2>📄 Configuración de PDF</h2>
+                    <button class="modal-close" id="closePdfConfig">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="help-section">
+                        <label class="sidebar-label">Nombre del Estudio (Título):</label>
+                        <input type="text" id="procedureInput" class="toolbar-input" style="width: 100%;"
+                            placeholder="Ej: Ecografía Abdominal">
+                    </div>
+                    <div class="help-section">
+                        <label class="sidebar-label">Encabezado Adicional (opcional):</label>
+                        <textarea id="pdfHeaderInput" class="config-textarea"
+                            placeholder="Ej: Consultorio Central\nTel: 1234-5678"></textarea>
+                    </div>
+                    <div class="help-section">
+                        <label class="sidebar-label">Pie de Página:</label>
+                        <input type="text" id="pdfFooterInput" class="toolbar-input" style="width: 100%;"
+                            placeholder="Ej: Página {page} • {date}">
+                    </div>
+                    <button class="btn btn-primary btn-full" id="savePdfConfig">Guardar Cambios</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help Modal -->
+        <div class="modal-overlay" id="helpModal">
+            <div class="modal" style="max-width: 600px;">
+                <div class="modal-header">
+                    <h2>📖 Guía de Uso</h2>
+                    <button class="modal-close" id="closeHelp">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <section class="help-section">
+                        <h3>🎙️ Grabación y Carga</h3>
+                        <p>Usa el botón "Grabar" para dictar en tiempo real o arrastra archivos de audio.</p>
+                    </section>
+                    <section class="help-section">
+                        <h3>📝 Transcripción</h3>
+                        <p>Una vez cargados, pulsa "Transcribir". El texto aparecerá en el editor.</p>
+                    </section>
+                    <section class="help-section">
+                        <h3>✨ Modo Pro (Estructura IA)</h3>
+                        <p>Usa plantillas para organizar automáticamente el dictado en informes profesionales.</p>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Auth Modal -->
+        <div class="modal-overlay" id="adminAuthOverlay">
+            <div class="modal" style="max-width: 400px;">
+                <div class="modal-header">
+                    <h2>🔐 Acceso Administrador</h2>
+                    <button class="modal-close" id="closeAdminAuth">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <input type="password" id="adminPasswordInput" class="toolbar-input"
+                        style="width: 100%; margin-bottom: 1rem;" placeholder="Contraseña...">
+                    <button class="btn btn-primary btn-full" id="btnConfirmAdmin">Entrar al Panel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard Modal -->
+        <div class="modal-overlay" id="adminDashboardOverlay">
+            <div class="modal" style="max-width: 800px;">
+                <div class="modal-header">
+                    <h2>🚀 Panel de Control</h2>
+                    <button class="modal-close" id="closeAdminDashboard">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="stats"
+                        style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+                        <div class="stat-card"
+                            style="background: var(--bg-main); padding: 1rem; border-radius: 8px; text-align: center;">
+                            <h4 style="font-size: 0.7rem; color: var(--text-secondary);">ESTADO</h4>
+                            <p id="adminUserStatus" style="font-weight: 800; font-size: 1.2rem;">---</p>
+                        </div>
+                        <div class="stat-card"
+                            style="background: var(--bg-main); padding: 1rem; border-radius: 8px; text-align: center;">
+                            <h4 style="font-size: 0.7rem; color: var(--text-secondary);">TRIAL</h4>
+                            <p id="adminTrialDays" style="font-weight: 800; font-size: 1.2rem;">---</p>
+                        </div>
+                        <div class="stat-card"
+                            style="background: var(--bg-main); padding: 1rem; border-radius: 8px; text-align: center;">
+                            <h4 style="font-size: 0.7rem; color: var(--text-secondary);">USO</h4>
+                            <p id="adminUsageCount" style="font-weight: 800; font-size: 1.2rem;">---</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" id="btnResetAccount">♻️ Resetear Cuenta</button>
+                </div>
+            </div>
+        </div>
         <!-- Sidebar -->
         <aside class="sidebar">
             <!-- Capture Card -->
@@ -1636,12 +1800,13 @@
                     studyDate: '',
                     procedure: ''
                 };
-                pdfHeaderInput.value = pdfSettings.header || '';
-                pdfFooterInput.value = pdfSettings.footer || '';
-                patientNameInput.value = pdfSettings.patientName || '';
-                patientDniInput.value = pdfSettings.patientDni || '';
-                if (pdfSettings.studyDate) studyDateInput.value = pdfSettings.studyDate;
-                procedureInput.value = pdfSettings.procedure || '';
+                // App State initialization with safety checks
+                if (pdfHeaderInput) pdfHeaderInput.value = pdfSettings.header || '';
+                if (pdfFooterInput) pdfFooterInput.value = pdfSettings.footer || '';
+                if (patientNameInput) patientNameInput.value = pdfSettings.patientName || '';
+                if (patientDniInput) patientDniInput.value = pdfSettings.patientDni || '';
+                if (pdfSettings.studyDate && studyDateInput) studyDateInput.value = pdfSettings.studyDate;
+                if (procedureInput) procedureInput.value = pdfSettings.procedure || '';
 
                 const GROQ_API_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
 
@@ -2876,170 +3041,6 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                 });
             </script>
 
-            <!-- Onboarding / Welcome Modal -->
-            <div class="modal-overlay" id="onboardingOverlay">
-                <div class="modal" style="max-width: 500px;">
-                    <div class="modal-header">
-                        <h2>🩺 ¡Bienvenido/a a Transcriptor Pro!</h2>
-                    </div>
-                    <div class="modal-body">
-                        <p style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
-                            Para comenzar, por favor completa tu perfil profesional. Estos datos se usarán para
-                            personalizar tus
-                            reportes y habilitar tu cuenta.
-                        </p>
-                        <form id="onboardingForm">
-                            <div class="help-section">
-                                <label class="sidebar-label">Nombre y Apellido:</label>
-                                <input type="text" id="profName" class="toolbar-input" style="width: 100%;"
-                                    placeholder="Ej: Dr. Juan Pérez" required>
-                            </div>
-                            <div class="help-section">
-                                <label class="sidebar-label">Matrícula (MN/MP):</label>
-                                <input type="text" id="profMatricula" class="toolbar-input" style="width: 100%;"
-                                    placeholder="Ej: MN 12345" required>
-                            </div>
-
-                            <div class="help-section">
-                                <label class="sidebar-label">Especialidades (selecciona las que aplicas):</label>
-                                <div id="specialtiesGrid"
-                                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem;">
-                                    <label class="audio-option"><input type="checkbox" name="specialty"
-                                            value="Cardiología"> Cardiología</label>
-                                    <label class="audio-option"><input type="checkbox" name="specialty"
-                                            value="Ecografía"> Ecografía</label>
-                                    <label class="audio-option"><input type="checkbox" name="specialty"
-                                            value="Gastroenterología"> Gastroenterología</label>
-                                    <label class="audio-option"><input type="checkbox" name="specialty" value="ORL">
-                                        ORL</label>
-                                    <label class="audio-option"><input type="checkbox" name="specialty" value="General">
-                                        Medicina General</label>
-                                    <label class="audio-option"><input type="checkbox" name="specialty"
-                                            value="Quirúrgico"> Quirúrgico</label>
-                                </div>
-                            </div>
-
-                            <div class="help-section" id="onboardingStudiesSection" style="display: none;">
-                                <label class="sidebar-label">Estudios que realiza:</label>
-                                <div id="studiesGrid"
-                                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem; background: rgba(0,0,0,0.02); padding: 0.5rem; border-radius: 4px;">
-                                    <!-- Populated dynamically -->
-                                </div>
-                            </div>
-
-                            <div class="help-section">
-                                <label class="sidebar-label">Lugares de Trabajo (uno por línea o separados por
-                                    coma):</label>
-                                <textarea id="profWorkplace" class="config-textarea"
-                                    style="width: 100%; min-height: 60px;"
-                                    placeholder="Ej: Hospital Italiano, Sanatorio Parque, Consultorio 2"
-                                    required></textarea>
-                            </div>
-
-                            <div
-                                style="background: rgba(15, 118, 110, 0.05); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
-                                <p style="font-size: 0.75rem; color: var(--primary-dark);">
-                                    ⚠️ <strong>IMPORTANTE:</strong> Los datos de Nombre y Matrícula no podrán ser
-                                    modificados posteriormente para asegurar la integridad de los reportes.
-                                </p>
-                            </div>
-                            <button type="submit" class="btn btn-primary btn-full">Activar Mi Licencia</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <!-- PDF Config Modal -->
-            <div class="modal-overlay" id="pdfModalOverlay">
-                <div class="modal" style="max-width: 600px;">
-                    <div class="modal-header">
-                        <h2>📄 Configuración de PDF</h2>
-                        <button class="modal-close" id="closePdfConfig">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="help-section">
-                            <label class="sidebar-label">Encabezado Adicional (opcional):</label>
-                            <textarea id="pdfHeaderInput" class="config-textarea" placeholder="Ej: Consultorio Central
-Tel: 1234-5678"></textarea>
-                        </div>
-                        <div class="help-section">
-                            <label class="sidebar-label">Pie de Página:</label>
-                            <input type="text" id="pdfFooterInput" class="toolbar-input" style="width: 100%;"
-                                placeholder="Ej: Página {page} • Dr. Pérez">
-                        </div>
-                        <div class="help-section">
-                            <p style="font-size: 0.75rem; color: var(--text-secondary);">
-                                Nota: El Nombre y Matrícula se incluyen automáticamente en el encabezado profesional.
-                            </p>
-                        </div>
-                        <button class="btn btn-primary btn-full" id="savePdfConfig">Guardar Cambios</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Admin Password Modal -->
-            <div class="modal-overlay" id="adminAuthOverlay">
-                <div class="modal" style="max-width: 400px;">
-                    <div class="modal-header">
-                        <h2>🔐 Acceso Administrador</h2>
-                        <button class="modal-close" id="closeAdminAuth">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        <input type="password" id="adminPasswordInput" class="toolbar-input"
-                            style="width: 100%; margin-bottom: 1rem;" placeholder="Introducir contraseña...">
-                        <button class="btn btn-primary btn-full" id="btnConfirmAdmin">Entrar al Panel</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Internal Admin Dashboard (Hidden Card) -->
-            <div class="modal-overlay" id="adminDashboardOverlay">
-                <div class="modal" style="max-width: 800px;">
-                    <div class="modal-header">
-                        <h2>🚀 Panel de Control Maestro</h2>
-                        <button class="modal-close" id="closeAdminDashboard">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="stats"
-                            style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
-                            <div class="stat-card"
-                                style="background: var(--bg-main); padding: 1rem; border-radius: 8px; text-align: center;">
-                                <h4 style="font-size: 0.7rem; color: var(--text-secondary);">ESTADO</h4>
-                                <p id="adminUserStatus" style="font-weight: 800; font-size: 1.2rem;">---</p>
-                            </div>
-                            <div class="stat-card"
-                                style="background: var(--bg-main); padding: 1rem; border-radius: 8px; text-align: center;">
-                                <h4 style="font-size: 0.7rem; color: var(--text-secondary);">TRIAL RESTANTE</h4>
-                                <p id="adminTrialDays" style="font-weight: 800; font-size: 1.2rem;">---</p>
-                            </div>
-                            <div class="stat-card"
-                                style="background: var(--bg-main); padding: 1rem; border-radius: 8px; text-align: center;">
-                                <h4 style="font-size: 0.7rem; color: var(--text-secondary);">REPORTES</h4>
-                                <p id="adminUsageCount" style="font-weight: 800; font-size: 1.2rem;">---</p>
-                            </div>
-                        </div>
-                        <div class="help-section">
-                            <h3>Gestión de Licencia</h3>
-                            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                                <button class="btn btn-secondary"
-                                    onclick="window.open('https://api.whatsapp.com/send?phone=TU_NUMERO_AQUI')">📞
-                                    Contactar
-                                    Soporte</button>
-                                <button class="btn btn-secondary" id="btnResetAccount">♻️ Resetear Cuenta
-                                    (Cuidado)</button>
-                            </div>
-                        </div>
-                        <div class="help-section" id="adminMetricsView"
-                            style="margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1rem;">
-                            <h3>Historial de Uso</h3>
-                            <p style="font-size: 0.8rem; color: var(--text-secondary);">Solo visible para el
-                                administrador
-                                central.</p>
-                            <!-- More metrics here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
 </body>
 
 </html>
