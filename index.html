@@ -1199,6 +1199,85 @@
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
         }
+
+        /* Prominent Join Toggle */
+        .join-toggle-container {
+            margin: 1rem 0 0.5rem 0;
+            padding: 0.75rem;
+            background: rgba(15, 118, 110, 0.05);
+            border: 1px dashed var(--primary);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .join-toggle-container:hover {
+            background: rgba(15, 118, 110, 0.1);
+            border-style: solid;
+        }
+
+        .join-toggle-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 20px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--primary);
+        }
+
+        input:focus+.slider {
+            box-shadow: 0 0 1px var(--primary);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(20px);
+        }
     </style>
 </head>
 
@@ -1302,11 +1381,6 @@
                         <input type="checkbox" id="chkCompress" checked>
                         📦 Comprimir
                     </label>
-                    <label class="audio-option" id="optJoin" title="Une todos los audios en un solo informe"
-                        style="border: 1px solid var(--primary); background: rgba(15, 118, 110, 0.05);">
-                        <input type="checkbox" id="chkJoinAudios">
-                        🔗 Unir audios
-                    </label>
                 </div>
 
                 <div class="file-list" id="fileList"></div>
@@ -1319,6 +1393,17 @@
                     <div class="progress-bar">
                         <div class="progress-fill" id="progressFill"></div>
                     </div>
+                </div>
+
+                <div class="join-toggle-container"
+                    onclick="const chk = document.getElementById('chkJoinAudios'); chk.checked = !chk.checked; chk.dispatchEvent(new Event('change')); event.stopPropagation();">
+                    <div class="join-toggle-label">
+                        <span>🔗 Unir todos los audios</span>
+                    </div>
+                    <label class="switch" onclick="event.stopPropagation();">
+                        <input type="checkbox" id="chkJoinAudios">
+                        <span class="slider"></span>
+                    </label>
                 </div>
 
                 <button class="btn btn-primary btn-full" id="transcribeBtn" disabled style="margin-top: 0.75rem;">
@@ -1393,13 +1478,6 @@
                             Descargar ▾
                         </button>
                         <div class="dropdown-menu">
-                            <button class="dropdown-item" data-format="rtf">
-                                <svg viewBox="0 0 24 24">
-                                    <path
-                                        d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
-                                </svg>
-                                Word (.rtf)
-                            </button>
                             <button class="dropdown-item" data-format="pdf">
                                 <svg viewBox="0 0 24 24">
                                     <path
@@ -1665,49 +1743,58 @@
                 </div>
             </div>
         </div>
-        <!-- PDF Config Modal -->
-        <div id="pdfModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2 class="modal-title">📄 Configuración de PDF</h2>
-                    <button class="close-btn" id="closePdfConfig">✕</button>
-                </div>
-                <div class="modal-body">
-                    <div class="help-section">
-                        <h3>💡 Plantillas Rápidas</h3>
-                        <div class="preset-grid">
-                            <button class="btn-preset"
-                                onclick="setPreset('header', 'Dr. [Nombre]\nEspecialista en [Especialidad]\nMat. [Número]')">
-                                🩺 Profesional
-                            </button>
-                            <button class="btn-preset"
-                                onclick="setPreset('header', 'Clínica [Nombre]\nDirección: [Calle 123]\nLocalidad: [Ciudad]\nTel: [1234-5678]')">
-                                🏥 Institución
-                            </button>
-                            <button class="btn-preset" onclick="setPreset('footer', 'Documento Confidencial • {page}')">
-                                🔒 Confidencial
-                            </button>
-                            <button class="btn-preset"
-                                onclick="setPreset('footer', '[Localidad], [Provincia]\nFecha de impresión: {date}')">
-                                📍 Ubicación
-                            </button>
-                        </div>
-                    </div>
+    </div>
+    </div>
+    </div>
+    </div>
 
-                    <div class="help-section">
-                        <h3>Encabezado</h3>
-                        <textarea id="pdfHeaderInput" class="config-textarea"
-                            placeholder="Ej: Clínica Central - Dr. García"></textarea>
-                        <p><small>Aparecerá en el centro superior. Puedes usar varias líneas.</small></p>
+    <!-- PDF Config Modal -->
+    <div class="modal-overlay" id="pdfModalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>📄 Configuración de PDF</h2>
+                <button class="modal-close" id="closePdfConfig">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="help-section">
+                    <h3>💡 Plantillas Rápidas</h3>
+                    <div class="preset-grid">
+                        <button class="btn-preset"
+                            onclick="setPreset('header', 'Dr. [Nombre]\nEspecialista en [Especialidad]\nMat. [Número]')">
+                            🩺 Profesional
+                        </button>
+                        <button class="btn-preset"
+                            onclick="setPreset('header', 'Clínica [Nombre]\nDirección: [Calle 123]\nLocalidad: [Ciudad]\nTel: [1234-5678]')">
+                            🏥 Institución
+                        </button>
+                        <button class="btn-preset" onclick="setPreset('footer', 'Documento Confidencial • {page}')">
+                            🔒 Confidencial
+                        </button>
+                        <button class="btn-preset"
+                            onclick="setPreset('footer', '[Localidad], [Provincia]\nFecha de impresión: {date}')">
+                            📍 Ubicación
+                        </button>
                     </div>
-                    <div class="help-section">
-                        <h3>Pie de página</h3>
-                        <textarea id="pdfFooterInput" class="config-textarea"
-                            placeholder="Ej: Confidencial • {page}"></textarea>
-                        <p><small>Usa {page} para número de página y {date} para fecha actual.</small></p>
-                    </div>
-                    <button class="btn btn-primary btn-full" id="savePdfConfig">Guardar Configuración</button>
                 </div>
+
+                <div class="help-section">
+                    <h3>Encabezado</h3>
+                    <textarea id="pdfHeaderInput" class="config-textarea"
+                        placeholder="Ej: Clínica Central - Dr. García"></textarea>
+                    <p><small>Aparecerá en el centro superior. Puedes usar varias líneas.</small></p>
+                </div>
+                <div class="help-section">
+                    <h3>Pie de página</h3>
+                    <textarea id="pdfFooterInput" class="config-textarea"
+                        placeholder="Ej: Confidencial • {page}"></textarea>
+                    <p><small>Usa {page} para número de página y {date} para fecha actual.</small></p>
+                </div>
+                <button class="btn btn-primary btn-full" id="savePdfConfig">Guardar Configuración</button>
             </div>
         </div>
     </div>
@@ -1721,7 +1808,7 @@
         const chkJoinAudios = $('chkJoinAudios');
 
         // PDF Config Elements
-        const pdfModal = $('pdfModal');
+        const pdfModalOverlay = $('pdfModalOverlay');
         const btnConfigPdf = $('btnConfigPdf');
         const closePdfConfig = $('closePdfConfig');
         const pdfHeaderInput = $('pdfHeaderInput');
@@ -2602,11 +2689,11 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
             }
         };
 
-        btnConfigPdf.addEventListener('click', () => pdfModal.classList.add('active'));
-        closePdfConfig.addEventListener('click', () => pdfModal.classList.remove('active'));
-        pdfModal.addEventListener('click', (e) => {
-            if (e.target === pdfModal) {
-                pdfModal.classList.remove('active');
+        btnConfigPdf.addEventListener('click', () => pdfModalOverlay.classList.add('active'));
+        closePdfConfig.addEventListener('click', () => pdfModalOverlay.classList.remove('active'));
+        pdfModalOverlay.addEventListener('click', (e) => {
+            if (e.target === pdfModalOverlay) {
+                pdfModalOverlay.classList.remove('active');
             }
         });
 
@@ -2616,7 +2703,7 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                 footer: pdfFooterInput.value.trim()
             };
             localStorage.setItem('pdf_settings', JSON.stringify(pdfSettings));
-            pdfModal.classList.remove('active');
+            pdfModalOverlay.classList.remove('active');
             showToast('Configuración guardada ✓', 'success');
         });
     </script>
