@@ -1969,7 +1969,12 @@
                     item.status = 'done';
                     done++;
 
-                    transcriptions.push({ fileName: item.file.name, text: text.trim() || 'Sin audio detectado.' });
+                    const shouldJoin = $('chkJoinAudios').checked;
+                    if (shouldJoin) {
+                        joinedText += (joinedText ? '\n\n' : '') + text.trim();
+                    } else {
+                        transcriptions.push({ fileName: item.file.name, text: text.trim() || 'Sin audio detectado.' });
+                    }
 
                     if (transcriptions.length === 1) {
                         editor.innerHTML = transcriptions[0].text;
@@ -2264,21 +2269,71 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                 const doc = new jsPDF();
 
                 doc.setFontSize(20);
-                doc.text('INFORME MÉDICO', 105, 20, { align: 'center' });
-                doc.setFontSize(12);
+                doc.setTextColor(0);
+                doc.setFont('helvetica', 'bold');
+
+                // Header integration logic
+                let pdfSettings = JSON.parse(localStorage.getItem('pdf_settings')) || { header: '', footer: '' };
+                const addHeaderFooter = (pageNumber, totalPages) => {
+                    doc.setFontSize(9);
+                    doc.setTextColor(150);
+
+                    // Header
+                    if (pdfSettings.header) {
+                        doc.setFont('helvetica', 'italic');
+                        const headerLines = pdfSettings.header.split('\n');
+                        let headerY = 10;
+                        headerLines.forEach(line => {
+                            doc.text(line, 105, headerY, { align: 'center' });
+                            headerY += 5;
+                        });
+                    }
+
+                    // Footer
+                    if (pdfSettings.footer) {
+                        doc.setFont('helvetica', 'normal');
+                        const footerText = pdfSettings.footer
+                            .replace('{page}', pageNumber)
+                            .replace('{date}', fecha);
+                        const footerLines = footerText.split('\n');
+                        let footerY = 287 - ((footerLines.length - 1) * 5);
+                        footerLines.forEach(line => {
+                            doc.text(line, 105, footerY, { align: 'center' });
+                            footerY += 5;
+                        });
+                    }
+                };
+
+                // Calculate title position relative to header
+                let titleY = 25;
+                if (pdfSettings.header) {
+                    const headerLines = pdfSettings.header.split('\n').length;
+                    titleY = 25 + (headerLines * 7);
+                }
+
+                addHeaderFooter(1, 1);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(20);
+                doc.setTextColor(0);
+                doc.text('INFORME MÉDICO', 105, titleY, { align: 'center' });
+
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'italic');
                 doc.setTextColor(100);
-                doc.text(`Fecha: ${fecha}`, 105, 30, { align: 'center' });
+                doc.text(`Fecha: ${fecha}`, 105, titleY + 8, { align: 'center' });
 
                 doc.setTextColor(0);
                 doc.setFontSize(11);
+                doc.setFont('helvetica', 'normal');
 
                 const lines = doc.splitTextToSize(text, 170);
-                let y = 45;
+                let y = titleY + 20;
 
                 for (const line of lines) {
                     if (y > 280) {
                         doc.addPage();
-                        y = 20;
+                        addHeaderFooter(doc.internal.getNumberOfPages(), 0);
+                        y = 30; // Margin after header
                     }
                     doc.text(line, 20, y);
                     y += 7;
