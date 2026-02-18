@@ -1762,7 +1762,29 @@
             </div>
             <div class="modal-body">
                 <div class="help-section">
-                    <h3>💡 Plantillas Rápidas</h3>
+                    <h3>🩺 Datos del Paciente (Opcional)</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <input type="text" id="patientNameInput" class="config-textarea"
+                            style="height: auto; padding: 0.5rem;" placeholder="Nombre completo">
+                        <input type="text" id="patientDniInput" class="config-textarea"
+                            style="height: auto; padding: 0.5rem;" placeholder="DNI/Identificación">
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <label style="font-size: 0.8rem; color: var(--text-muted);">Fecha del estudio:</label>
+                        <input type="date" id="studyDateInput" class="config-textarea"
+                            style="height: auto; padding: 0.5rem;">
+                    </div>
+                </div>
+
+                <div class="help-section">
+                    <h3>📝 Descripción del Procedimiento (Opcional)</h3>
+                    <textarea id="procedureInput" class="config-textarea" style="height: 60px;"
+                        placeholder="Ej: Ecografía abdominal realizada con transductor convexo..."></textarea>
+                    <p><small>Este párrafo aparecerá antes de la transcripción.</small></p>
+                </div>
+
+                <div class="help-section">
+                    <h3>💡 Plantillas de Encabezado/Pie</h3>
                     <div class="preset-grid">
                         <button class="btn-preset"
                             onclick="setPreset('header', 'Dr. [Nombre]\nEspecialista en [Especialidad]\nMat. [Número]')">
@@ -1813,12 +1835,30 @@
         const closePdfConfig = $('closePdfConfig');
         const pdfHeaderInput = $('pdfHeaderInput');
         const pdfFooterInput = $('pdfFooterInput');
+        const patientNameInput = $('patientNameInput');
+        const patientDniInput = $('patientDniInput');
+        const studyDateInput = $('studyDateInput');
+        const procedureInput = $('procedureInput');
         const savePdfConfig = $('savePdfConfig');
 
+        // Initial study date
+        studyDateInput.value = new Date().toISOString().split('T')[0];
+
         // PDF Settings
-        let pdfSettings = JSON.parse(localStorage.getItem('pdf_settings')) || { header: '', footer: '' };
-        pdfHeaderInput.value = pdfSettings.header;
-        pdfFooterInput.value = pdfSettings.footer;
+        let pdfSettings = JSON.parse(localStorage.getItem('pdf_settings')) || {
+            header: '',
+            footer: '',
+            patientName: '',
+            patientDni: '',
+            studyDate: '',
+            procedure: ''
+        };
+        pdfHeaderInput.value = pdfSettings.header || '';
+        pdfFooterInput.value = pdfSettings.footer || '';
+        patientNameInput.value = pdfSettings.patientName || '';
+        patientDniInput.value = pdfSettings.patientDni || '';
+        if (pdfSettings.studyDate) studyDateInput.value = pdfSettings.studyDate;
+        procedureInput.value = pdfSettings.procedure || '';
 
         const GROQ_API_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
 
@@ -2568,7 +2608,7 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
 
                     // Footer
                     if (pdfSettings.footer) {
-                        doc.setFont('helvetica', 'normal');
+                        doc.setFont('helvetica', 'italic'); // Cambiado a cursiva
                         const footerText = pdfSettings.footer
                             .replace('{page}', pageNumber)
                             .replace('{date}', fecha);
@@ -2585,32 +2625,86 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                 // Calculate header height
                 const hHeight = addHeaderFooter(1, 1);
 
-                // Content start - Increased margin from header
+                // Content start - Reduced size and centered title
                 let titleY = Math.max(25, hHeight + 15);
-                doc.setFontSize(22);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(16); // Reducido a 16
                 doc.setTextColor(0);
                 doc.text('INFORME MÉDICO', 105, titleY, { align: 'center' });
 
-                doc.setFontSize(12);
-                doc.setTextColor(100);
-                doc.text(`Fecha: ${fecha}`, 105, titleY + 10, { align: 'center' });
+                // Patient Info Block
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(11);
+                doc.setTextColor(50);
+                let currentY = titleY + 12;
 
+                // Patient data lines
+                const pName = pdfSettings.patientName || '---';
+                const pDni = pdfSettings.patientDni || '---';
+                const sDate = pdfSettings.studyDate ? new Date(pdfSettings.studyDate).toLocaleDateString('es-ES') : fecha;
+
+                doc.setFont('helvetica', 'normal');
+                doc.text(`Paciente: ${pName}`, 20, currentY);
+                doc.text(`DNI: ${pDni}`, 120, currentY);
+                currentY += 6;
+                doc.text(`Fecha del estudio: ${sDate}`, 20, currentY);
+                currentY += 10;
+
+                // Optional Procedure Description
+                if (pdfSettings.procedure) {
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('Procedimiento:', 20, currentY);
+                    currentY += 6;
+                    doc.setFont('helvetica', 'normal');
+                    const procLines = doc.splitTextToSize(pdfSettings.procedure, 170);
+                    doc.text(procLines, 20, currentY, { align: 'justify' });
+                    currentY += (procLines.length * 7) + 5;
+                }
+
+                // Transcription Content
                 doc.setTextColor(0);
                 doc.setFontSize(11);
 
-                const lines = doc.splitTextToSize(text, 170);
-                let y = titleY + 25;
+                const paragraphs = text.split('\n');
 
-                for (const line of lines) {
-                    if (y > 275) {
-                        doc.addPage();
-                        addHeaderFooter(doc.internal.getNumberOfPages(), doc.internal.getNumberOfPages());
-                        // Page margin after header
-                        y = Math.max(20, hHeight + 10);
+                for (const para of paragraphs) {
+                    if (!para.trim()) {
+                        currentY += 5;
+                        continue;
                     }
-                    doc.text(line, 20, y);
-                    y += 7;
+
+                    const paraLines = doc.splitTextToSize(para, 170);
+
+                    for (let i = 0; i < paraLines.length; i++) {
+                        if (currentY > 275) {
+                            doc.addPage();
+                            addHeaderFooter(doc.internal.getNumberOfPages(), doc.internal.getNumberOfPages());
+                            currentY = Math.max(20, hHeight + 10);
+                        }
+
+                        // Justify all lines except the last one of a paragraph
+                        const isLastLine = (i === paraLines.length - 1);
+                        doc.text(paraLines[i], 20, currentY, {
+                            align: isLastLine ? 'left' : 'justify',
+                            maxWidth: 170
+                        });
+                        currentY += 7;
+                    }
+                    currentY += 2; // Space between paragraphs
                 }
+
+                // Signature Area (3-4 line breaks, right aligned)
+                currentY += 25;
+                if (currentY > 275) {
+                    doc.addPage();
+                    addHeaderFooter(doc.internal.getNumberOfPages(), doc.internal.getNumberOfPages());
+                    currentY = Math.max(20, hHeight + 10) + 25;
+                }
+
+                const signatureLine = "__________________________";
+                const signatureText = "Firma y Sello del Profesional";
+                doc.text(signatureLine, 190, currentY, { align: 'right' });
+                doc.text(signatureText, 190, currentY + 6, { align: 'right' });
 
                 doc.save(`${fileName}_${fileDate}.pdf`);
                 showToast('PDF descargado ✓', 'success');
@@ -2700,7 +2794,11 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
         savePdfConfig.addEventListener('click', () => {
             pdfSettings = {
                 header: pdfHeaderInput.value.trim(),
-                footer: pdfFooterInput.value.trim()
+                footer: pdfFooterInput.value.trim(),
+                patientName: patientNameInput.value.trim(),
+                patientDni: patientDniInput.value.trim(),
+                studyDate: studyDateInput.value,
+                procedure: procedureInput.value.trim()
             };
             localStorage.setItem('pdf_settings', JSON.stringify(pdfSettings));
             pdfModalOverlay.classList.remove('active');
