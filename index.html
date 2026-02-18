@@ -2064,6 +2064,8 @@
 
             const pending = uploadedFiles.filter(f => f.status === 'pending');
             let done = 0;
+            let joinedText = '';
+            const shouldJoin = $('chkJoinAudios').checked;
 
             for (const item of pending) {
                 item.status = 'processing';
@@ -2082,7 +2084,6 @@
                     item.status = 'done';
                     done++;
 
-                    const shouldJoin = $('chkJoinAudios').checked;
                     if (shouldJoin) {
                         joinedText += (joinedText ? '\n\n' : '') + text.trim();
                     } else {
@@ -2104,6 +2105,15 @@
                     item.status = 'pending';
                     showToast(`Error: ${err.message}`, 'error');
                 }
+            }
+
+            if (shouldJoin && joinedText) {
+                const fileName = `Informe Combinado (${done} audios)`;
+                transcriptions.push({ fileName, text: joinedText });
+                activeTabIndex = transcriptions.length - 1;
+                editor.innerHTML = joinedText;
+                updateWordCount();
+                enableButtons();
             }
 
             progressFill.style.width = '100%';
