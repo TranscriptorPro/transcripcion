@@ -1197,6 +1197,50 @@
         input:checked+.slider:before {
             transform: translateX(20px);
         }
+
+        /* PDF Modal Specifics */
+        .pdf-preset-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .preset-btn {
+            background: rgba(15, 118, 110, 0.05);
+            border: 1px dashed var(--primary);
+            color: var(--primary);
+            padding: 0.5rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .preset-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .modal-body textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            resize: vertical;
+            min-height: 80px;
+            margin-bottom: 1rem;
+        }
+
+        .modal-body label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-main);
+            font-size: 0.85rem;
+        }
     </style>
 </head>
 
@@ -1428,6 +1472,13 @@
                             </button>
                         </div>
                     </div>
+                    <button class="btn btn-secondary" id="btnConfigPdf">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.81,11.69,4.81,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z" />
+                        </svg>
+                        PDF
+                    </button>
                 </div>
             </div>
 
@@ -2102,8 +2153,11 @@
 
                 } catch (err) {
                     console.error(err);
-                    item.status = 'pending';
-                    showToast(`Error: ${err.message}`, 'error');
+                    item.status = 'error';
+                    showToast(`Error en ${item.file.name}: ${err.message}`, 'error');
+                } finally {
+                    updateFileList();
+                    progressFill.style.width = `${((done) / pending.length) * 100}%`;
                 }
             }
 
@@ -2112,6 +2166,7 @@
                 transcriptions.push({ fileName, text: joinedText });
                 activeTabIndex = transcriptions.length - 1;
                 editor.innerHTML = joinedText;
+                createTabs();
                 updateWordCount();
                 enableButtons();
             }
@@ -2124,7 +2179,8 @@
             }, 1000);
 
             isProcessing = false;
-            transcribeBtn.disabled = uploadedFiles.every(f => f.status === 'done');
+            createTabs();
+            transcribeBtn.disabled = uploadedFiles.every(f => f.status === 'done' || f.status === 'error');
         });
 
         async function transcribeWithGroq(file) {
@@ -2497,6 +2553,35 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
+        // ============ PDF CONFIG MODAL ============
+        const pdfModal = $('pdfModal');
+        const btnConfigPdf = $('btnConfigPdf');
+        const closePdfConfig = $('closePdfConfig');
+        const pdfHeaderInput = $('pdfHeaderInput');
+        const pdfFooterInput = $('pdfFooterInput');
+        const savePdfConfig = $('savePdfConfig');
+
+        let pdfSettings = JSON.parse(localStorage.getItem('pdf_settings')) || { header: '', footer: '' };
+        pdfHeaderInput.value = pdfSettings.header;
+        pdfFooterInput.value = pdfSettings.footer;
+
+        btnConfigPdf.addEventListener('click', () => pdfModal.classList.add('active'));
+        closePdfConfig.addEventListener('click', () => pdfModal.classList.remove('active'));
+        pdfModal.addEventListener('click', (e) => { if (e.target === pdfModal) pdfModal.classList.remove('active'); });
+
+        savePdfConfig.addEventListener('click', () => {
+            pdfSettings.header = pdfHeaderInput.value;
+            pdfSettings.footer = pdfFooterInput.value;
+            localStorage.setItem('pdf_settings', JSON.stringify(pdfSettings));
+            showToast('Configuración guardada ✓', 'success');
+            pdfModal.classList.remove('active');
+        });
+
+        window.setPreset = (type, text) => {
+            if (type === 'header') pdfHeaderInput.value = text;
+            else pdfFooterInput.value = text;
+        };
+
         // Keyboard shortcuts
         document.addEventListener('keydown', e => {
             if (e.ctrlKey || e.metaKey) {
@@ -2508,6 +2593,7 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
             // Escape cierra modales
             if (e.key === 'Escape') {
                 $('helpModal').classList.remove('active');
+                pdfModal.classList.remove('active');
             }
         });
 
@@ -2530,6 +2616,51 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
             }
         });
     </script>
+    <!-- PDF Configuration Modal -->
+    <div class="modal" id="pdfModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 style="display: flex; align-items: center; gap: 0.5rem;">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="var(--primary)">
+                        <path
+                            d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5z" />
+                    </svg>
+                    Configurar PDF
+                </h2>
+                <button class="close-btn" id="closePdfConfig">✕</button>
+            </div>
+            <div class="modal-body">
+                <label>Encabezado del Informe (Centro):</label>
+                <div class="pdf-preset-list">
+                    <button class="preset-btn"
+                        onclick="setPreset('header', 'Dr. [Nombre]\nEspecialista en [Especialidad]\nMat. 0000')">🩺 Dr.
+                        / Médica</button>
+                    <button class="preset-btn"
+                        onclick="setPreset('header', 'Sanatorio [Nombre]\nDepartamento de [Área]\nDirección 123')">🏥
+                        Sanatorio/Clínica</button>
+                </div>
+                <textarea id="pdfHeaderInput" placeholder="Ej: Dr. Aldo Wagner - Mat. 123456"></textarea>
+
+                <label>Pie de Página (Opciones):</label>
+                <div class="pdf-preset-list">
+                    <button class="preset-btn" onclick="setPreset('footer', 'Página {page} de {date}')">📄 Pág. y
+                        Fecha</button>
+                    <button class="preset-btn"
+                        onclick="setPreset('footer', 'Documento generado automáticamente • {date}')">🤖
+                        Automático</button>
+                </div>
+                <textarea id="pdfFooterInput" placeholder="Ej: Página {page} • Fecha: {date}"></textarea>
+
+                <p style="font-size: 0.75rem; color: var(--text-secondary);">
+                    Usa <b>{page}</b> para número de página y <b>{date}</b> para la fecha actual.
+                </p>
+
+                <button class="btn btn-primary btn-full" id="savePdfConfig" style="margin-top: 1.5rem;">
+                    Guardar Configuración
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>
