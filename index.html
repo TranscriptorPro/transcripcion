@@ -1104,142 +1104,100 @@
             }
         }
 
-        /* Mode Selector */
-        .mode-selector {
-            background: rgba(15, 118, 110, 0.08);
-            border: 1px solid var(--primary);
-            border-radius: var(--radius-md);
-            padding: 0.75rem;
-            margin: 1rem 0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .mode-selector:hover {
-            background: rgba(15, 118, 110, 0.12);
-            transform: translateY(-1px);
-        }
-
-        .mode-info {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .mode-icon {
-            width: 32px;
-            height: 32px;
-            background: var(--primary);
-            color: white;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .mode-text h4 {
-            margin: 0;
-            font-size: 0.9rem;
-            color: var(--primary);
-        }
-
-        .mode-text p {
-            margin: 0;
-            font-size: 0.75rem;
-            opacity: 0.8;
-        }
-
-        /* Toggle Switch */
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 44px;
-            height: 24px;
-        }
-
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 24px;
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 18px;
-            width: 18px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
-        input:checked+.slider {
-            background-color: var(--primary);
-        }
-
-        input:checked+.slider:before {
-            transform: translateX(20px);
-        }
-
-        /* PDF Modal Specifics */
-        .pdf-preset-list {
+        .preset-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
             gap: 0.5rem;
             margin-bottom: 1rem;
         }
 
-        .preset-btn {
-            background: rgba(15, 118, 110, 0.05);
-            border: 1px dashed var(--primary);
-            color: var(--primary);
+        .btn-preset {
             padding: 0.5rem;
+            font-size: 0.7rem;
+            background: var(--bg-main);
+            border: 1px solid var(--border);
             border-radius: 6px;
-            font-size: 0.75rem;
             cursor: pointer;
-            transition: all 0.2s;
             text-align: left;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: var(--text-primary);
         }
 
-        .preset-btn:hover {
-            background: var(--primary);
-            color: white;
+        .btn-preset:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(15, 118, 110, 0.05);
         }
 
-        .modal-body textarea {
+        .config-textarea {
             width: 100%;
+            min-height: 80px;
             padding: 0.75rem;
             border: 1px solid var(--border);
             border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            background: var(--bg-main);
+            color: var(--text-primary);
             font-family: inherit;
             resize: vertical;
-            min-height: 80px;
+            transition: all 0.2s;
+        }
+
+        .config-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
+        }
+
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 0.5rem;
             margin-bottom: 1rem;
         }
 
-        .modal-body label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: var(--text-main);
+        .btn-preset {
+            padding: 0.5rem;
+            font-size: 0.7rem;
+            background: var(--bg-main);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: var(--text-primary);
+        }
+
+        .btn-preset:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(15, 118, 110, 0.05);
+        }
+
+        .config-textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
             font-size: 0.85rem;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            font-family: inherit;
+            resize: vertical;
+            transition: all 0.2s;
+        }
+
+        .config-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
         }
     </style>
 </head>
@@ -1344,28 +1302,14 @@
                         <input type="checkbox" id="chkCompress" checked>
                         📦 Comprimir
                     </label>
+                    <label class="audio-option" id="optJoin" title="Une todos los audios en un solo informe"
+                        style="border: 1px solid var(--primary); background: rgba(15, 118, 110, 0.05);">
+                        <input type="checkbox" id="chkJoinAudios">
+                        🔗 Unir audios
+                    </label>
                 </div>
 
                 <div class="file-list" id="fileList"></div>
-
-                <!-- Modos de Transcripción Extra Visible -->
-                <div class="mode-selector" onclick="$('chkJoinAudios').click()">
-                    <div class="mode-info">
-                        <div class="mode-icon">
-                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-                            </svg>
-                        </div>
-                        <div class="mode-text">
-                            <h4>🔗 Unir Informes</h4>
-                            <p>Combinar varios audios en uno</p>
-                        </div>
-                    </div>
-                    <label class="switch" onclick="event.stopPropagation()">
-                        <input type="checkbox" id="chkJoinAudios">
-                        <span class="slider"></span>
-                    </label>
-                </div>
 
                 <div class="processing-status" id="processingStatus">
                     <div class="processing-header">
@@ -1427,6 +1371,13 @@
             <div class="editor-header">
                 <h2 class="editor-title">📝 Editor de Transcripción</h2>
                 <div class="editor-actions">
+                    <button class="btn btn-secondary" id="btnConfigPdf" title="Configurar encabezado y pie de página">
+                        <svg viewBox="0 0 24 24">
+                            <path
+                                d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z" />
+                        </svg>
+                        Configurar PDF
+                    </button>
                     <button class="btn btn-secondary" id="copyBtn" disabled>
                         <svg viewBox="0 0 24 24" fill="currentColor">
                             <path
@@ -1472,13 +1423,6 @@
                             </button>
                         </div>
                     </div>
-                    <button class="btn btn-secondary" id="btnConfigPdf">
-                        <svg viewBox="0 0 24 24" fill="currentColor">
-                            <path
-                                d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.81,11.69,4.81,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z" />
-                        </svg>
-                        PDF
-                    </button>
                 </div>
             </div>
 
@@ -1621,6 +1565,8 @@
                             partes muy suaves se hacen más audibles y las muy fuertes se suavizan. <strong>Ideal
                                 para:</strong> grabaciones con volumen irregular, voces que varían mucho entre susurros
                             y gritos, o entrevistas donde algunas personas hablan más bajo que otras.</li>
+                        <li><strong>➕ Unir audios:</strong> Si subes varios archivos y activas esta opción, el texto
+                            transcrito de todos los audios se unirá en una sola transcripción en el editor.</li>
                     </ul>
                     <div class="help-tip">
                         <strong>💡 Recomendación:</strong> Para grabaciones de celular o dictados casuales, activa las
@@ -1719,11 +1665,72 @@
                 </div>
             </div>
         </div>
+        <!-- PDF Config Modal -->
+        <div id="pdfModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">📄 Configuración de PDF</h2>
+                    <button class="close-btn" id="closePdfConfig">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="help-section">
+                        <h3>💡 Plantillas Rápidas</h3>
+                        <div class="preset-grid">
+                            <button class="btn-preset"
+                                onclick="setPreset('header', 'Dr. [Nombre]\nEspecialista en [Especialidad]\nMat. [Número]')">
+                                🩺 Profesional
+                            </button>
+                            <button class="btn-preset"
+                                onclick="setPreset('header', 'Clínica [Nombre]\nDirección: [Calle 123]\nLocalidad: [Ciudad]\nTel: [1234-5678]')">
+                                🏥 Institución
+                            </button>
+                            <button class="btn-preset" onclick="setPreset('footer', 'Documento Confidencial • {page}')">
+                                🔒 Confidencial
+                            </button>
+                            <button class="btn-preset"
+                                onclick="setPreset('footer', '[Localidad], [Provincia]\nFecha de impresión: {date}')">
+                                📍 Ubicación
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="help-section">
+                        <h3>Encabezado</h3>
+                        <textarea id="pdfHeaderInput" class="config-textarea"
+                            placeholder="Ej: Clínica Central - Dr. García"></textarea>
+                        <p><small>Aparecerá en el centro superior. Puedes usar varias líneas.</small></p>
+                    </div>
+                    <div class="help-section">
+                        <h3>Pie de página</h3>
+                        <textarea id="pdfFooterInput" class="config-textarea"
+                            placeholder="Ej: Confidencial • {page}"></textarea>
+                        <p><small>Usa {page} para número de página y {date} para fecha actual.</small></p>
+                    </div>
+                    <button class="btn btn-primary btn-full" id="savePdfConfig">Guardar Configuración</button>
+                </div>
+            </div>
+        </div>
+    </div>
     </div>
 
     <script>
         // ============ CONFIGURATION ============
         let GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
+        const chkJoinAudios = $('chkJoinAudios');
+
+        // PDF Config Elements
+        const pdfModal = $('pdfModal');
+        const btnConfigPdf = $('btnConfigPdf');
+        const closePdfConfig = $('closePdfConfig');
+        const pdfHeaderInput = $('pdfHeaderInput');
+        const pdfFooterInput = $('pdfFooterInput');
+        const savePdfConfig = $('savePdfConfig');
+
+        // PDF Settings
+        let pdfSettings = JSON.parse(localStorage.getItem('pdf_settings')) || { header: '', footer: '' };
+        pdfHeaderInput.value = pdfSettings.header;
+        pdfFooterInput.value = pdfSettings.footer;
+
         const GROQ_API_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
 
         // ============ DOM ELEMENTS ============
@@ -2115,8 +2122,8 @@
 
             const pending = uploadedFiles.filter(f => f.status === 'pending');
             let done = 0;
+            const shouldJoin = chkJoinAudios.checked;
             let joinedText = '';
-            const shouldJoin = $('chkJoinAudios').checked;
 
             for (const item of pending) {
                 item.status = 'processing';
@@ -2125,51 +2132,47 @@
                 progressFill.style.width = `${(done / pending.length) * 100}%`;
 
                 try {
-                    // Process audio before sending
                     processingText.textContent = `Mejorando audio: ${item.file.name}`;
                     const processedFile = await processAudio(item.file);
 
                     processingText.textContent = `Transcribiendo: ${item.file.name}`;
                     const text = await transcribeWithGroq(processedFile);
 
+                    const cleanedText = cleanTranscriptionText(text);
                     item.status = 'done';
                     done++;
 
                     if (shouldJoin) {
-                        joinedText += (joinedText ? '\n\n' : '') + text.trim();
+                        joinedText += (joinedText ? '\n\n' : '') + cleanedText;
                     } else {
-                        transcriptions.push({ fileName: item.file.name, text: text.trim() || 'Sin audio detectado.' });
+                        transcriptions.push({ fileName: item.file.name, text: cleanedText || 'Sin audio detectado.' });
+                        if (transcriptions.length === 1) {
+                            editor.innerHTML = transcriptions[0].text;
+                            updateWordCount();
+                            enableButtons();
+                        }
                     }
 
-                    if (transcriptions.length === 1) {
-                        editor.innerHTML = transcriptions[0].text;
-                        updateWordCount();
-                        enableButtons();
-                    }
-
-                    createTabs();
                     updateFileList();
                     progressFill.style.width = `${(done / pending.length) * 100}%`;
 
                 } catch (err) {
                     console.error(err);
-                    item.status = 'error';
-                    showToast(`Error en ${item.file.name}: ${err.message}`, 'error');
-                } finally {
-                    updateFileList();
-                    progressFill.style.width = `${((done) / pending.length) * 100}%`;
+                    item.status = 'pending';
+                    showToast(`Error: ${err.message}`, 'error');
                 }
             }
 
             if (shouldJoin && joinedText) {
-                const fileName = `Informe Combinado (${done} audios)`;
-                transcriptions.push({ fileName, text: joinedText });
+                const combinedName = `Informe Combinado (${done} audios)`;
+                transcriptions.push({ fileName: combinedName, text: joinedText });
                 activeTabIndex = transcriptions.length - 1;
                 editor.innerHTML = joinedText;
-                createTabs();
                 updateWordCount();
                 enableButtons();
             }
+
+            createTabs();
 
             progressFill.style.width = '100%';
             processingText.textContent = `✓ ${done} transcrito(s)`;
@@ -2179,8 +2182,7 @@
             }, 1000);
 
             isProcessing = false;
-            createTabs();
-            transcribeBtn.disabled = uploadedFiles.every(f => f.status === 'done' || f.status === 'error');
+            transcribeBtn.disabled = uploadedFiles.every(f => f.status === 'done');
         });
 
         async function transcribeWithGroq(file) {
@@ -2198,6 +2200,18 @@
 
             if (!res.ok) throw new Error(`API ${res.status}`);
             return await res.text();
+        }
+
+        function cleanTranscriptionText(text) {
+            if (!text) return "";
+            let cleaned = text.trim();
+            // Remove leading ellipsis and spaces
+            cleaned = cleaned.replace(/^[\s\.]+/u, "").trim();
+            // Capitalize first letter
+            if (cleaned.length > 0) {
+                cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+            }
+            return cleaned;
         }
 
         // ============ TABS ============
@@ -2447,17 +2461,12 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
 
-                doc.setFontSize(20);
-                doc.setTextColor(0);
-                doc.setFont('helvetica', 'bold');
-
-                // Header integration logic
-                let pdfSettings = JSON.parse(localStorage.getItem('pdf_settings')) || { header: '', footer: '' };
                 const addHeaderFooter = (pageNumber, totalPages) => {
                     doc.setFontSize(9);
                     doc.setTextColor(150);
 
                     // Header
+                    let headerHeight = 0;
                     if (pdfSettings.header) {
                         doc.setFont('helvetica', 'italic');
                         const headerLines = pdfSettings.header.split('\n');
@@ -2466,6 +2475,7 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                             doc.text(line, 105, headerY, { align: 'center' });
                             headerY += 5;
                         });
+                        headerHeight = (headerLines.length * 5) + 5;
                     }
 
                     // Footer
@@ -2481,38 +2491,34 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                             footerY += 5;
                         });
                     }
+                    return headerHeight;
                 };
 
-                // Calculate title position relative to header
-                let titleY = 25;
-                if (pdfSettings.header) {
-                    const headerLines = pdfSettings.header.split('\n').length;
-                    titleY = 25 + (headerLines * 7);
-                }
+                // Calculate header height
+                const hHeight = addHeaderFooter(1, 1);
 
-                addHeaderFooter(1, 1);
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(20);
+                // Content start - Increased margin from header
+                let titleY = Math.max(25, hHeight + 15);
+                doc.setFontSize(22);
                 doc.setTextColor(0);
                 doc.text('INFORME MÉDICO', 105, titleY, { align: 'center' });
 
-                doc.setFontSize(11);
-                doc.setFont('helvetica', 'italic');
+                doc.setFontSize(12);
                 doc.setTextColor(100);
-                doc.text(`Fecha: ${fecha}`, 105, titleY + 8, { align: 'center' });
+                doc.text(`Fecha: ${fecha}`, 105, titleY + 10, { align: 'center' });
 
                 doc.setTextColor(0);
                 doc.setFontSize(11);
-                doc.setFont('helvetica', 'normal');
 
                 const lines = doc.splitTextToSize(text, 170);
-                let y = titleY + 20;
+                let y = titleY + 25;
 
                 for (const line of lines) {
-                    if (y > 280) {
+                    if (y > 275) {
                         doc.addPage();
-                        addHeaderFooter(doc.internal.getNumberOfPages(), 0);
-                        y = 30; // Margin after header
+                        addHeaderFooter(doc.internal.getNumberOfPages(), doc.internal.getNumberOfPages());
+                        // Page margin after header
+                        y = Math.max(20, hHeight + 10);
                     }
                     doc.text(line, 20, y);
                     y += 7;
@@ -2553,35 +2559,6 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
-        // ============ PDF CONFIG MODAL ============
-        const pdfModal = $('pdfModal');
-        const btnConfigPdf = $('btnConfigPdf');
-        const closePdfConfig = $('closePdfConfig');
-        const pdfHeaderInput = $('pdfHeaderInput');
-        const pdfFooterInput = $('pdfFooterInput');
-        const savePdfConfig = $('savePdfConfig');
-
-        let pdfSettings = JSON.parse(localStorage.getItem('pdf_settings')) || { header: '', footer: '' };
-        pdfHeaderInput.value = pdfSettings.header;
-        pdfFooterInput.value = pdfSettings.footer;
-
-        btnConfigPdf.addEventListener('click', () => pdfModal.classList.add('active'));
-        closePdfConfig.addEventListener('click', () => pdfModal.classList.remove('active'));
-        pdfModal.addEventListener('click', (e) => { if (e.target === pdfModal) pdfModal.classList.remove('active'); });
-
-        savePdfConfig.addEventListener('click', () => {
-            pdfSettings.header = pdfHeaderInput.value;
-            pdfSettings.footer = pdfFooterInput.value;
-            localStorage.setItem('pdf_settings', JSON.stringify(pdfSettings));
-            showToast('Configuración guardada ✓', 'success');
-            pdfModal.classList.remove('active');
-        });
-
-        window.setPreset = (type, text) => {
-            if (type === 'header') pdfHeaderInput.value = text;
-            else pdfFooterInput.value = text;
-        };
-
         // Keyboard shortcuts
         document.addEventListener('keydown', e => {
             if (e.ctrlKey || e.metaKey) {
@@ -2593,7 +2570,6 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
             // Escape cierra modales
             if (e.key === 'Escape') {
                 $('helpModal').classList.remove('active');
-                pdfModal.classList.remove('active');
             }
         });
 
@@ -2615,52 +2591,34 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                 helpModal.classList.remove('active');
             }
         });
+
+        // ============ PDF CONFIG MODAL ============
+        window.setPreset = (type, text) => {
+            if (type === 'header') {
+                pdfHeaderInput.value = text;
+            } else {
+                pdfFooterInput.value = text;
+            }
+        };
+
+        btnConfigPdf.addEventListener('click', () => pdfModal.classList.add('active'));
+        closePdfConfig.addEventListener('click', () => pdfModal.classList.remove('active'));
+        pdfModal.addEventListener('click', (e) => {
+            if (e.target === pdfModal) {
+                pdfModal.classList.remove('active');
+            }
+        });
+
+        savePdfConfig.addEventListener('click', () => {
+            pdfSettings = {
+                header: pdfHeaderInput.value.trim(),
+                footer: pdfFooterInput.value.trim()
+            };
+            localStorage.setItem('pdf_settings', JSON.stringify(pdfSettings));
+            pdfModal.classList.remove('active');
+            showToast('Configuración guardada ✓', 'success');
+        });
     </script>
-    <!-- PDF Configuration Modal -->
-    <div class="modal" id="pdfModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 style="display: flex; align-items: center; gap: 0.5rem;">
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="var(--primary)">
-                        <path
-                            d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5z" />
-                    </svg>
-                    Configurar PDF
-                </h2>
-                <button class="close-btn" id="closePdfConfig">✕</button>
-            </div>
-            <div class="modal-body">
-                <label>Encabezado del Informe (Centro):</label>
-                <div class="pdf-preset-list">
-                    <button class="preset-btn"
-                        onclick="setPreset('header', 'Dr. [Nombre]\nEspecialista en [Especialidad]\nMat. 0000')">🩺 Dr.
-                        / Médica</button>
-                    <button class="preset-btn"
-                        onclick="setPreset('header', 'Sanatorio [Nombre]\nDepartamento de [Área]\nDirección 123')">🏥
-                        Sanatorio/Clínica</button>
-                </div>
-                <textarea id="pdfHeaderInput" placeholder="Ej: Dr. Aldo Wagner - Mat. 123456"></textarea>
-
-                <label>Pie de Página (Opciones):</label>
-                <div class="pdf-preset-list">
-                    <button class="preset-btn" onclick="setPreset('footer', 'Página {page} de {date}')">📄 Pág. y
-                        Fecha</button>
-                    <button class="preset-btn"
-                        onclick="setPreset('footer', 'Documento generado automáticamente • {date}')">🤖
-                        Automático</button>
-                </div>
-                <textarea id="pdfFooterInput" placeholder="Ej: Página {page} • Fecha: {date}"></textarea>
-
-                <p style="font-size: 0.75rem; color: var(--text-secondary);">
-                    Usa <b>{page}</b> para número de página y <b>{date}</b> para la fecha actual.
-                </p>
-
-                <button class="btn btn-primary btn-full" id="savePdfConfig" style="margin-top: 1.5rem;">
-                    Guardar Configuración
-                </button>
-            </div>
-        </div>
-    </div>
 </body>
 
 </html>
