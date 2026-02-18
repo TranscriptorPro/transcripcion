@@ -1162,17 +1162,41 @@
             border: none;
             background: transparent;
             border-radius: 8px;
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
             color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .mode-tab svg {
+            opacity: 0.6;
+            transition: all 0.2s;
         }
 
         .mode-tab.active {
             background: white;
             color: var(--primary);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .mode-tab.active svg {
+            opacity: 1;
+        }
+
+        /* Specific style for Professional Mode when active */
+        #modePro.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(15, 118, 110, 0.2);
+        }
+
+        #modePro.active svg {
+            filter: brightness(0) invert(1);
         }
 
         .template-selector {
@@ -1425,8 +1449,20 @@
 
                 <!-- Mode Selector -->
                 <div class="mode-selector">
-                    <button class="mode-tab active" id="modeNormal">Modo Normal</button>
-                    <button class="mode-tab" id="modePro">Modo Profesional 🩺</button>
+                    <button class="mode-tab active" id="modeNormal">
+                        <svg viewBox="0 0 24 24" width="16" height="16">
+                            <path
+                                d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+                        </svg>
+                        Modo Normal
+                    </button>
+                    <button class="mode-tab" id="modePro">
+                        <svg viewBox="0 0 24 24" width="16" height="16">
+                            <path
+                                d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-8.5 15.5l-2.12-2.12c-.78-.78-.78-2.05 0-2.83l.71-.71c.78-.78 2.05-.78 2.83 0L12 14.17l2.12-2.12c.78-.78 2.05-.78 2.83 0l.71.71c.78.78.78 2.05 0 2.83l-2.12 2.12c-.78.78-2.05.78-2.83 0l-2.12-2.12zM12 11c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z" />
+                        </svg>
+                        Modo Profesional 🩺
+                    </button>
                 </div>
 
                 <!-- Template Selector (Hidden by default) -->
@@ -1997,6 +2033,139 @@
         let recordingInterval = null;
         let recordingStartTime = 0;
 
+        // ============ AI STRUCTURER (MODO PRO) ============
+        const MEDICAL_TEMPLATES = {
+            orl: {
+                label: "Otorrinolaringología",
+                studies: {
+                    naso: {
+                        name: "Videonaso / Laringoscopía",
+                        prompt: `Actúa como un médico especialista en Otorrinolaringología. Convierte el audio en un informe de VIDEONASOFIBROLARINGOSCOPIA.
+Estructura:
+# INFORME DE VIDEONASOFIBROLARINGOSCOPÍA
+### I. FOSAS NASALES Y RINOFARINGE
+* Mucosa, Septum, Cornetes, Meatos, Rinofaringe.
+### II. FARINGE Y LARINGE
+* Base de Lengua, Senos Piriformes, Epiglotis, Cuerdas Vocales, Bandas.
+### III. CONCLUSIÓN DIAGNÓSTICA`
+                    },
+                    otologica: {
+                        name: "Endoscopía Otológica",
+                        prompt: `Actúa como médico ORL. Genera un INFORME DE ENDOSCOPÍA OTOLÓGICA.
+Estructura:
+# INFORME DE ENDOSCOPÍA OTOLÓGICA
+**OD:** CAE, Membrana, Observaciones.
+**OI:** CAE, Membrana, Observaciones.
+**CONCLUSIÓN**`
+                    }
+                }
+            },
+            cardiologia: {
+                label: "Cardiología",
+                studies: {
+                    cinecoro: {
+                        name: "Cinecoronariografía",
+                        prompt: `Actúa como cardiólogo intervencionista. Estructura el audio como un INFORME DE CINECORONARIOGRAFÍA.
+Estructura:
+# INFORME DE CINECORONARIOGRAFÍA
+**ACCESO:** [rellenar]
+**VENTRICULOGRAFÍA:** [rellenar]
+**CORONARIA IZQUIERDA (TCI, DA, CX):** [rellenar]
+**CORONARIA DERECHA:** [rellenar]
+**CONCLUSIÓN:** [rellenar]`
+                    },
+                    ecg: {
+                        name: "Electrocardiograma (ECG)",
+                        prompt: `Estructura el audio como un INFORME DE ECG.
+Estructura:
+# INFORME DE ELECTROCARDIOGRAMA
+* Ritmo, Frecuencia, Eje, Intervalos (PR, QRS, QT), Segmento ST, Onda T.
+* Conclusión.`
+                    },
+                    ecostress: {
+                        name: "Ecografía de Estrés",
+                        prompt: `Actúa como cardiólogo. Estructura el audio como un ECO-STRESS.
+Estructura:
+# INFORME DE ECOCARDIOGRAMA DE ESTRÉS
+* Protocolo, Hallazgos en Reposo, Hallazgos en Esfuerzo/Dobutamina, Motilidad Parietal, Conclusión.`
+                    }
+                }
+            },
+            imagenes: {
+                label: "Diagnóstico por Imágenes",
+                studies: {
+                    resonancia: {
+                        name: "Resonancia Magnética (RMN)",
+                        prompt: `Actúa como especialista en imágenes. Estructura el audio como un INFORME DE RMN.
+Estructura:
+# INFORME DE RESONANCIA MAGNÉTICA
+* Técnica, Hallazgos detallados, Conclusión.`
+                    },
+                    tomografia: {
+                        name: "Tomografía (TC)",
+                        prompt: `Actúa como especialista en imágenes. Estructura el audio como un INFORME DE TC.
+Estructura:
+# INFORME DE TOMOGRAFÍA COMPUTADA
+* Hallazgos por regiones, Conclusión.`
+                    },
+                    ecografia: {
+                        name: "Ecografía General",
+                        prompt: `Estructura el audio como una ECOGRAFÍA.
+Estructura:
+# INFORME ECOGRÁFICO
+* Descripción de órganos/región, Conclusión.`
+                    },
+                    rx: {
+                        name: "Radiografía (RX)",
+                        prompt: `Estructura el audio como un informe de RADIOLOGÍA.
+Estructura:
+# INFORME RADIOLÓGICO
+* Hallazgos, Conclusión.`
+                    }
+                }
+            },
+            otros: {
+                label: "Otros / Quirúrgico",
+                studies: {
+                    quirurgico: {
+                        name: "Protocolo Quirúrgico",
+                        prompt: `Actúa como cirujano. Transforma el audio en un PROTOCOLO OPERATORIO.
+# PROTOCOLO OPERATORIO
+**PROCEDIMIENTO:** [rellenar]
+**TÉCNICA:** [pasos]
+**RESULTADO:** [complicaciones, AP]`
+                    },
+                    generico: {
+                        name: "Informe General Estructurado",
+                        prompt: `Actúa como médico experto. Estructura la transcripción médica de forma profesional con títulos lógicos y Markdown.`
+                    }
+                }
+            }
+        };
+
+        function populateTemplateDropdown() {
+            const select = $('templateSelect');
+            if (!select) return;
+            select.innerHTML = '';
+
+            for (const catKey in MEDICAL_TEMPLATES) {
+                const cat = MEDICAL_TEMPLATES[catKey];
+                const group = document.createElement('optgroup');
+                group.label = cat.label;
+
+                for (const studyKey in cat.studies) {
+                    const study = cat.studies[studyKey];
+                    const option = document.createElement('option');
+                    option.value = studyKey;
+                    option.textContent = study.name;
+                    group.appendChild(option);
+                }
+                select.appendChild(group);
+            }
+            // Set initial selected template
+            selectedTemplate = select.value;
+        }
+
         // ============ THEME ============
         const savedTheme = localStorage.getItem('theme') || 'light';
         if (savedTheme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
@@ -2452,137 +2621,6 @@
             return cleaned;
         }
 
-        // ============ AI STRUCTURER (MODO PRO) ============
-        const MEDICAL_TEMPLATES = {
-            orl: {
-                label: "Otorrinolaringología",
-                studies: {
-                    naso: {
-                        name: "Videonaso / Laringoscopía",
-                        prompt: `Actúa como un médico especialista en Otorrinolaringología. Convierte el audio en un informe de VIDEONASOFIBROLARINGOSCOPIA.
-Estructura:
-# INFORME DE VIDEONASOFIBROLARINGOSCOPÍA
-### I. FOSAS NASALES Y RINOFARINGE
-* Mucosa, Septum, Cornetes, Meatos, Rinofaringe.
-### II. FARINGE Y LARINGE
-* Base de Lengua, Senos Piriformes, Epiglotis, Cuerdas Vocales, Bandas.
-### III. CONCLUSIÓN DIAGNÓSTICA`
-                    },
-                    otologica: {
-                        name: "Endoscopía Otológica",
-                        prompt: `Actúa como médico ORL. Genera un INFORME DE ENDOSCOPÍA OTOLÓGICA.
-Estructura:
-# INFORME DE ENDOSCOPÍA OTOLÓGICA
-**OD:** CAE, Membrana, Observaciones.
-**OI:** CAE, Membrana, Observaciones.
-**CONCLUSIÓN**`
-                    }
-                }
-            },
-            cardiologia: {
-                label: "Cardiología",
-                studies: {
-                    cinecoro: {
-                        name: "Cinecoronariografía",
-                        prompt: `Actúa como cardiólogo intervencionista. Estructura el audio como un INFORME DE CINECORONARIOGRAFÍA.
-Estructura:
-# INFORME DE CINECORONARIOGRAFÍA
-**ACCESO:** [rellenar]
-**VENTRICULOGRAFÍA:** [rellenar]
-**CORONARIA IZQUIERDA (TCI, DA, CX):** [rellenar]
-**CORONARIA DERECHA:** [rellenar]
-**CONCLUSIÓN:** [rellenar]`
-                    },
-                    ecg: {
-                        name: "Electrocardiograma (ECG)",
-                        prompt: `Estructura el audio como un INFORME DE ECG.
-Estructura:
-# INFORME DE ELECTROCARDIOGRAMA
-* Ritmo, Frecuencia, Eje, Intervalos (PR, QRS, QT), Segmento ST, Onda T.
-* Conclusión.`
-                    },
-                    ecostress: {
-                        name: "Ecografía de Estrés",
-                        prompt: `Actúa como cardiólogo. Estructura el audio como un ECO-STRESS.
-Estructura:
-# INFORME DE ECOCARDIOGRAMA DE ESTRÉS
-* Protocolo, Hallazgos en Reposo, Hallazgos en Esfuerzo/Dobutamina, Motilidad Parietal, Conclusión.`
-                    }
-                }
-            },
-            imagenes: {
-                label: "Diagnóstico por Imágenes",
-                studies: {
-                    resonancia: {
-                        name: "Resonancia Magnética (RMN)",
-                        prompt: `Actúa como especialista en imágenes. Estructura el audio como un INFORME DE RMN.
-Estructura:
-# INFORME DE RESONANCIA MAGNÉTICA
-* Técnica, Hallazgos detallados, Conclusión.`
-                    },
-                    tomografia: {
-                        name: "Tomografía (TC)",
-                        prompt: `Actúa como especialista en imágenes. Estructura el audio como un INFORME DE TC.
-Estructura:
-# INFORME DE TOMOGRAFÍA COMPUTADA
-* Hallazgos por regiones, Conclusión.`
-                    },
-                    ecografia: {
-                        name: "Ecografía General",
-                        prompt: `Estructura el audio como una ECOGRAFÍA.
-Estructura:
-# INFORME ECOGRÁFICO
-* Descripción de órganos/región, Conclusión.`
-                    },
-                    rx: {
-                        name: "Radiografía (RX)",
-                        prompt: `Estructura el audio como un informe de RADIOLOGÍA.
-Estructura:
-# INFORME RADIOLÓGICO
-* Hallazgos, Conclusión.`
-                    }
-                }
-            },
-            otros: {
-                label: "Otros / Quirúrgico",
-                studies: {
-                    quirurgico: {
-                        name: "Protocolo Quirúrgico",
-                        prompt: `Actúa como cirujano. Transforma el audio en un PROTOCOLO OPERATORIO.
-# PROTOCOLO OPERATORIO
-**PROCEDIMIENTO:** [rellenar]
-**TÉCNICA:** [pasos]
-**RESULTADO:** [complicaciones, AP]`
-                    },
-                    generico: {
-                        name: "Informe General Estructurado",
-                        prompt: `Actúa como médico experto. Estructura la transcripción médica de forma profesional con títulos lógicos y Markdown.`
-                    }
-                }
-            }
-        };
-
-        function populateTemplateDropdown() {
-            const select = $('templateSelect');
-            select.innerHTML = '';
-
-            for (const catKey in MEDICAL_TEMPLATES) {
-                const cat = MEDICAL_TEMPLATES[catKey];
-                const group = document.createElement('optgroup');
-                group.label = cat.label;
-
-                for (const studyKey in cat.studies) {
-                    const study = cat.studies[studyKey];
-                    const option = document.createElement('option');
-                    option.value = studyKey;
-                    option.textContent = study.name;
-                    group.appendChild(option);
-                }
-                select.appendChild(group);
-            }
-            // Set initial selected template
-            selectedTemplate = select.value;
-        }
 
         async function structureTranscription(text, templateKey) {
             if (!GROQ_API_KEY) {
