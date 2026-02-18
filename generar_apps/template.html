@@ -1540,7 +1540,7 @@
         <section class="editor-area">
             <!-- Report Metadata Card -->
             <div class="card" id="reportMetadataCard"
-                style="margin-bottom: 1.5rem; border-left: 4px solid var(--primary);">
+                style="margin-bottom: 1.5rem; border-left: 4px solid var(--primary); display: none;">
                 <div class="card-title">
                     <svg viewBox="0 0 24 24">
                         <path
@@ -2120,9 +2120,10 @@
                         updateWordCount();
                         enableButtons();
 
-                        // WIZARD STEP 2: Show template selection
+                        // WIZARD STEP 2: Show template selection & Metadata
                         if (currentMode === 'pro') {
                             wizardTemplateCard.style.display = 'block';
+                            reportMetadataCard.style.display = 'block';
                             wizardTemplateCard.scrollIntoView({ behavior: 'smooth' });
                         }
 
@@ -2604,6 +2605,11 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                     transcribeBtn.disabled = true;
                     disableButtons();
                     processingStatus.classList.remove('active');
+
+                    // Hide Wizard Step 2 & Metadata
+                    wizardTemplateCard.style.display = 'none';
+                    reportMetadataCard.style.display = 'none';
+
                     showToast('Limpiado ✓', 'success');
                 });
 
