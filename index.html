@@ -1622,6 +1622,8 @@
                     Grabando... <span id="recordingTime">00:00</span>
                 </div>
 
+                <input type="file" id="fileInput" multiple style="display: none;">
+
                 <div class="audio-options" style="margin-top: 1rem;">
                     <div id="dropZone" class="drop-zone" style="width: 100%;">
                         <div class="drop-zone-icon">
@@ -1783,450 +1785,506 @@
                 </div>
             </div>
 
-            <script>
-                const $ = id => document.getElementById(id);
+            <!-- Main Editor Card -->
+            <div class="card" style="flex: 1; display: flex; flex-direction: column; margin-top: 0;">
+                <div class="editor-header"
+                    style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem;">
+                    <div class="editor-tabs" id="editorTabs" style="display: flex; gap: 0.25rem;">
+                        <!-- Tabs will be dynamically populated -->
+                    </div>
+                    <div class="editor-actions" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <select id="fontSizeSelect" class="toolbar-select" style="width: 100px;">
+                            <option value="14px">Pequeña</option>
+                            <option value="16px" selected>Normal</option>
+                            <option value="18px">Grande</option>
+                            <option value="20px">Extra</option>
+                        </select>
+                        <button class="toolbar-btn" id="toggleFindReplace"
+                            title="Buscar y Reemplazar (Ctrl+F)">🔍</button>
+                        <div style="width: 1px; height: 20px; background: var(--border); margin: 0 0.5rem;"></div>
+                        <button class="toolbar-btn" id="copyBtn" title="Copiar todo">📋</button>
+                        <div class="dropdown-container">
+                            <button class="btn btn-secondary" id="downloadBtn">
+                                <span>⬇️ Descargar</span>
+                                <svg viewBox="0 0 24 24" width="16" height="16" style="margin-left: 0.5rem;">
+                                    <path d="M7 10l5 5 5-5H7z" fill="currentColor" />
+                                </svg>
+                            </button>
+                            <div class="dropdown-content" id="downloadDropdown">
+                                <button onclick="downloadPDF()">📄 PDF Profesional</button>
+                                <button onclick="downloadRTF()">📝 Word (RTF)</button>
+                                <button onclick="downloadTXT()">🗒️ Texto Simple</button>
+                                <button onclick="downloadHTML()">🌐 HTML</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                // ============ CONFIGURATION ============
-                let GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
-                const chkJoinAudios = $('chkJoinAudios');
+                <!-- Find and Replace Panel -->
+                <div id="findReplacePanel" class="find-replace-panel"
+                    style="display: none; background: var(--bg-main); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid var(--border); gap: 0.5rem; align-items: center;">
+                    <input type="text" id="findInput" class="toolbar-input" style="flex: 1;" placeholder="Buscar...">
+                    <input type="text" id="replaceInput" class="toolbar-input" style="flex: 1;"
+                        placeholder="Reemplazar con...">
+                    <button class="btn btn-primary" onclick="replaceAll()">Reemplazar Todo</button>
+                </div>
 
-                const modeNormal = $('modeNormal');
-                const modePro = $('modePro');
-                const templateSelectorContainer = $('templateSelectorContainer');
-                const templateSelect = $('templateSelect');
+                <div class="editor-container"
+                    style="flex: 1; position: relative; display: flex; flex-direction: column;">
+                    <div id="editor" class="editor-content" contenteditable="true" spellcheck="true"
+                        style="flex: 1; min-height: 450px; padding: 1.5rem; outline: none; line-height: 1.8; font-size: 16px; overflow-y: auto; background: white; border-radius: 8px; border: 1px solid var(--border);">
+                    </div>
+                    <div class="word-count"
+                        style="padding: 0.5rem 1rem; border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--text-secondary); display: flex; justify-content: flex-end; background: var(--bg-main); border-radius: 0 0 8px 8px;">
+                        Palabras: <span id="wordCount">0</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <script>
+            const $ = id => document.getElementById(id);
 
-                // App State
-                let currentMode = 'normal'; // 'normal' or 'pro'
-                let selectedTemplate = 'generico';
-                // PDF Config Elements
-                const pdfModalOverlay = $('pdfModalOverlay');
-                const btnConfigPdf = $('btnConfigPdf');
-                const closePdfConfig = $('closePdfConfig');
-                const pdfHeaderInput = $('pdfHeaderInput');
-                const pdfFooterInput = $('pdfFooterInput');
-                const patientNameInput = $('patientName');
-                const patientDniInput = $('patientDni');
-                const studyDateInput = $('studyDate');
-                const procedureInput = $('procedureInput');
-                const workplaceSelect = $('workplaceSelect');
-                const savePdfConfig = $('savePdfConfig');
+            // ============ CONFIGURATION ============
+            let GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
+            const chkJoinAudios = $('chkJoinAudios');
 
-                // Initial study date
-                if (studyDateInput) studyDateInput.value = new Date().toISOString().split('T')[0];
+            const modeNormal = $('modeNormal');
+            const modePro = $('modePro');
+            const templateSelectorContainer = $('templateSelectorContainer');
+            const templateSelect = $('templateSelect');
 
-                // PDF Settings
-                let pdfSettings = JSON.parse(localStorage.getItem('pdf_settings')) || {
-                    header: '',
-                    footer: '',
-                    patientName: '',
-                    patientDni: '',
-                    studyDate: '',
-                    procedure: ''
-                };
-                // App State initialization with safety checks
-                if (pdfHeaderInput) pdfHeaderInput.value = pdfSettings.header || '';
-                if (pdfFooterInput) pdfFooterInput.value = pdfSettings.footer || '';
-                if (patientNameInput) patientNameInput.value = pdfSettings.patientName || '';
-                if (patientDniInput) patientDniInput.value = pdfSettings.patientDni || '';
-                if (pdfSettings.studyDate && studyDateInput) studyDateInput.value = pdfSettings.studyDate;
-                if (procedureInput) procedureInput.value = pdfSettings.procedure || '';
+            // App State
+            let currentMode = 'normal'; // 'normal' or 'pro'
+            let selectedTemplate = 'generico';
+            // PDF Config Elements
+            const pdfModalOverlay = $('pdfModalOverlay');
+            const btnConfigPdf = $('btnConfigPdf');
+            const closePdfConfig = $('closePdfConfig');
+            const pdfHeaderInput = $('pdfHeaderInput');
+            const pdfFooterInput = $('pdfFooterInput');
+            const patientNameInput = $('patientName');
+            const patientDniInput = $('patientDni');
+            const studyDateInput = $('studyDate');
+            const procedureInput = $('procedureInput');
+            const workplaceSelect = $('workplaceSelect');
+            const savePdfConfig = $('savePdfConfig');
 
-                const GROQ_API_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
+            // Initial study date
+            if (studyDateInput) studyDateInput.value = new Date().toISOString().split('T')[0];
 
-                // ============ DOM ELEMENTS ============
-                const dropZone = $('dropZone');
-                const fileInput = $('fileInput');
-                const fileList = $('fileList');
-                const transcribeBtn = $('transcribeBtn');
-                const processingStatus = $('processingStatus');
-                const processingText = $('processingText');
-                const progressFill = $('progressFill');
-                const editor = $('editor');
-                const wordCount = $('wordCount');
-                const copyBtn = $('copyBtn');
-                const downloadBtn = $('downloadBtn');
-                const downloadDropdown = $('downloadDropdown');
-                const resetBtn = $('resetBtn');
-                const toast = $('toast');
-                const toastMessage = $('toastMessage');
-                const apiKeyInput = $('apiKeyInput');
-                const saveApiKeyBtn = $('saveApiKey');
-                const apiStatus = $('apiStatus');
-                const themeToggle = $('themeToggle');
-                const fontSizeSelect = $('fontSizeSelect');
-                const findReplacePanel = $('findReplacePanel');
-                const findInput = $('findInput');
-                const replaceInput = $('replaceInput');
+            // PDF Settings
+            let pdfSettings = JSON.parse(localStorage.getItem('pdf_settings')) || {
+                header: '',
+                footer: '',
+                patientName: '',
+                patientDni: '',
+                studyDate: '',
+                procedure: ''
+            };
+            // App State initialization with safety checks
+            if (pdfHeaderInput) pdfHeaderInput.value = pdfSettings.header || '';
+            if (pdfFooterInput) pdfFooterInput.value = pdfSettings.footer || '';
+            if (patientNameInput) patientNameInput.value = pdfSettings.patientName || '';
+            if (patientDniInput) patientDniInput.value = pdfSettings.patientDni || '';
+            if (pdfSettings.studyDate && studyDateInput) studyDateInput.value = pdfSettings.studyDate;
+            if (procedureInput) procedureInput.value = pdfSettings.procedure || '';
 
-                // Audio options
-                const chkNormalize = $('chkNormalize');
-                const chkNoise = $('chkNoise');
-                const chkCompress = $('chkCompress');
+            const GROQ_API_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
 
-                // ============ STATE ============
-                let uploadedFiles = [];
-                let transcriptions = [];
-                let activeTabIndex = 0;
-                let isProcessing = false;
-                let undoStack = [];
-                let redoStack = [];
-                // Recording State
-                let mediaRecorder = null;
-                let audioChunks = [];
-                let isRecording = false;
-                let recordingInterval = null;
-                let recordingStartTime = 0;
+            // ============ DOM ELEMENTS ============
+            const dropZone = $('dropZone');
+            const fileInput = $('fileInput');
+            const fileList = $('fileList');
+            const transcribeBtn = $('transcribeBtn');
+            const processingStatus = $('processingStatus');
+            const processingText = $('processingText');
+            const progressFill = $('progressFill');
+            const editor = $('editor');
+            const wordCount = $('wordCount');
+            const copyBtn = $('copyBtn');
+            const downloadBtn = $('downloadBtn');
+            const downloadDropdown = $('downloadDropdown');
+            const resetBtn = $('resetBtn');
+            const toast = $('toast');
+            const toastMessage = $('toastMessage');
+            const apiKeyInput = $('apiKeyInput');
+            const saveApiKeyBtn = $('saveApiKey');
+            const apiStatus = $('apiStatus');
+            const themeToggle = $('themeToggle');
+            const fontSizeSelect = $('fontSizeSelect');
+            const findReplacePanel = $('findReplacePanel');
+            const findInput = $('findInput');
+            const replaceInput = $('replaceInput');
 
-                // ============ BUSINESS DATA & TEMPLATES ============
-                const MEDICAL_SPECIALTIES = {
-                    "Cardiología": ["Ecocardiograma", "ECG", "Eco-Stress", "Cinecoronariografía", "Holter"],
-                    "Ecografía": ["Abdominal", "Renal", "Partes Blandas", "Eco-Doppler Vascular", "Obstétrica"],
-                    "Gastroenterología": ["Endoscopía Digestiva Alta", "Colonoscopía", "Video-Cápsula"],
-                    "ORL": ["Videonaso / Laringoscopía", "Endoscopía Otológica", "Audiometría"],
-                    "General": ["Informe Evolutivo", "Epicrisis", "Certificado"],
-                    "Quirúrgico": ["Protocolo Operatorio", "Parte de Cirugía"]
-                };
+            // Audio options
+            const chkNormalize = $('chkNormalize');
+            const chkNoise = $('chkNoise');
+            const chkCompress = $('chkCompress');
 
-                const MEDICAL_TEMPLATES = {
-                    naso: { name: "Videonaso / Laringoscopía", category: "ORL", prompt: "Actúa como especialista ORL. Estructura: # INFORME DE VIDEONASOFIBROLARINGOSCOPÍA\n### I. FOSAS NASALES Y RINOFARINGE\n### II. FARINGE Y LARINGE\n### III. CONCLUSIÓN DIAGNÓSTICA" },
-                    otologica: { name: "Endoscopía Otológica", category: "ORL", prompt: "Actúa como especialista ORL. Estructura: # INFORME DE ENDOSCOPÍA OTOLÓGICA\n**OD:** ...\n**OI:** ...\n**CONCLUSIÓN**" },
-                    cinecoro: { name: "Cinecoronariografía", category: "Cardiología", prompt: "Actúa como cardiólogo intervencionista. Estructura: # INFORME DE CINECORONARIOGRAFÍA\n**ACCESO:**\n**VENTRICULOGRAFÍA:**\n**CORONARIAS:**\n**CONCLUSIÓN:**" },
-                    ecg: { name: "ECG", category: "Cardiología", prompt: "Estructura como INFORME DE ECG: Ritmo, Frecuencia, Eje, Intervalos, ST, T, Conclusión." },
-                    ecostress: { name: "Eco-Stress", category: "Cardiología", prompt: "Estructura como ECO-STRESS: Protocolo, Hallazgos en Reposo, Hallazgos en Esfuerzo, Conclusión." },
-                    resonancia: { name: "Resonancia (RMN)", category: "Imágenes", prompt: "# INFORME DE RESONANCIA MAGNÉTICA\n* Técnica, Hallazgos, Conclusión." },
-                    ecografia: { name: "Ecografía General", category: "Ecografía", prompt: "# INFORME ECOGRÁFICO\n* Descripción por órganos, Conclusión." },
-                    quirurgico: { name: "Protocolo Quirúrgico", category: "Quirúrgico", prompt: "# PROTOCOLO OPERATORIO\n**PROCEDIMIENTO:**\n**TÉCNICA:**\n**RESULTADO:**" },
-                    generico: { name: "Informe Médico General", category: "General", prompt: "Estructura la transcripción médica profesionalmente con títulos y Markdown lógicos." }
-                };
+            // ============ STATE ============
+            let uploadedFiles = [];
+            let transcriptions = [];
+            let activeTabIndex = 0;
+            let isProcessing = false;
+            let undoStack = [];
+            let redoStack = [];
+            // Recording State
+            let mediaRecorder = null;
+            let audioChunks = [];
+            let isRecording = false;
+            let recordingInterval = null;
+            let recordingStartTime = 0;
 
-                const populateTemplateDropdown = (userStudies = null) => {
-                    templateSelect.innerHTML = '<option value="generico">✨ Informe Estructurado General</option>';
+            // ============ BUSINESS DATA & TEMPLATES ============
+            const MEDICAL_SPECIALTIES = {
+                "Cardiología": ["Ecocardiograma", "ECG", "Eco-Stress", "Cinecoronariografía", "Holter"],
+                "Ecografía": ["Abdominal", "Renal", "Partes Blandas", "Eco-Doppler Vascular", "Obstétrica"],
+                "Gastroenterología": ["Endoscopía Digestiva Alta", "Colonoscopía", "Video-Cápsula"],
+                "ORL": ["Videonaso / Laringoscopía", "Endoscopía Otológica", "Audiometría"],
+                "General": ["Informe Evolutivo", "Epicrisis", "Certificado"],
+                "Quirúrgico": ["Protocolo Operatorio", "Parte de Cirugía"]
+            };
 
-                    for (const key in MEDICAL_TEMPLATES) {
-                        if (key === 'generico') continue;
-                        const t = MEDICAL_TEMPLATES[key];
-                        // If user has defined studies, only show those as main, others as optional?
-                        // For now, let's show all but group them
-                        const option = document.createElement('option');
-                        option.value = key;
-                        option.textContent = t.name;
-                        templateSelect.appendChild(option);
-                    }
-                };
+            const MEDICAL_TEMPLATES = {
+                naso: { name: "Videonaso / Laringoscopía", category: "ORL", prompt: "Actúa como especialista ORL. Estructura: # INFORME DE VIDEONASOFIBROLARINGOSCOPÍA\n### I. FOSAS NASALES Y RINOFARINGE\n### II. FARINGE Y LARINGE\n### III. CONCLUSIÓN DIAGNÓSTICA" },
+                otologica: { name: "Endoscopía Otológica", category: "ORL", prompt: "Actúa como especialista ORL. Estructura: # INFORME DE ENDOSCOPÍA OTOLÓGICA\n**OD:** ...\n**OI:** ...\n**CONCLUSIÓN**" },
+                cinecoro: { name: "Cinecoronariografía", category: "Cardiología", prompt: "Actúa como cardiólogo intervencionista. Estructura: # INFORME DE CINECORONARIOGRAFÍA\n**ACCESO:**\n**VENTRICULOGRAFÍA:**\n**CORONARIAS:**\n**CONCLUSIÓN:**" },
+                ecg: { name: "ECG", category: "Cardiología", prompt: "Estructura como INFORME DE ECG: Ritmo, Frecuencia, Eje, Intervalos, ST, T, Conclusión." },
+                ecostress: { name: "Eco-Stress", category: "Cardiología", prompt: "Estructura como ECO-STRESS: Protocolo, Hallazgos en Reposo, Hallazgos en Esfuerzo, Conclusión." },
+                resonancia: { name: "Resonancia (RMN)", category: "Imágenes", prompt: "# INFORME DE RESONANCIA MAGNÉTICA\n* Técnica, Hallazgos, Conclusión." },
+                ecografia: { name: "Ecografía General", category: "Ecografía", prompt: "# INFORME ECOGRÁFICO\n* Descripción por órganos, Conclusión." },
+                quirurgico: { name: "Protocolo Quirúrgico", category: "Quirúrgico", prompt: "# PROTOCOLO OPERATORIO\n**PROCEDIMIENTO:**\n**TÉCNICA:**\n**RESULTADO:**" },
+                generico: { name: "Informe Médico General", category: "General", prompt: "Estructura la transcripción médica profesionalmente con títulos y Markdown lógicos." }
+            };
 
-                // ============ THEME ============
-                const savedTheme = localStorage.getItem('theme') || 'light';
-                if (savedTheme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+            const populateTemplateDropdown = (userStudies = null) => {
+                templateSelect.innerHTML = '<option value="generico">✨ Informe Estructurado General</option>';
+
+                for (const key in MEDICAL_TEMPLATES) {
+                    if (key === 'generico') continue;
+                    const t = MEDICAL_TEMPLATES[key];
+                    // If user has defined studies, only show those as main, others as optional?
+                    // For now, let's show all but group them
+                    const option = document.createElement('option');
+                    option.value = key;
+                    option.textContent = t.name;
+                    templateSelect.appendChild(option);
+                }
+            };
+
+            // ============ THEME ============
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            if (savedTheme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+            updateThemeIcon();
+
+            themeToggle.addEventListener('click', () => {
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+                localStorage.setItem('theme', isDark ? 'light' : 'dark');
                 updateThemeIcon();
+            });
 
-                themeToggle.addEventListener('click', () => {
-                    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-                    document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
-                    localStorage.setItem('theme', isDark ? 'light' : 'dark');
-                    updateThemeIcon();
-                });
+            function updateThemeIcon() {
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                $('themeIcon').innerHTML = isDark
+                    ? '<path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0a.996.996 0 000-1.41l-1.06-1.06zm1.06-10.96a.996.996 0 000-1.41.996.996 0 00-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36a.996.996 0 000-1.41.996.996 0 00-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/>'
+                    : '<path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/>';
+            }
 
-                function updateThemeIcon() {
-                    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-                    $('themeIcon').innerHTML = isDark
-                        ? '<path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0a.996.996 0 000-1.41l-1.06-1.06zm1.06-10.96a.996.996 0 000-1.41.996.996 0 00-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36a.996.996 0 000-1.41.996.996 0 00-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/>'
-                        : '<path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/>';
-                }
-
-                // ============ API KEY ============
-                // Update API Status
-                function updateApiStatus() {
-                    if (!apiStatus) return; // Safety check
-                    if (GROQ_API_KEY) {
-                        apiStatus.className = 'api-status connected';
-                        apiStatus.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg><span>Conectada ✓</span>';
-                        if (apiKeyInput) { // Safety check
-                            apiKeyInput.value = '••••••••••••••••';
-                            apiKeyInput.dataset.hasKey = 'true';
-                        }
-                    } else {
-                        apiStatus.className = 'api-status disconnected';
-                        apiStatus.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg><span>No configurada</span>';
-                        if (apiKeyInput) { // Safety check
-                            apiKeyInput.value = '';
-                            delete apiKeyInput.dataset.hasKey;
-                        }
-                    }
-                }
-                updateApiStatus();
-                populateTemplateDropdown();
-
-                saveApiKeyBtn.addEventListener('click', () => {
-                    if (!apiKeyInput) return; // Safety check
-                    const key = apiKeyInput.value.trim();
-                    if (key && !key.includes('•') && key.startsWith('gsk_')) {
-                        localStorage.setItem('groq_api_key', key);
-                        GROQ_API_KEY = key;
-                        updateApiStatus();
-                        showToast('API Key guardada ✓', 'success');
-                    } else if (!apiKeyInput.dataset.hasKey) {
-                        showToast('Ingresa una API Key válida (empieza con gsk_)', 'error');
-                    }
-                });
-
-                apiKeyInput.addEventListener('focus', () => {
-                    if (apiKeyInput.dataset.hasKey) {
-                        apiKeyInput.value = '';
-                        apiKeyInput.type = 'text';
-                    }
-                });
-
-                apiKeyInput.addEventListener('blur', () => {
-                    if (apiKeyInput.value === '' && GROQ_API_KEY) {
+            // ============ API KEY ============
+            // Update API Status
+            function updateApiStatus() {
+                if (!apiStatus) return; // Safety check
+                if (GROQ_API_KEY) {
+                    apiStatus.className = 'api-status connected';
+                    apiStatus.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg><span>Conectada ✓</span>';
+                    if (apiKeyInput) { // Safety check
                         apiKeyInput.value = '••••••••••••••••';
-                        apiKeyInput.type = 'password';
+                        apiKeyInput.dataset.hasKey = 'true';
                     }
-                });
-
-                // ============ AUDIO PROCESSING ============
-                async function processAudio(file) {
-                    const shouldNormalize = chkNormalize.checked;
-                    const shouldReduceNoise = chkNoise.checked;
-                    const shouldCompress = chkCompress.checked;
-
-                    if (!shouldNormalize && !shouldReduceNoise && !shouldCompress) {
-                        return file; // No processing needed
+                } else {
+                    apiStatus.className = 'api-status disconnected';
+                    apiStatus.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg><span>No configurada</span>';
+                    if (apiKeyInput) { // Safety check
+                        apiKeyInput.value = '';
+                        delete apiKeyInput.dataset.hasKey;
                     }
+                }
+            }
+            updateApiStatus();
+            populateTemplateDropdown();
 
-                    try {
-                        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                        const arrayBuffer = await file.arrayBuffer();
-                        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+            saveApiKeyBtn.addEventListener('click', () => {
+                if (!apiKeyInput) return; // Safety check
+                const key = apiKeyInput.value.trim();
+                if (key && !key.includes('•') && key.startsWith('gsk_')) {
+                    localStorage.setItem('groq_api_key', key);
+                    GROQ_API_KEY = key;
+                    updateApiStatus();
+                    showToast('API Key guardada ✓', 'success');
+                } else if (!apiKeyInput.dataset.hasKey) {
+                    showToast('Ingresa una API Key válida (empieza con gsk_)', 'error');
+                }
+            });
 
-                        // Create offline context for processing
-                        const offlineContext = new OfflineAudioContext(
-                            audioBuffer.numberOfChannels,
-                            audioBuffer.length,
-                            audioBuffer.sampleRate
-                        );
+            apiKeyInput.addEventListener('focus', () => {
+                if (apiKeyInput.dataset.hasKey) {
+                    apiKeyInput.value = '';
+                    apiKeyInput.type = 'text';
+                }
+            });
 
-                        const source = offlineContext.createBufferSource();
-                        source.buffer = audioBuffer;
+            apiKeyInput.addEventListener('blur', () => {
+                if (apiKeyInput.value === '' && GROQ_API_KEY) {
+                    apiKeyInput.value = '••••••••••••••••';
+                    apiKeyInput.type = 'password';
+                }
+            });
 
-                        let currentNode = source;
+            // ============ AUDIO PROCESSING ============
+            async function processAudio(file) {
+                const shouldNormalize = chkNormalize.checked;
+                const shouldReduceNoise = chkNoise.checked;
+                const shouldCompress = chkCompress.checked;
 
-                        // Normalize (gain adjustment)
-                        if (shouldNormalize) {
-                            const gainNode = offlineContext.createGain();
-                            // Find peak and normalize
-                            let peak = 0;
-                            for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
-                                const data = audioBuffer.getChannelData(c);
-                                for (let i = 0; i < data.length; i++) {
-                                    peak = Math.max(peak, Math.abs(data[i]));
-                                }
+                if (!shouldNormalize && !shouldReduceNoise && !shouldCompress) {
+                    return file; // No processing needed
+                }
+
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const arrayBuffer = await file.arrayBuffer();
+                    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+                    // Create offline context for processing
+                    const offlineContext = new OfflineAudioContext(
+                        audioBuffer.numberOfChannels,
+                        audioBuffer.length,
+                        audioBuffer.sampleRate
+                    );
+
+                    const source = offlineContext.createBufferSource();
+                    source.buffer = audioBuffer;
+
+                    let currentNode = source;
+
+                    // Normalize (gain adjustment)
+                    if (shouldNormalize) {
+                        const gainNode = offlineContext.createGain();
+                        // Find peak and normalize
+                        let peak = 0;
+                        for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
+                            const data = audioBuffer.getChannelData(c);
+                            for (let i = 0; i < data.length; i++) {
+                                peak = Math.max(peak, Math.abs(data[i]));
                             }
-                            gainNode.gain.value = peak > 0 ? 0.95 / peak : 1;
-                            currentNode.connect(gainNode);
-                            currentNode = gainNode;
                         }
+                        gainNode.gain.value = peak > 0 ? 0.95 / peak : 1;
+                        currentNode.connect(gainNode);
+                        currentNode = gainNode;
+                    }
 
-                        // Noise reduction (high-pass filter to remove low-frequency noise)
-                        if (shouldReduceNoise) {
-                            const highpass = offlineContext.createBiquadFilter();
-                            highpass.type = 'highpass';
-                            highpass.frequency.value = 80; // Remove frequencies below 80Hz
-                            currentNode.connect(highpass);
-                            currentNode = highpass;
+                    // Noise reduction (high-pass filter to remove low-frequency noise)
+                    if (shouldReduceNoise) {
+                        const highpass = offlineContext.createBiquadFilter();
+                        highpass.type = 'highpass';
+                        highpass.frequency.value = 80; // Remove frequencies below 80Hz
+                        currentNode.connect(highpass);
+                        currentNode = highpass;
 
-                            // Also add a subtle lowpass to remove high-frequency hiss
-                            const lowpass = offlineContext.createBiquadFilter();
-                            lowpass.type = 'lowpass';
-                            lowpass.frequency.value = 12000;
-                            currentNode.connect(lowpass);
-                            currentNode = lowpass;
-                        }
+                        // Also add a subtle lowpass to remove high-frequency hiss
+                        const lowpass = offlineContext.createBiquadFilter();
+                        lowpass.type = 'lowpass';
+                        lowpass.frequency.value = 12000;
+                        currentNode.connect(lowpass);
+                        currentNode = lowpass;
+                    }
 
-                        // Compressor for dynamic range
-                        if (shouldCompress) {
-                            const compressor = offlineContext.createDynamicsCompressor();
-                            compressor.threshold.value = -24;
-                            compressor.knee.value = 30;
-                            compressor.ratio.value = 4;
-                            compressor.attack.value = 0.003;
-                            compressor.release.value = 0.25;
-                            currentNode.connect(compressor);
-                            currentNode = compressor;
-                        }
+                    // Compressor for dynamic range
+                    if (shouldCompress) {
+                        const compressor = offlineContext.createDynamicsCompressor();
+                        compressor.threshold.value = -24;
+                        compressor.knee.value = 30;
+                        compressor.ratio.value = 4;
+                        compressor.attack.value = 0.003;
+                        compressor.release.value = 0.25;
+                        currentNode.connect(compressor);
+                        currentNode = compressor;
+                    }
 
-                        currentNode.connect(offlineContext.destination);
-                        source.start(0);
+                    currentNode.connect(offlineContext.destination);
+                    source.start(0);
 
-                        const renderedBuffer = await offlineContext.startRendering();
+                    const renderedBuffer = await offlineContext.startRendering();
 
-                        // Convert to WAV blob
-                        const wavBlob = audioBufferToWav(renderedBuffer);
-                        return new File([wavBlob], file.name.replace(/\.[^/.]+$/, '.wav'), { type: 'audio/wav' });
+                    // Convert to WAV blob
+                    const wavBlob = audioBufferToWav(renderedBuffer);
+                    return new File([wavBlob], file.name.replace(/\.[^/.]+$/, '.wav'), { type: 'audio/wav' });
 
-                    } catch (error) {
-                        console.warn('Audio processing failed, using original:', error);
-                        return file;
+                } catch (error) {
+                    console.warn('Audio processing failed, using original:', error);
+                    return file;
+                }
+            }
+
+            function audioBufferToWav(buffer) {
+                const numChannels = buffer.numberOfChannels;
+                const sampleRate = buffer.sampleRate;
+                const format = 1; // PCM
+                const bitDepth = 16;
+
+                const bytesPerSample = bitDepth / 8;
+                const blockAlign = numChannels * bytesPerSample;
+
+                const dataLength = buffer.length * blockAlign;
+                const bufferLength = 44 + dataLength;
+
+                const arrayBuffer = new ArrayBuffer(bufferLength);
+                const view = new DataView(arrayBuffer);
+
+                // WAV header
+                writeString(view, 0, 'RIFF');
+                view.setUint32(4, 36 + dataLength, true);
+                writeString(view, 8, 'WAVE');
+                writeString(view, 12, 'fmt ');
+                view.setUint32(16, 16, true);
+                view.setUint16(20, format, true);
+                view.setUint16(22, numChannels, true);
+                view.setUint32(24, sampleRate, true);
+                view.setUint32(28, sampleRate * blockAlign, true);
+                view.setUint16(32, blockAlign, true);
+                view.setUint16(34, bitDepth, true);
+                writeString(view, 36, 'data');
+                view.setUint32(40, dataLength, true);
+
+                // Write audio data
+                const offset = 44;
+                const channels = [];
+                for (let i = 0; i < numChannels; i++) {
+                    channels.push(buffer.getChannelData(i));
+                }
+
+                for (let i = 0; i < buffer.length; i++) {
+                    for (let c = 0; c < numChannels; c++) {
+                        const sample = Math.max(-1, Math.min(1, channels[c][i]));
+                        const intSample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+                        view.setInt16(offset + (i * blockAlign) + (c * bytesPerSample), intSample, true);
                     }
                 }
 
-                function audioBufferToWav(buffer) {
-                    const numChannels = buffer.numberOfChannels;
-                    const sampleRate = buffer.sampleRate;
-                    const format = 1; // PCM
-                    const bitDepth = 16;
+                return new Blob([arrayBuffer], { type: 'audio/wav' });
+            }
 
-                    const bytesPerSample = bitDepth / 8;
-                    const blockAlign = numChannels * bytesPerSample;
+            function writeString(view, offset, string) {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            }
 
-                    const dataLength = buffer.length * blockAlign;
-                    const bufferLength = 44 + dataLength;
 
-                    const arrayBuffer = new ArrayBuffer(bufferLength);
-                    const view = new DataView(arrayBuffer);
 
-                    // WAV header
-                    writeString(view, 0, 'RIFF');
-                    view.setUint32(4, 36 + dataLength, true);
-                    writeString(view, 8, 'WAVE');
-                    writeString(view, 12, 'fmt ');
-                    view.setUint32(16, 16, true);
-                    view.setUint16(20, format, true);
-                    view.setUint16(22, numChannels, true);
-                    view.setUint32(24, sampleRate, true);
-                    view.setUint32(28, sampleRate * blockAlign, true);
-                    view.setUint16(32, blockAlign, true);
-                    view.setUint16(34, bitDepth, true);
-                    writeString(view, 36, 'data');
-                    view.setUint32(40, dataLength, true);
+            // ============ RECORDING ============
+            const recordBtn = $('recordBtn');
+            const recordBtnText = $('recordBtnText');
+            const recordingStatus = $('recordingStatus');
+            const recordingTime = $('recordingTime');
 
-                    // Write audio data
-                    const offset = 44;
-                    const channels = [];
-                    for (let i = 0; i < numChannels; i++) {
-                        channels.push(buffer.getChannelData(i));
+            recordBtn.addEventListener('click', toggleRecording);
+
+            async function toggleRecording() {
+                if (!isRecording) {
+                    // Start Recording
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        mediaRecorder = new MediaRecorder(stream);
+                        audioChunks = [];
+
+                        mediaRecorder.ondataavailable = event => {
+                            audioChunks.push(event.data);
+                        };
+
+                        mediaRecorder.onstop = () => {
+                            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                            const audioUrl = URL.createObjectURL(audioBlob);
+                            const fileName = `Grabación ${new Date().toLocaleTimeString().replace(/:/g, '-')}.wav`;
+                            const file = new File([audioBlob], fileName, { type: 'audio/wav' });
+
+                            handleFiles([file]);
+
+                            // Stop all tracks
+                            stream.getTracks().forEach(track => track.stop());
+                        };
+
+                        mediaRecorder.start();
+                        isRecording = true;
+                        updateRecordingUI(true);
+
+                        // Timer
+                        recordingStartTime = Date.now();
+                        recordingInterval = setInterval(() => {
+                            const diff = Date.now() - recordingStartTime;
+                            const seconds = Math.floor((diff / 1000) % 60);
+                            const minutes = Math.floor((diff / (1000 * 60)) % 60);
+                            recordingTime.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                        }, 1000);
+
+                    } catch (err) {
+                        console.error('Error accessing microphone:', err);
+                        showToast('No se pudo acceder al micrófono. Verifica los permisos.', 'error');
                     }
+                } else {
+                    // Stop Recording
+                    mediaRecorder.stop();
+                    isRecording = false;
+                    updateRecordingUI(false);
+                    clearInterval(recordingInterval);
+                    recordingTime.textContent = '00:00';
+                }
+            }
 
-                    for (let i = 0; i < buffer.length; i++) {
-                        for (let c = 0; c < numChannels; c++) {
-                            const sample = Math.max(-1, Math.min(1, channels[c][i]));
-                            const intSample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
-                            view.setInt16(offset + (i * blockAlign) + (c * bytesPerSample), intSample, true);
-                        }
-                    }
+            function updateRecordingUI(recording) {
+                if (recording) {
+                    recordBtn.classList.add('recording-pulse');
+                    recordBtnText.textContent = 'Detener Grabación';
+                    recordingStatus.classList.add('active');
+                    dropZone.style.opacity = '0.5';
+                    dropZone.style.pointerEvents = 'none';
+                } else {
+                    recordBtn.classList.remove('recording-pulse');
+                    recordBtnText.textContent = 'Grabar Audio';
+                    recordingStatus.classList.remove('active');
+                    dropZone.style.opacity = '1';
+                    dropZone.style.pointerEvents = 'all';
+                }
+            }
 
-                    return new Blob([arrayBuffer], { type: 'audio/wav' });
+            // ============ FILE HANDLING ============
+            dropZone.addEventListener('click', () => fileInput.click());
+            dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+            dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+            fileInput.addEventListener('change', e => handleFiles(e.target.files));
+
+            function handleFiles(files) {
+                const audioFiles = Array.from(files).filter(f => f.type.startsWith('audio/') || /\.(mp3|wav|ogg|m4a|webm|flac)$/i.test(f.name));
+
+                if (!audioFiles.length) {
+                    showToast('Selecciona archivos de audio válidos', 'error');
+                    return;
                 }
 
-                function writeString(view, offset, string) {
-                    for (let i = 0; i < string.length; i++) {
-                        view.setUint8(offset + i, string.charCodeAt(i));
-                    }
+                const validFiles = audioFiles.filter(f => f.size <= 25 * 1024 * 1024);
+                if (validFiles.length < audioFiles.length) {
+                    showToast('Archivos >25MB ignorados', 'error');
                 }
 
+                uploadedFiles.push(...validFiles.map(f => ({ file: f, status: 'pending' })));
+                updateFileList();
+                transcribeBtn.disabled = false;
+            }
 
-
-                // ============ RECORDING ============
-                const recordBtn = $('recordBtn');
-                const recordBtnText = $('recordBtnText');
-                const recordingStatus = $('recordingStatus');
-                const recordingTime = $('recordingTime');
-
-                recordBtn.addEventListener('click', toggleRecording);
-
-                async function toggleRecording() {
-                    if (!isRecording) {
-                        // Start Recording
-                        try {
-                            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                            mediaRecorder = new MediaRecorder(stream);
-                            audioChunks = [];
-
-                            mediaRecorder.ondataavailable = event => {
-                                audioChunks.push(event.data);
-                            };
-
-                            mediaRecorder.onstop = () => {
-                                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                                const audioUrl = URL.createObjectURL(audioBlob);
-                                const fileName = `Grabación ${new Date().toLocaleTimeString().replace(/:/g, '-')}.wav`;
-                                const file = new File([audioBlob], fileName, { type: 'audio/wav' });
-
-                                handleFiles([file]);
-
-                                // Stop all tracks
-                                stream.getTracks().forEach(track => track.stop());
-                            };
-
-                            mediaRecorder.start();
-                            isRecording = true;
-                            updateRecordingUI(true);
-
-                            // Timer
-                            recordingStartTime = Date.now();
-                            recordingInterval = setInterval(() => {
-                                const diff = Date.now() - recordingStartTime;
-                                const seconds = Math.floor((diff / 1000) % 60);
-                                const minutes = Math.floor((diff / (1000 * 60)) % 60);
-                                recordingTime.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                            }, 1000);
-
-                        } catch (err) {
-                            console.error('Error accessing microphone:', err);
-                            showToast('No se pudo acceder al micrófono. Verifica los permisos.', 'error');
-                        }
-                    } else {
-                        // Stop Recording
-                        mediaRecorder.stop();
-                        isRecording = false;
-                        updateRecordingUI(false);
-                        clearInterval(recordingInterval);
-                        recordingTime.textContent = '00:00';
-                    }
-                }
-
-                function updateRecordingUI(recording) {
-                    if (recording) {
-                        recordBtn.classList.add('recording-pulse');
-                        recordBtnText.textContent = 'Detener Grabación';
-                        recordingStatus.classList.add('active');
-                        dropZone.style.opacity = '0.5';
-                        dropZone.style.pointerEvents = 'none';
-                    } else {
-                        recordBtn.classList.remove('recording-pulse');
-                        recordBtnText.textContent = 'Grabar Audio';
-                        recordingStatus.classList.remove('active');
-                        dropZone.style.opacity = '1';
-                        dropZone.style.pointerEvents = 'all';
-                    }
-                }
-
-                // ============ FILE HANDLING ============
-                dropZone.addEventListener('click', () => fileInput.click());
-                dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-                dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-                dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
-                fileInput.addEventListener('change', e => handleFiles(e.target.files));
-
-                function handleFiles(files) {
-                    const audioFiles = Array.from(files).filter(f => f.type.startsWith('audio/') || /\.(mp3|wav|ogg|m4a|webm|flac)$/i.test(f.name));
-
-                    if (!audioFiles.length) {
-                        showToast('Selecciona archivos de audio válidos', 'error');
-                        return;
-                    }
-
-                    const validFiles = audioFiles.filter(f => f.size <= 25 * 1024 * 1024);
-                    if (validFiles.length < audioFiles.length) {
-                        showToast('Archivos >25MB ignorados', 'error');
-                    }
-
-                    uploadedFiles.push(...validFiles.map(f => ({ file: f, status: 'pending' })));
-                    updateFileList();
-                    transcribeBtn.disabled = false;
-                }
-
-                function updateFileList() {
-                    fileList.innerHTML = uploadedFiles.map((item, i) => `
+            function updateFileList() {
+                fileList.innerHTML = uploadedFiles.map((item, i) => `
                 <div class="file-item">
                     <div class="file-item-icon ${item.status}">
                         <svg viewBox="0 0 24 24"><path d="${item.status === 'done' ? 'M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z' : 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4-1.79 4-4V7h4V3h-6z'}"/></svg>
@@ -2238,206 +2296,206 @@
                     ${!isProcessing ? `<button class="file-item-remove" onclick="removeFile(${i})"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>` : ''}
                 </div>
             `).join('');
+            }
+
+            window.removeFile = i => {
+                uploadedFiles.splice(i, 1);
+                updateFileList();
+                transcribeBtn.disabled = !uploadedFiles.length;
+            };
+
+            function formatSize(bytes) {
+                if (!bytes) return '0 B';
+                const k = 1024, sizes = ['B', 'KB', 'MB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
+            }
+
+            // ============ TRANSCRIPTION ============
+            transcribeBtn.addEventListener('click', async () => {
+                const pending = uploadedFiles.filter(item => item.status === 'pending');
+                if (pending.length === 0 || isProcessing) return;
+
+                if (!GROQ_API_KEY) {
+                    showToast('Ingresa tu API Key de Groq', 'error');
+                    apiKeyInput.focus();
+                    return;
                 }
 
-                window.removeFile = i => {
-                    uploadedFiles.splice(i, 1);
-                    updateFileList();
-                    transcribeBtn.disabled = !uploadedFiles.length;
-                };
+                isProcessing = true;
+                transcribeBtn.disabled = true;
+                processingStatus.classList.add('active');
+                let done = 0;
+                let joinedText = '';
+                const shouldJoin = chkJoinAudios.checked;
 
-                function formatSize(bytes) {
-                    if (!bytes) return '0 B';
-                    const k = 1024, sizes = ['B', 'KB', 'MB'];
-                    const i = Math.floor(Math.log(bytes) / Math.log(k));
-                    return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
-                }
+                try {
+                    for (let i = 0; i < uploadedFiles.length; i++) {
+                        const item = uploadedFiles[i];
+                        if (item.status !== 'pending') continue;
 
-                // ============ TRANSCRIPTION ============
-                transcribeBtn.addEventListener('click', async () => {
-                    const pending = uploadedFiles.filter(item => item.status === 'pending');
-                    if (pending.length === 0 || isProcessing) return;
+                        item.status = 'processing';
+                        updateFileList();
+                        processingText.textContent = `${done + 1}/${pending.length}: ${item.file.name}`;
+                        progressFill.style.width = `${(done / pending.length) * 100}%`;
 
-                    if (!GROQ_API_KEY) {
-                        showToast('Ingresa tu API Key de Groq', 'error');
-                        apiKeyInput.focus();
-                        return;
-                    }
+                        try {
+                            processingText.textContent = `Mejorando audio: ${item.file.name}`;
+                            const processedFile = await processAudio(item.file);
 
-                    isProcessing = true;
-                    transcribeBtn.disabled = true;
-                    processingStatus.classList.add('active');
-                    let done = 0;
-                    let joinedText = '';
-                    const shouldJoin = chkJoinAudios.checked;
+                            processingText.textContent = `Transcribiendo: ${item.file.name}`;
+                            let text = await transcribeWithGroq(processedFile);
+                            text = cleanTranscriptionText(text);
 
-                    try {
-                        for (let i = 0; i < uploadedFiles.length; i++) {
-                            const item = uploadedFiles[i];
-                            if (item.status !== 'pending') continue;
-
-                            item.status = 'processing';
-                            updateFileList();
-                            processingText.textContent = `${done + 1}/${pending.length}: ${item.file.name}`;
-                            progressFill.style.width = `${(done / pending.length) * 100}%`;
-
-                            try {
-                                processingText.textContent = `Mejorando audio: ${item.file.name}`;
-                                const processedFile = await processAudio(item.file);
-
-                                processingText.textContent = `Transcribiendo: ${item.file.name}`;
-                                let text = await transcribeWithGroq(processedFile);
-                                text = cleanTranscriptionText(text);
-
-                                // MODO PRO: AI Structuring per file if NOT joining
-                                if (currentMode === 'pro' && !shouldJoin) {
-                                    processingText.textContent = `Estructurando informe con IA...`;
-                                    text = await structureTranscription(text, selectedTemplate);
-                                }
-
-                                if (shouldJoin) {
-                                    joinedText += (joinedText ? '\n\n' : '') + text;
-                                } else {
-                                    transcriptions.push({ fileName: item.file.name, text: text || 'Sin audio detectado.' });
-                                    activeTabIndex = transcriptions.length - 1;
-                                }
-
-                                item.status = 'done';
-                                done++;
-                            } catch (err) {
-                                console.error(err);
-                                item.status = 'pending';
-                                showToast(`Error en ${item.file.name}: ${err.message}`, 'error');
+                            // MODO PRO: AI Structuring per file if NOT joining
+                            if (currentMode === 'pro' && !shouldJoin) {
+                                processingText.textContent = `Estructurando informe con IA...`;
+                                text = await structureTranscription(text, selectedTemplate);
                             }
 
-                            updateFileList();
-                            progressFill.style.width = `${(done / pending.length) * 100}%`;
+                            if (shouldJoin) {
+                                joinedText += (joinedText ? '\n\n' : '') + text;
+                            } else {
+                                transcriptions.push({ fileName: item.file.name, text: text || 'Sin audio detectado.' });
+                                activeTabIndex = transcriptions.length - 1;
+                            }
+
+                            item.status = 'done';
+                            done++;
+                        } catch (err) {
+                            console.error(err);
+                            item.status = 'pending';
+                            showToast(`Error en ${item.file.name}: ${err.message}`, 'error');
                         }
 
-                        if (shouldJoin && joinedText) {
-                            const combinedName = `Informe Combinado (${done} audios)`;
-                            transcriptions.push({ fileName: combinedName, text: joinedText });
-                            activeTabIndex = transcriptions.length - 1;
-                            editor.innerHTML = joinedText;
-                        } else if (!shouldJoin && transcriptions.length > 0) {
-                            editor.innerHTML = transcriptions[activeTabIndex].text;
-                        }
-
-                        createTabs();
-                        updateWordCount();
-                        enableButtons();
-
-                        // WIZARD STEP 2: Show template selection & Metadata
-                        if (currentMode === 'pro') {
-                            wizardTemplateCard.style.display = 'block';
-                            reportMetadataCard.style.display = 'block';
-                            wizardTemplateCard.scrollIntoView({ behavior: 'smooth' });
-                        }
-
-                        progressFill.style.width = '100%';
-                        processingText.textContent = `✓ ${done} transcrito(s)`;
-                        setTimeout(() => {
-                            processingStatus.classList.remove('active');
-                            if (done) showToast(`${done} transcripción(es) lista(s)`, 'success');
-                        }, 1000);
-
-                    } catch (generalError) {
-                        console.error(generalError);
-                        showToast('Error general en el proceso', 'error');
-                    } finally {
-                        isProcessing = false;
-                        transcribeBtn.disabled = uploadedFiles.every(f => f.status === 'done');
+                        updateFileList();
+                        progressFill.style.width = `${(done / pending.length) * 100}%`;
                     }
+
+                    if (shouldJoin && joinedText) {
+                        const combinedName = `Informe Combinado (${done} audios)`;
+                        transcriptions.push({ fileName: combinedName, text: joinedText });
+                        activeTabIndex = transcriptions.length - 1;
+                        editor.innerHTML = joinedText;
+                    } else if (!shouldJoin && transcriptions.length > 0) {
+                        editor.innerHTML = transcriptions[activeTabIndex].text;
+                    }
+
+                    createTabs();
+                    updateWordCount();
+                    enableButtons();
+
+                    // WIZARD STEP 2: Show template selection & Metadata
+                    if (currentMode === 'pro') {
+                        wizardTemplateCard.style.display = 'block';
+                        reportMetadataCard.style.display = 'block';
+                        wizardTemplateCard.scrollIntoView({ behavior: 'smooth' });
+                    }
+
+                    progressFill.style.width = '100%';
+                    processingText.textContent = `✓ ${done} transcrito(s)`;
+                    setTimeout(() => {
+                        processingStatus.classList.remove('active');
+                        if (done) showToast(`${done} transcripción(es) lista(s)`, 'success');
+                    }, 1000);
+
+                } catch (generalError) {
+                    console.error(generalError);
+                    showToast('Error general en el proceso', 'error');
+                } finally {
+                    isProcessing = false;
+                    transcribeBtn.disabled = uploadedFiles.every(f => f.status === 'done');
+                }
+            });
+
+            async function transcribeWithGroq(file) {
+                const form = new FormData();
+                form.append('file', file);
+                form.append('model', 'whisper-large-v3');
+                form.append('language', 'es');
+                form.append('response_format', 'text');
+
+                const res = await fetch(GROQ_API_URL, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${GROQ_API_KEY}` },
+                    body: form
                 });
 
-                async function transcribeWithGroq(file) {
-                    const form = new FormData();
-                    form.append('file', file);
-                    form.append('model', 'whisper-large-v3');
-                    form.append('language', 'es');
-                    form.append('response_format', 'text');
+                if (!res.ok) throw new Error(`API ${res.status}`);
+                return await res.text();
+            }
 
-                    const res = await fetch(GROQ_API_URL, {
+            function cleanTranscriptionText(text) {
+                if (!text) return "";
+                let cleaned = text.trim();
+                // Remove leading ellipsis and spaces
+                cleaned = cleaned.replace(/^[\s\.]+/u, "").trim();
+                // Capitalize first letter
+                if (cleaned.length > 0) {
+                    cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+                }
+                return cleaned;
+            }
+
+
+            async function structureTranscription(text, templateKey) {
+                if (!GROQ_API_KEY) {
+                    showToast('Configura la API Key para el Modo Pro', 'error');
+                    return text;
+                }
+
+                // Find prompt in the deep object
+                let prompt = "";
+                for (const catKey in MEDICAL_TEMPLATES) {
+                    if (MEDICAL_TEMPLATES[catKey].studies[templateKey]) {
+                        prompt = MEDICAL_TEMPLATES[catKey].studies[templateKey].prompt;
+                        break;
+                    }
+                }
+                if (!prompt) prompt = MEDICAL_TEMPLATES.otros.studies.generico.prompt;
+
+                try {
+                    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                         method: 'POST',
-                        headers: { 'Authorization': `Bearer ${GROQ_API_KEY}` },
-                        body: form
+                        headers: {
+                            'Authorization': `Bearer ${GROQ_API_KEY}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            model: "llama-3.3-70b-versatile",
+                            messages: [
+                                { role: "system", content: prompt },
+                                { role: "user", content: `Transcripción a estructurar:\n\n${text}` }
+                            ],
+                            temperature: 0.1
+                        })
                     });
 
-                    if (!res.ok) throw new Error(`API ${res.status}`);
-                    return await res.text();
+                    if (!res.ok) throw new Error('Error al estructurar');
+                    const data = await res.json();
+                    return data.choices[0].message.content.trim();
+                } catch (error) {
+                    console.error('Structuring failed:', error);
+                    showToast('Error al estructurar. Se usará texto plano.', 'warning');
+                    return text;
+                }
+            }
+
+            // ============ TABS ============
+            function createTabs() {
+                const container = $('tabsContainer');
+                const toolbar = $('editorToolbar');
+
+                if (transcriptions.length <= 1) {
+                    container.classList.remove('active');
+                    toolbar.classList.add('no-tabs');
+                    return;
                 }
 
-                function cleanTranscriptionText(text) {
-                    if (!text) return "";
-                    let cleaned = text.trim();
-                    // Remove leading ellipsis and spaces
-                    cleaned = cleaned.replace(/^[\s\.]+/u, "").trim();
-                    // Capitalize first letter
-                    if (cleaned.length > 0) {
-                        cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
-                    }
-                    return cleaned;
-                }
+                container.classList.add('active');
+                toolbar.classList.remove('no-tabs');
 
-
-                async function structureTranscription(text, templateKey) {
-                    if (!GROQ_API_KEY) {
-                        showToast('Configura la API Key para el Modo Pro', 'error');
-                        return text;
-                    }
-
-                    // Find prompt in the deep object
-                    let prompt = "";
-                    for (const catKey in MEDICAL_TEMPLATES) {
-                        if (MEDICAL_TEMPLATES[catKey].studies[templateKey]) {
-                            prompt = MEDICAL_TEMPLATES[catKey].studies[templateKey].prompt;
-                            break;
-                        }
-                    }
-                    if (!prompt) prompt = MEDICAL_TEMPLATES.otros.studies.generico.prompt;
-
-                    try {
-                        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${GROQ_API_KEY}`,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                model: "llama-3.3-70b-versatile",
-                                messages: [
-                                    { role: "system", content: prompt },
-                                    { role: "user", content: `Transcripción a estructurar:\n\n${text}` }
-                                ],
-                                temperature: 0.1
-                            })
-                        });
-
-                        if (!res.ok) throw new Error('Error al estructurar');
-                        const data = await res.json();
-                        return data.choices[0].message.content.trim();
-                    } catch (error) {
-                        console.error('Structuring failed:', error);
-                        showToast('Error al estructurar. Se usará texto plano.', 'warning');
-                        return text;
-                    }
-                }
-
-                // ============ TABS ============
-                function createTabs() {
-                    const container = $('tabsContainer');
-                    const toolbar = $('editorToolbar');
-
-                    if (transcriptions.length <= 1) {
-                        container.classList.remove('active');
-                        toolbar.classList.add('no-tabs');
-                        return;
-                    }
-
-                    container.classList.add('active');
-                    toolbar.classList.remove('no-tabs');
-
-                    container.innerHTML = transcriptions.map((t, i) => `
+                container.innerHTML = transcriptions.map((t, i) => `
                 <button class="tab ${i === activeTabIndex ? 'active' : ''}" onclick="switchTab(${i})">
                     ${t.fileName.length > 12 ? t.fileName.slice(0, 10) + '...' : t.fileName}
                     <span class="tab-close" onclick="event.stopPropagation(); closeTab(${i})">
@@ -2445,485 +2503,485 @@
                     </span>
                 </button>
             `).join('');
+            }
+
+            window.switchTab = i => {
+                if (transcriptions[activeTabIndex]) transcriptions[activeTabIndex].text = editor.innerHTML;
+                activeTabIndex = i;
+                editor.innerHTML = transcriptions[i].text;
+                updateWordCount();
+                createTabs();
+            };
+
+            window.closeTab = i => {
+                transcriptions.splice(i, 1);
+                if (!transcriptions.length) {
+                    editor.innerHTML = '';
+                    disableButtons();
+                } else {
+                    activeTabIndex = Math.min(activeTabIndex, transcriptions.length - 1);
+                    editor.innerHTML = transcriptions[activeTabIndex].text;
                 }
+                updateWordCount();
+                createTabs();
+            };
 
-                window.switchTab = i => {
-                    if (transcriptions[activeTabIndex]) transcriptions[activeTabIndex].text = editor.innerHTML;
-                    activeTabIndex = i;
-                    editor.innerHTML = transcriptions[i].text;
+            // ============ EDITOR ============
+            function updateWordCount() {
+                const text = editor.innerText.trim();
+                const words = text ? text.split(/\s+/).length : 0;
+                wordCount.textContent = `${words} palabras`;
+
+                const hasText = text.length > 0;
+                copyBtn.disabled = !hasText;
+                downloadBtn.disabled = !hasText;
+            }
+
+            editor.addEventListener('input', () => {
+                updateWordCount();
+                saveUndoState();
+            });
+
+            window.formatText = cmd => { document.execCommand(cmd, false, null); editor.focus(); };
+
+            fontSizeSelect.addEventListener('change', () => {
+                editor.style.fontSize = fontSizeSelect.value + 'px';
+            });
+
+            // Undo/Redo
+            function saveUndoState() {
+                undoStack.push(editor.innerHTML);
+                if (undoStack.length > 50) undoStack.shift();
+                redoStack = [];
+            }
+
+            $('undoBtn').addEventListener('click', () => {
+                if (undoStack.length > 1) {
+                    redoStack.push(undoStack.pop());
+                    editor.innerHTML = undoStack[undoStack.length - 1] || '';
                     updateWordCount();
-                    createTabs();
-                };
-
-                window.closeTab = i => {
-                    transcriptions.splice(i, 1);
-                    if (!transcriptions.length) {
-                        editor.innerHTML = '';
-                        disableButtons();
-                    } else {
-                        activeTabIndex = Math.min(activeTabIndex, transcriptions.length - 1);
-                        editor.innerHTML = transcriptions[activeTabIndex].text;
-                    }
-                    updateWordCount();
-                    createTabs();
-                };
-
-                // ============ EDITOR ============
-                function updateWordCount() {
-                    const text = editor.innerText.trim();
-                    const words = text ? text.split(/\s+/).length : 0;
-                    wordCount.textContent = `${words} palabras`;
-
-                    const hasText = text.length > 0;
-                    copyBtn.disabled = !hasText;
-                    downloadBtn.disabled = !hasText;
                 }
+            });
 
-                editor.addEventListener('input', () => {
+            $('redoBtn').addEventListener('click', () => {
+                if (redoStack.length) {
+                    const state = redoStack.pop();
+                    undoStack.push(state);
+                    editor.innerHTML = state;
                     updateWordCount();
+                }
+            });
+
+            // Find & Replace
+            $('toggleFindReplace').addEventListener('click', () => {
+                findReplacePanel.classList.toggle('active');
+                if (findReplacePanel.classList.contains('active')) findInput.focus();
+            });
+
+            $('closeFindReplace').addEventListener('click', () => findReplacePanel.classList.remove('active'));
+
+            $('findNextBtn').addEventListener('click', () => {
+                const text = findInput.value;
+                if (!text) return;
+                const selection = window.getSelection();
+                const range = document.createRange();
+                const content = editor.innerText;
+                const start = content.indexOf(text, selection.anchorOffset || 0);
+                if (start >= 0) {
+                    highlightText(text);
+                } else {
+                    showToast('No encontrado', 'error');
+                }
+            });
+
+            $('replaceBtn').addEventListener('click', () => {
+                const find = findInput.value;
+                const replace = replaceInput.value;
+                if (!find) return;
+                const html = editor.innerHTML;
+                const newHtml = html.replace(find, replace);
+                if (html !== newHtml) {
                     saveUndoState();
-                });
-
-                window.formatText = cmd => { document.execCommand(cmd, false, null); editor.focus(); };
-
-                fontSizeSelect.addEventListener('change', () => {
-                    editor.style.fontSize = fontSizeSelect.value + 'px';
-                });
-
-                // Undo/Redo
-                function saveUndoState() {
-                    undoStack.push(editor.innerHTML);
-                    if (undoStack.length > 50) undoStack.shift();
-                    redoStack = [];
-                }
-
-                $('undoBtn').addEventListener('click', () => {
-                    if (undoStack.length > 1) {
-                        redoStack.push(undoStack.pop());
-                        editor.innerHTML = undoStack[undoStack.length - 1] || '';
-                        updateWordCount();
-                    }
-                });
-
-                $('redoBtn').addEventListener('click', () => {
-                    if (redoStack.length) {
-                        const state = redoStack.pop();
-                        undoStack.push(state);
-                        editor.innerHTML = state;
-                        updateWordCount();
-                    }
-                });
-
-                // Find & Replace
-                $('toggleFindReplace').addEventListener('click', () => {
-                    findReplacePanel.classList.toggle('active');
-                    if (findReplacePanel.classList.contains('active')) findInput.focus();
-                });
-
-                $('closeFindReplace').addEventListener('click', () => findReplacePanel.classList.remove('active'));
-
-                $('findNextBtn').addEventListener('click', () => {
-                    const text = findInput.value;
-                    if (!text) return;
-                    const selection = window.getSelection();
-                    const range = document.createRange();
-                    const content = editor.innerText;
-                    const start = content.indexOf(text, selection.anchorOffset || 0);
-                    if (start >= 0) {
-                        highlightText(text);
-                    } else {
-                        showToast('No encontrado', 'error');
-                    }
-                });
-
-                $('replaceBtn').addEventListener('click', () => {
-                    const find = findInput.value;
-                    const replace = replaceInput.value;
-                    if (!find) return;
-                    const html = editor.innerHTML;
-                    const newHtml = html.replace(find, replace);
-                    if (html !== newHtml) {
-                        saveUndoState();
-                        editor.innerHTML = newHtml;
-                        updateWordCount();
-                        showToast('Reemplazado', 'success');
-                    }
-                });
-
-                $('replaceAllBtn').addEventListener('click', () => {
-                    const find = findInput.value;
-                    const replace = replaceInput.value;
-                    if (!find) return;
-                    saveUndoState();
-                    const regex = new RegExp(escapeRegex(find), 'gi');
-                    const text = editor.innerText;
-                    const count = (text.match(regex) || []).length;
-                    editor.innerText = text.replace(regex, replace);
+                    editor.innerHTML = newHtml;
                     updateWordCount();
-                    showToast(`${count} reemplazado(s)`, 'success');
-                });
+                    showToast('Reemplazado', 'success');
+                }
+            });
 
-                function escapeRegex(str) {
-                    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            $('replaceAllBtn').addEventListener('click', () => {
+                const find = findInput.value;
+                const replace = replaceInput.value;
+                if (!find) return;
+                saveUndoState();
+                const regex = new RegExp(escapeRegex(find), 'gi');
+                const text = editor.innerText;
+                const count = (text.match(regex) || []).length;
+                editor.innerText = text.replace(regex, replace);
+                updateWordCount();
+                showToast(`${count} reemplazado(s)`, 'success');
+            });
+
+            function escapeRegex(str) {
+                return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            }
+
+            function highlightText(text) {
+                const content = editor.innerHTML;
+                const highlighted = content.replace(new RegExp(`(${escapeRegex(text)})`, 'gi'), '<mark>$1</mark>');
+                editor.innerHTML = highlighted;
+            }
+
+            // ============ COPY ============
+            copyBtn.addEventListener('click', async () => {
+                try {
+                    await navigator.clipboard.writeText(editor.innerText);
+                    showToast('Copiado ✓', 'success');
+                } catch { showToast('Error al copiar', 'error'); }
+            });
+
+            // ============ DOWNLOAD ============
+            downloadBtn.addEventListener('click', () => {
+                downloadDropdown.classList.toggle('open');
+            });
+
+            document.addEventListener('click', e => {
+                if (!downloadDropdown.contains(e.target)) {
+                    downloadDropdown.classList.remove('open');
+                }
+            });
+
+            document.querySelectorAll('.dropdown-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const format = item.dataset.format;
+                    downloadFile(format);
+                    downloadDropdown.classList.remove('open');
+                });
+            });
+
+            function downloadFile(format) {
+                const text = editor.innerText || '';
+                if (!text.trim()) return showToast('No hay texto', 'error');
+
+                const fileName = (transcriptions[activeTabIndex]?.fileName || 'informe').replace(/\.[^/.]+$/, '');
+                const date = new Date().toLocaleDateString('es-ES');
+                const fileDate = new Date().toISOString().split('T')[0];
+
+                if (format === 'pdf') {
+                    downloadPDF(text, fileName, date, fileDate);
+                    return;
                 }
 
-                function highlightText(text) {
-                    const content = editor.innerHTML;
-                    const highlighted = content.replace(new RegExp(`(${escapeRegex(text)})`, 'gi'), '<mark>$1</mark>');
-                    editor.innerHTML = highlighted;
+                let blob, ext;
+                switch (format) {
+                    case 'rtf': blob = new Blob([createRTF(text, date)], { type: 'application/rtf' }); ext = 'rtf'; break;
+                    case 'txt': blob = new Blob([`INFORME MÉDICO\nFecha: ${date}\n\n${text}`], { type: 'text/plain;charset=utf-8' }); ext = 'txt'; break;
+                    case 'html': blob = new Blob([createHTML(text, date)], { type: 'text/html;charset=utf-8' }); ext = 'html'; break;
                 }
 
-                // ============ COPY ============
-                copyBtn.addEventListener('click', async () => {
-                    try {
-                        await navigator.clipboard.writeText(editor.innerText);
-                        showToast('Copiado ✓', 'success');
-                    } catch { showToast('Error al copiar', 'error'); }
-                });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `${fileName}_${fileDate}.${ext}`;
+                a.click();
+                URL.revokeObjectURL(a.href);
+                showToast(`Descargado .${ext}`, 'success');
+            }
 
-                // ============ DOWNLOAD ============
-                downloadBtn.addEventListener('click', () => {
-                    downloadDropdown.classList.toggle('open');
-                });
-
-                document.addEventListener('click', e => {
-                    if (!downloadDropdown.contains(e.target)) {
-                        downloadDropdown.classList.remove('open');
-                    }
-                });
-
-                document.querySelectorAll('.dropdown-item').forEach(item => {
-                    item.addEventListener('click', () => {
-                        const format = item.dataset.format;
-                        downloadFile(format);
-                        downloadDropdown.classList.remove('open');
-                    });
-                });
-
-                function downloadFile(format) {
-                    const text = editor.innerText || '';
-                    if (!text.trim()) return showToast('No hay texto', 'error');
-
-                    const fileName = (transcriptions[activeTabIndex]?.fileName || 'informe').replace(/\.[^/.]+$/, '');
-                    const date = new Date().toLocaleDateString('es-ES');
-                    const fileDate = new Date().toISOString().split('T')[0];
-
-                    if (format === 'pdf') {
-                        downloadPDF(text, fileName, date, fileDate);
-                        return;
-                    }
-
-                    let blob, ext;
-                    switch (format) {
-                        case 'rtf': blob = new Blob([createRTF(text, date)], { type: 'application/rtf' }); ext = 'rtf'; break;
-                        case 'txt': blob = new Blob([`INFORME MÉDICO\nFecha: ${date}\n\n${text}`], { type: 'text/plain;charset=utf-8' }); ext = 'txt'; break;
-                        case 'html': blob = new Blob([createHTML(text, date)], { type: 'text/html;charset=utf-8' }); ext = 'html'; break;
-                    }
-
-                    const a = document.createElement('a');
-                    a.href = URL.createObjectURL(blob);
-                    a.download = `${fileName}_${fileDate}.${ext}`;
-                    a.click();
-                    URL.revokeObjectURL(a.href);
-                    showToast(`Descargado .${ext}`, 'success');
+            function createRTF(text, fecha) {
+                const lines = text.split('\n');
+                let body = '';
+                for (const line of lines) {
+                    const escaped = line
+                        .replace(/\\/g, '\\\\').replace(/\{/g, '\\{').replace(/\}/g, '\\}')
+                        .replace(/[áàäâ]/g, "\\'e1").replace(/[éèëê]/g, "\\'e9").replace(/[íìïî]/g, "\\'ed")
+                        .replace(/[óòöô]/g, "\\'f3").replace(/[úùüû]/g, "\\'fa").replace(/ñ/g, "\\'f1")
+                        .replace(/Ñ/g, "\\'d1").replace(/[ÁÀÄÂ]/g, "\\'c1").replace(/[ÉÈËÊ]/g, "\\'c9")
+                        .replace(/[ÍÌÏÎ]/g, "\\'cd").replace(/[ÓÒÖÔ]/g, "\\'d3").replace(/[ÚÙÜÛ]/g, "\\'da");
+                    body += escaped + '\\par\n';
                 }
+                return `{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 Arial;}}\\paperw12240\\paperh15840\\margl1440\\margr1440\\margt1440\\margb1440\\qc\\f0\\fs36\\b INFORME M\\'c9DICO\\b0\\par\\fs24\\i Fecha: ${fecha}\\i0\\par\\par\\ql\\fs24${body}}`;
+            }
 
-                function createRTF(text, fecha) {
-                    const lines = text.split('\n');
-                    let body = '';
-                    for (const line of lines) {
-                        const escaped = line
-                            .replace(/\\/g, '\\\\').replace(/\{/g, '\\{').replace(/\}/g, '\\}')
-                            .replace(/[áàäâ]/g, "\\'e1").replace(/[éèëê]/g, "\\'e9").replace(/[íìïî]/g, "\\'ed")
-                            .replace(/[óòöô]/g, "\\'f3").replace(/[úùüû]/g, "\\'fa").replace(/ñ/g, "\\'f1")
-                            .replace(/Ñ/g, "\\'d1").replace(/[ÁÀÄÂ]/g, "\\'c1").replace(/[ÉÈËÊ]/g, "\\'c9")
-                            .replace(/[ÍÌÏÎ]/g, "\\'cd").replace(/[ÓÒÖÔ]/g, "\\'d3").replace(/[ÚÙÜÛ]/g, "\\'da");
-                        body += escaped + '\\par\n';
-                    }
-                    return `{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 Arial;}}\\paperw12240\\paperh15840\\margl1440\\margr1440\\margt1440\\margb1440\\qc\\f0\\fs36\\b INFORME M\\'c9DICO\\b0\\par\\fs24\\i Fecha: ${fecha}\\i0\\par\\par\\ql\\fs24${body}}`;
-                }
-
-                function createHTML(text, fecha) {
-                    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Informe Médico</title>
+            function createHTML(text, fecha) {
+                return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Informe Médico</title>
 <style>body{font-family:Georgia,serif;max-width:800px;margin:40px auto;padding:20px;line-height:1.8}
 h1{text-align:center;border-bottom:2px solid #333;padding-bottom:10px}
 .fecha{text-align:center;color:#666;font-style:italic}</style></head>
 <body><h1>INFORME MÉDICO</h1><p class="fecha">Fecha: ${fecha}</p>
 ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
+            }
+
+            async function downloadPDF(text, fileName, fecha, fileDate) {
+                if (typeof jspdf === 'undefined') {
+                    showToast('Cargando motor PDF...', 'success');
+                    await new Promise(r => setTimeout(r, 500));
                 }
 
-                async function downloadPDF(text, fileName, fecha, fileDate) {
-                    if (typeof jspdf === 'undefined') {
-                        showToast('Cargando motor PDF...', 'success');
-                        await new Promise(r => setTimeout(r, 500));
-                    }
+                try {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF();
+                    const profData = JSON.parse(localStorage.getItem('prof_data')) || {};
+                    const selectedWorkplace = $('workplaceSelect').value;
 
-                    try {
-                        const { jsPDF } = window.jspdf;
-                        const doc = new jsPDF();
-                        const profData = JSON.parse(localStorage.getItem('prof_data')) || {};
-                        const selectedWorkplace = $('workplaceSelect').value;
-
-                        const addHeaderFooter = (pageNumber, totalPages) => {
-                            doc.setFontSize(9);
-                            doc.setTextColor(100);
-
-                            // Header: Professional Name & Workplace
-                            doc.setFont('helvetica', 'bold');
-                            doc.text(profData.nombre || '', 105, 12, { align: 'center' });
-                            doc.setFont('helvetica', 'normal');
-                            doc.text(`${profData.matricula || ''} • ${selectedWorkplace || ''}`, 105, 17, { align: 'center' });
-
-                            // Custom Header Lines
-                            if (pdfSettings.header) {
-                                const headerLines = pdfSettings.header.split('\n');
-                                let hy = 25;
-                                headerLines.forEach(l => { doc.text(l, 105, hy, { align: 'center' }); hy += 4; });
-                            }
-
-                            // Footer: Page & Date
-                            doc.setFont('helvetica', 'italic');
-                            const footerText = (pdfSettings.footer || "Página {page} • Transcriptor Pro")
-                                .replace('{page}', pageNumber).replace('{date}', fecha);
-                            doc.text(footerText, 105, 285, { align: 'center' });
-
-                            return 30; // Return content start Y
-                        };
-
-                        const hHeight = addHeaderFooter(1, 1);
-
-                        // Title
-                        doc.setFont('helvetica', 'bold');
-                        doc.setFontSize(16);
-                        doc.setTextColor(0);
-                        doc.text('INFORME MÉDICO', 105, hHeight + 10, { align: 'center' });
-
-                        // Patient Info Block
-                        doc.setFontSize(11);
-                        doc.setFont('helvetica', 'bold');
-                        let cy = hHeight + 22;
-
-                        const pName = $('patientName').value || '---';
-                        const pDni = $('patientDni').value || '---';
-                        const pDate = $('studyDate').value ? new Date($('studyDate').value).toLocaleDateString('es-ES') : fecha;
-
-                        doc.text(`Paciente:`, 20, cy);
-                        doc.setFont('helvetica', 'normal');
-                        doc.text(pName, 45, cy);
-
-                        doc.setFont('helvetica', 'bold');
-                        doc.text(`DNI:`, 120, cy);
-                        doc.setFont('helvetica', 'normal');
-                        doc.text(pDni, 135, cy);
-
-                        cy += 7;
-                        doc.setFont('helvetica', 'bold');
-                        doc.text(`Fecha:`, 20, cy);
-                        doc.setFont('helvetica', 'normal');
-                        doc.text(pDate, 45, cy);
-
-                        cy += 12;
-
-                        // Content
-                        const paragraphs = text.split('\n');
-                        for (const para of paragraphs) {
-                            if (!para.trim()) { cy += 5; continue; }
-
-                            let isTitle = para.startsWith('#');
-                            let cleanPara = para.replace(/^#+\s*/, '').replace(/\*\*/g, '');
-
-                            if (cy > 270) {
-                                doc.addPage();
-                                addHeaderFooter(doc.internal.getNumberOfPages(), 0);
-                                cy = 35;
-                            }
-
-                            if (isTitle) {
-                                doc.setFont('helvetica', 'bold');
-                                doc.setFontSize(12);
-                                cy += 4;
-                            } else {
-                                doc.setFont('helvetica', 'normal');
-                                doc.setFontSize(11);
-                            }
-
-                            const lines = doc.splitTextToSize(cleanPara, 170);
-                            doc.text(lines, 20, cy);
-                            cy += (lines.length * 6) + 2;
-                        }
-
-                        // Final Signature
-                        cy += 30;
-                        if (cy > 270) { doc.addPage(); addHeaderFooter(doc.internal.getNumberOfPages(), 0); cy = 50; }
-                        doc.line(130, cy, 190, cy);
+                    const addHeaderFooter = (pageNumber, totalPages) => {
                         doc.setFontSize(9);
-                        doc.text(profData.nombre || '', 160, cy + 5, { align: 'center' });
-                        doc.text(profData.matricula || '', 160, cy + 10, { align: 'center' });
+                        doc.setTextColor(100);
 
-                        doc.save(`${fileName}_${fileDate}.pdf`);
-                        showToast('PDF generado ✓', 'success');
-                    } catch (e) {
-                        console.error(e);
-                        showToast('Error al crear PDF', 'error');
-                    }
-                }
+                        // Header: Professional Name & Workplace
+                        doc.setFont('helvetica', 'bold');
+                        doc.text(profData.nombre || '', 105, 12, { align: 'center' });
+                        doc.setFont('helvetica', 'normal');
+                        doc.text(`${profData.matricula || ''} • ${selectedWorkplace || ''}`, 105, 17, { align: 'center' });
 
-                // ============ MODE SELECTOR ============
-                modeNormal.addEventListener('click', () => setMode('normal'));
-                modePro.addEventListener('click', () => setMode('pro'));
-
-                function setMode(mode) {
-                    currentMode = mode;
-                    if (mode === 'normal') {
-                        modeNormal.classList.add('active');
-                        modePro.classList.remove('active');
-                        templateSelectorContainer.style.display = 'none';
-                    } else {
-                        modePro.classList.add('active');
-                        modeNormal.classList.remove('active');
-                        templateSelectorContainer.style.display = 'block';
-                    }
-                    updateUIByMode();
-                }
-
-                templateSelect.addEventListener('change', (e) => {
-                    selectedTemplate = e.target.value;
-                    showToast(`Plantilla: ${templateSelect.options[templateSelect.selectedIndex].text}`, 'success');
-                });
-
-                function updateUIByMode() {
-                    // Visual feedback of the current mode
-                    if (currentMode === 'pro') {
-                        document.body.style.borderTop = "4px solid var(--primary)";
-                    } else {
-                        document.body.style.borderTop = "none";
-                    }
-                }
-                resetBtn.addEventListener('click', () => {
-                    uploadedFiles = [];
-                    transcriptions = [];
-                    activeTabIndex = 0;
-                    isProcessing = false;
-                    editor.innerHTML = '';
-                    fileInput.value = '';
-                    updateFileList();
-                    createTabs();
-                    updateWordCount();
-                    transcribeBtn.disabled = true;
-                    disableButtons();
-                    processingStatus.classList.remove('active');
-
-                    // Hide Wizard Step 2 & Metadata
-                    wizardTemplateCard.style.display = 'none';
-                    reportMetadataCard.style.display = 'none';
-
-                    showToast('Limpiado ✓', 'success');
-                });
-
-                // ============ HELPERS ============
-                function enableButtons() { copyBtn.disabled = false; downloadBtn.disabled = false; }
-                function disableButtons() { copyBtn.disabled = true; downloadBtn.disabled = true; }
-
-                function showToast(msg, type = 'success') {
-                    toastMessage.textContent = msg;
-                    toast.className = `toast ${type} show`;
-                    setTimeout(() => toast.classList.remove('show'), 3000);
-                }
-
-                // Keyboard shortcuts
-                document.addEventListener('keydown', e => {
-                    if (e.ctrlKey || e.metaKey) {
-                        if (e.key === 'h' || e.key === 'H') {
-                            e.preventDefault();
-                            $('toggleFindReplace').click();
+                        // Custom Header Lines
+                        if (pdfSettings.header) {
+                            const headerLines = pdfSettings.header.split('\n');
+                            let hy = 25;
+                            headerLines.forEach(l => { doc.text(l, 105, hy, { align: 'center' }); hy += 4; });
                         }
-                    }
-                    // Escape cierra modales
-                    if (e.key === 'Escape') {
-                        $('helpModal').classList.remove('active');
-                    }
-                });
 
-                // ============ HELP MODAL ============
-                const helpModal = $('helpModal');
-                const helpBtn = $('helpBtn');
-                const closeHelp = $('closeHelp');
+                        // Footer: Page & Date
+                        doc.setFont('helvetica', 'italic');
+                        const footerText = (pdfSettings.footer || "Página {page} • Transcriptor Pro")
+                            .replace('{page}', pageNumber).replace('{date}', fecha);
+                        doc.text(footerText, 105, 285, { align: 'center' });
 
-                helpBtn.addEventListener('click', () => {
-                    helpModal.classList.add('active');
-                });
-
-                closeHelp.addEventListener('click', () => {
-                    helpModal.classList.remove('active');
-                });
-
-                helpModal.addEventListener('click', (e) => {
-                    if (e.target === helpModal) {
-                        helpModal.classList.remove('active');
-                    }
-                });
-
-                // ============ PDF CONFIG MODAL ============
-                window.setPreset = (type, text) => {
-                    if (type === 'header') {
-                        pdfHeaderInput.value = text;
-                    } else {
-                        pdfFooterInput.value = text;
-                    }
-                };
-
-                btnConfigPdf.addEventListener('click', () => pdfModalOverlay.classList.add('active'));
-                closePdfConfig.addEventListener('click', () => pdfModalOverlay.classList.remove('active'));
-                pdfModalOverlay.addEventListener('click', (e) => {
-                    if (e.target === pdfModalOverlay) {
-                        pdfModalOverlay.classList.remove('active');
-                    }
-                });
-
-                savePdfConfig.addEventListener('click', () => {
-                    pdfSettings = {
-                        header: pdfHeaderInput.value.trim(),
-                        footer: pdfFooterInput.value.trim(),
-                        patientName: patientNameInput.value.trim(),
-                        patientDni: patientDniInput.value.trim(),
-                        studyDate: studyDateInput.value,
-                        procedure: procedureInput.value.trim()
+                        return 30; // Return content start Y
                     };
-                    localStorage.setItem('pdf_settings', JSON.stringify(pdfSettings));
+
+                    const hHeight = addHeaderFooter(1, 1);
+
+                    // Title
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(16);
+                    doc.setTextColor(0);
+                    doc.text('INFORME MÉDICO', 105, hHeight + 10, { align: 'center' });
+
+                    // Patient Info Block
+                    doc.setFontSize(11);
+                    doc.setFont('helvetica', 'bold');
+                    let cy = hHeight + 22;
+
+                    const pName = $('patientName').value || '---';
+                    const pDni = $('patientDni').value || '---';
+                    const pDate = $('studyDate').value ? new Date($('studyDate').value).toLocaleDateString('es-ES') : fecha;
+
+                    doc.text(`Paciente:`, 20, cy);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(pName, 45, cy);
+
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(`DNI:`, 120, cy);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(pDni, 135, cy);
+
+                    cy += 7;
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(`Fecha:`, 20, cy);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(pDate, 45, cy);
+
+                    cy += 12;
+
+                    // Content
+                    const paragraphs = text.split('\n');
+                    for (const para of paragraphs) {
+                        if (!para.trim()) { cy += 5; continue; }
+
+                        let isTitle = para.startsWith('#');
+                        let cleanPara = para.replace(/^#+\s*/, '').replace(/\*\*/g, '');
+
+                        if (cy > 270) {
+                            doc.addPage();
+                            addHeaderFooter(doc.internal.getNumberOfPages(), 0);
+                            cy = 35;
+                        }
+
+                        if (isTitle) {
+                            doc.setFont('helvetica', 'bold');
+                            doc.setFontSize(12);
+                            cy += 4;
+                        } else {
+                            doc.setFont('helvetica', 'normal');
+                            doc.setFontSize(11);
+                        }
+
+                        const lines = doc.splitTextToSize(cleanPara, 170);
+                        doc.text(lines, 20, cy);
+                        cy += (lines.length * 6) + 2;
+                    }
+
+                    // Final Signature
+                    cy += 30;
+                    if (cy > 270) { doc.addPage(); addHeaderFooter(doc.internal.getNumberOfPages(), 0); cy = 50; }
+                    doc.line(130, cy, 190, cy);
+                    doc.setFontSize(9);
+                    doc.text(profData.nombre || '', 160, cy + 5, { align: 'center' });
+                    doc.text(profData.matricula || '', 160, cy + 10, { align: 'center' });
+
+                    doc.save(`${fileName}_${fileDate}.pdf`);
+                    showToast('PDF generado ✓', 'success');
+                } catch (e) {
+                    console.error(e);
+                    showToast('Error al crear PDF', 'error');
+                }
+            }
+
+            // ============ MODE SELECTOR ============
+            modeNormal.addEventListener('click', () => setMode('normal'));
+            modePro.addEventListener('click', () => setMode('pro'));
+
+            function setMode(mode) {
+                currentMode = mode;
+                if (mode === 'normal') {
+                    modeNormal.classList.add('active');
+                    modePro.classList.remove('active');
+                    templateSelectorContainer.style.display = 'none';
+                } else {
+                    modePro.classList.add('active');
+                    modeNormal.classList.remove('active');
+                    templateSelectorContainer.style.display = 'block';
+                }
+                updateUIByMode();
+            }
+
+            templateSelect.addEventListener('change', (e) => {
+                selectedTemplate = e.target.value;
+                showToast(`Plantilla: ${templateSelect.options[templateSelect.selectedIndex].text}`, 'success');
+            });
+
+            function updateUIByMode() {
+                // Visual feedback of the current mode
+                if (currentMode === 'pro') {
+                    document.body.style.borderTop = "4px solid var(--primary)";
+                } else {
+                    document.body.style.borderTop = "none";
+                }
+            }
+            resetBtn.addEventListener('click', () => {
+                uploadedFiles = [];
+                transcriptions = [];
+                activeTabIndex = 0;
+                isProcessing = false;
+                editor.innerHTML = '';
+                fileInput.value = '';
+                updateFileList();
+                createTabs();
+                updateWordCount();
+                transcribeBtn.disabled = true;
+                disableButtons();
+                processingStatus.classList.remove('active');
+
+                // Hide Wizard Step 2 & Metadata
+                wizardTemplateCard.style.display = 'none';
+                reportMetadataCard.style.display = 'none';
+
+                showToast('Limpiado ✓', 'success');
+            });
+
+            // ============ HELPERS ============
+            function enableButtons() { copyBtn.disabled = false; downloadBtn.disabled = false; }
+            function disableButtons() { copyBtn.disabled = true; downloadBtn.disabled = true; }
+
+            function showToast(msg, type = 'success') {
+                toastMessage.textContent = msg;
+                toast.className = `toast ${type} show`;
+                setTimeout(() => toast.classList.remove('show'), 3000);
+            }
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', e => {
+                if (e.ctrlKey || e.metaKey) {
+                    if (e.key === 'h' || e.key === 'H') {
+                        e.preventDefault();
+                        $('toggleFindReplace').click();
+                    }
+                }
+                // Escape cierra modales
+                if (e.key === 'Escape') {
+                    $('helpModal').classList.remove('active');
+                }
+            });
+
+            // ============ HELP MODAL ============
+            const helpModal = $('helpModal');
+            const helpBtn = $('helpBtn');
+            const closeHelp = $('closeHelp');
+
+            helpBtn.addEventListener('click', () => {
+                helpModal.classList.add('active');
+            });
+
+            closeHelp.addEventListener('click', () => {
+                helpModal.classList.remove('active');
+            });
+
+            helpModal.addEventListener('click', (e) => {
+                if (e.target === helpModal) {
+                    helpModal.classList.remove('active');
+                }
+            });
+
+            // ============ PDF CONFIG MODAL ============
+            window.setPreset = (type, text) => {
+                if (type === 'header') {
+                    pdfHeaderInput.value = text;
+                } else {
+                    pdfFooterInput.value = text;
+                }
+            };
+
+            btnConfigPdf.addEventListener('click', () => pdfModalOverlay.classList.add('active'));
+            closePdfConfig.addEventListener('click', () => pdfModalOverlay.classList.remove('active'));
+            pdfModalOverlay.addEventListener('click', (e) => {
+                if (e.target === pdfModalOverlay) {
                     pdfModalOverlay.classList.remove('active');
-                    showToast('Configuración guardada ✓', 'success');
-                });
+                }
+            });
 
-                // ============ BUSINESS SUITE LOGIC (Onboarding, Admin, Trial) ============
-                const MASTER_PASSWORD = 'Al26716975d@';
-                const onboardingOverlay = $('onboardingOverlay');
-                const onboardingStudiesSection = $('onboardingStudiesSection');
-                const studiesGrid = $('studiesGrid');
-
-                const updatePersonalization = (data) => {
-                    if (data.nombre) {
-                        $('appMainTitle').textContent = `Transcriptor Pro: ${data.nombre}`;
-                        const specs = Array.isArray(data.specialties) ? data.specialties.join(' / ') : (data.especialidad || 'Médico');
-                        $('doctorWelcomeName').textContent = `👩‍⚕️ ${specs} | ${data.matricula}`;
-                    }
+            savePdfConfig.addEventListener('click', () => {
+                pdfSettings = {
+                    header: pdfHeaderInput.value.trim(),
+                    footer: pdfFooterInput.value.trim(),
+                    patientName: patientNameInput.value.trim(),
+                    patientDni: patientDniInput.value.trim(),
+                    studyDate: studyDateInput.value,
+                    procedure: procedureInput.value.trim()
                 };
+                localStorage.setItem('pdf_settings', JSON.stringify(pdfSettings));
+                pdfModalOverlay.classList.remove('active');
+                showToast('Configuración guardada ✓', 'success');
+            });
 
-                const checkTrial = (startDateStr) => {
-                    if (!startDateStr) return;
-                    const startDate = new Date(startDateStr);
-                    const now = new Date();
-                    const diffDays = Math.ceil((now - startDate) / (1000 * 60 * 60 * 24));
+            // ============ BUSINESS SUITE LOGIC (Onboarding, Admin, Trial) ============
+            const MASTER_PASSWORD = 'Al26716975d@';
+            const onboardingOverlay = $('onboardingOverlay');
+            const onboardingStudiesSection = $('onboardingStudiesSection');
+            const studiesGrid = $('studiesGrid');
 
-                    if (diffDays > 5 && CLIENT_CONFIG.status !== 'active') {
-                        showBlocker('Tu período de prueba de 5 días ha finalizado.', true);
-                    } else if (CLIENT_CONFIG.status === 'vencido') {
-                        showBlocker('Tu suscripción ha vencido. Por favor regulariza tu pago.', true);
-                    }
-                };
+            const updatePersonalization = (data) => {
+                if (data.nombre) {
+                    $('appMainTitle').textContent = `Transcriptor Pro: ${data.nombre}`;
+                    const specs = Array.isArray(data.specialties) ? data.specialties.join(' / ') : (data.especialidad || 'Médico');
+                    $('doctorWelcomeName').textContent = `👩‍⚕️ ${specs} | ${data.matricula}`;
+                }
+            };
 
-                const showBlocker = (msg, isContactRequired) => {
-                    const body = document.body;
-                    body.innerHTML = `
+            const checkTrial = (startDateStr) => {
+                if (!startDateStr) return;
+                const startDate = new Date(startDateStr);
+                const now = new Date();
+                const diffDays = Math.ceil((now - startDate) / (1000 * 60 * 60 * 24));
+
+                if (diffDays > 5 && CLIENT_CONFIG.status !== 'active') {
+                    showBlocker('Tu período de prueba de 5 días ha finalizado.', true);
+                } else if (CLIENT_CONFIG.status === 'vencido') {
+                    showBlocker('Tu suscripción ha vencido. Por favor regulariza tu pago.', true);
+                }
+            };
+
+            const showBlocker = (msg, isContactRequired) => {
+                const body = document.body;
+                body.innerHTML = `
                         <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f1f5f9; font-family: sans-serif; text-align: center; padding: 2rem;">
                             <h1 style="color: #0f766e; margin-bottom: 1rem;">💼 Suscripción</h1>
                             <p style="font-size: 1.2rem; color: #475569; max-width: 500px;">${msg}</p>
@@ -2931,147 +2989,152 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                             <p style="margin-top: 2rem; font-size: 0.85rem; color: #94a3b8;">Contacta con el desarrollador para habilitar tu licencia.</p>
                         </div>
                     `;
-                };
+            };
 
-                const initBusinessSuite = () => {
-                    const profData = JSON.parse(localStorage.getItem('prof_data'));
-                    const onboardingDate = localStorage.getItem('onboarding_date');
+            const initBusinessSuite = () => {
+                const profData = JSON.parse(localStorage.getItem('prof_data'));
+                const onboardingDate = localStorage.getItem('onboarding_date');
 
-                    if (!profData) {
-                        onboardingOverlay.classList.add('active');
-                        initSpecialtiesGrid();
-                    } else {
-                        applyProfessionalData(profData);
-                        updatePersonalization(profData);
-                        checkTrial(onboardingDate);
-                    }
-
-                    // Hide API Section (Black Box)
-                    const apiCard = document.querySelector('.card:has(#apiKeyInput)');
-                    if (apiCard) apiCard.style.display = 'none';
-                };
-
-                const initSpecialtiesGrid = () => {
-                    document.querySelectorAll('input[name="specialty"]').forEach(cb => {
-                        cb.addEventListener('change', updateStudiesGrid);
-                    });
-                };
-
-                const updateStudiesGrid = () => {
-                    const selected = Array.from(document.querySelectorAll('input[name="specialty"]:checked')).map(cb => cb.value);
-                    studiesGrid.innerHTML = '';
-                    if (selected.length === 0) {
-                        onboardingStudiesSection.style.display = 'none';
-                        return;
-                    }
-                    onboardingStudiesSection.style.display = 'block';
-                    selected.forEach(spec => {
-                        const studies = MEDICAL_SPECIALTIES[spec] || [];
-                        studies.forEach(study => {
-                            const label = document.createElement('label');
-                            label.className = 'audio-option';
-                            label.innerHTML = `<input type="checkbox" name="study" value="${study}" data-spec="${spec}"> ${study}`;
-                            studiesGrid.appendChild(label);
-                        });
-                    });
-                };
-
-                const applyProfessionalData = (data) => {
-                    $('lockNameDisplay').textContent = data.nombre;
-                    $('lockMatriculaDisplay').textContent = data.matricula;
-
-                    // Populate workplaces dropdown
-                    const wps = data.workplace.split(/[,\n]/).map(w => w.trim()).filter(w => w);
-                    const wpSelect = $('workplaceSelect');
-                    wpSelect.innerHTML = wps.map(w => `<option value="${w}">${w}</option>`).join('');
-
-                    populateTemplateDropdown(data.studies);
-                };
-
-                $('onboardingForm').addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    const name = $('profName').value;
-                    const matricula = $('profMatricula').value;
-                    const workplaces = $('profWorkplace').value;
-                    const specialties = Array.from(document.querySelectorAll('input[name="specialty"]:checked')).map(cb => cb.value);
-                    const studies = Array.from(document.querySelectorAll('input[name="study"]:checked')).map(cb => ({ name: cb.value, spec: cb.dataset.spec }));
-
-                    const profData = { nombre: name, matricula, workplace: workplaces, specialties, studies };
-                    localStorage.setItem('prof_data', JSON.stringify(profData));
-                    localStorage.setItem('onboarding_date', new Date().toISOString());
-
+                if (!profData) {
+                    onboardingOverlay.classList.add('active');
+                    initSpecialtiesGrid();
+                } else {
                     applyProfessionalData(profData);
-                    onboardingOverlay.classList.remove('active');
-                    showToast('Perfil activado. ¡Bienvenido/a!', 'success');
+                    updatePersonalization(profData);
+                    checkTrial(onboardingDate);
+                }
+
+                // Hide API Section (Black Box)
+                const apiCard = document.querySelector('.card:has(#apiKeyInput)');
+                if (apiCard) apiCard.style.display = 'none';
+            };
+
+            const initSpecialtiesGrid = () => {
+                document.querySelectorAll('input[name="specialty"]').forEach(cb => {
+                    cb.addEventListener('change', updateStudiesGrid);
                 });
+            };
 
-                $('btnApplyStructure').addEventListener('click', async () => {
-                    const editor = $('editor');
-                    if (!editor.innerText.trim()) return showToast('No hay texto para estructurar', 'error');
-
-                    const btn = $('btnApplyStructure');
-                    const oldText = btn.textContent;
-                    btn.disabled = true;
-                    btn.textContent = "✨ Estructurando...";
-
-                    try {
-                        const text = await structureTranscription(editor.innerText, $('templateSelect').value);
-                        editor.innerHTML = text;
-                        updateWordCount();
-                        showToast('Informe estructurado ✓', 'success');
-                        wizardTemplateCard.style.display = 'none'; // Done!
-                    } catch (e) {
-                        showToast('Error al estructurar', 'error');
-                    } finally {
-                        btn.disabled = false;
-                        btn.textContent = oldText;
-                    }
+            const updateStudiesGrid = () => {
+                const selected = Array.from(document.querySelectorAll('input[name="specialty"]:checked')).map(cb => cb.value);
+                studiesGrid.innerHTML = '';
+                if (selected.length === 0) {
+                    onboardingStudiesSection.style.display = 'none';
+                    return;
+                }
+                onboardingStudiesSection.style.display = 'block';
+                selected.forEach(spec => {
+                    const studies = MEDICAL_SPECIALTIES[spec] || [];
+                    studies.forEach(study => {
+                        const label = document.createElement('label');
+                        label.className = 'audio-option';
+                        label.innerHTML = `<input type="checkbox" name="study" value="${study}" data-spec="${spec}"> ${study}`;
+                        studiesGrid.appendChild(label);
+                    });
                 });
+            };
 
-                // Initialize Suite
-                initBusinessSuite();
-                $('btnAdminAccess').addEventListener('click', () => {
-                    $('adminAuthOverlay').classList.add('active');
-                });
+            const applyProfessionalData = (data) => {
+                $('lockNameDisplay').textContent = data.nombre;
+                $('lockMatriculaDisplay').textContent = data.matricula;
 
-                $('closeAdminAuth').addEventListener('click', () => $('adminAuthOverlay').classList.remove('active'));
+                // Populate workplaces dropdown
+                const wps = data.workplace.split(/[,\n]/).map(w => w.trim()).filter(w => w);
+                const wpSelect = $('workplaceSelect');
+                wpSelect.innerHTML = wps.map(w => `<option value="${w}">${w}</option>`).join('');
 
-                $('btnConfirmAdmin').addEventListener('click', () => {
-                    const pass = $('adminPasswordInput').value;
-                    if (pass === MASTER_PASSWORD) {
-                        $('adminAuthOverlay').classList.remove('active');
-                        $('adminDashboardOverlay').classList.add('active');
-                        prepareAdminDashboard();
-                    } else {
-                        showToast('Contraseña incorrecta', 'error');
-                    }
-                });
+                populateTemplateDropdown(data.studies);
+            };
 
-                const prepareAdminDashboard = () => {
-                    const profData = JSON.parse(localStorage.getItem('prof_data')) || {};
-                    const onboardingDate = localStorage.getItem('onboarding_date');
+            $('onboardingForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const name = $('profName').value;
+                const matricula = $('profMatricula').value;
+                const workplaces = $('profWorkplace').value;
+                const specialties = Array.from(document.querySelectorAll('input[name="specialty"]:checked')).map(cb => cb.value);
+                const studies = Array.from(document.querySelectorAll('input[name="study"]:checked')).map(cb => ({ name: cb.value, spec: cb.dataset.spec }));
 
-                    $('adminUserStatus').textContent = CLIENT_CONFIG.status || 'TRIAL';
+                const profData = { nombre: name, matricula, workplace: workplaces, specialties, studies };
+                localStorage.setItem('prof_data', JSON.stringify(profData));
+                localStorage.setItem('onboarding_date', new Date().toISOString());
 
-                    if (onboardingDate) {
-                        const start = new Date(onboardingDate);
-                        const daysUsed = Math.ceil((new Date() - start) / (1000 * 60 * 60 * 24));
-                        $('adminTrialDays').textContent = Math.max(0, 5 - daysUsed) + " días";
-                    }
+                applyProfessionalData(profData);
+                onboardingOverlay.classList.remove('active');
+                showToast('Perfil activado. ¡Bienvenido/a!', 'success');
+            });
 
-                    $('adminUsageCount').textContent = localStorage.getItem('usage_count') || "0";
-                };
+            $('btnApplyStructure').addEventListener('click', async () => {
+                const editor = $('editor');
+                if (!editor.innerText.trim()) return showToast('No hay texto para estructurar', 'error');
 
-                $('closeAdminDashboard').addEventListener('click', () => $('adminDashboardOverlay').classList.remove('active'));
+                const btn = $('btnApplyStructure');
+                const oldText = btn.textContent;
+                btn.disabled = true;
+                btn.textContent = "✨ Estructurando...";
 
-                $('btnResetAccount').addEventListener('click', () => {
-                    if (confirm('¿Estás seguro? Esto borrará tus datos y se interpretará como un cambio de equipo.')) {
-                        localStorage.removeItem('prof_data');
-                        localStorage.removeItem('onboarding_date');
-                        location.reload();
-                    }
-                });
-            </script>
+                try {
+                    const text = await structureTranscription(editor.innerText, $('templateSelect').value);
+                    editor.innerHTML = text;
+                    updateWordCount();
+                    showToast('Informe estructurado ✓', 'success');
+                    wizardTemplateCard.style.display = 'none'; // Done!
+                } catch (e) {
+                    showToast('Error al estructurar', 'error');
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = oldText;
+                }
+            });
+
+            // Initialize Suite
+            initBusinessSuite();
+            $('btnAdminAccess').addEventListener('click', () => {
+                $('adminAuthOverlay').classList.add('active');
+            });
+
+            $('closeAdminAuth').addEventListener('click', () => $('adminAuthOverlay').classList.remove('active'));
+
+            $('btnConfirmAdmin').addEventListener('click', () => {
+                const pass = $('adminPasswordInput').value;
+                if (pass === MASTER_PASSWORD) {
+                    $('adminAuthOverlay').classList.remove('active');
+                    $('adminDashboardOverlay').classList.add('active');
+                    prepareAdminDashboard();
+                } else {
+                    showToast('Contraseña incorrecta', 'error');
+                }
+            });
+
+            const prepareAdminDashboard = () => {
+                const profData = JSON.parse(localStorage.getItem('prof_data')) || {};
+                const onboardingDate = localStorage.getItem('onboarding_date');
+
+                $('adminUserStatus').textContent = CLIENT_CONFIG.status || 'TRIAL';
+
+                if (onboardingDate) {
+                    const start = new Date(onboardingDate);
+                    const daysUsed = Math.ceil((new Date() - start) / (1000 * 60 * 60 * 24));
+                    $('adminTrialDays').textContent = Math.max(0, 5 - daysUsed) + " días";
+                }
+
+                $('adminUsageCount').textContent = localStorage.getItem('usage_count') || "0";
+            };
+
+            $('closeAdminDashboard').addEventListener('click', () => $('adminDashboardOverlay').classList.remove('active'));
+
+            $('btnResetAccount').addEventListener('click', () => {
+                if (confirm('¿Estás seguro? Esto borrará tus datos y se interpretará como un cambio de equipo.')) {
+                    localStorage.removeItem('prof_data');
+                    localStorage.removeItem('onboarding_date');
+                    location.reload();
+                }
+            });
+        </script>
+
+        <!-- Toast Notifications -->
+        <div id="toast" class="toast">
+            <span id="toastMessage"></span>
+        </div>
 
 </body>
 
