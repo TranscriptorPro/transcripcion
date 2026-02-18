@@ -1146,6 +1146,74 @@
             transition: all 0.2s;
         }
 
+        /* Mode Selector Styles */
+        .mode-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            background: rgba(15, 118, 110, 0.05);
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(15, 118, 110, 0.1);
+        }
+
+        .mode-tab {
+            padding: 10px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-muted);
+        }
+
+        .mode-tab.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .template-selector {
+            margin-bottom: 1.5rem;
+            background: white;
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px dashed var(--primary);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .config-select {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .config-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .config-textarea:focus {
             outline: none;
             border-color: var(--primary);
@@ -1354,6 +1422,24 @@
                     style="margin-top: 0.5rem; font-size: 0.7rem; color: var(--text-secondary); border-top: 1px solid var(--border); padding-top: 1rem;">
                     O SUBIR ARCHIVOS
                 </div>
+
+                <!-- Mode Selector -->
+                <div class="mode-selector">
+                    <button class="mode-tab active" id="modeNormal">Modo Normal</button>
+                    <button class="mode-tab" id="modePro">Modo Profesional 🩺</button>
+                </div>
+
+                <!-- Template Selector (Hidden by default) -->
+                <div class="template-selector" id="templateSelectorContainer" style="display: none;">
+                    <label class="sidebar-label">Plantilla Médica:</label>
+                    <select id="templateSelect" class="config-select">
+                        <option value="naso">喉 Videonaso / Laringoscopía</option>
+                        <option value="otologica">👂 Endoscopía Otológica</option>
+                        <option value="quirurgico">🔪 Protocolo Quirúrgico</option>
+                        <option value="generico">📋 Informe General Pro</option>
+                    </select>
+                </div>
+
                 <div class="drop-zone" id="dropZone">
                     <div class="drop-zone-icon">
                         <svg viewBox="0 0 24 24">
@@ -1829,6 +1915,14 @@
         let GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
         const chkJoinAudios = $('chkJoinAudios');
 
+        const modeNormal = $('modeNormal');
+        const modePro = $('modePro');
+        const templateSelectorContainer = $('templateSelectorContainer');
+        const templateSelect = $('templateSelect');
+
+        // App State
+        let currentMode = 'normal'; // 'normal' or 'pro'
+        let selectedTemplate = 'generico';
         // PDF Config Elements
         const pdfModalOverlay = $('pdfModalOverlay');
         const btnConfigPdf = $('btnConfigPdf');
@@ -2211,7 +2305,7 @@
             fileList.innerHTML = uploadedFiles.map((item, i) => `
                 <div class="file-item">
                     <div class="file-item-icon ${item.status}">
-                        <svg viewBox="0 0 24 24"><path d="${item.status === 'done' ? 'M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z' : 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z'}"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="${item.status === 'done' ? 'M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z' : 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4-1.79 4-4V7h4V3h-6z'}"/></svg>
                     </div>
                     <div class="file-item-info">
                         <div class="file-item-name">${item.file.name}</div>
@@ -2237,80 +2331,98 @@
 
         // ============ TRANSCRIPTION ============
         transcribeBtn.addEventListener('click', async () => {
-            if (!uploadedFiles.length || isProcessing) return;
+            const pending = uploadedFiles.filter(item => item.status === 'pending');
+            if (pending.length === 0 || isProcessing) return;
+
             if (!GROQ_API_KEY) {
-                showToast('Primero configura tu API Key', 'error');
+                showToast('Ingresa tu API Key de Groq', 'error');
                 apiKeyInput.focus();
                 return;
             }
 
             isProcessing = true;
-            processingStatus.classList.add('active');
             transcribeBtn.disabled = true;
-
-            const pending = uploadedFiles.filter(f => f.status === 'pending');
+            processingStatus.classList.add('active');
             let done = 0;
-            const shouldJoin = chkJoinAudios.checked;
             let joinedText = '';
+            const shouldJoin = chkJoinAudios.checked;
 
-            for (const item of pending) {
-                item.status = 'processing';
-                updateFileList();
-                processingText.textContent = `${done + 1}/${pending.length}: ${item.file.name}`;
-                progressFill.style.width = `${(done / pending.length) * 100}%`;
+            try {
+                for (let i = 0; i < uploadedFiles.length; i++) {
+                    const item = uploadedFiles[i];
+                    if (item.status !== 'pending') continue;
 
-                try {
-                    processingText.textContent = `Mejorando audio: ${item.file.name}`;
-                    const processedFile = await processAudio(item.file);
+                    item.status = 'processing';
+                    updateFileList();
+                    processingText.textContent = `${done + 1}/${pending.length}: ${item.file.name}`;
+                    progressFill.style.width = `${(done / pending.length) * 100}%`;
 
-                    processingText.textContent = `Transcribiendo: ${item.file.name}`;
-                    const text = await transcribeWithGroq(processedFile);
+                    try {
+                        processingText.textContent = `Mejorando audio: ${item.file.name}`;
+                        const processedFile = await processAudio(item.file);
 
-                    const cleanedText = cleanTranscriptionText(text);
-                    item.status = 'done';
-                    done++;
+                        processingText.textContent = `Transcribiendo: ${item.file.name}`;
+                        let text = await transcribeWithGroq(processedFile);
+                        text = cleanTranscriptionText(text);
 
-                    if (shouldJoin) {
-                        joinedText += (joinedText ? '\n\n' : '') + cleanedText;
-                    } else {
-                        transcriptions.push({ fileName: item.file.name, text: cleanedText || 'Sin audio detectado.' });
-                        if (transcriptions.length === 1) {
-                            editor.innerHTML = transcriptions[0].text;
-                            updateWordCount();
-                            enableButtons();
+                        // MODO PRO: AI Structuring per file if NOT joining
+                        if (currentMode === 'pro' && !shouldJoin) {
+                            processingText.textContent = `Estructurando informe con IA...`;
+                            text = await structureTranscription(text, selectedTemplate);
                         }
+
+                        if (shouldJoin) {
+                            joinedText += (joinedText ? '\n\n' : '') + text;
+                        } else {
+                            transcriptions.push({ fileName: item.file.name, text: text || 'Sin audio detectado.' });
+                            activeTabIndex = transcriptions.length - 1;
+                        }
+
+                        item.status = 'done';
+                        done++;
+                    } catch (err) {
+                        console.error(err);
+                        item.status = 'pending';
+                        showToast(`Error en ${item.file.name}: ${err.message}`, 'error');
                     }
 
                     updateFileList();
                     progressFill.style.width = `${(done / pending.length) * 100}%`;
-
-                } catch (err) {
-                    console.error(err);
-                    item.status = 'pending';
-                    showToast(`Error: ${err.message}`, 'error');
                 }
+
+                if (shouldJoin && joinedText) {
+                    // MODO PRO: Final structuring for joined reports
+                    if (currentMode === 'pro') {
+                        processingText.textContent = `Consolidando informe final con IA...`;
+                        joinedText = await structureTranscription(joinedText, selectedTemplate);
+                    }
+                    const combinedName = `Informe Combinado (${done} audios)`;
+                    transcriptions.push({ fileName: combinedName, text: joinedText });
+                    activeTabIndex = transcriptions.length - 1;
+                    editor.innerHTML = joinedText;
+                    updateWordCount();
+                    enableButtons();
+                } else if (!shouldJoin && transcriptions.length > 0) {
+                    editor.innerHTML = transcriptions[activeTabIndex].text;
+                    updateWordCount();
+                    enableButtons();
+                }
+
+                createTabs();
+                progressFill.style.width = '100%';
+                processingText.textContent = `✓ ${done} transcrito(s)`;
+                setTimeout(() => {
+                    processingStatus.classList.remove('active');
+                    if (done) showToast(`${done} transcripción(es) lista(s)`, 'success');
+                }, 1000);
+
+            } catch (generalError) {
+                console.error(generalError);
+                showToast('Error general en el proceso', 'error');
+            } finally {
+                isProcessing = false;
+                transcribeBtn.disabled = uploadedFiles.every(f => f.status === 'done');
             }
-
-            if (shouldJoin && joinedText) {
-                const combinedName = `Informe Combinado (${done} audios)`;
-                transcriptions.push({ fileName: combinedName, text: joinedText });
-                activeTabIndex = transcriptions.length - 1;
-                editor.innerHTML = joinedText;
-                updateWordCount();
-                enableButtons();
-            }
-
-            createTabs();
-
-            progressFill.style.width = '100%';
-            processingText.textContent = `✓ ${done} transcrito(s)`;
-            setTimeout(() => {
-                processingStatus.classList.remove('active');
-                if (done) showToast(`${done} transcripción(es) lista(s)`, 'success');
-            }, 1000);
-
-            isProcessing = false;
-            transcribeBtn.disabled = uploadedFiles.every(f => f.status === 'done');
         });
 
         async function transcribeWithGroq(file) {
@@ -2340,6 +2452,102 @@
                 cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
             }
             return cleaned;
+        }
+
+        // ============ AI STRUCTURER (MODO PRO) ============
+        const TEMPLATE_PROMPTS = {
+            naso: `Actúa como un médico especialista en Otorrinolaringología. Tu tarea es convertir una transcripción de voz en un informe profesional de VIDEONASOFIBROLARINGOSCOPIA.
+Usa la siguiente estructura (rellena con los datos del audio):
+
+# INFORME DE VIDEONASOFIBROLARINGOSCOPÍA
+### I. FOSAS NASALES Y RINOFARINGE
+* Mucosa: [rellenar]
+* Septum Nasal: [rellenar]
+* Cornetes Inferiores: [rellenar]
+* Meatos: [rellenar]
+* Rinofaringe: [rellenar]
+### II. FARINGE Y LARINGE
+* Base de Lengua / Vallesculas: [rellenar]
+* Senos Piriformes: [rellenar]
+* Epiglotis: [rellenar]
+* Cuerdas Vocales (Morfología y Movilidad): [rellenar]
+* Bandas Ventriculares: [rellenar]
+### III. CONCLUSIÓN DIAGNÓSTICA
+* [conclusión breve]
+
+REGLAS:
+- Si no se menciona algo, pon "[Sin particularidades]" o "[No se observa lesión]".
+- Usa un lenguaje médico profesional.
+- Devuelve solo el informe formateado en Markdown.`,
+
+            otologica: `Actúa como médico ORL. Genera un INFORME DE ENDOSCOPÍA OTOLÓGICA basado en el audio.
+Estructura:
+# INFORME DE ENDOSCOPÍA OTOLÓGICA
+**OÍDO DERECHO (OD):**
+* CAE: [rellenar]
+* Membrana Timpánica: [rellenar]
+* Triángulo Luminoso: [rellenar]
+* Observaciones: [rellenar]
+**OÍDO IZQUIERDO (OI):**
+* CAE: [rellenar]
+* Membrana Timpánica: [rellenar]
+* Observaciones: [rellenar]
+**CONCLUSIÓN:**
+* [conclusión]
+
+REGLAS:
+- Si no se menciona un oído, indícalo como "No examinado".
+- Mantener profesionalismo clínico.`,
+
+            quirurgico: `Actúa como cirujano. Transforma el audio en un PROTOCOLO OPERATORIO.
+Estructura:
+# PROTOCOLO OPERATORIO
+**PROCEDIMIENTO:** [rellenar]
+**HALLAZGOS:** [rellenar]
+**TÉCNICA QUIRÚRGICA:**
+[pasos detallados basados en el audio]
+**RESULTADO:**
+* Complicaciones: [rellenar]
+* Piezas para AP: [Sí/No]`,
+
+            generico: `Actúa como un médico experto. Estructura la siguiente transcripción médica de forma profesional. 
+Crea secciones lógicas (Ej: Examen Físico, Antecedentes, Impresión Diagnóstica, Plan) basándote estrictamente en lo que se dice en el audio. 
+Usa Markdown para títulos y listas.`
+        };
+
+        async function structureTranscription(text, templateKey) {
+            if (!GROQ_API_KEY) {
+                showToast('Configura la API Key para el Modo Pro', 'error');
+                return text;
+            }
+
+            const prompt = TEMPLATE_PROMPTS[templateKey] || TEMPLATE_PROMPTS.generico;
+
+            try {
+                const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${GROQ_API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: "llama-3.3-70b-versatile",
+                        messages: [
+                            { role: "system", content: prompt },
+                            { role: "user", content: `Transcripción a estructurar:\n\n${text}` }
+                        ],
+                        temperature: 0.1
+                    })
+                });
+
+                if (!res.ok) throw new Error('Error al estructurar');
+                const data = await res.json();
+                return data.choices[0].message.content.trim();
+            } catch (error) {
+                console.error('Structuring failed:', error);
+                showToast('Error al estructurar. Se usará texto plano.', 'warning');
+                return text;
+            }
         }
 
         // ============ TABS ============
@@ -2673,7 +2881,20 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                         continue;
                     }
 
-                    const paraLines = doc.splitTextToSize(para, 170);
+                    // Check for Title (Markdown style # ## ###)
+                    let isTitle = false;
+                    let cleanPara = para;
+                    if (para.startsWith('#')) {
+                        isTitle = true;
+                        cleanPara = para.replace(/^#+\s*/, '');
+                        doc.setFont('helvetica', 'bold');
+                        doc.setFontSize(13);
+                    } else {
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(11);
+                    }
+
+                    const paraLines = doc.splitTextToSize(cleanPara, 170);
 
                     for (let i = 0; i < paraLines.length; i++) {
                         if (currentY > 275) {
@@ -2682,15 +2903,37 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                             currentY = Math.max(20, hHeight + 10);
                         }
 
-                        // Justify all lines except the last one of a paragraph
+                        let line = paraLines[i];
+
+                        // Basic Bold Handling (**text**) - Very simple approach
+                        // For a truly professional look, we should use a more robust parsing
+                        // but this handles the most common case in AI templates.
                         const isLastLine = (i === paraLines.length - 1);
-                        doc.text(paraLines[i], 20, currentY, {
-                            align: isLastLine ? 'left' : 'justify',
-                            maxWidth: 170
-                        });
+
+                        if (isTitle) {
+                            doc.text(line, 20, currentY);
+                        } else {
+                            // If the line contains **, we strip them for now to avoid messy dots
+                            // Professional bolding per word is harder, so we'll just clean it for now
+                            // OR we can detect if the whole line is a bullet point
+                            let alignment = isLastLine ? 'left' : 'justify';
+                            if (line.trim().startsWith('*') || line.trim().startsWith('-')) {
+                                alignment = 'left';
+                            }
+
+                            const cleanLine = line.replace(/\*\*/g, '');
+                            doc.text(cleanLine, 20, currentY, {
+                                align: alignment,
+                                maxWidth: 170
+                            });
+                        }
                         currentY += 7;
                     }
-                    currentY += 2; // Space between paragraphs
+
+                    // Reset font if it was modified
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(11);
+                    currentY += 2;
                 }
 
                 // Signature Area (3-4 line breaks, right aligned)
@@ -2714,7 +2957,37 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
             }
         }
 
-        // ============ RESET ============
+        // ============ MODE SELECTOR ============
+        modeNormal.addEventListener('click', () => setMode('normal'));
+        modePro.addEventListener('click', () => setMode('pro'));
+
+        function setMode(mode) {
+            currentMode = mode;
+            if (mode === 'normal') {
+                modeNormal.classList.add('active');
+                modePro.classList.remove('active');
+                templateSelectorContainer.style.display = 'none';
+            } else {
+                modePro.classList.add('active');
+                modeNormal.classList.remove('active');
+                templateSelectorContainer.style.display = 'block';
+            }
+            updateUIByMode();
+        }
+
+        templateSelect.addEventListener('change', (e) => {
+            selectedTemplate = e.target.value;
+            showToast(`Plantilla: ${templateSelect.options[templateSelect.selectedIndex].text}`, 'success');
+        });
+
+        function updateUIByMode() {
+            // Visual feedback of the current mode
+            if (currentMode === 'pro') {
+                document.body.style.borderTop = "4px solid var(--primary)";
+            } else {
+                document.body.style.borderTop = "none";
+            }
+        }
         resetBtn.addEventListener('click', () => {
             uploadedFiles = [];
             transcriptions = [];
