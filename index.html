@@ -1433,10 +1433,7 @@
                 <div class="template-selector" id="templateSelectorContainer" style="display: none;">
                     <label class="sidebar-label">Plantilla Médica:</label>
                     <select id="templateSelect" class="config-select">
-                        <option value="naso">喉 Videonaso / Laringoscopía</option>
-                        <option value="otologica">👂 Endoscopía Otológica</option>
-                        <option value="quirurgico">🔪 Protocolo Quirúrgico</option>
-                        <option value="generico">📋 Informe General Pro</option>
+                        <!-- Populated dynamically -->
                     </select>
                 </div>
 
@@ -2032,6 +2029,7 @@
             }
         }
         updateApiStatus();
+        populateTemplateDropdown();
 
         saveApiKeyBtn.addEventListener('click', () => {
             const key = apiKeyInput.value.trim();
@@ -2455,65 +2453,136 @@
         }
 
         // ============ AI STRUCTURER (MODO PRO) ============
-        const TEMPLATE_PROMPTS = {
-            naso: `Actúa como un médico especialista en Otorrinolaringología. Tu tarea es convertir una transcripción de voz en un informe profesional de VIDEONASOFIBROLARINGOSCOPIA.
-Usa la siguiente estructura (rellena con los datos del audio):
-
+        const MEDICAL_TEMPLATES = {
+            orl: {
+                label: "Otorrinolaringología",
+                studies: {
+                    naso: {
+                        name: "Videonaso / Laringoscopía",
+                        prompt: `Actúa como un médico especialista en Otorrinolaringología. Convierte el audio en un informe de VIDEONASOFIBROLARINGOSCOPIA.
+Estructura:
 # INFORME DE VIDEONASOFIBROLARINGOSCOPÍA
 ### I. FOSAS NASALES Y RINOFARINGE
-* Mucosa: [rellenar]
-* Septum Nasal: [rellenar]
-* Cornetes Inferiores: [rellenar]
-* Meatos: [rellenar]
-* Rinofaringe: [rellenar]
+* Mucosa, Septum, Cornetes, Meatos, Rinofaringe.
 ### II. FARINGE Y LARINGE
-* Base de Lengua / Vallesculas: [rellenar]
-* Senos Piriformes: [rellenar]
-* Epiglotis: [rellenar]
-* Cuerdas Vocales (Morfología y Movilidad): [rellenar]
-* Bandas Ventriculares: [rellenar]
-### III. CONCLUSIÓN DIAGNÓSTICA
-* [conclusión breve]
-
-REGLAS:
-- Si no se menciona algo, pon "[Sin particularidades]" o "[No se observa lesión]".
-- Usa un lenguaje médico profesional.
-- Devuelve solo el informe formateado en Markdown.`,
-
-            otologica: `Actúa como médico ORL. Genera un INFORME DE ENDOSCOPÍA OTOLÓGICA basado en el audio.
+* Base de Lengua, Senos Piriformes, Epiglotis, Cuerdas Vocales, Bandas.
+### III. CONCLUSIÓN DIAGNÓSTICA`
+                    },
+                    otologica: {
+                        name: "Endoscopía Otológica",
+                        prompt: `Actúa como médico ORL. Genera un INFORME DE ENDOSCOPÍA OTOLÓGICA.
 Estructura:
 # INFORME DE ENDOSCOPÍA OTOLÓGICA
-**OÍDO DERECHO (OD):**
-* CAE: [rellenar]
-* Membrana Timpánica: [rellenar]
-* Triángulo Luminoso: [rellenar]
-* Observaciones: [rellenar]
-**OÍDO IZQUIERDO (OI):**
-* CAE: [rellenar]
-* Membrana Timpánica: [rellenar]
-* Observaciones: [rellenar]
-**CONCLUSIÓN:**
-* [conclusión]
-
-REGLAS:
-- Si no se menciona un oído, indícalo como "No examinado".
-- Mantener profesionalismo clínico.`,
-
-            quirurgico: `Actúa como cirujano. Transforma el audio en un PROTOCOLO OPERATORIO.
+**OD:** CAE, Membrana, Observaciones.
+**OI:** CAE, Membrana, Observaciones.
+**CONCLUSIÓN**`
+                    }
+                }
+            },
+            cardiologia: {
+                label: "Cardiología",
+                studies: {
+                    cinecoro: {
+                        name: "Cinecoronariografía",
+                        prompt: `Actúa como cardiólogo intervencionista. Estructura el audio como un INFORME DE CINECORONARIOGRAFÍA.
 Estructura:
+# INFORME DE CINECORONARIOGRAFÍA
+**ACCESO:** [rellenar]
+**VENTRICULOGRAFÍA:** [rellenar]
+**CORONARIA IZQUIERDA (TCI, DA, CX):** [rellenar]
+**CORONARIA DERECHA:** [rellenar]
+**CONCLUSIÓN:** [rellenar]`
+                    },
+                    ecg: {
+                        name: "Electrocardiograma (ECG)",
+                        prompt: `Estructura el audio como un INFORME DE ECG.
+Estructura:
+# INFORME DE ELECTROCARDIOGRAMA
+* Ritmo, Frecuencia, Eje, Intervalos (PR, QRS, QT), Segmento ST, Onda T.
+* Conclusión.`
+                    },
+                    ecostress: {
+                        name: "Ecografía de Estrés",
+                        prompt: `Actúa como cardiólogo. Estructura el audio como un ECO-STRESS.
+Estructura:
+# INFORME DE ECOCARDIOGRAMA DE ESTRÉS
+* Protocolo, Hallazgos en Reposo, Hallazgos en Esfuerzo/Dobutamina, Motilidad Parietal, Conclusión.`
+                    }
+                }
+            },
+            imagenes: {
+                label: "Diagnóstico por Imágenes",
+                studies: {
+                    resonancia: {
+                        name: "Resonancia Magnética (RMN)",
+                        prompt: `Actúa como especialista en imágenes. Estructura el audio como un INFORME DE RMN.
+Estructura:
+# INFORME DE RESONANCIA MAGNÉTICA
+* Técnica, Hallazgos detallados, Conclusión.`
+                    },
+                    tomografia: {
+                        name: "Tomografía (TC)",
+                        prompt: `Actúa como especialista en imágenes. Estructura el audio como un INFORME DE TC.
+Estructura:
+# INFORME DE TOMOGRAFÍA COMPUTADA
+* Hallazgos por regiones, Conclusión.`
+                    },
+                    ecografia: {
+                        name: "Ecografía General",
+                        prompt: `Estructura el audio como una ECOGRAFÍA.
+Estructura:
+# INFORME ECOGRÁFICO
+* Descripción de órganos/región, Conclusión.`
+                    },
+                    rx: {
+                        name: "Radiografía (RX)",
+                        prompt: `Estructura el audio como un informe de RADIOLOGÍA.
+Estructura:
+# INFORME RADIOLÓGICO
+* Hallazgos, Conclusión.`
+                    }
+                }
+            },
+            otros: {
+                label: "Otros / Quirúrgico",
+                studies: {
+                    quirurgico: {
+                        name: "Protocolo Quirúrgico",
+                        prompt: `Actúa como cirujano. Transforma el audio en un PROTOCOLO OPERATORIO.
 # PROTOCOLO OPERATORIO
 **PROCEDIMIENTO:** [rellenar]
-**HALLAZGOS:** [rellenar]
-**TÉCNICA QUIRÚRGICA:**
-[pasos detallados basados en el audio]
-**RESULTADO:**
-* Complicaciones: [rellenar]
-* Piezas para AP: [Sí/No]`,
-
-            generico: `Actúa como un médico experto. Estructura la siguiente transcripción médica de forma profesional. 
-Crea secciones lógicas (Ej: Examen Físico, Antecedentes, Impresión Diagnóstica, Plan) basándote estrictamente en lo que se dice en el audio. 
-Usa Markdown para títulos y listas.`
+**TÉCNICA:** [pasos]
+**RESULTADO:** [complicaciones, AP]`
+                    },
+                    generico: {
+                        name: "Informe General Estructurado",
+                        prompt: `Actúa como médico experto. Estructura la transcripción médica de forma profesional con títulos lógicos y Markdown.`
+                    }
+                }
+            }
         };
+
+        function populateTemplateDropdown() {
+            const select = $('templateSelect');
+            select.innerHTML = '';
+
+            for (const catKey in MEDICAL_TEMPLATES) {
+                const cat = MEDICAL_TEMPLATES[catKey];
+                const group = document.createElement('optgroup');
+                group.label = cat.label;
+
+                for (const studyKey in cat.studies) {
+                    const study = cat.studies[studyKey];
+                    const option = document.createElement('option');
+                    option.value = studyKey;
+                    option.textContent = study.name;
+                    group.appendChild(option);
+                }
+                select.appendChild(group);
+            }
+            // Set initial selected template
+            selectedTemplate = select.value;
+        }
 
         async function structureTranscription(text, templateKey) {
             if (!GROQ_API_KEY) {
@@ -2521,7 +2590,15 @@ Usa Markdown para títulos y listas.`
                 return text;
             }
 
-            const prompt = TEMPLATE_PROMPTS[templateKey] || TEMPLATE_PROMPTS.generico;
+            // Find prompt in the deep object
+            let prompt = "";
+            for (const catKey in MEDICAL_TEMPLATES) {
+                if (MEDICAL_TEMPLATES[catKey].studies[templateKey]) {
+                    prompt = MEDICAL_TEMPLATES[catKey].studies[templateKey].prompt;
+                    break;
+                }
+            }
+            if (!prompt) prompt = MEDICAL_TEMPLATES.otros.studies.generico.prompt;
 
             try {
                 const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
