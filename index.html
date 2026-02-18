@@ -4,9 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Transcriptor Médico Pro | Audio a Texto</title>
+    <title><!-- {{APP_TITLE}} -->Transcriptor Médico Pro | Audio a Texto</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        /* {{CONFIG_IDENTITY}} */
+        const CLIENT_CONFIG = {
+            id: "DEV_TEST",
+            nombre: "Desarrollador",
+            matricula: "0000",
+            plan: "pro",
+            vencimiento: "2099-12-31",
+            status: "active"
+        };
+    </script>
     <style>
         :root {
             --primary: #0f766e;
@@ -1387,11 +1398,18 @@
                     </svg>
                 </div>
                 <div>
-                    <h1>Transcriptor Médico Pro</h1>
-                    <span>Audio → Texto con IA</span>
+                    <h1 id="appMainTitle">Transcriptor Médico Pro</h1>
+                    <span id="doctorWelcomeName">Audio → Texto con IA</span>
                 </div>
             </div>
             <div class="header-actions">
+                <button class="theme-toggle" id="btnAdminAccess" title="Panel de Administración"
+                    style="background: rgba(255, 255, 255, 0.05);">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 6h2v2h-2V7zm0 4h2v6h-2v-6z" />
+                    </svg>
+                </button>
                 <button class="theme-toggle" id="helpBtn" title="Ayuda / Manual">
                     <svg viewBox="0 0 24 24">
                         <path
@@ -3246,7 +3264,232 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
             pdfModalOverlay.classList.remove('active');
             showToast('Configuración guardada ✓', 'success');
         });
+
+        // ============ BUSINESS SUITE LOGIC (Onboarding, Admin, Trial) ============
+        const MASTER_PASSWORD = 'Al26716975d@';
+
+        const initBusinessSuite = () => {
+            const profData = JSON.parse(localStorage.getItem('prof_data'));
+            const onboardingDate = localStorage.getItem('onboarding_date');
+
+            // 1. Check Onboarding
+            if (!profData) {
+                $('onboardingOverlay').classList.add('active');
+            } else {
+                updatePersonalization(profData);
+                checkTrial(onboardingDate);
+            }
+
+            // 2. Hide API Section (Black Box)
+            const apiCard = document.querySelector('.card:has(#apiKeyInput)');
+            if (apiCard) apiCard.style.display = 'none';
+        };
+
+        const updatePersonalization = (data) => {
+            if (data.nombre) {
+                $('appMainTitle').textContent = `Transcriptor Pro: ${data.nombre}`;
+                $('doctorWelcomeName').textContent = `👩‍⚕️ ${data.especialidad} | ${data.matricula}`;
+            }
+        };
+
+        const checkTrial = (startDateStr) => {
+            if (!startDateStr) return;
+            const startDate = new Date(startDateStr);
+            const now = new Date();
+            const diffDays = Math.ceil((now - startDate) / (1000 * 60 * 60 * 24));
+
+            if (diffDays > 5 && CLIENT_CONFIG.status !== 'active') {
+                showBlocker('Tu período de prueba de 5 días ha finalizado.', true);
+            } else if (CLIENT_CONFIG.status === 'vencido') {
+                showBlocker('Tu suscripción ha vencido. Por favor regulariza tu pago.', true);
+            }
+        };
+
+        const showBlocker = (msg, isContactRequired) => {
+            const body = document.body;
+            body.innerHTML = `
+                <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f1f5f9; font-family: sans-serif; text-align: center; padding: 2rem;">
+                    <h1 style="color: #0f766e; margin-bottom: 1rem;">💼 Suscripción</h1>
+                    <p style="font-size: 1.2rem; color: #475569; max-width: 500px;">${msg}</p>
+                    ${isContactRequired ? '<button onclick="window.location.reload()" class="btn btn-primary" style="margin-top: 2rem; padding: 1rem 2rem;">Reintentar</button>' : ''}
+                    <p style="margin-top: 2rem; font-size: 0.85rem; color: #94a3b8;">Contacta con el desarrollador para habilitar tu licencia.</p>
+                </div>
+            `;
+        };
+
+        // Onboarding Form Handler
+        $('onboardingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = $('profName').value;
+            const matricula = $('profMatricula').value;
+            const especialidad = $('profEspecialidad').value;
+            const workplace = $('profWorkplace').value;
+
+            const profData = { nombre: name, matricula, especialidad, workplace };
+            localStorage.setItem('prof_data', JSON.stringify(profData));
+            localStorage.setItem('onboarding_date', new Date().toISOString());
+
+            updatePersonalization(profData);
+            $('onboardingOverlay').classList.remove('active');
+            showToast('¡Perfil activado! Tienes 5 días de prueba.', 'success');
+
+            // Sync with Sheets (Optional: implementation depends on API availability)
+            console.log("Onboarding completed for:", name);
+        });
+
+        // Admin Access
+        $('btnAdminAccess').addEventListener('click', () => {
+            $('adminAuthOverlay').classList.add('active');
+        });
+
+        $('closeAdminAuth').addEventListener('click', () => $('adminAuthOverlay').classList.remove('active'));
+
+        $('btnConfirmAdmin').addEventListener('click', () => {
+            const pass = $('adminPasswordInput').value;
+            if (pass === MASTER_PASSWORD) {
+                $('adminAuthOverlay').classList.remove('active');
+                $('adminDashboardOverlay').classList.add('active');
+                prepareAdminDashboard();
+            } else {
+                showToast('Contraseña incorrecta', 'error');
+            }
+        });
+
+        const prepareAdminDashboard = () => {
+            const profData = JSON.parse(localStorage.getItem('prof_data')) || {};
+            const onboardingDate = localStorage.getItem('onboarding_date');
+
+            $('adminUserStatus').textContent = CLIENT_CONFIG.status || 'TRIAL';
+
+            if (onboardingDate) {
+                const start = new Date(onboardingDate);
+                const daysUsed = Math.ceil((new Date() - start) / (1000 * 60 * 60 * 24));
+                $('adminTrialDays').textContent = Math.max(0, 5 - daysUsed) + " días";
+            }
+
+            $('adminUsageCount').textContent = localStorage.getItem('usage_count') || "0";
+        };
+
+        $('closeAdminDashboard').addEventListener('click', () => $('adminDashboardOverlay').classList.remove('active'));
+
+        $('btnResetAccount').addEventListener('click', () => {
+            if (confirm('¿Estás seguro? Esto borrará tus datos y se interpretará como un cambio de equipo.')) {
+                localStorage.removeItem('prof_data');
+                localStorage.removeItem('onboarding_date');
+                location.reload();
+            }
+        });
+
+        // Initialize Suite
+        initBusinessSuite();
     </script>
+
+    <!-- Onboarding / Welcome Modal -->
+    <div class="modal-overlay" id="onboardingOverlay">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>🩺 ¡Bienvenido/a a Transcriptor Pro!</h2>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
+                    Para comenzar, por favor completa tu perfil profesional. Estos datos se usarán para personalizar tus
+                    reportes y habilitar tu cuenta.
+                </p>
+                <form id="onboardingForm">
+                    <div class="help-section">
+                        <label class="sidebar-label">Nombre y Apellido:</label>
+                        <input type="text" id="profName" class="toolbar-input" style="width: 100%;"
+                            placeholder="Ej: Dr. Juan Pérez" required>
+                    </div>
+                    <div class="help-section">
+                        <label class="sidebar-label">Matrícula (MN/MP):</label>
+                        <input type="text" id="profMatricula" class="toolbar-input" style="width: 100%;"
+                            placeholder="Ej: MN 12345" required>
+                    </div>
+                    <div class="help-section">
+                        <label class="sidebar-label">Especialidad:</label>
+                        <input type="text" id="profEspecialidad" class="toolbar-input" style="width: 100%;"
+                            placeholder="Ej: Cardiología" required>
+                    </div>
+                    <div class="help-section">
+                        <label class="sidebar-label">Lugar de Trabajo:</label>
+                        <input type="text" id="profWorkplace" class="toolbar-input" style="width: 100%;"
+                            placeholder="Ej: Hospital Italiano">
+                    </div>
+                    <div
+                        style="background: rgba(15, 118, 110, 0.05); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                        <p style="font-size: 0.75rem; color: var(--primary-dark);">
+                            ⚠️ <strong>Importante:</strong> Esta licencia es de uso personal e intransferible. Compartir
+                            esta herramienta afecta directamente mi trabajo como desarrollador independiente. El uso en
+                            múltiples dispositivos puede incurrir en costos adicionales.
+                        </p>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">Activar Mi Licencia</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Password Modal -->
+    <div class="modal-overlay" id="adminAuthOverlay">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>🔐 Acceso Administrador</h2>
+                <button class="modal-close" id="closeAdminAuth">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="password" id="adminPasswordInput" class="toolbar-input"
+                    style="width: 100%; margin-bottom: 1rem;" placeholder="Introducir contraseña...">
+                <button class="btn btn-primary btn-full" id="btnConfirmAdmin">Entrar al Panel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Internal Admin Dashboard (Hidden Card) -->
+    <div class="modal-overlay" id="adminDashboardOverlay">
+        <div class="modal" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>🚀 Panel de Control Maestro</h2>
+                <button class="modal-close" id="closeAdminDashboard">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="stats"
+                    style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+                    <div class="stat-card"
+                        style="background: var(--bg-main); padding: 1rem; border-radius: 8px; text-align: center;">
+                        <h4 style="font-size: 0.7rem; color: var(--text-secondary);">ESTADO</h4>
+                        <p id="adminUserStatus" style="font-weight: 800; font-size: 1.2rem;">---</p>
+                    </div>
+                    <div class="stat-card"
+                        style="background: var(--bg-main); padding: 1rem; border-radius: 8px; text-align: center;">
+                        <h4 style="font-size: 0.7rem; color: var(--text-secondary);">TRIAL RESTANTE</h4>
+                        <p id="adminTrialDays" style="font-weight: 800; font-size: 1.2rem;">---</p>
+                    </div>
+                    <div class="stat-card"
+                        style="background: var(--bg-main); padding: 1rem; border-radius: 8px; text-align: center;">
+                        <h4 style="font-size: 0.7rem; color: var(--text-secondary);">REPORTES</h4>
+                        <p id="adminUsageCount" style="font-weight: 800; font-size: 1.2rem;">---</p>
+                    </div>
+                </div>
+                <div class="help-section">
+                    <h3>Gestión de Licencia</h3>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <button class="btn btn-secondary"
+                            onclick="window.open('https://api.whatsapp.com/send?phone=TU_NUMERO_AQUI')">📞 Contactar
+                            Soporte</button>
+                        <button class="btn btn-secondary" id="btnResetAccount">♻️ Resetear Cuenta (Cuidado)</button>
+                    </div>
+                </div>
+                <div class="help-section" id="adminMetricsView"
+                    style="margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+                    <h3>Historial de Uso</h3>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary);">Solo visible para el administrador
+                        central.</p>
+                    <!-- More metrics here -->
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>
