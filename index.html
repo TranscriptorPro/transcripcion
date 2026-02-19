@@ -1312,31 +1312,34 @@
         }
 
         /* Pro Mode Toggle Slider */
+        /* Pro Mode Toggle Slider - ANIMATED & VIBRANT */
         .pro-toggle-container {
             display: inline-flex;
             align-items: center;
-            gap: 0.4rem;
+            gap: 0.5rem;
             margin-left: 0.75rem;
             vertical-align: middle;
         }
 
         .pro-toggle-label {
-            font-size: 0.7rem;
-            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
             font-weight: 500;
             user-select: none;
+            transition: all 0.3s ease;
         }
 
         .pro-toggle-label-active {
-            color: rgba(255, 255, 255, 0.95);
-            font-weight: 600;
+            color: #fff;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(245, 158, 11, 0.8);
         }
 
         .pro-toggle-switch {
             position: relative;
             display: inline-block;
-            width: 40px;
-            height: 22px;
+            width: 48px;
+            height: 26px;
             cursor: pointer;
         }
 
@@ -1352,39 +1355,68 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: rgba(255, 255, 255, 0.3);
-            border-radius: 22px;
-            transition: 0.3s;
+            background-color: rgba(255, 255, 255, 0.25);
+            border-radius: 26px;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            border: 2px solid rgba(255, 255, 255, 0.3);
         }
 
         .pro-toggle-slider:before {
             position: absolute;
             content: "";
-            height: 16px;
-            width: 16px;
-            left: 3px;
-            bottom: 3px;
+            height: 18px;
+            width: 18px;
+            left: 2px;
+            bottom: 2px;
             background-color: white;
             border-radius: 50%;
-            transition: 0.3s;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
+        /* ACTIVE STATE - Pro ON */
         .pro-toggle-switch input:checked + .pro-toggle-slider {
-            background-color: #fbbf24;
+            background: linear-gradient(135deg, #f59e0b, #f97316, #ef4444);
+            border-color: rgba(255, 255, 255, 0.6);
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.5), 0 0 30px rgba(245, 158, 11, 0.2);
+            animation: proGlow 2s ease-in-out infinite alternate;
         }
 
         .pro-toggle-switch input:checked + .pro-toggle-slider:before {
-            transform: translateX(18px);
+            transform: translateX(22px);
+            background: white;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
         }
 
+        /* Glow animation */
+        @keyframes proGlow {
+            0% {
+                box-shadow: 0 0 10px rgba(245, 158, 11, 0.4), 0 0 20px rgba(245, 158, 11, 0.15);
+            }
+            100% {
+                box-shadow: 0 0 18px rgba(245, 158, 11, 0.6), 0 0 35px rgba(245, 158, 11, 0.25);
+            }
+        }
+
+        /* Normal mode label styles */
         .pro-toggle-container.mode-normal .pro-toggle-label-active {
-            color: rgba(255, 255, 255, 0.5);
+            color: rgba(255, 255, 255, 0.4);
             font-weight: 500;
+            text-shadow: none;
         }
 
         .pro-toggle-container.mode-normal #proToggleLabelOff {
-            color: rgba(255, 255, 255, 0.95);
+            color: rgba(255, 255, 255, 0.9);
             font-weight: 600;
+        }
+
+        /* Hover effect on switch */
+        .pro-toggle-switch:hover .pro-toggle-slider {
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .pro-toggle-switch:hover input:checked + .pro-toggle-slider {
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.6), 0 0 40px rgba(245, 158, 11, 0.3);
         }
 
         .template-selector {
@@ -2085,7 +2117,7 @@
                             <label><input type="checkbox" id="pdfShowFooter" checked> Incluir pie de página con firma</label>
                             <label><input type="checkbox" id="pdfShowPageNum" checked> Incluir número de página</label>
                             <label><input type="checkbox" id="pdfShowDate"> Incluir fecha de impresión</label>
-                            <label><input type="checkbox" id="pdfShowQR"> Incluir código QR de verificación</label>
+                            <label><input type="checkbox" id="pdfShowQR" disabled title="Próximamente"> Incluir código QR de verificación</label>
                         </div>
                     </div>
 
@@ -2587,109 +2619,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- PDF Metadata Modal -->
-            <div class="modal-overlay" id="pdfMetadataModal">
-                <div class="modal" style="max-width: 600px;">
-                    <div class="modal-header">
-                        <h2>⚙️ Configuración del PDF</h2>
-                        <button class="modal-close" onclick="closePdfMetadataModal()">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        <!-- ENCABEZADO (BLOQUEADO) -->
-                        <div class="config-section" style="margin-bottom: 1.5rem;">
-                            <h3 style="margin-bottom: 0.75rem; font-size: 1rem; color: var(--text-primary);">📄 Encabezado del Informe</h3>
-                            <div style="margin-bottom: 1rem;">
-                                <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; font-weight: 500;">Profesional:</label>
-                                <input type="text" id="pdfMetaProfName" readonly 
-                                       style="width: 100%; padding: 0.5rem; background: #f0f0f0; cursor: not-allowed; border: 1px solid var(--border); border-radius: 4px;"
-                                       value="[NOMBRE DEL PROFESIONAL]">
-                                <small style="color: #666; font-size: 0.75rem;">🔒 Este campo no se puede modificar (protección anti-piratería)</small>
-                            </div>
-                            <div>
-                                <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; font-weight: 500;">Matrícula:</label>
-                                <input type="text" id="pdfMetaMatricula" readonly 
-                                       style="width: 100%; padding: 0.5rem; background: #f0f0f0; cursor: not-allowed; border: 1px solid var(--border); border-radius: 4px;"
-                                       value="[MATRÍCULA]">
-                            </div>
-                        </div>
-
-                        <!-- PIE DE PÁGINA (EDITABLE) -->
-                        <div class="config-section" style="margin-bottom: 1.5rem;">
-                            <h3 style="margin-bottom: 0.75rem; font-size: 1rem; color: var(--text-primary);">📝 Pie de Página</h3>
-                            <textarea id="pdfMetaFooter" rows="2" 
-                                      placeholder="Ej: Consultorio Médico - Tel: XXX - Email: xxx@xxx.com"
-                                      style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; resize: vertical;"></textarea>
-                        </div>
-
-                        <!-- DATOS DEL PACIENTE -->
-                        <div class="config-section" style="margin-bottom: 1.5rem;">
-                            <h3 style="margin-bottom: 0.75rem; font-size: 1rem; color: var(--text-primary);">👤 Datos del Paciente</h3>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                                <div>
-                                    <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; font-weight: 500;">Nombre completo:</label>
-                                    <input type="text" id="pdfMetaPatientName" placeholder="Nombre del paciente" 
-                                           style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;">
-                                </div>
-                                <div>
-                                    <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; font-weight: 500;">DNI / Cédula:</label>
-                                    <input type="text" id="pdfMetaPatientDni" placeholder="Documento" 
-                                           style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;">
-                                </div>
-                            </div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
-                                <div>
-                                    <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; font-weight: 500;">Fecha del estudio:</label>
-                                    <input type="date" id="pdfMetaStudyDate" 
-                                           style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;">
-                                </div>
-                                <div>
-                                    <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; font-weight: 500;">Procedimiento/Estudio:</label>
-                                    <input type="text" id="pdfMetaProcedure" placeholder="Ej: Ecografía abdominal" 
-                                           style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- TIPO DE ESTUDIO (DETECCIÓN AUTOMÁTICA) -->
-                        <div class="config-section">
-                            <h3 style="margin-bottom: 0.75rem; font-size: 1rem; color: var(--text-primary);">🔬 Tipo de Informe</h3>
-                            <select id="pdfMetaTemplateType" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;">
-                                <option value="auto">🤖 Detectar automáticamente</option>
-                                <option value="ecografia">Ecografía</option>
-                                <option value="tac">TAC / Tomografía</option>
-                                <option value="radiografia">Radiografía</option>
-                                <option value="resonancia">Resonancia Magnética</option>
-                                <option value="cardiologia">Cardiología</option>
-                                <option value="endoscopia">Endoscopía</option>
-                                <option value="generico">Genérico</option>
-                            </select>
-                            <small style="color: #666; font-size: 0.75rem;">La app intentará detectar el tipo de estudio del texto</small>
-                        </div>
-                    </div>
-                    <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; gap: 0.5rem; justify-content: flex-end;">
-                        <button class="btn btn-secondary" onclick="closePdfMetadataModal()">Cancelar</button>
-                        <button class="btn btn-primary" onclick="savePdfMetadata()">💾 Guardar Configuración</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- PDF Preview Modal -->
-            <div class="modal-overlay" id="pdfPreviewModal">
-                <div class="modal" style="max-width: 900px; max-height: 90vh;">
-                    <div class="modal-header">
-                        <h2>👁️ Vista Previa del PDF</h2>
-                        <button class="modal-close" onclick="closePdfPreview()">&times;</button>
-                    </div>
-                    <div class="modal-body" style="padding: 0; overflow: auto; max-height: 70vh;">
-                        <iframe id="pdfPreviewFrame" style="width: 100%; height: 600px; border: none;"></iframe>
-                    </div>
-                    <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; gap: 0.5rem; justify-content: flex-end;">
-                        <button class="btn btn-secondary" onclick="closePdfPreview()">Cerrar</button>
-                        <button class="btn btn-primary" onclick="downloadPDF()">📥 Descargar PDF</button>
-                    </div>
-                </div>
-            </div>
         </section>
         <!-- Toast Notifications -->
         <div id="toast" class="toast">
@@ -2710,7 +2639,7 @@
             let GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
             const chkJoinAudios = $('chkJoinAudios');
 
-            const templateSelectorContainer = null;
+            const templateSelectorContainer = document.getElementById('wizardTemplateCard');
             const templateSelect = $('templateSelect');
 
             // App State
@@ -2719,35 +2648,6 @@
             // PDF Config Elements
             const pdfModalOverlay = $('pdfModalOverlay');
             const btnConfigPdf = $('btnConfigPdf');
-            const closePdfConfig = $('closePdfConfig');
-            const pdfHeaderInput = $('pdfHeaderInput');
-            const pdfFooterInput = $('pdfFooterInput');
-            const patientNameInput = $('patientName');
-            const patientDniInput = $('patientDni');
-            const studyDateInput = $('studyDate');
-            const procedureInput = $('procedureInput');
-            const workplaceSelect = $('workplaceSelect');
-            const savePdfConfig = $('savePdfConfig');
-
-            // Initial study date
-            if (studyDateInput) studyDateInput.value = new Date().toISOString().split('T')[0];
-
-            // PDF Settings (legacy - kept for backward compat)
-            let pdfSettings = JSON.parse(localStorage.getItem('pdf_settings')) || {
-                header: '',
-                footer: '',
-                patientName: '',
-                patientDni: '',
-                studyDate: '',
-                procedure: ''
-            };
-            // App State initialization with safety checks (legacy fields may not exist in new modal)
-            if (pdfHeaderInput) pdfHeaderInput.value = pdfSettings.header || '';
-            if (pdfFooterInput) pdfFooterInput.value = pdfSettings.footer || '';
-            if (patientNameInput) patientNameInput.value = pdfSettings.patientName || '';
-            if (patientDniInput) patientDniInput.value = pdfSettings.patientDni || '';
-            if (pdfSettings.studyDate && studyDateInput) studyDateInput.value = pdfSettings.studyDate;
-            if (procedureInput) procedureInput.value = pdfSettings.procedure || '';
 
             const GROQ_API_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
 
@@ -4794,48 +4694,6 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                 }
             }
 
-            // Abrir modal de configuración de PDF
-            function openPdfMetadataModal() {
-                const modal = $('pdfMetadataModal');
-                
-                // Cargar datos del profesional (del localStorage o config)
-                const profData = JSON.parse(localStorage.getItem('prof_data')) || {};
-                const profName = profData.nombre || 'Dr. [Nombre]';
-                const matricula = profData.matricula || '';
-                
-                $('pdfMetaProfName').value = profName;
-                $('pdfMetaMatricula').value = matricula;
-                
-                // Cargar configuración guardada
-                const savedConfig = JSON.parse(localStorage.getItem('pdf_metadata_config') || '{}');
-                $('pdfMetaFooter').value = savedConfig.footer || '';
-                $('pdfMetaPatientName').value = savedConfig.patientName || '';
-                $('pdfMetaPatientDni').value = savedConfig.patientDni || '';
-                $('pdfMetaStudyDate').value = savedConfig.studyDate || new Date().toISOString().split('T')[0];
-                $('pdfMetaProcedure').value = savedConfig.procedure || '';
-                $('pdfMetaTemplateType').value = savedConfig.templateType || 'auto';
-                
-                modal.classList.add('active');
-            }
-
-            function closePdfMetadataModal() {
-                $('pdfMetadataModal').classList.remove('active');
-            }
-
-            function savePdfMetadata() {
-                const config = {
-                    footer: $('pdfMetaFooter').value,
-                    patientName: $('pdfMetaPatientName').value,
-                    patientDni: $('pdfMetaPatientDni').value,
-                    studyDate: $('pdfMetaStudyDate').value,
-                    procedure: $('pdfMetaProcedure').value,
-                    templateType: $('pdfMetaTemplateType').value
-                };
-                
-                localStorage.setItem('pdf_metadata_config', JSON.stringify(config));
-                showToast('✅ Configuración guardada', 'success');
-                closePdfMetadataModal();
-            }
 
             // Helper function to escape HTML
             function escapeHtml(unsafe) {
@@ -4846,126 +4704,6 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                     .replace(/>/g, "&gt;")
                     .replace(/"/g, "&quot;")
                     .replace(/'/g, "&#039;");
-            }
-
-            // Previsualizar PDF
-            async function previewPdf() {
-                // Obtener configuración
-                const config = JSON.parse(localStorage.getItem('pdf_metadata_config') || '{}');
-                const profData = JSON.parse(localStorage.getItem('prof_data')) || {};
-                const profName = escapeHtml(profData.nombre) || 'Dr. [Nombre]';
-                const matricula = escapeHtml(profData.matricula) || '';
-                
-                // Obtener texto del editor (ya sanitizado por el navegador)
-                const editorContent = $('editor').innerHTML;
-                
-                // Escapar datos del usuario
-                const patientName = escapeHtml(config.patientName) || '[No especificado]';
-                const patientDni = escapeHtml(config.patientDni) || '[No especificado]';
-                const studyDate = escapeHtml(config.studyDate) || new Date().toLocaleDateString('es-ES');
-                const procedure = escapeHtml(config.procedure) || '[No especificado]';
-                const footer = escapeHtml(config.footer);
-                
-                // Crear HTML de preview
-                const previewHTML = `
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <meta charset="UTF-8">
-                        <style>
-                            body {
-                                font-family: 'Times New Roman', serif;
-                                max-width: 800px;
-                                margin: 0 auto;
-                                padding: 40px;
-                                line-height: 1.6;
-                                background: white;
-                            }
-                            .header {
-                                text-align: center;
-                                border-bottom: 2px solid #333;
-                                padding-bottom: 20px;
-                                margin-bottom: 30px;
-                            }
-                            .header h1 {
-                                margin: 0;
-                                font-size: 24px;
-                                color: #333;
-                            }
-                            .header p {
-                                margin: 5px 0;
-                                color: #666;
-                            }
-                            .patient-info {
-                                background: #f5f5f5;
-                                padding: 15px;
-                                border-radius: 5px;
-                                margin-bottom: 20px;
-                            }
-                            .patient-info strong {
-                                display: inline-block;
-                                width: 120px;
-                            }
-                            .content {
-                                margin: 20px 0;
-                            }
-                            .footer {
-                                margin-top: 40px;
-                                padding-top: 20px;
-                                border-top: 1px solid #ccc;
-                                text-align: center;
-                                font-size: 12px;
-                                color: #666;
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="header">
-                            <h1>${profName}</h1>
-                            <p>${matricula}</p>
-                        </div>
-                        
-                        <div class="patient-info">
-                            <p><strong>Paciente:</strong> ${patientName}</p>
-                            <p><strong>DNI:</strong> ${patientDni}</p>
-                            <p><strong>Fecha:</strong> ${studyDate}</p>
-                            <p><strong>Estudio:</strong> ${procedure}</p>
-                        </div>
-                        
-                        <div class="content">
-                            ${editorContent}
-                        </div>
-                        
-                        ${footer ? `<div class="footer">${footer}</div>` : ''}
-                    </body>
-                    </html>
-                `;
-                
-                // Cargar preview en iframe
-                const iframe = $('pdfPreviewFrame');
-                const blob = new Blob([previewHTML], { type: 'text/html' });
-                
-                // Revocar URL anterior si existe
-                if (iframe.dataset.blobUrl) {
-                    URL.revokeObjectURL(iframe.dataset.blobUrl);
-                }
-                
-                const blobUrl = URL.createObjectURL(blob);
-                iframe.dataset.blobUrl = blobUrl;
-                iframe.src = blobUrl;
-                
-                $('pdfPreviewModal').classList.add('active');
-            }
-
-            function closePdfPreview() {
-                // Revocar blob URL al cerrar
-                const iframe = $('pdfPreviewFrame');
-                if (iframe.dataset.blobUrl) {
-                    URL.revokeObjectURL(iframe.dataset.blobUrl);
-                    delete iframe.dataset.blobUrl;
-                }
-                
-                $('pdfPreviewModal').classList.remove('active');
             }
 
             async function downloadPDFWrapper(text, fileName, fecha, fileDate) {
@@ -5226,14 +4964,9 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
             });
 
             // ============ PDF CONFIG MODAL ============
-            window.setPreset = (type, text) => {
-                if (type === 'header') {
-                    if (pdfHeaderInput) pdfHeaderInput.value = text;
-                } else {
-                    const el = document.getElementById('pdfFooterText');
-                    if (el) el.value = text;
-                    else if (pdfFooterInput) pdfFooterInput.value = text;
-                }
+            window.setPreset = (text) => {
+                const el = document.getElementById('pdfFooterText');
+                if (el) el.value = text;
             };
 
             // ---- Workplace Profiles ----
@@ -5461,14 +5194,6 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                     workplaceEmail: val('pdfWorkplaceEmail')
                 };
                 localStorage.setItem('pdf_config', JSON.stringify(config));
-                // Also update legacy pdf_metadata_config for backward compat
-                localStorage.setItem('pdf_metadata_config', JSON.stringify({
-                    patientName: config.patientName,
-                    patientDni: config.patientDni,
-                    studyDate: config.studyDate,
-                    procedure: config.studyType,
-                    footer: config.footerText
-                }));
                 showToast('💾 Configuración PDF guardada', 'success');
             }
 
@@ -5690,14 +5415,7 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
 
                 const qrEl = document.getElementById('previewQR');
                 if (qrEl) {
-                    if (config.showQR) {
-                        const qrData = `INFORME:${reportNum}|PROF:${profData.nombre||''}|PAC:${config.patientName||''}|FECHA:${config.studyDate||''}`;
-                        const qrUrl = `https://chart.googleapis.com/chart?cht=qr&chs=120x120&chl=${encodeURIComponent(qrData)}`;
-                        qrEl.innerHTML = `<img src="${qrUrl}" alt="QR" style="width:120px; height:120px;">`;
-                        qrEl.style.display = 'block';
-                    } else {
-                        qrEl.style.display = 'none';
-                    }
+                    qrEl.style.display = 'none';
                 }
 
                 document.getElementById('printPreviewOverlay')?.classList.add('active');
