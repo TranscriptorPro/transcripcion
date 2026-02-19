@@ -1683,10 +1683,10 @@
 
                 <div class="audio-options">
                     <label class="audio-option">
-                        <input type="checkbox" id="normalizeCheck" checked> 🔊 Normalizar
+                        <input type="checkbox" id="chkNormalize"> 🔊 Normalizar
                     </label>
                     <label class="audio-option">
-                        <input type="checkbox" id="reduceNoiseCheck" checked> 🪄 Reducir ruido
+                        <input type="checkbox" id="chkNoise"> 🪄 Reducir ruido
                     </label>
                 </div>
 
@@ -1764,8 +1764,14 @@
                 <div style="margin-top: 0.5rem; display: flex; gap: 4px;">
                     <input type="password" id="apiKeyInput" class="toolbar-input"
                         style="flex: 1; font-size: 0.8rem; padding: 4px 8px;" placeholder="gsk_...">
-                    <button class="btn btn-primary" id="saveApiKey" style="padding: 0 8px;">💾</button>
+                    <button class="btn btn-primary" id="saveApiKey" style="padding: 0 8px;" title="Guardar API Key">💾</button>
+                    <button class="btn btn-secondary" id="testApiKey" style="padding: 0 8px;" title="Probar Conexión">🔌</button>
                 </div>
+                <div id="apiTestResult" style="margin-top: 0.5rem; font-size: 0.75rem; display: none;"></div>
+                <small style="display: block; margin-top: 0.5rem; font-size: 0.7rem; color: var(--text-secondary);">
+                    Obtén tu API key gratis en: 
+                    <a href="https://console.groq.com/keys" target="_blank" style="color: var(--primary-light);">console.groq.com/keys</a>
+                </small>
             </div>
         </aside>
 
@@ -1953,6 +1959,8 @@
             const toastMessage = $('toastMessage');
             const apiKeyInput = $('apiKeyInput');
             const saveApiKeyBtn = $('saveApiKey');
+            const testApiKeyBtn = $('testApiKey');
+            const apiTestResult = $('apiTestResult');
             const apiStatus = $('apiStatus');
             const themeToggle = $('themeToggle');
             const fontSizeSelect = $('fontSizeSelect');
@@ -2071,6 +2079,53 @@
                 }
             });
 
+            // Test API Key Connection
+            testApiKeyBtn.addEventListener('click', async () => {
+                if (!GROQ_API_KEY) {
+                    showToast('⚠️ Primero configura tu API Key', 'error');
+                    apiKeyInput.focus();
+                    return;
+                }
+
+                // Show testing state
+                testApiKeyBtn.disabled = true;
+                testApiKeyBtn.textContent = '⏳';
+                apiTestResult.style.display = 'block';
+                apiTestResult.textContent = 'Probando conexión...';
+                apiTestResult.style.color = 'var(--text-secondary)';
+
+                try {
+                    const isValid = await testGroqConnection();
+                    
+                    if (isValid) {
+                        apiTestResult.textContent = '✅ Conexión exitosa';
+                        apiTestResult.style.color = '#10b981';
+                        showToast('✅ API Key válida y conectada', 'success');
+                        
+                        // Update status to connected
+                        apiStatus.className = 'api-status connected';
+                        apiStatus.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg><span>Conectada ✓</span>';
+                    } else {
+                        apiTestResult.textContent = '❌ Error de conexión - Verifica tu API Key';
+                        apiTestResult.style.color = '#ef4444';
+                        showToast('❌ No se pudo conectar a Groq', 'error');
+                    }
+
+                    // Hide result after 5 seconds
+                    setTimeout(() => {
+                        apiTestResult.style.display = 'none';
+                    }, 5000);
+
+                } catch (error) {
+                    apiTestResult.textContent = '❌ Error: ' + error.message;
+                    apiTestResult.style.color = '#ef4444';
+                    showToast('❌ Error al probar conexión', 'error');
+                } finally {
+                    testApiKeyBtn.disabled = false;
+                    testApiKeyBtn.textContent = '🔌';
+                }
+            });
+
             apiKeyInput.addEventListener('focus', () => {
                 if (apiKeyInput.dataset.hasKey) {
                     apiKeyInput.value = '';
@@ -2087,12 +2142,13 @@
 
             // ============ AUDIO PROCESSING ============
             async function processAudio(file) {
-                const shouldNormalize = chkNormalize.checked;
-                const shouldReduceNoise = chkNoise.checked;
-                const shouldCompress = chkCompress.checked;
+                const shouldNormalize = chkNormalize?.checked || false;
+                const shouldReduceNoise = chkNoise?.checked || false;
+                const shouldCompress = chkCompress?.checked || false;
 
+                // If no processing is needed, return original file
                 if (!shouldNormalize && !shouldReduceNoise && !shouldCompress) {
-                    return file; // No processing needed
+                    return file;
                 }
 
                 try {
@@ -2363,8 +2419,16 @@
                 const pending = uploadedFiles.filter(item => item.status === 'pending');
                 if (pending.length === 0 || isProcessing) return;
 
+                // Enhanced API Key validation
                 if (!GROQ_API_KEY) {
-                    showToast('Ingresa tu API Key de Groq', 'error');
+                    showToast('⚠️ Configura tu API Key de Groq primero', 'error');
+                    apiKeyInput.focus();
+                    return;
+                }
+                
+                // Validate API key format
+                if (!GROQ_API_KEY.startsWith('gsk_')) {
+                    showToast('❌ API Key inválida (debe empezar con gsk_)', 'error');
                     apiKeyInput.focus();
                     return;
                 }
@@ -2462,14 +2526,36 @@
                 form.append('language', 'es');
                 form.append('response_format', 'text');
 
-                const res = await fetch(GROQ_API_URL, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${GROQ_API_KEY}` },
-                    body: form
-                });
+                try {
+                    const res = await fetch(GROQ_API_URL, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${GROQ_API_KEY}` },
+                        body: form
+                    });
 
-                if (!res.ok) throw new Error(`API ${res.status}`);
-                return await res.text();
+                    if (!res.ok) {
+                        const errorData = await res.json().catch(() => null);
+                        
+                        // Specific error messages
+                        if (res.status === 400) {
+                            throw new Error('Archivo de audio inválido o corrupto');
+                        } else if (res.status === 401) {
+                            throw new Error('API Key inválida o expirada');
+                        } else if (res.status === 429) {
+                            throw new Error('Límite de requests excedido. Espera un momento');
+                        } else if (res.status === 503) {
+                            throw new Error('Servicio de Groq temporalmente no disponible');
+                        } else {
+                            const msg = errorData?.error?.message || 'Error desconocido';
+                            throw new Error(`Error ${res.status}: ${msg}`);
+                        }
+                    }
+
+                    return await res.text();
+                } catch (error) {
+                    console.error('❌ Groq API Error:', error);
+                    throw error;
+                }
             }
 
             function cleanTranscriptionText(text) {
@@ -2482,6 +2568,75 @@
                     cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
                 }
                 return cleaned;
+            }
+
+            // Validate audio file before processing
+            function validateAudioFile(file) {
+                const validTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a', 'audio/x-m4a'];
+                const validExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.webm', '.flac', '.aac', '.opus'];
+                
+                // Validate type MIME
+                if (!validTypes.includes(file.type) && !validExtensions.some(ext => file.name.toLowerCase().endsWith(ext))) {
+                    throw new Error(`Formato no soportado: ${file.name}`);
+                }
+                
+                // Validate size (25MB max for Groq)
+                const maxSize = 25 * 1024 * 1024;
+                if (file.size > maxSize) {
+                    throw new Error(`Archivo muy grande: ${file.name} (máx 25MB)`);
+                }
+                
+                // Validate not empty
+                if (file.size === 0) {
+                    throw new Error(`Archivo vacío: ${file.name}`);
+                }
+                
+                return true;
+            }
+
+            // Test Groq API connection
+            async function testGroqConnection() {
+                if (!GROQ_API_KEY) {
+                    return false;
+                }
+
+                try {
+                    // Create a minimal valid audio test file
+                    const sampleRate = 16000;
+                    const duration = 0.1; // 100ms
+                    const numSamples = Math.floor(sampleRate * duration);
+                    
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const audioBuffer = audioContext.createBuffer(1, numSamples, sampleRate);
+                    
+                    // Generate a simple 440Hz tone (A note)
+                    const channelData = audioBuffer.getChannelData(0);
+                    for (let i = 0; i < numSamples; i++) {
+                        channelData[i] = Math.sin(2 * Math.PI * 440 * i / sampleRate) * 0.1;
+                    }
+                    
+                    // Convert to valid WAV
+                    const wavBlob = audioBufferToWav(audioBuffer);
+                    const testFile = new File([wavBlob], 'test.wav', { type: 'audio/wav' });
+                    
+                    // Test with Groq
+                    const form = new FormData();
+                    form.append('file', testFile);
+                    form.append('model', 'whisper-large-v3');
+                    form.append('language', 'es');
+                    form.append('response_format', 'text');
+                    
+                    const res = await fetch(GROQ_API_URL, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${GROQ_API_KEY}` },
+                        body: form
+                    });
+                    
+                    return res.ok;
+                } catch (error) {
+                    console.error('Test connection failed:', error);
+                    return false;
+                }
             }
 
 
