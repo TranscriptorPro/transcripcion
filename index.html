@@ -1683,6 +1683,22 @@
                 </div>
             </div>
 
+            <!-- Mode Selector -->
+            <div class="mode-selector" id="templateSelectorContainer" style="display: none;">
+                <button class="mode-tab active" id="modeNormal">
+                    <svg viewBox="0 0 24 24" width="16" height="16">
+                        <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" fill="currentColor"/>
+                    </svg>
+                    Normal
+                </button>
+                <button class="mode-tab" id="modePro">
+                    <svg viewBox="0 0 24 24" width="16" height="16">
+                        <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V9h7V3.18l8 3.56v8.26h-8v-2.01z" fill="currentColor"/>
+                    </svg>
+                    Pro
+                </button>
+            </div>
+
             <!-- Wizard: Template Selection (Contextual) -->
             <div class="card" id="wizardTemplateCard"
                 style="display: none; border: 2px solid var(--primary); background: rgba(15, 118, 110, 0.02);">
@@ -2852,8 +2868,12 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
             }
 
             // ============ MODE SELECTOR ============
-            modeNormal.addEventListener('click', () => setMode('normal'));
-            modePro.addEventListener('click', () => setMode('pro'));
+            if (modeNormal) {
+                modeNormal.addEventListener('click', () => setMode('normal'));
+            }
+            if (modePro) {
+                modePro.addEventListener('click', () => setMode('pro'));
+            }
 
             function setMode(mode) {
                 currentMode = mode;
