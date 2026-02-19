@@ -1940,6 +1940,11 @@
                 </div>
             </div>
 
+            <!-- Tabs Container -->
+            <div class="tabs-container" id="tabsContainer">
+                <!-- Tabs will be dynamically created here -->
+            </div>
+
             <!-- Main Editor Card -->
             <div class="card" style="flex: 1; display: flex; flex-direction: column; margin-top: 0;">
                 <div class="editor-header"
@@ -3488,21 +3493,11 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
             
             // Mostrar botones de PDF después de transcripción
             function showPdfControls() {
-                console.log('🔍 showPdfControls() llamada');
-                const pdfControlsContainer = document.getElementById('pdfControls');
-
-                if (!pdfControlsContainer) {
-                    console.error('❌ Elemento #pdfControls NO encontrado en el DOM');
-                    return;
+                const pdfControls = $('pdfControls');
+                if (pdfControls) {
+                    pdfControls.style.display = 'flex';
+                    pdfControls.classList.add('pdf-controls-visible');
                 }
-
-                console.log('✅ Elemento #pdfControls encontrado, mostrando...');
-
-                pdfControlsContainer.setAttribute('style', 'display: flex; gap: 0.5rem; margin-bottom: 1rem; align-items: center;');
-                pdfControlsContainer.style.visibility = 'visible';
-                pdfControlsContainer.classList.add('pdf-controls-visible');
-
-                console.log('✅ Botones PDF mostrados. Display:', pdfControlsContainer.style.display);
             }
 
             // Abrir modal de configuración de PDF
