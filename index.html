@@ -301,6 +301,48 @@
             color: var(--primary);
         }
 
+        /* Join Audios Option - Enhanced Styling */
+        .join-audios-option {
+            background: rgba(99, 102, 241, 0.1);
+            border: 2px solid rgba(99, 102, 241, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            margin: 10px 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .join-audios-option:hover {
+            background: rgba(99, 102, 241, 0.15);
+            border-color: rgba(99, 102, 241, 0.5);
+            transform: translateX(2px);
+        }
+
+        .join-audios-option label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 0;
+        }
+
+        .join-audios-option input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #6366f1;
+        }
+
+        .join-audios-option span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-primary);
+        }
+
         /* File List */
         .file-list {
             display: flex;
@@ -1727,10 +1769,10 @@
                 </div>
 
                 <!-- Join Files Toggle -->
-                <div class="audio-options" style="border-top: none; padding-top: 0;">
-                    <label class="audio-option" style="width: 100%; justify-content: space-between;">
+                <div class="join-audios-option" title="Combina múltiples archivos de audio en uno solo antes de transcribir">
+                    <label>
                         <span>🔗 Unir todos los audios</span>
-                        <input type="checkbox" id="joinAudiosCheck">
+                        <input type="checkbox" id="chkJoinAudios" aria-label="Unir todos los archivos de audio en uno solo">
                     </label>
                 </div>
 
@@ -1982,12 +2024,6 @@
                         <option value="1.8" selected>Normal</option>
                         <option value="2">Doble</option>
                     </select>
-                    
-                    <div class="toolbar-divider"></div>
-                    
-                    <!-- Color Group -->
-                    <input type="color" id="textColorPicker" class="toolbar-btn" title="Color de texto" value="#000000" style="cursor: pointer; padding: 2px;">
-                    <input type="color" id="bgColorPicker" class="toolbar-btn" title="Color de fondo (resaltado)" value="#ffff00" style="cursor: pointer; padding: 2px;">
                     
                     <div class="toolbar-divider"></div>
                     
@@ -2863,23 +2899,6 @@
             if (lineSpacingSelect) {
                 lineSpacingSelect.addEventListener('change', () => {
                     editor.style.lineHeight = lineSpacingSelect.value;
-                });
-            }
-
-            // Color Pickers
-            const textColorPicker = $('textColorPicker');
-            if (textColorPicker) {
-                textColorPicker.addEventListener('change', () => {
-                    document.execCommand('foreColor', false, textColorPicker.value);
-                    editor.focus();
-                });
-            }
-
-            const bgColorPicker = $('bgColorPicker');
-            if (bgColorPicker) {
-                bgColorPicker.addEventListener('change', () => {
-                    document.execCommand('backColor', false, bgColorPicker.value);
-                    editor.focus();
                 });
             }
 
