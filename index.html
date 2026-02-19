@@ -1799,6 +1799,9 @@
                             <option value="18px">Grande</option>
                             <option value="20px">Extra</option>
                         </select>
+                        <button class="toolbar-btn" id="undoBtn" title="Deshacer (Ctrl+Z)">↶</button>
+                        <button class="toolbar-btn" id="redoBtn" title="Rehacer (Ctrl+Y)">↷</button>
+                        <div style="width: 1px; height: 20px; background: var(--border); margin: 0 0.5rem;"></div>
                         <button class="toolbar-btn" id="toggleFindReplace"
                             title="Buscar y Reemplazar (Ctrl+F)">🔍</button>
                         <div style="width: 1px; height: 20px; background: var(--border); margin: 0 0.5rem;"></div>
@@ -1821,12 +1824,13 @@
                 </div>
 
                 <!-- Find and Replace Panel -->
-                <div id="findReplacePanel" class="find-replace-panel"
-                    style="display: none; background: var(--bg-main); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid var(--border); gap: 0.5rem; align-items: center;">
-                    <input type="text" id="findInput" class="toolbar-input" style="flex: 1;" placeholder="Buscar...">
-                    <input type="text" id="replaceInput" class="toolbar-input" style="flex: 1;"
-                        placeholder="Reemplazar con...">
-                    <button class="btn btn-primary" onclick="replaceAll()">Reemplazar Todo</button>
+                <div id="findReplacePanel" class="find-replace-panel">
+                    <input type="text" id="findInput" placeholder="Buscar...">
+                    <button id="findNextBtn">Siguiente</button>
+                    <input type="text" id="replaceInput" placeholder="Reemplazar con...">
+                    <button id="replaceBtn">Reemplazar</button>
+                    <button id="replaceAllBtn">Reemplazar Todo</button>
+                    <button id="closeFindReplace" class="close-btn">✕</button>
                 </div>
 
                 <div class="editor-container"
@@ -2555,71 +2559,92 @@
                 redoStack = [];
             }
 
-            $('undoBtn').addEventListener('click', () => {
-                if (undoStack.length > 1) {
-                    redoStack.push(undoStack.pop());
-                    editor.innerHTML = undoStack[undoStack.length - 1] || '';
-                    updateWordCount();
-                }
-            });
+            const undoBtn = $('undoBtn');
+            if (undoBtn) {
+                undoBtn.addEventListener('click', () => {
+                    if (undoStack.length > 1) {
+                        redoStack.push(undoStack.pop());
+                        editor.innerHTML = undoStack[undoStack.length - 1] || '';
+                        updateWordCount();
+                    }
+                });
+            }
 
-            $('redoBtn').addEventListener('click', () => {
-                if (redoStack.length) {
-                    const state = redoStack.pop();
-                    undoStack.push(state);
-                    editor.innerHTML = state;
-                    updateWordCount();
-                }
-            });
+            const redoBtn = $('redoBtn');
+            if (redoBtn) {
+                redoBtn.addEventListener('click', () => {
+                    if (redoStack.length) {
+                        const state = redoStack.pop();
+                        undoStack.push(state);
+                        editor.innerHTML = state;
+                        updateWordCount();
+                    }
+                });
+            }
 
             // Find & Replace
-            $('toggleFindReplace').addEventListener('click', () => {
-                findReplacePanel.classList.toggle('active');
-                if (findReplacePanel.classList.contains('active')) findInput.focus();
-            });
+            const toggleFindReplace = $('toggleFindReplace');
+            if (toggleFindReplace) {
+                toggleFindReplace.addEventListener('click', () => {
+                    findReplacePanel.classList.toggle('active');
+                    if (findReplacePanel.classList.contains('active')) findInput.focus();
+                });
+            }
 
-            $('closeFindReplace').addEventListener('click', () => findReplacePanel.classList.remove('active'));
+            const closeFindReplace = $('closeFindReplace');
+            if (closeFindReplace) {
+                closeFindReplace.addEventListener('click', () => findReplacePanel.classList.remove('active'));
+            }
 
-            $('findNextBtn').addEventListener('click', () => {
-                const text = findInput.value;
-                if (!text) return;
-                const selection = window.getSelection();
-                const range = document.createRange();
-                const content = editor.innerText;
-                const start = content.indexOf(text, selection.anchorOffset || 0);
-                if (start >= 0) {
-                    highlightText(text);
-                } else {
-                    showToast('No encontrado', 'error');
-                }
-            });
+            const findNextBtn = $('findNextBtn');
+            if (findNextBtn) {
+                findNextBtn.addEventListener('click', () => {
+                    const text = findInput.value;
+                    if (!text) return;
+                    const selection = window.getSelection();
+                    const range = document.createRange();
+                    const content = editor.innerText;
+                    const start = content.indexOf(text, selection.anchorOffset || 0);
+                    if (start >= 0) {
+                        highlightText(text);
+                    } else {
+                        showToast('No encontrado', 'error');
+                    }
+                });
+            }
 
-            $('replaceBtn').addEventListener('click', () => {
-                const find = findInput.value;
-                const replace = replaceInput.value;
-                if (!find) return;
-                const html = editor.innerHTML;
-                const newHtml = html.replace(find, replace);
-                if (html !== newHtml) {
+            const replaceBtn = $('replaceBtn');
+            if (replaceBtn) {
+                replaceBtn.addEventListener('click', () => {
+                    const find = findInput.value;
+                    const replace = replaceInput.value;
+                    if (!find) return;
+                    const html = editor.innerHTML;
+                    const newHtml = html.replace(find, replace);
+                    if (html !== newHtml) {
+                        saveUndoState();
+                        editor.innerHTML = newHtml;
+                        updateWordCount();
+                        showToast('Reemplazado', 'success');
+                    }
+                });
+            }
+
+            const replaceAllBtn = $('replaceAllBtn');
+            if (replaceAllBtn) {
+                replaceAllBtn.addEventListener('click', () => {
+                    const find = findInput.value;
+                    const replace = replaceInput.value;
+                    if (!find) return;
                     saveUndoState();
-                    editor.innerHTML = newHtml;
+                    const regex = new RegExp(escapeRegex(find), 'gi');
+                    const text = editor.innerText;
+                    const count = (text.match(regex) || []).length;
+                    editor.innerText = text.replace(regex, replace);
                     updateWordCount();
-                    showToast('Reemplazado', 'success');
-                }
-            });
-
-            $('replaceAllBtn').addEventListener('click', () => {
-                const find = findInput.value;
-                const replace = replaceInput.value;
-                if (!find) return;
-                saveUndoState();
-                const regex = new RegExp(escapeRegex(find), 'gi');
-                const text = editor.innerText;
-                const count = (text.match(regex) || []).length;
-                editor.innerText = text.replace(regex, replace);
-                updateWordCount();
-                showToast(`${count} reemplazado(s)`, 'success');
-            });
+                    showToast(`${count} reemplazado(s)`, 'success');
+                });
+            }
 
             function escapeRegex(str) {
                 return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -3046,24 +3071,29 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                 populateTemplateDropdown(data.studies);
             };
 
-            $('onboardingForm').addEventListener('submit', (e) => {
-                e.preventDefault();
-                const name = $('profName').value;
-                const matricula = $('profMatricula').value;
-                const workplaces = $('profWorkplace').value;
-                const specialties = Array.from(document.querySelectorAll('input[name="specialty"]:checked')).map(cb => cb.value);
-                const studies = Array.from(document.querySelectorAll('input[name="study"]:checked')).map(cb => ({ name: cb.value, spec: cb.dataset.spec }));
+            const onboardingForm = $('onboardingForm');
+            if (onboardingForm) {
+                onboardingForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const name = $('profName').value;
+                    const matricula = $('profMatricula').value;
+                    const workplaces = $('profWorkplace').value;
+                    const specialties = Array.from(document.querySelectorAll('input[name="specialty"]:checked')).map(cb => cb.value);
+                    const studies = Array.from(document.querySelectorAll('input[name="study"]:checked')).map(cb => ({ name: cb.value, spec: cb.dataset.spec }));
 
-                const profData = { nombre: name, matricula, workplace: workplaces, specialties, studies };
-                localStorage.setItem('prof_data', JSON.stringify(profData));
-                localStorage.setItem('onboarding_date', new Date().toISOString());
+                    const profData = { nombre: name, matricula, workplace: workplaces, specialties, studies };
+                    localStorage.setItem('prof_data', JSON.stringify(profData));
+                    localStorage.setItem('onboarding_date', new Date().toISOString());
 
-                applyProfessionalData(profData);
-                onboardingOverlay.classList.remove('active');
-                showToast('Perfil activado. ¡Bienvenido/a!', 'success');
-            });
+                    applyProfessionalData(profData);
+                    onboardingOverlay.classList.remove('active');
+                    showToast('Perfil activado. ¡Bienvenido/a!', 'success');
+                });
+            }
 
-            $('btnApplyStructure').addEventListener('click', async () => {
+            const btnApplyStructure = $('btnApplyStructure');
+            if (btnApplyStructure) {
+                btnApplyStructure.addEventListener('click', async () => {
                 const editor = $('editor');
                 if (!editor.innerText.trim()) return showToast('No hay texto para estructurar', 'error');
 
@@ -3085,25 +3115,36 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                     btn.textContent = oldText;
                 }
             });
+            }
 
             // Initialize Suite
             initBusinessSuite();
-            $('btnAdminAccess').addEventListener('click', () => {
-                $('adminAuthOverlay').classList.add('active');
-            });
+            
+            const btnAdminAccess = $('btnAdminAccess');
+            if (btnAdminAccess) {
+                btnAdminAccess.addEventListener('click', () => {
+                    $('adminAuthOverlay').classList.add('active');
+                });
+            }
 
-            $('closeAdminAuth').addEventListener('click', () => $('adminAuthOverlay').classList.remove('active'));
+            const closeAdminAuth = $('closeAdminAuth');
+            if (closeAdminAuth) {
+                closeAdminAuth.addEventListener('click', () => $('adminAuthOverlay').classList.remove('active'));
+            }
 
-            $('btnConfirmAdmin').addEventListener('click', () => {
-                const pass = $('adminPasswordInput').value;
-                if (pass === MASTER_PASSWORD) {
-                    $('adminAuthOverlay').classList.remove('active');
-                    $('adminDashboardOverlay').classList.add('active');
-                    prepareAdminDashboard();
-                } else {
-                    showToast('Contraseña incorrecta', 'error');
-                }
-            });
+            const btnConfirmAdmin = $('btnConfirmAdmin');
+            if (btnConfirmAdmin) {
+                btnConfirmAdmin.addEventListener('click', () => {
+                    const pass = $('adminPasswordInput').value;
+                    if (pass === MASTER_PASSWORD) {
+                        $('adminAuthOverlay').classList.remove('active');
+                        $('adminDashboardOverlay').classList.add('active');
+                        prepareAdminDashboard();
+                    } else {
+                        showToast('Contraseña incorrecta', 'error');
+                    }
+                });
+            }
 
             const prepareAdminDashboard = () => {
                 const profData = JSON.parse(localStorage.getItem('prof_data')) || {};
@@ -3120,15 +3161,21 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                 $('adminUsageCount').textContent = localStorage.getItem('usage_count') || "0";
             };
 
-            $('closeAdminDashboard').addEventListener('click', () => $('adminDashboardOverlay').classList.remove('active'));
+            const closeAdminDashboard = $('closeAdminDashboard');
+            if (closeAdminDashboard) {
+                closeAdminDashboard.addEventListener('click', () => $('adminDashboardOverlay').classList.remove('active'));
+            }
 
-            $('btnResetAccount').addEventListener('click', () => {
-                if (confirm('¿Estás seguro? Esto borrará tus datos y se interpretará como un cambio de equipo.')) {
-                    localStorage.removeItem('prof_data');
-                    localStorage.removeItem('onboarding_date');
-                    location.reload();
-                }
-            });
+            const btnResetAccount = $('btnResetAccount');
+            if (btnResetAccount) {
+                btnResetAccount.addEventListener('click', () => {
+                    if (confirm('¿Estás seguro? Esto borrará tus datos y se interpretará como un cambio de equipo.')) {
+                        localStorage.removeItem('prof_data');
+                        localStorage.removeItem('onboarding_date');
+                        location.reload();
+                    }
+                });
+            }
         </script>
 
         <!-- Toast Notifications -->
