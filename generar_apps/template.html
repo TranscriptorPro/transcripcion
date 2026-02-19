@@ -1430,6 +1430,21 @@
         input:checked+.slider:before {
             transform: translateX(20px);
         }
+
+        .pdf-controls-visible {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        #pdfControls {
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        #pdfControls:not(.pdf-controls-visible) {
+            opacity: 0;
+            pointer-events: none;
+        }
     </style>
 </head>
 
@@ -1876,7 +1891,7 @@
                 </div>
 
                 <!-- PDF Controls (shown after transcription) -->
-                <div id="pdfControls" style="display: none; gap: 0.5rem; margin-bottom: 1rem;">
+                <div id="pdfControls" style="display: none; gap: 0.5rem; margin-bottom: 1rem; align-items: center;">
                     <button class="btn btn-secondary" onclick="openPdfMetadataModal()">
                         ⚙️ Configurar PDF
                     </button>
@@ -2604,7 +2619,11 @@
                     createTabs();
                     updateWordCount();
                     enableButtons();
-                    showPdfControls();
+
+                    // Usar setTimeout para asegurar que el DOM se actualizó
+                    setTimeout(() => {
+                        showPdfControls();
+                    }, 100);
 
                     // WIZARD STEP 2: Show template selection & Metadata
                     if (currentMode === 'pro') {
@@ -3055,10 +3074,21 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
             
             // Mostrar botones de PDF después de transcripción
             function showPdfControls() {
-                const pdfControlsContainer = $('pdfControls');
-                if (pdfControlsContainer) {
-                    pdfControlsContainer.style.display = 'flex';
+                console.log('🔍 showPdfControls() llamada');
+                const pdfControlsContainer = document.getElementById('pdfControls');
+
+                if (!pdfControlsContainer) {
+                    console.error('❌ Elemento #pdfControls NO encontrado en el DOM');
+                    return;
                 }
+
+                console.log('✅ Elemento #pdfControls encontrado, mostrando...');
+
+                pdfControlsContainer.setAttribute('style', 'display: flex; gap: 0.5rem; margin-bottom: 1rem; align-items: center;');
+                pdfControlsContainer.style.visibility = 'visible';
+                pdfControlsContainer.classList.add('pdf-controls-visible');
+
+                console.log('✅ Botones PDF mostrados. Display:', pdfControlsContainer.style.display);
             }
 
             // Abrir modal de configuración de PDF
