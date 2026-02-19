@@ -41,3 +41,31 @@ El proyecto es una *Single Page Application* (SPA) pura contenida en `index.html
 - Se agregó soporte para archivos OGG.
 - Se implementó un botón de "Limpiar / Nuevo Informe".
 - Se agregó persistencia (`localStorage`) para no mostrar el aviso de descarga del modelo tras el primer uso.
+
+## 🧹 Limpieza del Repositorio (PR #10 - Feb 2026)
+
+### Cambios Realizados
+- ✅ **Bug Fix:** Agregado elemento `tabsContainer` faltante
+- ✅ **Bug Fix:** Agregado elemento `toast` con `toastMessage` faltante
+- ✅ **Bug Fix:** Corregida función `showPdfControls()` para mostrar botones PDF
+- 🗑️ **Limpieza:** Eliminadas carpetas `recursos/`, `generar_apps/`, `dist/` (contenían archivos de prueba y código muerto)
+- 📚 **Documentación:** README actualizado con estructura clara
+
+### Estructura Final del Proyecto
+```
+transcripcion/
+├── index.html          # ✅ Aplicación principal (CORREGIDA)
+├── backend/            # ✅ Scripts de backend (Google Apps Script)
+└── documentacion/      # ✅ Documentación del proyecto
+```
+
+### ¿Por qué se eliminaron esos archivos?
+- `recursos/`: Contenía backups, tests y código experimental no usado
+- `generar_apps/`: Scripts Python para generar versiones personalizadas (no usado en GitHub Pages)
+- `dist/`: Directorio vacío
+
+### Resultado
+- ✅ Repositorio limpio y organizado
+- ✅ Todos los bugs críticos corregidos
+- ✅ Descargable como ZIP funcional para trabajar en local
+- ✅ Código mantenible y documentado
