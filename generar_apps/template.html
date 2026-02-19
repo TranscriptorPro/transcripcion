@@ -3104,16 +3104,34 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                 closePdfMetadataModal();
             }
 
+            // Helper function to escape HTML
+            function escapeHtml(unsafe) {
+                if (!unsafe) return '';
+                return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
             // Previsualizar PDF
             async function previewPdf() {
                 // Obtener configuración
                 const config = JSON.parse(localStorage.getItem('pdf_metadata_config') || '{}');
                 const profData = JSON.parse(localStorage.getItem('prof_data')) || {};
-                const profName = profData.nombre || 'Dr. [Nombre]';
-                const matricula = profData.matricula || '';
+                const profName = escapeHtml(profData.nombre) || 'Dr. [Nombre]';
+                const matricula = escapeHtml(profData.matricula) || '';
                 
-                // Obtener texto del editor
+                // Obtener texto del editor (ya sanitizado por el navegador)
                 const editorContent = $('editor').innerHTML;
+                
+                // Escapar datos del usuario
+                const patientName = escapeHtml(config.patientName) || '[No especificado]';
+                const patientDni = escapeHtml(config.patientDni) || '[No especificado]';
+                const studyDate = escapeHtml(config.studyDate) || new Date().toLocaleDateString('es-ES');
+                const procedure = escapeHtml(config.procedure) || '[No especificado]';
+                const footer = escapeHtml(config.footer);
                 
                 // Crear HTML de preview
                 const previewHTML = `
@@ -3175,17 +3193,17 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                         </div>
                         
                         <div class="patient-info">
-                            <p><strong>Paciente:</strong> ${config.patientName || '[No especificado]'}</p>
-                            <p><strong>DNI:</strong> ${config.patientDni || '[No especificado]'}</p>
-                            <p><strong>Fecha:</strong> ${config.studyDate || new Date().toLocaleDateString('es-ES')}</p>
-                            <p><strong>Estudio:</strong> ${config.procedure || '[No especificado]'}</p>
+                            <p><strong>Paciente:</strong> ${patientName}</p>
+                            <p><strong>DNI:</strong> ${patientDni}</p>
+                            <p><strong>Fecha:</strong> ${studyDate}</p>
+                            <p><strong>Estudio:</strong> ${procedure}</p>
                         </div>
                         
                         <div class="content">
                             ${editorContent}
                         </div>
                         
-                        ${config.footer ? `<div class="footer">${config.footer}</div>` : ''}
+                        ${footer ? `<div class="footer">${footer}</div>` : ''}
                     </body>
                     </html>
                 `;
@@ -3193,12 +3211,27 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                 // Cargar preview en iframe
                 const iframe = $('pdfPreviewFrame');
                 const blob = new Blob([previewHTML], { type: 'text/html' });
-                iframe.src = URL.createObjectURL(blob);
+                
+                // Revocar URL anterior si existe
+                if (iframe.dataset.blobUrl) {
+                    URL.revokeObjectURL(iframe.dataset.blobUrl);
+                }
+                
+                const blobUrl = URL.createObjectURL(blob);
+                iframe.dataset.blobUrl = blobUrl;
+                iframe.src = blobUrl;
                 
                 $('pdfPreviewModal').classList.add('active');
             }
 
             function closePdfPreview() {
+                // Revocar blob URL al cerrar
+                const iframe = $('pdfPreviewFrame');
+                if (iframe.dataset.blobUrl) {
+                    URL.revokeObjectURL(iframe.dataset.blobUrl);
+                    delete iframe.dataset.blobUrl;
+                }
+                
                 $('pdfPreviewModal').classList.remove('active');
             }
 
