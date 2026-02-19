@@ -1530,6 +1530,193 @@
         #btnPreviewPdfMain {
             display: none;
         }
+        /* ============ PDF CONFIG MODAL NEW STYLES ============ */
+        .pdf-config-modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            max-height: 70vh;
+        }
+        .pdf-config-section {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-bottom: 1.25rem;
+            background: var(--bg-card);
+        }
+        .pdf-config-section h3 {
+            margin: 0 0 1rem 0;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+        .field-group {
+            margin-bottom: 0.75rem;
+        }
+        .field-group label {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-size: 0.825rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        .field-group input,
+        .field-group select,
+        .field-group textarea {
+            width: 100%;
+            padding: 0.45rem 0.6rem;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            box-sizing: border-box;
+        }
+        .field-group textarea {
+            resize: vertical;
+        }
+        .field-group small {
+            display: block;
+            margin-top: 0.2rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+        .field-group.locked input {
+            background: var(--bg-main);
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .field-row {
+            display: flex;
+            gap: 0.75rem;
+        }
+        .field-row .field-group {
+            flex: 1;
+        }
+        .checkbox-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+        .checkbox-options label {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+        .checkbox-options input[type="checkbox"] {
+            width: auto;
+            cursor: pointer;
+        }
+        .logo-preview,
+        .signature-preview {
+            margin-top: 0.4rem;
+            min-height: 40px;
+        }
+        .logo-preview img,
+        .signature-preview img {
+            max-height: 80px;
+            max-width: 200px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+        .pdf-modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            background: var(--bg-card);
+        }
+        .btn-sm {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.78rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            background: var(--bg-main);
+            color: var(--text-primary);
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .btn-sm:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        .field-group.has-btn {
+            display: flex;
+            gap: 0.5rem;
+            align-items: flex-end;
+        }
+        .field-group.has-btn select {
+            flex: 1;
+        }
+        @media (max-width: 600px) {
+            .field-row {
+                flex-direction: column;
+            }
+        }
+        /* Print Preview */
+        .print-preview-container {
+            overflow-y: auto;
+            padding: 1.5rem;
+            background: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            max-height: 65vh;
+        }
+        .a4-page {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            padding: 20mm 18mm;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.5;
+            color: #333;
+            box-sizing: border-box;
+        }
+        .preview-header {
+            border-bottom: 2px solid #333;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .preview-patient {
+            background: #f5f5f5;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 16px;
+            font-size: 10pt;
+        }
+        .preview-study {
+            margin-bottom: 12px;
+            font-size: 10pt;
+        }
+        .preview-content {
+            margin: 16px 0;
+        }
+        .preview-signature {
+            margin-top: 40px;
+            text-align: right;
+        }
+        .preview-footer {
+            margin-top: 16px;
+            padding-top: 10px;
+            border-top: 1px solid #ccc;
+            font-size: 9pt;
+            color: #666;
+            text-align: center;
+        }
+        .preview-qr {
+            text-align: right;
+            margin-top: 8px;
+        }
     </style>
 </head>
 
@@ -1644,30 +1831,311 @@
             </div>
         </div>
 
-        <!-- PDF Config Modal -->
+        <!-- PDF Config Modal (New Comprehensive) -->
         <div class="modal-overlay" id="pdfModalOverlay">
-            <div class="modal" style="max-width: 600px;">
+            <div class="modal" style="max-width: 680px; display: flex; flex-direction: column; max-height: 92vh;">
                 <div class="modal-header">
-                    <h2>📄 Configuración de PDF</h2>
+                    <h2>⚙️ Configurar PDF</h2>
                     <button class="modal-close" id="closePdfConfig">&times;</button>
                 </div>
+                <div class="pdf-config-modal-body">
+                    <!-- Section 1: Report Header -->
+                    <div class="pdf-config-section">
+                        <h3>📄 Encabezado del Informe</h3>
+                        <div class="field-group locked">
+                            <label>🔒 Profesional</label>
+                            <input type="text" id="pdfProfName" readonly disabled placeholder="[Sin datos profesionales]">
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group locked">
+                                <label>🔒 Matrícula</label>
+                                <input type="text" id="pdfProfMatricula" readonly disabled placeholder="---">
+                            </div>
+                            <div class="field-group locked">
+                                <label>🔒 Especialidad</label>
+                                <input type="text" id="pdfProfEspecialidad" readonly disabled placeholder="---">
+                            </div>
+                        </div>
+                        <div class="field-group has-btn">
+                            <div style="flex:1">
+                                <label>🏥 Lugar de trabajo</label>
+                                <select id="pdfWorkplace">
+                                    <option value="">Seleccionar lugar...</option>
+                                </select>
+                            </div>
+                            <button class="btn-sm" id="btnAddWorkplace" title="Agregar nuevo lugar">+ Agregar</button>
+                        </div>
+                        <div class="field-group">
+                            <label>📍 Dirección</label>
+                            <input type="text" id="pdfWorkplaceAddress" placeholder="Dirección del lugar de trabajo">
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>📞 Teléfono</label>
+                                <input type="text" id="pdfWorkplacePhone" placeholder="Teléfono del consultorio">
+                            </div>
+                            <div class="field-group">
+                                <label>📧 Email</label>
+                                <input type="email" id="pdfWorkplaceEmail" placeholder="Email profesional">
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label>🖼️ Logo (opcional)</label>
+                            <input type="file" id="pdfLogoUpload" accept="image/*">
+                            <div id="pdfLogoPreview" class="logo-preview"></div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Patient Data -->
+                    <div class="pdf-config-section">
+                        <h3>👤 Datos del Paciente</h3>
+                        <div class="field-group pro-only" id="patientHistoryGroup" style="display:none;">
+                            <label>🔍 Buscar paciente anterior</label>
+                            <input type="text" id="patientSearch" placeholder="Escriba nombre o DNI..." list="patientHistoryList">
+                            <datalist id="patientHistoryList"></datalist>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Nombre y Apellido</label>
+                                <input type="text" id="pdfPatientName" placeholder="Nombre completo del paciente">
+                            </div>
+                            <div class="field-group">
+                                <label>DNI / Documento</label>
+                                <input type="text" id="pdfPatientDni" placeholder="Nº de documento">
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Fecha de nacimiento</label>
+                                <input type="date" id="pdfPatientBirthdate">
+                            </div>
+                            <div class="field-group">
+                                <label>Edad</label>
+                                <input type="number" id="pdfPatientAge" placeholder="Auto-calculada" min="0" max="150">
+                            </div>
+                            <div class="field-group">
+                                <label>Sexo</label>
+                                <select id="pdfPatientSex">
+                                    <option value="">--</option>
+                                    <option value="M">Masculino</option>
+                                    <option value="F">Femenino</option>
+                                    <option value="X">Otro</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Obra Social / Prepaga</label>
+                                <input type="text" id="pdfPatientInsurance" placeholder="Ej: OSDE, Swiss Medical">
+                            </div>
+                            <div class="field-group">
+                                <label>Nº de Afiliado</label>
+                                <input type="text" id="pdfPatientAffiliateNum" placeholder="Número de afiliado">
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label>Teléfono del paciente</label>
+                            <input type="tel" id="pdfPatientPhone" placeholder="Teléfono de contacto">
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Study Data -->
+                    <div class="pdf-config-section">
+                        <h3>📝 Datos del Estudio</h3>
+                        <div class="field-group">
+                            <label>Tipo de estudio</label>
+                            <input type="text" id="pdfStudyType" placeholder="Auto desde plantilla en Pro / Manual en Normal">
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Fecha del estudio</label>
+                                <input type="date" id="pdfStudyDate">
+                            </div>
+                            <div class="field-group">
+                                <label>Hora del estudio</label>
+                                <input type="time" id="pdfStudyTime">
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label>Motivo / Indicación clínica</label>
+                            <input type="text" id="pdfStudyReason" placeholder="Ej: Dolor abdominal, control post-quirúrgico">
+                        </div>
+                        <div class="field-group">
+                            <label>Médico solicitante</label>
+                            <input type="text" id="pdfReferringDoctor" placeholder="Dr/a que solicitó el estudio">
+                        </div>
+                        <div class="field-group">
+                            <label>Equipo utilizado (opcional)</label>
+                            <input type="text" id="pdfEquipment" placeholder="Ej: Ecógrafo GE Logiq E10, transductor convex 3.5 MHz">
+                        </div>
+                        <div class="field-group">
+                            <label>Técnica (opcional)</label>
+                            <textarea id="pdfTechnique" rows="2" placeholder="Auto desde plantilla en Pro / Manual en Normal"></textarea>
+                        </div>
+                        <div class="field-group">
+                            <label>Informe Nº</label>
+                            <input type="text" id="pdfReportNumber" placeholder="Auto: 2026-0042" readonly>
+                            <small>Numeración correlativa automática (formato: YYYY-NNNN)</small>
+                        </div>
+                    </div>
+
+                    <!-- Section 4: PDF Format -->
+                    <div class="pdf-config-section">
+                        <h3>🎨 Formato del PDF</h3>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Tamaño de papel</label>
+                                <select id="pdfPageSize">
+                                    <option value="a4" selected>A4</option>
+                                    <option value="letter">Carta</option>
+                                    <option value="legal">Oficio</option>
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label>Orientación</label>
+                                <select id="pdfOrientation">
+                                    <option value="portrait" selected>Vertical</option>
+                                    <option value="landscape">Horizontal</option>
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label>Márgenes</label>
+                                <select id="pdfMargins">
+                                    <option value="normal" selected>Normal</option>
+                                    <option value="narrow">Estrecho</option>
+                                    <option value="wide">Ancho</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Fuente</label>
+                                <select id="pdfFont">
+                                    <option value="helvetica" selected>Helvetica</option>
+                                    <option value="times">Times New Roman</option>
+                                    <option value="courier">Courier</option>
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label>Tamaño fuente</label>
+                                <select id="pdfFontSize">
+                                    <option value="9">9 pt</option>
+                                    <option value="10">10 pt</option>
+                                    <option value="11" selected>11 pt</option>
+                                    <option value="12">12 pt</option>
+                                    <option value="14">14 pt</option>
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label>Interlineado</label>
+                                <select id="pdfLineSpacing">
+                                    <option value="1">Simple</option>
+                                    <option value="1.15">1.15</option>
+                                    <option value="1.5" selected>1.5</option>
+                                    <option value="2">Doble</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="checkbox-options">
+                            <label><input type="checkbox" id="pdfShowHeader" checked> Incluir encabezado en todas las páginas</label>
+                            <label><input type="checkbox" id="pdfShowFooter" checked> Incluir pie de página con firma</label>
+                            <label><input type="checkbox" id="pdfShowPageNum" checked> Incluir número de página</label>
+                            <label><input type="checkbox" id="pdfShowDate"> Incluir fecha de impresión</label>
+                            <label><input type="checkbox" id="pdfShowQR"> Incluir código QR de verificación</label>
+                        </div>
+                    </div>
+
+                    <!-- Section 5: Footer / Signature -->
+                    <div class="pdf-config-section">
+                        <h3>✍️ Pie de Página y Firma</h3>
+                        <div class="field-group">
+                            <label>Texto personalizado del pie</label>
+                            <textarea id="pdfFooterText" rows="2" placeholder="Ej: Este informe es confidencial y de uso exclusivo del paciente"></textarea>
+                        </div>
+                        <div class="checkbox-options">
+                            <label><input type="checkbox" id="pdfShowSignLine" checked> Incluir línea de firma</label>
+                            <label><input type="checkbox" id="pdfShowSignName" checked> Incluir nombre debajo de firma</label>
+                            <label><input type="checkbox" id="pdfShowSignMatricula" checked> Incluir matrícula debajo de firma</label>
+                        </div>
+                        <div class="field-group" style="margin-top:0.75rem;">
+                            <label>Firma digital (imagen PNG transparente)</label>
+                            <input type="file" id="pdfSignatureUpload" accept="image/png">
+                            <div id="pdfSignaturePreview" class="signature-preview"></div>
+                            <small>Suba una imagen de su firma escaneada (fondo transparente recomendado)</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="pdf-modal-footer">
+                    <button class="btn btn-secondary" id="btnSavePdfConfig">💾 Guardar configuración</button>
+                    <button class="btn btn-primary" id="btnPreviewFromConfig">👁️ Previsualizar</button>
+                    <button class="btn btn-outline" id="btnClosePdfConfig">Cerrar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workplace Profile Modal -->
+        <div class="modal-overlay" id="workplaceModalOverlay">
+            <div class="modal" style="max-width: 500px;">
+                <div class="modal-header">
+                    <h3 style="margin:0;">🏥 Agregar Lugar de Trabajo</h3>
+                    <button class="modal-close" id="btnCancelWorkplace">&times;</button>
+                </div>
                 <div class="modal-body">
-                    <div class="help-section">
-                        <label class="sidebar-label">Nombre del Estudio (Título):</label>
-                        <input type="text" id="procedureInput" class="toolbar-input" style="width: 100%;"
-                            placeholder="Ej: Ecografía Abdominal">
+                    <div class="field-group">
+                        <label>Nombre del lugar</label>
+                        <input type="text" id="wpName" placeholder="Ej: Clínica San Martín">
                     </div>
-                    <div class="help-section">
-                        <label class="sidebar-label">Encabezado Adicional (opcional):</label>
-                        <textarea id="pdfHeaderInput" class="config-textarea"
-                            placeholder="Ej: Consultorio Central\nTel: 1234-5678"></textarea>
+                    <div class="field-group">
+                        <label>Dirección</label>
+                        <input type="text" id="wpAddress" placeholder="Dirección completa">
                     </div>
-                    <div class="help-section">
-                        <label class="sidebar-label">Pie de Página:</label>
-                        <input type="text" id="pdfFooterInput" class="toolbar-input" style="width: 100%;"
-                            placeholder="Ej: Página {page} • {date}">
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label>Teléfono</label>
+                            <input type="text" id="wpPhone" placeholder="Teléfono">
+                        </div>
+                        <div class="field-group">
+                            <label>Email</label>
+                            <input type="email" id="wpEmail" placeholder="Email">
+                        </div>
                     </div>
-                    <button class="btn btn-primary btn-full" id="savePdfConfig">Guardar Cambios</button>
+                    <div class="field-group">
+                        <label>Logo (opcional)</label>
+                        <input type="file" id="wpLogo" accept="image/*">
+                    </div>
+                    <div class="field-group">
+                        <label>Pie de página personalizado</label>
+                        <input type="text" id="wpFooter" placeholder="Texto del pie para este lugar">
+                    </div>
+                </div>
+                <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; gap: 0.5rem; justify-content: flex-end;">
+                    <button class="btn btn-primary" id="btnSaveWorkplace">💾 Guardar lugar</button>
+                    <button class="btn btn-outline" id="btnCancelWorkplaceBtn">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Print Preview Modal -->
+        <div class="modal-overlay" id="printPreviewOverlay">
+            <div class="modal" style="max-width: 900px; height: 90vh; display: flex; flex-direction: column;">
+                <div class="modal-header">
+                    <h2>👁️ Vista Previa de Impresión</h2>
+                    <button class="modal-close" id="closePrintPreview">&times;</button>
+                </div>
+                <div class="print-preview-container" id="printPreviewContainer">
+                    <div class="a4-page" id="previewPage">
+                        <div class="preview-header" id="previewHeader"></div>
+                        <div class="preview-patient" id="previewPatient"></div>
+                        <div class="preview-study" id="previewStudy"></div>
+                        <div class="preview-content" id="previewContent"></div>
+                        <div class="preview-signature" id="previewSignature"></div>
+                        <div class="preview-footer" id="previewFooter"></div>
+                        <div class="preview-qr" id="previewQR"></div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; gap: 0.5rem; justify-content: flex-end;">
+                    <button class="btn btn-secondary" id="btnBackToEdit">✏️ Volver a editar</button>
+                    <button class="btn btn-primary" id="btnDownloadFromPreview">📥 Descargar PDF</button>
                 </div>
             </div>
         </div>
@@ -2231,7 +2699,7 @@
             // Initial study date
             if (studyDateInput) studyDateInput.value = new Date().toISOString().split('T')[0];
 
-            // PDF Settings
+            // PDF Settings (legacy - kept for backward compat)
             let pdfSettings = JSON.parse(localStorage.getItem('pdf_settings')) || {
                 header: '',
                 footer: '',
@@ -2240,7 +2708,7 @@
                 studyDate: '',
                 procedure: ''
             };
-            // App State initialization with safety checks
+            // App State initialization with safety checks (legacy fields may not exist in new modal)
             if (pdfHeaderInput) pdfHeaderInput.value = pdfSettings.header || '';
             if (pdfFooterInput) pdfFooterInput.value = pdfSettings.footer || '';
             if (patientNameInput) patientNameInput.value = pdfSettings.patientName || '';
@@ -4702,42 +5170,508 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
             // ============ PDF CONFIG MODAL ============
             window.setPreset = (type, text) => {
                 if (type === 'header') {
-                    pdfHeaderInput.value = text;
+                    if (pdfHeaderInput) pdfHeaderInput.value = text;
                 } else {
-                    pdfFooterInput.value = text;
+                    const el = document.getElementById('pdfFooterText');
+                    if (el) el.value = text;
+                    else if (pdfFooterInput) pdfFooterInput.value = text;
                 }
             };
 
-            btnConfigPdf.addEventListener('click', () => pdfModalOverlay.classList.add('active'));
+            // ---- Workplace Profiles ----
+            let workplaceProfiles = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+
+            function populateWorkplaceDropdown() {
+                const sel = document.getElementById('pdfWorkplace');
+                if (!sel) return;
+                const current = sel.value;
+                sel.innerHTML = '<option value="">Seleccionar lugar...</option>';
+                workplaceProfiles.forEach((p, i) => {
+                    const opt = document.createElement('option');
+                    opt.value = i;
+                    opt.textContent = p.name || `Lugar ${i+1}`;
+                    sel.appendChild(opt);
+                });
+                if (current !== '') sel.value = current;
+            }
+
+            function loadWorkplaceProfile(index) {
+                const profile = workplaceProfiles[index];
+                if (!profile) return;
+                const addr = document.getElementById('pdfWorkplaceAddress');
+                const phone = document.getElementById('pdfWorkplacePhone');
+                const email = document.getElementById('pdfWorkplaceEmail');
+                const logo = document.getElementById('pdfLogoPreview');
+                if (addr) addr.value = profile.address || '';
+                if (phone) phone.value = profile.phone || '';
+                if (email) email.value = profile.email || '';
+                if (logo && profile.logo) {
+                    logo.innerHTML = `<img src="${escapeHtml(profile.logo)}" alt="Logo">`;
+                }
+            }
+
+            document.getElementById('pdfWorkplace')?.addEventListener('change', (e) => {
+                if (e.target.value !== '') loadWorkplaceProfile(parseInt(e.target.value));
+            });
+
+            document.getElementById('btnAddWorkplace')?.addEventListener('click', () => {
+                ['wpName','wpAddress','wpPhone','wpEmail','wpFooter'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = '';
+                });
+                document.getElementById('workplaceModalOverlay')?.classList.add('active');
+            });
+
+            document.getElementById('btnSaveWorkplace')?.addEventListener('click', () => {
+                const name = document.getElementById('wpName')?.value?.trim();
+                if (!name) { showToast('Ingrese un nombre para el lugar', 'error'); return; }
+                const logoInput = document.getElementById('wpLogo');
+                const file = logoInput?.files?.[0];
+                const saveProfile = (logoData) => {
+                    workplaceProfiles.push({
+                        name,
+                        address: document.getElementById('wpAddress')?.value?.trim() || '',
+                        phone: document.getElementById('wpPhone')?.value?.trim() || '',
+                        email: document.getElementById('wpEmail')?.value?.trim() || '',
+                        footer: document.getElementById('wpFooter')?.value?.trim() || '',
+                        logo: logoData || ''
+                    });
+                    localStorage.setItem('workplace_profiles', JSON.stringify(workplaceProfiles));
+                    populateWorkplaceDropdown();
+                    document.getElementById('workplaceModalOverlay')?.classList.remove('active');
+                    showToast('✅ Lugar de trabajo guardado', 'success');
+                };
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => saveProfile(ev.target.result);
+                    reader.readAsDataURL(file);
+                } else {
+                    saveProfile('');
+                }
+            });
+
+            const closeWpHandlers = ['btnCancelWorkplace', 'btnCancelWorkplaceBtn'];
+            closeWpHandlers.forEach(id => {
+                document.getElementById(id)?.addEventListener('click', () => {
+                    document.getElementById('workplaceModalOverlay')?.classList.remove('active');
+                });
+            });
+
+            document.getElementById('workplaceModalOverlay')?.addEventListener('click', (e) => {
+                if (e.target.id === 'workplaceModalOverlay') {
+                    e.target.classList.remove('active');
+                }
+            });
+
+            // ---- Patient History ----
+            let patientHistory = JSON.parse(localStorage.getItem('patient_history') || '[]');
+
+            function savePatientToHistory(patient) {
+                if (!patient || !patient.name) return;
+                patientHistory = patientHistory.filter(p => p.dni !== patient.dni || !patient.dni);
+                patientHistory.unshift(patient);
+                if (patientHistory.length > 50) patientHistory.pop();
+                localStorage.setItem('patient_history', JSON.stringify(patientHistory));
+            }
+
+            function populatePatientDatalist() {
+                const datalist = document.getElementById('patientHistoryList');
+                if (!datalist) return;
+                datalist.innerHTML = '';
+                patientHistory.forEach((p, i) => {
+                    const option = document.createElement('option');
+                    option.value = p.dni ? `${p.name} - DNI: ${p.dni}` : p.name;
+                    option.dataset.index = i;
+                    datalist.appendChild(option);
+                });
+            }
+
+            document.getElementById('patientSearch')?.addEventListener('input', (e) => {
+                const val = e.target.value;
+                const selected = patientHistory.find(p =>
+                    (p.dni && val.includes(p.dni)) || (p.name && val.includes(p.name))
+                );
+                if (selected) {
+                    const set = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
+                    set('pdfPatientName', selected.name);
+                    set('pdfPatientDni', selected.dni);
+                    set('pdfPatientAge', selected.age);
+                    set('pdfPatientSex', selected.sex);
+                    set('pdfPatientInsurance', selected.insurance);
+                    set('pdfPatientPhone', selected.phone);
+                }
+            });
+
+            // ---- Extract patient data from transcription ----
+            function extractPatientDataFromText(text) {
+                const data = {};
+                const nameMatch = text.match(/paciente\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)+)/i);
+                if (nameMatch) data.name = nameMatch[1];
+                const dniMatch = text.match(/(?:DNI|documento|D\.N\.I\.?)\s*(?:N[°º]?\s*)?(\d{1,3}\.?\d{3}\.?\d{3})/i);
+                if (dniMatch) data.dni = dniMatch[1];
+                const ageMatch = text.match(/(\d{1,3})\s*años/i);
+                if (ageMatch) data.age = parseInt(ageMatch[1]);
+                const sexMatch = text.match(/(?:sexo|género)\s*(?::|,)?\s*(masculino|femenino|masc|fem)/i);
+                if (sexMatch) data.sex = /^m/i.test(sexMatch[1]) ? 'M' : 'F';
+                return data;
+            }
+
+            // ---- Report numbering ----
+            function generateReportNumber() {
+                const year = new Date().getFullYear();
+                let counter = parseInt(localStorage.getItem('report_counter_' + year) || '0');
+                counter++;
+                localStorage.setItem('report_counter_' + year, counter);
+                return `${year}-${String(counter).padStart(4, '0')}`;
+            }
+
+            // ---- Image upload handlers ----
+            function handleImageUpload(inputId, previewId, storageKey) {
+                document.getElementById(inputId)?.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const dataUrl = event.target.result;
+                        const preview = document.getElementById(previewId);
+                        if (preview) preview.innerHTML = `<img src="${dataUrl}" alt="Preview" style="max-height:80px;">`;
+                        try { localStorage.setItem(storageKey, dataUrl); } catch(e) { /* storage full */ }
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+            handleImageUpload('pdfLogoUpload', 'pdfLogoPreview', 'pdf_logo');
+            handleImageUpload('pdfSignatureUpload', 'pdfSignaturePreview', 'pdf_signature');
+
+            // ---- Birthdate → Age auto-calculation ----
+            document.getElementById('pdfPatientBirthdate')?.addEventListener('change', (e) => {
+                if (!e.target.value) return;
+                const birthdate = new Date(e.target.value);
+                const today = new Date();
+                let age = today.getFullYear() - birthdate.getFullYear();
+                const m = today.getMonth() - birthdate.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < birthdate.getDate())) age--;
+                const ageEl = document.getElementById('pdfPatientAge');
+                if (ageEl) ageEl.value = age;
+            });
+
+            // ---- Save/Load configuration ----
+            function savePdfConfiguration() {
+                const val = (id) => document.getElementById(id)?.value || '';
+                const chk = (id, def) => document.getElementById(id)?.checked ?? def;
+                const config = {
+                    studyType: val('pdfStudyType'),
+                    studyDate: val('pdfStudyDate'),
+                    studyTime: val('pdfStudyTime'),
+                    studyReason: val('pdfStudyReason'),
+                    referringDoctor: val('pdfReferringDoctor'),
+                    equipment: val('pdfEquipment'),
+                    technique: val('pdfTechnique'),
+                    patientName: val('pdfPatientName'),
+                    patientDni: val('pdfPatientDni'),
+                    patientAge: val('pdfPatientAge'),
+                    patientSex: val('pdfPatientSex'),
+                    patientInsurance: val('pdfPatientInsurance'),
+                    patientAffiliateNum: val('pdfPatientAffiliateNum'),
+                    patientPhone: val('pdfPatientPhone'),
+                    patientBirthdate: val('pdfPatientBirthdate'),
+                    pageSize: val('pdfPageSize') || 'a4',
+                    orientation: val('pdfOrientation') || 'portrait',
+                    margins: val('pdfMargins') || 'normal',
+                    font: val('pdfFont') || 'helvetica',
+                    fontSize: val('pdfFontSize') || '11',
+                    lineSpacing: val('pdfLineSpacing') || '1.5',
+                    showHeader: chk('pdfShowHeader', true),
+                    showFooter: chk('pdfShowFooter', true),
+                    showPageNum: chk('pdfShowPageNum', true),
+                    showDate: chk('pdfShowDate', false),
+                    showQR: chk('pdfShowQR', false),
+                    showSignLine: chk('pdfShowSignLine', true),
+                    showSignName: chk('pdfShowSignName', true),
+                    showSignMatricula: chk('pdfShowSignMatricula', true),
+                    footerText: val('pdfFooterText'),
+                    selectedWorkplace: val('pdfWorkplace'),
+                    workplaceAddress: val('pdfWorkplaceAddress'),
+                    workplacePhone: val('pdfWorkplacePhone'),
+                    workplaceEmail: val('pdfWorkplaceEmail')
+                };
+                localStorage.setItem('pdf_config', JSON.stringify(config));
+                // Also update legacy pdf_metadata_config for backward compat
+                localStorage.setItem('pdf_metadata_config', JSON.stringify({
+                    patientName: config.patientName,
+                    patientDni: config.patientDni,
+                    studyDate: config.studyDate,
+                    procedure: config.studyType,
+                    footer: config.footerText
+                }));
+                showToast('💾 Configuración PDF guardada', 'success');
+            }
+
+            function loadPdfConfiguration() {
+                const config = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+                const set = (id, v) => { if (v !== undefined && v !== null) { const el = document.getElementById(id); if (el) el.value = v; } };
+                const setChk = (id, v, def) => { const el = document.getElementById(id); if (el) el.checked = (v !== undefined) ? v : def; };
+                set('pdfStudyType', config.studyType);
+                set('pdfStudyDate', config.studyDate);
+                set('pdfStudyTime', config.studyTime);
+                set('pdfStudyReason', config.studyReason);
+                set('pdfReferringDoctor', config.referringDoctor);
+                set('pdfEquipment', config.equipment);
+                set('pdfTechnique', config.technique);
+                set('pdfPatientName', config.patientName);
+                set('pdfPatientDni', config.patientDni);
+                set('pdfPatientAge', config.patientAge);
+                set('pdfPatientSex', config.patientSex);
+                set('pdfPatientInsurance', config.patientInsurance);
+                set('pdfPatientAffiliateNum', config.patientAffiliateNum);
+                set('pdfPatientPhone', config.patientPhone);
+                set('pdfPatientBirthdate', config.patientBirthdate);
+                set('pdfPageSize', config.pageSize || 'a4');
+                set('pdfOrientation', config.orientation || 'portrait');
+                set('pdfMargins', config.margins || 'normal');
+                set('pdfFont', config.font || 'helvetica');
+                set('pdfFontSize', config.fontSize || '11');
+                set('pdfLineSpacing', config.lineSpacing || '1.5');
+                setChk('pdfShowHeader', config.showHeader, true);
+                setChk('pdfShowFooter', config.showFooter, true);
+                setChk('pdfShowPageNum', config.showPageNum, true);
+                setChk('pdfShowDate', config.showDate, false);
+                setChk('pdfShowQR', config.showQR, false);
+                setChk('pdfShowSignLine', config.showSignLine, true);
+                setChk('pdfShowSignName', config.showSignName, true);
+                setChk('pdfShowSignMatricula', config.showSignMatricula, true);
+                set('pdfFooterText', config.footerText);
+                set('pdfWorkplace', config.selectedWorkplace);
+                set('pdfWorkplaceAddress', config.workplaceAddress);
+                set('pdfWorkplacePhone', config.workplacePhone);
+                set('pdfWorkplaceEmail', config.workplaceEmail);
+                // Restore logo preview
+                const savedLogo = localStorage.getItem('pdf_logo');
+                if (savedLogo) {
+                    const lp = document.getElementById('pdfLogoPreview');
+                    if (lp) lp.innerHTML = `<img src="${savedLogo}" alt="Logo" style="max-height:80px;">`;
+                }
+                const savedSig = localStorage.getItem('pdf_signature');
+                if (savedSig) {
+                    const sp = document.getElementById('pdfSignaturePreview');
+                    if (sp) sp.innerHTML = `<img src="${savedSig}" alt="Firma" style="max-height:80px;">`;
+                }
+            }
+
+            // ---- Pro-only visibility ----
+            function updatePdfModalByMode() {
+                const proElements = document.querySelectorAll('.pro-only');
+                proElements.forEach(el => {
+                    el.style.display = currentMode === 'pro' ? 'block' : 'none';
+                });
+            }
+
+            // ---- Open PDF Config Modal ----
+            function openPdfConfigModal() {
+                loadPdfConfiguration();
+                const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
+                const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+                set('pdfProfName', profData.nombre);
+                set('pdfProfMatricula', profData.matricula);
+                const specs = Array.isArray(profData.specialties) ? profData.specialties.join(' / ') : (profData.especialidad || '');
+                set('pdfProfEspecialidad', specs);
+                if (currentMode === 'pro' && selectedTemplate && MEDICAL_TEMPLATES[selectedTemplate]) {
+                    const studyTypeEl = document.getElementById('pdfStudyType');
+                    if (studyTypeEl && !studyTypeEl.value) {
+                        studyTypeEl.value = MEDICAL_TEMPLATES[selectedTemplate].name || '';
+                    }
+                }
+                if (currentMode === 'pro' && editor && editor.innerText.trim().length > 0) {
+                    const extracted = extractPatientDataFromText(editor.innerText);
+                    const setIfEmpty = (id, v) => {
+                        if (!v) return;
+                        const el = document.getElementById(id);
+                        if (el && !el.value) el.value = v;
+                    };
+                    setIfEmpty('pdfPatientName', extracted.name);
+                    setIfEmpty('pdfPatientDni', extracted.dni);
+                    if (extracted.age) setIfEmpty('pdfPatientAge', extracted.age);
+                    if (extracted.sex) setIfEmpty('pdfPatientSex', extracted.sex);
+                }
+                const reportNumEl = document.getElementById('pdfReportNumber');
+                if (reportNumEl && !reportNumEl.value) {
+                    reportNumEl.value = generateReportNumber();
+                }
+                const studyDateEl = document.getElementById('pdfStudyDate');
+                if (studyDateEl && !studyDateEl.value) {
+                    studyDateEl.value = new Date().toISOString().split('T')[0];
+                }
+                const studyTimeEl = document.getElementById('pdfStudyTime');
+                if (studyTimeEl && !studyTimeEl.value) {
+                    const now = new Date();
+                    studyTimeEl.value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+                }
+                updatePdfModalByMode();
+                populateWorkplaceDropdown();
+                populatePatientDatalist();
+                document.getElementById('pdfModalOverlay')?.classList.add('active');
+            }
+
+            // ---- Open Print Preview ----
+            function openPrintPreview() {
+                const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
+                const config = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+                const esc = escapeHtml;
+
+                const profName = esc(profData.nombre) || 'Dr. [Nombre]';
+                const matricula = esc(profData.matricula) || '';
+                const especialidad = esc(
+                    Array.isArray(profData.specialties) ? profData.specialties.join(' / ') : (profData.especialidad || '')
+                );
+                const patientName = esc(config.patientName) || '';
+                const patientDni = esc(config.patientDni) || '';
+                const patientAge = esc(config.patientAge) || '';
+                const patientSex = config.patientSex === 'M' ? 'Masculino' : config.patientSex === 'F' ? 'Femenino' : (esc(config.patientSex) || '');
+                const patientInsurance = esc(config.patientInsurance) || '';
+                const studyType = esc(config.studyType) || '';
+                const studyDate = esc(config.studyDate) || '';
+                const studyReason = esc(config.studyReason) || '';
+                const referringDoctor = esc(config.referringDoctor) || '';
+                const footerText = esc(config.footerText) || '';
+                const workplaceAddress = esc(config.workplaceAddress) || '';
+                const workplacePhone = esc(config.workplacePhone) || '';
+                const reportNum = document.getElementById('pdfReportNumber')?.value || '';
+
+                const headerEl = document.getElementById('previewHeader');
+                if (headerEl) {
+                    const logoSrc = localStorage.getItem('pdf_logo');
+                    const logoHtml = logoSrc ? `<img src="${logoSrc}" style="max-height:60px; float:right;" alt="Logo">` : '';
+                    headerEl.innerHTML = `
+                        ${logoHtml}
+                        <h2 style="margin:0 0 4px 0; font-size:16pt;">${profName}</h2>
+                        <p style="margin:2px 0; font-size:10pt; color:#555;">${matricula}${especialidad ? ' &bull; ' + especialidad : ''}</p>
+                        ${workplaceAddress ? `<p style="margin:2px 0; font-size:9pt; color:#666;">📍 ${workplaceAddress}${workplacePhone ? ' &bull; 📞 ' + workplacePhone : ''}</p>` : ''}
+                    `;
+                }
+
+                const patientEl = document.getElementById('previewPatient');
+                if (patientEl) {
+                    const rows = [];
+                    if (patientName) rows.push(`<strong>Paciente:</strong> ${patientName}`);
+                    if (patientDni) rows.push(`<strong>DNI:</strong> ${patientDni}`);
+                    if (patientAge) rows.push(`<strong>Edad:</strong> ${patientAge} años`);
+                    if (patientSex) rows.push(`<strong>Sexo:</strong> ${patientSex}`);
+                    if (patientInsurance) rows.push(`<strong>Obra Social:</strong> ${patientInsurance}`);
+                    patientEl.innerHTML = rows.length ? rows.map(r => `<p style="margin:3px 0;">${r}</p>`).join('') : '<p style="color:#999; margin:0;">Sin datos del paciente</p>';
+                }
+
+                const studyEl = document.getElementById('previewStudy');
+                if (studyEl) {
+                    const rows = [];
+                    if (studyType) rows.push(`<strong>Estudio:</strong> ${studyType}`);
+                    if (studyDate) rows.push(`<strong>Fecha:</strong> ${studyDate}`);
+                    if (studyReason) rows.push(`<strong>Motivo:</strong> ${studyReason}`);
+                    if (referringDoctor) rows.push(`<strong>Médico solicitante:</strong> ${referringDoctor}`);
+                    if (reportNum) rows.push(`<strong>Informe Nº:</strong> ${esc(reportNum)}`);
+                    studyEl.innerHTML = rows.map(r => `<p style="margin:3px 0;">${r}</p>`).join('');
+                }
+
+                const contentEl = document.getElementById('previewContent');
+                if (contentEl) {
+                    contentEl.innerHTML = editor ? editor.innerHTML : '';
+                }
+
+                const sigEl = document.getElementById('previewSignature');
+                const showSignLine = config.showSignLine ?? true;
+                const showSignName = config.showSignName ?? true;
+                const showSignMatricula = config.showSignMatricula ?? true;
+                if (sigEl) {
+                    const sigSrc = localStorage.getItem('pdf_signature');
+                    let sigHtml = '';
+                    if (sigSrc) sigHtml += `<img src="${sigSrc}" style="max-height:60px; display:block; margin-bottom:4px;" alt="Firma">`;
+                    if (showSignLine) sigHtml += `<div style="border-top:1px solid #333; width:200px; margin-top:${sigSrc ? '0' : '40px'};"></div>`;
+                    if (showSignName) sigHtml += `<p style="margin:4px 0 2px 0; font-size:10pt;">${profName}</p>`;
+                    if (showSignMatricula && matricula) sigHtml += `<p style="margin:0; font-size:9pt; color:#555;">${matricula}</p>`;
+                    sigEl.innerHTML = sigHtml;
+                }
+
+                const footerEl = document.getElementById('previewFooter');
+                if (footerEl) {
+                    let footerHtml = '';
+                    if (footerText) footerHtml += `<p>${footerText}</p>`;
+                    if (config.showDate) footerHtml += `<p>Impreso: ${new Date().toLocaleDateString('es-ES')}</p>`;
+                    footerEl.innerHTML = footerHtml;
+                    footerEl.style.display = footerHtml ? 'block' : 'none';
+                }
+
+                const qrEl = document.getElementById('previewQR');
+                if (qrEl) {
+                    if (config.showQR) {
+                        const qrData = `INFORME:${reportNum}|PROF:${profData.nombre||''}|PAC:${config.patientName||''}|FECHA:${config.studyDate||''}`;
+                        const qrUrl = `https://chart.googleapis.com/chart?cht=qr&chs=120x120&chl=${encodeURIComponent(qrData)}`;
+                        qrEl.innerHTML = `<img src="${qrUrl}" alt="QR" style="width:120px; height:120px;">`;
+                        qrEl.style.display = 'block';
+                    } else {
+                        qrEl.style.display = 'none';
+                    }
+                }
+
+                document.getElementById('printPreviewOverlay')?.classList.add('active');
+            }
+
+            // ---- Print Preview close/download ----
+            document.getElementById('closePrintPreview')?.addEventListener('click', () => {
+                document.getElementById('printPreviewOverlay')?.classList.remove('active');
+            });
+            document.getElementById('btnBackToEdit')?.addEventListener('click', () => {
+                document.getElementById('printPreviewOverlay')?.classList.remove('active');
+            });
+            document.getElementById('printPreviewOverlay')?.addEventListener('click', (e) => {
+                if (e.target.id === 'printPreviewOverlay') e.target.classList.remove('active');
+            });
+            document.getElementById('btnDownloadFromPreview')?.addEventListener('click', () => {
+                downloadPDF();
+            });
+            document.getElementById('btnPreviewFromConfig')?.addEventListener('click', () => {
+                savePdfConfiguration();
+                document.getElementById('pdfModalOverlay')?.classList.remove('active');
+                openPrintPreview();
+            });
+
+            if (btnConfigPdf) btnConfigPdf.addEventListener('click', () => openPdfConfigModal());
 
             const btnConfigPdfMain = document.getElementById('btnConfigPdfMain');
             if (btnConfigPdfMain) {
-                btnConfigPdfMain.addEventListener('click', () => pdfModalOverlay.classList.add('active'));
+                btnConfigPdfMain.addEventListener('click', () => openPdfConfigModal());
             }
 
             const btnPreviewPdfMain = document.getElementById('btnPreviewPdfMain');
             if (btnPreviewPdfMain) {
-                btnPreviewPdfMain.addEventListener('click', () => previewPdf());
+                btnPreviewPdfMain.addEventListener('click', () => openPrintPreview());
             }
-            closePdfConfig.addEventListener('click', () => pdfModalOverlay.classList.remove('active'));
-            pdfModalOverlay.addEventListener('click', (e) => {
-                if (e.target === pdfModalOverlay) {
-                    pdfModalOverlay.classList.remove('active');
+            document.getElementById('closePdfConfig')?.addEventListener('click', () => {
+                document.getElementById('pdfModalOverlay')?.classList.remove('active');
+            });
+            document.getElementById('btnClosePdfConfig')?.addEventListener('click', () => {
+                document.getElementById('pdfModalOverlay')?.classList.remove('active');
+            });
+            document.getElementById('pdfModalOverlay')?.addEventListener('click', (e) => {
+                if (e.target.id === 'pdfModalOverlay') {
+                    e.target.classList.remove('active');
                 }
             });
 
-            savePdfConfig.addEventListener('click', () => {
-                pdfSettings = {
-                    header: pdfHeaderInput.value.trim(),
-                    footer: pdfFooterInput.value.trim(),
-                    patientName: patientNameInput.value.trim(),
-                    patientDni: patientDniInput.value.trim(),
-                    studyDate: studyDateInput.value,
-                    procedure: procedureInput.value.trim()
-                };
-                localStorage.setItem('pdf_settings', JSON.stringify(pdfSettings));
-                pdfModalOverlay.classList.remove('active');
-                showToast('Configuración guardada ✓', 'success');
+            document.getElementById('btnSavePdfConfig')?.addEventListener('click', () => {
+                savePdfConfiguration();
+                // Save patient to history if in pro mode
+                if (currentMode === 'pro') {
+                    const patName = document.getElementById('pdfPatientName')?.value?.trim();
+                    if (patName) {
+                        savePatientToHistory({
+                            name: patName,
+                            dni: document.getElementById('pdfPatientDni')?.value?.trim() || '',
+                            age: document.getElementById('pdfPatientAge')?.value || '',
+                            sex: document.getElementById('pdfPatientSex')?.value || '',
+                            insurance: document.getElementById('pdfPatientInsurance')?.value?.trim() || '',
+                            phone: document.getElementById('pdfPatientPhone')?.value?.trim() || ''
+                        });
+                    }
+                }
             });
 
             // ============ BUSINESS SUITE LOGIC (Onboarding, Admin, Trial) ============
