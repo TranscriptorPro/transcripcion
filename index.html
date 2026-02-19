@@ -1509,19 +1509,10 @@
             transform: translateX(20px);
         }
 
-        .pdf-controls-visible {
-            display: flex !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-        }
-
-        #pdfControls {
-            transition: opacity 0.3s ease-in-out;
-        }
-
-        #pdfControls:not(.pdf-controls-visible) {
-            opacity: 0;
-            pointer-events: none;
+        /* PDF Buttons - Initially Hidden */
+        #btnConfigPdfMain,
+        #btnPreviewPdfMain {
+            display: none;
         }
     </style>
 </head>
@@ -1953,6 +1944,16 @@
                         <!-- Tabs will be dynamically populated -->
                     </div>
                     <div class="editor-actions" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <!-- PDF Controls - Initially hidden, shown after transcription -->
+                        <button class="btn btn-secondary" id="btnConfigPdfMain" title="Configurar PDF">
+                            ⚙️ Configurar PDF
+                        </button>
+                        <button class="btn btn-primary" id="btnPreviewPdfMain" title="Previsualizar PDF">
+                            👁️ Previsualizar PDF
+                        </button>
+                        <div style="width: 1px; height: 20px; background: var(--border); margin: 0 0.5rem;"></div>
+
+                        <!-- Controles existentes -->
                         <select id="fontSizeSelect" class="toolbar-select" style="width: 100px;">
                             <option value="14px">Pequeña</option>
                             <option value="16px" selected>Normal</option>
@@ -2053,16 +2054,6 @@
                     <button class="toolbar-btn" id="clearFormatBtn" title="Limpiar formato">⎚</button>
                     <button class="toolbar-btn" id="insertLinkBtn" title="Insertar enlace">🔗</button>
                     <button class="toolbar-btn" id="insertTableBtn" title="Insertar tabla">⊞</button>
-                </div>
-
-                <!-- PDF Controls (shown after transcription) -->
-                <div id="pdfControls" style="display: none; gap: 0.5rem; margin-bottom: 1rem; align-items: center;">
-                    <button class="btn btn-secondary" onclick="openPdfMetadataModal()">
-                        ⚙️ Configurar PDF
-                    </button>
-                    <button class="btn btn-primary" onclick="previewPdf()">
-                        👁️ Previsualizar PDF
-                    </button>
                 </div>
 
                 <div class="editor-container"
@@ -3493,18 +3484,13 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
             
             // Mostrar botones de PDF después de transcripción
             function showPdfControls() {
-                const pdfControlsContainer = document.getElementById('pdfControls');
+                const btnConfig = document.getElementById('btnConfigPdfMain');
+                const btnPreview = document.getElementById('btnPreviewPdfMain');
                 
-                if (!pdfControlsContainer) {
-                    console.error('❌ ERROR: Elemento #pdfControls NO existe en el DOM');
-                    return;
+                if (btnConfig && btnPreview) {
+                    btnConfig.style.display = 'inline-flex';
+                    btnPreview.style.display = 'inline-flex';
                 }
-                
-                // Forzar visibilidad con !important inline
-                pdfControlsContainer.style.cssText = 'display: flex !important; gap: 0.5rem; margin-bottom: 1rem; align-items: center; visibility: visible !important; opacity: 1 !important;';
-                pdfControlsContainer.classList.add('pdf-controls-visible');
-                
-                console.log('✅ PDF Controls mostrados:', pdfControlsContainer);
             }
 
             // Abrir modal de configuración de PDF
@@ -3906,6 +3892,16 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
             };
 
             btnConfigPdf.addEventListener('click', () => pdfModalOverlay.classList.add('active'));
+
+            const btnConfigPdfMain = document.getElementById('btnConfigPdfMain');
+            if (btnConfigPdfMain) {
+                btnConfigPdfMain.addEventListener('click', () => pdfModalOverlay.classList.add('active'));
+            }
+
+            const btnPreviewPdfMain = document.getElementById('btnPreviewPdfMain');
+            if (btnPreviewPdfMain) {
+                btnPreviewPdfMain.addEventListener('click', () => previewPdf());
+            }
             closePdfConfig.addEventListener('click', () => pdfModalOverlay.classList.remove('active'));
             pdfModalOverlay.addEventListener('click', (e) => {
                 if (e.target === pdfModalOverlay) {
