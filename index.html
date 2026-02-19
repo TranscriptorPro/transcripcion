@@ -2903,13 +2903,22 @@
             const insertTableBtn = $('insertTableBtn');
             if (insertTableBtn) {
                 insertTableBtn.addEventListener('click', () => {
-                    const rows = prompt('Número de filas:', '3');
-                    const cols = prompt('Número de columnas:', '3');
-                    if (rows && cols) {
+                    const rowsInput = prompt('Número de filas:', '3');
+                    const colsInput = prompt('Número de columnas:', '3');
+                    if (rowsInput && colsInput) {
+                        const rows = parseInt(rowsInput);
+                        const cols = parseInt(colsInput);
+                        
+                        // Validate input
+                        if (isNaN(rows) || isNaN(cols) || rows < 1 || cols < 1 || rows > 20 || cols > 10) {
+                            alert('Por favor ingrese valores válidos (filas: 1-20, columnas: 1-10)');
+                            return;
+                        }
+                        
                         let tableHTML = '<table border="1" style="border-collapse: collapse; width: 100%; margin: 1rem 0;">';
-                        for (let i = 0; i < parseInt(rows); i++) {
+                        for (let i = 0; i < rows; i++) {
                             tableHTML += '<tr>';
-                            for (let j = 0; j < parseInt(cols); j++) {
+                            for (let j = 0; j < cols; j++) {
                                 tableHTML += '<td style="border: 1px solid #ddd; padding: 8px;">&nbsp;</td>';
                             }
                             tableHTML += '</tr>';
@@ -2937,20 +2946,20 @@
 
             // Keyboard Shortcuts for Formatting
             editor.addEventListener('keydown', (e) => {
-                // Ctrl+B for Bold
-                if (e.ctrlKey && e.key === 'b') {
+                // Ctrl+B or Cmd+B for Bold
+                if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
                     e.preventDefault();
                     document.execCommand('bold', false, null);
                     updateActiveStates();
                 }
-                // Ctrl+I for Italic
-                if (e.ctrlKey && e.key === 'i') {
+                // Ctrl+I or Cmd+I for Italic
+                if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
                     e.preventDefault();
                     document.execCommand('italic', false, null);
                     updateActiveStates();
                 }
-                // Ctrl+U for Underline
-                if (e.ctrlKey && e.key === 'u') {
+                // Ctrl+U or Cmd+U for Underline
+                if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
                     e.preventDefault();
                     document.execCommand('underline', false, null);
                     updateActiveStates();
@@ -3076,13 +3085,15 @@
             });
 
             // ============ DOWNLOAD ============
+            const downloadContainer = downloadBtn.parentElement;
+            
             downloadBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 downloadDropdown.classList.toggle('open');
             });
 
             document.addEventListener('click', e => {
-                if (!downloadBtn.contains(e.target) && !downloadDropdown.contains(e.target)) {
+                if (!downloadContainer.contains(e.target)) {
                     downloadDropdown.classList.remove('open');
                 }
             });
