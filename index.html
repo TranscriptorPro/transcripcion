@@ -11,12 +11,14 @@
     <script>
         /* {{CONFIG_IDENTITY}} */
         const CLIENT_CONFIG = {
-            id: "DEV_TEST",
-            nombre: "Desarrollador",
-            matricula: "0000",
-            plan: "pro",
-            vencimiento: "2099-12-31",
-            status: "active"
+            type: 'ADMIN',        // ADMIN, TRIAL, NORMAL, PRO
+            status: 'active',
+            specialties: ['ALL'], // ALL = todas las especialidades
+            maxDevices: Infinity,
+            trialDays: 0,
+            hasProMode: true,
+            hasDashboard: true,
+            canGenerateApps: true
         };
     </script>
     <style>
@@ -133,6 +135,18 @@
             font-size: 0.7rem;
             opacity: 0.8;
             display: block;
+        }
+
+        .admin-badge {
+            display: none;
+            font-size: 0.7rem;
+            background: #f59e0b;
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 700;
+            margin-left: 6px;
+            vertical-align: middle;
         }
 
         .header-actions {
@@ -1733,6 +1747,7 @@
                 <div>
                     <h1 id="appMainTitle">Transcriptor Médico Pro</h1>
                     <span id="doctorWelcomeName">Audio → Texto con IA</span>
+                    <span id="adminBadge" class="admin-badge">👑 ADMIN</span>
                 </div>
             </div>
             <div class="header-actions">
@@ -2670,6 +2685,10 @@
 
         <script>
             const $ = id => document.getElementById(id);
+
+            function isAdminUser() {
+                return CLIENT_CONFIG.type === 'ADMIN';
+            }
 
             // ============ CONFIGURATION ============
             let GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
@@ -5482,6 +5501,29 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                 set('pdfProfMatricula', profData.matricula);
                 const specs = Array.isArray(profData.specialties) ? profData.specialties.join(' / ') : (profData.especialidad || '');
                 set('pdfProfEspecialidad', specs);
+                if (isAdminUser()) {
+                    const profNameField = document.getElementById('pdfProfName');
+                    const profMatriculaField = document.getElementById('pdfProfMatricula');
+                    const profEspecialidadField = document.getElementById('pdfProfEspecialidad');
+                    if (profNameField) {
+                        profNameField.readOnly = false;
+                        profNameField.disabled = false;
+                        profNameField.style.backgroundColor = '';
+                        profNameField.closest('.field-group')?.classList.remove('locked');
+                    }
+                    if (profMatriculaField) {
+                        profMatriculaField.readOnly = false;
+                        profMatriculaField.disabled = false;
+                        profMatriculaField.style.backgroundColor = '';
+                        profMatriculaField.closest('.field-group')?.classList.remove('locked');
+                    }
+                    if (profEspecialidadField) {
+                        profEspecialidadField.readOnly = false;
+                        profEspecialidadField.disabled = false;
+                        profEspecialidadField.style.backgroundColor = '';
+                        profEspecialidadField.closest('.field-group')?.classList.remove('locked');
+                    }
+                }
                 if (currentMode === 'pro' && selectedTemplate && MEDICAL_TEMPLATES[selectedTemplate]) {
                     const studyTypeEl = document.getElementById('pdfStudyType');
                     if (studyTypeEl && !studyTypeEl.value) {
@@ -5732,6 +5774,12 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                     applyProfessionalData(profData);
                     updatePersonalization(profData);
                     checkTrial(onboardingDate);
+                }
+
+                if (isAdminUser()) {
+                    setMode('pro');
+                    const badge = $('adminBadge');
+                    if (badge) badge.style.display = 'inline';
                 }
             };
 
