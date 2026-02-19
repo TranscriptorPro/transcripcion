@@ -1,44 +1,116 @@
-# 🩺 Transcriptor Médico Pro
+# 🏥 Transcriptor Médico Pro
 
-Aplicación web offline para transcribir audios médicos a texto usando IA.
+**Aplicación web para transcripción de audio médico con inteligencia artificial.**
+
+Convierte dictados médicos en informes profesionales estructurados usando IA (Whisper + LLaMA 3.3 70B).
 
 ## ✨ Características
 
-- 🎙️ **Grabación en tiempo real** o carga de archivos
-- 🤖 **Transcripción con IA** (Whisper de Groq)
-- 📝 **Editor profesional** con formato
-- 📄 **Exportación PDF** personalizada
-- 🔒 **100% Privado** - funciona offline tras la primera carga
-- 🌐 **Sin instalación** - funciona en el navegador
+### Modo Normal
+- 🎙️ Grabación de audio en vivo
+- 📂 Subida de archivos de audio (MP3, WAV, OGG, M4A, WebM)
+- 🔊 Normalización y reducción de ruido
+- 🔗 Unir múltiples audios en una transcripción
+- ✏️ Editor WYSIWYG completo (negrita, cursiva, listas, tablas, etc.)
+- 📄 Exportar a PDF y Word
+- ⚙️ Configuración completa del PDF (encabezado, paciente, estudio, firma)
+- 👁️ Vista previa de impresión (A4)
+- 🏥 Perfiles de lugar de trabajo (múltiples consultorios)
+- 🔢 Numeración correlativa de informes
 
-## 🚀 Uso
+### Modo Pro (IA avanzada)
+- 📋 32+ plantillas médicas especializadas por especialidad
+- 🤖 Detección automática del tipo de estudio
+- ✨ Estructuración automática con IA (LLaMA 3.3 70B)
+- 👤 Historial de pacientes (últimos 50)
+- 📝 Auto-completado de datos del paciente desde el audio
+- ✍️ Firma digital (imagen PNG)
+- 📱 QR de verificación en informes
 
-### Online (GitHub Pages)
-Visita: [https://aldowagner78-cmd.github.io/transcripcion/](https://aldowagner78-cmd.github.io/transcripcion/)
+### Especialidades cubiertas
+| Categoría | Plantillas |
+|-----------|------------|
+| 🫁 Neumología | Espirometría, Test Marcha 6min, Pletismografía, Oximetría Nocturna |
+| 👁️ Oftalmología | Campimetría, OCT Retinal, Topografía Corneal, Fondo de Ojo |
+| 📷 Imágenes | TAC, RMN, Mamografía, Densitometría, PET-CT, Radiografía, Ecografía |
+| 🔬 Endoscopía | Gastroscopía, Colonoscopía, Broncoscopía, Laringoscopía |
+| ❤️ Cardiología | Gammagrafía, Holter, MAPA, Cinecoronariografía, ECG, Eco-Stress |
+| 🩺 Ginecología | PAP, Colposcopía |
+| 🧠 Neurología | EMG/Potenciales Evocados, Polisomnografía |
+| 👂 ORL | Videonasofibrolaringoscopía, Endoscopía Otológica |
+| 🔪 Quirúrgico | Protocolo Quirúrgico |
 
-### Local
-1. Descarga el repositorio como ZIP
-2. Abre `index.html` en tu navegador
-3. Configura tu API Key de Groq (gratis en [console.groq.com](https://console.groq.com/keys))
+## 🚀 Instalación
 
-## 📁 Estructura del Proyecto
+### Opción 1: Usar directamente (GitHub Pages)
+Abrir en el navegador:
+```
+https://aldowagner78-cmd.github.io/transcripcion/
+```
+
+### Opción 2: Descargar ZIP para uso local
+1. Ir a: https://github.com/aldowagner78-cmd/transcripcion
+2. Click en **Code** → **Download ZIP**
+3. Descomprimir en cualquier carpeta
+4. Abrir `index.html` en el navegador
+
+### Opción 3: Clonar con Git
+```bash
+git clone https://github.com/aldowagner78-cmd/transcripcion.git
+cd transcripcion
+# Abrir index.html en el navegador
+```
+
+## 🔧 Configuración inicial
+
+1. **Abrir la app** → Aparece el onboarding
+2. **Configurar API Key de Groq** (necesaria para transcripción)
+   - Obtener gratis en: https://console.groq.com/
+   - Pegar la key en la configuración
+3. **Completar datos profesionales** (nombre, matrícula, especialidad)
+4. **¡Listo!** Ya podés transcribir
+
+## 📁 Estructura del proyecto
 
 ```
 transcripcion/
-├── index.html          # Aplicación principal (SPA)
-├── backend/            # Scripts de backend (futuro)
-└── documentacion/      # Documentación técnica
+├── index.html                    # App principal (HTML + CSS + JS en un solo archivo)
+├── README.md                     # Este archivo
+├── backend/
+│   └── google_apps_script.js     # Backend para Google Sheets (control de usuarios)
+└── documentacion/
+    └── CONTEXTO_PROYECTO.md      # Visión y contexto del proyecto
 ```
 
-## 🔧 Requisitos
+## 🛠️ Tecnologías utilizadas
 
-- Navegador moderno (Chrome, Firefox, Edge, Safari)
-- API Key de Groq (gratuita)
+- **Frontend:** HTML5, CSS3, JavaScript (vanilla, sin frameworks)
+- **Transcripción:** Groq API (Whisper large-v3)
+- **Estructuración IA:** Groq API (LLaMA 3.3 70B Versatile)
+- **PDF:** jsPDF (generación de PDF en el navegador)
+- **Backend:** Google Apps Script + Google Sheets
+- **Hosting:** GitHub Pages (gratis)
 
-## 📝 Licencia
+## 💰 Modelo de negocio
 
-Proyecto personal - Uso libre para fines médicos
+| Concepto | Precio |
+|----------|--------|
+| App personalizada (pago único) | $200 USD |
+| Suscripción Normal | $15 USD/mes |
+| Suscripción Pro | $25 USD/mes |
 
----
+## 🔒 Seguridad
 
-**Última actualización:** Febrero 2026 (PR #10 - Limpieza Total)
+- Datos del profesional bloqueados en informes (anti-piratería)
+- Contraseña para acceso admin
+- Control de dispositivos
+- Sin almacenamiento en servidor (todo en localStorage del navegador)
+- API keys encriptadas en localStorage
+
+## 📞 Soporte
+
+Para soporte técnico o consultas comerciales, contactar al administrador.
+
+## 📄 Licencia
+
+Proyecto privado. Todos los derechos reservados.
