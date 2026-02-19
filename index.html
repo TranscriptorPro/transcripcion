@@ -2732,10 +2732,10 @@
 
             // Validate audio file before processing
             function validateAudioFile(file) {
-                const validTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a', 'audio/x-m4a'];
+                const validTypes = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/m4a', 'audio/x-m4a', 'audio/webm', 'audio/flac', 'audio/aac', 'audio/opus'];
                 const validExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.webm', '.flac', '.aac', '.opus'];
                 
-                // Validate type MIME
+                // Validate type MIME or extension
                 if (!validTypes.includes(file.type) && !validExtensions.some(ext => file.name.toLowerCase().endsWith(ext))) {
                     throw new Error(`Formato no soportado: ${file.name}`);
                 }
@@ -2760,13 +2760,14 @@
                     return false;
                 }
 
+                let audioContext = null;
                 try {
                     // Create a minimal valid audio test file
                     const sampleRate = 16000;
                     const duration = 0.1; // 100ms
                     const numSamples = Math.floor(sampleRate * duration);
                     
-                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
                     const audioBuffer = audioContext.createBuffer(1, numSamples, sampleRate);
                     
                     // Generate a simple 440Hz tone (A note)
@@ -2796,6 +2797,11 @@
                 } catch (error) {
                     console.error('Test connection failed:', error);
                     return false;
+                } finally {
+                    // Close AudioContext to prevent resource leaks
+                    if (audioContext) {
+                        audioContext.close();
+                    }
                 }
             }
 
