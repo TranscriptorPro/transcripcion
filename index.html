@@ -1311,60 +1311,80 @@
             transition: all 0.2s;
         }
 
-        /* Mode Selector Styles */
-        .mode-selector {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            background: rgba(15, 118, 110, 0.05);
-            padding: 4px;
-            border-radius: 12px;
-            margin-bottom: 1.5rem;
-            border: 1px solid rgba(15, 118, 110, 0.1);
-        }
-
-        .mode-tab {
-            padding: 10px 5px;
-            border: none;
-            background: transparent;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            color: var(--text-muted);
-            display: flex;
+        /* Pro Mode Toggle Slider */
+        .pro-toggle-container {
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
             gap: 0.4rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            margin-left: 0.75rem;
+            vertical-align: middle;
         }
 
-        .mode-tab svg {
-            opacity: 0.6;
-            transition: all 0.2s;
+        .pro-toggle-label {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 500;
+            user-select: none;
         }
 
-        .mode-tab.active {
-            background: white;
-            color: var(--primary);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        .pro-toggle-label-active {
+            color: rgba(255, 255, 255, 0.95);
+            font-weight: 600;
         }
 
-        .mode-tab.active svg {
-            opacity: 1;
+        .pro-toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 22px;
+            cursor: pointer;
         }
 
-        /* Specific style for Professional Mode when active */
-        #modePro.active {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 4px 12px rgba(15, 118, 110, 0.2);
+        .pro-toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
         }
 
-        #modePro.active svg {
-            filter: brightness(0) invert(1);
+        .pro-toggle-slider {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 22px;
+            transition: 0.3s;
+        }
+
+        .pro-toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .pro-toggle-switch input:checked + .pro-toggle-slider {
+            background-color: #fbbf24;
+        }
+
+        .pro-toggle-switch input:checked + .pro-toggle-slider:before {
+            transform: translateX(18px);
+        }
+
+        .pro-toggle-container.mode-normal .pro-toggle-label-active {
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 500;
+        }
+
+        .pro-toggle-container.mode-normal #proToggleLabelOff {
+            color: rgba(255, 255, 255, 0.95);
+            font-weight: 600;
         }
 
         .template-selector {
@@ -1748,6 +1768,15 @@
                     <h1 id="appMainTitle">Transcriptor Médico Pro</h1>
                     <span id="doctorWelcomeName">Audio → Texto con IA</span>
                     <span id="adminBadge" class="admin-badge">👑 ADMIN</span>
+                    <!-- Pro Mode Toggle Slider -->
+                    <div class="pro-toggle-container" id="proToggleContainer">
+                        <span class="pro-toggle-label" id="proToggleLabelOff">Normal</span>
+                        <label class="pro-toggle-switch">
+                            <input type="checkbox" id="proModeToggle">
+                            <span class="pro-toggle-slider"></span>
+                        </label>
+                        <span class="pro-toggle-label pro-toggle-label-active" id="proToggleLabelOn">Pro ✨</span>
+                    </div>
                 </div>
             </div>
             <div class="header-actions">
@@ -2221,6 +2250,9 @@
                         </div>
                     </div>
                     <button class="btn btn-secondary" id="btnResetAccount">♻️ Resetear Cuenta</button>
+                    <button class="btn btn-danger" id="btnResetProfile" onclick="resetAdminProfile()">
+                        🔄 Reset Perfil (Volver al Onboarding)
+                    </button>
                 </div>
             </div>
         </div>
@@ -2308,22 +2340,6 @@
                         Limpiar
                     </button>
                 </div>
-            </div>
-
-            <!-- Mode Selector -->
-            <div class="mode-selector" id="templateSelectorContainer" style="display: none;">
-                <button class="mode-tab active" id="modeNormal">
-                    <svg viewBox="0 0 24 24" width="16" height="16">
-                        <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" fill="currentColor"/>
-                    </svg>
-                    Normal
-                </button>
-                <button class="mode-tab" id="modePro">
-                    <svg viewBox="0 0 24 24" width="16" height="16">
-                        <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V9h7V3.18l8 3.56v8.26h-8v-2.01z" fill="currentColor"/>
-                    </svg>
-                    Pro
-                </button>
             </div>
 
             <!-- Wizard: Template Selection (Contextual) -->
@@ -2694,9 +2710,7 @@
             let GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
             const chkJoinAudios = $('chkJoinAudios');
 
-            const modeNormal = $('modeNormal');
-            const modePro = $('modePro');
-            const templateSelectorContainer = $('templateSelectorContainer');
+            const templateSelectorContainer = null;
             const templateSelect = $('templateSelect');
 
             // App State
@@ -5071,31 +5085,56 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
             }
 
             // ============ MODE SELECTOR ============
-            if (modeNormal) {
-                modeNormal.addEventListener('click', () => setMode('normal'));
-            }
-            if (modePro) {
-                modePro.addEventListener('click', () => setMode('pro'));
+            const proModeToggle = document.getElementById('proModeToggle');
+            const proToggleContainer = document.getElementById('proToggleContainer');
+
+            if (proModeToggle) {
+                proModeToggle.addEventListener('change', (e) => {
+                    const mode = e.target.checked ? 'pro' : 'normal';
+                    setMode(mode, true);
+
+                    if (proToggleContainer) {
+                        proToggleContainer.classList.toggle('mode-normal', !e.target.checked);
+                    }
+                });
             }
 
-            function setMode(mode) {
+            function setMode(mode, notify = false) {
                 currentMode = mode;
                 const templateDropdown = document.getElementById('templateDropdownMain');
                 const templateDivider = document.getElementById('templateDivider');
+
+                if (proModeToggle) proModeToggle.checked = (mode === 'pro');
+                if (proToggleContainer) {
+                    proToggleContainer.classList.toggle('mode-normal', mode === 'normal');
+                }
+
                 if (mode === 'normal') {
-                    modeNormal.classList.add('active');
-                    modePro.classList.remove('active');
-                    templateSelectorContainer.style.display = 'none';
+                    if (templateSelectorContainer) templateSelectorContainer.style.display = 'none';
                     if (templateDropdown) templateDropdown.style.display = 'none';
                     if (templateDivider) templateDivider.style.display = 'none';
+                    if (notify) showToast('Modo Normal activado', 'info');
                 } else {
-                    modePro.classList.add('active');
-                    modeNormal.classList.remove('active');
-                    templateSelectorContainer.style.display = 'block';
+                    if (templateSelectorContainer) templateSelectorContainer.style.display = 'block';
                     if (templateDropdown) templateDropdown.style.display = 'inline-block';
                     if (templateDivider) templateDivider.style.display = 'block';
+                    if (notify) showToast('Modo Pro ✨ activado', 'success');
                 }
                 updateUIByMode();
+            }
+
+            function initializeMode() {
+                const isAdminOrPro = ['ADMIN', 'PRO', 'TRIAL'].includes(CLIENT_CONFIG.type);
+                if (isAdminOrPro) {
+                    setMode('pro');
+                } else {
+                    setMode('normal');
+                    if (proModeToggle) {
+                        proModeToggle.disabled = true;
+                        const sw = proModeToggle.closest('.pro-toggle-switch');
+                        if (sw) { sw.style.opacity = '0.5'; sw.style.cursor = 'not-allowed'; }
+                    }
+                }
             }
 
             templateSelect.addEventListener('change', (e) => {
@@ -5777,10 +5816,10 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                 }
 
                 if (isAdminUser()) {
-                    setMode('pro');
                     const badge = $('adminBadge');
                     if (badge) badge.style.display = 'inline';
                 }
+                initializeMode();
             };
 
             const initSpecialtiesGrid = () => {
@@ -5924,6 +5963,16 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                         location.reload();
                     }
                 });
+            }
+
+            function resetAdminProfile() {
+                if (confirm('⚠️ ¿Estás seguro? Esto borrará tu perfil actual y volverá a mostrar el onboarding.')) {
+                    localStorage.removeItem('prof_data');
+                    localStorage.removeItem('onboarding_done');
+                    localStorage.removeItem('onboarding_complete');
+                    showToast('Perfil reseteado. Recargando...', 'info');
+                    setTimeout(() => location.reload(), 1500);
+                }
             }
         </script>
 
