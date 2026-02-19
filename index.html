@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title><!-- {{APP_TITLE}} -->Transcriptor Médico Pro | Audio a Texto</title>
+    <title>Transcriptor Médico Pro | Audio a Texto</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
@@ -636,6 +636,57 @@
             width: 16px;
             height: 16px;
             fill: currentColor;
+        }
+
+        /* Dropdown Container for Download Button */
+        .dropdown-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 0.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow);
+            min-width: 200px;
+            z-index: 50;
+            overflow: hidden;
+        }
+
+        .dropdown-content.open {
+            display: block;
+        }
+
+        .dropdown-content button {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            background: none;
+            width: 100%;
+            color: var(--text-primary);
+            text-align: left;
+            font-family: inherit;
+        }
+
+        .dropdown-content button:hover {
+            background: var(--bg-main);
+            color: var(--primary);
+        }
+
+        .dropdown-content button:active {
+            background: var(--primary-light);
+            color: white;
         }
 
         /* Tabs */
@@ -1823,7 +1874,7 @@
                         <div style="width: 1px; height: 20px; background: var(--border); margin: 0 0.5rem;"></div>
                         <button class="toolbar-btn" id="copyBtn" title="Copiar todo">📋</button>
                         <div class="dropdown-container">
-                            <button class="btn btn-secondary" id="downloadBtn">
+                            <button class="btn btn-accent" id="downloadBtn">
                                 <span>⬇️ Descargar</span>
                                 <svg viewBox="0 0 24 24" width="16" height="16" style="margin-left: 0.5rem;">
                                     <path d="M7 10l5 5 5-5H7z" fill="currentColor" />
@@ -2681,12 +2732,13 @@
             });
 
             // ============ DOWNLOAD ============
-            downloadBtn.addEventListener('click', () => {
+            downloadBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
                 downloadDropdown.classList.toggle('open');
             });
 
             document.addEventListener('click', e => {
-                if (!downloadDropdown.contains(e.target)) {
+                if (!downloadBtn.contains(e.target) && !downloadDropdown.contains(e.target)) {
                     downloadDropdown.classList.remove('open');
                 }
             });
