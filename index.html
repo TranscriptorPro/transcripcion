@@ -5604,7 +5604,7 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
             const btnAdminAccess = $('btnAdminAccess');
             if (btnAdminAccess) {
                 btnAdminAccess.addEventListener('click', () => {
-                    window.open('recursos/admin.html', '_blank');
+                    window.open('recursos/admin.html?fromApp=true', '_blank');
                 });
             }
 

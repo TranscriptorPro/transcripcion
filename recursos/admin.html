@@ -52,7 +52,7 @@
             box-shadow: 0 2px 20px rgba(15, 118, 110, 0.3);
             position: sticky;
             top: 0;
-            z-index: 100;
+            z-index: 1000;
         }
 
         .header-content {
@@ -60,6 +60,8 @@
             align-items: center;
             justify-content: space-between;
             gap: 1rem;
+            position: relative;
+            z-index: 1001;
         }
 
         .logo-section h1 {
@@ -93,8 +95,8 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 40px;
-            height: 40px;
+            width: 36px !important;
+            height: 36px !important;
             border-radius: 50%;
             background: var(--primary-light);
             color: white;
@@ -103,8 +105,8 @@
         }
 
         .admin-icon svg {
-            width: 24px;
-            height: 24px;
+            width: 20px !important;
+            height: 20px !important;
         }
 
         .btn-icon-only {
@@ -132,11 +134,42 @@
             border: none;
             cursor: pointer;
             transition: all 0.2s;
+            width: 36px !important;
+            height: 36px !important;
+        }
+
+        .btn-logout svg {
+            width: 18px !important;
+            height: 18px !important;
         }
 
         .btn-logout:hover {
             background: #dc2626;
             box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-refresh-icon {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            padding: 0.5rem;
+            color: var(--primary);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 1003 !important;
+            pointer-events: auto !important;
+        }
+
+        .btn-refresh-icon:hover {
+            transform: rotate(180deg);
+        }
+
+        .btn-refresh-icon:active {
+            transform: scale(0.9) rotate(180deg);
         }
 
         /* ── Stats ── */
@@ -1104,6 +1137,14 @@
             display: flex;
             gap: 1rem;
             align-items: center;
+            position: relative;
+            z-index: 1002 !important;
+        }
+
+        .header-actions button {
+            position: relative;
+            z-index: 1003 !important;
+            pointer-events: auto !important;
         }
 
         .header-actions .btn-primary {
@@ -1226,7 +1267,7 @@
                     <button class="btn-primary" id="btnNewUser">
                         ➕ Nuevo Usuario
                     </button>
-                    <button class="btn-icon-only btn-refresh" id="btnRefresh" title="Actualizar tabla">
+                    <button class="btn-refresh-icon" id="btnRefresh" title="Actualizar tabla">
                         🔄
                     </button>
                     <span class="admin-icon" title="Administrador">
@@ -1572,6 +1613,23 @@
 
         /* ── Authentication ─────────────────────────────────────────────────── */
         (function checkAuth() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const fromApp = urlParams.get('fromApp');
+
+            if (fromApp === 'true') {
+                // Create automatic session without requiring login
+                const adminSession = {
+                    username: 'admin',
+                    nombre: 'Administrador',
+                    timestamp: Date.now(),
+                    autoLogin: true
+                };
+                sessionStorage.setItem('adminSession', JSON.stringify(adminSession));
+                // Remove fromApp param from URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+                return;
+            }
+
             const raw = sessionStorage.getItem('adminSession');
             if (!raw) {
                 window.location.href = 'login.html';
@@ -2343,7 +2401,7 @@
             const btn = e.target.closest('[data-action]');
             if (!btn) return;
             const userId = btn.dataset.userId;
-            if (btn.dataset.action === 'edit') openEditModal(userId);
+            if (btn.dataset.action === 'edit') openEditUserModal(userId);
             else if (btn.dataset.action === 'metrics') openUserMetrics(userId);
             else if (btn.dataset.action === 'ban') quickBan(userId);
             else if (btn.dataset.action === 'activate') activateUser(userId);
@@ -2384,6 +2442,7 @@
                 closeEditModal();
                 closeUserMetrics();
                 closeNewUserModal();
+                closeEditUserModal();
             }
         });
 
@@ -2406,6 +2465,14 @@
             document.getElementById('newUserModal')?.addEventListener('click', function (e) {
                 if (e.target === this) closeNewUserModal();
             });
+
+            // Setup edit user modal close buttons (modal HTML is after the script block)
+            document.getElementById('btnCloseEditUser')?.addEventListener('click', () => closeEditUserModal());
+            document.getElementById('btnCancelEditUser')?.addEventListener('click', () => closeEditUserModal());
+            document.getElementById('editUserModal')?.addEventListener('click', function (e) {
+                if (e.target === this) closeEditUserModal();
+            });
+            document.getElementById('editUserForm')?.addEventListener('submit', handleEditUserSubmit);
         });
 
         // ========== NUEVO USUARIO ==========
@@ -2431,6 +2498,152 @@
             'General': ['Informe Evolutivo', 'Epicrisis', 'Certificado'],
             'Quirúrgico': ['Protocolo Operatorio', 'Parte de Cirugía']
         };
+
+        // ========== EDITAR USUARIO ==========
+
+        async function openEditUserModal(userId) {
+            try {
+                const user = allUsers.find(u => String(u.ID_Medico) === String(userId));
+                if (!user) {
+                    showToast('Usuario no encontrado', 'error');
+                    return;
+                }
+
+                document.getElementById('editUserId2').value = user.ID_Medico;
+                document.getElementById('editUserTitle').textContent = user.Nombre;
+                document.getElementById('editNombre').value = user.Nombre || '';
+                document.getElementById('editMatricula').value = user.Matricula || '';
+                document.getElementById('editEmail').value = user.Email || '';
+                document.getElementById('editTelefono').value = user.Telefono || '';
+                document.getElementById('editPlanEdit').value = user.Plan || 'trial';
+                document.getElementById('editEstado').value = user.Estado || 'trial';
+                document.getElementById('editDevicesMaxEdit').value = user.Devices_Max || 2;
+                document.getElementById('editNotasEdit').value = user.Notas_Admin || '';
+                document.getElementById('editLugaresTrabajo').value = user.Lugares_Trabajo || '';
+
+                if (user.Fecha_Vencimiento) {
+                    document.getElementById('editFechaVencimiento').value = user.Fecha_Vencimiento.split('T')[0];
+                }
+
+                const selectedEsp = user.Especialidad
+                    ? user.Especialidad.split(',').map(s => s.trim())
+                    : [];
+                initEditEspecialidadesGrid(selectedEsp);
+
+                document.getElementById('editUserModal').style.display = 'flex';
+            } catch (error) {
+                console.error('Error loading user for edit:', error);
+                showToast('Error al cargar usuario', 'error');
+            }
+        }
+
+        function initEditEspecialidadesGrid(selectedEsp = []) {
+            const grid = document.getElementById('editEspecialidadesGrid');
+            grid.innerHTML = ESPECIALIDADES.map(esp => {
+                const isChecked = selectedEsp.includes(esp) ? 'checked' : '';
+                return `
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="editesp_${esp.replace(/\s+/g, '_')}" value="${esp}" ${isChecked}>
+                        <label for="editesp_${esp.replace(/\s+/g, '_')}">${esp}</label>
+                    </div>
+                `;
+            }).join('');
+
+            grid.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.addEventListener('change', updateEditEstudiosGrid);
+            });
+
+            updateEditEstudiosGrid();
+        }
+
+        function updateEditEstudiosGrid() {
+            const selectedEspecialidades = Array.from(
+                document.querySelectorAll('#editEspecialidadesGrid input:checked')
+            ).map(cb => cb.value);
+
+            const estudiosGrid = document.getElementById('editEstudiosGrid');
+
+            if (selectedEspecialidades.length === 0) {
+                estudiosGrid.innerHTML = '<p style="color:var(--text-secondary);font-style:italic;">Seleccione al menos una especialidad</p>';
+                return;
+            }
+
+            const estudios = selectedEspecialidades.flatMap(esp =>
+                (ESTUDIOS_POR_ESPECIALIDAD[esp] || []).map(estudio => ({ esp, estudio }))
+            );
+
+            estudiosGrid.innerHTML = estudios.map(({ esp, estudio }) => `
+                <div class="checkbox-item">
+                    <input type="checkbox" id="editest_${estudio.replace(/\s+/g, '_')}" value="${estudio}" data-especialidad="${esp}">
+                    <label for="editest_${estudio.replace(/\s+/g, '_')}">${estudio} <small style="color:var(--text-secondary);">(${esp})</small></label>
+                </div>
+            `).join('');
+        }
+
+        function closeEditUserModal() {
+            const modal = document.getElementById('editUserModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function handleEditUserSubmit(e) {
+            e.preventDefault();
+
+            const userId = document.getElementById('editUserId2').value;
+
+            const selectedEspecialidades = Array.from(
+                document.querySelectorAll('#editEspecialidadesGrid input:checked')
+            ).map(cb => cb.value);
+
+            const selectedEstudios = Array.from(
+                document.querySelectorAll('#editEstudiosGrid input:checked')
+            ).map(cb => ({ nombre: cb.value, especialidad: cb.dataset.especialidad }));
+
+            const userData = {
+                Nombre: document.getElementById('editNombre').value,
+                Matricula: document.getElementById('editMatricula').value,
+                Email: document.getElementById('editEmail').value,
+                Telefono: document.getElementById('editTelefono').value,
+                Especialidad: selectedEspecialidades.join(', '),
+                Plan: document.getElementById('editPlanEdit').value,
+                Estado: document.getElementById('editEstado').value,
+                Fecha_Vencimiento: document.getElementById('editFechaVencimiento').value,
+                Devices_Max: parseInt(document.getElementById('editDevicesMaxEdit').value, 10) || 2,
+                Notas_Admin: document.getElementById('editNotasEdit').value,
+                Lugares_Trabajo: document.getElementById('editLugaresTrabajo').value,
+                Estudios_JSON: JSON.stringify(selectedEstudios)
+            };
+
+            const btnSave = document.getElementById('btnSaveEditUser');
+            btnSave.disabled = true;
+            btnSave.textContent = '⏳ Guardando...';
+
+            try {
+                const result = await updateUser(userId, userData);
+
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+
+                // Update local state
+                const idx = allUsers.findIndex(u => String(u.ID_Medico) === String(userId));
+                if (idx !== -1) {
+                    allUsers[idx] = { ...allUsers[idx], ...userData };
+                }
+
+                updateStats(allUsers);
+                applyFilters();
+                closeEditUserModal();
+                showToast('✅ Usuario actualizado correctamente', 'success');
+            } catch (error) {
+                console.error('Error updating user:', error);
+                showToast('Error: ' + error.message, 'error');
+            } finally {
+                btnSave.disabled = false;
+                btnSave.textContent = '💾 Guardar Cambios';
+            }
+        }
+
+        // ========== FIN EDITAR USUARIO ==========
 
         // Abrir modal
         document.getElementById('btnNewUser')?.addEventListener('click', () => {
@@ -2659,6 +2872,106 @@
             };
         }
     </script>
+
+    <!-- Modal Editar Usuario -->
+    <div class="modal-overlay" id="editUserModal" style="display:none;">
+        <div class="modal" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h2>✏️ Editar Usuario: <span id="editUserTitle"></span></h2>
+                <button class="modal-close" id="btnCloseEditUser">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editUserForm">
+                    <input type="hidden" id="editUserId2">
+
+                    <div class="form-section">
+                        <h3>👤 Datos Personales</h3>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Nombre y Apellido *</label>
+                                <input type="text" id="editNombre" required>
+                            </div>
+                            <div class="field-group">
+                                <label>Matrícula *</label>
+                                <input type="text" id="editMatricula" required>
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Email *</label>
+                                <input type="email" id="editEmail" required>
+                            </div>
+                            <div class="field-group">
+                                <label>Teléfono</label>
+                                <input type="tel" id="editTelefono">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>🩺 Especialidades</h3>
+                        <div class="checkbox-grid" id="editEspecialidadesGrid"></div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>📋 Estudios que Realiza</h3>
+                        <div class="checkbox-grid" id="editEstudiosGrid">
+                            <p style="color:var(--text-secondary);font-style:italic;">Seleccione al menos una especialidad</p>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>🏥 Lugares de Trabajo</h3>
+                        <textarea id="editLugaresTrabajo" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>⚙️ Configuración de Cuenta</h3>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Plan *</label>
+                                <select id="editPlanEdit" required>
+                                    <option value="trial">Trial</option>
+                                    <option value="pro">Pro</option>
+                                    <option value="enterprise">Enterprise</option>
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label>Dispositivos Máximos *</label>
+                                <input type="number" id="editDevicesMaxEdit" min="1" max="999" required>
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Fecha de Vencimiento *</label>
+                                <input type="date" id="editFechaVencimiento" required>
+                            </div>
+                            <div class="field-group">
+                                <label>Estado *</label>
+                                <select id="editEstado" required>
+                                    <option value="trial">Trial</option>
+                                    <option value="active">Activo</option>
+                                    <option value="expired">Expirado</option>
+                                    <option value="banned">Bloqueado</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>📝 Notas Administrativas</h3>
+                        <textarea id="editNotasEdit" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="btnCancelEditUser">Cancelar</button>
+                <button type="submit" form="editUserForm" class="btn-primary" id="btnSaveEditUser">
+                    💾 Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal Nuevo Usuario -->
     <div class="modal-overlay" id="newUserModal" style="display:none;">
