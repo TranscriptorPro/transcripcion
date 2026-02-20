@@ -470,19 +470,19 @@
         }
 
         .btn-primary {
-            background: var(--primary);
-            color: #ffffff;
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+            color: white;
             border: none;
-            padding: 0.55rem 1.1rem;
+            padding: 0.6rem 1.2rem;
             border-radius: var(--radius-sm);
-            font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s;
         }
 
         .btn-primary:hover {
-            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(20, 184, 166, 0.3);
         }
 
         .btn-secondary {
@@ -1067,6 +1067,111 @@
                 font-size: 0.8rem;
             }
         }
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .form-section {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .form-section:last-child {
+            border-bottom: none;
+        }
+
+        .form-section h3 {
+            font-size: 1.1rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .field-group label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .field-group input,
+        .field-group select,
+        .field-group textarea {
+            padding: 0.75rem;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+
+        .field-group input:focus,
+        .field-group select:focus,
+        .field-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-light);
+        }
+
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border-radius: var(--radius-sm);
+            transition: background 0.2s;
+        }
+
+        .checkbox-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .checkbox-item label {
+            cursor: pointer;
+            margin: 0;
+            font-weight: normal;
+            font-size: 0.9rem;
+        }
+
+        .image-preview {
+            margin-top: 0.5rem;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .image-preview img {
+            max-width: 120px;
+            max-height: 120px;
+            border-radius: var(--radius-sm);
+            border: 2px solid var(--border);
+            object-fit: cover;
+        }
     </style>
 </head>
 <body>
@@ -1078,6 +1183,11 @@
                 <div class="logo-section">
                     <h1>🏥 Admin Dashboard</h1>
                     <span class="subtitle">Transcriptor Médico Pro</span>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-primary" id="btnNewUser">
+                        ➕ Nuevo Usuario
+                    </button>
                 </div>
                 <div class="user-section">
                     <span class="admin-badge">👤 <span id="adminName">Administrador</span></span>
@@ -2239,6 +2349,393 @@
             await loadDashboard();
             startAutoRefresh(5);
         });
+
+        // ========== NUEVO USUARIO ==========
+
+        const ESPECIALIDADES = [
+            'Neumología',
+            'Oftalmología',
+            'Imágenes',
+            'Endoscopía',
+            'Cardiología',
+            'Ginecología',
+            'General',
+            'Quirúrgico'
+        ];
+
+        const ESTUDIOS_POR_ESPECIALIDAD = {
+            'Neumología': ['Espirometría', 'Test Marcha 6min', 'Pletismografía', 'Oximetría Nocturna'],
+            'Oftalmología': ['Campimetría', 'OCT Retinal', 'Topografía Corneal', 'Fondo de Ojo'],
+            'Imágenes': ['TAC', 'RMN', 'Mamografía', 'Densitometría', 'PET-CT', 'Radiografía', 'Ecografía'],
+            'Endoscopía': ['Gastroscopía', 'Colonoscopía', 'Broncoscopía', 'Laringoscopía'],
+            'Cardiología': ['Gammagrafía', 'Holter', 'MAPA', 'Cinecoronariografía', 'ECG', 'Eco-Stress'],
+            'Ginecología': ['PAP', 'Colposcopía'],
+            'General': ['Informe Evolutivo', 'Epicrisis', 'Certificado'],
+            'Quirúrgico': ['Protocolo Operatorio', 'Parte de Cirugía']
+        };
+
+        // Abrir modal
+        document.getElementById('btnNewUser')?.addEventListener('click', () => {
+            document.getElementById('newUserModal').style.display = 'flex';
+            initEspecialidadesGrid();
+            setDefaultExpirationDate();
+        });
+
+        // Cerrar modal
+        document.getElementById('btnCloseNewUser')?.addEventListener('click', closeNewUserModal);
+        document.getElementById('btnCancelNewUser')?.addEventListener('click', closeNewUserModal);
+
+        function closeNewUserModal() {
+            document.getElementById('newUserModal').style.display = 'none';
+            document.getElementById('newUserForm').reset();
+            clearImagePreviews();
+            document.getElementById('estudiosGrid').innerHTML = '<p style="color:var(--text-secondary);font-style:italic;">Seleccione al menos una especialidad</p>';
+        }
+
+        // Generar grid de especialidades
+        function initEspecialidadesGrid() {
+            const grid = document.getElementById('especialidadesGrid');
+            grid.innerHTML = ESPECIALIDADES.map(esp => `
+                <div class="checkbox-item">
+                    <input type="checkbox" id="esp_${esp.replace(/\s+/g, '_')}" value="${esp}">
+                    <label for="esp_${esp.replace(/\s+/g, '_')}">${esp}</label>
+                </div>
+            `).join('');
+
+            // Add change listeners
+            grid.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.addEventListener('change', updateEstudiosGrid);
+            });
+        }
+
+        // Actualizar estudios según especialidades seleccionadas
+        function updateEstudiosGrid() {
+            const selectedEspecialidades = Array.from(
+                document.querySelectorAll('#especialidadesGrid input:checked')
+            ).map(cb => cb.value);
+
+            const estudiosGrid = document.getElementById('estudiosGrid');
+
+            if (selectedEspecialidades.length === 0) {
+                estudiosGrid.innerHTML = '<p style="color:var(--text-secondary);font-style:italic;">Seleccione al menos una especialidad</p>';
+                return;
+            }
+
+            const estudios = selectedEspecialidades.flatMap(esp =>
+                (ESTUDIOS_POR_ESPECIALIDAD[esp] || []).map(estudio => ({ esp, estudio }))
+            );
+
+            estudiosGrid.innerHTML = estudios.map(({ esp, estudio }) => `
+                <div class="checkbox-item">
+                    <input type="checkbox" id="est_${estudio.replace(/\s+/g, '_')}" value="${estudio}" data-especialidad="${esp}">
+                    <label for="est_${estudio.replace(/\s+/g, '_')}">${estudio} <small style="color:var(--text-secondary);">(${esp})</small></label>
+                </div>
+            `).join('');
+        }
+
+        // Fecha de vencimiento por defecto
+        function setDefaultExpirationDate() {
+            const planSelect = document.getElementById('newPlan');
+            const fechaInput = document.getElementById('newFechaVencimiento');
+            const estadoSelect = document.getElementById('newEstado');
+
+            const updateExpiration = () => {
+                const plan = planSelect.value;
+                const today = new Date();
+                let expirationDate;
+
+                if (plan === 'trial') {
+                    expirationDate = new Date(today.getTime());
+                    expirationDate.setDate(expirationDate.getDate() + 7);
+                    estadoSelect.value = 'trial';
+                } else if (plan === 'pro') {
+                    expirationDate = new Date(today.getTime());
+                    expirationDate.setMonth(expirationDate.getMonth() + 1);
+                    estadoSelect.value = 'active';
+                } else if (plan === 'enterprise') {
+                    expirationDate = new Date(today.getTime());
+                    expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+                    estadoSelect.value = 'active';
+                }
+
+                const yyyy = expirationDate.getFullYear();
+                const mm = String(expirationDate.getMonth() + 1).padStart(2, '0');
+                const dd = String(expirationDate.getDate()).padStart(2, '0');
+                fechaInput.value = `${yyyy}-${mm}-${dd}`;
+            };
+
+            planSelect.addEventListener('change', updateExpiration);
+            updateExpiration(); // Set initial date
+        }
+
+        // Preview de imágenes
+        document.getElementById('newLogoMedico')?.addEventListener('change', (e) => previewImage(e, 'previewLogoMedico'));
+        document.getElementById('newFirma')?.addEventListener('change', (e) => previewImage(e, 'previewFirma'));
+        document.getElementById('newLogosInstituciones')?.addEventListener('change', (e) => previewMultipleImages(e, 'previewLogosInst'));
+
+        function previewImage(event, previewId) {
+            const file = event.target.files[0];
+            const preview = document.getElementById(previewId);
+            preview.innerHTML = '';
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    preview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function previewMultipleImages(event, previewId) {
+            const files = event.target.files;
+            const preview = document.getElementById(previewId);
+            preview.innerHTML = '';
+
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    preview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function clearImagePreviews() {
+            document.getElementById('previewLogoMedico').innerHTML = '';
+            document.getElementById('previewFirma').innerHTML = '';
+            document.getElementById('previewLogosInst').innerHTML = '';
+        }
+
+        // Submit del formulario
+        document.getElementById('newUserForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const selectedEspecialidades = Array.from(
+                document.querySelectorAll('#especialidadesGrid input:checked')
+            ).map(cb => cb.value);
+
+            const selectedEstudios = Array.from(
+                document.querySelectorAll('#estudiosGrid input:checked')
+            ).map(cb => ({ nombre: cb.value, especialidad: cb.dataset.especialidad }));
+
+            if (selectedEspecialidades.length === 0) {
+                showToast('Debe seleccionar al menos una especialidad', 'error');
+                return;
+            }
+
+            // Generar ID único
+            const newUserId = await generateUserId();
+
+            const userData = {
+                ID_Medico: newUserId,
+                Nombre: document.getElementById('newNombre').value,
+                Matricula: document.getElementById('newMatricula').value,
+                Email: document.getElementById('newEmail').value,
+                Telefono: document.getElementById('newTelefono').value || '',
+                Especialidad: selectedEspecialidades.join(', '),
+                Plan: document.getElementById('newPlan').value,
+                Estado: document.getElementById('newEstado').value,
+                Fecha_Registro: new Date().toISOString().split('T')[0],
+                Fecha_Vencimiento: document.getElementById('newFechaVencimiento').value,
+                Devices_Max: parseInt(document.getElementById('newDevicesMax').value),
+                Devices_Logged: '[]',
+                Usage_Count: 0,
+                Notas_Admin: document.getElementById('newNotas').value || '',
+                Lugares_Trabajo: document.getElementById('newLugaresTrabajo').value || '',
+                Estudios_JSON: JSON.stringify(selectedEstudios)
+            };
+
+            const btnSave = document.getElementById('btnSaveNewUser');
+            const originalText = btnSave.textContent;
+            btnSave.disabled = true;
+            btnSave.textContent = '⏳ Creando...';
+
+            try {
+                // Crear usuario en Google Sheets
+                const result = await API.createUser(userData);
+
+                if (!result.success) {
+                    throw new Error(result.error || 'Error al crear usuario');
+                }
+
+                showToast('✅ Usuario creado exitosamente', 'success');
+                closeNewUserModal();
+                loadDashboard(true); // Recargar tabla
+            } catch (error) {
+                console.error('Error creating user:', error);
+                showToast('Error al crear usuario: ' + error.message, 'error');
+            } finally {
+                btnSave.disabled = false;
+                btnSave.textContent = originalText;
+            }
+        });
+
+        // Generar ID único
+        async function generateUserId() {
+            try {
+                const users = await API.getUsers();
+                const existingIds = users.users.map(u => u.ID_Medico);
+                let newId;
+                let counter = 1;
+
+                do {
+                    newId = `DR${String(counter).padStart(3, '0')}`;
+                    counter++;
+                } while (existingIds.includes(newId));
+
+                return newId;
+            } catch (error) {
+                console.error('Error generating user ID:', error);
+                // Fallback: generar ID basado en timestamp + random
+                const rand = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+                return `DR${Date.now().toString().slice(-4)}${rand}`;
+            }
+        }
+
+        // Agregar método al API object
+        if (typeof API !== 'undefined') {
+            API.createUser = async function(userData) {
+                const updatesJson = encodeURIComponent(JSON.stringify(userData));
+                return await this.call(`?action=admin_create_user&updates=${updatesJson}`);
+            };
+        }
     </script>
+
+    <!-- Modal Nuevo Usuario -->
+    <div class="modal-overlay" id="newUserModal" style="display:none;">
+        <div class="modal" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h2>➕ Crear Nuevo Usuario</h2>
+                <button class="modal-close" id="btnCloseNewUser">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="newUserForm">
+
+                    <!-- Sección 1: Datos Personales -->
+                    <div class="form-section">
+                        <h3>👤 Datos Personales</h3>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Nombre y Apellido *</label>
+                                <input type="text" id="newNombre" required placeholder="Dr. Juan Pérez">
+                            </div>
+                            <div class="field-group">
+                                <label>Matrícula *</label>
+                                <input type="text" id="newMatricula" required placeholder="MN 12345">
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Email *</label>
+                                <input type="email" id="newEmail" required placeholder="doctor@example.com">
+                            </div>
+                            <div class="field-group">
+                                <label>Teléfono</label>
+                                <input type="tel" id="newTelefono" placeholder="+54 9 11 1234-5678">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección 2: Especialidades -->
+                    <div class="form-section">
+                        <h3>🩺 Especialidades</h3>
+                        <div class="checkbox-grid" id="especialidadesGrid">
+                            <!-- Se genera dinámicamente -->
+                        </div>
+                    </div>
+
+                    <!-- Sección 3: Estudios que Realiza -->
+                    <div class="form-section">
+                        <h3>📋 Estudios que Realiza</h3>
+                        <div class="checkbox-grid" id="estudiosGrid">
+                            <p style="color:var(--text-secondary);font-style:italic;">Seleccione al menos una especialidad</p>
+                        </div>
+                    </div>
+
+                    <!-- Sección 4: Lugares de Trabajo -->
+                    <div class="form-section">
+                        <h3>🏥 Lugares de Trabajo</h3>
+                        <textarea id="newLugaresTrabajo" rows="3" placeholder="Clínica San Martín&#10;Hospital Central&#10;Consultorio Privado - Av. Corrientes 1234"></textarea>
+                        <small>Separe cada lugar con Enter (un lugar por línea)</small>
+                    </div>
+
+                    <!-- Sección 5: Plan y Configuración -->
+                    <div class="form-section">
+                        <h3>⚙️ Configuración de Cuenta</h3>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Plan *</label>
+                                <select id="newPlan" required>
+                                    <option value="trial">Trial (7 días gratis)</option>
+                                    <option value="pro">Pro (Pago mensual)</option>
+                                    <option value="enterprise">Enterprise (Anual)</option>
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label>Dispositivos Máximos *</label>
+                                <input type="number" id="newDevicesMax" value="2" min="1" max="999" required>
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Fecha de Vencimiento *</label>
+                                <input type="date" id="newFechaVencimiento" required>
+                            </div>
+                            <div class="field-group">
+                                <label>Estado *</label>
+                                <select id="newEstado" required>
+                                    <option value="trial">Trial</option>
+                                    <option value="active">Activo</option>
+                                    <option value="expired">Expirado</option>
+                                    <option value="banned">Bloqueado</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección 6: Upload de Imágenes -->
+                    <div class="form-section">
+                        <h3>🖼️ Imágenes (Opcional)</h3>
+
+                        <div class="field-group">
+                            <label>Logo del Médico</label>
+                            <input type="file" id="newLogoMedico" accept="image/*">
+                            <div class="image-preview" id="previewLogoMedico"></div>
+                        </div>
+
+                        <div class="field-group">
+                            <label>Firma Escaneada</label>
+                            <input type="file" id="newFirma" accept="image/*">
+                            <div class="image-preview" id="previewFirma"></div>
+                        </div>
+
+                        <div class="field-group">
+                            <label>Logos de Instituciones (múltiples)</label>
+                            <input type="file" id="newLogosInstituciones" accept="image/*" multiple>
+                            <div class="image-preview" id="previewLogosInst"></div>
+                        </div>
+                    </div>
+
+                    <!-- Sección 7: Notas Admin -->
+                    <div class="form-section">
+                        <h3>📝 Notas Administrativas</h3>
+                        <textarea id="newNotas" rows="3" placeholder="Notas internas del admin..."></textarea>
+                    </div>
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="btnCancelNewUser">Cancelar</button>
+                <button type="submit" form="newUserForm" class="btn-primary" id="btnSaveNewUser">
+                    💾 Crear Usuario
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
