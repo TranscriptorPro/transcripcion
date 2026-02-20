@@ -1,10 +1,9 @@
-async function fetchUsers() {
-    try {
-        const data = await API.getUsers();
-        return data.users || [];
-    } catch (error) {
-        console.error('Error fetching users:', error);
-        showToast('Error al cargar usuarios. Usando datos de muestra.', 'warning');
-        return SAMPLE_USERS;
-    }
-}
+<html>
+<head>
+    <title>Admin Page</title>
+</head>
+<body>
+    <h1>Welcome to the Admin Page</h1>
+    <p>This is where administrative tasks can be performed.</p>
+</body>
+</html>
