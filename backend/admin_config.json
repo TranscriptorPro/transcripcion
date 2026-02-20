@@ -1,0 +1,16 @@
+{
+  "sheetName": "Usuarios_Transcriptor",
+  "scriptUrl": "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE",
+  "adminKey": "ADMIN_SECRET_2026",
+  "endpoints": {
+    "listUsers": "?action=admin_list_users",
+    "updateUser": "POST with action=admin_update_user",
+    "validateUser": "?id=USER_ID&deviceId=DEVICE_ID"
+  },
+  "notes": [
+    "1. Deploy Apps Script as Web App (Anyone, even anonymous)",
+    "2. Copy the Web App URL to scriptUrl field",
+    "3. Change ADMIN_SECRET_2026 to a secure random string",
+    "4. Never commit the real admin key to GitHub"
+  ]
+}
