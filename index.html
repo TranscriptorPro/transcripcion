@@ -2240,54 +2240,7 @@
             </div>
         </div>
 
-        <!-- Admin Auth Modal -->
-        <div class="modal-overlay" id="adminAuthOverlay">
-            <div class="modal" style="max-width: 400px;">
-                <div class="modal-header">
-                    <h2>🔐 Acceso Administrador</h2>
-                    <button class="modal-close" id="closeAdminAuth">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <input type="password" id="adminPasswordInput" class="toolbar-input"
-                        style="width: 100%; margin-bottom: 1rem;" placeholder="Contraseña...">
-                    <button class="btn btn-primary btn-full" id="btnConfirmAdmin">Entrar al Panel</button>
-                </div>
-            </div>
-        </div>
 
-        <!-- Admin Dashboard Modal -->
-        <div class="modal-overlay" id="adminDashboardOverlay">
-            <div class="modal" style="max-width: 800px;">
-                <div class="modal-header">
-                    <h2>🚀 Panel de Control</h2>
-                    <button class="modal-close" id="closeAdminDashboard">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div class="stats"
-                        style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
-                        <div class="stat-card"
-                            style="background: var(--bg-main); padding: 1rem; border-radius: 8px; text-align: center;">
-                            <h4 style="font-size: 0.7rem; color: var(--text-secondary);">ESTADO</h4>
-                            <p id="adminUserStatus" style="font-weight: 800; font-size: 1.2rem;">---</p>
-                        </div>
-                        <div class="stat-card"
-                            style="background: var(--bg-main); padding: 1rem; border-radius: 8px; text-align: center;">
-                            <h4 style="font-size: 0.7rem; color: var(--text-secondary);">TRIAL</h4>
-                            <p id="adminTrialDays" style="font-weight: 800; font-size: 1.2rem;">---</p>
-                        </div>
-                        <div class="stat-card"
-                            style="background: var(--bg-main); padding: 1rem; border-radius: 8px; text-align: center;">
-                            <h4 style="font-size: 0.7rem; color: var(--text-secondary);">USO</h4>
-                            <p id="adminUsageCount" style="font-weight: 800; font-size: 1.2rem;">---</p>
-                        </div>
-                    </div>
-                    <button class="btn btn-secondary" id="btnResetAccount">♻️ Resetear Cuenta</button>
-                    <button class="btn btn-danger" id="btnResetProfile" onclick="resetAdminProfile()">
-                        🔄 Reset Perfil (Volver al Onboarding)
-                    </button>
-                </div>
-            </div>
-        </div>
         <!-- Sidebar -->
         <aside class="sidebar">
             <!-- Capture Card -->
@@ -5481,12 +5434,20 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
             });
 
             // ============ BUSINESS SUITE LOGIC (Onboarding, Admin, Trial) ============
-            const MASTER_PASSWORD = 'Al26716975d@';
             const onboardingOverlay = $('onboardingOverlay');
             const onboardingStudiesSection = $('onboardingStudiesSection');
             const studiesGrid = $('studiesGrid');
 
             const updatePersonalization = (data) => {
+                // ✅ Mensaje especial para admin
+                if (isAdminUser()) {
+                    const appTitle = $('appMainTitle');
+                    if (appTitle) appTitle.textContent = '🏥 Transcriptor Pro - Modo Administrador';
+                    const welcomeName = $('doctorWelcomeName');
+                    if (welcomeName) welcomeName.textContent = '👨‍💼 Panel de Control';
+                    return;
+                }
+
                 if (data.nombre) {
                     $('appMainTitle').textContent = `Transcriptor Pro: ${data.nombre}`;
                     const specs = Array.isArray(data.specialties) ? data.specialties.join(' / ') : (data.especialidad || 'Médico');
@@ -5520,6 +5481,25 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
             };
 
             const initBusinessSuite = () => {
+                // ✅ Si es admin, precargar datos y NO mostrar onboarding
+                if (isAdminUser()) {
+                    const adminProfData = {
+                        nombre: 'Administrador',
+                        matricula: 'ADMIN',
+                        workplace: 'Panel de Administración',
+                        specialties: ['Todas'],
+                        studies: []
+                    };
+                    localStorage.setItem('prof_data', JSON.stringify(adminProfData));
+                    localStorage.setItem('onboarding_date', new Date().toISOString());
+                    applyProfessionalData(adminProfData);
+                    updatePersonalization(adminProfData);
+                    const badge = $('adminBadge');
+                    if (badge) badge.style.display = 'inline';
+                    initializeMode();
+                    return;
+                }
+
                 const profData = JSON.parse(localStorage.getItem('prof_data'));
                 const onboardingDate = localStorage.getItem('onboarding_date');
 
@@ -5532,10 +5512,6 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                     checkTrial(onboardingDate);
                 }
 
-                if (isAdminUser()) {
-                    const badge = $('adminBadge');
-                    if (badge) badge.style.display = 'inline';
-                }
                 initializeMode();
             };
 
@@ -5628,69 +5604,10 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
             const btnAdminAccess = $('btnAdminAccess');
             if (btnAdminAccess) {
                 btnAdminAccess.addEventListener('click', () => {
-                    $('adminAuthOverlay').classList.add('active');
+                    window.open('recursos/admin.html', '_blank');
                 });
             }
 
-            const closeAdminAuth = $('closeAdminAuth');
-            if (closeAdminAuth) {
-                closeAdminAuth.addEventListener('click', () => $('adminAuthOverlay').classList.remove('active'));
-            }
-
-            const btnConfirmAdmin = $('btnConfirmAdmin');
-            if (btnConfirmAdmin) {
-                btnConfirmAdmin.addEventListener('click', () => {
-                    const pass = $('adminPasswordInput').value;
-                    if (pass === MASTER_PASSWORD) {
-                        $('adminAuthOverlay').classList.remove('active');
-                        $('adminDashboardOverlay').classList.add('active');
-                        prepareAdminDashboard();
-                    } else {
-                        showToast('Contraseña incorrecta', 'error');
-                    }
-                });
-            }
-
-            const prepareAdminDashboard = () => {
-                const profData = JSON.parse(localStorage.getItem('prof_data')) || {};
-                const onboardingDate = localStorage.getItem('onboarding_date');
-
-                $('adminUserStatus').textContent = CLIENT_CONFIG.status || 'TRIAL';
-
-                if (onboardingDate) {
-                    const start = new Date(onboardingDate);
-                    const daysUsed = Math.ceil((new Date() - start) / (1000 * 60 * 60 * 24));
-                    $('adminTrialDays').textContent = Math.max(0, 5 - daysUsed) + " días";
-                }
-
-                $('adminUsageCount').textContent = localStorage.getItem('usage_count') || "0";
-            };
-
-            const closeAdminDashboard = $('closeAdminDashboard');
-            if (closeAdminDashboard) {
-                closeAdminDashboard.addEventListener('click', () => $('adminDashboardOverlay').classList.remove('active'));
-            }
-
-            const btnResetAccount = $('btnResetAccount');
-            if (btnResetAccount) {
-                btnResetAccount.addEventListener('click', () => {
-                    if (confirm('¿Estás seguro? Esto borrará tus datos y se interpretará como un cambio de equipo.')) {
-                        localStorage.removeItem('prof_data');
-                        localStorage.removeItem('onboarding_date');
-                        location.reload();
-                    }
-                });
-            }
-
-            function resetAdminProfile() {
-                if (confirm('⚠️ ¿Estás seguro? Esto borrará tu perfil actual y volverá a mostrar el onboarding.')) {
-                    localStorage.removeItem('prof_data');
-                    localStorage.removeItem('onboarding_done');
-                    localStorage.removeItem('onboarding_complete');
-                    showToast('Perfil reseteado. Recargando...', 'info');
-                    setTimeout(() => location.reload(), 1500);
-                }
-            }
         </script>
 
 </body>
