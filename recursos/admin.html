@@ -654,6 +654,395 @@
                 display: none;
             }
         }
+
+        /* ── Tabs Navigation ── */
+        .tabs-nav {
+            background: var(--bg-card);
+            border-bottom: 2px solid var(--border);
+            position: sticky;
+            top: 60px;
+            z-index: 90;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .tabs-nav .container {
+            display: flex;
+            gap: 0;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 0.85rem 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: color 0.2s, border-color 0.2s;
+            white-space: nowrap;
+            font-family: inherit;
+        }
+
+        .tab-btn:hover {
+            color: var(--primary);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* ── Metrics Tab ── */
+        .metrics-section {
+            padding: 1.5rem 0 2rem;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 1.25rem 1.5rem;
+            box-shadow: var(--shadow);
+            border-top: 4px solid var(--primary-light);
+            transition: transform 0.2s;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .metric-card .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .metric-card .metric-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.3rem;
+        }
+
+        .metric-card .metric-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-mrr { border-top-color: var(--success); }
+        .metric-conversion { border-top-color: var(--warning); }
+        .metric-words { border-top-color: var(--info); }
+
+        /* ── Bar Chart ── */
+        .chart-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 1.25rem 1.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 6px;
+            height: 120px;
+            padding-bottom: 1.5rem;
+            position: relative;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .bar-wrap {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            justify-content: flex-end;
+        }
+
+        .bar {
+            width: 100%;
+            background: linear-gradient(to top, var(--primary), var(--primary-light));
+            border-radius: 4px 4px 0 0;
+            transition: height 0.5s ease;
+            min-height: 2px;
+            position: relative;
+        }
+
+        .bar:hover::after {
+            content: attr(data-value);
+            position: absolute;
+            top: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--text-primary);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            white-space: nowrap;
+        }
+
+        .bar-label {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            margin-top: 0.3rem;
+            text-align: center;
+        }
+
+        /* ── Top Users ── */
+        .top-users-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 1.25rem 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .top-users-card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .top-user-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .top-user-row:last-child {
+            border-bottom: none;
+        }
+
+        .top-user-rank {
+            font-size: 1.1rem;
+            width: 1.5rem;
+            text-align: center;
+        }
+
+        .top-user-info {
+            flex: 1;
+        }
+
+        .top-user-info strong {
+            font-size: 0.875rem;
+        }
+
+        .top-user-info small {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .top-user-count {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 0.9rem;
+        }
+
+        /* ── Logs Tab ── */
+        .logs-section {
+            padding: 1.5rem 0 2rem;
+        }
+
+        .logs-filters {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 1rem 1.25rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+            box-shadow: var(--shadow);
+            margin-bottom: 1rem;
+        }
+
+        .logs-table-wrapper {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow-x: auto;
+        }
+
+        .logs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        .logs-table thead tr {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        }
+
+        .logs-table thead th {
+            padding: 0.9rem 1rem;
+            text-align: left;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+        }
+
+        .logs-table tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+
+        .logs-table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .logs-table td {
+            padding: 0.65rem 1rem;
+            color: var(--text-primary);
+            vertical-align: middle;
+        }
+
+        .log-action-badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .log-edit   { background: #dbeafe; color: #1d4ed8; }
+        .log-ban    { background: #fee2e2; color: #991b1b; }
+        .log-activate { background: #dcfce7; color: #166534; }
+        .log-login  { background: #f3e8ff; color: #6d28d9; }
+        .log-view   { background: #fef3c7; color: #92400e; }
+
+        /* ── Activity Badge ── */
+        .badge-active-today {
+            background: #fef3c7;
+            color: #92400e;
+            font-size: 0.7rem;
+            padding: 0.1rem 0.35rem;
+            border-radius: 999px;
+            margin-left: 0.3rem;
+            display: inline-block;
+        }
+
+        /* ── Usage Progress Bar ── */
+        .usage-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .usage-bar {
+            flex: 1;
+            height: 6px;
+            background: var(--border);
+            border-radius: 999px;
+            overflow: hidden;
+            min-width: 50px;
+        }
+
+        .usage-bar-fill {
+            height: 100%;
+            background: linear-gradient(to right, var(--primary-light), var(--primary));
+            border-radius: 999px;
+            transition: width 0.5s;
+        }
+
+        .usage-bar-fill.high { background: linear-gradient(to right, #f59e0b, #ef4444); }
+
+        /* ── User Metrics Modal ── */
+        .modal-content.modal-wide {
+            max-width: 680px;
+        }
+
+        .user-metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .user-metric-box {
+            background: var(--bg-main);
+            border-radius: var(--radius-sm);
+            padding: 0.75rem;
+            text-align: center;
+        }
+
+        .user-metric-box .um-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .user-metric-box .um-label {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            margin-top: 0.2rem;
+        }
+
+        .um-chart-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .devices-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .devices-list li {
+            padding: 0.35rem 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .devices-list li:last-child {
+            border-bottom: none;
+        }
+
+        /* ── Metrics two-column layout ── */
+        .metrics-two-col {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .metrics-two-col {
+                grid-template-columns: 1fr;
+            }
+            .user-metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .tab-btn {
+                padding: 0.75rem 0.9rem;
+                font-size: 0.8rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -667,12 +1056,24 @@
                     <span class="subtitle">Transcriptor Médico Pro</span>
                 </div>
                 <div class="user-section">
-                    <span class="admin-badge">👤 Administrador</span>
+                    <span class="admin-badge">👤 <span id="adminName">Administrador</span></span>
                     <button class="btn-logout" id="btnLogout">Cerrar Sesión</button>
                 </div>
             </div>
         </div>
     </header>
+
+    <!-- ── Tabs Navigation ── -->
+    <nav class="tabs-nav" role="navigation" aria-label="Secciones del panel">
+        <div class="container">
+            <button class="tab-btn active" data-tab="usuarios">👥 Usuarios</button>
+            <button class="tab-btn" data-tab="metricas">📊 Métricas</button>
+            <button class="tab-btn" data-tab="logs">🚨 Logs</button>
+        </div>
+    </nav>
+
+    <!-- ── Tab: Usuarios ── -->
+    <div id="tab-usuarios" class="tab-content">
 
     <!-- ── Stats ── -->
     <section class="stats-section">
@@ -754,18 +1155,116 @@
                             <th>Estado</th>
                             <th class="col-expiration">Vencimiento</th>
                             <th class="col-usage">Uso</th>
+                            <th class="col-activity">Última Actividad</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody">
                         <tr class="loading-row">
-                            <td colspan="9" class="text-center">⏳ Cargando usuarios...</td>
+                            <td colspan="10" class="text-center">⏳ Cargando usuarios...</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </section>
+
+    </div><!-- /#tab-usuarios -->
+
+    <!-- ── Tab: Métricas ── -->
+    <div id="tab-metricas" class="tab-content" style="display:none">
+    <section class="metrics-section">
+        <div class="container">
+            <div class="metrics-grid" id="globalMetricsGrid">
+                <div class="metric-card">
+                    <div class="metric-icon">📝</div>
+                    <div class="metric-value" id="mTranscriptions">—</div>
+                    <div class="metric-label">Transcripciones este mes</div>
+                </div>
+                <div class="metric-card metric-words">
+                    <div class="metric-icon">📖</div>
+                    <div class="metric-value" id="mWords">—</div>
+                    <div class="metric-label">Palabras transcritas (mes)</div>
+                </div>
+                <div class="metric-card metric-mrr">
+                    <div class="metric-icon">💰</div>
+                    <div class="metric-value" id="mMrr">—</div>
+                    <div class="metric-label">MRR (Ingresos Recurrentes)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon">👤</div>
+                    <div class="metric-value" id="mActiveToday">—</div>
+                    <div class="metric-label">Usuarios activos hoy</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon">📅</div>
+                    <div class="metric-value" id="mActiveWeek">—</div>
+                    <div class="metric-label">Usuarios activos esta semana</div>
+                </div>
+                <div class="metric-card metric-conversion">
+                    <div class="metric-icon">🔄</div>
+                    <div class="metric-value" id="mConversion">—</div>
+                    <div class="metric-label">Conversión Trial → Pro</div>
+                </div>
+            </div>
+
+            <div class="metrics-two-col">
+                <div class="chart-card">
+                    <h3>📈 Crecimiento de Usuarios (Últimos 30 días)</h3>
+                    <div class="bar-chart" id="globalGrowthChart">
+                        <p style="color:var(--text-secondary);font-size:0.85rem;align-self:center;">Cargando datos...</p>
+                    </div>
+                </div>
+                <div class="top-users-card">
+                    <h3>🏆 Top 5 Usuarios por Consumo</h3>
+                    <div id="topUsersList">
+                        <p style="color:var(--text-secondary);font-size:0.85rem;">Cargando...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    </div><!-- /#tab-metricas -->
+
+    <!-- ── Tab: Logs ── -->
+    <div id="tab-logs" class="tab-content" style="display:none">
+    <section class="logs-section">
+        <div class="container">
+            <div class="logs-filters">
+                <div class="filter-group">
+                    <input type="date" id="logFilterDate" class="filter-select" title="Filtrar por fecha">
+                </div>
+                <div class="filter-group">
+                    <select id="logFilterType" class="filter-select">
+                        <option value="">Todos los tipos</option>
+                        <option value="edit">Edición</option>
+                        <option value="ban">Bloqueo/Desbloqueo</option>
+                        <option value="activate">Activación</option>
+                        <option value="login">Login</option>
+                        <option value="view">Vista de métricas</option>
+                    </select>
+                </div>
+                <button class="btn-refresh" id="btnRefreshLogs">🔄 Actualizar Logs</button>
+            </div>
+            <div class="logs-table-wrapper">
+                <table class="logs-table" id="logsTable">
+                    <thead>
+                        <tr>
+                            <th>Fecha/Hora</th>
+                            <th>Admin</th>
+                            <th>Acción</th>
+                            <th>Usuario Afectado</th>
+                            <th>Detalles</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody">
+                        <tr><td colspan="5" class="text-center">⏳ Cargando logs...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+    </div><!-- /#tab-logs -->
 
     <!-- ── Edit Modal ── -->
     <div class="modal-overlay" id="editModal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
@@ -830,6 +1329,49 @@
         </div>
     </div>
 
+    <!-- ── User Metrics Modal ── -->
+    <div class="modal-overlay" id="userMetricsModal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="userMetricsTitle">
+        <div class="modal-content modal-wide">
+            <div class="modal-header">
+                <h2 id="userMetricsTitle">📊 Métricas del Usuario</h2>
+                <button class="modal-close" id="closeUserMetrics" aria-label="Cerrar">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="user-metrics-grid">
+                    <div class="user-metric-box">
+                        <div class="um-value" id="umTranscriptions">—</div>
+                        <div class="um-label">Transcripciones totales</div>
+                    </div>
+                    <div class="user-metric-box">
+                        <div class="um-value" id="umWords">—</div>
+                        <div class="um-label">Palabras transcritas</div>
+                    </div>
+                    <div class="user-metric-box">
+                        <div class="um-value" id="umMinutes">—</div>
+                        <div class="um-label">Minutos de audio</div>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom:0.5rem">
+                    <div class="um-chart-label">📅 Uso últimos 7 días</div>
+                    <div class="bar-chart" id="userUsageChart" style="height:80px;"></div>
+                </div>
+                <div class="form-group" style="margin-bottom:0.5rem">
+                    <label>📱 Dispositivos Registrados</label>
+                    <ul class="devices-list" id="userDevicesList">
+                        <li>Cargando...</li>
+                    </ul>
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                    <label>🕐 Última Actividad</label>
+                    <div id="umLastActivity" style="font-size:0.9rem;color:var(--text-primary);padding:0.4rem 0;">—</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="btnCloseUserMetrics">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ── Toast ── -->
     <div id="toast" role="status" aria-live="polite"></div>
 
@@ -840,12 +1382,45 @@
 
     <script>
         /* ── Configuration ──────────────────────────────────────────────────── */
-        // TODO: Load scriptUrl from backend/admin_config.json once backend is deployed.
-        // TODO: Add authentication/session check before rendering the dashboard.
         const CONFIG = {
             scriptUrl: 'https://script.google.com/macros/s/AKfycby2VEaj2Qy4TGrjL7ZG_YjfEO4ttI6fynnWLgAMafU8VMWoYoWgqJX48D5okxKOrgQiaw/exec',
-            adminKey: 'ADMIN_SECRET_2026'
+            adminKey: 'ADMIN_SECRET_2026',
+            sessionTimeout: 8 * 60 * 60 * 1000 // 8 hours in ms
         };
+
+        /* ── Authentication ─────────────────────────────────────────────────── */
+        (function checkAuth() {
+            const raw = sessionStorage.getItem('adminSession');
+            if (!raw) {
+                window.location.href = 'login.html';
+                return;
+            }
+            try {
+                const session = JSON.parse(raw);
+                if ((Date.now() - session.timestamp) >= CONFIG.sessionTimeout) {
+                    sessionStorage.removeItem('adminSession');
+                    window.location.href = 'login.html';
+                }
+            } catch (err) {
+                console.error('Session parse error, clearing session:', err);
+                sessionStorage.removeItem('adminSession');
+                window.location.href = 'login.html';
+            }
+        })();
+
+        /* Auto-logout on inactivity after 8 hours */
+        let _inactivityTimer = null;
+        function resetInactivityTimer() {
+            clearTimeout(_inactivityTimer);
+            _inactivityTimer = setTimeout(() => {
+                sessionStorage.removeItem('adminSession');
+                window.location.href = 'login.html';
+            }, CONFIG.sessionTimeout);
+        }
+        ['click', 'keydown', 'mousemove', 'touchstart'].forEach(evt =>
+            document.addEventListener(evt, resetInactivityTimer, { passive: true })
+        );
+        resetInactivityTimer();
 
         /* Sample data used when the backend URL has not been configured yet */
         const SAMPLE_USERS = [
@@ -928,6 +1503,30 @@
             async updateUser(userId, updates) {
                 const updatesJson = encodeURIComponent(JSON.stringify(updates));
                 return await this.call(`?action=admin_update_user&userId=${encodeURIComponent(userId)}&updates=${updatesJson}`);
+            },
+
+            async getUserMetrics(userId) {
+                return await this.call(`?action=admin_get_metrics&userId=${encodeURIComponent(userId)}`);
+            },
+
+            async getGlobalStats() {
+                return await this.call('?action=admin_get_global_stats');
+            },
+
+            async getLogs(filterDate, filterType) {
+                let qs = '?action=admin_get_logs';
+                if (filterDate) qs += `&date=${encodeURIComponent(filterDate)}`;
+                if (filterType) qs += `&type=${encodeURIComponent(filterType)}`;
+                return await this.call(qs);
+            },
+
+            async logAction(action, userId, details) {
+                try {
+                    const raw = sessionStorage.getItem('adminSession');
+                    const session = raw ? JSON.parse(raw) : {};
+                    const adminUser = encodeURIComponent(session.username || 'unknown');
+                    await this.call(`?action=admin_log_action&adminUser=${adminUser}&logAction=${encodeURIComponent(action)}&userId=${encodeURIComponent(userId)}&details=${encodeURIComponent(details)}`);
+                } catch (err) { console.warn('logAction failed (non-blocking):', err); }
             }
         };
 
@@ -1022,32 +1621,251 @@
             }, 4000);
         }
 
+        /* ── Tab Navigation ─────────────────────────────────────────────────── */
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+            document.getElementById(`tab-${tabName}`).style.display = 'block';
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.tab-btn[data-tab="${tabName}"]`).classList.add('active');
+
+            if (tabName === 'metricas') loadGlobalStats();
+            else if (tabName === 'logs') loadLogs();
+        }
+
+        /* ── User Metrics Modal ──────────────────────────────────────────────── */
+        async function openUserMetrics(userId) {
+            const user = allUsers.find(u => String(u.ID_Medico) === String(userId));
+            const modal = document.getElementById('userMetricsModal');
+            const title = document.getElementById('userMetricsTitle');
+            if (user) title.textContent = `📊 Métricas — ${user.Nombre}`;
+            modal.style.display = 'flex';
+
+            // Reset
+            ['umTranscriptions','umWords','umMinutes'].forEach(id => document.getElementById(id).textContent = '⏳');
+            document.getElementById('userDevicesList').innerHTML = '<li>Cargando...</li>';
+            document.getElementById('umLastActivity').textContent = '⏳';
+            document.getElementById('userUsageChart').innerHTML = '';
+
+            try {
+                await logAdminAction('view', userId, `Vista métricas usuario ${userId}`);
+                const data = await API.getUserMetrics(userId);
+                renderUserMetrics(data);
+            } catch (_) {
+                // If API not available, show mock data based on known user data
+                const mockData = buildMockMetrics(userId);
+                renderUserMetrics(mockData);
+            }
+        }
+
+        function buildMockMetrics(userId) {
+            const user = allUsers.find(u => String(u.ID_Medico) === String(userId)) || {};
+            const days = Array.from({length: 7}, (_, i) => {
+                const d = new Date(); d.setDate(d.getDate() - (6 - i));
+                return { label: `${d.getDate()}/${d.getMonth()+1}`, value: Math.floor(Math.random() * 10) };
+            });
+            return {
+                transcripciones: user.Usage_Count || 0,
+                palabras: (user.Usage_Count || 0) * 180,
+                minutos: Math.round((user.Usage_Count || 0) * 2.5),
+                ultima_actividad: user.Ultima_Actividad || user.Fecha_Registro || '—',
+                dispositivos: [{ nombre: 'Dispositivo principal', fecha: user.Fecha_Registro || '—' }],
+                uso_7dias: days
+            };
+        }
+
+        function renderUserMetrics(data) {
+            const fmtNum = v => (v != null ? Number(v).toLocaleString() : '—');
+            document.getElementById('umTranscriptions').textContent = fmtNum(data.transcripciones);
+            document.getElementById('umWords').textContent = fmtNum(data.palabras);
+            document.getElementById('umMinutes').textContent = fmtNum(data.minutos);
+            document.getElementById('umLastActivity').textContent = data.ultima_actividad || '—';
+
+            // Devices list
+            const devList = document.getElementById('userDevicesList');
+            const devices = data.dispositivos || [];
+            if (devices.length === 0) {
+                devList.innerHTML = '<li>Sin dispositivos registrados</li>';
+            } else {
+                devList.innerHTML = devices.map(d =>
+                    `<li>📱 <strong>${escapeHtml(d.nombre || d.id || 'Dispositivo')}</strong><small style="margin-left:auto;color:var(--text-secondary)">${escapeHtml(d.fecha || '')}</small></li>`
+                ).join('');
+            }
+
+            // 7-day bar chart
+            const chartEl = document.getElementById('userUsageChart');
+            const days = data.uso_7dias || [];
+            if (days.length > 0) {
+                const maxVal = Math.max(...days.map(d => d.value || 0), 1);
+                chartEl.innerHTML = days.map(d => {
+                    const pct = Math.round(((d.value || 0) / maxVal) * 100);
+                    return `<div class="bar-wrap"><div class="bar" style="height:${pct}%" data-value="${d.value || 0}"></div><span class="bar-label">${escapeHtml(String(d.label))}</span></div>`;
+                }).join('');
+            } else {
+                chartEl.innerHTML = '<p style="color:var(--text-secondary);font-size:0.85rem;align-self:center;">Sin datos disponibles</p>';
+            }
+        }
+
+        function closeUserMetrics() {
+            document.getElementById('userMetricsModal').style.display = 'none';
+        }
+
+        /* ── Global Metrics ──────────────────────────────────────────────────── */
+        async function loadGlobalStats() {
+            try {
+                const data = await API.getGlobalStats();
+                renderGlobalStats(data);
+            } catch (_) {
+                renderGlobalStats(buildMockGlobalStats());
+            }
+        }
+
+        function buildMockGlobalStats() {
+            const proUsers = allUsers.filter(u => u.Plan === 'pro' || u.Plan === 'enterprise').length;
+            const trialUsers = allUsers.filter(u => u.Plan === 'trial').length;
+            const convRate = trialUsers > 0 ? Math.round((proUsers / (proUsers + trialUsers)) * 100) : 0;
+            const sorted = [...allUsers].sort((a, b) => (b.Usage_Count || 0) - (a.Usage_Count || 0));
+            const days = Array.from({length: 30}, (_, i) => {
+                const d = new Date(); d.setDate(d.getDate() - (29 - i));
+                return { label: `${d.getDate()}/${d.getMonth()+1}`, value: Math.floor(Math.random() * 3) };
+            });
+            return {
+                transcripciones_mes: allUsers.reduce((s, u) => s + (u.Usage_Count || 0), 0),
+                palabras_mes: allUsers.reduce((s, u) => s + ((u.Usage_Count || 0) * 180), 0),
+                mrr: proUsers * 29,
+                activos_hoy: Math.min(allUsers.filter(u => u.Estado === 'active').length, 3),
+                activos_semana: allUsers.filter(u => u.Estado === 'active').length,
+                conversion: convRate,
+                crecimiento_30dias: days,
+                top_usuarios: sorted.slice(0, 5).map(u => ({
+                    nombre: u.Nombre,
+                    plan: u.Plan,
+                    usage: u.Usage_Count || 0
+                }))
+            };
+        }
+
+        function renderGlobalStats(data) {
+            const fmt = v => (v != null ? Number(v).toLocaleString() : '—');
+            document.getElementById('mTranscriptions').textContent = fmt(data.transcripciones_mes);
+            document.getElementById('mWords').textContent = fmt(data.palabras_mes);
+            document.getElementById('mMrr').textContent = data.mrr != null ? `$${fmt(data.mrr)}` : '—';
+            document.getElementById('mActiveToday').textContent = fmt(data.activos_hoy);
+            document.getElementById('mActiveWeek').textContent = fmt(data.activos_semana);
+            document.getElementById('mConversion').textContent = data.conversion != null ? `${data.conversion}%` : '—';
+
+            // Growth chart
+            const chartEl = document.getElementById('globalGrowthChart');
+            const days = data.crecimiento_30dias || [];
+            if (days.length > 0) {
+                const maxVal = Math.max(...days.map(d => d.value || 0), 1);
+                chartEl.innerHTML = days.map(d => {
+                    const pct = Math.round(((d.value || 0) / maxVal) * 100);
+                    return `<div class="bar-wrap"><div class="bar" style="height:${pct}%" data-value="${d.value || 0}"></div><span class="bar-label">${escapeHtml(String(d.label))}</span></div>`;
+                }).join('');
+            }
+
+            // Top users
+            const topEl = document.getElementById('topUsersList');
+            const medals = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+            const top = data.top_usuarios || [];
+            if (top.length > 0) {
+                topEl.innerHTML = top.map((u, i) => `
+                    <div class="top-user-row">
+                        <span class="top-user-rank">${medals[i] || (i+1)}</span>
+                        <div class="top-user-info">
+                            <strong>${escapeHtml(u.nombre || '—')}</strong><br>
+                            <small>${escapeHtml(u.plan || '—').toUpperCase()}</small>
+                        </div>
+                        <span class="top-user-count">${(u.usage || 0).toLocaleString()}</span>
+                    </div>`).join('');
+            } else {
+                topEl.innerHTML = '<p style="color:var(--text-secondary);font-size:0.85rem;">Sin datos</p>';
+            }
+        }
+
+        /* ── Logs ────────────────────────────────────────────────────────────── */
+        async function loadLogs() {
+            const tbody = document.getElementById('logsTableBody');
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center">⏳ Cargando logs...</td></tr>';
+            const filterDate = document.getElementById('logFilterDate').value;
+            const filterType = document.getElementById('logFilterType').value;
+
+            try {
+                const data = await API.getLogs(filterDate, filterType);
+                renderLogs(data.logs || []);
+            } catch (_) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">Sin logs disponibles</td></tr>';
+            }
+        }
+
+        function renderLogs(logs) {
+            const tbody = document.getElementById('logsTableBody');
+            if (!logs || logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay logs registrados</td></tr>';
+                return;
+            }
+            tbody.innerHTML = logs.map(log => {
+                const type = (log.type || log.accion || 'view').toLowerCase();
+                return `<tr>
+                    <td><small>${escapeHtml(log.timestamp || log.fecha || '—')}</small></td>
+                    <td>${escapeHtml(log.admin || '—')}</td>
+                    <td><span class="log-action-badge log-${escapeHtml(type)}">${escapeHtml(log.type || log.accion || '—')}</span></td>
+                    <td>${escapeHtml(log.userId || log.usuario_afectado || '—')}</td>
+                    <td><small>${escapeHtml(log.details || log.detalles || '—')}</small></td>
+                </tr>`;
+            }).join('');
+        }
+
+        /* ── Log Admin Action ────────────────────────────────────────────────── */
+        async function logAdminAction(action, userId, details) {
+            try {
+                await API.logAction(action, userId, details);
+            } catch (_) { /* non-blocking */ }
+        }
+
         /* ── Render ──────────────────────────────────────────────────────────── */
         function renderTable(users) {
             const tbody = document.getElementById('tableBody');
             if (!users || users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="text-center">No hay usuarios registrados</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center">No hay usuarios registrados</td></tr>';
                 return;
             }
 
+            const maxUsage = Math.max(...users.map(u => u.Usage_Count || 0), 1);
+            const now = Date.now();
+            const oneDayMs = 24 * 60 * 60 * 1000;
             tbody.innerHTML = users.map(user => {
                 const plan    = user.Plan || 'trial';
                 const id      = escapeHtml(String(user.ID_Medico));
                 const isBanned  = user.Estado === 'banned';
                 const isTrial   = user.Estado === 'trial';
                 const isExpired = user.Estado === 'expired';
+                const usage     = user.Usage_Count || 0;
+                const usagePct  = Math.round((usage / maxUsage) * 100);
+                const highUsage = usagePct >= 80 ? ' high' : '';
+                const lastActivity = user.Ultima_Actividad || user.Fecha_Registro || '';
+                const lastActivityMs = lastActivity ? new Date(lastActivity).getTime() : NaN;
+                const isActiveToday = !isNaN(lastActivityMs) && (now - lastActivityMs) < oneDayMs;
+                const activityDisplay = lastActivity ? formatDate(lastActivity.split('T')[0]) : '—';
                 return `
                 <tr data-user-id="${id}" class="${isBanned ? 'row-banned' : ''}">
                     <td data-label="ID"><span class="user-id">${id}</span></td>
-                    <td data-label="Nombre"><strong>${escapeHtml(user.Nombre)}</strong><br><small class="text-muted">${escapeHtml(user.Matricula || '')}</small></td>
+                    <td data-label="Nombre"><strong>${escapeHtml(user.Nombre)}</strong>${isActiveToday ? '<span class="badge-active-today">🔥 Activo hoy</span>' : ''}<br><small class="text-muted">${escapeHtml(user.Matricula || '')}</small></td>
                     <td data-label="Email"><small>${escapeHtml(user.Email)}</small></td>
                     <td data-label="Especialidad"><span class="badge badge-specialty">${escapeHtml(user.Especialidad)}</span></td>
                     <td data-label="Plan"><span class="badge badge-plan badge-${escapeHtml(plan)}">${escapeHtml(plan.toUpperCase())}</span></td>
                     <td data-label="Estado"><span class="status-badge status-${escapeHtml(user.Estado)}">${getStatusText(user.Estado)}</span></td>
                     <td data-label="Vencimiento" class="col-expiration">${formatDate(user.Fecha_Vencimiento)}</td>
-                    <td data-label="Uso" class="col-usage"><span class="usage-count">${user.Usage_Count || 0}</span></td>
+                    <td data-label="Uso" class="col-usage">
+                        <div class="usage-bar-wrap">
+                            <span class="usage-count">${usage}</span>
+                            <div class="usage-bar"><div class="usage-bar-fill${highUsage}" style="width:${usagePct}%"></div></div>
+                        </div>
+                    </td>
+                    <td data-label="Última Actividad" class="col-activity">${activityDisplay}</td>
                     <td data-label="Acciones" class="actions-cell">
                         <button class="btn-action btn-edit" data-action="edit" data-user-id="${id}" title="Editar">✏️</button>
+                        <button class="btn-action" data-action="metrics" data-user-id="${id}" title="Ver Métricas" style="font-size:1rem;">📊</button>
                         ${isTrial || isExpired ? `<button class="btn-action btn-activate" data-action="activate" data-user-id="${id}" title="Activar PRO">✅</button>` : ''}
                         <button class="btn-action btn-ban"  data-action="ban"  data-user-id="${id}" title="${isBanned ? 'Desbloquear' : 'Bloquear'}">${isBanned ? '🔓' : '🚫'}</button>
                     </td>
@@ -1183,12 +2001,14 @@
                     const idx = allUsers.findIndex(u => String(u.ID_Medico) === String(userId));
                     if (idx !== -1) allUsers[idx] = { ...allUsers[idx], ...updates };
                     showNotification('✅ Usuario actualizado correctamente', 'success');
+                    await logAdminAction('edit', userId, `Plan: ${updates.Plan}, Estado: ${updates.Estado}`);
                     closeEditModal();
                     updateStats(allUsers);
                     applyFilters();
                 } else {
                     await API.updateUser(userId, updates);
                     showNotification('✅ Usuario actualizado correctamente', 'success');
+                    await logAdminAction('edit', userId, `Plan: ${updates.Plan}, Estado: ${updates.Estado}`);
                     closeEditModal();
                     await loadDashboard(true);
                 }
@@ -1220,6 +2040,7 @@
                     await API.updateUser(userId, { Estado: newStatus });
                     await loadDashboard(true);
                 }
+                await logAdminAction('ban', userId, `Estado: ${newStatus}`);
                 showNotification(`Usuario ${action === 'bloquear' ? 'bloqueado 🚫' : 'desbloqueado ✅'}`, newStatus === 'banned' ? 'info' : 'success');
             } catch (error) {
                 showNotification(`Error al ${action} usuario`, 'error');
@@ -1255,6 +2076,7 @@
                     await API.updateUser(userId, updates);
                     await loadDashboard(true);
                 }
+                await logAdminAction('activate', userId, `Plan PRO hasta ${formattedDate}`);
                 showNotification(`✅ ${user.Nombre} activado - Plan PRO hasta ${formattedDate}`, 'success');
             } catch (error) {
                 showNotification('Error al activar usuario', 'error');
@@ -1269,7 +2091,7 @@
         async function loadDashboard(silent = false) {
             if (!silent) {
                 document.getElementById('tableBody').innerHTML =
-                    '<tr><td colspan="9" class="text-center">⏳ Cargando datos...</td></tr>';
+                    '<tr><td colspan="10" class="text-center">⏳ Cargando datos...</td></tr>';
             }
 
             try {
@@ -1282,7 +2104,7 @@
                 }
             } catch (error) {
                 document.getElementById('tableBody').innerHTML =
-                    `<tr><td colspan="9" class="text-center">❌ Error al cargar datos: ${escapeHtml(error.message)}</td></tr>`;
+                    `<tr><td colspan="10" class="text-center">❌ Error al cargar datos: ${escapeHtml(error.message)}</td></tr>`;
             }
         }
 
@@ -1298,7 +2120,8 @@
         /* ── Event Listeners ─────────────────────────────────────────────────── */
         document.getElementById('btnLogout').addEventListener('click', () => {
             if (confirm('¿Cerrar sesión del panel de administración?')) {
-                window.location.href = '../index.html';
+                sessionStorage.removeItem('adminSession');
+                window.location.href = 'login.html';
             }
         });
 
@@ -1314,6 +2137,7 @@
             if (!btn) return;
             const userId = btn.dataset.userId;
             if (btn.dataset.action === 'edit') openEditModal(userId);
+            else if (btn.dataset.action === 'metrics') openUserMetrics(userId);
             else if (btn.dataset.action === 'ban') quickBan(userId);
             else if (btn.dataset.action === 'activate') activateUser(userId);
         });
@@ -1322,6 +2146,23 @@
         document.getElementById('btnCancelEdit').addEventListener('click', closeEditModal);
         document.getElementById('btnSaveEdit').addEventListener('click', saveUserChanges);
 
+        /* Tab buttons */
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => showTab(btn.dataset.tab));
+        });
+
+        /* User metrics modal */
+        document.getElementById('closeUserMetrics').addEventListener('click', closeUserMetrics);
+        document.getElementById('btnCloseUserMetrics').addEventListener('click', closeUserMetrics);
+        document.getElementById('userMetricsModal').addEventListener('click', function(e) {
+            if (e.target === this) closeUserMetrics();
+        });
+
+        /* Logs filters */
+        document.getElementById('btnRefreshLogs').addEventListener('click', loadLogs);
+        document.getElementById('logFilterDate').addEventListener('change', loadLogs);
+        document.getElementById('logFilterType').addEventListener('change', loadLogs);
+
         /* Close modal on backdrop click */
         document.getElementById('editModal').addEventListener('click', function (e) {
             if (e.target === this) closeEditModal();
@@ -1329,12 +2170,22 @@
 
         /* Close modal on Escape key */
         document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') closeEditModal();
+            if (e.key === 'Escape') {
+                closeEditModal();
+                closeUserMetrics();
+            }
         });
 
         /* ── Init ────────────────────────────────────────────────────────────── */
-        // TODO: Add authentication/session check before rendering the dashboard.
         document.addEventListener('DOMContentLoaded', async () => {
+            // Set admin name in header
+            try {
+                const session = JSON.parse(sessionStorage.getItem('adminSession') || '{}');
+                if (session.nombre) {
+                    document.getElementById('adminName').textContent = session.nombre;
+                }
+            } catch (_) {}
+
             await loadDashboard();
             startAutoRefresh(5);
         });
