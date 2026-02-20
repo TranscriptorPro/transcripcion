@@ -2681,7 +2681,6 @@
             // Audio options
             const chkNormalize = $('chkNormalize');
             const chkNoise = $('chkNoise');
-            const chkCompress = $('chkCompress');
 
             // ============ STATE ============
             let uploadedFiles = [];
@@ -3617,7 +3616,7 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
             async function processAudio(file) {
                 const shouldNormalize = chkNormalize?.checked || false;
                 const shouldReduceNoise = chkNoise?.checked || false;
-                const shouldCompress = chkCompress?.checked || false;
+                const shouldCompress = false; // Feature disabled (checkbox removed in PR #5)
 
                 // If no processing is needed, return original file
                 if (!shouldNormalize && !shouldReduceNoise && !shouldCompress) {
