@@ -1,6 +1,6 @@
 {
   "sheetName": "Usuarios_Transcriptor",
-  "scriptUrl": "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE",
+  "scriptUrl": "https://script.google.com/macros/s/AKfycbw9xT0IdmPbpIsncavlktd3a9vJgao1wR-kwaEZA2PUUVXEo2GIIfV-FgJpBHE_-u9ofg/exec",
   "adminKey": "ADMIN_SECRET_2026",
   "endpoints": {
     "listUsers": "?action=admin_list_users",
