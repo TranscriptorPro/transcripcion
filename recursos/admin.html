@@ -955,15 +955,13 @@
         .log-login  { background: #f3e8ff; color: #6d28d9; }
         .log-view   { background: #fef3c7; color: #92400e; }
 
-        /* ── Activity Badge ── */
-        .badge-active-today {
-            background: #fef3c7;
-            color: #92400e;
-            font-size: 0.7rem;
-            padding: 0.1rem 0.35rem;
-            border-radius: 999px;
-            margin-left: 0.3rem;
+        /* ── Activity Indicator ── */
+        .active-indicator {
+            font-size: 1.2rem;
             display: inline-block;
+            margin-left: 6px;
+            cursor: help;
+            vertical-align: middle;
         }
 
         /* ── Usage Progress Bar ── */
@@ -1899,7 +1897,7 @@
                 return `
                 <tr data-user-id="${id}" class="${isBanned ? 'row-banned' : ''}">
                     <td data-label="ID"><span class="user-id">${id}</span></td>
-                    <td data-label="Nombre" class="user-name-cell"><strong>${escapeHtml(user.Nombre)}</strong>${isActiveToday ? '<span class="badge-active-today">🔥 Activo hoy</span>' : ''}<br><small class="text-muted">${escapeHtml(user.Matricula || '')}</small></td>
+                    <td data-label="Nombre" class="user-name-cell"><strong>${escapeHtml(user.Nombre)}</strong>${isActiveToday ? '<span class="active-indicator" title="Activo hoy">🔥</span>' : ''}<br><small class="text-muted">${escapeHtml(user.Matricula || '')}</small></td>
                     <td data-label="Email" class="email-cell"><small>${escapeHtml(user.Email)}</small></td>
                     <td data-label="Especialidad"><span class="badge badge-specialty">${escapeHtml(user.Especialidad)}</span></td>
                     <td data-label="Plan"><span class="badge badge-plan badge-${escapeHtml(plan)}">${escapeHtml(plan.toUpperCase())}</span></td>
