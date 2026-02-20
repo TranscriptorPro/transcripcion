@@ -1661,6 +1661,19 @@
                     const adminUser = encodeURIComponent(session.username || 'unknown');
                     await this.call(`?action=admin_log_action&adminUser=${adminUser}&logAction=${encodeURIComponent(action)}&userId=${encodeURIComponent(userId)}&details=${encodeURIComponent(details)}`);
                 } catch (err) { console.warn('logAction failed (non-blocking):', err); }
+            },
+
+            async getMedicoConfig(userId) {
+                return await this.call(`?action=get_medico_config&userId=${encodeURIComponent(userId)}`);
+            },
+
+            async saveMedicoConfig(userId, configData) {
+                const configJson = encodeURIComponent(JSON.stringify(configData));
+                return await this.call(`?action=save_medico_config&userId=${encodeURIComponent(userId)}&configData=${configJson}`);
+            },
+
+            async deleteMedicoConfig(userId) {
+                return await this.call(`?action=delete_medico_config&userId=${encodeURIComponent(userId)}`);
             }
         };
 
@@ -2563,7 +2576,24 @@
                     throw new Error(result.error || 'Error al crear usuario');
                 }
 
-                showToast('✅ Usuario creado exitosamente', 'success');
+                // Guardar configuración detallada en Medicos_Configuracion
+                const configData = {
+                    Especialidades: selectedEspecialidades,
+                    Estudios: selectedEstudios,
+                    Lugares_Trabajo: document.getElementById('newLugaresTrabajo').value || '',
+                    Telefono: document.getElementById('newTelefono').value || '',
+                    Logo_Medico_URL: '',
+                    Firma_URL: '',
+                    Logos_Instituciones: [],
+                    Config_PDF: {}
+                };
+                try {
+                    await API.saveMedicoConfig(newUserId, configData);
+                    showToast('✅ Usuario y configuración creados', 'success');
+                } catch (configError) {
+                    console.error('Error saving medico config:', configError);
+                    showToast('✅ Usuario creado, pero hubo un error al guardar la configuración', 'warning');
+                }
                 closeNewUserModal();
                 loadDashboard(true); // Recargar tabla
             } catch (error) {

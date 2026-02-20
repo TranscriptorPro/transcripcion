@@ -8,6 +8,7 @@
  */
 
 const SHEET_NAME = 'Usuarios_Transcriptor';
+const CONFIG_SHEET_NAME = 'Medicos_Configuracion';
 
 // TODO: Move admin key to Apps Script Properties for better security:
 // PropertiesService.getScriptProperties().getProperty('ADMIN_KEY')
@@ -71,6 +72,155 @@ function doGet(e) {
     }
 
     return createResponse({ users: users, total: users.length });
+  }
+
+  // GET ?action=get_medico_config&userId=DR001&adminKey=XXX
+  if (action === 'get_medico_config') {
+    const adminKey = e.parameter.adminKey;
+    const userId = e.parameter.userId;
+
+    if (adminKey !== ADMIN_KEY) {
+      return createResponse({ error: 'Unauthorized' });
+    }
+
+    if (!userId) {
+      return createResponse({ error: 'userId is required' });
+    }
+
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG_SHEET_NAME);
+    if (!sheet) {
+      return createResponse({ error: 'Configuration sheet not found' });
+    }
+
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][0] === userId) {
+        const config = {};
+        headers.forEach((header, index) => {
+          config[header] = data[i][index];
+        });
+
+        try {
+          if (config.Especialidades) config.Especialidades = JSON.parse(config.Especialidades);
+          if (config.Estudios) config.Estudios = JSON.parse(config.Estudios);
+          if (config.Logos_Instituciones) config.Logos_Instituciones = JSON.parse(config.Logos_Instituciones);
+          if (config.Config_PDF) config.Config_PDF = JSON.parse(config.Config_PDF);
+        } catch (parseError) {
+          // Si hay error al parsear, dejar como string
+        }
+
+        return createResponse({ success: true, config: config });
+      }
+    }
+
+    return createResponse({ error: 'Configuration not found for this user' });
+  }
+
+  // GET ?action=save_medico_config&userId=DR001&configData=...&adminKey=XXX
+  if (action === 'save_medico_config') {
+    const adminKey = e.parameter.adminKey;
+    const userId = e.parameter.userId;
+    const configDataJson = e.parameter.configData;
+
+    if (adminKey !== ADMIN_KEY) {
+      return createResponse({ error: 'Unauthorized' });
+    }
+
+    if (!userId || !configDataJson) {
+      return createResponse({ error: 'userId and configData are required' });
+    }
+
+    let configData;
+    try {
+      configData = JSON.parse(decodeURIComponent(configDataJson));
+    } catch (parseErr) {
+      return createResponse({ error: 'Invalid JSON in configData' });
+    }
+
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG_SHEET_NAME);
+    if (!sheet) {
+      return createResponse({ error: 'Configuration sheet not found' });
+    }
+
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+
+    let rowIndex = -1;
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][0] === userId) {
+        rowIndex = i;
+        break;
+      }
+    }
+
+    const now = new Date();
+    const timestamp = Utilities.formatDate(now, Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+
+    if (rowIndex !== -1) {
+      headers.forEach((header, index) => {
+        if (configData[header] !== undefined) {
+          let value = configData[header];
+          if (typeof value === 'object' && value !== null) {
+            value = JSON.stringify(value);
+          }
+          sheet.getRange(rowIndex + 1, index + 1).setValue(value);
+        }
+      });
+
+      const updateColIndex = headers.indexOf('Fecha_Actualizacion');
+      if (updateColIndex !== -1) {
+        sheet.getRange(rowIndex + 1, updateColIndex + 1).setValue(timestamp);
+      }
+
+      return createResponse({ success: true, message: 'Configuration updated' });
+    } else {
+      const newRow = headers.map(header => {
+        if (header === 'ID_Medico') return userId;
+        if (header === 'Fecha_Creacion') return Utilities.formatDate(now, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+        if (header === 'Fecha_Actualizacion') return timestamp;
+
+        let value = configData[header] || '';
+        if (typeof value === 'object' && value !== null) {
+          value = JSON.stringify(value);
+        }
+        return value;
+      });
+
+      sheet.appendRow(newRow);
+      return createResponse({ success: true, message: 'Configuration created' });
+    }
+  }
+
+  // GET ?action=delete_medico_config&userId=DR001&adminKey=XXX
+  if (action === 'delete_medico_config') {
+    const adminKey = e.parameter.adminKey;
+    const userId = e.parameter.userId;
+
+    if (adminKey !== ADMIN_KEY) {
+      return createResponse({ error: 'Unauthorized' });
+    }
+
+    if (!userId) {
+      return createResponse({ error: 'userId is required' });
+    }
+
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG_SHEET_NAME);
+    if (!sheet) {
+      return createResponse({ error: 'Configuration sheet not found' });
+    }
+
+    const data = sheet.getDataRange().getValues();
+
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][0] === userId) {
+        sheet.deleteRow(i + 1);
+        return createResponse({ success: true, message: 'Configuration deleted' });
+      }
+    }
+
+    return createResponse({ error: 'Configuration not found' });
   }
 
   return createResponse({ error: 'Acción no válida' });
