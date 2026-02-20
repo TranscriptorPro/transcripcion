@@ -895,28 +895,30 @@
 
         /* ── Enhanced API ────────────────────────────────────────────────────── */
         const API = {
-            async call(endpoint, options = {}) {
-                const url = options.method === 'POST'
-                    ? CONFIG.scriptUrl
-                    : `${CONFIG.scriptUrl}${endpoint}&adminKey=${encodeURIComponent(CONFIG.adminKey)}`;
+            async call(endpoint) {
+                const url = `${CONFIG.scriptUrl}${endpoint}&adminKey=${encodeURIComponent(CONFIG.adminKey)}`;
 
-                const response = await fetch(url, {
-                    method: options.method || 'GET',
-                    headers: options.headers || {},
-                    body: options.body || null
-                });
+                try {
+                    const response = await fetch(url, {
+                        method: 'GET'
+                    });
 
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const data = await response.json();
+
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+
+                    return data;
+                } catch (error) {
+                    console.error('API Error:', error);
+                    showNotification(`Error: ${error.message}`, 'error');
+                    throw error;
                 }
-
-                const data = await response.json();
-
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-
-                return data;
             },
 
             async getUsers() {
@@ -924,16 +926,8 @@
             },
 
             async updateUser(userId, updates) {
-                return await this.call('', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'admin_update_user',
-                        adminKey: CONFIG.adminKey,
-                        userId: userId,
-                        updates: updates
-                    })
-                });
+                const updatesJson = encodeURIComponent(JSON.stringify(updates));
+                return await this.call(`?action=admin_update_user&userId=${encodeURIComponent(userId)}&updates=${updatesJson}`);
             }
         };
 
@@ -968,16 +962,9 @@
                 return { success: true };
             }
             try {
-                const response = await fetch(CONFIG.scriptUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'admin_update_user',
-                        adminKey: CONFIG.adminKey,
-                        userId: userId,
-                        updates: updates
-                    })
-                });
+                const updatesJson = encodeURIComponent(JSON.stringify(updates));
+                const url = `${CONFIG.scriptUrl}?action=admin_update_user&userId=${encodeURIComponent(userId)}&updates=${updatesJson}&adminKey=${encodeURIComponent(CONFIG.adminKey)}`;
+                const response = await fetch(url);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 return await response.json();
             } catch (error) {
