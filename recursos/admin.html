@@ -488,6 +488,67 @@
             background: var(--bg-main);
         }
 
+        /* ── Notification ── */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            font-weight: 500;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+            z-index: 10000;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .notification-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .notification-error {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .notification-info {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+
+        /* ── Banned row ── */
+        .row-banned {
+            background-color: #fee;
+            opacity: 0.7;
+        }
+
+        .row-banned:hover {
+            opacity: 1;
+        }
+
+        .actions-cell {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+        }
+
+        .btn-activate {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-activate:hover {
+            transform: scale(1.1);
+        }
+
         /* ── Toast ── */
         #toast {
             position: fixed;
@@ -832,8 +893,55 @@
             }
         ];
 
+        /* ── Enhanced API ────────────────────────────────────────────────────── */
+        const API = {
+            async call(endpoint, options = {}) {
+                const url = options.method === 'POST'
+                    ? CONFIG.scriptUrl
+                    : `${CONFIG.scriptUrl}${endpoint}&adminKey=${encodeURIComponent(CONFIG.adminKey)}`;
+
+                const response = await fetch(url, {
+                    method: options.method || 'GET',
+                    headers: options.headers || {},
+                    body: options.body || null
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                return data;
+            },
+
+            async getUsers() {
+                return await this.call('?action=admin_list_users');
+            },
+
+            async updateUser(userId, updates) {
+                return await this.call('', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'admin_update_user',
+                        adminKey: CONFIG.adminKey,
+                        userId: userId,
+                        updates: updates
+                    })
+                });
+            }
+        };
+
         /* ── State ───────────────────────────────────────────────────────────── */
         let allUsers = [];
+        let currentEditUser = null;
+        let refreshInterval = null;
+        let notificationTimer = null;
 
         /* ── API ─────────────────────────────────────────────────────────────── */
         async function fetchUsers() {
@@ -909,6 +1017,24 @@
             }, 3000);
         }
 
+        function showNotification(message, type = 'info') {
+            let notification = document.getElementById('notification');
+            if (!notification) {
+                notification = document.createElement('div');
+                notification.id = 'notification';
+                notification.className = 'notification';
+                document.body.appendChild(notification);
+            }
+
+            notification.textContent = message;
+            notification.className = `notification notification-${type} show`;
+
+            clearTimeout(notificationTimer);
+            notificationTimer = setTimeout(() => {
+                notification.classList.remove('show');
+            }, 4000);
+        }
+
         /* ── Render ──────────────────────────────────────────────────────────── */
         function renderTable(users) {
             const tbody = document.getElementById('tableBody');
@@ -918,21 +1044,25 @@
             }
 
             tbody.innerHTML = users.map(user => {
-                const plan = user.Plan || 'trial';
-                const id   = escapeHtml(String(user.ID_Medico));
+                const plan    = user.Plan || 'trial';
+                const id      = escapeHtml(String(user.ID_Medico));
+                const isBanned  = user.Estado === 'banned';
+                const isTrial   = user.Estado === 'trial';
+                const isExpired = user.Estado === 'expired';
                 return `
-                <tr data-user-id="${id}">
+                <tr data-user-id="${id}" class="${isBanned ? 'row-banned' : ''}">
                     <td data-label="ID"><span class="user-id">${id}</span></td>
-                    <td data-label="Nombre"><strong>${escapeHtml(user.Nombre)}</strong></td>
+                    <td data-label="Nombre"><strong>${escapeHtml(user.Nombre)}</strong><br><small class="text-muted">${escapeHtml(user.Matricula || '')}</small></td>
                     <td data-label="Email"><small>${escapeHtml(user.Email)}</small></td>
                     <td data-label="Especialidad"><span class="badge badge-specialty">${escapeHtml(user.Especialidad)}</span></td>
                     <td data-label="Plan"><span class="badge badge-plan badge-${escapeHtml(plan)}">${escapeHtml(plan.toUpperCase())}</span></td>
                     <td data-label="Estado"><span class="status-badge status-${escapeHtml(user.Estado)}">${getStatusText(user.Estado)}</span></td>
                     <td data-label="Vencimiento" class="col-expiration">${formatDate(user.Fecha_Vencimiento)}</td>
                     <td data-label="Uso" class="col-usage"><span class="usage-count">${user.Usage_Count || 0}</span></td>
-                    <td data-label="Acciones">
+                    <td data-label="Acciones" class="actions-cell">
                         <button class="btn-action btn-edit" data-action="edit" data-user-id="${id}" title="Editar">✏️</button>
-                        <button class="btn-action btn-ban"  data-action="ban"  data-user-id="${id}" title="Bloquear">🚫</button>
+                        ${isTrial || isExpired ? `<button class="btn-action btn-activate" data-action="activate" data-user-id="${id}" title="Activar PRO">✅</button>` : ''}
+                        <button class="btn-action btn-ban"  data-action="ban"  data-user-id="${id}" title="${isBanned ? 'Desbloquear' : 'Bloquear'}">${isBanned ? '🔓' : '🚫'}</button>
                     </td>
                 </tr>`;
             }).join('');
@@ -983,7 +1113,12 @@
         /* ── Edit Modal ──────────────────────────────────────────────────────── */
         function openEditModal(userId) {
             const user = allUsers.find(u => String(u.ID_Medico) === String(userId));
-            if (!user) return;
+            if (!user) {
+                showNotification('Usuario no encontrado', 'error');
+                return;
+            }
+
+            currentEditUser = user;
 
             document.getElementById('editUserId').value     = user.ID_Medico;
             document.getElementById('editName').value       = user.Nombre;
@@ -999,6 +1134,7 @@
 
         function closeEditModal() {
             document.getElementById('editModal').style.display = 'none';
+            currentEditUser = null;
         }
 
         async function saveEdit() {
@@ -1037,6 +1173,46 @@
             showToast('Usuario actualizado correctamente ✅', 'success');
         }
 
+        async function saveUserChanges() {
+            if (!currentEditUser) return;
+
+            const userId = document.getElementById('editUserId').value;
+            const updates = {
+                Plan:              document.getElementById('editPlan').value,
+                Estado:            document.getElementById('editStatus').value,
+                Fecha_Vencimiento: document.getElementById('editExpiration').value,
+                Devices_Max:       parseInt(document.getElementById('editDevicesMax').value, 10) || 2,
+                Notas_Admin:       document.getElementById('editNotes').value
+            };
+
+            const saveBtn = document.getElementById('btnSaveEdit');
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = '⏳ Guardando...';
+            saveBtn.disabled = true;
+
+            try {
+                if (CONFIG.scriptUrl === 'PASTE_APPS_SCRIPT_URL_HERE') {
+                    /* Simulate success when backend is not configured */
+                    const idx = allUsers.findIndex(u => String(u.ID_Medico) === String(userId));
+                    if (idx !== -1) allUsers[idx] = { ...allUsers[idx], ...updates };
+                    showNotification('✅ Usuario actualizado correctamente', 'success');
+                    closeEditModal();
+                    updateStats(allUsers);
+                    applyFilters();
+                } else {
+                    await API.updateUser(userId, updates);
+                    showNotification('✅ Usuario actualizado correctamente', 'success');
+                    closeEditModal();
+                    await loadDashboard(true);
+                }
+            } catch (error) {
+                showNotification(`Error al guardar: ${error.message}`, 'error');
+            } finally {
+                saveBtn.textContent = originalText;
+                saveBtn.disabled = false;
+            }
+        }
+
         /* ── Quick Ban ───────────────────────────────────────────────────────── */
         async function quickBan(userId) {
             const user = allUsers.find(u => String(u.ID_Medico) === String(userId));
@@ -1045,41 +1221,101 @@
             const newStatus = user.Estado === 'banned' ? 'active' : 'banned';
             const action    = newStatus === 'banned' ? 'bloquear' : 'desbloquear';
 
-            if (!confirm(`¿Deseas ${action} a ${user.Nombre}?`)) return;
+            if (!confirm(`¿Confirmar ${action} a ${user.Nombre}?`)) return;
 
-            const result = await updateUser(userId, { Estado: newStatus });
-
-            if (result.error) {
-                showToast('Error: ' + result.error, 'error');
-                return;
+            try {
+                if (CONFIG.scriptUrl === 'PASTE_APPS_SCRIPT_URL_HERE') {
+                    const idx = allUsers.findIndex(u => String(u.ID_Medico) === String(userId));
+                    if (idx !== -1) allUsers[idx].Estado = newStatus;
+                    updateStats(allUsers);
+                    applyFilters();
+                } else {
+                    await API.updateUser(userId, { Estado: newStatus });
+                    await loadDashboard(true);
+                }
+                showNotification(`Usuario ${action === 'bloquear' ? 'bloqueado 🚫' : 'desbloqueado ✅'}`, newStatus === 'banned' ? 'info' : 'success');
+            } catch (error) {
+                showNotification(`Error al ${action} usuario`, 'error');
             }
+        }
 
-            const idx = allUsers.findIndex(u => String(u.ID_Medico) === String(userId));
-            if (idx !== -1) allUsers[idx].Estado = newStatus;
+        /* ── Activate User ───────────────────────────────────────────────────── */
+        async function activateUser(userId) {
+            const user = allUsers.find(u => String(u.ID_Medico) === String(userId));
+            if (!user) return;
 
-            updateStats(allUsers);
-            applyFilters();
-            showToast(`Usuario ${action === 'bloquear' ? 'bloqueado 🚫' : 'desbloqueado ✅'}`, newStatus === 'banned' ? 'warning' : 'success');
+            if (!confirm(`¿Activar suscripción PRO para ${user.Nombre}?`)) return;
+
+            const expirationDate = new Date();
+            expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+            const formattedDate = expirationDate.toISOString().split('T')[0];
+
+            const updates = {
+                Plan:              'pro',
+                Estado:            'active',
+                Fecha_Vencimiento: formattedDate,
+                Devices_Max:       5,
+                Notas_Admin:       `Activado manualmente el ${new Date().toISOString().split('T')[0]}`
+            };
+
+            try {
+                if (CONFIG.scriptUrl === 'PASTE_APPS_SCRIPT_URL_HERE') {
+                    const idx = allUsers.findIndex(u => String(u.ID_Medico) === String(userId));
+                    if (idx !== -1) allUsers[idx] = { ...allUsers[idx], ...updates };
+                    updateStats(allUsers);
+                    applyFilters();
+                } else {
+                    await API.updateUser(userId, updates);
+                    await loadDashboard(true);
+                }
+                showNotification(`✅ ${user.Nombre} activado - Plan PRO hasta ${formattedDate}`, 'success');
+            } catch (error) {
+                showNotification('Error al activar usuario', 'error');
+            }
         }
 
         /* ── Load Data ───────────────────────────────────────────────────────── */
         async function loadUsers() {
-            document.getElementById('tableBody').innerHTML =
-                '<tr><td colspan="9" class="text-center">⏳ Cargando usuarios...</td></tr>';
+            await loadDashboard();
+        }
 
-            allUsers = await fetchUsers();
-            updateStats(allUsers);
-            applyFilters();
+        async function loadDashboard(silent = false) {
+            if (!silent) {
+                document.getElementById('tableBody').innerHTML =
+                    '<tr><td colspan="9" class="text-center">⏳ Cargando datos...</td></tr>';
+            }
+
+            try {
+                allUsers = await fetchUsers();
+                updateStats(allUsers);
+                applyFilters();
+
+                if (!silent) {
+                    showNotification(`✅ ${allUsers.length} usuarios cargados`, 'success');
+                }
+            } catch (error) {
+                document.getElementById('tableBody').innerHTML =
+                    `<tr><td colspan="9" class="text-center">❌ Error al cargar datos: ${escapeHtml(error.message)}</td></tr>`;
+            }
+        }
+
+        function startAutoRefresh(intervalMinutes = 5) {
+            if (refreshInterval) clearInterval(refreshInterval);
+
+            refreshInterval = setInterval(async () => {
+                console.log('Auto-refreshing dashboard...');
+                await loadDashboard(true);
+            }, intervalMinutes * 60 * 1000);
         }
 
         /* ── Event Listeners ─────────────────────────────────────────────────── */
         document.getElementById('btnLogout').addEventListener('click', () => {
-            if (confirm('¿Cerrar sesión?')) {
+            if (confirm('¿Cerrar sesión del panel de administración?')) {
                 window.location.href = '../index.html';
             }
         });
 
-        document.getElementById('btnRefresh').addEventListener('click', loadUsers);
+        document.getElementById('btnRefresh').addEventListener('click', () => loadDashboard());
 
         document.getElementById('searchInput').addEventListener('input', applyFilters);
         document.getElementById('filterStatus').addEventListener('change', applyFilters);
@@ -1092,11 +1328,12 @@
             const userId = btn.dataset.userId;
             if (btn.dataset.action === 'edit') openEditModal(userId);
             else if (btn.dataset.action === 'ban') quickBan(userId);
+            else if (btn.dataset.action === 'activate') activateUser(userId);
         });
 
         document.getElementById('closeModal').addEventListener('click', closeEditModal);
         document.getElementById('btnCancelEdit').addEventListener('click', closeEditModal);
-        document.getElementById('btnSaveEdit').addEventListener('click', saveEdit);
+        document.getElementById('btnSaveEdit').addEventListener('click', saveUserChanges);
 
         /* Close modal on backdrop click */
         document.getElementById('editModal').addEventListener('click', function (e) {
@@ -1109,7 +1346,11 @@
         });
 
         /* ── Init ────────────────────────────────────────────────────────────── */
-        loadUsers();
+        // TODO: Add authentication/session check before rendering the dashboard.
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadDashboard();
+            startAutoRefresh(5);
+        });
     </script>
 </body>
 </html>
