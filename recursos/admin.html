@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Transcriptor Médico Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0f766e;
+            --primary-light: #14b8a6;
+            --primary-dark: #0d5c56;
+            --accent: #f59e0b;
+            --bg-main: #f1f5f9;
+            --bg-card: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        /* ── Header ── */
+        .dashboard-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 1rem 0;
+            box-shadow: 0 2px 20px rgba(15, 118, 110, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .logo-section h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1.2;
+        }
+
+        .logo-section .subtitle {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.75);
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .admin-badge {
+            background: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            padding: 0.35rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .btn-logout {
+            background: rgba(239, 68, 68, 0.85);
+            color: #ffffff;
+            border: none;
+            padding: 0.4rem 0.9rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: #dc2626;
+        }
+
+        /* ── Stats ── */
+        .stats-section {
+            padding: 1.5rem 0 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: var(--shadow);
+            border-left: 4px solid transparent;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .stat-total  { border-left-color: var(--info); }
+        .stat-active { border-left-color: var(--success); }
+        .stat-trial  { border-left-color: var(--warning); }
+        .stat-expired{ border-left-color: var(--danger); }
+
+        .stat-icon {
+            font-size: 2rem;
+            line-height: 1;
+        }
+
+        .stat-content h3 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .stat-content p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.2rem;
+        }
+
+        /* ── Filters ── */
+        .filters-section {
+            padding: 1.25rem 0;
+        }
+
+        .filters-bar {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 1rem 1.25rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+            box-shadow: var(--shadow);
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .search-input,
+        .filter-select {
+            width: 100%;
+            padding: 0.5rem 0.85rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-family: inherit;
+            color: var(--text-primary);
+            background: var(--bg-main);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+
+        .search-input:focus,
+        .filter-select:focus {
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15);
+        }
+
+        .btn-refresh {
+            background: var(--primary);
+            color: #ffffff;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+
+        .btn-refresh:hover {
+            background: var(--primary-dark);
+        }
+
+        /* ── Table ── */
+        .table-section {
+            padding-bottom: 2rem;
+        }
+
+        .table-wrapper {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow-x: auto;
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        .users-table thead tr {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        }
+
+        .users-table thead th {
+            padding: 0.9rem 1rem;
+            text-align: left;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+        }
+
+        .users-table tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+
+        .users-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .users-table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .users-table td {
+            padding: 0.75rem 1rem;
+            color: var(--text-primary);
+            vertical-align: middle;
+        }
+
+        .text-center {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 2rem !important;
+        }
+
+        .user-id {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: var(--bg-main);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.55rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-specialty {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .badge-plan { text-transform: uppercase; font-size: 0.7rem; font-weight: 700; }
+        .badge-trial      { background: #fef3c7; color: #92400e; }
+        .badge-pro        { background: #dcfce7; color: #166534; }
+        .badge-enterprise { background: #ede9fe; color: #5b21b6; }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-active  { background: #dcfce7; color: #166534; }
+        .status-trial   { background: #fef3c7; color: #92400e; }
+        .status-expired { background: #fee2e2; color: #991b1b; }
+        .status-banned  { background: #f1f5f9; color: #475569; }
+
+        .usage-count {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        /* Action buttons */
+        .btn-action {
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0.25rem 0.35rem;
+            border-radius: 6px;
+            transition: background 0.15s;
+            line-height: 1;
+        }
+
+        .btn-edit:hover { background: #e0f2fe; }
+        .btn-ban:hover  { background: #fee2e2; }
+
+        /* ── Modal ── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            padding: 1rem;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 560px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            animation: modalIn 0.25s ease;
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+            to   { opacity: 1; transform: scale(1)   translateY(0); }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 1rem 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h2 {
+            color: #ffffff;
+            font-size: 1.05rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .modal-body {
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.25rem;
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+            border-top: 1px solid var(--border);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            flex: 1;
+        }
+
+        .form-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-family: inherit;
+            color: var(--text-primary);
+            background: var(--bg-main);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15);
+        }
+
+        .form-group input[readonly] {
+            background: #f1f5f9;
+            color: var(--text-secondary);
+            cursor: default;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #ffffff;
+            border: none;
+            padding: 0.55rem 1.1rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            padding: 0.55rem 1.1rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-main);
+        }
+
+        /* ── Toast ── */
+        #toast {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            background: var(--text-primary);
+            color: #ffffff;
+            padding: 0.75rem 1.1rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+            font-weight: 500;
+            z-index: 300;
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity 0.25s, transform 0.25s;
+            pointer-events: none;
+        }
+
+        #toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #toast.success { background: var(--success); }
+        #toast.error   { background: var(--danger); }
+        #toast.warning { background: var(--warning); color: var(--text-primary); }
+
+        /* ── Footer ── */
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .users-table .col-usage,
+            .users-table .col-expiration {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .filter-group {
+                min-width: 100%;
+            }
+
+            /* Card layout on mobile */
+            .users-table thead {
+                display: none;
+            }
+
+            .users-table tbody tr {
+                display: block;
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: var(--radius-sm);
+                margin-bottom: 0.75rem;
+                padding: 0.75rem;
+            }
+
+            .users-table tbody td {
+                display: flex;
+                justify-content: space-between;
+                padding: 0.3rem 0;
+                border: none;
+                font-size: 0.85rem;
+            }
+
+            .users-table tbody td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: var(--text-secondary);
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                margin-right: 0.5rem;
+            }
+
+            .form-row {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .logo-section h1 {
+                font-size: 1.1rem;
+            }
+
+            .admin-badge {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ── Header ── -->
+    <header class="dashboard-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo-section">
+                    <h1>🏥 Admin Dashboard</h1>
+                    <span class="subtitle">Transcriptor Médico Pro</span>
+                </div>
+                <div class="user-section">
+                    <span class="admin-badge">👤 Administrador</span>
+                    <button class="btn-logout" id="btnLogout">Cerrar Sesión</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ── Stats ── -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-card stat-total">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-content">
+                        <h3 id="statTotal">0</h3>
+                        <p>Total Usuarios</p>
+                    </div>
+                </div>
+                <div class="stat-card stat-active">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-content">
+                        <h3 id="statActive">0</h3>
+                        <p>Activos (Pago)</p>
+                    </div>
+                </div>
+                <div class="stat-card stat-trial">
+                    <div class="stat-icon">⏰</div>
+                    <div class="stat-content">
+                        <h3 id="statTrial">0</h3>
+                        <p>En Trial</p>
+                    </div>
+                </div>
+                <div class="stat-card stat-expired">
+                    <div class="stat-icon">⚠️</div>
+                    <div class="stat-content">
+                        <h3 id="statExpired">0</h3>
+                        <p>Expirados</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Filters ── -->
+    <section class="filters-section">
+        <div class="container">
+            <div class="filters-bar">
+                <div class="filter-group">
+                    <input type="text" id="searchInput" placeholder="🔍 Buscar por nombre, email o matrícula..." class="search-input">
+                </div>
+                <div class="filter-group">
+                    <select id="filterStatus" class="filter-select">
+                        <option value="">Todos los estados</option>
+                        <option value="active">Activos</option>
+                        <option value="trial">Trial</option>
+                        <option value="expired">Expirados</option>
+                        <option value="banned">Bloqueados</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <select id="filterPlan" class="filter-select">
+                        <option value="">Todos los planes</option>
+                        <option value="trial">Trial</option>
+                        <option value="pro">Pro</option>
+                        <option value="enterprise">Enterprise</option>
+                    </select>
+                </div>
+                <button class="btn-refresh" id="btnRefresh">🔄 Actualizar</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Table ── -->
+    <section class="table-section">
+        <div class="container">
+            <div class="table-wrapper">
+                <table class="users-table" id="usersTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Especialidad</th>
+                            <th>Plan</th>
+                            <th>Estado</th>
+                            <th class="col-expiration">Vencimiento</th>
+                            <th class="col-usage">Uso</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr class="loading-row">
+                            <td colspan="9" class="text-center">⏳ Cargando usuarios...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Edit Modal ── -->
+    <div class="modal-overlay" id="editModal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">✏️ Editar Usuario</h2>
+                <button class="modal-close" id="closeModal" aria-label="Cerrar">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editUserId">
+
+                <div class="form-group">
+                    <label for="editName">Nombre Completo</label>
+                    <input type="text" id="editName" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="editEmail">Email</label>
+                    <input type="email" id="editEmail" readonly>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editPlan">Plan</label>
+                        <select id="editPlan">
+                            <option value="trial">Trial</option>
+                            <option value="pro">Pro</option>
+                            <option value="enterprise">Enterprise</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editStatus">Estado</label>
+                        <select id="editStatus">
+                            <option value="active">Activo ✅</option>
+                            <option value="trial">Trial ⏰</option>
+                            <option value="expired">Expirado ⚠️</option>
+                            <option value="banned">Bloqueado 🚫</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editExpiration">Fecha Vencimiento</label>
+                        <input type="date" id="editExpiration">
+                    </div>
+                    <div class="form-group">
+                        <label for="editDevicesMax">Dispositivos Máximos</label>
+                        <input type="number" id="editDevicesMax" min="1" max="999">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="editNotes">Notas Administrativas</label>
+                    <textarea id="editNotes" rows="3" placeholder="Observaciones internas..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="btnCancelEdit">Cancelar</button>
+                <button class="btn-primary" id="btnSaveEdit">💾 Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Toast ── -->
+    <div id="toast" role="status" aria-live="polite"></div>
+
+    <!-- ── Footer ── -->
+    <footer>
+        <p>© 2026 Transcriptor Médico Pro — Panel de Administración</p>
+    </footer>
+
+    <script>
+        /* ── Configuration ──────────────────────────────────────────────────── */
+        // TODO: Load scriptUrl from backend/admin_config.json once backend is deployed.
+        // TODO: Add authentication/session check before rendering the dashboard.
+        const CONFIG = {
+            scriptUrl: 'PASTE_APPS_SCRIPT_URL_HERE',
+            adminKey: 'ADMIN_SECRET_2026'
+        };
+
+        /* Sample data used when the backend URL has not been configured yet */
+        const SAMPLE_USERS = [
+            {
+                ID_Medico: 'DR001',
+                Nombre: 'Dr. Juan Pérez',
+                Matricula: 'MN 12345',
+                Email: 'juan.perez@example.com',
+                Especialidad: 'Cardiología',
+                Plan: 'trial',
+                Estado: 'trial',
+                Fecha_Registro: '2026-02-15',
+                Fecha_Vencimiento: '2026-02-22',
+                Devices_Max: 2,
+                Usage_Count: 5,
+                Notas_Admin: 'Usuario de prueba - trial activo'
+            },
+            {
+                ID_Medico: 'DR002',
+                Nombre: 'Dra. María García',
+                Matricula: 'MP 67890',
+                Email: 'maria.garcia@example.com',
+                Especialidad: 'ORL',
+                Plan: 'pro',
+                Estado: 'active',
+                Fecha_Registro: '2026-01-10',
+                Fecha_Vencimiento: '2026-12-31',
+                Devices_Max: 5,
+                Usage_Count: 127,
+                Notas_Admin: 'Cliente pagado - plan anual'
+            },
+            {
+                ID_Medico: 'DR003',
+                Nombre: 'Dr. Carlos Rodríguez',
+                Matricula: 'MN 11111',
+                Email: 'carlos.r@example.com',
+                Especialidad: 'Gastroenterología',
+                Plan: 'trial',
+                Estado: 'expired',
+                Fecha_Registro: '2026-01-20',
+                Fecha_Vencimiento: '2026-01-27',
+                Devices_Max: 2,
+                Usage_Count: 23,
+                Notas_Admin: 'Trial expirado - seguimiento pendiente'
+            }
+        ];
+
+        /* ── State ───────────────────────────────────────────────────────────── */
+        let allUsers = [];
+
+        /* ── API ─────────────────────────────────────────────────────────────── */
+        async function fetchUsers() {
+            if (CONFIG.scriptUrl === 'PASTE_APPS_SCRIPT_URL_HERE') {
+                /* Backend not yet configured — use sample data */
+                return SAMPLE_USERS;
+            }
+            try {
+                const url = `${CONFIG.scriptUrl}?action=admin_list_users&adminKey=${encodeURIComponent(CONFIG.adminKey)}`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                return data.users || [];
+            } catch (error) {
+                console.error('Error fetching users:', error);
+                showToast('Error al cargar usuarios. Usando datos de muestra.', 'warning');
+                return SAMPLE_USERS;
+            }
+        }
+
+        async function updateUser(userId, updates) {
+            if (CONFIG.scriptUrl === 'PASTE_APPS_SCRIPT_URL_HERE') {
+                /* Simulate success when backend is not configured */
+                return { success: true };
+            }
+            try {
+                const response = await fetch(CONFIG.scriptUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'admin_update_user',
+                        adminKey: CONFIG.adminKey,
+                        userId: userId,
+                        updates: updates
+                    })
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                console.error('Error updating user:', error);
+                return { error: error.message };
+            }
+        }
+
+        /* ── Helpers ─────────────────────────────────────────────────────────── */
+        function getStatusText(estado) {
+            const map = {
+                active: '✅ Activo',
+                trial: '⏰ Trial',
+                expired: '⚠️ Expirado',
+                banned: '🚫 Bloqueado'
+            };
+            return map[estado] || estado;
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '—';
+            try {
+                const [y, m, d] = dateStr.split('-');
+                return `${d}/${m}/${y}`;
+            } catch (_) {
+                return dateStr;
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `show ${type}`;
+            clearTimeout(toast._timer);
+            toast._timer = setTimeout(() => {
+                toast.className = '';
+            }, 3000);
+        }
+
+        /* ── Render ──────────────────────────────────────────────────────────── */
+        function renderTable(users) {
+            const tbody = document.getElementById('tableBody');
+            if (!users || users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center">No hay usuarios registrados</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = users.map(user => {
+                const plan = user.Plan || 'trial';
+                const id   = escapeHtml(String(user.ID_Medico));
+                return `
+                <tr data-user-id="${id}">
+                    <td data-label="ID"><span class="user-id">${id}</span></td>
+                    <td data-label="Nombre"><strong>${escapeHtml(user.Nombre)}</strong></td>
+                    <td data-label="Email"><small>${escapeHtml(user.Email)}</small></td>
+                    <td data-label="Especialidad"><span class="badge badge-specialty">${escapeHtml(user.Especialidad)}</span></td>
+                    <td data-label="Plan"><span class="badge badge-plan badge-${escapeHtml(plan)}">${escapeHtml(plan.toUpperCase())}</span></td>
+                    <td data-label="Estado"><span class="status-badge status-${escapeHtml(user.Estado)}">${getStatusText(user.Estado)}</span></td>
+                    <td data-label="Vencimiento" class="col-expiration">${formatDate(user.Fecha_Vencimiento)}</td>
+                    <td data-label="Uso" class="col-usage"><span class="usage-count">${user.Usage_Count || 0}</span></td>
+                    <td data-label="Acciones">
+                        <button class="btn-action btn-edit" data-action="edit" data-user-id="${id}" title="Editar">✏️</button>
+                        <button class="btn-action btn-ban"  data-action="ban"  data-user-id="${id}" title="Bloquear">🚫</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.appendChild(document.createTextNode(str));
+            return div.innerHTML;
+        }
+
+        /* ── Stats ───────────────────────────────────────────────────────────── */
+        function updateStats(users) {
+            const stats = {
+                total: users.length,
+                active: users.filter(u => u.Estado === 'active').length,
+                trial: users.filter(u => u.Estado === 'trial').length,
+                expired: users.filter(u => u.Estado === 'expired').length
+            };
+
+            document.getElementById('statTotal').textContent   = stats.total;
+            document.getElementById('statActive').textContent  = stats.active;
+            document.getElementById('statTrial').textContent   = stats.trial;
+            document.getElementById('statExpired').textContent = stats.expired;
+        }
+
+        /* ── Filters ─────────────────────────────────────────────────────────── */
+        function applyFilters() {
+            const search = document.getElementById('searchInput').value.toLowerCase().trim();
+            const status = document.getElementById('filterStatus').value;
+            const plan   = document.getElementById('filterPlan').value;
+
+            const filtered = allUsers.filter(user => {
+                const matchSearch = !search ||
+                    (user.Nombre    || '').toLowerCase().includes(search) ||
+                    (user.Email     || '').toLowerCase().includes(search) ||
+                    (user.Matricula || '').toLowerCase().includes(search);
+
+                const matchStatus = !status || user.Estado === status;
+                const matchPlan   = !plan   || user.Plan   === plan;
+
+                return matchSearch && matchStatus && matchPlan;
+            });
+
+            renderTable(filtered);
+        }
+
+        /* ── Edit Modal ──────────────────────────────────────────────────────── */
+        function openEditModal(userId) {
+            const user = allUsers.find(u => String(u.ID_Medico) === String(userId));
+            if (!user) return;
+
+            document.getElementById('editUserId').value     = user.ID_Medico;
+            document.getElementById('editName').value       = user.Nombre;
+            document.getElementById('editEmail').value      = user.Email;
+            document.getElementById('editPlan').value       = user.Plan;
+            document.getElementById('editStatus').value     = user.Estado;
+            document.getElementById('editExpiration').value = user.Fecha_Vencimiento || '';
+            document.getElementById('editDevicesMax').value = user.Devices_Max || 2;
+            document.getElementById('editNotes').value      = user.Notas_Admin || '';
+
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        async function saveEdit() {
+            const userId = document.getElementById('editUserId').value;
+            const updates = {
+                Plan:              document.getElementById('editPlan').value,
+                Estado:            document.getElementById('editStatus').value,
+                Fecha_Vencimiento: document.getElementById('editExpiration').value,
+                Devices_Max:       parseInt(document.getElementById('editDevicesMax').value, 10) || 2,
+                Notas_Admin:       document.getElementById('editNotes').value
+            };
+
+            const saveBtn = document.getElementById('btnSaveEdit');
+            saveBtn.disabled = true;
+            saveBtn.textContent = '⏳ Guardando...';
+
+            const result = await updateUser(userId, updates);
+
+            saveBtn.disabled = false;
+            saveBtn.textContent = '💾 Guardar Cambios';
+
+            if (result.error) {
+                showToast('Error al guardar: ' + result.error, 'error');
+                return;
+            }
+
+            /* Update local state */
+            const idx = allUsers.findIndex(u => String(u.ID_Medico) === String(userId));
+            if (idx !== -1) {
+                allUsers[idx] = { ...allUsers[idx], ...updates };
+            }
+
+            updateStats(allUsers);
+            applyFilters();
+            closeEditModal();
+            showToast('Usuario actualizado correctamente ✅', 'success');
+        }
+
+        /* ── Quick Ban ───────────────────────────────────────────────────────── */
+        async function quickBan(userId) {
+            const user = allUsers.find(u => String(u.ID_Medico) === String(userId));
+            if (!user) return;
+
+            const newStatus = user.Estado === 'banned' ? 'active' : 'banned';
+            const action    = newStatus === 'banned' ? 'bloquear' : 'desbloquear';
+
+            if (!confirm(`¿Deseas ${action} a ${user.Nombre}?`)) return;
+
+            const result = await updateUser(userId, { Estado: newStatus });
+
+            if (result.error) {
+                showToast('Error: ' + result.error, 'error');
+                return;
+            }
+
+            const idx = allUsers.findIndex(u => String(u.ID_Medico) === String(userId));
+            if (idx !== -1) allUsers[idx].Estado = newStatus;
+
+            updateStats(allUsers);
+            applyFilters();
+            showToast(`Usuario ${action === 'bloquear' ? 'bloqueado 🚫' : 'desbloqueado ✅'}`, newStatus === 'banned' ? 'warning' : 'success');
+        }
+
+        /* ── Load Data ───────────────────────────────────────────────────────── */
+        async function loadUsers() {
+            document.getElementById('tableBody').innerHTML =
+                '<tr><td colspan="9" class="text-center">⏳ Cargando usuarios...</td></tr>';
+
+            allUsers = await fetchUsers();
+            updateStats(allUsers);
+            applyFilters();
+        }
+
+        /* ── Event Listeners ─────────────────────────────────────────────────── */
+        document.getElementById('btnLogout').addEventListener('click', () => {
+            if (confirm('¿Cerrar sesión?')) {
+                window.location.href = '../index.html';
+            }
+        });
+
+        document.getElementById('btnRefresh').addEventListener('click', loadUsers);
+
+        document.getElementById('searchInput').addEventListener('input', applyFilters);
+        document.getElementById('filterStatus').addEventListener('change', applyFilters);
+        document.getElementById('filterPlan').addEventListener('change', applyFilters);
+
+        /* Event delegation for table action buttons */
+        document.getElementById('tableBody').addEventListener('click', function (e) {
+            const btn = e.target.closest('[data-action]');
+            if (!btn) return;
+            const userId = btn.dataset.userId;
+            if (btn.dataset.action === 'edit') openEditModal(userId);
+            else if (btn.dataset.action === 'ban') quickBan(userId);
+        });
+
+        document.getElementById('closeModal').addEventListener('click', closeEditModal);
+        document.getElementById('btnCancelEdit').addEventListener('click', closeEditModal);
+        document.getElementById('btnSaveEdit').addEventListener('click', saveEdit);
+
+        /* Close modal on backdrop click */
+        document.getElementById('editModal').addEventListener('click', function (e) {
+            if (e.target === this) closeEditModal();
+        });
+
+        /* Close modal on Escape key */
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeEditModal();
+        });
+
+        /* ── Init ────────────────────────────────────────────────────────────── */
+        loadUsers();
+    </script>
+</body>
+</html>
