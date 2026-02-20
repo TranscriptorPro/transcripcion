@@ -250,6 +250,7 @@
         .users-table tbody tr {
             border-bottom: 1px solid var(--border);
             transition: background 0.15s;
+            height: 60px;
         }
 
         .users-table tbody tr:last-child {
@@ -261,9 +262,21 @@
         }
 
         .users-table td {
-            padding: 0.75rem 1rem;
+            padding: 0.5rem 0.75rem;
             color: var(--text-primary);
             vertical-align: middle;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .users-table td.user-name-cell {
+            white-space: normal;
+            max-width: 180px;
+        }
+
+        .email-cell {
+            max-width: 200px;
         }
 
         .text-center {
@@ -284,9 +297,9 @@
         /* Badges */
         .badge {
             display: inline-block;
-            padding: 0.2rem 0.55rem;
+            padding: 0.15rem 0.4rem;
             border-radius: 999px;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 500;
         }
 
@@ -323,8 +336,8 @@
             border: none;
             background: transparent;
             cursor: pointer;
-            font-size: 1.1rem;
-            padding: 0.25rem 0.35rem;
+            font-size: 1.2rem;
+            padding: 0.3rem;
             border-radius: 6px;
             transition: background 0.15s;
             line-height: 1;
@@ -536,8 +549,10 @@
 
         .actions-cell {
             display: flex;
-            gap: 4px;
+            gap: 6px;
             justify-content: center;
+            align-items: center;
+            flex-wrap: nowrap;
         }
 
         .btn-activate {
@@ -692,6 +707,15 @@
             color: var(--primary);
             border-bottom-color: var(--primary);
             font-weight: 600;
+        }
+
+        /* ── Tab Content ── */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
         }
 
         /* ── Metrics Tab ── */
@@ -950,18 +974,20 @@
         }
 
         .usage-bar {
-            flex: 1;
-            height: 6px;
+            display: inline-block;
+            width: 40px;
+            height: 4px;
             background: var(--border);
-            border-radius: 999px;
+            border-radius: 2px;
+            margin-left: 6px;
+            vertical-align: middle;
             overflow: hidden;
-            min-width: 50px;
         }
 
         .usage-bar-fill {
             height: 100%;
             background: linear-gradient(to right, var(--primary-light), var(--primary));
-            border-radius: 999px;
+            border-radius: 2px;
             transition: width 0.5s;
         }
 
@@ -1073,7 +1099,7 @@
     </nav>
 
     <!-- ── Tab: Usuarios ── -->
-    <div id="tab-usuarios" class="tab-content">
+    <div id="tab-usuarios" class="tab-content active">
 
     <!-- ── Stats ── -->
     <section class="stats-section">
@@ -1172,7 +1198,7 @@
     </div><!-- /#tab-usuarios -->
 
     <!-- ── Tab: Métricas ── -->
-    <div id="tab-metricas" class="tab-content" style="display:none">
+    <div id="tab-metricas" class="tab-content">
     <section class="metrics-section">
         <div class="container">
             <div class="metrics-grid" id="globalMetricsGrid">
@@ -1227,7 +1253,7 @@
     </div><!-- /#tab-metricas -->
 
     <!-- ── Tab: Logs ── -->
-    <div id="tab-logs" class="tab-content" style="display:none">
+    <div id="tab-logs" class="tab-content">
     <section class="logs-section">
         <div class="container">
             <div class="logs-filters">
@@ -1535,6 +1561,8 @@
         let currentEditUser = null;
         let refreshInterval = null;
         let notificationTimer = null;
+        let metricsLoaded = false;
+        let logsLoaded = false;
 
         /* ── API ─────────────────────────────────────────────────────────────── */
         async function fetchUsers() {
@@ -1623,13 +1651,34 @@
 
         /* ── Tab Navigation ─────────────────────────────────────────────────── */
         function showTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
-            document.getElementById(`tab-${tabName}`).style.display = 'block';
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelector(`.tab-btn[data-tab="${tabName}"]`).classList.add('active');
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
 
-            if (tabName === 'metricas') loadGlobalStats();
-            else if (tabName === 'logs') loadLogs();
+            // Remove active from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            const selectedTab = document.getElementById(`tab-${tabName}`);
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+            }
+
+            // Activate button
+            const activeBtn = document.querySelector(`[data-tab="${tabName}"]`);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            // Load data lazily
+            if (tabName === 'metricas' && !metricsLoaded) {
+                loadGlobalStats();
+                metricsLoaded = true;
+            } else if (tabName === 'logs' && !logsLoaded) {
+                loadLogs();
+                logsLoaded = true;
+            }
         }
 
         /* ── User Metrics Modal ──────────────────────────────────────────────── */
@@ -1850,8 +1899,8 @@
                 return `
                 <tr data-user-id="${id}" class="${isBanned ? 'row-banned' : ''}">
                     <td data-label="ID"><span class="user-id">${id}</span></td>
-                    <td data-label="Nombre"><strong>${escapeHtml(user.Nombre)}</strong>${isActiveToday ? '<span class="badge-active-today">🔥 Activo hoy</span>' : ''}<br><small class="text-muted">${escapeHtml(user.Matricula || '')}</small></td>
-                    <td data-label="Email"><small>${escapeHtml(user.Email)}</small></td>
+                    <td data-label="Nombre" class="user-name-cell"><strong>${escapeHtml(user.Nombre)}</strong>${isActiveToday ? '<span class="badge-active-today">🔥 Activo hoy</span>' : ''}<br><small class="text-muted">${escapeHtml(user.Matricula || '')}</small></td>
+                    <td data-label="Email" class="email-cell"><small>${escapeHtml(user.Email)}</small></td>
                     <td data-label="Especialidad"><span class="badge badge-specialty">${escapeHtml(user.Especialidad)}</span></td>
                     <td data-label="Plan"><span class="badge badge-plan badge-${escapeHtml(plan)}">${escapeHtml(plan.toUpperCase())}</span></td>
                     <td data-label="Estado"><span class="status-badge status-${escapeHtml(user.Estado)}">${getStatusText(user.Estado)}</span></td>
@@ -2159,7 +2208,10 @@
         });
 
         /* Logs filters */
-        document.getElementById('btnRefreshLogs').addEventListener('click', loadLogs);
+        document.getElementById('btnRefreshLogs').addEventListener('click', () => {
+            logsLoaded = false;
+            loadLogs();
+        });
         document.getElementById('logFilterDate').addEventListener('change', loadLogs);
         document.getElementById('logFilterType').addEventListener('change', loadLogs);
 
