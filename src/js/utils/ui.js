@@ -163,7 +163,7 @@ window.initApiManagement = function () {
     const apiTestResult = document.getElementById('apiTestResult');
 
     // Restaurar API key guardada al cargar la página
-    const savedKey = localStorage.getItem('groq_api_key');
+    const savedKey = localStorage.getItem('groq_api_key') || window.GROQ_API_KEY || '';
     if (savedKey) {
         window.GROQ_API_KEY = savedKey;
         if (apiKeyInput) {
@@ -171,6 +171,8 @@ window.initApiManagement = function () {
             apiKeyInput.type = 'password';
             apiKeyInput.dataset.hasKey = 'true';
         }
+        // Actualizar el status indicator
+        if (typeof updateApiStatus === 'function') updateApiStatus(savedKey);
     }
 
     // Guardar API Key

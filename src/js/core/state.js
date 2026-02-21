@@ -23,3 +23,6 @@ window.audioChunks = [];
 window.isRecording = false;
 window.recordingInterval = null;
 window.recordingStartTime = 0;
+
+// API Key State - initialize early from localStorage
+window.GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
