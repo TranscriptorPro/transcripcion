@@ -64,6 +64,45 @@
             z-index: 1001;
         }
 
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .superhero-icon {
+            flex-shrink: 0;
+        }
+
+        .header-titles {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-titles h1 {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 2.5rem;
+            font-weight: 400;
+            color: #ffffff;
+            letter-spacing: 0.02em;
+            line-height: 1.2;
+            margin: 0;
+        }
+
+        .header-titles .subtitle {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            font-size: 1.125rem;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.85);
+            margin-top: 0.25rem;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
         .logo-section h1 {
             font-size: 1.4rem;
             font-weight: 700;
@@ -89,6 +128,65 @@
             border-radius: 999px;
             font-size: 0.85rem;
             font-weight: 500;
+        }
+
+        /* Pro Mode Toggle */
+        .pro-toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #6c757d;
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: linear-gradient(135deg, #ff8c42 0%, #ff6b2b 100%);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        .toggle-label {
+            margin-left: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #ffffff;
         }
 
         .admin-icon {
@@ -678,6 +776,19 @@
         }
 
         @media (max-width: 768px) {
+            .superhero-icon svg {
+                width: 80px;
+                height: 80px;
+            }
+
+            .header-titles h1 {
+                font-size: 2rem;
+            }
+
+            .header-titles .subtitle {
+                font-size: 1rem;
+            }
+
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -723,6 +834,22 @@
         }
 
         @media (max-width: 480px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .header-left {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .superhero-icon svg {
+                width: 60px;
+                height: 60px;
+            }
+
             .stats-grid {
                 grid-template-columns: 1fr 1fr;
             }
@@ -1259,11 +1386,50 @@
     <header class="dashboard-header">
         <div class="container">
             <div class="header-content">
-                <div class="logo-section">
-                    <h1>🏥 Admin Dashboard</h1>
-                    <span class="subtitle">Transcriptor Médico Pro</span>
+                <div class="header-left">
+                    <div class="superhero-icon">
+                        <svg width="100" height="100" viewBox="0 0 100 100">
+                            <defs>
+                                <linearGradient id="adminHeroGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#e8e8e8;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#c0c0c0;stop-opacity:1" />
+                                </linearGradient>
+                            </defs>
+                            <!-- Cabeza -->
+                            <circle cx="50" cy="25" r="14" fill="url(#adminHeroGradient)"/>
+                            <!-- Cuello -->
+                            <rect x="46" y="37" width="8" height="6" fill="url(#adminHeroGradient)"/>
+                            <!-- Torso -->
+                            <path d="M30,43 L70,43 L68,75 Q68,78 65,78 L35,78 Q32,78 32,75 Z" fill="url(#adminHeroGradient)"/>
+                            <!-- Brazos extendidos -->
+                            <ellipse cx="22" cy="50" rx="7" ry="10" fill="url(#adminHeroGradient)"/>
+                            <ellipse cx="78" cy="50" rx="7" ry="10" fill="url(#adminHeroGradient)"/>
+                            <!-- Letra A en el pecho -->
+                            <text x="50" y="60"
+                                  font-family="Arial Black, sans-serif"
+                                  font-size="28"
+                                  font-weight="900"
+                                  fill="#2c5f7c"
+                                  text-anchor="middle"
+                                  dominant-baseline="middle">A</text>
+                            <!-- Piernas -->
+                            <rect x="42" y="78" width="7" height="16" rx="2" fill="url(#adminHeroGradient)"/>
+                            <rect x="51" y="78" width="7" height="16" rx="2" fill="url(#adminHeroGradient)"/>
+                        </svg>
+                    </div>
+                    <div class="header-titles">
+                        <h1>Transcriptor Pro</h1>
+                        <span class="subtitle">Modo Administrador</span>
+                    </div>
                 </div>
-                <div class="header-actions">
+                <div class="header-right">
+                    <div class="pro-toggle-container">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="proToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="toggle-label">Pro</span>
+                    </div>
                     <button class="btn-primary" id="btnNewUser">
                         ➕ Nuevo Usuario
                     </button>
