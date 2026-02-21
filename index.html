@@ -5754,36 +5754,32 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
             };
 
             const initBusinessSuite = () => {
-                // ✅ Si es admin, precargar datos y NO mostrar onboarding
-                if (isAdminUser()) {
-                    const adminProfData = {
-                        nombre: 'Administrador',
-                        matricula: 'ADMIN',
-                        workplace: 'Panel de Administración',
-                        specialties: ['Todas'],
-                        studies: []
-                    };
-                    localStorage.setItem('prof_data', JSON.stringify(adminProfData));
-                    localStorage.setItem('onboarding_date', new Date().toISOString());
+                // Siempre establecer como Admin para esta app principal
+                const adminProfData = {
+                    nombre: 'Administrador',
+                    matricula: 'ADMIN',
+                    workplace: 'Panel de Administración',
+                    specialties: ['Todas'],
+                    studies: []
+                };
+                localStorage.setItem('prof_data', JSON.stringify(adminProfData));
+                localStorage.setItem('onboarding_date', new Date().toISOString());
+
+                try {
                     applyProfessionalData(adminProfData);
                     updatePersonalization(adminProfData);
                     initializeMode();
-                    return;
+                } catch (e) {
+                    console.error("Error inicializando datos admin:", e);
                 }
 
-                const profData = JSON.parse(localStorage.getItem('prof_data'));
-                const onboardingDate = localStorage.getItem('onboarding_date');
-
-                if (!profData) {
-                    onboardingOverlay.classList.add('active');
-                    initSpecialtiesGrid();
-                } else {
-                    applyProfessionalData(profData);
-                    updatePersonalization(profData);
-                    checkTrial(onboardingDate);
+                // Forzar la ocultación del modal de onboarding siempre,
+                // ya que esta es exclusivamente la app del Administrador.
+                const onboardingOverlay = document.getElementById('onboardingOverlay');
+                if (onboardingOverlay) {
+                    onboardingOverlay.style.display = 'none';
+                    onboardingOverlay.classList.remove('active');
                 }
-
-                initializeMode();
             };
 
             const initSpecialtiesGrid = () => {
@@ -5812,21 +5808,31 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
             };
 
             const applyProfessionalData = (data) => {
-                $('lockNameDisplay').textContent = data.nombre;
-                $('lockMatriculaDisplay').textContent = data.matricula;
+                try {
+                    const nameEl = $('lockNameDisplay');
+                    const matEl = $('lockMatriculaDisplay');
+                    if (nameEl) nameEl.textContent = data.nombre;
+                    if (matEl) matEl.textContent = data.matricula;
 
-                // Populate workplaces dropdown
-                const wps = data.workplace.split(/[,\n]/).map(w => w.trim()).filter(w => w);
-                const wpSelect = $('workplaceSelect');
-                wpSelect.innerHTML = wps.map(w => `<option value="${w}">${w}</option>`).join('');
+                    // Populate workplaces dropdown
+                    const wps = data.workplace.split(/[,\n]/).map(w => w.trim()).filter(w => w);
+                    const wpSelect = $('workplaceSelect');
+                    if (wpSelect) {
+                        wpSelect.innerHTML = wps.map(w => `<option value="${w}">${w}</option>`).join('');
+                    }
 
-                populateTemplateDropdown(data.studies);
+                    populateTemplateDropdown(data.studies);
+                } catch (err) {
+                    console.error("Error en applyProfessionalData: ", err);
+                }
             };
 
             const onboardingForm = $('onboardingForm');
             if (onboardingForm) {
                 onboardingForm.addEventListener('submit', (e) => {
                     e.preventDefault();
+                    // Lógica dejada por si se recicla el código en un clon,
+                    // aunque en admin nunca se mostrará el form.
                     const name = $('profName').value;
                     const matricula = $('profMatricula').value;
                     const workplaces = $('profWorkplace').value;
@@ -5838,7 +5844,8 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                     localStorage.setItem('onboarding_date', new Date().toISOString());
 
                     applyProfessionalData(profData);
-                    onboardingOverlay.classList.remove('active');
+                    const overlay = $('onboardingOverlay');
+                    if (overlay) overlay.classList.remove('active');
                     showToast('Perfil activado. ¡Bienvenido/a!', 'success');
                 });
 
