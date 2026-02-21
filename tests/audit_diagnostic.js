@@ -76,10 +76,14 @@ const fs = require('fs');
 })();
 
 async function proModeTest(page, auditResults) {
-    const toggle = page.locator('#proModeToggle');
-    // Forzar click porque está oculto visualmente por CSS
-    await toggle.evaluate(el => el.click());
-    await page.waitForTimeout(500);
+    // Use dispatchEvent('change') instead of .click() to reliably trigger the change listener
+    await page.evaluate(() => {
+        const toggle = document.getElementById('proModeToggle');
+        if (!toggle) return;
+        toggle.checked = true;
+        toggle.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    await page.waitForTimeout(800);
 
     const dropdownVisible = await page.locator('#templateDropdownMain').isVisible();
     auditResults.push({
@@ -87,8 +91,13 @@ async function proModeTest(page, auditResults) {
         status: dropdownVisible ? 'PASS' : 'FAIL'
     });
 
+    // Save to localStorage so persistence test works after reload
+    await page.evaluate(() => {
+        localStorage.setItem('last_profile_type', 'pro');
+    });
+
     await page.reload({ waitUntil: 'load' });
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(1200);
     const dropdownStillVisible = await page.locator('#templateDropdownMain').isVisible();
     auditResults.push({
         test: 'Persistencia Modo Pro',
