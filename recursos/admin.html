@@ -76,6 +76,43 @@
             color: rgba(255, 255, 255, 0.75);
         }
 
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .header-logo {
+            height: 100px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .header-texts {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .header-title {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 2.5rem;
+            font-weight: 400;
+            color: #ffffff;
+            margin: 0;
+            line-height: 1.2;
+            letter-spacing: 0.02em;
+        }
+
+        .header-subtitle {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 1.125rem;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.85);
+            margin: 0;
+            line-height: 1.4;
+        }
+
         .user-section {
             display: flex;
             align-items: center;
@@ -720,6 +757,18 @@
             .form-row {
                 flex-direction: column;
             }
+
+            .header-logo {
+                height: 80px;
+            }
+
+            .header-title {
+                font-size: 2rem;
+            }
+
+            .header-subtitle {
+                font-size: 1rem;
+            }
         }
 
         @media (max-width: 480px) {
@@ -727,8 +776,16 @@
                 grid-template-columns: 1fr 1fr;
             }
 
-            .logo-section h1 {
-                font-size: 1.1rem;
+            .header-logo {
+                height: 60px;
+            }
+
+            .header-title {
+                font-size: 1.8rem;
+            }
+
+            .header-subtitle {
+                font-size: 0.9rem;
             }
 
             .admin-badge {
@@ -1259,9 +1316,12 @@
     <header class="dashboard-header">
         <div class="container">
             <div class="header-content">
-                <div class="logo-section">
-                    <h1>🏥 Admin Dashboard</h1>
-                    <span class="subtitle">Transcriptor Médico Pro</span>
+                <div class="header-left">
+                    <img src="logo-superhero.png" alt="Transcriptor Pro Logo" class="header-logo">
+                    <div class="header-texts">
+                        <h1 class="header-title">Transcriptor Pro</h1>
+                        <p class="header-subtitle">Modo Administrador</p>
+                    </div>
                 </div>
                 <div class="header-actions">
                     <button class="btn-primary" id="btnNewUser">
