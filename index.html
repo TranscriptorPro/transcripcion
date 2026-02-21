@@ -702,7 +702,7 @@
             visibility: hidden;
             transform: translateY(-10px);
             transition: all 0.2s;
-            z-index: 50;
+            z-index: 1100;
         }
 
         .dropdown.open .dropdown-menu {
@@ -753,7 +753,7 @@
             border-radius: var(--radius-sm);
             box-shadow: var(--shadow);
             min-width: 200px;
-            z-index: 50;
+            z-index: 1100;
             overflow: hidden;
         }
 
@@ -1081,7 +1081,7 @@
             inset: 0;
             background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(4px);
-            z-index: 1000;
+            z-index: 10000;
             display: none;
             place-items: center;
             padding: 1rem;
@@ -3512,8 +3512,15 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
 
             themeToggle.addEventListener('click', () => {
                 const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-                document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
-                localStorage.setItem('theme', isDark ? 'light' : 'dark');
+                const newTheme = isDark ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateThemeIcon();
+                window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: newTheme } }));
+            });
+
+            window.addEventListener('themeChanged', (e) => {
+                document.documentElement.setAttribute('data-theme', e.detail.theme);
                 updateThemeIcon();
             });
 
@@ -3939,12 +3946,6 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
                             let text = await transcribeWithGroq(processedFile);
                             text = cleanTranscriptionText(text);
 
-                            // MODO PRO: AI Structuring per file if NOT joining
-                            if (currentMode === 'pro' && !shouldJoin) {
-                                processingText.textContent = `Estructurando informe con IA...`;
-                                text = await structureTranscription(text, selectedTemplate);
-                            }
-
                             if (shouldJoin) {
                                 joinedText += (joinedText ? '\n\n' : '') + text;
                             } else {
@@ -3965,11 +3966,21 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
                     }
 
                     if (shouldJoin && joinedText) {
+                        if (currentMode === 'pro') {
+                            processingText.textContent = `Estructurando informe con IA...`;
+                            joinedText = await structureTranscription(joinedText, selectedTemplate);
+                        }
                         const combinedName = `Informe Combinado (${done} audios)`;
                         transcriptions.push({ fileName: combinedName, text: joinedText });
                         activeTabIndex = transcriptions.length - 1;
                         editor.innerHTML = joinedText;
                     } else if (!shouldJoin && transcriptions.length > 0) {
+                        if (currentMode === 'pro') {
+                            processingText.textContent = `Estructurando informe con IA...`;
+                            for (let i = 0; i < transcriptions.length; i++) {
+                                transcriptions[i].text = await structureTranscription(transcriptions[i].text, selectedTemplate);
+                            }
+                        }
                         editor.innerHTML = transcriptions[activeTabIndex].text;
                     }
 
@@ -4695,10 +4706,14 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
             function showPdfControls() {
                 const btnConfig = document.getElementById('btnConfigPdfMain');
                 const btnPreview = document.getElementById('btnPreviewPdfMain');
+                const editor = document.getElementById('editor');
                 
-                if (btnConfig && btnPreview) {
+                if (btnConfig && btnPreview && editor && editor.innerText.trim().length > 0) {
                     btnConfig.style.display = 'inline-flex';
                     btnPreview.style.display = 'inline-flex';
+                } else {
+                    if (btnConfig) btnConfig.style.display = 'none';
+                    if (btnPreview) btnPreview.style.display = 'none';
                 }
             }
 
