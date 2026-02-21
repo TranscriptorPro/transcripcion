@@ -1048,7 +1048,7 @@
             transform: translateY(100px);
             opacity: 0;
             transition: all 0.3s;
-            z-index: 1000;
+            z-index: 10001;
             font-size: 0.85rem;
             max-width: 90vw;
         }
@@ -1090,6 +1090,18 @@
 
         .modal-overlay.active {
             display: grid;
+        }
+
+        /* Ensure all modals appear above header */
+        [id*="Modal"],
+        [id*="modal"],
+        [class*="modal-overlay"] {
+            z-index: 10000 !important;
+        }
+
+        /* Toast above modals */
+        .toast {
+            z-index: 10001 !important;
         }
 
         .modal {
@@ -1957,7 +1969,15 @@
                                 modificados posteriormente.
                             </p>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-full">Activar Mi Licencia</button>
+                        <div class="terms-section" style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-main); border-radius: 8px; margin-bottom: 1rem;">
+                            <label style="display: flex; align-items: start; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" id="acceptTerms" required style="margin-top: 0.25rem;">
+                                <span style="font-size: 0.85rem; color: var(--text-secondary);">
+                                    Acepto los <a href="#" id="linkTerms" style="color: var(--primary); text-decoration: underline;">términos y condiciones</a> de uso
+                                </span>
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full" id="btnSubmitOnboarding" disabled>Activar Mi Licencia</button>
                     </form>
                 </div>
             </div>
@@ -2297,6 +2317,28 @@
         </div>
 
 
+        <!-- Terms and Conditions Modal -->
+        <div class="modal-overlay" id="termsModal" role="dialog" aria-modal="true" aria-labelledby="termsModalTitle">
+            <div class="modal" style="max-width: 600px;">
+                <div class="modal-header">
+                    <h2 id="termsModalTitle">📄 Términos y Condiciones</h2>
+                    <button class="modal-close" id="closeTermsModal" aria-label="Cerrar">&times;</button>
+                </div>
+                <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+                    <section class="help-section">
+                        <p>1. Este software es exclusivo para uso profesional médico.</p>
+                        <p>2. La información del paciente es confidencial y responsabilidad del profesional.</p>
+                        <p>3. El usuario acepta que los informes generados deben ser revisados por un profesional habilitado.</p>
+                        <p>4. Está prohibida la distribución no autorizada de este software.</p>
+                        <p>5. El desarrollador no se responsabiliza por errores en las transcripciones automáticas.</p>
+                    </section>
+                </div>
+                <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end;">
+                    <button class="btn btn-primary" id="btnAcceptTermsFromModal">✅ Aceptar</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Sidebar -->
         <aside class="sidebar">
             <!-- Capture Card -->
@@ -2505,12 +2547,17 @@
                             <option value="generico">📋 Plantilla General</option>
                         </select>
                         <div id="templateDivider" style="display: none; width: 1px; height: 20px; background: var(--border); margin: 0 0.25rem;"></div>
-                        <!-- PDF Controls - Initially hidden, shown after transcription -->
-                        <button class="btn btn-secondary" id="btnConfigPdfMain" title="Configurar PDF">
+                        <!-- Structure AI Button (Pro mode) - shown after transcription -->
+                        <button class="btn btn-accent" id="btnStructureAI" style="display:none;" title="Estructurar con IA">🤖 Estructurar con IA</button>
+                        <!-- Apply Template (Normal mode) - shown after transcription -->
+                        <select id="normalTemplateSelect" class="toolbar-select" style="display:none; min-width:150px;" title="Seleccionar plantilla"></select>
+                        <button class="btn btn-secondary" id="btnApplyTemplate" style="display:none;" title="Aplicar Plantilla">📋 Aplicar Plantilla</button>
+                        <!-- PDF Controls - managed by state machine -->
+                        <button class="btn btn-secondary" id="btnConfigPdfMain" style="display:none;" title="Configurar PDF">
                             ⚙️ Configurar PDF
                         </button>
-                        <button class="btn btn-primary" id="btnPreviewPdfMain" title="Previsualizar PDF">
-                            👁️ Previsualizar PDF
+                        <button class="btn btn-primary" id="btnPreviewPdfMain" style="display:none;" title="Previsualizar PDF">
+                            👁️ Previsualizar
                         </button>
                         <div style="width: 1px; height: 20px; background: var(--border); margin: 0 0.5rem;"></div>
 
@@ -2527,8 +2574,8 @@
                         <button class="toolbar-btn" id="toggleFindReplace"
                             title="Buscar y Reemplazar (Ctrl+F)">🔍</button>
                         <div style="width: 1px; height: 20px; background: var(--border); margin: 0 0.5rem;"></div>
-                        <button class="toolbar-btn" id="copyBtn" title="Copiar todo">📋</button>
-                        <div class="dropdown-container">
+                        <button class="toolbar-btn" id="copyBtn" style="display:none;" title="Copiar todo">📋</button>
+                        <div class="dropdown-container" id="downloadBtnContainer" style="display:none;">
                             <button class="btn btn-accent" id="downloadBtn">
                                 <span>Descargar</span>
                                 <svg viewBox="0 0 24 24" width="16" height="16" style="margin-left: 0.5rem;">
@@ -2653,6 +2700,7 @@
 
             // App State
             let currentMode = 'normal'; // 'normal' or 'pro'
+            let appState = 'IDLE'; // IDLE → FILES_LOADED → TRANSCRIBED → STRUCTURED → PREVIEWED
             let selectedTemplate = 'generico';
             // PDF Config Elements
             const pdfModalOverlay = $('pdfModalOverlay');
@@ -2704,6 +2752,90 @@
             let isRecording = false;
             let recordingInterval = null;
             let recordingStartTime = 0;
+
+            // ============ PROGRESSIVE BUTTON FLOW ============
+            function updateButtonsVisibility(state) {
+                const btnStructureAI = $('btnStructureAI');
+                const btnApplyTemplate = $('btnApplyTemplate');
+                const normalTemplateSelectEl = $('normalTemplateSelect');
+                const editorToolbarEl = $('editorToolbar');
+                const btnPreviewPdf = $('btnPreviewPdfMain');
+                const btnConfigPdf2 = $('btnConfigPdfMain');
+                const copyBtnEl = $('copyBtn');
+                const downloadContainer = $('downloadBtnContainer');
+
+                // Reset all managed buttons to hidden
+                transcribeBtn.style.display = 'none';
+                if (editorToolbarEl) editorToolbarEl.style.display = 'none';
+                if (btnStructureAI) btnStructureAI.style.display = 'none';
+                if (btnApplyTemplate) btnApplyTemplate.style.display = 'none';
+                if (normalTemplateSelectEl) normalTemplateSelectEl.style.display = 'none';
+                if (btnPreviewPdf) btnPreviewPdf.style.display = 'none';
+                if (btnConfigPdf2) btnConfigPdf2.style.display = 'none';
+                if (copyBtnEl) copyBtnEl.style.display = 'none';
+                if (downloadContainer) downloadContainer.style.display = 'none';
+
+                switch (state) {
+                    case 'FILES_LOADED':
+                        transcribeBtn.style.display = 'inline-flex';
+                        break;
+
+                    case 'TRANSCRIBED':
+                        if (editorToolbarEl) editorToolbarEl.style.display = 'flex';
+                        if (currentMode === 'pro') {
+                            if (btnStructureAI) { btnStructureAI.style.display = 'inline-flex'; btnStructureAI.innerHTML = '🤖 Estructurar con IA'; }
+                        } else {
+                            if (btnApplyTemplate) { btnApplyTemplate.style.display = 'inline-flex'; btnApplyTemplate.innerHTML = '📋 Aplicar Plantilla'; }
+                            if (normalTemplateSelectEl) normalTemplateSelectEl.style.display = 'inline-block';
+                        }
+                        break;
+
+                    case 'STRUCTURED':
+                        if (editorToolbarEl) editorToolbarEl.style.display = 'flex';
+                        if (currentMode === 'pro') {
+                            if (btnStructureAI) { btnStructureAI.style.display = 'inline-flex'; btnStructureAI.innerHTML = '🔄 Re-estructurar con IA'; }
+                        } else {
+                            if (btnApplyTemplate) { btnApplyTemplate.style.display = 'inline-flex'; btnApplyTemplate.innerHTML = '🔄 Cambiar Plantilla'; }
+                            if (normalTemplateSelectEl) normalTemplateSelectEl.style.display = 'inline-block';
+                        }
+                        if (btnPreviewPdf) { btnPreviewPdf.style.display = 'inline-flex'; btnPreviewPdf.innerHTML = '👁️ Previsualizar'; }
+                        if (btnConfigPdf2) btnConfigPdf2.style.display = 'inline-flex';
+                        break;
+
+                    case 'PREVIEWED':
+                        if (editorToolbarEl) editorToolbarEl.style.display = 'flex';
+                        if (currentMode === 'pro') {
+                            if (btnStructureAI) btnStructureAI.style.display = 'inline-flex';
+                        } else {
+                            if (btnApplyTemplate) btnApplyTemplate.style.display = 'inline-flex';
+                            if (normalTemplateSelectEl) normalTemplateSelectEl.style.display = 'inline-block';
+                        }
+                        if (btnPreviewPdf) { btnPreviewPdf.style.display = 'inline-flex'; btnPreviewPdf.innerHTML = '✏️ Volver a Editar'; }
+                        if (btnConfigPdf2) btnConfigPdf2.style.display = 'inline-flex';
+                        if (copyBtnEl) copyBtnEl.style.display = 'inline-flex';
+                        if (downloadContainer) downloadContainer.style.display = 'inline-flex';
+                        break;
+                }
+
+                appState = state;
+            }
+
+            function populateLimitedTemplates() {
+                const normalTemplateSelectEl = $('normalTemplateSelect');
+                if (!normalTemplateSelectEl) return;
+                const profData = JSON.parse(localStorage.getItem('prof_data')) || {};
+                const userStudies = profData.studies || [];
+                const allowedStudies = userStudies.slice(0, 2);
+                let options = allowedStudies.map(study => {
+                    const tmpl = MEDICAL_TEMPLATES[study.name];
+                    return tmpl ? `<option value="${study.name}">${tmpl.name}</option>` : '';
+                }).filter(o => o).join('');
+                if (!options) {
+                    options = '<option value="generico">📋 Plantilla General</option>';
+                }
+                options += '<option disabled>💰 Más plantillas → Upgrade a Pro</option>';
+                normalTemplateSelectEl.innerHTML = options;
+            }
 
             // ============ BUSINESS DATA & TEMPLATES ============
             const MEDICAL_SPECIALTIES = {
@@ -3872,6 +4004,7 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
                 uploadedFiles.push(...validFiles.map(f => ({ file: f, status: 'pending' })));
                 updateFileList();
                 transcribeBtn.disabled = false;
+                updateButtonsVisibility('FILES_LOADED');
             }
 
             function updateFileList() {
@@ -3893,6 +4026,9 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
                 uploadedFiles.splice(i, 1);
                 updateFileList();
                 transcribeBtn.disabled = !uploadedFiles.length;
+                if (!uploadedFiles.length) {
+                    updateButtonsVisibility('IDLE');
+                }
             };
 
             function formatSize(bytes) {
@@ -3966,52 +4102,35 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
                     }
 
                     if (shouldJoin && joinedText) {
-                        if (currentMode === 'pro') {
-                            processingText.textContent = `Estructurando informe con IA...`;
-                            joinedText = await structureTranscription(joinedText, selectedTemplate);
-                        }
                         const combinedName = `Informe Combinado (${done} audios)`;
                         transcriptions.push({ fileName: combinedName, text: joinedText });
                         activeTabIndex = transcriptions.length - 1;
                         editor.innerHTML = joinedText;
                     } else if (!shouldJoin && transcriptions.length > 0) {
-                        if (currentMode === 'pro') {
-                            processingText.textContent = `Estructurando informe con IA...`;
-                            for (let i = 0; i < transcriptions.length; i++) {
-                                transcriptions[i].text = await structureTranscription(transcriptions[i].text, selectedTemplate);
-                            }
-                        }
                         editor.innerHTML = transcriptions[activeTabIndex].text;
                     }
 
                     createTabs();
                     updateWordCount();
-                    enableButtons();
 
-                    // Usar setTimeout para asegurar que el DOM se actualizó
-                    setTimeout(() => {
-                        showPdfControls();
-                    }, 100);
+                    // Update state to TRANSCRIBED and populate templates for Normal mode
+                    updateButtonsVisibility('TRANSCRIBED');
+                    if (currentMode === 'normal') {
+                        populateLimitedTemplates();
+                    }
 
-                    // WIZARD STEP 2: Show template selection & Metadata
-                    if (currentMode === 'pro') {
-                        wizardTemplateCard.style.display = 'block';
-                        reportMetadataCard.style.display = 'block';
-                        wizardTemplateCard.scrollIntoView({ behavior: 'smooth' });
-
-                        // Auto-detect template in Pro mode
-                        if (editor.innerText.trim().length > 50) {
-                            const detection = detectStudyType(editor.innerText);
-                            if (detection.confidence >= 2) {
-                                selectedTemplate = detection.type;
-                                const toolbarDropdown = document.getElementById('templateDropdownMain');
-                                if (toolbarDropdown) toolbarDropdown.value = detection.type;
-                                if (templateSelect) templateSelect.value = detection.type;
-                                const templateName = MEDICAL_TEMPLATES[detection.type]?.name || detection.type;
-                                setTimeout(() => {
-                                    showToast(`🤖 Plantilla detectada: ${templateName}`, 'success');
-                                }, 700);
-                            }
+                    // Auto-detect template in Pro mode
+                    if (currentMode === 'pro' && editor.innerText.trim().length > 50) {
+                        const detection = detectStudyType(editor.innerText);
+                        if (detection.confidence >= 2) {
+                            selectedTemplate = detection.type;
+                            const toolbarDropdown = document.getElementById('templateDropdownMain');
+                            if (toolbarDropdown) toolbarDropdown.value = detection.type;
+                            if (templateSelect) templateSelect.value = detection.type;
+                            const templateName = MEDICAL_TEMPLATES[detection.type]?.name || detection.type;
+                            setTimeout(() => {
+                                showToast(`🤖 Plantilla detectada: ${templateName}`, 'success');
+                            }, 700);
                         }
                     }
 
@@ -4702,13 +4821,14 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
 
             // ============ PDF CONTROLS ============
             
-            // Mostrar botones de PDF después de transcripción
+            // Mostrar botones de PDF después de transcripción (legacy, now managed by updateButtonsVisibility)
             function showPdfControls() {
                 const btnConfig = document.getElementById('btnConfigPdfMain');
                 const btnPreview = document.getElementById('btnPreviewPdfMain');
-                const editor = document.getElementById('editor');
+                const editorEl = document.getElementById('editor');
                 
-                if (btnConfig && btnPreview && editor && editor.innerText.trim().length > 0) {
+                if (btnConfig && btnPreview && editorEl && editorEl.innerText.trim().length > 0 &&
+                    (appState === 'STRUCTURED' || appState === 'PREVIEWED')) {
                     btnConfig.style.display = 'inline-flex';
                     btnPreview.style.display = 'inline-flex';
                 } else {
@@ -4940,6 +5060,7 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                 wizardTemplateCard.style.display = 'none';
                 reportMetadataCard.style.display = 'none';
 
+                updateButtonsVisibility('IDLE');
                 showToast('Limpiado ✓', 'success');
             });
 
@@ -5472,7 +5593,16 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
 
             const btnPreviewPdfMain = document.getElementById('btnPreviewPdfMain');
             if (btnPreviewPdfMain) {
-                btnPreviewPdfMain.addEventListener('click', () => openPrintPreview());
+                btnPreviewPdfMain.addEventListener('click', () => {
+                    if (appState === 'STRUCTURED') {
+                        openPrintPreview();
+                        updateButtonsVisibility('PREVIEWED');
+                    } else if (appState === 'PREVIEWED') {
+                        updateButtonsVisibility('STRUCTURED');
+                    } else {
+                        openPrintPreview();
+                    }
+                });
             }
             document.getElementById('closePdfConfig')?.addEventListener('click', () => {
                 document.getElementById('pdfModalOverlay')?.classList.remove('active');
@@ -5639,6 +5769,109 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                     onboardingOverlay.classList.remove('active');
                     showToast('Perfil activado. ¡Bienvenido/a!', 'success');
                 });
+
+                // Terms checkbox logic
+                const acceptTermsEl = $('acceptTerms');
+                const btnSubmitOnboarding = $('btnSubmitOnboarding');
+                const linkTerms = $('linkTerms');
+
+                if (acceptTermsEl && btnSubmitOnboarding) {
+                    acceptTermsEl.addEventListener('change', (e) => {
+                        btnSubmitOnboarding.disabled = !e.target.checked;
+                    });
+                }
+
+                if (linkTerms) {
+                    linkTerms.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const termsModal = $('termsModal');
+                        if (termsModal) termsModal.classList.add('active');
+                    });
+                }
+
+                const closeTermsModal = $('closeTermsModal');
+                if (closeTermsModal) {
+                    closeTermsModal.addEventListener('click', () => {
+                        $('termsModal')?.classList.remove('active');
+                    });
+                }
+
+                const btnAcceptTermsFromModal = $('btnAcceptTermsFromModal');
+                if (btnAcceptTermsFromModal) {
+                    btnAcceptTermsFromModal.addEventListener('click', () => {
+                        const acceptTermsEl2 = $('acceptTerms');
+                        if (acceptTermsEl2) {
+                            acceptTermsEl2.checked = true;
+                            if (btnSubmitOnboarding) btnSubmitOnboarding.disabled = false;
+                        }
+                        $('termsModal')?.classList.remove('active');
+                    });
+                }
+
+                const termsModalEl = $('termsModal');
+                if (termsModalEl) {
+                    termsModalEl.addEventListener('click', (e) => {
+                        if (e.target === termsModalEl) termsModalEl.classList.remove('active');
+                    });
+                }
+            }
+
+            // ============ STRUCTURE AI BUTTON (Pro Mode) ============
+            const btnStructureAIEl = $('btnStructureAI');
+            if (btnStructureAIEl) {
+                btnStructureAIEl.addEventListener('click', async () => {
+                    if (!editor.textContent.trim()) {
+                        showToast('No hay texto para estructurar', 'error');
+                        return;
+                    }
+                    const rawText = editor.innerText;
+                    const oldHTML = btnStructureAIEl.innerHTML;
+                    btnStructureAIEl.disabled = true;
+                    btnStructureAIEl.innerHTML = '⏳ Estructurando...';
+                    try {
+                        const structured = await structureTranscription(rawText, selectedTemplate);
+                        editor.innerHTML = structured;
+                        updateWordCount();
+                        updateButtonsVisibility('STRUCTURED');
+                        showToast('✅ Texto estructurado con IA', 'success');
+                    } catch (error) {
+                        showToast('Error al estructurar', 'error');
+                        btnStructureAIEl.innerHTML = oldHTML;
+                    } finally {
+                        btnStructureAIEl.disabled = false;
+                    }
+                });
+            }
+
+            // ============ APPLY TEMPLATE BUTTON (Normal Mode) ============
+            const btnApplyTemplateEl = $('btnApplyTemplate');
+            if (btnApplyTemplateEl) {
+                btnApplyTemplateEl.addEventListener('click', () => {
+                    const rawText = editor.innerText;
+                    const normalTemplateSelectEl = $('normalTemplateSelect');
+                    const templateKey = normalTemplateSelectEl ? normalTemplateSelectEl.value : 'generico';
+
+                    if (!rawText.trim()) {
+                        showToast('No hay texto para aplicar plantilla', 'error');
+                        return;
+                    }
+
+                    const template = MEDICAL_TEMPLATES[templateKey];
+                    const templateName = template ? template.name : 'General';
+
+                    const structured = `<h2>${templateName}</h2>
+<h3>Datos del Paciente:</h3>
+<p>[Completar desde historial o manualmente]</p>
+<h3>Transcripción:</h3>
+${rawText.split('\n').filter(l => l.trim()).map(line => `<p>${line}</p>`).join('\n')}
+<h3>Conclusión:</h3>
+<p>[A completar por el profesional]</p>`;
+
+                    editor.innerHTML = structured;
+                    updateWordCount();
+                    updateButtonsVisibility('STRUCTURED');
+                    showToast(`✅ Plantilla "${templateName}" aplicada`, 'success');
+                });
             }
 
             const btnApplyStructure = $('btnApplyStructure');
@@ -5658,6 +5891,7 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                     updateWordCount();
                     showToast('Informe estructurado ✓', 'success');
                     wizardTemplateCard.style.display = 'none'; // Done!
+                    updateButtonsVisibility('STRUCTURED');
                 } catch (e) {
                     showToast('Error al estructurar', 'error');
                 } finally {
@@ -5669,6 +5903,8 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
 
             // Initialize Suite
             initBusinessSuite();
+            // Set initial button state
+            updateButtonsVisibility('IDLE');
 
             const btnAdminAccess = $('btnAdminAccess');
             if (btnAdminAccess) {
