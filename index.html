@@ -908,8 +908,10 @@
                     updateButtonsVisibility('IDLE');
                 }
 
-                // Initial UI status
-                if (typeof updateApiStatus === 'function') updateApiStatus();
+                // Initial UI status — pass saved key so updateApiStatus doesn't reset the input
+                if (typeof updateApiStatus === 'function') {
+                    updateApiStatus(localStorage.getItem('groq_api_key') || window.GROQ_API_KEY);
+                }
             });
         </script>
     </main>
