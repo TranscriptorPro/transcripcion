@@ -152,37 +152,62 @@ window.initShortcuts = function () {
 }
 
 window.initApiManagement = function () {
-    const testApiKeyBtn = document.getElementById('testApiKeyBtn');
-    const apiKeyInput = document.getElementById('apiKeyInput');
+    const saveApiKeyBtn = document.getElementById('saveApiKey');
+    const testApiKeyBtn = document.getElementById('testApiKey');
+    const apiKeyInput   = document.getElementById('apiKeyInput');
     const apiTestResult = document.getElementById('apiTestResult');
 
+    // Guardar API Key
+    if (saveApiKeyBtn && apiKeyInput) {
+        saveApiKeyBtn.addEventListener('click', () => {
+            const key = apiKeyInput.value.trim();
+            if (!key || key === '••••••••••••••••') {
+                if (typeof showToast === 'function') showToast('⚠️ Ingresá una API Key válida', 'error');
+                return;
+            }
+            if (!key.startsWith('gsk_')) {
+                if (typeof showToast === 'function') showToast('❌ La API Key debe empezar con gsk_', 'error');
+                return;
+            }
+            localStorage.setItem('groq_api_key', key);
+            window.GROQ_API_KEY = key;
+            if (typeof updateApiStatus === 'function') updateApiStatus(key);
+            if (typeof showToast === 'function') showToast('✅ API Key guardada correctamente', 'success');
+        });
+    }
+
+    // Probar conexión
     if (testApiKeyBtn) {
         testApiKeyBtn.addEventListener('click', async () => {
             if (typeof window.testGroqConnection !== 'function') return;
 
             testApiKeyBtn.disabled = true;
             testApiKeyBtn.textContent = '⏳';
-            apiTestResult.style.display = 'block';
-            apiTestResult.textContent = '⌛ Probando conexión...';
-            apiTestResult.style.color = 'var(--text-secondary)';
+            if (apiTestResult) {
+                apiTestResult.style.display = 'block';
+                apiTestResult.textContent = '⌛ Probando conexión...';
+                apiTestResult.style.color = 'var(--text-secondary)';
+            }
 
             try {
                 const success = await window.testGroqConnection();
-                if (success) {
-                    apiTestResult.textContent = '✅ Conexión exitosa';
-                    apiTestResult.style.color = '#10b981';
-                    showToast('✅ Conexión exitosa con Groq', 'success');
-                } else {
-                    apiTestResult.textContent = '❌ Error de conexión';
-                    apiTestResult.style.color = '#ef4444';
-                    showToast('❌ Error de conexión', 'error');
+                if (apiTestResult) {
+                    if (success) {
+                        apiTestResult.textContent = '✅ Conexión exitosa';
+                        apiTestResult.style.color = '#10b981';
+                        if (typeof showToast === 'function') showToast('✅ Conexión exitosa con Groq', 'success');
+                    } else {
+                        apiTestResult.textContent = '❌ Error de conexión';
+                        apiTestResult.style.color = '#ef4444';
+                        if (typeof showToast === 'function') showToast('❌ Error de conexión', 'error');
+                    }
+                    setTimeout(() => { apiTestResult.style.display = 'none'; }, 5000);
                 }
-                setTimeout(() => {
-                    apiTestResult.style.display = 'none';
-                }, 5000);
             } catch (error) {
-                apiTestResult.textContent = '❌ Error: ' + error.message;
-                apiTestResult.style.color = '#ef4444';
+                if (apiTestResult) {
+                    apiTestResult.textContent = '❌ Error: ' + error.message;
+                    apiTestResult.style.color = '#ef4444';
+                }
             } finally {
                 testApiKeyBtn.disabled = false;
                 testApiKeyBtn.textContent = '🔌';
@@ -199,7 +224,7 @@ window.initApiManagement = function () {
         });
 
         apiKeyInput.addEventListener('blur', () => {
-            if (apiKeyInput.value === '' && typeof GROQ_API_KEY !== 'undefined' && GROQ_API_KEY) {
+            if (apiKeyInput.value === '' && window.GROQ_API_KEY) {
                 apiKeyInput.value = '••••••••••••••••';
                 apiKeyInput.type = 'password';
             }
