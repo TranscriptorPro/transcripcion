@@ -1857,18 +1857,16 @@
                 <div class="header-texts">
                     <h1 class="header-title" id="appMainTitle">Transcriptor Pro</h1>
                     <p class="header-subtitle" id="doctorWelcomeName">Audio → Texto con IA</p>
-                    <span id="adminBadge" class="admin-badge">👑 ADMIN</span>
                 </div>
             </div>
             <div class="header-actions">
                 <!-- Pro Mode Toggle Slider -->
                 <div class="pro-toggle-container" id="proToggleContainer">
-                    <span class="pro-toggle-label" id="proToggleLabelOff">Normal</span>
                     <label class="pro-toggle-switch">
                         <input type="checkbox" id="proModeToggle">
                         <span class="pro-toggle-slider"></span>
                     </label>
-                    <span class="pro-toggle-label pro-toggle-label-active" id="proToggleLabelOn">Pro ✨</span>
+                    <span class="pro-toggle-label pro-toggle-label-active" id="proToggleLabelOn">Pro</span>
                 </div>
                 <button class="theme-toggle" id="btnAdminAccess" title="Panel de Administración"
                     style="background: rgba(255, 255, 255, 0.05);">
@@ -5500,9 +5498,9 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                 // ✅ Mensaje especial para admin
                 if (isAdminUser()) {
                     const appTitle = $('appMainTitle');
-                    if (appTitle) appTitle.textContent = '🏥 Transcriptor Pro - Modo Administrador';
+                    if (appTitle) appTitle.textContent = 'Transcriptor Pro';
                     const welcomeName = $('doctorWelcomeName');
-                    if (welcomeName) welcomeName.textContent = '👨‍💼 Panel de Control';
+                    if (welcomeName) welcomeName.textContent = 'Modo Administrador';
                     return;
                 }
 
@@ -5552,8 +5550,6 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                     localStorage.setItem('onboarding_date', new Date().toISOString());
                     applyProfessionalData(adminProfData);
                     updatePersonalization(adminProfData);
-                    const badge = $('adminBadge');
-                    if (badge) badge.style.display = 'inline';
                     initializeMode();
                     return;
                 }
