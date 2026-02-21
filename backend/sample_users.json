@@ -1,0 +1,47 @@
+[
+  {
+    "ID_Medico": "DR001",
+    "Nombre": "Dr. Juan Pérez",
+    "Matricula": "MN 12345",
+    "Email": "juan.perez@example.com",
+    "Especialidad": "Cardiología",
+    "Plan": "trial",
+    "Estado": "trial",
+    "Fecha_Registro": "2026-02-15",
+    "Fecha_Vencimiento": "2026-02-22",
+    "Devices_Max": 2,
+    "Devices_Logged": "[]",
+    "Usage_Count": 5,
+    "Notas_Admin": "Usuario de prueba - trial activo"
+  },
+  {
+    "ID_Medico": "DR002",
+    "Nombre": "Dra. María García",
+    "Matricula": "MP 67890",
+    "Email": "maria.garcia@example.com",
+    "Especialidad": "ORL",
+    "Plan": "pro",
+    "Estado": "active",
+    "Fecha_Registro": "2026-01-10",
+    "Fecha_Vencimiento": "2026-12-31",
+    "Devices_Max": 5,
+    "Devices_Logged": "[\"dev_abc123\", \"dev_xyz789\"]",
+    "Usage_Count": 127,
+    "Notas_Admin": "Cliente pagado - plan anual"
+  },
+  {
+    "ID_Medico": "DR003",
+    "Nombre": "Dr. Carlos Rodríguez",
+    "Matricula": "MN 11111",
+    "Email": "carlos.r@example.com",
+    "Especialidad": "Gastroenterología",
+    "Plan": "trial",
+    "Estado": "expired",
+    "Fecha_Registro": "2026-01-20",
+    "Fecha_Vencimiento": "2026-01-27",
+    "Devices_Max": 2,
+    "Devices_Logged": "[\"dev_old456\"]",
+    "Usage_Count": 23,
+    "Notas_Admin": "Trial expirado - seguimiento pendiente"
+  }
+]

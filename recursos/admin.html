@@ -1,0 +1,3463 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Transcriptor Médico Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0f766e;
+            --primary-light: #14b8a6;
+            --primary-dark: #0d5c56;
+            --accent: #f59e0b;
+            --bg-main: #f1f5f9;
+            --bg-card: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        /* ── Header ── */
+        .dashboard-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 1rem 0;
+            box-shadow: 0 2px 20px rgba(15, 118, 110, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            position: relative;
+            z-index: 1001;
+        }
+
+        .logo-section h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1.2;
+        }
+
+        .logo-section .subtitle {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.75);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .header-logo {
+            height: 100px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .header-texts {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .header-title {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 2.5rem;
+            font-weight: 400;
+            color: #ffffff;
+            margin: 0;
+            line-height: 1.2;
+            letter-spacing: 0.02em;
+        }
+
+        .header-subtitle {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 1.125rem;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.85);
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .admin-badge {
+            background: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            padding: 0.35rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .admin-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px !important;
+            height: 36px !important;
+            border-radius: 50%;
+            background: var(--primary-light);
+            color: white;
+            cursor: help;
+            flex-shrink: 0;
+        }
+
+        .admin-icon svg {
+            width: 20px !important;
+            height: 20px !important;
+        }
+
+        .btn-icon-only {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .btn-icon-only:hover {
+            transform: scale(1.1);
+        }
+
+        .btn-logout {
+            background: #ef4444;
+            color: #ffffff;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 36px !important;
+            height: 36px !important;
+        }
+
+        .btn-logout svg {
+            width: 18px !important;
+            height: 18px !important;
+        }
+
+        .btn-logout:hover {
+            background: #dc2626;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-refresh-icon {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            padding: 0.5rem;
+            color: var(--primary);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 1003 !important;
+            pointer-events: auto !important;
+        }
+
+        .btn-refresh-icon:hover {
+            transform: rotate(180deg);
+        }
+
+        .btn-refresh-icon:active {
+            transform: scale(0.9) rotate(180deg);
+        }
+
+        /* ── Stats ── */
+        .stats-section {
+            padding: 1.5rem 0 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: var(--shadow);
+            border-left: 4px solid transparent;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .stat-total  { border-left-color: var(--info); }
+        .stat-active { border-left-color: var(--success); }
+        .stat-trial  { border-left-color: var(--warning); }
+        .stat-expired{ border-left-color: var(--danger); }
+
+        .stat-icon {
+            font-size: 2rem;
+            line-height: 1;
+        }
+
+        .stat-content h3 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .stat-content p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.2rem;
+        }
+
+        /* ── Filters ── */
+        .filters-section {
+            padding: 1.25rem 0;
+        }
+
+        .filters-bar {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 1rem 1.25rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+            box-shadow: var(--shadow);
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .search-input,
+        .filter-select {
+            width: 100%;
+            padding: 0.5rem 0.85rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-family: inherit;
+            color: var(--text-primary);
+            background: var(--bg-main);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+
+        .search-input:focus,
+        .filter-select:focus {
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15);
+        }
+
+        .btn-refresh {
+            background: var(--primary);
+        }
+
+        .btn-refresh:hover {
+            box-shadow: 0 4px 12px rgba(15, 118, 110, 0.3);
+        }
+
+        /* ── Table ── */
+        .table-section {
+            padding-bottom: 2rem;
+        }
+
+        .table-wrapper {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow-x: auto;
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        .users-table thead tr {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        }
+
+        .users-table thead th {
+            padding: 0.9rem 1rem;
+            text-align: left;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+        }
+
+        .users-table tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+            height: 60px;
+        }
+
+        .users-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .users-table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .users-table td {
+            padding: 0.5rem 0.75rem;
+            color: var(--text-primary);
+            vertical-align: middle;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .users-table td.user-name-cell {
+            white-space: normal;
+            max-width: 180px;
+        }
+
+        .email-cell {
+            max-width: 200px;
+        }
+
+        .text-center {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 2rem !important;
+        }
+
+        .user-id {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: var(--bg-main);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 0.15rem 0.4rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .badge-specialty {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .badge-plan { text-transform: uppercase; font-size: 0.7rem; font-weight: 700; }
+        .badge-trial      { background: #fef3c7; color: #92400e; }
+        .badge-pro        { background: #dcfce7; color: #166534; }
+        .badge-enterprise { background: #ede9fe; color: #5b21b6; }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-active  { background: #dcfce7; color: #166534; }
+        .status-trial   { background: #fef3c7; color: #92400e; }
+        .status-expired { background: #fee2e2; color: #991b1b; }
+        .status-banned  { background: #f1f5f9; color: #475569; }
+
+        .usage-count {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        /* Action buttons */
+        .btn-action {
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0.3rem;
+            border-radius: 6px;
+            transition: background 0.15s;
+            line-height: 1;
+        }
+
+        .btn-edit:hover { background: #e0f2fe; }
+        .btn-ban:hover  { background: #fee2e2; }
+
+        /* ── Modal ── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            padding: 1rem;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 560px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            animation: modalIn 0.25s ease;
+        }
+
+        .modal {
+            background: #ffffff !important;
+            border-radius: var(--radius);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            animation: modalIn 0.25s ease;
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+            to   { opacity: 1; transform: scale(1)   translateY(0); }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 1rem 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h2 {
+            color: #ffffff;
+            font-size: 1.05rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .modal-body {
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.25rem;
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+            border-top: 1px solid var(--border);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            flex: 1;
+        }
+
+        .form-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-family: inherit;
+            color: var(--text-primary);
+            background: var(--bg-main);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15);
+        }
+
+        .form-group input[readonly] {
+            background: #f1f5f9;
+            color: var(--text-secondary);
+            cursor: default;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(20, 184, 166, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            padding: 0.55rem 1.1rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-main);
+        }
+
+        /* ── Notification ── */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            font-weight: 500;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+            z-index: 10000;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .notification-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .notification-error {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .notification-info {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+
+        /* ── Banned row ── */
+        .row-banned {
+            background-color: #fee;
+            opacity: 0.7;
+        }
+
+        .row-banned:hover {
+            opacity: 1;
+        }
+
+        .actions-cell {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: nowrap;
+        }
+
+        .btn-activate {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-activate:hover {
+            transform: scale(1.1);
+        }
+
+        /* ── Toast ── */
+        #toast {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            background: var(--text-primary);
+            color: #ffffff;
+            padding: 0.75rem 1.1rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+            font-weight: 500;
+            z-index: 300;
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity 0.25s, transform 0.25s;
+            pointer-events: none;
+        }
+
+        #toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #toast.success { background: var(--success); }
+        #toast.error   { background: var(--danger); }
+        #toast.warning { background: var(--warning); color: var(--text-primary); }
+
+        /* ── Footer ── */
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .users-table .col-usage,
+            .users-table .col-expiration {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .filter-group {
+                min-width: 100%;
+            }
+
+            /* Card layout on mobile */
+            .users-table thead {
+                display: none;
+            }
+
+            .users-table tbody tr {
+                display: block;
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: var(--radius-sm);
+                margin-bottom: 0.75rem;
+                padding: 0.75rem;
+            }
+
+            .users-table tbody td {
+                display: flex;
+                justify-content: space-between;
+                padding: 0.3rem 0;
+                border: none;
+                font-size: 0.85rem;
+            }
+
+            .users-table tbody td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: var(--text-secondary);
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                margin-right: 0.5rem;
+            }
+
+            .form-row {
+                flex-direction: column;
+            }
+
+            .header-logo {
+                height: 80px;
+            }
+
+            .header-title {
+                font-size: 2rem;
+            }
+
+            .header-subtitle {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .header-logo {
+                height: 60px;
+            }
+
+            .header-title {
+                font-size: 1.8rem;
+            }
+
+            .header-subtitle {
+                font-size: 0.9rem;
+            }
+
+            .admin-badge {
+                display: none;
+            }
+        }
+
+        /* ── Tabs Navigation ── */
+        .tabs-nav {
+            background: var(--bg-card);
+            border-bottom: 2px solid var(--border);
+            position: sticky;
+            top: 60px;
+            z-index: 90;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .tabs-nav .container {
+            display: flex;
+            gap: 0;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 0.85rem 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: color 0.2s, border-color 0.2s;
+            white-space: nowrap;
+            font-family: inherit;
+        }
+
+        .tab-btn:hover {
+            color: var(--primary);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* ── Tab Content ── */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ── Metrics Tab ── */
+        .metrics-section {
+            padding: 1.5rem 0 2rem;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 1.25rem 1.5rem;
+            box-shadow: var(--shadow);
+            border-top: 4px solid var(--primary-light);
+            transition: transform 0.2s;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .metric-card .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .metric-card .metric-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.3rem;
+        }
+
+        .metric-card .metric-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-mrr { border-top-color: var(--success); }
+        .metric-conversion { border-top-color: var(--warning); }
+        .metric-words { border-top-color: var(--info); }
+
+        /* ── Bar Chart ── */
+        .chart-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 1.25rem 1.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 6px;
+            height: 120px;
+            padding-bottom: 1.5rem;
+            position: relative;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .bar-wrap {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            justify-content: flex-end;
+        }
+
+        .bar {
+            width: 100%;
+            background: linear-gradient(to top, var(--primary), var(--primary-light));
+            border-radius: 4px 4px 0 0;
+            transition: height 0.5s ease;
+            min-height: 2px;
+            position: relative;
+        }
+
+        .bar:hover::after {
+            content: attr(data-value);
+            position: absolute;
+            top: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--text-primary);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            white-space: nowrap;
+        }
+
+        .bar-label {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            margin-top: 0.3rem;
+            text-align: center;
+        }
+
+        /* ── Top Users ── */
+        .top-users-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 1.25rem 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .top-users-card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .top-user-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .top-user-row:last-child {
+            border-bottom: none;
+        }
+
+        .top-user-rank {
+            font-size: 1.1rem;
+            width: 1.5rem;
+            text-align: center;
+        }
+
+        .top-user-info {
+            flex: 1;
+        }
+
+        .top-user-info strong {
+            font-size: 0.875rem;
+        }
+
+        .top-user-info small {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .top-user-count {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 0.9rem;
+        }
+
+        /* ── Logs Tab ── */
+        .logs-section {
+            padding: 1.5rem 0 2rem;
+        }
+
+        .logs-filters {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 1rem 1.25rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+            box-shadow: var(--shadow);
+            margin-bottom: 1rem;
+        }
+
+        .logs-table-wrapper {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow-x: auto;
+        }
+
+        .logs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        .logs-table thead tr {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        }
+
+        .logs-table thead th {
+            padding: 0.9rem 1rem;
+            text-align: left;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+        }
+
+        .logs-table tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+
+        .logs-table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .logs-table td {
+            padding: 0.65rem 1rem;
+            color: var(--text-primary);
+            vertical-align: middle;
+        }
+
+        .log-action-badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .log-edit   { background: #dbeafe; color: #1d4ed8; }
+        .log-ban    { background: #fee2e2; color: #991b1b; }
+        .log-activate { background: #dcfce7; color: #166534; }
+        .log-login  { background: #f3e8ff; color: #6d28d9; }
+        .log-view   { background: #fef3c7; color: #92400e; }
+
+        /* ── Activity Indicator ── */
+        .active-indicator {
+            font-size: 0.85rem;
+            display: inline-block;
+            margin-left: 6px;
+            cursor: help;
+            vertical-align: middle;
+        }
+
+        /* ── Usage Progress Bar ── */
+        .usage-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .usage-bar {
+            display: inline-block;
+            width: 40px;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            margin-left: 6px;
+            vertical-align: middle;
+            overflow: hidden;
+        }
+
+        .usage-bar-fill {
+            height: 100%;
+            background: linear-gradient(to right, var(--primary-light), var(--primary));
+            border-radius: 2px;
+            transition: width 0.5s;
+        }
+
+        .usage-bar-fill.high { background: linear-gradient(to right, #f59e0b, #ef4444); }
+
+        /* ── User Metrics Modal ── */
+        .modal-content.modal-wide {
+            max-width: 680px;
+        }
+
+        .user-metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .user-metric-box {
+            background: var(--bg-main);
+            border-radius: var(--radius-sm);
+            padding: 0.75rem;
+            text-align: center;
+        }
+
+        .user-metric-box .um-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .user-metric-box .um-label {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            margin-top: 0.2rem;
+        }
+
+        .um-chart-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .devices-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .devices-list li {
+            padding: 0.35rem 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .devices-list li:last-child {
+            border-bottom: none;
+        }
+
+        /* ── Metrics two-column layout ── */
+        .metrics-two-col {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .metrics-two-col {
+                grid-template-columns: 1fr;
+            }
+            .user-metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .tab-btn {
+                padding: 0.75rem 0.9rem;
+                font-size: 0.8rem;
+            }
+        }
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            position: relative;
+            z-index: 1002 !important;
+        }
+
+        .header-actions button {
+            position: relative;
+            z-index: 1003 !important;
+            pointer-events: auto !important;
+        }
+
+        .header-actions .btn-primary {
+            padding: 0.7rem 1.2rem;
+            font-weight: 600;
+        }
+
+        .form-section {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .form-section:last-child {
+            border-bottom: none;
+        }
+
+        .form-section h3 {
+            font-size: 1.1rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .field-group label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .field-group input,
+        .field-group select,
+        .field-group textarea {
+            padding: 0.75rem;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+
+        .field-group input:focus,
+        .field-group select:focus,
+        .field-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-light);
+        }
+
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border-radius: var(--radius-sm);
+            transition: background 0.2s;
+        }
+
+        .checkbox-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .checkbox-item label {
+            cursor: pointer;
+            margin: 0;
+            font-weight: normal;
+            font-size: 0.9rem;
+        }
+
+        .image-preview {
+            margin-top: 0.5rem;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .image-preview img {
+            max-width: 120px;
+            max-height: 120px;
+            border-radius: var(--radius-sm);
+            border: 2px solid var(--border);
+            object-fit: cover;
+        }
+
+        /* ── Mode Toggle ── */
+        .mode-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .mode-label {
+            font-size: 0.875rem;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .mode-label-active {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #6c757d;
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background: linear-gradient(135deg, #ff8c42 0%, #ff6b2b 100%);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        .btn-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-icon:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.4);
+            transform: translateY(-2px);
+        }
+
+        /* ── Skeleton Loader ── */
+        .skeleton-row {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .skeleton-text {
+            height: 16px;
+            background: linear-gradient(
+                90deg,
+                #f0f0f0 25%,
+                #e0e0e0 50%,
+                #f0f0f0 75%
+            );
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 4px;
+        }
+
+        @keyframes shimmer {
+            0%   { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.5; }
+        }
+
+        /* ── Button Loading State ── */
+        .btn-loading {
+            position: relative;
+            color: transparent !important;
+            pointer-events: none;
+        }
+
+        .btn-loading::after {
+            content: "";
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 50%;
+            left: 50%;
+            margin-left: -8px;
+            margin-top: -8px;
+            border: 2px solid #fff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+
+        /* ── Rich Toast Notifications ── */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            min-width: 300px;
+            padding: 1rem 1.5rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            z-index: 10001;
+            opacity: 0;
+            transform: translateX(400px);
+            transition: all 0.3s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .toast-icon {
+            font-size: 1.5rem;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .toast-message {
+            flex: 1;
+            color: #1f2937;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .toast-success { border-left: 4px solid #28a745; }
+        .toast-success .toast-icon { color: #28a745; }
+        .toast-error   { border-left: 4px solid #dc3545; }
+        .toast-error .toast-icon   { color: #dc3545; }
+        .toast-info    { border-left: 4px solid #17a2b8; }
+        .toast-info .toast-icon    { color: #17a2b8; }
+        .toast-warning { border-left: 4px solid #ffc107; }
+        .toast-warning .toast-icon { color: #ffc107; }
+
+        /* ── Form Validation ── */
+        .form-control.is-invalid,
+        .form-group input.is-invalid,
+        .form-group select.is-invalid {
+            border-color: #dc3545;
+        }
+
+        .invalid-feedback {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .form-control.is-invalid ~ .invalid-feedback,
+        .form-group input.is-invalid ~ .invalid-feedback,
+        .form-group select.is-invalid ~ .invalid-feedback {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ── Header ── -->
+    <header class="dashboard-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="header-left">
+                    <img src="logo-superhero.png" alt="Transcriptor Pro Logo" class="header-logo">
+                    <div class="header-texts">
+                        <h1 class="header-title">Transcriptor Pro</h1>
+                        <p class="header-subtitle">Modo Administrador</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <!-- Botón dark mode -->
+                    <button class="btn-icon" id="btnDarkMode" aria-label="Modo oscuro">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                        </svg>
+                    </button>
+
+                    <button class="btn-primary" id="btnNewUser">
+                        ➕ Nuevo Usuario
+                    </button>
+                    <button class="btn-refresh-icon" id="btnRefresh" title="Actualizar tabla">
+                        🔄
+                    </button>
+                    <button class="btn-icon-only btn-logout" id="btnLogout" title="Cerrar sesión">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                            <polyline points="16 17 21 12 16 7"/>
+                            <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ── Tabs Navigation ── -->
+    <nav class="tabs-nav" role="navigation" aria-label="Secciones del panel">
+        <div class="container">
+            <button class="tab-btn active" data-tab="usuarios">👥 Usuarios</button>
+            <button class="tab-btn" data-tab="metricas">📊 Métricas</button>
+            <button class="tab-btn" data-tab="logs">🚨 Logs</button>
+        </div>
+    </nav>
+
+    <!-- ── Tab: Usuarios ── -->
+    <div id="tab-usuarios" class="tab-content active">
+
+    <!-- ── Stats ── -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-card stat-total">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-content">
+                        <h3 id="statTotal">0</h3>
+                        <p>Total Usuarios</p>
+                    </div>
+                </div>
+                <div class="stat-card stat-active">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-content">
+                        <h3 id="statActive">0</h3>
+                        <p>Activos (Pago)</p>
+                    </div>
+                </div>
+                <div class="stat-card stat-trial">
+                    <div class="stat-icon">⏰</div>
+                    <div class="stat-content">
+                        <h3 id="statTrial">0</h3>
+                        <p>En Trial</p>
+                    </div>
+                </div>
+                <div class="stat-card stat-expired">
+                    <div class="stat-icon">⚠️</div>
+                    <div class="stat-content">
+                        <h3 id="statExpired">0</h3>
+                        <p>Expirados</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Filters ── -->
+    <section class="filters-section">
+        <div class="container">
+            <div class="filters-bar">
+                <div class="filter-group">
+                    <input type="text" id="searchInput" placeholder="🔍 Buscar por nombre, email o matrícula..." class="search-input">
+                </div>
+                <div class="filter-group">
+                    <select id="filterStatus" class="filter-select">
+                        <option value="">Todos los estados</option>
+                        <option value="active">Activos</option>
+                        <option value="trial">Trial</option>
+                        <option value="expired">Expirados</option>
+                        <option value="banned">Bloqueados</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <select id="filterPlan" class="filter-select">
+                        <option value="">Todos los planes</option>
+                        <option value="trial">Trial</option>
+                        <option value="pro">Pro</option>
+                        <option value="enterprise">Enterprise</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Table ── -->
+    <section class="table-section">
+        <div class="container">
+            <div class="table-wrapper">
+                <table class="users-table" id="usersTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Especialidad</th>
+                            <th>Plan</th>
+                            <th>Estado</th>
+                            <th class="col-expiration">Vencimiento</th>
+                            <th class="col-usage">Uso</th>
+                            <th class="col-activity">Última Actividad</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr class="loading-row">
+                            <td colspan="10" class="text-center">⏳ Cargando usuarios...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    </div><!-- /#tab-usuarios -->
+
+    <!-- ── Tab: Métricas ── -->
+    <div id="tab-metricas" class="tab-content">
+    <section class="metrics-section">
+        <div class="container">
+            <div class="metrics-grid" id="globalMetricsGrid">
+                <div class="metric-card">
+                    <div class="metric-icon">📝</div>
+                    <div class="metric-value" id="mTranscriptions">—</div>
+                    <div class="metric-label">Transcripciones este mes</div>
+                </div>
+                <div class="metric-card metric-words">
+                    <div class="metric-icon">📖</div>
+                    <div class="metric-value" id="mWords">—</div>
+                    <div class="metric-label">Palabras transcritas (mes)</div>
+                </div>
+                <div class="metric-card metric-mrr">
+                    <div class="metric-icon">💰</div>
+                    <div class="metric-value" id="mMrr">—</div>
+                    <div class="metric-label">MRR (Ingresos Recurrentes)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon">👤</div>
+                    <div class="metric-value" id="mActiveToday">—</div>
+                    <div class="metric-label">Usuarios activos hoy</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon">📅</div>
+                    <div class="metric-value" id="mActiveWeek">—</div>
+                    <div class="metric-label">Usuarios activos esta semana</div>
+                </div>
+                <div class="metric-card metric-conversion">
+                    <div class="metric-icon">🔄</div>
+                    <div class="metric-value" id="mConversion">—</div>
+                    <div class="metric-label">Conversión Trial → Pro</div>
+                </div>
+            </div>
+
+            <div class="metrics-two-col">
+                <div class="chart-card">
+                    <h3>📈 Crecimiento de Usuarios (Últimos 30 días)</h3>
+                    <div class="bar-chart" id="globalGrowthChart">
+                        <p style="color:var(--text-secondary);font-size:0.85rem;align-self:center;">Cargando datos...</p>
+                    </div>
+                </div>
+                <div class="top-users-card">
+                    <h3>🏆 Top 5 Usuarios por Consumo</h3>
+                    <div id="topUsersList">
+                        <p style="color:var(--text-secondary);font-size:0.85rem;">Cargando...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    </div><!-- /#tab-metricas -->
+
+    <!-- ── Tab: Logs ── -->
+    <div id="tab-logs" class="tab-content">
+    <section class="logs-section">
+        <div class="container">
+            <div class="logs-filters">
+                <div class="filter-group">
+                    <input type="date" id="logFilterDate" class="filter-select" title="Filtrar por fecha">
+                </div>
+                <div class="filter-group">
+                    <select id="logFilterType" class="filter-select">
+                        <option value="">Todos los tipos</option>
+                        <option value="edit">Edición</option>
+                        <option value="ban">Bloqueo/Desbloqueo</option>
+                        <option value="activate">Activación</option>
+                        <option value="login">Login</option>
+                        <option value="view">Vista de métricas</option>
+                    </select>
+                </div>
+                <button class="btn-refresh" id="btnRefreshLogs">🔄 Actualizar Logs</button>
+            </div>
+            <div class="logs-table-wrapper">
+                <table class="logs-table" id="logsTable">
+                    <thead>
+                        <tr>
+                            <th>Fecha/Hora</th>
+                            <th>Admin</th>
+                            <th>Acción</th>
+                            <th>Usuario Afectado</th>
+                            <th>Detalles</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody">
+                        <tr><td colspan="5" class="text-center">⏳ Cargando logs...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+    </div><!-- /#tab-logs -->
+
+    <!-- ── Edit Modal ── -->
+    <div class="modal-overlay" id="editModal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">✏️ Editar Usuario</h2>
+                <button class="modal-close" id="closeModal" aria-label="Cerrar">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editUserId">
+
+                <div class="form-group">
+                    <label for="editName">Nombre Completo</label>
+                    <input type="text" id="editName" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="editEmail">Email</label>
+                    <input type="email" id="editEmail" readonly>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editPlan">Plan</label>
+                        <select id="editPlan">
+                            <option value="trial">Trial</option>
+                            <option value="pro">Pro</option>
+                            <option value="enterprise">Enterprise</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editStatus">Estado</label>
+                        <select id="editStatus">
+                            <option value="active">Activo ✅</option>
+                            <option value="trial">Trial ⏰</option>
+                            <option value="expired">Expirado ⚠️</option>
+                            <option value="banned">Bloqueado 🚫</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editExpiration">Fecha Vencimiento</label>
+                        <input type="date" id="editExpiration">
+                    </div>
+                    <div class="form-group">
+                        <label for="editDevicesMax">Dispositivos Máximos</label>
+                        <input type="number" id="editDevicesMax" min="1" max="999">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="editNotes">Notas Administrativas</label>
+                    <textarea id="editNotes" rows="3" placeholder="Observaciones internas..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="btnCancelEdit">Cancelar</button>
+                <button class="btn-primary" id="btnSaveEdit">💾 Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── User Metrics Modal ── -->
+    <div class="modal-overlay" id="userMetricsModal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="userMetricsTitle">
+        <div class="modal-content modal-wide">
+            <div class="modal-header">
+                <h2 id="userMetricsTitle">📊 Métricas del Usuario</h2>
+                <button class="modal-close" id="closeUserMetrics" aria-label="Cerrar">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="user-metrics-grid">
+                    <div class="user-metric-box">
+                        <div class="um-value" id="umTranscriptions">—</div>
+                        <div class="um-label">Transcripciones totales</div>
+                    </div>
+                    <div class="user-metric-box">
+                        <div class="um-value" id="umWords">—</div>
+                        <div class="um-label">Palabras transcritas</div>
+                    </div>
+                    <div class="user-metric-box">
+                        <div class="um-value" id="umMinutes">—</div>
+                        <div class="um-label">Minutos de audio</div>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom:0.5rem">
+                    <div class="um-chart-label">📅 Uso últimos 7 días</div>
+                    <div class="bar-chart" id="userUsageChart" style="height:80px;"></div>
+                </div>
+                <div class="form-group" style="margin-bottom:0.5rem">
+                    <label>📱 Dispositivos Registrados</label>
+                    <ul class="devices-list" id="userDevicesList">
+                        <li>Cargando...</li>
+                    </ul>
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                    <label>🕐 Última Actividad</label>
+                    <div id="umLastActivity" style="font-size:0.9rem;color:var(--text-primary);padding:0.4rem 0;">—</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="btnCloseUserMetrics">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Toast ── -->
+    <div id="toast" role="status" aria-live="polite"></div>
+
+    <!-- ── Footer ── -->
+    <footer>
+        <p>© 2026 Transcriptor Médico Pro — Panel de Administración</p>
+    </footer>
+
+    <script>
+        /* ── Configuration ──────────────────────────────────────────────────── */
+        const CONFIG = {
+            scriptUrl: 'https://script.google.com/macros/s/AKfycby2VEaj2Qy4TGrjL7ZG_YjfEO4ttI6fynnWLgAMafU8VMWoYoWgqJX48D5okxKOrgQiaw/exec',
+            adminKey: 'ADMIN_SECRET_2026',
+            sessionTimeout: 8 * 60 * 60 * 1000 // 8 hours in ms
+        };
+
+        /* ── Authentication ─────────────────────────────────────────────────── */
+        (function checkAuth() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const fromApp = urlParams.get('fromApp');
+
+            if (fromApp === 'true') {
+                // Create automatic session without requiring login
+                const adminSession = {
+                    username: 'admin',
+                    nombre: 'Administrador',
+                    timestamp: Date.now(),
+                    autoLogin: true
+                };
+                sessionStorage.setItem('adminSession', JSON.stringify(adminSession));
+                // Remove fromApp param from URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+                return;
+            }
+
+            const raw = sessionStorage.getItem('adminSession');
+            if (!raw) {
+                window.location.href = 'login.html';
+                return;
+            }
+            try {
+                const session = JSON.parse(raw);
+                if ((Date.now() - session.timestamp) >= CONFIG.sessionTimeout) {
+                    sessionStorage.removeItem('adminSession');
+                    window.location.href = 'login.html';
+                }
+            } catch (err) {
+                console.error('Session parse error, clearing session:', err);
+                sessionStorage.removeItem('adminSession');
+                window.location.href = 'login.html';
+            }
+        })();
+
+        /* Auto-logout on inactivity after 8 hours */
+        let _inactivityTimer = null;
+        function resetInactivityTimer() {
+            clearTimeout(_inactivityTimer);
+            _inactivityTimer = setTimeout(() => {
+                sessionStorage.removeItem('adminSession');
+                window.location.href = 'login.html';
+            }, CONFIG.sessionTimeout);
+        }
+        ['click', 'keydown', 'mousemove', 'touchstart'].forEach(evt =>
+            document.addEventListener(evt, resetInactivityTimer, { passive: true })
+        );
+        resetInactivityTimer();
+
+        /* Sample data used when the backend URL has not been configured yet */
+        const SAMPLE_USERS = [
+            {
+                ID_Medico: 'DR001',
+                Nombre: 'Dr. Juan Pérez',
+                Matricula: 'MN 12345',
+                Email: 'juan.perez@example.com',
+                Especialidad: 'Cardiología',
+                Plan: 'trial',
+                Estado: 'trial',
+                Fecha_Registro: '2026-02-15',
+                Fecha_Vencimiento: '2026-02-22',
+                Devices_Max: 2,
+                Usage_Count: 5,
+                Notas_Admin: 'Usuario de prueba - trial activo'
+            },
+            {
+                ID_Medico: 'DR002',
+                Nombre: 'Dra. María García',
+                Matricula: 'MP 67890',
+                Email: 'maria.garcia@example.com',
+                Especialidad: 'ORL',
+                Plan: 'pro',
+                Estado: 'active',
+                Fecha_Registro: '2026-01-10',
+                Fecha_Vencimiento: '2026-12-31',
+                Devices_Max: 5,
+                Usage_Count: 127,
+                Notas_Admin: 'Cliente pagado - plan anual'
+            },
+            {
+                ID_Medico: 'DR003',
+                Nombre: 'Dr. Carlos Rodríguez',
+                Matricula: 'MN 11111',
+                Email: 'carlos.r@example.com',
+                Especialidad: 'Gastroenterología',
+                Plan: 'trial',
+                Estado: 'expired',
+                Fecha_Registro: '2026-01-20',
+                Fecha_Vencimiento: '2026-01-27',
+                Devices_Max: 2,
+                Usage_Count: 23,
+                Notas_Admin: 'Trial expirado - seguimiento pendiente'
+            }
+        ];
+
+        /* ── Enhanced API ────────────────────────────────────────────────────── */
+        const API = {
+            async call(endpoint) {
+                const url = `${CONFIG.scriptUrl}${endpoint}&adminKey=${encodeURIComponent(CONFIG.adminKey)}`;
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'GET'
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const data = await response.json();
+
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+
+                    return data;
+                } catch (error) {
+                    console.error('API Error:', error);
+                    showNotification(`Error: ${error.message}`, 'error');
+                    throw error;
+                }
+            },
+
+            async getUsers() {
+                return await this.call('?action=admin_list_users');
+            },
+
+            async updateUser(userId, updates) {
+                const updatesJson = encodeURIComponent(JSON.stringify(updates));
+                return await this.call(`?action=admin_update_user&userId=${encodeURIComponent(userId)}&updates=${updatesJson}`);
+            },
+
+            async getUserMetrics(userId) {
+                return await this.call(`?action=admin_get_metrics&userId=${encodeURIComponent(userId)}`);
+            },
+
+            async getGlobalStats() {
+                return await this.call('?action=admin_get_global_stats');
+            },
+
+            async getLogs(filterDate, filterType) {
+                let qs = '?action=admin_get_logs';
+                if (filterDate) qs += `&date=${encodeURIComponent(filterDate)}`;
+                if (filterType) qs += `&type=${encodeURIComponent(filterType)}`;
+                return await this.call(qs);
+            },
+
+            async logAction(action, userId, details) {
+                try {
+                    const raw = sessionStorage.getItem('adminSession');
+                    const session = raw ? JSON.parse(raw) : {};
+                    const adminUser = encodeURIComponent(session.username || 'unknown');
+                    await this.call(`?action=admin_log_action&adminUser=${adminUser}&logAction=${encodeURIComponent(action)}&userId=${encodeURIComponent(userId)}&details=${encodeURIComponent(details)}`);
+                } catch (err) { console.warn('logAction failed (non-blocking):', err); }
+            }
+        };
+
+        /* ── State ───────────────────────────────────────────────────────────── */
+        let allUsers = [];
+        let currentEditUser = null;
+        let refreshInterval = null;
+        let notificationTimer = null;
+        let metricsLoaded = false;
+        let logsLoaded = false;
+
+        /* ── API ─────────────────────────────────────────────────────────────── */
+        async function fetchUsers() {
+            if (CONFIG.scriptUrl === 'PASTE_APPS_SCRIPT_URL_HERE') {
+                /* Backend not yet configured — use sample data */
+                return SAMPLE_USERS;
+            }
+            try {
+                const url = `${CONFIG.scriptUrl}?action=admin_list_users&adminKey=${encodeURIComponent(CONFIG.adminKey)}`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                return data.users || [];
+            } catch (error) {
+                console.error('Error fetching users:', error);
+                showToast('Error al cargar usuarios. Usando datos de muestra.', 'warning');
+                return SAMPLE_USERS;
+            }
+        }
+
+        async function updateUser(userId, updates) {
+            if (CONFIG.scriptUrl === 'PASTE_APPS_SCRIPT_URL_HERE') {
+                /* Simulate success when backend is not configured */
+                return { success: true };
+            }
+            try {
+                const updatesJson = encodeURIComponent(JSON.stringify(updates));
+                const url = `${CONFIG.scriptUrl}?action=admin_update_user&userId=${encodeURIComponent(userId)}&updates=${updatesJson}&adminKey=${encodeURIComponent(CONFIG.adminKey)}`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                console.error('Error updating user:', error);
+                return { error: error.message };
+            }
+        }
+
+        /* ── Helpers ─────────────────────────────────────────────────────────── */
+        function getStatusText(estado) {
+            const map = {
+                active: '✅ Activo',
+                trial: '⏰ Trial',
+                expired: '⚠️ Expirado',
+                banned: '🚫 Bloqueado'
+            };
+            return map[estado] || estado;
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '—';
+            // Limpiar string de fecha (remover hora si existe)
+            const cleanDate = String(dateStr).split('T')[0];
+            try {
+                const [y, m, d] = cleanDate.split('-');
+                if (!y || !m || !d) return dateStr;
+                return `${d}/${m}/${y}`;
+            } catch (_) {
+                return dateStr;
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const icons = { success: '✓', error: '✕', info: 'ℹ', warning: '⚠' };
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'toast-close';
+            closeBtn.textContent = '×';
+            closeBtn.setAttribute('aria-label', 'Cerrar');
+            closeBtn.addEventListener('click', () => toast.remove());
+            const iconEl = document.createElement('div');
+            iconEl.className = 'toast-icon';
+            iconEl.textContent = icons[type] || icons.info;
+            const msgEl = document.createElement('div');
+            msgEl.className = 'toast-message';
+            msgEl.textContent = message;
+            toast.append(iconEl, msgEl, closeBtn);
+            document.body.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 50);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        function showNotification(message, type = 'info') {
+            let notification = document.getElementById('notification');
+            if (!notification) {
+                notification = document.createElement('div');
+                notification.id = 'notification';
+                notification.className = 'notification';
+                document.body.appendChild(notification);
+            }
+
+            notification.textContent = message;
+            notification.className = `notification notification-${type} show`;
+
+            clearTimeout(notificationTimer);
+            notificationTimer = setTimeout(() => {
+                notification.classList.remove('show');
+            }, 4000);
+        }
+
+        /* ── Tab Navigation ─────────────────────────────────────────────────── */
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Remove active from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            const selectedTab = document.getElementById(`tab-${tabName}`);
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+            }
+
+            // Activate button
+            const activeBtn = document.querySelector(`[data-tab="${tabName}"]`);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            // Load data lazily
+            if (tabName === 'metricas' && !metricsLoaded) {
+                loadGlobalStats();
+                metricsLoaded = true;
+            } else if (tabName === 'logs' && !logsLoaded) {
+                loadLogs();
+                logsLoaded = true;
+            }
+        }
+
+        /* ── User Metrics Modal ──────────────────────────────────────────────── */
+        async function openUserMetrics(userId) {
+            const user = allUsers.find(u => String(u.ID_Medico) === String(userId));
+            const modal = document.getElementById('userMetricsModal');
+            const title = document.getElementById('userMetricsTitle');
+            if (user) title.textContent = `📊 Métricas — ${user.Nombre}`;
+            modal.style.display = 'flex';
+
+            // Reset
+            ['umTranscriptions','umWords','umMinutes'].forEach(id => document.getElementById(id).textContent = '⏳');
+            document.getElementById('userDevicesList').innerHTML = '<li>Cargando...</li>';
+            document.getElementById('umLastActivity').textContent = '⏳';
+            document.getElementById('userUsageChart').innerHTML = '';
+
+            try {
+                await logAdminAction('view', userId, `Vista métricas usuario ${userId}`);
+                const data = await API.getUserMetrics(userId);
+                renderUserMetrics(data);
+            } catch (_) {
+                // If API not available, show mock data based on known user data
+                const mockData = buildMockMetrics(userId);
+                renderUserMetrics(mockData);
+            }
+        }
+
+        function buildMockMetrics(userId) {
+            const user = allUsers.find(u => String(u.ID_Medico) === String(userId)) || {};
+            const days = Array.from({length: 7}, (_, i) => {
+                const d = new Date(); d.setDate(d.getDate() - (6 - i));
+                return { label: `${d.getDate()}/${d.getMonth()+1}`, value: Math.floor(Math.random() * 10) };
+            });
+            return {
+                transcripciones: user.Usage_Count || 0,
+                palabras: (user.Usage_Count || 0) * 180,
+                minutos: Math.round((user.Usage_Count || 0) * 2.5),
+                ultima_actividad: user.Ultima_Actividad || user.Fecha_Registro || '—',
+                dispositivos: [{ nombre: 'Dispositivo principal', fecha: user.Fecha_Registro || '—' }],
+                uso_7dias: days
+            };
+        }
+
+        function renderUserMetrics(data) {
+            const fmtNum = v => (v != null ? Number(v).toLocaleString() : '—');
+            document.getElementById('umTranscriptions').textContent = fmtNum(data.transcripciones);
+            document.getElementById('umWords').textContent = fmtNum(data.palabras);
+            document.getElementById('umMinutes').textContent = fmtNum(data.minutos);
+            document.getElementById('umLastActivity').textContent = data.ultima_actividad || '—';
+
+            // Devices list
+            const devList = document.getElementById('userDevicesList');
+            const devices = data.dispositivos || [];
+            if (devices.length === 0) {
+                devList.innerHTML = '<li>Sin dispositivos registrados</li>';
+            } else {
+                devList.innerHTML = devices.map(d =>
+                    `<li>📱 <strong>${escapeHtml(d.nombre || d.id || 'Dispositivo')}</strong><small style="margin-left:auto;color:var(--text-secondary)">${escapeHtml(d.fecha || '')}</small></li>`
+                ).join('');
+            }
+
+            // 7-day bar chart
+            const chartEl = document.getElementById('userUsageChart');
+            const days = data.uso_7dias || [];
+            if (days.length > 0) {
+                const maxVal = Math.max(...days.map(d => d.value || 0), 1);
+                chartEl.innerHTML = days.map(d => {
+                    const pct = Math.round(((d.value || 0) / maxVal) * 100);
+                    return `<div class="bar-wrap"><div class="bar" style="height:${pct}%" data-value="${d.value || 0}"></div><span class="bar-label">${escapeHtml(String(d.label))}</span></div>`;
+                }).join('');
+            } else {
+                chartEl.innerHTML = '<p style="color:var(--text-secondary);font-size:0.85rem;align-self:center;">Sin datos disponibles</p>';
+            }
+        }
+
+        function closeUserMetrics() {
+            document.getElementById('userMetricsModal').style.display = 'none';
+        }
+
+        /* ── Global Metrics ──────────────────────────────────────────────────── */
+        async function loadGlobalStats() {
+            try {
+                const data = await API.getGlobalStats();
+                renderGlobalStats(data);
+            } catch (_) {
+                renderGlobalStats(buildMockGlobalStats());
+            }
+        }
+
+        function buildMockGlobalStats() {
+            const proUsers = allUsers.filter(u => u.Plan === 'pro' || u.Plan === 'enterprise').length;
+            const trialUsers = allUsers.filter(u => u.Plan === 'trial').length;
+            const convRate = trialUsers > 0 ? Math.round((proUsers / (proUsers + trialUsers)) * 100) : 0;
+            const sorted = [...allUsers].sort((a, b) => (b.Usage_Count || 0) - (a.Usage_Count || 0));
+            const days = Array.from({length: 30}, (_, i) => {
+                const d = new Date(); d.setDate(d.getDate() - (29 - i));
+                return { label: `${d.getDate()}/${d.getMonth()+1}`, value: Math.floor(Math.random() * 3) };
+            });
+            return {
+                transcripciones_mes: allUsers.reduce((s, u) => s + (u.Usage_Count || 0), 0),
+                palabras_mes: allUsers.reduce((s, u) => s + ((u.Usage_Count || 0) * 180), 0),
+                mrr: proUsers * 29,
+                activos_hoy: Math.min(allUsers.filter(u => u.Estado === 'active').length, 3),
+                activos_semana: allUsers.filter(u => u.Estado === 'active').length,
+                conversion: convRate,
+                crecimiento_30dias: days,
+                top_usuarios: sorted.slice(0, 5).map(u => ({
+                    nombre: u.Nombre,
+                    plan: u.Plan,
+                    usage: u.Usage_Count || 0
+                }))
+            };
+        }
+
+        function renderGlobalStats(data) {
+            const fmt = v => (v != null ? Number(v).toLocaleString() : '—');
+            document.getElementById('mTranscriptions').textContent = fmt(data.transcripciones_mes);
+            document.getElementById('mWords').textContent = fmt(data.palabras_mes);
+            document.getElementById('mMrr').textContent = data.mrr != null ? `$${fmt(data.mrr)}` : '—';
+            document.getElementById('mActiveToday').textContent = fmt(data.activos_hoy);
+            document.getElementById('mActiveWeek').textContent = fmt(data.activos_semana);
+            document.getElementById('mConversion').textContent = data.conversion != null ? `${data.conversion}%` : '—';
+
+            // Growth chart
+            const chartEl = document.getElementById('globalGrowthChart');
+            const days = data.crecimiento_30dias || [];
+            if (days.length > 0) {
+                const maxVal = Math.max(...days.map(d => d.value || 0), 1);
+                chartEl.innerHTML = days.map(d => {
+                    const pct = Math.round(((d.value || 0) / maxVal) * 100);
+                    return `<div class="bar-wrap"><div class="bar" style="height:${pct}%" data-value="${d.value || 0}"></div><span class="bar-label">${escapeHtml(String(d.label))}</span></div>`;
+                }).join('');
+            }
+
+            // Top users
+            const topEl = document.getElementById('topUsersList');
+            const medals = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+            const top = data.top_usuarios || [];
+            if (top.length > 0) {
+                topEl.innerHTML = top.map((u, i) => `
+                    <div class="top-user-row">
+                        <span class="top-user-rank">${medals[i] || (i+1)}</span>
+                        <div class="top-user-info">
+                            <strong>${escapeHtml(u.nombre || '—')}</strong><br>
+                            <small>${escapeHtml(u.plan || '—').toUpperCase()}</small>
+                        </div>
+                        <span class="top-user-count">${(u.usage || 0).toLocaleString()}</span>
+                    </div>`).join('');
+            } else {
+                topEl.innerHTML = '<p style="color:var(--text-secondary);font-size:0.85rem;">Sin datos</p>';
+            }
+        }
+
+        /* ── Logs ────────────────────────────────────────────────────────────── */
+        async function loadLogs() {
+            const tbody = document.getElementById('logsTableBody');
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center">⏳ Cargando logs...</td></tr>';
+            const filterDate = document.getElementById('logFilterDate').value;
+            const filterType = document.getElementById('logFilterType').value;
+
+            try {
+                const data = await API.getLogs(filterDate, filterType);
+                renderLogs(data.logs || []);
+            } catch (_) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">Sin logs disponibles</td></tr>';
+            }
+        }
+
+        function renderLogs(logs) {
+            const tbody = document.getElementById('logsTableBody');
+            if (!logs || logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay logs registrados</td></tr>';
+                return;
+            }
+            tbody.innerHTML = logs.map(log => {
+                const type = (log.type || log.accion || 'view').toLowerCase();
+                return `<tr>
+                    <td><small>${escapeHtml(log.timestamp || log.fecha || '—')}</small></td>
+                    <td>${escapeHtml(log.admin || '—')}</td>
+                    <td><span class="log-action-badge log-${escapeHtml(type)}">${escapeHtml(log.type || log.accion || '—')}</span></td>
+                    <td>${escapeHtml(log.userId || log.usuario_afectado || '—')}</td>
+                    <td><small>${escapeHtml(log.details || log.detalles || '—')}</small></td>
+                </tr>`;
+            }).join('');
+        }
+
+        /* ── Log Admin Action ────────────────────────────────────────────────── */
+        async function logAdminAction(action, userId, details) {
+            try {
+                await API.logAction(action, userId, details);
+            } catch (_) { /* non-blocking */ }
+        }
+
+        /* ── Render ──────────────────────────────────────────────────────────── */
+        function renderTable(users) {
+            const tbody = document.getElementById('tableBody');
+            if (!users || users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center">No hay usuarios registrados</td></tr>';
+                return;
+            }
+
+            const maxUsage = Math.max(...users.map(u => u.Usage_Count || 0), 1);
+            const now = Date.now();
+            const oneDayMs = 24 * 60 * 60 * 1000;
+            tbody.innerHTML = users.map(user => {
+                const plan    = user.Plan || 'trial';
+                const id      = escapeHtml(String(user.ID_Medico));
+                const isBanned  = user.Estado === 'banned';
+                const isTrial   = user.Estado === 'trial';
+                const isExpired = user.Estado === 'expired';
+                const usage     = user.Usage_Count || 0;
+                const usagePct  = Math.round((usage / maxUsage) * 100);
+                const highUsage = usagePct >= 80 ? ' high' : '';
+                const lastActivity = user.Ultima_Actividad || user.Fecha_Registro || '';
+                const lastActivityMs = lastActivity ? new Date(lastActivity).getTime() : NaN;
+                const isActiveToday = !isNaN(lastActivityMs) && (now - lastActivityMs) < oneDayMs;
+                const activityDisplay = lastActivity ? formatDate(lastActivity.split('T')[0]) : '—';
+                return `
+                <tr data-user-id="${id}" class="${isBanned ? 'row-banned' : ''}">
+                    <td data-label="ID"><span class="user-id">${id}</span></td>
+                    <td data-label="Nombre" class="user-name-cell"><strong>${escapeHtml(user.Nombre)}</strong>${isActiveToday ? '<span class="active-indicator" title="Activo hoy">🔥</span>' : ''}<br><small class="text-muted">${escapeHtml(user.Matricula || '')}</small></td>
+                    <td data-label="Email" class="email-cell"><small>${escapeHtml(user.Email)}</small></td>
+                    <td data-label="Especialidad"><span class="badge badge-specialty">${escapeHtml(user.Especialidad)}</span></td>
+                    <td data-label="Plan"><span class="badge badge-plan badge-${escapeHtml(plan)}">${escapeHtml(plan.toUpperCase())}</span></td>
+                    <td data-label="Estado"><span class="status-badge status-${escapeHtml(user.Estado)}">${getStatusText(user.Estado)}</span></td>
+                    <td data-label="Vencimiento" class="col-expiration">${formatDate(user.Fecha_Vencimiento)}</td>
+                    <td data-label="Uso" class="col-usage">
+                        <div class="usage-bar-wrap">
+                            <span class="usage-count">${usage}</span>
+                            <div class="usage-bar"><div class="usage-bar-fill${highUsage}" style="width:${usagePct}%"></div></div>
+                        </div>
+                    </td>
+                    <td data-label="Última Actividad" class="col-activity">${activityDisplay}</td>
+                    <td data-label="Acciones" class="actions-cell">
+                        <button class="btn-action btn-edit" data-action="edit" data-user-id="${id}" title="Editar">✏️</button>
+                        <button class="btn-action" data-action="metrics" data-user-id="${id}" title="Ver Métricas" style="font-size:1rem;">📊</button>
+                        ${isTrial || isExpired ? `<button class="btn-action btn-activate" data-action="activate" data-user-id="${id}" title="Activar PRO">✅</button>` : ''}
+                        <button class="btn-action btn-ban"  data-action="ban"  data-user-id="${id}" title="${isBanned ? 'Desbloquear' : 'Bloquear'}">${isBanned ? '🔓' : '🚫'}</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.appendChild(document.createTextNode(str));
+            return div.innerHTML;
+        }
+
+        /* ── Stats ───────────────────────────────────────────────────────────── */
+        function updateStats(users) {
+            const stats = {
+                total: users.length,
+                active: users.filter(u => u.Estado === 'active').length,
+                trial: users.filter(u => u.Estado === 'trial').length,
+                expired: users.filter(u => u.Estado === 'expired').length
+            };
+
+            document.getElementById('statTotal').textContent   = stats.total;
+            document.getElementById('statActive').textContent  = stats.active;
+            document.getElementById('statTrial').textContent   = stats.trial;
+            document.getElementById('statExpired').textContent = stats.expired;
+        }
+
+        /* ── Filters ─────────────────────────────────────────────────────────── */
+        function applyFilters() {
+            const search = document.getElementById('searchInput').value.toLowerCase().trim();
+            const status = document.getElementById('filterStatus').value;
+            const plan   = document.getElementById('filterPlan').value;
+
+            const filtered = allUsers.filter(user => {
+                const matchSearch = !search ||
+                    (user.Nombre    || '').toLowerCase().includes(search) ||
+                    (user.Email     || '').toLowerCase().includes(search) ||
+                    (user.Matricula || '').toLowerCase().includes(search);
+
+                const matchStatus = !status || user.Estado === status;
+                const matchPlan   = !plan   || user.Plan   === plan;
+
+                return matchSearch && matchStatus && matchPlan;
+            });
+
+            renderTable(filtered);
+        }
+
+        /* ── Edit Modal ──────────────────────────────────────────────────────── */
+        function openEditModal(userId) {
+            const user = allUsers.find(u => String(u.ID_Medico) === String(userId));
+            if (!user) {
+                showNotification('Usuario no encontrado', 'error');
+                return;
+            }
+
+            currentEditUser = user;
+
+            document.getElementById('editUserId').value     = user.ID_Medico;
+            document.getElementById('editName').value       = user.Nombre;
+            document.getElementById('editEmail').value      = user.Email;
+            document.getElementById('editPlan').value       = user.Plan;
+            document.getElementById('editStatus').value     = user.Estado;
+            document.getElementById('editExpiration').value = user.Fecha_Vencimiento || '';
+            document.getElementById('editDevicesMax').value = user.Devices_Max || 2;
+            document.getElementById('editNotes').value      = user.Notas_Admin || '';
+
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+            currentEditUser = null;
+        }
+
+        async function saveEdit() {
+            const userId = document.getElementById('editUserId').value;
+            const updates = {
+                Plan:              document.getElementById('editPlan').value,
+                Estado:            document.getElementById('editStatus').value,
+                Fecha_Vencimiento: document.getElementById('editExpiration').value,
+                Devices_Max:       parseInt(document.getElementById('editDevicesMax').value, 10) || 2,
+                Notas_Admin:       document.getElementById('editNotes').value
+            };
+
+            const saveBtn = document.getElementById('btnSaveEdit');
+            saveBtn.disabled = true;
+            saveBtn.textContent = '⏳ Guardando...';
+
+            const result = await updateUser(userId, updates);
+
+            saveBtn.disabled = false;
+            saveBtn.textContent = '💾 Guardar Cambios';
+
+            if (result.error) {
+                showToast('Error al guardar: ' + result.error, 'error');
+                return;
+            }
+
+            /* Update local state */
+            const idx = allUsers.findIndex(u => String(u.ID_Medico) === String(userId));
+            if (idx !== -1) {
+                allUsers[idx] = { ...allUsers[idx], ...updates };
+            }
+
+            updateStats(allUsers);
+            applyFilters();
+            closeEditModal();
+            showToast('Usuario actualizado correctamente ✅', 'success');
+        }
+
+        async function saveUserChanges() {
+            if (!currentEditUser) return;
+
+            const userId = document.getElementById('editUserId').value;
+            const updates = {
+                Plan:              document.getElementById('editPlan').value,
+                Estado:            document.getElementById('editStatus').value,
+                Fecha_Vencimiento: document.getElementById('editExpiration').value,
+                Devices_Max:       parseInt(document.getElementById('editDevicesMax').value, 10) || 2,
+                Notas_Admin:       document.getElementById('editNotes').value
+            };
+
+            const saveBtn = document.getElementById('btnSaveEdit');
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = '⏳ Guardando...';
+            saveBtn.disabled = true;
+
+            try {
+                if (CONFIG.scriptUrl === 'PASTE_APPS_SCRIPT_URL_HERE') {
+                    /* Simulate success when backend is not configured */
+                    const idx = allUsers.findIndex(u => String(u.ID_Medico) === String(userId));
+                    if (idx !== -1) allUsers[idx] = { ...allUsers[idx], ...updates };
+                    showNotification('✅ Usuario actualizado correctamente', 'success');
+                    await logAdminAction('edit', userId, `Plan: ${updates.Plan}, Estado: ${updates.Estado}`);
+                    closeEditModal();
+                    updateStats(allUsers);
+                    applyFilters();
+                } else {
+                    await API.updateUser(userId, updates);
+                    showNotification('✅ Usuario actualizado correctamente', 'success');
+                    await logAdminAction('edit', userId, `Plan: ${updates.Plan}, Estado: ${updates.Estado}`);
+                    closeEditModal();
+                    await loadDashboard(true);
+                }
+            } catch (error) {
+                showNotification(`Error al guardar: ${error.message}`, 'error');
+            } finally {
+                saveBtn.textContent = originalText;
+                saveBtn.disabled = false;
+            }
+        }
+
+        /* ── Quick Ban ───────────────────────────────────────────────────────── */
+        async function quickBan(userId) {
+            const user = allUsers.find(u => String(u.ID_Medico) === String(userId));
+            if (!user) return;
+
+            const newStatus = user.Estado === 'banned' ? 'active' : 'banned';
+            const action    = newStatus === 'banned' ? 'bloquear' : 'desbloquear';
+
+            if (!confirm(`¿Confirmar ${action} a ${user.Nombre}?`)) return;
+
+            try {
+                if (CONFIG.scriptUrl === 'PASTE_APPS_SCRIPT_URL_HERE') {
+                    const idx = allUsers.findIndex(u => String(u.ID_Medico) === String(userId));
+                    if (idx !== -1) allUsers[idx].Estado = newStatus;
+                    updateStats(allUsers);
+                    applyFilters();
+                } else {
+                    await API.updateUser(userId, { Estado: newStatus });
+                    await loadDashboard(true);
+                }
+                await logAdminAction('ban', userId, `Estado: ${newStatus}`);
+                showNotification(`Usuario ${action === 'bloquear' ? 'bloqueado 🚫' : 'desbloqueado ✅'}`, newStatus === 'banned' ? 'info' : 'success');
+            } catch (error) {
+                showNotification(`Error al ${action} usuario`, 'error');
+            }
+        }
+
+        /* ── Activate User ───────────────────────────────────────────────────── */
+        async function activateUser(userId) {
+            const user = allUsers.find(u => String(u.ID_Medico) === String(userId));
+            if (!user) return;
+
+            if (!confirm(`¿Activar suscripción PRO para ${user.Nombre}?`)) return;
+
+            const expirationDate = new Date();
+            expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+            const formattedDate = expirationDate.toISOString().split('T')[0];
+
+            const updates = {
+                Plan:              'pro',
+                Estado:            'active',
+                Fecha_Vencimiento: formattedDate,
+                Devices_Max:       5,
+                Notas_Admin:       `Activado manualmente el ${new Date().toISOString().split('T')[0]}`
+            };
+
+            try {
+                if (CONFIG.scriptUrl === 'PASTE_APPS_SCRIPT_URL_HERE') {
+                    const idx = allUsers.findIndex(u => String(u.ID_Medico) === String(userId));
+                    if (idx !== -1) allUsers[idx] = { ...allUsers[idx], ...updates };
+                    updateStats(allUsers);
+                    applyFilters();
+                } else {
+                    await API.updateUser(userId, updates);
+                    await loadDashboard(true);
+                }
+                await logAdminAction('activate', userId, `Plan PRO hasta ${formattedDate}`);
+                showNotification(`✅ ${user.Nombre} activado - Plan PRO hasta ${formattedDate}`, 'success');
+            } catch (error) {
+                showNotification('Error al activar usuario', 'error');
+            }
+        }
+
+        /* ── Load Data ───────────────────────────────────────────────────────── */
+        async function loadUsers() {
+            await loadDashboard();
+        }
+
+        async function loadDashboard(silent = false) {
+            if (!silent) {
+                document.getElementById('tableBody').innerHTML =
+                    '<tr><td colspan="10" class="text-center">⏳ Cargando datos...</td></tr>';
+            }
+
+            try {
+                allUsers = await fetchUsers();
+                updateStats(allUsers);
+                applyFilters();
+
+                if (!silent) {
+                    showNotification(`✅ ${allUsers.length} usuarios cargados`, 'success');
+                }
+            } catch (error) {
+                document.getElementById('tableBody').innerHTML =
+                    `<tr><td colspan="10" class="text-center">❌ Error al cargar datos: ${escapeHtml(error.message)}</td></tr>`;
+            }
+        }
+
+        function startAutoRefresh(intervalMinutes = 5) {
+            if (refreshInterval) clearInterval(refreshInterval);
+
+            refreshInterval = setInterval(async () => {
+                console.log('Auto-refreshing dashboard...');
+                await loadDashboard(true);
+            }, intervalMinutes * 60 * 1000);
+        }
+
+        /* ── Event Listeners ─────────────────────────────────────────────────── */
+        document.getElementById('btnLogout').addEventListener('click', () => {
+            localStorage.removeItem('adminSession');
+            sessionStorage.clear();
+            window.location.href = 'login.html';
+        });
+
+        document.getElementById('btnRefresh').addEventListener('click', () => loadDashboard());
+
+        document.getElementById('searchInput').addEventListener('input', applyFilters);
+        document.getElementById('filterStatus').addEventListener('change', applyFilters);
+        document.getElementById('filterPlan').addEventListener('change', applyFilters);
+
+        /* Event delegation for table action buttons */
+        document.getElementById('tableBody').addEventListener('click', function (e) {
+            const btn = e.target.closest('[data-action]');
+            if (!btn) return;
+            const userId = btn.dataset.userId;
+            if (btn.dataset.action === 'edit') openEditUserModal(userId);
+            else if (btn.dataset.action === 'metrics') openUserMetrics(userId);
+            else if (btn.dataset.action === 'ban') quickBan(userId);
+            else if (btn.dataset.action === 'activate') activateUser(userId);
+        });
+
+        document.getElementById('closeModal').addEventListener('click', closeEditModal);
+        document.getElementById('btnCancelEdit').addEventListener('click', closeEditModal);
+        document.getElementById('btnSaveEdit').addEventListener('click', saveUserChanges);
+
+        /* Tab buttons */
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => showTab(btn.dataset.tab));
+        });
+
+        /* User metrics modal */
+        document.getElementById('closeUserMetrics').addEventListener('click', closeUserMetrics);
+        document.getElementById('btnCloseUserMetrics').addEventListener('click', closeUserMetrics);
+        document.getElementById('userMetricsModal').addEventListener('click', function(e) {
+            if (e.target === this) closeUserMetrics();
+        });
+
+        /* Logs filters */
+        document.getElementById('btnRefreshLogs').addEventListener('click', () => {
+            logsLoaded = false;
+            loadLogs();
+        });
+        document.getElementById('logFilterDate').addEventListener('change', loadLogs);
+        document.getElementById('logFilterType').addEventListener('change', loadLogs);
+
+        /* Close modal on backdrop click */
+        document.getElementById('editModal').addEventListener('click', function (e) {
+            if (e.target === this) closeEditModal();
+        });
+
+        /* Close modal on Escape key */
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                closeEditModal();
+                closeUserMetrics();
+                closeNewUserModal();
+                closeEditUserModal();
+            }
+        });
+
+        /* ── Init ────────────────────────────────────────────────────────────── */
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Set admin name in header
+            try {
+                const session = JSON.parse(sessionStorage.getItem('adminSession') || '{}');
+                if (session.nombre) {
+                    document.getElementById('adminName').textContent = session.nombre;
+                }
+            } catch (_) {}
+
+            await loadDashboard();
+            startAutoRefresh(5);
+
+            // Setup new user modal close buttons (modal HTML is after the script block)
+            document.getElementById('btnCloseNewUser')?.addEventListener('click', () => closeNewUserModal());
+            document.getElementById('btnCancelNewUser')?.addEventListener('click', () => closeNewUserModal());
+            document.getElementById('newUserModal')?.addEventListener('click', function (e) {
+                if (e.target === this) closeNewUserModal();
+            });
+
+            // Setup edit user modal close buttons (modal HTML is after the script block)
+            document.getElementById('btnCloseEditUser')?.addEventListener('click', () => closeEditUserModal());
+            document.getElementById('btnCancelEditUser')?.addEventListener('click', () => closeEditUserModal());
+            document.getElementById('editUserModal')?.addEventListener('click', function (e) {
+                if (e.target === this) closeEditUserModal();
+            });
+            document.getElementById('editUserForm')?.addEventListener('submit', handleEditUserSubmit);
+        });
+
+        // ========== NUEVO USUARIO ==========
+
+        const ESPECIALIDADES = [
+            'Neumología',
+            'Oftalmología',
+            'Imágenes',
+            'Endoscopía',
+            'Cardiología',
+            'Ginecología',
+            'General',
+            'Quirúrgico'
+        ];
+
+        const ESTUDIOS_POR_ESPECIALIDAD = {
+            'Neumología': ['Espirometría', 'Test Marcha 6min', 'Pletismografía', 'Oximetría Nocturna'],
+            'Oftalmología': ['Campimetría', 'OCT Retinal', 'Topografía Corneal', 'Fondo de Ojo'],
+            'Imágenes': ['TAC', 'RMN', 'Mamografía', 'Densitometría', 'PET-CT', 'Radiografía', 'Ecografía'],
+            'Endoscopía': ['Gastroscopía', 'Colonoscopía', 'Broncoscopía', 'Laringoscopía'],
+            'Cardiología': ['Gammagrafía', 'Holter', 'MAPA', 'Cinecoronariografía', 'ECG', 'Eco-Stress'],
+            'Ginecología': ['PAP', 'Colposcopía'],
+            'General': ['Informe Evolutivo', 'Epicrisis', 'Certificado'],
+            'Quirúrgico': ['Protocolo Operatorio', 'Parte de Cirugía']
+        };
+
+        // ========== EDITAR USUARIO ==========
+
+        async function openEditUserModal(userId) {
+            try {
+                const user = allUsers.find(u => String(u.ID_Medico) === String(userId));
+                if (!user) {
+                    showToast('Usuario no encontrado', 'error');
+                    return;
+                }
+
+                document.getElementById('editUserId2').value = user.ID_Medico;
+                document.getElementById('editUserTitle').textContent = user.Nombre;
+                document.getElementById('editNombre').value = user.Nombre || '';
+                document.getElementById('editMatricula').value = user.Matricula || '';
+                document.getElementById('editEmail').value = user.Email || '';
+                document.getElementById('editTelefono').value = user.Telefono || '';
+                document.getElementById('editPlanEdit').value = user.Plan || 'trial';
+                document.getElementById('editEstado').value = user.Estado || 'trial';
+                document.getElementById('editDevicesMaxEdit').value = user.Devices_Max || 2;
+                document.getElementById('editNotasEdit').value = user.Notas_Admin || '';
+                document.getElementById('editLugaresTrabajo').value = user.Lugares_Trabajo || '';
+
+                if (user.Fecha_Vencimiento) {
+                    document.getElementById('editFechaVencimiento').value = user.Fecha_Vencimiento.split('T')[0];
+                }
+
+                const selectedEsp = user.Especialidad
+                    ? user.Especialidad.split(',').map(s => s.trim())
+                    : [];
+                initEditEspecialidadesGrid(selectedEsp);
+
+                document.getElementById('editUserModal').style.display = 'flex';
+            } catch (error) {
+                console.error('Error loading user for edit:', error);
+                showToast('Error al cargar usuario', 'error');
+            }
+        }
+
+        function initEditEspecialidadesGrid(selectedEsp = []) {
+            const grid = document.getElementById('editEspecialidadesGrid');
+            grid.innerHTML = ESPECIALIDADES.map(esp => {
+                const isChecked = selectedEsp.includes(esp) ? 'checked' : '';
+                return `
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="editesp_${esp.replace(/\s+/g, '_')}" value="${esp}" ${isChecked}>
+                        <label for="editesp_${esp.replace(/\s+/g, '_')}">${esp}</label>
+                    </div>
+                `;
+            }).join('');
+
+            grid.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.addEventListener('change', updateEditEstudiosGrid);
+            });
+
+            updateEditEstudiosGrid();
+        }
+
+        function updateEditEstudiosGrid() {
+            const selectedEspecialidades = Array.from(
+                document.querySelectorAll('#editEspecialidadesGrid input:checked')
+            ).map(cb => cb.value);
+
+            const estudiosGrid = document.getElementById('editEstudiosGrid');
+
+            if (selectedEspecialidades.length === 0) {
+                estudiosGrid.innerHTML = '<p style="color:var(--text-secondary);font-style:italic;">Seleccione al menos una especialidad</p>';
+                return;
+            }
+
+            const estudios = selectedEspecialidades.flatMap(esp =>
+                (ESTUDIOS_POR_ESPECIALIDAD[esp] || []).map(estudio => ({ esp, estudio }))
+            );
+
+            estudiosGrid.innerHTML = estudios.map(({ esp, estudio }) => `
+                <div class="checkbox-item">
+                    <input type="checkbox" id="editest_${estudio.replace(/\s+/g, '_')}" value="${estudio}" data-especialidad="${esp}">
+                    <label for="editest_${estudio.replace(/\s+/g, '_')}">${estudio} <small style="color:var(--text-secondary);">(${esp})</small></label>
+                </div>
+            `).join('');
+        }
+
+        function closeEditUserModal() {
+            const modal = document.getElementById('editUserModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function handleEditUserSubmit(e) {
+            e.preventDefault();
+
+            const userId = document.getElementById('editUserId2').value;
+
+            const selectedEspecialidades = Array.from(
+                document.querySelectorAll('#editEspecialidadesGrid input:checked')
+            ).map(cb => cb.value);
+
+            const selectedEstudios = Array.from(
+                document.querySelectorAll('#editEstudiosGrid input:checked')
+            ).map(cb => ({ nombre: cb.value, especialidad: cb.dataset.especialidad }));
+
+            const userData = {
+                Nombre: document.getElementById('editNombre').value,
+                Matricula: document.getElementById('editMatricula').value,
+                Email: document.getElementById('editEmail').value,
+                Telefono: document.getElementById('editTelefono').value,
+                Especialidad: selectedEspecialidades.join(', '),
+                Plan: document.getElementById('editPlanEdit').value,
+                Estado: document.getElementById('editEstado').value,
+                Fecha_Vencimiento: document.getElementById('editFechaVencimiento').value,
+                Devices_Max: parseInt(document.getElementById('editDevicesMaxEdit').value, 10) || 2,
+                Notas_Admin: document.getElementById('editNotasEdit').value,
+                Lugares_Trabajo: document.getElementById('editLugaresTrabajo').value,
+                Estudios_JSON: JSON.stringify(selectedEstudios)
+            };
+
+            const btnSave = document.getElementById('btnSaveEditUser');
+            btnSave.disabled = true;
+            btnSave.textContent = '⏳ Guardando...';
+
+            try {
+                const result = await updateUser(userId, userData);
+
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+
+                // Update local state
+                const idx = allUsers.findIndex(u => String(u.ID_Medico) === String(userId));
+                if (idx !== -1) {
+                    allUsers[idx] = { ...allUsers[idx], ...userData };
+                }
+
+                updateStats(allUsers);
+                applyFilters();
+                closeEditUserModal();
+                showToast('✅ Usuario actualizado correctamente', 'success');
+            } catch (error) {
+                console.error('Error updating user:', error);
+                showToast('Error: ' + error.message, 'error');
+            } finally {
+                btnSave.disabled = false;
+                btnSave.textContent = '💾 Guardar Cambios';
+            }
+        }
+
+        // ========== FIN EDITAR USUARIO ==========
+
+        // Abrir modal
+        document.getElementById('btnNewUser')?.addEventListener('click', () => {
+            document.getElementById('newUserModal').style.display = 'flex';
+            initEspecialidadesGrid();
+            setDefaultExpirationDate();
+        });
+
+        function closeNewUserModal() {
+            document.getElementById('newUserModal').style.display = 'none';
+            document.getElementById('newUserForm').reset();
+            clearImagePreviews();
+            document.getElementById('estudiosGrid').innerHTML = '<p style="color:var(--text-secondary);font-style:italic;">Seleccione al menos una especialidad</p>';
+        }
+
+        // Generar grid de especialidades
+        function initEspecialidadesGrid() {
+            const grid = document.getElementById('especialidadesGrid');
+            grid.innerHTML = ESPECIALIDADES.map(esp => `
+                <div class="checkbox-item">
+                    <input type="checkbox" id="esp_${esp.replace(/\s+/g, '_')}" value="${esp}">
+                    <label for="esp_${esp.replace(/\s+/g, '_')}">${esp}</label>
+                </div>
+            `).join('');
+
+            // Add change listeners
+            grid.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.addEventListener('change', updateEstudiosGrid);
+            });
+        }
+
+        // Actualizar estudios según especialidades seleccionadas
+        function updateEstudiosGrid() {
+            const selectedEspecialidades = Array.from(
+                document.querySelectorAll('#especialidadesGrid input:checked')
+            ).map(cb => cb.value);
+
+            const estudiosGrid = document.getElementById('estudiosGrid');
+
+            if (selectedEspecialidades.length === 0) {
+                estudiosGrid.innerHTML = '<p style="color:var(--text-secondary);font-style:italic;">Seleccione al menos una especialidad</p>';
+                return;
+            }
+
+            const estudios = selectedEspecialidades.flatMap(esp =>
+                (ESTUDIOS_POR_ESPECIALIDAD[esp] || []).map(estudio => ({ esp, estudio }))
+            );
+
+            estudiosGrid.innerHTML = estudios.map(({ esp, estudio }) => `
+                <div class="checkbox-item">
+                    <input type="checkbox" id="est_${estudio.replace(/\s+/g, '_')}" value="${estudio}" data-especialidad="${esp}">
+                    <label for="est_${estudio.replace(/\s+/g, '_')}">${estudio} <small style="color:var(--text-secondary);">(${esp})</small></label>
+                </div>
+            `).join('');
+        }
+
+        // Fecha de vencimiento por defecto
+        function setDefaultExpirationDate() {
+            const planSelect = document.getElementById('newPlan');
+            const fechaInput = document.getElementById('newFechaVencimiento');
+            const estadoSelect = document.getElementById('newEstado');
+
+            const updateExpiration = () => {
+                const plan = planSelect.value;
+                const today = new Date();
+                let expirationDate;
+
+                if (plan === 'trial') {
+                    expirationDate = new Date(today.getTime());
+                    expirationDate.setDate(expirationDate.getDate() + 7);
+                    estadoSelect.value = 'trial';
+                } else if (plan === 'pro') {
+                    expirationDate = new Date(today.getTime());
+                    expirationDate.setMonth(expirationDate.getMonth() + 1);
+                    estadoSelect.value = 'active';
+                } else if (plan === 'enterprise') {
+                    expirationDate = new Date(today.getTime());
+                    expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+                    estadoSelect.value = 'active';
+                }
+
+                const yyyy = expirationDate.getFullYear();
+                const mm = String(expirationDate.getMonth() + 1).padStart(2, '0');
+                const dd = String(expirationDate.getDate()).padStart(2, '0');
+                fechaInput.value = `${yyyy}-${mm}-${dd}`;
+            };
+
+            planSelect.addEventListener('change', updateExpiration);
+            updateExpiration(); // Set initial date
+        }
+
+        // Preview de imágenes
+        document.getElementById('newLogoMedico')?.addEventListener('change', (e) => previewImage(e, 'previewLogoMedico'));
+        document.getElementById('newFirma')?.addEventListener('change', (e) => previewImage(e, 'previewFirma'));
+        document.getElementById('newLogosInstituciones')?.addEventListener('change', (e) => previewMultipleImages(e, 'previewLogosInst'));
+
+        function previewImage(event, previewId) {
+            const file = event.target.files[0];
+            const preview = document.getElementById(previewId);
+            preview.innerHTML = '';
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    preview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function previewMultipleImages(event, previewId) {
+            const files = event.target.files;
+            const preview = document.getElementById(previewId);
+            preview.innerHTML = '';
+
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    preview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function clearImagePreviews() {
+            document.getElementById('previewLogoMedico').innerHTML = '';
+            document.getElementById('previewFirma').innerHTML = '';
+            document.getElementById('previewLogosInst').innerHTML = '';
+        }
+
+        // Submit del formulario
+        document.getElementById('newUserForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const selectedEspecialidades = Array.from(
+                document.querySelectorAll('#especialidadesGrid input:checked')
+            ).map(cb => cb.value);
+
+            const selectedEstudios = Array.from(
+                document.querySelectorAll('#estudiosGrid input:checked')
+            ).map(cb => ({ nombre: cb.value, especialidad: cb.dataset.especialidad }));
+
+            if (selectedEspecialidades.length === 0) {
+                showToast('Debe seleccionar al menos una especialidad', 'error');
+                return;
+            }
+
+            // Generar ID único
+            const newUserId = await generateUserId();
+
+            const userData = {
+                ID_Medico: newUserId,
+                Nombre: document.getElementById('newNombre').value,
+                Matricula: document.getElementById('newMatricula').value,
+                Email: document.getElementById('newEmail').value,
+                Telefono: document.getElementById('newTelefono').value || '',
+                Especialidad: selectedEspecialidades.join(', '),
+                Plan: document.getElementById('newPlan').value,
+                Estado: document.getElementById('newEstado').value,
+                Fecha_Registro: new Date().toISOString().split('T')[0],
+                Fecha_Vencimiento: document.getElementById('newFechaVencimiento').value,
+                Devices_Max: parseInt(document.getElementById('newDevicesMax').value),
+                Devices_Logged: '[]',
+                Usage_Count: 0,
+                Notas_Admin: document.getElementById('newNotas').value || '',
+                Lugares_Trabajo: document.getElementById('newLugaresTrabajo').value || '',
+                Estudios_JSON: JSON.stringify(selectedEstudios)
+            };
+
+            const btnSave = document.getElementById('btnSaveNewUser');
+            const originalText = btnSave.textContent;
+            btnSave.disabled = true;
+            btnSave.textContent = '⏳ Creando...';
+
+            try {
+                // Crear usuario en Google Sheets
+                const result = await API.createUser(userData);
+
+                if (!result.success) {
+                    throw new Error(result.error || 'Error al crear usuario');
+                }
+
+                showToast('✅ Usuario creado exitosamente', 'success');
+                closeNewUserModal();
+                loadDashboard(true); // Recargar tabla
+            } catch (error) {
+                console.error('Error creating user:', error);
+                showToast('Error al crear usuario: ' + error.message, 'error');
+            } finally {
+                btnSave.disabled = false;
+                btnSave.textContent = originalText;
+            }
+        });
+
+        // Generar ID único
+        async function generateUserId() {
+            try {
+                const users = await API.getUsers();
+                const existingIds = users.users.map(u => u.ID_Medico);
+                let newId;
+                let counter = 1;
+
+                do {
+                    newId = `DR${String(counter).padStart(3, '0')}`;
+                    counter++;
+                } while (existingIds.includes(newId));
+
+                return newId;
+            } catch (error) {
+                console.error('Error generating user ID:', error);
+                // Fallback: generar ID basado en timestamp + random
+                const rand = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+                return `DR${Date.now().toString().slice(-4)}${rand}`;
+            }
+        }
+
+        // Agregar método al API object
+        if (typeof API !== 'undefined') {
+            API.createUser = async function(userData) {
+                const updatesJson = encodeURIComponent(JSON.stringify(userData));
+                return await this.call(`?action=admin_create_user&updates=${updatesJson}`);
+            };
+        }
+
+        /* ── Form Validation ─────────────────────────────────────────────────── */
+        function validateUserForm(formData) {
+            const errors = [];
+            if (!formData.nombre || formData.nombre.trim().length < 2) {
+                errors.push({ field: 'nombre', message: 'El nombre debe tener al menos 2 caracteres' });
+            }
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!formData.email || !emailRegex.test(formData.email)) {
+                errors.push({ field: 'email', message: 'Email inválido' });
+            }
+            if (!formData.tipo || !['admin', 'doctor'].includes(formData.tipo)) {
+                errors.push({ field: 'tipo', message: 'Debe seleccionar un tipo de usuario válido' });
+            }
+            return errors;
+        }
+
+        function showFormErrors(errors) {
+            document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            document.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
+            errors.forEach(error => {
+                const field = document.getElementById(error.field);
+                if (field) {
+                    field.classList.add('is-invalid');
+                    const feedback = document.createElement('div');
+                    feedback.className = 'invalid-feedback';
+                    feedback.textContent = error.message;
+                    field.parentNode.appendChild(feedback);
+                }
+            });
+            if (errors.length > 0) {
+                const firstErrorField = document.getElementById(errors[0].field);
+                if (firstErrorField) firstErrorField.focus();
+            }
+        }
+
+        function setButtonLoading(button, loading) {
+            if (loading) {
+                button.disabled = true;
+                button.classList.add('btn-loading');
+                button.dataset.originalText = button.textContent;
+            } else {
+                button.disabled = false;
+                button.classList.remove('btn-loading');
+                if (button.dataset.originalText) {
+                    button.textContent = button.dataset.originalText;
+                }
+            }
+        }
+
+        function showTableSkeleton() {
+            const tbody = document.getElementById('tableBody');
+            if (!tbody) return;
+            tbody.innerHTML = Array(5).fill(null).map(() => `
+                <tr class="skeleton-row">
+                    <td><div class="skeleton-text" style="width:60%"></div></td>
+                    <td><div class="skeleton-text" style="width:80%"></div></td>
+                    <td><div class="skeleton-text" style="width:40%"></div></td>
+                    <td><div class="skeleton-text" style="width:50%"></div></td>
+                    <td><div class="skeleton-text" style="width:70%"></div></td>
+                    <td><div class="skeleton-text" style="width:30%"></div></td>
+                </tr>`).join('');
+        }
+
+        /* ── Dark Mode button ────────────────────────────────────────── */
+        document.getElementById('btnDarkMode')?.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+        });
+    </script>
+
+    <!-- Modal Editar Usuario -->
+    <div class="modal-overlay" id="editUserModal" style="display:none;">
+        <div class="modal" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h2>✏️ Editar Usuario: <span id="editUserTitle"></span></h2>
+                <button class="modal-close" id="btnCloseEditUser">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editUserForm">
+                    <input type="hidden" id="editUserId2">
+
+                    <div class="form-section">
+                        <h3>👤 Datos Personales</h3>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Nombre y Apellido *</label>
+                                <input type="text" id="editNombre" required>
+                            </div>
+                            <div class="field-group">
+                                <label>Matrícula *</label>
+                                <input type="text" id="editMatricula" required>
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Email *</label>
+                                <input type="email" id="editEmail" required>
+                            </div>
+                            <div class="field-group">
+                                <label>Teléfono</label>
+                                <input type="tel" id="editTelefono">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>🩺 Especialidades</h3>
+                        <div class="checkbox-grid" id="editEspecialidadesGrid"></div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>📋 Estudios que Realiza</h3>
+                        <div class="checkbox-grid" id="editEstudiosGrid">
+                            <p style="color:var(--text-secondary);font-style:italic;">Seleccione al menos una especialidad</p>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>🏥 Lugares de Trabajo</h3>
+                        <textarea id="editLugaresTrabajo" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>⚙️ Configuración de Cuenta</h3>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Plan *</label>
+                                <select id="editPlanEdit" required>
+                                    <option value="trial">Trial</option>
+                                    <option value="pro">Pro</option>
+                                    <option value="enterprise">Enterprise</option>
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label>Dispositivos Máximos *</label>
+                                <input type="number" id="editDevicesMaxEdit" min="1" max="999" required>
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Fecha de Vencimiento *</label>
+                                <input type="date" id="editFechaVencimiento" required>
+                            </div>
+                            <div class="field-group">
+                                <label>Estado *</label>
+                                <select id="editEstado" required>
+                                    <option value="trial">Trial</option>
+                                    <option value="active">Activo</option>
+                                    <option value="expired">Expirado</option>
+                                    <option value="banned">Bloqueado</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>📝 Notas Administrativas</h3>
+                        <textarea id="editNotasEdit" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="btnCancelEditUser">Cancelar</button>
+                <button type="submit" form="editUserForm" class="btn-primary" id="btnSaveEditUser">
+                    💾 Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nuevo Usuario -->
+    <div class="modal-overlay" id="newUserModal" style="display:none;">
+        <div class="modal" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h2>➕ Crear Nuevo Usuario</h2>
+                <button class="modal-close" id="btnCloseNewUser">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="newUserForm">
+
+                    <!-- Sección 1: Datos Personales -->
+                    <div class="form-section">
+                        <h3>👤 Datos Personales</h3>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Nombre y Apellido *</label>
+                                <input type="text" id="newNombre" required placeholder="Dr. Juan Pérez">
+                            </div>
+                            <div class="field-group">
+                                <label>Matrícula *</label>
+                                <input type="text" id="newMatricula" required placeholder="MN 12345">
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Email *</label>
+                                <input type="email" id="newEmail" required placeholder="doctor@example.com">
+                            </div>
+                            <div class="field-group">
+                                <label>Teléfono</label>
+                                <input type="tel" id="newTelefono" placeholder="+54 9 11 1234-5678">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección 2: Especialidades -->
+                    <div class="form-section">
+                        <h3>🩺 Especialidades</h3>
+                        <div class="checkbox-grid" id="especialidadesGrid">
+                            <!-- Se genera dinámicamente -->
+                        </div>
+                    </div>
+
+                    <!-- Sección 3: Estudios que Realiza -->
+                    <div class="form-section">
+                        <h3>📋 Estudios que Realiza</h3>
+                        <div class="checkbox-grid" id="estudiosGrid">
+                            <p style="color:var(--text-secondary);font-style:italic;">Seleccione al menos una especialidad</p>
+                        </div>
+                    </div>
+
+                    <!-- Sección 4: Lugares de Trabajo -->
+                    <div class="form-section">
+                        <h3>🏥 Lugares de Trabajo</h3>
+                        <textarea id="newLugaresTrabajo" rows="3" placeholder="Clínica San Martín&#10;Hospital Central&#10;Consultorio Privado - Av. Corrientes 1234"></textarea>
+                        <small>Separe cada lugar con Enter (un lugar por línea)</small>
+                    </div>
+
+                    <!-- Sección 5: Plan y Configuración -->
+                    <div class="form-section">
+                        <h3>⚙️ Configuración de Cuenta</h3>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Plan *</label>
+                                <select id="newPlan" required>
+                                    <option value="trial">Trial (7 días gratis)</option>
+                                    <option value="pro">Pro (Pago mensual)</option>
+                                    <option value="enterprise">Enterprise (Anual)</option>
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label>Dispositivos Máximos *</label>
+                                <input type="number" id="newDevicesMax" value="2" min="1" max="999" required>
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Fecha de Vencimiento *</label>
+                                <input type="date" id="newFechaVencimiento" required>
+                            </div>
+                            <div class="field-group">
+                                <label>Estado *</label>
+                                <select id="newEstado" required>
+                                    <option value="trial">Trial</option>
+                                    <option value="active">Activo</option>
+                                    <option value="expired">Expirado</option>
+                                    <option value="banned">Bloqueado</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección 6: Upload de Imágenes -->
+                    <div class="form-section">
+                        <h3>🖼️ Imágenes (Opcional)</h3>
+
+                        <div class="field-group">
+                            <label>Logo del Médico</label>
+                            <input type="file" id="newLogoMedico" accept="image/*">
+                            <div class="image-preview" id="previewLogoMedico"></div>
+                        </div>
+
+                        <div class="field-group">
+                            <label>Firma Escaneada</label>
+                            <input type="file" id="newFirma" accept="image/*">
+                            <div class="image-preview" id="previewFirma"></div>
+                        </div>
+
+                        <div class="field-group">
+                            <label>Logos de Instituciones (múltiples)</label>
+                            <input type="file" id="newLogosInstituciones" accept="image/*" multiple>
+                            <div class="image-preview" id="previewLogosInst"></div>
+                        </div>
+                    </div>
+
+                    <!-- Sección 7: Notas Admin -->
+                    <div class="form-section">
+                        <h3>📝 Notas Administrativas</h3>
+                        <textarea id="newNotas" rows="3" placeholder="Notas internas del admin..."></textarea>
+                    </div>
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="btnCancelNewUser">Cancelar</button>
+                <button type="submit" form="newUserForm" class="btn-primary" id="btnSaveNewUser">
+                    💾 Crear Usuario
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
