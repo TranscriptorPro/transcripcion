@@ -80,6 +80,11 @@ window.initTheme = function () {
 
 // ============ API STATUS MANAGEMENT ============
 window.updateApiStatus = function (apiKey) {
+    // If no argument was passed, read from window or localStorage instead of assuming no key
+    if (apiKey === undefined) {
+        apiKey = window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '';
+    }
+
     const apiStatus = document.getElementById('apiStatus');
     const apiKeyInput = document.getElementById('apiKeyInput');
     if (!apiStatus) return;
