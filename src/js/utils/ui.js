@@ -204,6 +204,19 @@ window.initApiManagement = function () {
                 apiKeyInput.type = 'password';
             }
         });
+
+            // Guardar API key al perder el foco si se ingresó una nueva
+            apiKeyInput.addEventListener('change', () => {
+                const newKey = apiKeyInput.value.trim();
+                if (newKey && newKey.startsWith('gsk_')) {
+                    localStorage.setItem('groq_api_key', newKey);
+                    window.GROQ_API_KEY = newKey;
+                    updateApiStatus(newKey);
+                    showToast('API Key guardada ✓', 'success');
+                } else if (newKey) {
+                    showToast('❌ API Key inválida (debe empezar con gsk_)', 'error');
+                }
+            });
     }
 }
 
