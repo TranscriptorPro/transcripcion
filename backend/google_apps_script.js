@@ -5,13 +5,20 @@
  * 2. Ir a Extensiones -> Apps Script.
  * 3. Pegar este código y cambiar el nombre del proyecto.
  * 4. Implementar como "Aplicación Web" (Cualquier persona, incluso anónima).
+ * 5. IMPORTANT: Set ADMIN_KEY in Script Properties: File > Project Properties > Script Properties > Add: ADMIN_KEY = <your-secret>
  */
 
 const SHEET_NAME = 'Usuarios_Transcriptor';
 
-// TODO: Move admin key to Apps Script Properties for better security:
-// PropertiesService.getScriptProperties().getProperty('ADMIN_KEY')
-const ADMIN_KEY = 'ADMIN_SECRET_2026';
+// SECURITY: Read from Apps Script Script Properties (not hardcoded).
+// In Apps Script editor: File > Project Properties > Script Properties > Add: ADMIN_KEY = <your-secret>
+const ADMIN_KEY = (function() {
+  try {
+    return PropertiesService.getScriptProperties().getProperty('ADMIN_KEY') || 'CHANGE_ME_IN_PROPERTIES';
+  } catch(e) {
+    return 'CHANGE_ME_IN_PROPERTIES';
+  }
+})();
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -52,7 +59,6 @@ function doGet(e) {
   // NEW: admin endpoint - list all users
   if (action === 'admin_list_users') {
     const adminKey = e.parameter.adminKey;
-    // TODO: Replace hardcoded key with PropertiesService lookup for production
     if (adminKey !== ADMIN_KEY) {
       return createResponse({ error: 'Unauthorized' });
     }
@@ -100,7 +106,6 @@ function doPost(e) {
   // NEW: admin endpoint - update a user's fields (e.g. Estado, Plan)
   if (action === 'admin_update_user') {
     const adminKey = payload.adminKey;
-    // TODO: Replace hardcoded key with PropertiesService lookup for production
     if (adminKey !== ADMIN_KEY) {
       return createResponse({ error: 'Unauthorized' });
     }

@@ -295,3 +295,6 @@ function writeString(view, offset, string) {
         view.setUint8(offset + i, string.charCodeAt(i));
     }
 }
+
+// Expose audioBufferToWav globally so testGroqConnection() in transcriptor.js can use it
+window.audioBufferToWav = audioBufferToWav;
