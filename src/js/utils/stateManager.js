@@ -3,24 +3,68 @@
 window.updateButtonsVisibility = function (state) {
     window.appState = state;
 
-    const structureBtn   = document.getElementById('structureBtn');
-    const downloadPdfBtn = document.getElementById('downloadPdfBtn');
-    const btnConfigPdfMain   = document.getElementById('btnConfigPdfMain');
-    const btnPreviewPdfMain  = document.getElementById('btnPreviewPdfMain');
-    const copyBtn        = document.getElementById('copyBtn');
-    const downloadBtn    = document.getElementById('downloadBtn');
-    const btnStructureAI = document.getElementById('btnStructureAI');
+    const structureBtn           = document.getElementById('structureBtn');
+    const downloadPdfBtn         = document.getElementById('downloadPdfBtn');
+    const btnConfigPdfMain       = document.getElementById('btnConfigPdfMain');
+    const btnPreviewPdfMain      = document.getElementById('btnPreviewPdfMain');
+    const copyBtn                = document.getElementById('copyBtn');
+    const downloadBtn            = document.getElementById('downloadBtn');
+    const downloadBtnContainer   = document.getElementById('downloadBtnContainer');
+    const btnStructureAI         = document.getElementById('btnStructureAI');
+    const normalTemplateSelect   = document.getElementById('normalTemplateSelect');
+    const btnApplyTemplate       = document.getElementById('btnApplyTemplate');
 
-    const isTranscribed = ['TRANSCRIBED', 'STRUCTURED', 'PREVIEWED'].includes(state);
-    const isStructured  = ['STRUCTURED', 'PREVIEWED'].includes(state);
+    const isTranscribed  = ['TRANSCRIBED', 'STRUCTURED', 'PREVIEWED'].includes(state);
+    const isStructured   = ['STRUCTURED', 'PREVIEWED'].includes(state);
+    const isProMode      = window.currentMode === 'pro';
+    const isNormalMode   = isTranscribed && !isProMode;
 
-    if (structureBtn)      structureBtn.disabled      = !isTranscribed;
-    if (downloadPdfBtn)    downloadPdfBtn.disabled    = !isStructured;
-    if (btnConfigPdfMain)  btnConfigPdfMain.disabled  = !isTranscribed;
-    if (btnPreviewPdfMain) btnPreviewPdfMain.disabled = !isTranscribed;
-    if (copyBtn)           copyBtn.disabled           = !isTranscribed;
-    if (downloadBtn)       downloadBtn.disabled       = !isTranscribed;
-    if (btnStructureAI)    btnStructureAI.disabled    = !isTranscribed;
+    // btnStructureAI: visible in pro mode after transcription
+    if (btnStructureAI) {
+        btnStructureAI.style.display = (isTranscribed && isProMode) ? 'inline-flex' : 'none';
+        btnStructureAI.disabled = !isTranscribed;
+    }
+
+    // Normal mode template controls
+    if (normalTemplateSelect) {
+        normalTemplateSelect.style.display = isNormalMode ? 'inline-block' : 'none';
+    }
+    if (btnApplyTemplate) {
+        btnApplyTemplate.style.display = isNormalMode ? 'inline-flex' : 'none';
+    }
+
+    // PDF buttons: visible after transcription
+    if (btnConfigPdfMain) {
+        btnConfigPdfMain.style.display = isTranscribed ? 'inline-flex' : 'none';
+        btnConfigPdfMain.disabled = !isTranscribed;
+    }
+    if (btnPreviewPdfMain) {
+        btnPreviewPdfMain.style.display = isTranscribed ? 'inline-flex' : 'none';
+        btnPreviewPdfMain.disabled = !isTranscribed;
+    }
+
+    // Copy & Download: visible after transcription
+    if (copyBtn) {
+        copyBtn.style.display = isTranscribed ? 'inline-flex' : 'none';
+        copyBtn.disabled = !isTranscribed;
+    }
+    if (downloadBtnContainer) {
+        downloadBtnContainer.style.display = isTranscribed ? 'block' : 'none';
+    }
+    if (downloadBtn) {
+        downloadBtn.disabled = !isTranscribed;
+    }
+
+    // downloadPdfBtn (separate button, if present)
+    if (downloadPdfBtn) {
+        downloadPdfBtn.style.display = isStructured ? 'inline-flex' : 'none';
+        downloadPdfBtn.disabled = !isStructured;
+    }
+
+    // structureBtn (sidebar/wizard button, if present)
+    if (structureBtn) {
+        structureBtn.disabled = !isTranscribed;
+    }
 };
 
 const proModeToggle = document.getElementById('proModeToggle');
