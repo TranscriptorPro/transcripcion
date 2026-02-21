@@ -1,5 +1,28 @@
 // ============ MODE SELECTOR (PRO/NORMAL) & STATE MANAGER ============
 
+window.updateButtonsVisibility = function (state) {
+    window.appState = state;
+
+    const structureBtn   = document.getElementById('structureBtn');
+    const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+    const btnConfigPdfMain   = document.getElementById('btnConfigPdfMain');
+    const btnPreviewPdfMain  = document.getElementById('btnPreviewPdfMain');
+    const copyBtn        = document.getElementById('copyBtn');
+    const downloadBtn    = document.getElementById('downloadBtn');
+    const btnStructureAI = document.getElementById('btnStructureAI');
+
+    const isTranscribed = ['TRANSCRIBED', 'STRUCTURED', 'PREVIEWED'].includes(state);
+    const isStructured  = ['STRUCTURED', 'PREVIEWED'].includes(state);
+
+    if (structureBtn)      structureBtn.disabled      = !isTranscribed;
+    if (downloadPdfBtn)    downloadPdfBtn.disabled    = !isStructured;
+    if (btnConfigPdfMain)  btnConfigPdfMain.disabled  = !isTranscribed;
+    if (btnPreviewPdfMain) btnPreviewPdfMain.disabled = !isTranscribed;
+    if (copyBtn)           copyBtn.disabled           = !isTranscribed;
+    if (downloadBtn)       downloadBtn.disabled       = !isTranscribed;
+    if (btnStructureAI)    btnStructureAI.disabled    = !isTranscribed;
+};
+
 const proModeToggle = document.getElementById('proModeToggle');
 const proToggleContainer = document.getElementById('proToggleContainer');
 const resetBtn = document.getElementById('resetBtn');

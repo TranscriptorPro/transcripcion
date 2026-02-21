@@ -2,24 +2,24 @@
 
 if (transcribeBtn) {
     transcribeBtn.addEventListener('click', async () => {
-        const pending = uploadedFiles.filter(item => item.status === 'pending');
-        if (pending.length === 0 || isProcessing) return;
+        const pending = window.uploadedFiles.filter(item => item.status === 'pending');
+        if (pending.length === 0 || window.isProcessing) return;
 
         // Enhanced API Key validation
-        if (!GROQ_API_KEY) {
+        if (!window.GROQ_API_KEY) {
             showToast('⚠️ Configura tu API Key de Groq primero', 'error');
             if (apiKeyInput) apiKeyInput.focus();
             return;
         }
 
         // Validate API key format
-        if (!GROQ_API_KEY.startsWith('gsk_')) {
+        if (!window.GROQ_API_KEY.startsWith('gsk_')) {
             showToast('❌ API Key inválida (debe empezar con gsk_)', 'error');
             if (apiKeyInput) apiKeyInput.focus();
             return;
         }
 
-        isProcessing = true;
+        window.isProcessing = true;
         transcribeBtn.disabled = true;
         processingStatus.classList.add('active');
         let done = 0;
@@ -27,8 +27,8 @@ if (transcribeBtn) {
         const shouldJoin = chkJoinAudios ? chkJoinAudios.checked : false;
 
         try {
-            for (let i = 0; i < uploadedFiles.length; i++) {
-                const item = uploadedFiles[i];
+            for (let i = 0; i < window.uploadedFiles.length; i++) {
+                const item = window.uploadedFiles[i];
                 if (item.status !== 'pending') continue;
 
                 item.status = 'processing';
@@ -51,8 +51,8 @@ if (transcribeBtn) {
                     if (shouldJoin) {
                         joinedText += (joinedText ? '\n\n' : '') + text;
                     } else {
-                        transcriptions.push({ fileName: item.file.name, text: text || 'Sin audio detectado.' });
-                        activeTabIndex = transcriptions.length - 1;
+                        window.transcriptions.push({ fileName: item.file.name, text: text || 'Sin audio detectado.' });
+                        window.activeTabIndex = window.transcriptions.length - 1;
                     }
 
                     item.status = 'done';
@@ -69,28 +69,28 @@ if (transcribeBtn) {
 
             if (shouldJoin && joinedText) {
                 const combinedName = `Informe Combinado (${done} audios)`;
-                transcriptions.push({ fileName: combinedName, text: joinedText });
-                activeTabIndex = transcriptions.length - 1;
+                window.transcriptions.push({ fileName: combinedName, text: joinedText });
+                window.activeTabIndex = window.transcriptions.length - 1;
                 if (editor) editor.innerHTML = joinedText;
-            } else if (!shouldJoin && transcriptions.length > 0) {
-                if (editor) editor.innerHTML = transcriptions[activeTabIndex].text;
+            } else if (!shouldJoin && window.transcriptions.length > 0) {
+                if (editor) editor.innerHTML = window.transcriptions[window.activeTabIndex].text;
             }
 
             if (typeof createTabs === 'function') createTabs();
             if (typeof updateWordCount === 'function') updateWordCount();
 
             // Update state to TRANSCRIBED and populate templates for Normal mode
-            updateButtonsVisibility('TRANSCRIBED');
-            if (currentMode === 'normal' && typeof populateLimitedTemplates === 'function') {
+            if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
+            if (window.currentMode === 'normal' && typeof populateLimitedTemplates === 'function') {
                 populateLimitedTemplates();
             }
 
             // Auto-detect template in Pro mode
-            if (currentMode === 'pro' && editor && editor.innerText.trim().length > 50) {
+            if (window.currentMode === 'pro' && editor && editor.innerText.trim().length > 50) {
                 if (typeof detectStudyType === 'function') {
                     const detection = detectStudyType(editor.innerText);
                     if (detection.confidence >= 2) {
-                        selectedTemplate = detection.type;
+                        window.selectedTemplate = detection.type;
                         const toolbarDropdown = document.getElementById('templateDropdownMain');
                         if (toolbarDropdown) toolbarDropdown.value = detection.type;
                         if (typeof templateSelect !== 'undefined' && templateSelect) templateSelect.value = detection.type;
@@ -117,11 +117,14 @@ if (transcribeBtn) {
             }
 
         } catch (generalError) {
-            console.error(generalError);
-            showToast('Error general en el proceso', 'error');
+            console.error('Error general:', generalError);
+            showToast('Error general en el proceso: ' + (generalError?.message || 'Error desconocido'), 'error');
+            if (window.transcriptions && window.transcriptions.length > 0) {
+                if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
+            }
         } finally {
-            isProcessing = false;
-            transcribeBtn.disabled = uploadedFiles.every(f => f.status === 'done');
+            window.isProcessing = false;
+            transcribeBtn.disabled = window.uploadedFiles.every(f => f.status === 'done');
 
             // ALWAYS hide processing status after completion
             setTimeout(() => {
@@ -149,7 +152,7 @@ async function transcribeWithGroq(file) {
     try {
         const res = await fetch(GROQ_API_URL, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${GROQ_API_KEY}` },
+            headers: { 'Authorization': `Bearer ${window.GROQ_API_KEY}` },
             body: form
         });
 
@@ -216,7 +219,7 @@ function validateAudioFile(file) {
 
 // Test Groq API connection
 async function testGroqConnection() {
-    if (!GROQ_API_KEY) {
+    if (!window.GROQ_API_KEY) {
         return false;
     }
 
@@ -254,7 +257,7 @@ async function testGroqConnection() {
 
         const res = await fetch(GROQ_API_URL, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${GROQ_API_KEY}` },
+            headers: { 'Authorization': `Bearer ${window.GROQ_API_KEY}` },
             body: form
         });
 
