@@ -157,6 +157,17 @@ window.initApiManagement = function () {
     const apiKeyInput   = document.getElementById('apiKeyInput');
     const apiTestResult = document.getElementById('apiTestResult');
 
+    // Restaurar API key guardada al cargar la página
+    const savedKey = localStorage.getItem('groq_api_key');
+    if (savedKey) {
+        window.GROQ_API_KEY = savedKey;
+        if (apiKeyInput) {
+            apiKeyInput.value = '••••••••••••••••';
+            apiKeyInput.type = 'password';
+            apiKeyInput.dataset.hasKey = 'true';
+        }
+    }
+
     // Guardar API Key
     if (saveApiKeyBtn && apiKeyInput) {
         saveApiKeyBtn.addEventListener('click', () => {
