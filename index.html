@@ -722,22 +722,20 @@
                         <!-- Tabs will be dynamically populated -->
                     </div>
                     <div class="editor-actions" style="display: flex; align-items: center; gap: 0.5rem;">
-                        <!-- Template Selector - Only visible in Pro mode -->
-                        <select id="templateDropdownMain" class="toolbar-select"
-                            style="display: none; min-width: 180px;" title="Seleccionar plantilla médica">
-                            <option value="generico">📋 Plantilla General</option>
-                        </select>
-                        <div id="templateDivider"
-                            style="display: none; width: 1px; height: 20px; background: var(--border); margin: 0 0.25rem;">
-                        </div>
                         <!-- Structure AI Button (Pro mode) - shown after transcription -->
-                        <button class="btn btn-accent" id="btnStructureAI" style="display:none;"
-                            title="Estructurar con IA">🤖 Estructurar con IA</button>
+                        <button class="toolbar-btn" id="btnStructureAI" style="display:none;"
+                            title="Estructurar con IA">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Estructurar con IA">
+                                <path d="M12 2l2.09 6.41H21l-6.64 4.82 2.53 7.77L12 16.77l-4.89 4.23 2.53-7.77L3 8.41h6.91z"/>
+                            </svg>
+                        </button>
                         <!-- Apply Template (Normal mode) - shown after transcription -->
-                        <select id="normalTemplateSelect" class="toolbar-select" style="display:none; min-width:150px;"
-                            title="Seleccionar plantilla"></select>
-                        <button class="btn btn-secondary" id="btnApplyTemplate" style="display:none;"
-                            title="Aplicar Plantilla">📋 Aplicar Plantilla</button>
+                        <button class="toolbar-btn" id="btnApplyTemplate" style="display:none;"
+                            title="Aplicar Plantilla">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Aplicar Plantilla">
+                                <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="7" y1="11" x2="17" y2="11"/><line x1="7" y1="15" x2="13" y2="15"/>
+                            </svg>
+                        </button>
                         <!-- PDF Controls - managed by state machine -->
                         <button class="btn btn-secondary" id="btnConfigPdfMain" style="display:none;"
                             title="Configurar PDF">
@@ -747,21 +745,6 @@
                             title="Previsualizar PDF">
                             👁️ Previsualizar
                         </button>
-                        <div style="width: 1px; height: 20px; background: var(--border); margin: 0 0.5rem;"></div>
-
-                        <!-- Controles existentes -->
-                        <select id="fontSizeSelect" class="toolbar-select" style="width: 100px;">
-                            <option value="14px">Pequeña</option>
-                            <option value="16px" selected>Normal</option>
-                            <option value="18px">Grande</option>
-                            <option value="20px">Extra</option>
-                        </select>
-                        <button class="toolbar-btn" id="undoBtn" title="Deshacer (Ctrl+Z)">↶</button>
-                        <button class="toolbar-btn" id="redoBtn" title="Rehacer (Ctrl+Y)">↷</button>
-                        <div style="width: 1px; height: 20px; background: var(--border); margin: 0 0.5rem;"></div>
-                        <button class="toolbar-btn" id="toggleFindReplace"
-                            title="Buscar y Reemplazar (Ctrl+F)">🔍</button>
-                        <div style="width: 1px; height: 20px; background: var(--border); margin: 0 0.5rem;"></div>
                         <button class="toolbar-btn" id="copyBtn" style="display:none;" title="Copiar todo">📋</button>
                         <div class="dropdown-container" id="downloadBtnContainer" style="display:none;">
                             <button class="btn btn-accent" id="downloadBtn">
@@ -777,6 +760,20 @@
                                 <button onclick="downloadHTML()">🌐 HTML</button>
                             </div>
                         </div>
+                        <div style="width: 1px; height: 20px; background: var(--border); margin: 0 0.5rem;"></div>
+
+                        <!-- Controles existentes -->
+                        <select id="fontSizeSelect" class="toolbar-select" style="width: 100px;">
+                            <option value="14px">Pequeña</option>
+                            <option value="16px" selected>Normal</option>
+                            <option value="18px">Grande</option>
+                            <option value="20px">Extra</option>
+                        </select>
+                        <button class="toolbar-btn" id="undoBtn" title="Deshacer (Ctrl+Z)">↶</button>
+                        <button class="toolbar-btn" id="redoBtn" title="Rehacer (Ctrl+Y)">↷</button>
+                        <div style="width: 1px; height: 20px; background: var(--border); margin: 0 0.5rem;"></div>
+                        <button class="toolbar-btn" id="toggleFindReplace"
+                            title="Buscar y Reemplazar (Ctrl+F)">🔍</button>
                     </div>
                 </div>
 
