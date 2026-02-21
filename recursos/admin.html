@@ -1535,25 +1535,6 @@
                     </div>
                 </div>
                 <div class="header-actions">
-                    <!-- Toggle Normal/Pro -->
-                    <div class="mode-toggle">
-                        <span class="mode-label">Normal</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="proToggle" checked aria-label="Cambiar entre modo Normal y Pro+">
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <span class="mode-label mode-label-active">Pro +</span>
-                    </div>
-
-                    <!-- Botón ayuda -->
-                    <button class="btn-icon" id="btnHelp" aria-label="Ayuda">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                            <line x1="12" y1="17" x2="12.01" y2="17"/>
-                        </svg>
-                    </button>
-
                     <!-- Botón dark mode -->
                     <button class="btn-icon" id="btnDarkMode" aria-label="Modo oscuro">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -3241,11 +3222,7 @@
                 </tr>`).join('');
         }
 
-        /* ── Help & Dark Mode buttons ────────────────────────────────────────── */
-        document.getElementById('btnHelp')?.addEventListener('click', () => {
-            showToast('Ayuda: Gestione usuarios desde esta tabla. Use los botones de acción para editar, activar o bloquear.', 'info');
-        });
-
+        /* ── Dark Mode button ────────────────────────────────────────── */
         document.getElementById('btnDarkMode')?.addEventListener('click', () => {
             document.body.classList.toggle('dark-mode');
         });
