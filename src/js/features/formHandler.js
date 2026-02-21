@@ -58,6 +58,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const ageEl = document.getElementById('pdfPatientAge');
         if (ageEl) ageEl.value = age;
     });
+
+    // --- NUEVO: Lógica para la API Key de Groq ---
+    const groqInput = document.getElementById('inputGroqKey');
+    const groqBtn = document.getElementById('btnSaveGroqKey');
+
+    // Cargar clave si ya existe al iniciar
+    if (groqInput) {
+        groqInput.value = localStorage.getItem('groq_api_key') || '';
+    }
+
+    // Guardar clave al hacer clic
+    groqBtn?.addEventListener('click', () => {
+        const key = groqInput.value.trim();
+        if (key) {
+            localStorage.setItem('groq_api_key', key);
+            if (typeof showToast === 'function') showToast('🔑 API Key de Groq guardada', 'success');
+        } else {
+            if (typeof showToast === 'function') showToast('⚠️ Ingresa una clave válida', 'error');
+        }
+    });
 });
 
 // ---- Extract patient data from transcription ----

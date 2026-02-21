@@ -11,3 +11,12 @@ const CLIENT_CONFIG = {
 };
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
+
+/**
+ * FUNCIÓN DE ACCESO GLOBAL:
+ * Esta función permite que el transcriptor obtenga la llave 
+ * guardada en el navegador de forma segura.
+ */
+window.getGroqApiKey = function() {
+    return localStorage.getItem('groq_api_key') || '';
+};
