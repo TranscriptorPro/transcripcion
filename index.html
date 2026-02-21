@@ -2842,6 +2842,8 @@
                 if (btnConfigPdf2) btnConfigPdf2.style.display = 'none';
                 if (copyBtnEl) copyBtnEl.style.display = 'none';
                 if (downloadContainer) downloadContainer.style.display = 'none';
+                if (btnStructureAI) btnStructureAI.style.display = 'none';
+                if (templateSelectorContainer) templateSelectorContainer.style.display = 'none';
 
                 switch (state) {
                     case 'IDLE':
@@ -2855,6 +2857,7 @@
                     case 'TRANSCRIBED':
                         if (editorToolbarEl) editorToolbarEl.style.display = 'flex';
                         if (currentMode === 'pro') {
+                            if (templateSelectorContainer) templateSelectorContainer.style.display = 'block';
                             if (btnStructureAI) { btnStructureAI.style.display = 'inline-flex'; btnStructureAI.innerHTML = '🤖 Estructurar con IA'; }
                         } else {
                             if (btnApplyTemplate) { btnApplyTemplate.style.display = 'inline-flex'; btnApplyTemplate.innerHTML = '📋 Aplicar Plantilla'; }
@@ -2865,6 +2868,7 @@
                     case 'STRUCTURED':
                         if (editorToolbarEl) editorToolbarEl.style.display = 'flex';
                         if (currentMode === 'pro') {
+                            if (templateSelectorContainer) templateSelectorContainer.style.display = 'block';
                             if (btnStructureAI) { btnStructureAI.style.display = 'inline-flex'; btnStructureAI.innerHTML = '🔄 Re-estructurar con IA'; }
                         } else {
                             if (btnApplyTemplate) { btnApplyTemplate.style.display = 'inline-flex'; btnApplyTemplate.innerHTML = '🔄 Cambiar Plantilla'; }
@@ -2877,6 +2881,7 @@
                     case 'PREVIEWED':
                         if (editorToolbarEl) editorToolbarEl.style.display = 'flex';
                         if (currentMode === 'pro') {
+                            if (templateSelectorContainer) templateSelectorContainer.style.display = 'block';
                             if (btnStructureAI) { btnStructureAI.style.display = 'inline-flex'; }
                         } else {
                             if (btnApplyTemplate) { btnApplyTemplate.style.display = 'inline-flex'; }
@@ -5068,11 +5073,11 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
                     if (templateDivider) templateDivider.style.display = 'none';
                     if (notify) showToast('Modo Normal activado', 'info');
                 } else {
-                    if (templateSelectorContainer) templateSelectorContainer.style.display = 'block';
                     if (templateDropdown) templateDropdown.style.display = 'inline-block';
                     if (templateDivider) templateDivider.style.display = 'block';
                     if (notify) showToast('Modo Pro ✨ activado', 'success');
                 }
+                updateButtonsVisibility(appState);
                 updateUIByMode();
             }
 
