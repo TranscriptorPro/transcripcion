@@ -86,6 +86,9 @@ window.initBusinessSuite = function () {
     localStorage.setItem('prof_data', JSON.stringify(adminProfData));
     localStorage.setItem('onboarding_date', new Date().toISOString());
 
+    // Inicializar GROQ_API_KEY global desde localStorage
+    window.GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
+
     // Initialize UI modules
     if (typeof initTheme === 'function') initTheme();
     if (typeof updateApiStatus === 'function') updateApiStatus(localStorage.getItem('groq_api_key'));
