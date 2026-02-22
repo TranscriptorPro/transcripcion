@@ -977,10 +977,13 @@
             margin-left: 1.5rem;
         }
         #editor .report-p {
-            margin: 0.3rem 0;
+            margin: 0.05rem 0;
             font-size: 0.9rem;
             line-height: 1.65;
         }
+        /* Espacio antes de cada sección (h2) para respirar, pero no entre párrafos */
+        #editor .report-h2 { margin-top: 0.9rem; margin-bottom: 0.2rem; }
+        #editor .report-h3 { margin-top: 0.6rem; margin-bottom: 0.15rem; }
 
         /* Print: hide UI-only elements */
         @media print {

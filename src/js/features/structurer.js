@@ -74,49 +74,86 @@ function autoDetectTemplateKey(text) {
 // ============ MARKDOWN → HTML CONVERTER ============
 function markdownToHtml(md) {
     if (!md) return '';
-    const lines = md.split('\n');
-    const html = [];
-    let inList = false;
-
-    const closeList = () => { if (inList) { html.push('</ul>'); inList = false; } };
 
     const inlineFormat = (text) => text
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.+?)\*/g, '<em>$1</em>')
         .replace(/`(.+?)`/g, '<code>$1</code>');
 
-    for (const raw of lines) {
-        const line = raw.trimEnd();
+    // Capitaliza el primer carácter real (saltando etiquetas HTML al inicio)
+    const capFirst = (text) =>
+        text.replace(/^(\s*(?:<[^>]+>)*)([a-záéíóúüñ])/i, (_, pre, ch) => pre + ch.toUpperCase());
 
-        if (/^#{1}\s/.test(line)) {
-            closeList();
-            html.push(`<h1 class="report-h1">${inlineFormat(line.replace(/^#+\s*/, ''))}</h1>`);
-        } else if (/^#{2}\s/.test(line)) {
-            closeList();
-            html.push(`<h2 class="report-h2">${inlineFormat(line.replace(/^#+\s*/, ''))}</h2>`);
-        } else if (/^#{3,}\s/.test(line)) {
-            closeList();
-            html.push(`<h3 class="report-h3">${inlineFormat(line.replace(/^#+\s*/, ''))}</h3>`);
-        } else if (/^[-*]\s/.test(line)) {
-            if (!inList) { html.push('<ul class="report-list">'); inList = true; }
-            const content = line.replace(/^[-*]\s*/, '');
-            // Sub-item: detect "  - "
-            html.push(`<li>${inlineFormat(content)}</li>`);
-        } else if (/^\s{2,}[-*]\s/.test(line)) {
-            // nested bullet (already inside list paragraph)
-            const content = line.replace(/^\s+[-*]\s*/, '');
-            html.push(`<li class="report-list-nested">${inlineFormat(content)}</li>`);
-        } else if (line.trim() === '') {
-            closeList();
+    const html = [];
+
+    // Separar en bloques por líneas en blanco (párrafos Markdown reales)
+    const rawBlocks = md.replace(/\r\n/g, '\n').split(/\n{2,}/);
+
+    // Agrupar bloques de texto consecutivos que terminan en coma/punto y coma
+    // (son hallazgos en enumeración → van en el mismo párrafo fluido)
+    const mergedBlocks = [];
+    let enumAcc = null;
+    for (const block of rawBlocks) {
+        const t = block.trim();
+        if (!t) continue;
+        const isHeading = /^#{1,3}\s/.test(t);
+        const isList    = /^[-*]\s/.test(t.split('\n')[0].trim());
+        const endsComma = /[,;]\s*$/.test(t.replace(/\[No especificado\]/g, '').trimEnd());
+        if (!isHeading && !isList && endsComma) {
+            if (!enumAcc) enumAcc = [];
+            // Añadir todas las líneas no vacías del bloque al acumulador
+            t.split('\n').forEach(l => { if (l.trim()) enumAcc.push(l.trim()); });
         } else {
-            closeList();
-            html.push(`<p class="report-p">${inlineFormat(line)}</p>`);
+            if (enumAcc) { mergedBlocks.push({ type: 'enum', lines: enumAcc }); enumAcc = null; }
+            mergedBlocks.push({ type: isHeading ? 'heading' : isList ? 'list' : 'para', raw: t });
         }
     }
-    closeList();
-    const result = html.join('\n');
-    // Wrap [No especificado] with clickable span
-    return result.replace(/\[No especificado\]/g, '<span class="no-data" tabindex="0" title="Clic para editar">[No especificado]</span>');
+    if (enumAcc) mergedBlocks.push({ type: 'enum', lines: enumAcc });
+
+    for (const mb of mergedBlocks) {
+        if (mb.type === 'enum') {
+            // Hallazgos en enumeración → un solo párrafo, ítems unidos con espacio
+            const text = mb.lines.map(inlineFormat).join(' ');
+            html.push(`<p class="report-p">${capFirst(text)}</p>`);
+
+        } else if (mb.type === 'heading') {
+            const lines = mb.raw.split('\n');
+            lines.forEach(raw => {
+                const l = raw.trim();
+                if (!l) return;
+                if      (/^# /.test(l))  html.push(`<h1 class="report-h1">${inlineFormat(l.replace(/^#+\s*/, ''))}</h1>`);
+                else if (/^## /.test(l)) html.push(`<h2 class="report-h2">${inlineFormat(l.replace(/^#+\s*/, ''))}</h2>`);
+                else if (/^### /.test(l))html.push(`<h3 class="report-h3">${inlineFormat(l.replace(/^#+\s*/, ''))}</h3>`);
+                else                     html.push(`<p class="report-p">${capFirst(inlineFormat(l))}</p>`);
+            });
+
+        } else if (mb.type === 'list') {
+            html.push('<ul class="report-list">');
+            mb.raw.split('\n').forEach(l => {
+                const lt = l.trim();
+                if (!lt) return;
+                if (/^[-*]\s/.test(lt)) {
+                    html.push(`<li>${capFirst(inlineFormat(lt.replace(/^[-*]\s*/, '')))}</li>`);
+                } else if (/^\s{2,}[-*]\s/.test(l)) {
+                    html.push(`<li class="report-list-nested">${capFirst(inlineFormat(lt.replace(/^[-*]\s*/, '')))}</li>`);
+                }
+            });
+            html.push('</ul>');
+
+        } else {
+            // Párrafo normal: múltiples líneas → unir con <br>, capitalizar cada una
+            const lines = mb.raw.split('\n').map(l => l.trim()).filter(Boolean);
+            if (lines.length === 1) {
+                html.push(`<p class="report-p">${capFirst(inlineFormat(lines[0]))}</p>`);
+            } else {
+                const parts = lines.map((l, i) => i === 0 ? capFirst(inlineFormat(l)) : capFirst(inlineFormat(l)));
+                html.push(`<p class="report-p">${parts.join('<br>')}</p>`);
+            }
+        }
+    }
+
+    return html.join('\n')
+        .replace(/\[No especificado\]/g, '<span class="no-data" tabindex="0" title="Clic para editar">[No especificado]</span>');
 }
 
 // Extract AI's meta-note and return { body: html, note: string|null }
@@ -194,7 +231,8 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepción:
 4. NO añadas información que no esté en la transcripción.
 5. NO añadas notas, comentarios ni advertencias propias en ningún lugar del informe.
 6. Devuelve ÚNICAMENTE el contenido del informe en markdown, sin texto introductorio ni final.
-7. No uses encabezados de nivel > 3 (###).` },
+7. No uses encabezados de nivel > 3 (###).
+8. FORMATO DE PÁRRAFOS (CRÍTICO): dentro de cada sección, escribe los hallazgos como un párrafo continuo y fluido. NO separes cada hallazgo con líneas en blanco. Los ítems de una misma sección van juntos, sin saltos de línea dobles entre ellos. Solo usa línea en blanco para separar SECCIONES distintas (##). La primera palabra de cada párrafo debe comenzar con mayúscula.` },
                     { role: "user", content: `Transcripción a estructurar:\n\n${text}` }
                 ],
                 temperature: 0.1
@@ -301,20 +339,8 @@ window.initStructurer = function () {
                 const { body, note } = parseAIResponse(rawMarkdown);
                 editor.innerHTML = body;
                 window._lastStructuredHTML = body;
-                const tmplLabel = (typeof MEDICAL_TEMPLATES !== 'undefined' && MEDICAL_TEMPLATES[currentTemplate])
-                    ? MEDICAL_TEMPLATES[currentTemplate].name : currentTemplate;
-                // Armar el label visible en el panel:
-                // - Si se detectó automáticamente una plantilla específica → mostrar nombre
-                // - Si no se detectó ninguna (usamos genérico) → avisar al usuario
-                let displayLabel;
-                if (currentTemplate === 'generico') {
-                    displayLabel = '⚠️ Plantilla general (especialidad no detectada — seleccione manualmente si corresponde)';
-                } else if (autoDetected) {
-                    displayLabel = `✅ Detectado: ${tmplLabel}`;
-                } else {
-                    displayLabel = tmplLabel;
-                }
-                showAINote(note, displayLabel);
+                // No mostrar el panel de plantilla/nota — solo el informe estructurado
+                showAINote(null, null);
                 const btnR = document.getElementById('btnRestoreOriginal');
                 if (btnR) { btnR.style.display = ''; btnR._showingOriginal = false; btnR.textContent = '↩'; }
                 const btnM = document.getElementById('btnMedicalCheck');
@@ -352,9 +378,8 @@ window.initStructurer = function () {
                 const { body, note } = parseAIResponse(rawMarkdown);
                 editor.innerHTML = body;
                 window._lastStructuredHTML = body;
-                const tmplLabel2 = (typeof MEDICAL_TEMPLATES !== 'undefined' && MEDICAL_TEMPLATES[templateKey])
-                    ? MEDICAL_TEMPLATES[templateKey].name : templateKey;
-                showAINote(note, tmplLabel2);
+                // No mostrar el panel de plantilla/nota — solo el informe
+                showAINote(null, null);
                 const btnR2 = document.getElementById('btnRestoreOriginal');
                 if (btnR2) { btnR2.style.display = ''; btnR2._showingOriginal = false; btnR2.textContent = '↩'; }
                 const btnM2 = document.getElementById('btnMedicalCheck');
