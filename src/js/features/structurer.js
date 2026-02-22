@@ -64,7 +64,9 @@ function markdownToHtml(md) {
         }
     }
     closeList();
-    return html.join('\n');
+    const result = html.join('\n');
+    // Wrap [No especificado] with clickable span
+    return result.replace(/\[No especificado\]/g, '<span class="no-data" tabindex="0" title="Clic para editar">[No especificado]</span>');
 }
 
 // Extract AI's meta-note and return { body: html, note: string|null }
@@ -160,6 +162,69 @@ function showAINote(note) {
     panel.style.display = 'flex';
 }
 
+// ---- Patient data check after structuring ----
+window.triggerPatientDataCheck = function(rawText) {
+    const extracted = typeof extractPatientDataFromText === 'function'
+        ? extractPatientDataFromText(rawText)
+        : {};
+    const savedConfig = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+    const hasName = extracted.name || savedConfig.patientName;
+
+    if (!hasName) {
+        const set = (id, v) => { if (v !== undefined && v !== null && v !== '') { const el = document.getElementById(id); if (el) el.value = v; } };
+        set('reqPatientName', extracted.name || '');
+        set('reqPatientDni', extracted.dni || '');
+        set('reqPatientAge', extracted.age || '');
+        set('reqPatientSex', extracted.sex || '');
+        document.getElementById('patientDataRequiredOverlay')?.classList.add('active');
+    } else {
+        const config = { ...savedConfig };
+        if (extracted.name && !config.patientName) config.patientName = extracted.name;
+        if (extracted.dni  && !config.patientDni)  config.patientDni  = extracted.dni;
+        if (extracted.age  && !config.patientAge)  config.patientAge  = extracted.age;
+        if (extracted.sex  && !config.patientSex)  config.patientSex  = extracted.sex;
+        localStorage.setItem('pdf_config', JSON.stringify(config));
+        if (extracted.name && typeof showToast === 'function')
+            showToast(`👤 Paciente: ${extracted.name}`, 'success');
+    }
+}
+
+// ---- Medical terminology checker ----
+window.checkMedicalTerminology = async function() {
+    const editor = document.getElementById('editor');
+    if (!editor || !editor.innerText.trim()) return;
+    const key = window.GROQ_API_KEY || localStorage.getItem('groq_api_key');
+    if (!key) { if (typeof showToast === 'function') showToast('Configurá la API Key', 'error'); return; }
+    const btn = document.getElementById('btnMedicalCheck');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+    try {
+        const text = editor.innerText;
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: 'llama-3.3-70b-versatile',
+                messages: [
+                    { role: 'system', content: 'Eres un corrector de terminología médica en español. Corrige SOLO errores evidentes de transcripción por reconocimiento de voz (ej: "ecosisma" → "eco-estrés", palabras sin tilde médica, abreviaturas mal escritas). NO cambies el contenido clínico ni la estructura HTML del texto. Devuelve el texto completo con las correcciones, en el mismo formato que recibiste.' },
+                    { role: 'user', content: text }
+                ],
+                temperature: 0.0
+            })
+        });
+        if (!res.ok) throw new Error('Error');
+        const data = await res.json();
+        const corrected = data.choices[0].message.content.trim();
+        const { body } = typeof parseAIResponse === 'function' ? parseAIResponse(corrected) : { body: corrected };
+        editor.innerHTML = body || corrected;
+        if (typeof updateWordCount === 'function') updateWordCount();
+        if (typeof showToast === 'function') showToast('✅ Terminología revisada', 'success');
+    } catch(e) {
+        if (typeof showToast === 'function') showToast('Error al revisar terminología', 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '🩺'; }
+    }
+}
+
 // ============ AI BUTTON HANDLERS ============
 window.initStructurer = function () {
     const btnStructureAIEl = document.getElementById('btnStructureAI');
@@ -177,6 +242,7 @@ window.initStructurer = function () {
             }
             const rawText = editor.innerText;
             const oldHTML = btnStructureAIEl.innerHTML;
+            window._lastRawTranscription = rawText; // save for restore/toggle
             btnStructureAIEl.disabled = true;
             btnStructureAIEl.innerHTML = '⏳ IA...';
             showProgress();
@@ -188,10 +254,16 @@ window.initStructurer = function () {
                 const rawMarkdown = await structureTranscription(rawText, currentTemplate);
                 const { body, note } = parseAIResponse(rawMarkdown);
                 editor.innerHTML = body;
+                window._lastStructuredHTML = body;
                 showAINote(note);
+                const btnR = document.getElementById('btnRestoreOriginal');
+                if (btnR) { btnR.style.display = ''; btnR._showingOriginal = false; btnR.textContent = '↩'; }
+                const btnM = document.getElementById('btnMedicalCheck');
+                if (btnM) btnM.style.display = '';
                 if (typeof updateWordCount === 'function') updateWordCount();
                 if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURED');
                 if (typeof showToast === 'function') showToast('✅ Texto estructurado con IA', 'success');
+                triggerPatientDataCheck(rawText);
             } catch (error) {
                 if (typeof showToast === 'function') showToast('Error al estructurar', 'error');
             } finally {
@@ -208,6 +280,8 @@ window.initStructurer = function () {
             const editor = document.getElementById('editor');
             if (!editor || !editor.innerText.trim()) return showToast('No hay texto para estructurar', 'error');
 
+            const rawText = editor.innerText;
+            window._lastRawTranscription = rawText;
             const oldText = btnApplyStructure.textContent;
             btnApplyStructure.disabled = true;
             btnApplyStructure.textContent = "✨ Estructurando...";
@@ -218,13 +292,19 @@ window.initStructurer = function () {
                 const rawMarkdown = await structureTranscription(editor.innerText, templateKey);
                 const { body, note } = parseAIResponse(rawMarkdown);
                 editor.innerHTML = body;
+                window._lastStructuredHTML = body;
                 showAINote(note);
+                const btnR2 = document.getElementById('btnRestoreOriginal');
+                if (btnR2) { btnR2.style.display = ''; btnR2._showingOriginal = false; btnR2.textContent = '↩'; }
+                const btnM2 = document.getElementById('btnMedicalCheck');
+                if (btnM2) btnM2.style.display = '';
                 if (typeof updateWordCount === 'function') updateWordCount();
                 if (typeof showToast === 'function') showToast('Informe estructurado ✓', 'success');
 
                 const wizardTemplateCard = document.getElementById('wizardTemplateCard');
                 if (wizardTemplateCard) wizardTemplateCard.style.display = 'none';
                 if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURED');
+                triggerPatientDataCheck(rawText);
             } catch (e) {
                 if (typeof showToast === 'function') showToast('Error al estructurar', 'error');
             } finally {

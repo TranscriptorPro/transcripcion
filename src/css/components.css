@@ -869,6 +869,49 @@
             border-color: var(--primary);
         }
 
+        /* Structured report: [No especificado] clickable spans */
+        .no-data {
+            background: color-mix(in srgb, #f59e0b 12%, transparent);
+            color: #b45309;
+            border: 1px dashed #f59e0b;
+            border-radius: 3px;
+            padding: 0 3px;
+            cursor: text;
+            font-style: italic;
+            font-size: 0.85em;
+            transition: background 0.15s;
+        }
+        .no-data:hover, .no-data:focus {
+            background: color-mix(in srgb, #f59e0b 25%, transparent);
+            outline: none;
+        }
+        [data-theme="dark"] .no-data {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border-color: #f59e0b;
+        }
+
+        /* Small icon button (restore original, medical check) */
+        .btn-sm-icon {
+            padding: 0.3rem 0.5rem;
+            font-size: 0.9rem;
+            min-width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-sm-icon:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
         /* AI Note Panel */
         .ai-note-panel {
             display: flex;

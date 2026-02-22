@@ -230,12 +230,81 @@ window.initModals = function () {
         });
     }
 
+    // Patient Data Required Modal
+    const patientOverlay = document.getElementById('patientDataRequiredOverlay');
+    const btnSavePatientData = document.getElementById('btnSavePatientData');
+    const btnSkipPatientData = document.getElementById('btnSkipPatientData');
+
+    if (btnSavePatientData) {
+        btnSavePatientData.addEventListener('click', () => {
+            const name = document.getElementById('reqPatientName')?.value?.trim();
+            if (!name) {
+                if (typeof showToast === 'function') showToast('⚠️ El nombre del paciente es obligatorio', 'error');
+                return;
+            }
+            const config = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+            config.patientName = name;
+            const dni = document.getElementById('reqPatientDni')?.value?.trim();
+            const age = document.getElementById('reqPatientAge')?.value?.trim();
+            const sex = document.getElementById('reqPatientSex')?.value;
+            if (dni) config.patientDni = dni;
+            if (age) config.patientAge = age;
+            if (sex) config.patientSex = sex;
+            localStorage.setItem('pdf_config', JSON.stringify(config));
+            patientOverlay?.classList.remove('active');
+            if (typeof showToast === 'function') showToast('✅ Datos del paciente guardados', 'success');
+            if (typeof savePatientToHistory === 'function') {
+                savePatientToHistory({ name, dni, age, sex });
+            }
+        });
+    }
+    if (btnSkipPatientData) {
+        btnSkipPatientData.addEventListener('click', () => patientOverlay?.classList.remove('active'));
+    }
+
+    // Restore/toggle original button
+    const btnRestoreOriginal = document.getElementById('btnRestoreOriginal');
+    if (btnRestoreOriginal) {
+        btnRestoreOriginal.addEventListener('click', () => {
+            const editorEl = document.getElementById('editor');
+            if (!editorEl) return;
+            if (btnRestoreOriginal._showingOriginal) {
+                // Volver al estructurado
+                if (window._lastStructuredHTML) editorEl.innerHTML = window._lastStructuredHTML;
+                btnRestoreOriginal.textContent = '↩';
+                btnRestoreOriginal.title = 'Ver texto original';
+                btnRestoreOriginal._showingOriginal = false;
+            } else {
+                // Mostrar original
+                if (window._lastRawTranscription) {
+                    window._lastStructuredHTML = editorEl.innerHTML;
+                    editorEl.innerHTML = window._lastRawTranscription
+                        .split('\n').filter(l => l.trim())
+                        .map(l => `<p class="report-p">${l}</p>`).join('\n');
+                    btnRestoreOriginal.textContent = '⟳';
+                    btnRestoreOriginal.title = 'Volver al texto estructurado';
+                    btnRestoreOriginal._showingOriginal = true;
+                }
+            }
+            if (typeof updateWordCount === 'function') updateWordCount();
+        });
+    }
+
+    // Medical check button
+    const btnMedicalCheck = document.getElementById('btnMedicalCheck');
+    if (btnMedicalCheck) {
+        btnMedicalCheck.addEventListener('click', () => {
+            if (typeof checkMedicalTerminology === 'function') checkMedicalTerminology();
+        });
+    }
+
     // Escape key — close any open modal
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             if (helpModal) helpModal.classList.remove('active');
             const wpModal = document.getElementById('workplaceModalOverlay');
             if (wpModal) wpModal.classList.remove('active');
+            if (patientOverlay) patientOverlay.classList.remove('active');
             closePdfConfigModal();
             closePrintPreviewModal();
         }

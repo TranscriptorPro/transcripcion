@@ -437,7 +437,19 @@ const applyTemplateBtn = document.getElementById('btnApplyTemplate');
 const normalTemplateDropdown = document.getElementById('normalTemplateDropdown');
 const normalTemplateList = document.getElementById('normalTemplateList');
 
-function applyNormalTemplate(templateKey) {
+function buildStaticTemplate(templateName, rawText) {
+    const nd = '<span class="no-data" tabindex="0" title="Clic para editar">[No especificado]</span>';
+    return `<h1 class="report-h1">${templateName}</h1>
+<h2 class="report-h2">Datos del Paciente</h2>
+<p class="report-p"><strong>Nombre:</strong> ${nd} &nbsp; <strong>DNI:</strong> ${nd}</p>
+<p class="report-p"><strong>Edad:</strong> ${nd} &nbsp; <strong>Sexo:</strong> ${nd}</p>
+<h2 class="report-h2">Transcripción</h2>
+${rawText.split('\n').filter(l => l.trim()).map(line => `<p class="report-p">${line}</p>`).join('\n')}
+<h2 class="report-h2">Conclusión</h2>
+<p class="report-p">${nd}</p>`;
+}
+
+async function applyNormalTemplate(templateKey) {
     normalTemplateDropdown.style.display = 'none';
     const editorEl = document.getElementById('editor');
     const rawText = editorEl ? editorEl.innerText : '';
@@ -451,16 +463,41 @@ function applyNormalTemplate(templateKey) {
     const template = MEDICAL_TEMPLATES[templateKey];
     const templateName = template ? template.name : 'General';
 
-    const structured = `<h2>${templateName}</h2>
-<h3>Datos del Paciente:</h3>
-<p>[Completar desde historial o manualmente]</p>
-<h3>Transcripción:</h3>
-${rawText.split('\n').filter(l => l.trim()).map(line => `<p>${line}</p>`).join('\n')}
-<h3>Conclusión:</h3>
-<p>[A completar por el profesional]</p>`;
+    window._lastRawTranscription = rawText;
 
-    if (editorEl) {
-        editorEl.innerHTML = structured;
+    const hasKey = window.GROQ_API_KEY || localStorage.getItem('groq_api_key');
+    const canUseAI = hasKey && typeof structureTranscription === 'function';
+
+    if (canUseAI) {
+        if (applyTemplateBtn) applyTemplateBtn.disabled = true;
+        const aiBar = document.getElementById('aiProgressBar');
+        if (aiBar) aiBar.style.display = 'block';
+        try {
+            const rawMarkdown = await structureTranscription(rawText, templateKey);
+            const { body, note } = parseAIResponse(rawMarkdown);
+            editorEl.innerHTML = body;
+            window._lastStructuredHTML = body;
+            if (typeof showAINote === 'function') showAINote(note);
+            const btnR = document.getElementById('btnRestoreOriginal');
+            if (btnR) { btnR.style.display = ''; btnR._showingOriginal = false; btnR.textContent = '↩'; }
+            const btnM = document.getElementById('btnMedicalCheck');
+            if (btnM) btnM.style.display = '';
+            if (typeof window.updateWordCount === 'function') window.updateWordCount();
+            if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURED');
+            if (typeof showToast === 'function') showToast(`✅ Plantilla "${templateName}" aplicada con IA`, 'success');
+            if (typeof triggerPatientDataCheck === 'function') triggerPatientDataCheck(rawText);
+        } catch (e) {
+            editorEl.innerHTML = buildStaticTemplate(templateName, rawText);
+            if (typeof window.updateWordCount === 'function') window.updateWordCount();
+            if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURED');
+            if (typeof showToast === 'function') showToast(`✅ Plantilla "${templateName}" aplicada`, 'success');
+        } finally {
+            if (applyTemplateBtn) applyTemplateBtn.disabled = false;
+            const aiBar2 = document.getElementById('aiProgressBar');
+            if (aiBar2) aiBar2.style.display = 'none';
+        }
+    } else {
+        editorEl.innerHTML = buildStaticTemplate(templateName, rawText);
         if (typeof window.updateWordCount === 'function') window.updateWordCount();
         if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURED');
         if (typeof showToast === 'function') showToast(`✅ Plantilla "${templateName}" aplicada`, 'success');
@@ -486,4 +523,17 @@ if (applyTemplateBtn && normalTemplateDropdown) {
             applyNormalTemplate(item.dataset.value);
         });
     }
+}
+
+// Clickable [No especificado] — selecciona el texto al hacer clic para reemplazarlo
+if (editor) {
+    editor.addEventListener('click', (e) => {
+        const noData = e.target.closest('.no-data');
+        if (!noData) return;
+        const range = document.createRange();
+        range.selectNodeContents(noData);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    });
 }
