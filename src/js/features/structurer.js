@@ -6,6 +6,13 @@ async function structureTranscription(text, templateKey) {
         return text;
     }
 
+    // Enforce character limit before sending to API
+    const MAX_STRUCTURE_CHARS = 15000;
+    if (text.length > MAX_STRUCTURE_CHARS) {
+        if (typeof showToast === 'function') showToast('El texto es muy largo. Se enviará una parte para estructurar.', 'warning');
+        text = text.slice(0, MAX_STRUCTURE_CHARS);
+    }
+
     // Find prompt in flat MEDICAL_TEMPLATES
     // Checking if MEDICAL_TEMPLATES is globally available
     let prompt = '';
