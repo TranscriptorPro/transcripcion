@@ -257,34 +257,44 @@ window.initModals = function () {
     // Patient Data Required Modal
     const patientOverlay = document.getElementById('patientDataRequiredOverlay');
     const btnSavePatientData = document.getElementById('btnSavePatientData');
-    const btnSkipPatientData = document.getElementById('btnSkipPatientData');
 
     if (btnSavePatientData) {
         btnSavePatientData.addEventListener('click', () => {
             const name = document.getElementById('reqPatientName')?.value?.trim();
             if (!name) {
                 if (typeof showToast === 'function') showToast('⚠️ El nombre del paciente es obligatorio', 'error');
+                // Resaltar el campo vacío
+                const nameEl = document.getElementById('reqPatientName');
+                if (nameEl) { nameEl.style.borderColor = '#ef4444'; nameEl.focus(); }
                 return;
             }
             const config = JSON.parse(localStorage.getItem('pdf_config') || '{}');
             config.patientName = name;
-            const dni = document.getElementById('reqPatientDni')?.value?.trim();
-            const age = document.getElementById('reqPatientAge')?.value?.trim();
-            const sex = document.getElementById('reqPatientSex')?.value;
-            if (dni) config.patientDni = dni;
-            if (age) config.patientAge = age;
-            if (sex) config.patientSex = sex;
+            const dni          = document.getElementById('reqPatientDni')?.value?.trim();
+            const age          = document.getElementById('reqPatientAge')?.value?.trim();
+            const sex          = document.getElementById('reqPatientSex')?.value;
+            const insurance    = document.getElementById('reqPatientInsurance')?.value?.trim();
+            const affiliateNum = document.getElementById('reqPatientAffiliateNum')?.value?.trim();
+            if (dni)          config.patientDni         = dni;
+            if (age)          config.patientAge         = age;
+            if (sex)          config.patientSex         = sex;
+            if (insurance)    config.patientInsurance   = insurance;
+            if (affiliateNum) config.patientAffiliateNum = affiliateNum;
             localStorage.setItem('pdf_config', JSON.stringify(config));
             patientOverlay?.classList.remove('active');
             if (typeof showToast === 'function') showToast('✅ Datos del paciente guardados', 'success');
-            if (typeof savePatientToHistory === 'function') {
-                savePatientToHistory({ name, dni, age, sex });
+            // Guardar en el registro de pacientes
+            if (typeof savePatientToRegistry === 'function') {
+                savePatientToRegistry({ name, dni, age, sex, insurance, affiliateNum });
+                if (typeof populatePatientDatalist === 'function') populatePatientDatalist();
             }
         });
     }
-    if (btnSkipPatientData) {
-        btnSkipPatientData.addEventListener('click', () => patientOverlay?.classList.remove('active'));
-    }
+
+    // Limpiar borde rojo al escribir
+    document.getElementById('reqPatientName')?.addEventListener('input', (e) => {
+        e.target.style.borderColor = '';
+    });
 
     // Restore/toggle original button
     const btnRestoreOriginal = document.getElementById('btnRestoreOriginal');

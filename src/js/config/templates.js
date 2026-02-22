@@ -332,7 +332,7 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
     ecografia_abdominal: {
         name: "Ecografía Abdominal / Doppler",
         category: "Imágenes",
-        keywords: ["ecografía", "ecografía abdominal", "ultrasonido", "Doppler", "hígado", "riñón", "vesícula"],
+        keywords: ["ecografía abdominal", "ultrasonido abdominal", "ultrasonido", "Doppler abdominal", "hígado", "riñón", "vesícula", "bazo", "páncreas"],
         prompt: `Actúa como radiólogo especializado. Estructura este informe ecográfico:
 
 # INFORME ECOGRÁFICO

@@ -12,35 +12,54 @@ function autoDetectTemplateKey(text) {
     const normText = _normStr(text);
     const scores = {};
 
+    // Comprobar si todas las palabras de un array aparecen en proximidad dentro del texto
+    // (ventana deslizante de N palabras — evita falsos positivos por palabras dispersas)
+    const inProximity = (textWords, reqWords, windowSize) => {
+        for (let i = 0; i < textWords.length; i++) {
+            const win = textWords.slice(i, i + windowSize).join(' ');
+            if (reqWords.every(w => win.includes(w))) return true;
+        }
+        return false;
+    };
+    const textWords = normText.split(/\s+/);
+
     for (const [key, tmpl] of Object.entries(window.MEDICAL_TEMPLATES)) {
         if (key === 'generico') continue;
         let score = 0;
 
-        // 1. Palabras del NOMBRE de la plantilla (>3 chars) — peso alto
-        //    Ej: "Laringoscopía" → "laringoscopia": si aparece en el texto, +5
-        _normStr(tmpl.name).split(/\s+/).forEach(word => {
-            if (word.length > 3 && normText.includes(word)) score += 5;
-        });
+        // 1. NOMBRE DE PLANTILLA — solo como frase completa (no palabras sueltas)
+        //    Ej: "Topografía Corneal" → busca "topografia corneal" como subcadena continua
+        const normName = _normStr(tmpl.name).replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+        if (normText.includes(normName)) {
+            score += 10;
+        } else {
+            // Fallback: todas las palabras significativas del nombre juntas en ventana de 6
+            const nameWords = normName.split(/\s+/).filter(w => w.length > 4);
+            if (nameWords.length >= 2 && inProximity(textWords, nameWords, 6)) {
+                score += 7;
+            }
+        }
 
-        // 2. Keywords explícitos del array — forma más confiable de detección
+        // 2. Keywords explícitos del array — fuente principal de detección
         if (Array.isArray(tmpl.keywords)) {
             tmpl.keywords.forEach(kw => {
-                const normKw = _normStr(kw);
+                const normKw    = _normStr(kw);
+                const kwWords   = normKw.split(/\s+/).filter(w => w.length >= 4);
+
                 // Coincidencia exacta de frase completa → máxima confianza
                 if (normText.includes(normKw)) {
                     score += 6;
                     return;
                 }
-                // Todas las palabras de la keyword deben estar presentes
-                // (evita que UNA palabra suelta de una keyword compuesta sume puntos)
-                const words = normKw.split(/\s+/).filter(w => w.length >= 4);
-                if (words.length > 1 && words.every(w => normText.includes(w))) {
-                    score += 4;
+                // Keyword multi-palabra: todas las palabras deben aparecer en PROXIMIDAD
+                // (ventana de 8 palabras) — NO basta que estén en distintos párrafos
+                if (kwWords.length > 1) {
+                    if (inProximity(textWords, kwWords, 8)) score += 4;
                     return;
                 }
-                // Keyword de una sola palabra con raíz (stem) como fallback
-                if (words.length === 1) {
-                    const w = words[0];
+                // Keyword de una sola palabra (>= 4 chars)
+                if (kwWords.length === 1) {
+                    const w = kwWords[0];
                     if (normText.includes(w)) { score += 4; return; }
                     if (w.length >= 6 && normText.includes(w.slice(0, -2))) score += 2;
                 }
@@ -57,14 +76,11 @@ function autoDetectTemplateKey(text) {
     const runnerUpScore = sorted[1]?.[1] ?? 0;
 
     // UMBRAL MÍNIMO DE CONFIANZA
-    // Requiere al menos una coincidencia significativa para evitar falsos positivos.
-    // Con los pesos actuales: 1 keyword exacta = 6pts, 1 palabra del nombre = 5pts.
-    const MIN_SCORE = 5;
+    const MIN_SCORE = 7;
     if (bestScore < MIN_SCORE) return 'generico';
 
-    // VERIFICAR AMBIGÜEDAD: si hay dos candidatos muy cercanos con scores bajos,
-    // no hay suficiente certeza para elegir → usar generico.
-    if (runnerUpScore >= MIN_SCORE && bestScore < runnerUpScore * 1.4 && bestScore < 12) {
+    // VERIFICAR AMBIGÜEDAD: dos candidatos con scores similares y bajos → generico
+    if (runnerUpScore >= MIN_SCORE && bestScore < runnerUpScore * 1.5 && bestScore < 14) {
         return 'generico';
     }
 
@@ -288,10 +304,14 @@ window.triggerPatientDataCheck = function(rawText) {
             showToast(`👤 Paciente detectado: ${extracted.name}`, 'success');
     } else {
         // Sin datos en el audio → siempre pedir, siempre con campos vacíos
-        ['reqPatientName','reqPatientDni','reqPatientAge','reqPatientSex'].forEach(id => {
-            const el = document.getElementById(id); if (el) el.value = '';
+        ['reqPatientName','reqPatientDni','reqPatientAge','reqPatientSex',
+         'reqPatientInsurance','reqPatientAffiliateNum','reqPatientSearch'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) { el.value = ''; el.style.borderColor = ''; }
         });
         document.getElementById('patientDataRequiredOverlay')?.classList.add('active');
+        // Inicializar buscador de registro
+        if (typeof initPatientRegistrySearch === 'function') initPatientRegistrySearch();
     }
 }
 

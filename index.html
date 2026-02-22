@@ -212,59 +212,9 @@
                         </div>
                     </div>
 
-                    <!-- Section 2: Patient Data -->
-                    <div class="pdf-config-section">
-                        <h3>👤 Datos del Paciente</h3>
-                        <div class="field-group pro-only" id="patientHistoryGroup" style="display:none;">
-                            <label>🔍 Buscar paciente anterior</label>
-                            <input type="text" id="patientSearch" placeholder="Escriba nombre o DNI..."
-                                list="patientHistoryList">
-                            <datalist id="patientHistoryList"></datalist>
-                        </div>
-                        <div class="field-row">
-                            <div class="field-group">
-                                <label>Nombre y Apellido</label>
-                                <input type="text" id="pdfPatientName" placeholder="Nombre completo del paciente">
-                            </div>
-                            <div class="field-group">
-                                <label>DNI / Documento</label>
-                                <input type="text" id="pdfPatientDni" placeholder="Nº de documento">
-                            </div>
-                        </div>
-                        <div class="field-row">
-                            <div class="field-group">
-                                <label>Fecha de nacimiento</label>
-                                <input type="date" id="pdfPatientBirthdate">
-                            </div>
-                            <div class="field-group">
-                                <label>Edad</label>
-                                <input type="number" id="pdfPatientAge" placeholder="Auto-calculada" min="0" max="150">
-                            </div>
-                            <div class="field-group">
-                                <label>Sexo</label>
-                                <select id="pdfPatientSex">
-                                    <option value="">--</option>
-                                    <option value="M">Masculino</option>
-                                    <option value="F">Femenino</option>
-                                    <option value="X">Otro</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="field-row">
-                            <div class="field-group">
-                                <label>Obra Social / Prepaga</label>
-                                <input type="text" id="pdfPatientInsurance" placeholder="Ej: OSDE, Swiss Medical">
-                            </div>
-                            <div class="field-group">
-                                <label>Nº de Afiliado</label>
-                                <input type="text" id="pdfPatientAffiliateNum" placeholder="Número de afiliado">
-                            </div>
-                        </div>
-                        <div class="field-group">
-                            <label>Teléfono del paciente</label>
-                            <input type="tel" id="pdfPatientPhone" placeholder="Teléfono de contacto">
-                        </div>
-                    </div>
+                    <!-- Section 2: Patient Data — completada automáticamente al estructurar el informe -->
+                    <!-- Los datos del paciente se capturan desde el audio/texto. Si no se detectan,
+                         el sistema solicita completarlos mediante el modal dedicado (patientDataRequiredOverlay). -->
 
                     <!-- Section 3: Study Data -->
                     <div class="pdf-config-section">
@@ -482,14 +432,22 @@
 
         <!-- Patient Data Required Modal -->
         <div class="modal-overlay" id="patientDataRequiredOverlay">
-            <div class="modal" style="max-width: 440px;">
+            <div class="modal" style="max-width: 460px;">
                 <div class="modal-header">
                     <h2>👤 Datos del Paciente</h2>
                 </div>
                 <div class="modal-body">
                     <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:1rem;">
-                        El informe no contiene datos del paciente. Por favor completá los campos obligatorios para poder generar el PDF.
+                        Completá los datos del paciente para incluirlos en el informe.
                     </p>
+                    <!-- Buscador del registro de pacientes -->
+                    <div class="field-group" style="margin-bottom:0.9rem;">
+                        <label style="font-size:0.8rem;">🔍 Buscar paciente anterior (apellido o DNI)</label>
+                        <input type="text" id="reqPatientSearch" class="toolbar-input" style="width:100%;"
+                            placeholder="Escribí apellido o DNI para autocompletar..."
+                            list="reqPatientDatalist" autocomplete="off">
+                        <datalist id="reqPatientDatalist"></datalist>
+                    </div>
                     <div class="field-group">
                         <label>Nombre y Apellido <span style="color:#ef4444;">*</span></label>
                         <input type="text" id="reqPatientName" class="toolbar-input" style="width:100%;" placeholder="Nombre completo del paciente">
@@ -513,9 +471,18 @@
                             </select>
                         </div>
                     </div>
+                    <div style="display:flex; gap:0.75rem; margin-top:0.5rem;">
+                        <div class="field-group" style="flex:2">
+                            <label>Obra Social / Prepaga</label>
+                            <input type="text" id="reqPatientInsurance" class="toolbar-input" style="width:100%;" placeholder="Ej: OSDE, Swiss Medical">
+                        </div>
+                        <div class="field-group" style="flex:2">
+                            <label>Nº de Afiliado</label>
+                            <input type="text" id="reqPatientAffiliateNum" class="toolbar-input" style="width:100%;" placeholder="Número de afiliado">
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer" style="padding:1rem 1.5rem; border-top:1px solid var(--border); display:flex; gap:0.5rem; justify-content:flex-end;">
-                    <button class="btn btn-outline" id="btnSkipPatientData">Completar después</button>
                     <button class="btn btn-primary" id="btnSavePatientData">💾 Guardar y continuar</button>
                 </div>
             </div>
@@ -1050,6 +1017,7 @@
         <script src="src/js/features/transcriptor.js"></script>
         <script src="src/js/features/structurer.js"></script>
         <script src="src/js/features/medDictionary.js"></script>
+        <script src="src/js/features/patientRegistry.js"></script>
         <script src="src/js/features/formHandler.js"></script>
         <script src="src/js/features/business.js"></script>
         <script src="src/js/features/pdfPreview.js"></script>
