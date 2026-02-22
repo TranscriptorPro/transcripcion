@@ -219,39 +219,10 @@ window.triggerPatientDataCheck = function(rawText) {
     }
 }
 
-// ---- Medical terminology checker ----
-window.checkMedicalTerminology = async function() {
-    const editor = document.getElementById('editor');
-    if (!editor || !editor.innerText.trim()) return;
-    const key = window.GROQ_API_KEY || localStorage.getItem('groq_api_key');
-    if (!key) { if (typeof showToast === 'function') showToast('Configurá la API Key', 'error'); return; }
-    const btn = document.getElementById('btnMedicalCheck');
-    if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
-    try {
-        const text = editor.innerText;
-        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: 'llama-3.3-70b-versatile',
-                messages: [
-                    { role: 'system', content: 'Eres un corrector de terminología médica en español. Corrige SOLO errores evidentes de transcripción por reconocimiento de voz (ej: "ecosisma" → "eco-estrés", palabras sin tilde médica, abreviaturas mal escritas). NO cambies el contenido clínico ni la estructura HTML del texto. Devuelve el texto completo con las correcciones, en el mismo formato que recibiste.' },
-                    { role: 'user', content: text }
-                ],
-                temperature: 0.0
-            })
-        });
-        if (!res.ok) throw new Error('Error');
-        const data = await res.json();
-        const corrected = data.choices[0].message.content.trim();
-        const { body } = typeof parseAIResponse === 'function' ? parseAIResponse(corrected) : { body: corrected };
-        editor.innerHTML = body || corrected;
-        if (typeof updateWordCount === 'function') updateWordCount();
-        if (typeof showToast === 'function') showToast('✅ Terminología revisada', 'success');
-    } catch(e) {
-        if (typeof showToast === 'function') showToast('Error al revisar terminología', 'error');
-    } finally {
-        if (btn) { btn.disabled = false; btn.textContent = '🩺'; }
+// ---- Medical terminology checker — abre el modal del diccionario ----
+window.checkMedicalTerminology = function() {
+    if (typeof window.openMedDictModal === 'function') {
+        window.openMedDictModal();
     }
 }
 

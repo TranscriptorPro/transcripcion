@@ -506,6 +506,50 @@
             </div>
         </div>
 
+        <!-- Medical Dictionary Modal -->
+        <div class="modal-overlay" id="medDictModal">
+            <div class="modal" style="max-width:600px;">
+                <div class="modal-header">
+                    <h2>🩺 Revisor de Terminología Médica</h2>
+                    <button class="modal-close" id="closeMedDictModal">&times;</button>
+                </div>
+                <!-- Tabs -->
+                <div class="med-dict-tabs">
+                    <button class="med-dict-tab active" data-tab="review">📋 Revisión</button>
+                    <button class="med-dict-tab" data-tab="dictionary">📖 Diccionario</button>
+                </div>
+                <div class="modal-body" style="padding:0;">
+                    <!-- Tab: Revisión -->
+                    <div id="medDictTabReview" style="padding:1rem 1.5rem;">
+                        <p style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.75rem;">Correcciones encontradas en el informe. Desmarca las que no quieras aplicar.</p>
+                        <div id="medDictReviewList"></div>
+                        <div id="medDictReviewEmpty" style="display:none; text-align:center; padding:2rem 0; color:var(--text-secondary); font-size:0.85rem;">
+                            ✅ No se encontraron correcciones del diccionario en este texto.
+                        </div>
+                        <div style="margin-top:1rem; padding-top:0.75rem; border-top:1px solid var(--border);">
+                            <button class="btn btn-outline btn-sm" id="btnMedDictScanAI">🤖 Buscar más con IA</button>
+                        </div>
+                    </div>
+                    <!-- Tab: Diccionario -->
+                    <div id="medDictTabDictionary" style="display:none; padding:1rem 1.5rem;">
+                        <p style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.75rem;">Agrega tus propias correcciones para que se apliquen automáticamente.</p>
+                        <div class="med-dict-add-row">
+                            <input id="medDictInputFrom" class="toolbar-input" placeholder="Palabra incorrecta..." style="flex:1;">
+                            <span class="med-dict-arrow">→</span>
+                            <input id="medDictInputTo" class="toolbar-input" placeholder="Corrección correcta..." style="flex:1;">
+                            <button class="btn btn-primary btn-sm" id="btnMedDictAdd">+ Agregar</button>
+                        </div>
+                        <div id="medDictListContainer" style="margin-top:0.75rem; max-height:340px; overflow-y:auto;"></div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="padding:0.75rem 1.5rem; border-top:1px solid var(--border); display:flex; align-items:center; gap:0.75rem; justify-content:flex-end;">
+                    <span id="medDictSelCount" style="flex:1; font-size:0.8rem; color:var(--text-secondary);">0 correcciones seleccionadas</span>
+                    <button class="btn btn-outline" id="btnMedDictClose">Cerrar</button>
+                    <button class="btn btn-primary" id="btnMedDictApply">✅ Aplicar seleccionadas</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Help Modal -->
         <div class="modal-overlay" id="helpModal">
             <div class="modal" style="max-width: 600px;">
@@ -990,6 +1034,7 @@
         <script src="src/js/features/editor.js"></script>
         <script src="src/js/features/transcriptor.js"></script>
         <script src="src/js/features/structurer.js"></script>
+        <script src="src/js/features/medDictionary.js"></script>
         <script src="src/js/features/formHandler.js"></script>
         <script src="src/js/features/business.js"></script>
         <script src="src/js/features/pdfPreview.js"></script>
@@ -1012,6 +1057,9 @@
                 if (typeof updateApiStatus === 'function') {
                     updateApiStatus(localStorage.getItem('groq_api_key') || window.GROQ_API_KEY);
                 }
+
+                // Medical dictionary modal
+                if (typeof initMedDictModal === 'function') initMedDictModal();
             });
         </script>
     </main>
