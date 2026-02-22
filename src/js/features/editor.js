@@ -386,25 +386,40 @@ h1{text-align:center;border-bottom:2px solid #333;padding-bottom:10px}
 ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
 }
 
-// ============ APPLY TEMPLATE BUTTON (Normal Mode) ============
-const btnApplyTemplateEl = document.getElementById('btnApplyTemplate');
-if (btnApplyTemplateEl) {
-    btnApplyTemplateEl.addEventListener('click', () => {
-        const editor = document.getElementById('editor');
-        const rawText = editor ? editor.innerText : '';
-        const normalTemplateSelectEl = document.getElementById('normalTemplateSelect');
-        const templateKey = normalTemplateSelectEl ? normalTemplateSelectEl.value : 'generico';
+// ============ APPLY TEMPLATE BUTTON (Normal Mode) — dropdown ============
+const applyTemplateBtn = document.getElementById('btnApplyTemplate');
+const normalTemplateDropdown = document.getElementById('normalTemplateDropdown');
+const normalTemplateSelectEl = document.getElementById('normalTemplateSelect');
 
-        if (!rawText.trim()) {
-            if (typeof showToast === 'function') showToast('No hay texto para aplicar plantilla', 'error');
-            return;
-        }
+if (applyTemplateBtn && normalTemplateDropdown) {
+    applyTemplateBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = normalTemplateDropdown.style.display !== 'none';
+        normalTemplateDropdown.style.display = isOpen ? 'none' : 'block';
+    });
 
-        if (typeof MEDICAL_TEMPLATES === 'undefined') return;
-        const template = MEDICAL_TEMPLATES[templateKey];
-        const templateName = template ? template.name : 'General';
+    document.addEventListener('click', () => {
+        if (normalTemplateDropdown) normalTemplateDropdown.style.display = 'none';
+    });
 
-        const structured = `<h2>${templateName}</h2>
+    if (normalTemplateSelectEl) {
+        normalTemplateSelectEl.addEventListener('change', () => {
+            normalTemplateDropdown.style.display = 'none';
+
+            const editorEl = document.getElementById('editor');
+            const rawText = editorEl ? editorEl.innerText : '';
+            const templateKey = normalTemplateSelectEl.value;
+
+            if (!rawText.trim()) {
+                if (typeof showToast === 'function') showToast('No hay texto para aplicar plantilla', 'error');
+                return;
+            }
+            if (typeof MEDICAL_TEMPLATES === 'undefined') return;
+
+            const template = MEDICAL_TEMPLATES[templateKey];
+            const templateName = template ? template.name : 'General';
+
+            const structured = `<h2>${templateName}</h2>
 <h3>Datos del Paciente:</h3>
 <p>[Completar desde historial o manualmente]</p>
 <h3>Transcripción:</h3>
@@ -412,11 +427,12 @@ ${rawText.split('\n').filter(l => l.trim()).map(line => `<p>${line}</p>`).join('
 <h3>Conclusión:</h3>
 <p>[A completar por el profesional]</p>`;
 
-        if (editor) {
-            editor.innerHTML = structured;
-            if (typeof updateWordCount === 'function') updateWordCount();
-            if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURED');
-            if (typeof showToast === 'function') showToast(`✅ Plantilla "${templateName}" aplicada`, 'success');
-        }
-    });
+            if (editorEl) {
+                editorEl.innerHTML = structured;
+                if (typeof updateWordCount === 'function') updateWordCount();
+                if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURED');
+                if (typeof showToast === 'function') showToast(`✅ Plantilla "${templateName}" aplicada`, 'success');
+            }
+        });
+    }
 }

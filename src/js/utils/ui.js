@@ -143,6 +143,22 @@ window.initModals = function () {
     document.getElementById('btnCloseWorkplace')?.addEventListener('click', () => {
         document.getElementById('workplaceModalOverlay')?.classList.remove('active');
     });
+
+    // PDF Config Main button
+    const btnConfigPdfMain = document.getElementById('btnConfigPdfMain');
+    if (btnConfigPdfMain) {
+        btnConfigPdfMain.addEventListener('click', () => {
+            if (typeof openPdfConfigModal === 'function') openPdfConfigModal();
+        });
+    }
+
+    // PDF Preview Main button
+    const btnPreviewPdfMain = document.getElementById('btnPreviewPdfMain');
+    if (btnPreviewPdfMain) {
+        btnPreviewPdfMain.addEventListener('click', () => {
+            if (typeof openPrintPreview === 'function') openPrintPreview();
+        });
+    }
 }
 
 window.initShortcuts = function () {

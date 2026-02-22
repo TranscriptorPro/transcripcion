@@ -722,12 +722,6 @@
                         <!-- Tabs will be dynamically populated -->
                     </div>
                     <div class="editor-actions" style="display: flex; align-items: center; gap: 0.5rem;">
-                        <!-- Template Selector (Pro mode) -->
-                        <select id="templateDropdownMain" class="toolbar-select" style="display:none;" title="Seleccionar plantilla" aria-label="Seleccionar plantilla (modo Pro)"></select>
-                        <!-- Template Selector (Normal mode) -->
-                        <select id="normalTemplateSelect" class="toolbar-select" style="display:none;" title="Seleccionar plantilla" aria-label="Seleccionar plantilla (modo Normal)">
-                            <option value="generico">General</option>
-                        </select>
                         <!-- Structure AI Button (Pro mode) - shown after transcription -->
                         <button class="btn-ai-magic" id="btnStructureAI" style="display:none;"
                             title="Estructurar con IA">
@@ -738,14 +732,21 @@
                             <span>IA</span>
                         </button>
                         <!-- Apply Template (Normal mode) - shown after transcription -->
-                        <button class="btn btn-ai-magic" id="btnApplyTemplate" style="display:none;"
-                            title="Aplicar Plantilla">
+                        <div style="position: relative; display: none;" id="applyTemplateWrapper">
+                          <button class="btn-ai-magic" id="btnApplyTemplate" style="display:inline-flex;" title="Seleccionar y Aplicar Plantilla">
                             <svg width="18" height="18" viewBox="0 0 24 24" class="gemini-icon" fill="white">
-                                <path d="M12 2C12 2 13.5 8 20 12C13.5 16 12 22 12 22C12 22 10.5 16 4 12C10.5 8 12 2 12 2Z"/>
-                                <path d="M12 7C12 7 12.8 10 16 12C12.8 14 12 17 12 17C12 17 11.2 14 8 12C11.2 10 12 7 12 7Z" opacity="0.6"/>
+                              <path d="M12 2C12 2 13.5 8 20 12C13.5 16 12 22 12 22C12 22 10.5 16 4 12C10.5 8 12 2 12 2Z"/>
+                              <path d="M12 7C12 7 12.8 10 16 12C12.8 14 12 17 12 17C12 17 11.2 14 8 12C11.2 10 12 7 12 7Z" opacity="0.6"/>
                             </svg>
-                            <span>IA</span>
-                        </button>
+                            <span>PL</span>
+                          </button>
+                          <!-- Dropdown de plantillas para modo normal -->
+                          <div id="normalTemplateDropdown" style="display:none; position:absolute; top:calc(100% + 4px); left:0; z-index:1000; background:var(--bg-card); border:1px solid var(--border); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.15); min-width:220px; max-height:300px; overflow-y:auto; padding:4px 0;">
+                            <select id="normalTemplateSelect" size="8" style="width:100%; border:none; background:transparent; color:var(--text-primary); padding:4px 8px; cursor:pointer; font-size:0.85rem; outline:none;">
+                              <option value="generico">📋 General</option>
+                            </select>
+                          </div>
+                        </div>
                         <div style="width: 1px; height: 20px; background: var(--border); margin: 0 0.25rem;"></div>
                         <!-- PDF Controls - managed by state machine -->
                         <button class="btn btn-action-green" id="btnConfigPdfMain" style="display:none;"
