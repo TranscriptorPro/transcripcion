@@ -156,6 +156,15 @@ function updateUIByMode() {
 // Global UI Reset
 if (resetBtn) {
     resetBtn.addEventListener('click', () => {
+        // Revoke audio URLs and stop playback
+        window.uploadedFiles.forEach(item => {
+            if (item._audio) item._audio.pause();
+            if (item.audioUrl) URL.revokeObjectURL(item.audioUrl);
+        });
+        if (window._currentAudio) {
+            window._currentAudio = null;
+            window._currentPlayBtn = null;
+        }
         // Reset globals
         window.uploadedFiles = [];
         window.transcriptions = [];
