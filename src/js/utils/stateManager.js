@@ -8,6 +8,7 @@ window.updateButtonsVisibility = function (state) {
     const btnConfigPdfMain       = document.getElementById('btnConfigPdfMain');
     const btnPreviewPdfMain      = document.getElementById('btnPreviewPdfMain');
     const copyBtn                = document.getElementById('copyBtn');
+    const printBtn               = document.getElementById('printBtn');
     const downloadBtn            = document.getElementById('downloadBtn');
     const downloadBtnContainer   = document.getElementById('downloadBtnContainer');
     const btnStructureAI         = document.getElementById('btnStructureAI');
@@ -47,6 +48,10 @@ window.updateButtonsVisibility = function (state) {
     if (copyBtn) {
         copyBtn.style.display = isTranscribed ? 'inline-flex' : 'none';
         copyBtn.disabled = !isTranscribed;
+    }
+    if (printBtn) {
+        printBtn.style.display = isTranscribed ? 'inline-flex' : 'none';
+        printBtn.disabled = !isTranscribed;
     }
     if (downloadBtnContainer) {
         downloadBtnContainer.style.display = isTranscribed ? 'block' : 'none';
@@ -210,14 +215,18 @@ if (resetBtn) {
 // Buttons helpers mappings
 window.enableButtons = function () {
     const copyBtn = document.getElementById('copyBtn');
+    const printBtn = document.getElementById('printBtn');
     const downloadBtn = document.getElementById('downloadBtn');
     if (copyBtn) copyBtn.disabled = false;
+    if (printBtn) printBtn.disabled = false;
     if (downloadBtn) downloadBtn.disabled = false;
 }
 
 window.disableButtons = function () {
     const copyBtn = document.getElementById('copyBtn');
+    const printBtn = document.getElementById('printBtn');
     const downloadBtn = document.getElementById('downloadBtn');
     if (copyBtn) copyBtn.disabled = true;
+    if (printBtn) printBtn.disabled = true;
     if (downloadBtn) downloadBtn.disabled = true;
 }
