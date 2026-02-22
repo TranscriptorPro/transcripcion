@@ -1656,3 +1656,86 @@
             text-align: right;
             margin-top: 8px;
         }
+
+        /* ===== AI Magic Button (Gemini Style) ===== */
+        .btn-ai-magic {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899);
+            background-size: 300% 300%;
+            animation: ai-gradient 3s ease infinite;
+            border: none;
+            color: white;
+            border-radius: 10px;
+            padding: 6px 14px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 0 16px rgba(139, 92, 246, 0.5);
+            transition: box-shadow 0.3s;
+            cursor: pointer;
+        }
+
+        .btn-ai-magic:hover {
+            box-shadow: 0 0 24px rgba(236, 72, 153, 0.7);
+        }
+
+        @keyframes ai-gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .gemini-icon {
+            animation: gemini-spin 4s ease-in-out infinite;
+            fill: white;
+        }
+
+        @keyframes gemini-spin {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(90deg) scale(1.1); }
+            50% { transform: rotate(180deg) scale(1); }
+            75% { transform: rotate(270deg) scale(1.1); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .btn-ai-magic {
+                animation: none;
+            }
+            .gemini-icon {
+                animation: none;
+            }
+        }
+
+        /* ===== Editor Actions Bar — consistent button sizing ===== */
+        .editor-actions .btn,
+        .editor-actions .toolbar-btn {
+            min-width: 32px;
+            min-height: 32px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .editor-actions .btn svg,
+        .editor-actions .toolbar-btn svg {
+            fill: currentColor;
+        }
+
+        .editor-actions .toolbar-btn:hover {
+            transform: scale(1.08);
+        }
+
+        .editor-actions .btn-secondary:hover {
+            box-shadow: 0 0 8px rgba(100, 116, 139, 0.5);
+        }
+
+        .editor-actions .btn-primary:hover {
+            box-shadow: 0 0 8px rgba(15, 118, 110, 0.5);
+        }
+
+        .editor-actions .btn-accent:hover {
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+        }
