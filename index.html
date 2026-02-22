@@ -799,6 +799,12 @@
                 <div id="aiProgressBar" style="display:none; width:100%; height:3px; background:var(--border); border-radius:2px; overflow:hidden; margin-bottom:0.5rem;">
                     <div id="aiProgressFill" style="height:100%; width:40%; background:linear-gradient(90deg, var(--primary), var(--primary-light)); border-radius:2px; animation:aiProgressAnim 1.4s ease-in-out infinite;"></div>
                 </div>
+                <!-- AI Note Panel (no-print) -->
+                <div id="aiNotePanel" class="ai-note-panel no-print" style="display:none;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="flex-shrink:0; color:var(--primary);"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                    <span id="aiNoteContent"></span>
+                    <button class="ai-note-close" onclick="document.getElementById('aiNotePanel').style.display='none'" title="Cerrar">✕</button>
+                </div>
                 <!-- Find and Replace Panel -->
                 <div id="findReplacePanel" class="find-replace-panel">
                     <input type="text" id="findInput" placeholder="Buscar...">

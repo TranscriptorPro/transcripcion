@@ -869,6 +869,91 @@
             border-color: var(--primary);
         }
 
+        /* AI Note Panel */
+        .ai-note-panel {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+            padding: 0.65rem 0.9rem;
+            background: color-mix(in srgb, var(--primary) 8%, var(--bg-card));
+            border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.65rem;
+            line-height: 1.5;
+        }
+        .ai-note-panel span { flex: 1; }
+        .ai-note-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            padding: 0 0.2rem;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+        .ai-note-close:hover { color: var(--text-primary); }
+
+        /* Structured report content styles */
+        #editor .report-h1 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 0.3rem;
+            margin: 1.2rem 0 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        #editor .report-h2 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 1rem 0 0.35rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        #editor .report-h3 {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin: 0.7rem 0 0.25rem;
+        }
+        #editor .report-list {
+            margin: 0.2rem 0 0.5rem 1.2rem;
+            padding: 0;
+        }
+        #editor .report-list li {
+            margin-bottom: 0.2rem;
+            font-size: 0.9rem;
+        }
+        #editor .report-list-nested {
+            margin-left: 1.5rem;
+        }
+        #editor .report-p {
+            margin: 0.3rem 0;
+            font-size: 0.9rem;
+            line-height: 1.65;
+        }
+
+        /* Print: hide UI-only elements */
+        @media print {
+            .no-print,
+            .ai-note-panel,
+            #aiNotePanel,
+            #aiProgressBar,
+            .header,
+            .editor-toolbar,
+            .find-replace-panel,
+            .tabs-container,
+            .editor-actions,
+            #editorToolbar {
+                display: none !important;
+            }
+        }
+
         /* Toast */
         .toast {
             position: fixed;
