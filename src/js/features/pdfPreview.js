@@ -268,3 +268,63 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// ============ IMPRIMIR DESDE VISTA PREVIA ============
+// Inyecta el contenido A4 en un iframe oculto y llama print() sobre él.
+// Esto imprime SOLO el informe, sin ningún elemento de la UI.
+window.printFromPreview = function () {
+    const page = document.getElementById('previewPage');
+    if (!page) { window.print(); return; }
+
+    // Recopilar todas las reglas CSS del documento principal
+    let allStyles = '';
+    try {
+        Array.from(document.styleSheets).forEach(ss => {
+            try {
+                allStyles += Array.from(ss.cssRules).map(r => r.cssText).join('\n');
+            } catch (_) { /* cross-origin stylesheet, skip */ }
+        });
+    } catch (_) {}
+
+    // Leer el color de acento aplicado en la página
+    const accentColor = page.style.getPropertyValue('--pa') || '#1a56a0';
+
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:21cm;height:29.7cm;opacity:0;border:none;';
+    document.body.appendChild(iframe);
+
+    const iDoc = iframe.contentDocument || iframe.contentWindow.document;
+    iDoc.open();
+    iDoc.write(`<!DOCTYPE html><html><head>
+        <meta charset="UTF-8">
+        <title>Imprimir Informe</title>
+        <style>${allStyles}</style>
+        <style>
+            :root { --pa: ${accentColor}; }
+            html, body { margin: 0; padding: 0; background: white; }
+            .a4-page {
+                box-shadow: none !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+                width: 21cm !important;
+                min-height: auto !important;
+            }
+            .no-print, .ai-note-panel { display: none !important; }
+            @media print {
+                html, body { margin: 0; padding: 0; }
+                .a4-page { page-break-inside: avoid; }
+            }
+        </style>
+    </head><body>${page.outerHTML}</body></html>`);
+    iDoc.close();
+
+    iframe.onload = function () {
+        setTimeout(() => {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+            setTimeout(() => {
+                if (document.body.contains(iframe)) document.body.removeChild(iframe);
+            }, 2000);
+        }, 400);
+    };
+};

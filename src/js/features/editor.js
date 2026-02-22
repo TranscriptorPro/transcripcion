@@ -340,7 +340,11 @@ if (copyBtn && editor) {
 const printBtn = document.getElementById('printBtn');
 if (printBtn) {
     printBtn.addEventListener('click', () => {
-        window.print();
+        if (typeof openPrintPreview === 'function') {
+            openPrintPreview();
+        } else {
+            window.print(); // fallback
+        }
     });
 }
 
@@ -396,8 +400,10 @@ function downloadFile(format) {
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = `${fileName}_${fileDate}.${ext}`;
+        document.body.appendChild(a);
         a.click();
-        URL.revokeObjectURL(a.href);
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
         showToast(`Descargado .${ext}`, 'success');
     }
 }

@@ -228,6 +228,7 @@ window.initModals = function () {
     const printPreviewOverlay = document.getElementById('printPreviewOverlay');
     const closePrintPreview = document.getElementById('closePrintPreview');
     const btnDownloadFromPreview = document.getElementById('btnDownloadFromPreview');
+    const btnPrintFromPreview = document.getElementById('btnPrintFromPreview');
     const btnClosePrintPreviewFooter = document.getElementById('btnClosePrintPreviewFooter');
 
     const closePrintPreviewModal = () => printPreviewOverlay?.classList.remove('active');
@@ -238,6 +239,12 @@ window.initModals = function () {
     if (btnDownloadFromPreview) {
         btnDownloadFromPreview.addEventListener('click', () => {
             if (typeof downloadPDF === 'function') downloadPDF();
+        });
+    }
+
+    if (btnPrintFromPreview) {
+        btnPrintFromPreview.addEventListener('click', () => {
+            if (typeof printFromPreview === 'function') printFromPreview();
         });
     }
 
