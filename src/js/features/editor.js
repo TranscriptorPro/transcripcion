@@ -477,7 +477,7 @@ async function applyNormalTemplate(templateKey) {
             const { body, note } = parseAIResponse(rawMarkdown);
             editorEl.innerHTML = body;
             window._lastStructuredHTML = body;
-            if (typeof showAINote === 'function') showAINote(note);
+            if (typeof showAINote === 'function') showAINote(note, templateName);
             const btnR = document.getElementById('btnRestoreOriginal');
             if (btnR) { btnR.style.display = ''; btnR._showingOriginal = false; btnR.textContent = '↩'; }
             const btnM = document.getElementById('btnMedicalCheck');

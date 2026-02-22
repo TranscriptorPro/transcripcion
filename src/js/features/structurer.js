@@ -1,20 +1,37 @@
 // ============ CLINICAL STRUCTURER (LLaMA 3) ============
-// Detect template type from raw text content (keyword matching)
+// Remove accents for loose comparison
+function _normStr(s) {
+    return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+// Detect template type from raw text content (keyword + prompt matching with accent normalization)
 function autoDetectTemplateKey(text) {
     if (!text || typeof window.MEDICAL_TEMPLATES === 'undefined') return 'generico';
-    const lowerText = text.toLowerCase();
-    // Build score map: for each template, count how many keywords from its name/prompt match
+    const normText = _normStr(text);
     const scores = {};
     for (const [key, tmpl] of Object.entries(window.MEDICAL_TEMPLATES)) {
         if (key === 'generico') continue;
-        const name = (tmpl.name || '').toLowerCase();
-        const prompt = (tmpl.prompt || '').toLowerCase();
+        const name   = _normStr(tmpl.name);
+        const prompt = _normStr(tmpl.prompt);
         let score = 0;
-        // Split template name into words and check presence in text
-        name.split(/\s+/).forEach(word => { if (word.length > 3 && lowerText.includes(word)) score += 3; });
-        // Check some prompt keywords
-        const promptWords = prompt.split(/\s+/).filter(w => w.length > 5);
-        promptWords.slice(0, 20).forEach(word => { if (lowerText.includes(word)) score++; });
+        // Template name words (>3 chars) — high weight
+        name.split(/\s+/).forEach(word => {
+            if (word.length > 3 && normText.includes(word)) score += 3;
+        });
+        // First 20 significant words from prompt
+        prompt.split(/\s+/).filter(w => w.length > 5).slice(0, 20).forEach(word => {
+            if (normText.includes(word)) score++;
+        });
+        // Keywords array — with stem fallback (strip last 1–2 chars to handle plural/accents)
+        if (Array.isArray(tmpl.keywords)) {
+            tmpl.keywords.forEach(kw => {
+                _normStr(kw).split(/\s+/).forEach(w => {
+                    if (w.length < 4) return;
+                    if (normText.includes(w)) { score += 2; return; }
+                    if (w.length >= 5 && normText.includes(w.slice(0, -1))) { score += 1; return; }
+                    if (w.length >= 6 && normText.includes(w.slice(0, -2))) { score += 1; }
+                });
+            });
+        }
         if (score > 0) scores[key] = score;
     }
     if (Object.keys(scores).length === 0) return 'generico';
@@ -135,7 +152,16 @@ async function structureTranscription(text, templateKey) {
             body: JSON.stringify({
                 model: "llama-3.3-70b-versatile",
                 messages: [
-                    { role: "system", content: prompt + "\n\nREGLAS DE FORMATO OBLIGATORIAS:\n- Devuelve SOLO el contenido del informe en markdown.\n- NO agregues notas, aclaraciones, advertencias ni comentarios propios al final ni en ningún lugar del informe.\n- Si falta información, usa [No especificado] en el campo correspondiente.\n- No uses encabezados de nivel > 3 (###)." },
+                    { role: "system", content: prompt + `
+
+REGLAS ABSOLUTAS — cumplirlas todas sin excepción:
+1. PRESERVA TODO EL CONTENIDO: cada hallazgo, medición, valor y dato de la transcripción DEBE aparecer en el informe. Nunca descartes información clínica, aunque no encaje perfectamente en la plantilla.
+2. Si la transcripción contiene datos que no corresponden a las secciones propuestas, ubícalos en la sección más apropiada o crea una subsección adicional con un título descriptivo.
+3. Usa [No especificado] SOLO cuando un campo de la plantilla no tiene absolutamente ningún dato en la transcripción.
+4. NO añadas información que no esté en la transcripción.
+5. NO añadas notas, comentarios ni advertencias propias en ningún lugar del informe.
+6. Devuelve ÚNICAMENTE el contenido del informe en markdown, sin texto introductorio ni final.
+7. No uses encabezados de nivel > 3 (###).` },
                     { role: "user", content: `Transcripción a estructurar:\n\n${text}` }
                 ],
                 temperature: 0.1
@@ -153,12 +179,16 @@ async function structureTranscription(text, templateKey) {
 }
 
 // ---- AI Note panel helper ----
-function showAINote(note) {
+// templateLabel: optional string to show which template was used
+function showAINote(note, templateLabel) {
     const panel = document.getElementById('aiNotePanel');
     const content = document.getElementById('aiNoteContent');
     if (!panel || !content) return;
-    if (!note) { panel.style.display = 'none'; return; }
-    content.textContent = note;
+    const parts = [];
+    if (templateLabel) parts.push(`📋 Plantilla: <strong>${templateLabel}</strong>`);
+    if (note) parts.push(note);
+    if (parts.length === 0) { panel.style.display = 'none'; return; }
+    content.innerHTML = parts.join(' &nbsp;·&nbsp; ');
     panel.style.display = 'flex';
 }
 
@@ -255,7 +285,9 @@ window.initStructurer = function () {
                 const { body, note } = parseAIResponse(rawMarkdown);
                 editor.innerHTML = body;
                 window._lastStructuredHTML = body;
-                showAINote(note);
+                const tmplLabel = (typeof MEDICAL_TEMPLATES !== 'undefined' && MEDICAL_TEMPLATES[currentTemplate])
+                    ? MEDICAL_TEMPLATES[currentTemplate].name : currentTemplate;
+                showAINote(note, tmplLabel);
                 const btnR = document.getElementById('btnRestoreOriginal');
                 if (btnR) { btnR.style.display = ''; btnR._showingOriginal = false; btnR.textContent = '↩'; }
                 const btnM = document.getElementById('btnMedicalCheck');
@@ -293,7 +325,9 @@ window.initStructurer = function () {
                 const { body, note } = parseAIResponse(rawMarkdown);
                 editor.innerHTML = body;
                 window._lastStructuredHTML = body;
-                showAINote(note);
+                const tmplLabel2 = (typeof MEDICAL_TEMPLATES !== 'undefined' && MEDICAL_TEMPLATES[templateKey])
+                    ? MEDICAL_TEMPLATES[templateKey].name : templateKey;
+                showAINote(note, tmplLabel2);
                 const btnR2 = document.getElementById('btnRestoreOriginal');
                 if (btnR2) { btnR2.style.display = ''; btnR2._showingOriginal = false; btnR2.textContent = '↩'; }
                 const btnM2 = document.getElementById('btnMedicalCheck');
