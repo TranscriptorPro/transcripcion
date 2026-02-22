@@ -1659,25 +1659,33 @@
 
         /* ===== AI Magic Button (Gemini Style) ===== */
         .btn-ai-magic {
-            background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899);
-            background-size: 300% 300%;
-            animation: ai-gradient 3s ease infinite;
+            height: 36px;
+            padding: 0 14px;
+            border-radius: 10px;
             border: none;
             color: white;
-            border-radius: 10px;
-            padding: 6px 14px;
             font-weight: 600;
             font-size: 0.85rem;
-            display: flex;
+            display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899, #06b6d4);
+            background-size: 300% 300%;
+            animation: ai-gradient 3s ease infinite;
             box-shadow: 0 0 16px rgba(139, 92, 246, 0.5);
             transition: box-shadow 0.3s;
             cursor: pointer;
         }
 
-        .btn-ai-magic:hover {
+        .btn-ai-magic:hover:not(:disabled) {
             box-shadow: 0 0 24px rgba(236, 72, 153, 0.7);
+        }
+
+        .btn-ai-magic:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            animation: none;
         }
 
         @keyframes ai-gradient {
@@ -1705,6 +1713,38 @@
             .gemini-icon {
                 animation: none;
             }
+        }
+
+        /* ===== Action Green Buttons (Config PDF, Preview PDF, Copiar, Imprimir) ===== */
+        .btn-action-green {
+            background-color: #0f766e;
+            color: white;
+            border: none;
+            height: 36px;
+            min-width: 36px;
+            padding: 0 10px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .btn-action-green:hover:not(:disabled) {
+            background-color: #0d6660;
+            box-shadow: 0 0 10px rgba(15, 118, 110, 0.4);
+        }
+
+        .btn-action-green:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Download button consistent height */
+        #downloadBtn {
+            height: 36px;
+            border-radius: 8px;
         }
 
         /* ===== Editor Actions Bar — consistent button sizing ===== */

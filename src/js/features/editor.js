@@ -291,6 +291,13 @@ if (copyBtn && editor) {
     });
 }
 
+const printBtn = document.getElementById('printBtn');
+if (printBtn) {
+    printBtn.addEventListener('click', () => {
+        window.print();
+    });
+}
+
 // Download controls
 const downloadDropdown = document.querySelector('.dropdown-menu'); // A function scope limit prevents collision
 if (downloadBtn && downloadDropdown) {
