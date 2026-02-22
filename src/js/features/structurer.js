@@ -3,39 +3,72 @@
 function _normStr(s) {
     return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 }
-// Detect template type from raw text content (keyword + prompt matching with accent normalization)
+// Detect template type from raw text content.
+// REGLA ESTRICTA: si no hay coincidencia clara y confiable → 'generico'.
+// No usa palabras del prompt (son vocablo médico genérico y generan falsos positivos).
+// Solo usa: nombre de la plantilla + array de keywords explícitos.
 function autoDetectTemplateKey(text) {
     if (!text || typeof window.MEDICAL_TEMPLATES === 'undefined') return 'generico';
     const normText = _normStr(text);
     const scores = {};
+
     for (const [key, tmpl] of Object.entries(window.MEDICAL_TEMPLATES)) {
         if (key === 'generico') continue;
-        const name   = _normStr(tmpl.name);
-        const prompt = _normStr(tmpl.prompt);
         let score = 0;
-        // Template name words (>3 chars) — high weight
-        name.split(/\s+/).forEach(word => {
-            if (word.length > 3 && normText.includes(word)) score += 3;
+
+        // 1. Palabras del NOMBRE de la plantilla (>3 chars) — peso alto
+        //    Ej: "Laringoscopía" → "laringoscopia": si aparece en el texto, +5
+        _normStr(tmpl.name).split(/\s+/).forEach(word => {
+            if (word.length > 3 && normText.includes(word)) score += 5;
         });
-        // First 20 significant words from prompt
-        prompt.split(/\s+/).filter(w => w.length > 5).slice(0, 20).forEach(word => {
-            if (normText.includes(word)) score++;
-        });
-        // Keywords array — with stem fallback (strip last 1–2 chars to handle plural/accents)
+
+        // 2. Keywords explícitos del array — forma más confiable de detección
         if (Array.isArray(tmpl.keywords)) {
             tmpl.keywords.forEach(kw => {
-                _normStr(kw).split(/\s+/).forEach(w => {
-                    if (w.length < 4) return;
-                    if (normText.includes(w)) { score += 2; return; }
-                    if (w.length >= 5 && normText.includes(w.slice(0, -1))) { score += 1; return; }
-                    if (w.length >= 6 && normText.includes(w.slice(0, -2))) { score += 1; }
-                });
+                const normKw = _normStr(kw);
+                // Coincidencia exacta de frase completa → máxima confianza
+                if (normText.includes(normKw)) {
+                    score += 6;
+                    return;
+                }
+                // Todas las palabras de la keyword deben estar presentes
+                // (evita que UNA palabra suelta de una keyword compuesta sume puntos)
+                const words = normKw.split(/\s+/).filter(w => w.length >= 4);
+                if (words.length > 1 && words.every(w => normText.includes(w))) {
+                    score += 4;
+                    return;
+                }
+                // Keyword de una sola palabra con raíz (stem) como fallback
+                if (words.length === 1) {
+                    const w = words[0];
+                    if (normText.includes(w)) { score += 4; return; }
+                    if (w.length >= 6 && normText.includes(w.slice(0, -2))) score += 2;
+                }
             });
         }
+
         if (score > 0) scores[key] = score;
     }
+
     if (Object.keys(scores).length === 0) return 'generico';
-    return Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
+
+    const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+    const [bestKey, bestScore] = sorted[0];
+    const runnerUpScore = sorted[1]?.[1] ?? 0;
+
+    // UMBRAL MÍNIMO DE CONFIANZA
+    // Requiere al menos una coincidencia significativa para evitar falsos positivos.
+    // Con los pesos actuales: 1 keyword exacta = 6pts, 1 palabra del nombre = 5pts.
+    const MIN_SCORE = 5;
+    if (bestScore < MIN_SCORE) return 'generico';
+
+    // VERIFICAR AMBIGÜEDAD: si hay dos candidatos muy cercanos con scores bajos,
+    // no hay suficiente certeza para elegir → usar generico.
+    if (runnerUpScore >= MIN_SCORE && bestScore < runnerUpScore * 1.4 && bestScore < 12) {
+        return 'generico';
+    }
+
+    return bestKey;
 }
 
 // ============ MARKDOWN → HTML CONVERTER ============
@@ -254,8 +287,15 @@ window.initStructurer = function () {
             showProgress();
             try {
                 let currentTemplate = typeof selectedTemplate !== 'undefined' ? selectedTemplate : 'generico';
+                let autoDetected = false;
                 if (!currentTemplate || currentTemplate === 'generico') {
-                    currentTemplate = autoDetectTemplateKey(rawText);
+                    const detected = autoDetectTemplateKey(rawText);
+                    if (detected !== 'generico') {
+                        currentTemplate = detected;
+                        autoDetected = true;
+                    } else {
+                        currentTemplate = 'generico';
+                    }
                 }
                 const rawMarkdown = await structureTranscription(rawText, currentTemplate);
                 const { body, note } = parseAIResponse(rawMarkdown);
@@ -263,7 +303,18 @@ window.initStructurer = function () {
                 window._lastStructuredHTML = body;
                 const tmplLabel = (typeof MEDICAL_TEMPLATES !== 'undefined' && MEDICAL_TEMPLATES[currentTemplate])
                     ? MEDICAL_TEMPLATES[currentTemplate].name : currentTemplate;
-                showAINote(note, tmplLabel);
+                // Armar el label visible en el panel:
+                // - Si se detectó automáticamente una plantilla específica → mostrar nombre
+                // - Si no se detectó ninguna (usamos genérico) → avisar al usuario
+                let displayLabel;
+                if (currentTemplate === 'generico') {
+                    displayLabel = '⚠️ Plantilla general (especialidad no detectada — seleccione manualmente si corresponde)';
+                } else if (autoDetected) {
+                    displayLabel = `✅ Detectado: ${tmplLabel}`;
+                } else {
+                    displayLabel = tmplLabel;
+                }
+                showAINote(note, displayLabel);
                 const btnR = document.getElementById('btnRestoreOriginal');
                 if (btnR) { btnR.style.display = ''; btnR._showingOriginal = false; btnR.textContent = '↩'; }
                 const btnM = document.getElementById('btnMedicalCheck');
