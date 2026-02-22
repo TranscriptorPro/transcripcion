@@ -171,6 +171,32 @@ window.initModals = function () {
 
     if (btnPreviewFromConfig) {
         btnPreviewFromConfig.addEventListener('click', () => {
+            // Save config silently before opening preview
+            if (typeof savePdfConfiguration === 'function') {
+                const val = (id) => document.getElementById(id)?.value || '';
+                const chk = (id, def) => document.getElementById(id)?.checked ?? def;
+                const config = {
+                    studyType: val('pdfStudyType'), studyDate: val('pdfStudyDate'),
+                    studyTime: val('pdfStudyTime'), studyReason: val('pdfStudyReason'),
+                    referringDoctor: val('pdfReferringDoctor'), equipment: val('pdfEquipment'),
+                    technique: val('pdfTechnique'), patientName: val('pdfPatientName'),
+                    patientDni: val('pdfPatientDni'), patientAge: val('pdfPatientAge'),
+                    patientSex: val('pdfPatientSex'), patientInsurance: val('pdfPatientInsurance'),
+                    patientAffiliateNum: val('pdfPatientAffiliateNum'), patientPhone: val('pdfPatientPhone'),
+                    patientBirthdate: val('pdfPatientBirthdate'), pageSize: val('pdfPageSize') || 'a4',
+                    orientation: val('pdfOrientation') || 'portrait', margins: val('pdfMargins') || 'normal',
+                    font: val('pdfFont') || 'helvetica', fontSize: val('pdfFontSize') || '11',
+                    lineSpacing: val('pdfLineSpacing') || '1.5',
+                    showHeader: chk('pdfShowHeader', true), showFooter: chk('pdfShowFooter', true),
+                    showPageNum: chk('pdfShowPageNum', true), showDate: chk('pdfShowDate', false),
+                    showQR: chk('pdfShowQR', false), showSignLine: chk('pdfShowSignLine', true),
+                    showSignName: chk('pdfShowSignName', true), showSignMatricula: chk('pdfShowSignMatricula', true),
+                    footerText: val('pdfFooterText'), selectedWorkplace: val('pdfWorkplace'),
+                    workplaceAddress: val('pdfWorkplaceAddress'), workplacePhone: val('pdfWorkplacePhone'),
+                    workplaceEmail: val('pdfWorkplaceEmail')
+                };
+                localStorage.setItem('pdf_config', JSON.stringify(config));
+            }
             if (typeof openPrintPreview === 'function') openPrintPreview();
         });
     }
@@ -185,10 +211,12 @@ window.initModals = function () {
     const printPreviewOverlay = document.getElementById('printPreviewOverlay');
     const closePrintPreview = document.getElementById('closePrintPreview');
     const btnDownloadFromPreview = document.getElementById('btnDownloadFromPreview');
+    const btnClosePrintPreviewFooter = document.getElementById('btnClosePrintPreviewFooter');
 
     const closePrintPreviewModal = () => printPreviewOverlay?.classList.remove('active');
 
     if (closePrintPreview) closePrintPreview.addEventListener('click', closePrintPreviewModal);
+    if (btnClosePrintPreviewFooter) btnClosePrintPreviewFooter.addEventListener('click', closePrintPreviewModal);
 
     if (btnDownloadFromPreview) {
         btnDownloadFromPreview.addEventListener('click', () => {

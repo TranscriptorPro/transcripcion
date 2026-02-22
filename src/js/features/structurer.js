@@ -1,4 +1,25 @@
 // ============ CLINICAL STRUCTURER (LLaMA 3) ============
+// Detect template type from raw text content (keyword matching)
+function autoDetectTemplateKey(text) {
+    if (!text || typeof window.MEDICAL_TEMPLATES === 'undefined') return 'generico';
+    const lowerText = text.toLowerCase();
+    // Build score map: for each template, count how many keywords from its name/prompt match
+    const scores = {};
+    for (const [key, tmpl] of Object.entries(window.MEDICAL_TEMPLATES)) {
+        if (key === 'generico') continue;
+        const name = (tmpl.name || '').toLowerCase();
+        const prompt = (tmpl.prompt || '').toLowerCase();
+        let score = 0;
+        // Split template name into words and check presence in text
+        name.split(/\s+/).forEach(word => { if (word.length > 3 && lowerText.includes(word)) score += 3; });
+        // Check some prompt keywords
+        const promptWords = prompt.split(/\s+/).filter(w => w.length > 5);
+        promptWords.slice(0, 20).forEach(word => { if (lowerText.includes(word)) score++; });
+        if (score > 0) scores[key] = score;
+    }
+    if (Object.keys(scores).length === 0) return 'generico';
+    return Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
+}
 
 async function structureTranscription(text, templateKey) {
     if (!GROQ_API_KEY) {
@@ -53,6 +74,11 @@ async function structureTranscription(text, templateKey) {
 // ============ AI BUTTON HANDLERS ============
 window.initStructurer = function () {
     const btnStructureAIEl = document.getElementById('btnStructureAI');
+    const aiProgressBar = document.getElementById('aiProgressBar');
+
+    const showProgress = () => { if (aiProgressBar) aiProgressBar.style.display = 'block'; };
+    const hideProgress = () => { if (aiProgressBar) aiProgressBar.style.display = 'none'; };
+
     if (btnStructureAIEl) {
         btnStructureAIEl.addEventListener('click', async () => {
             const editor = document.getElementById('editor');
@@ -63,10 +89,14 @@ window.initStructurer = function () {
             const rawText = editor.innerText;
             const oldHTML = btnStructureAIEl.innerHTML;
             btnStructureAIEl.disabled = true;
-            btnStructureAIEl.innerHTML = '⏳ Estructurando...';
+            btnStructureAIEl.innerHTML = '⏳ IA...';
+            showProgress();
             try {
-                // Use the selectedTemplate global if it exists, otherwise fallback to 'generico'
-                const currentTemplate = typeof selectedTemplate !== 'undefined' ? selectedTemplate : 'generico';
+                // Auto-detect template if none selected or generic
+                let currentTemplate = typeof selectedTemplate !== 'undefined' ? selectedTemplate : 'generico';
+                if (!currentTemplate || currentTemplate === 'generico') {
+                    currentTemplate = autoDetectTemplateKey(rawText);
+                }
                 const structured = await structureTranscription(rawText, currentTemplate);
                 editor.innerHTML = structured;
                 if (typeof updateWordCount === 'function') updateWordCount();
@@ -74,10 +104,10 @@ window.initStructurer = function () {
                 if (typeof showToast === 'function') showToast('✅ Texto estructurado con IA', 'success');
             } catch (error) {
                 if (typeof showToast === 'function') showToast('Error al estructurar', 'error');
-                btnStructureAIEl.innerHTML = oldHTML;
             } finally {
                 btnStructureAIEl.disabled = false;
                 btnStructureAIEl.innerHTML = oldHTML;
+                hideProgress();
             }
         });
     }
