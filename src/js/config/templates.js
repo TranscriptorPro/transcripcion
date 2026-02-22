@@ -804,4 +804,40 @@ window.populateTemplateDropdown = function () {
 
     const normalSelect = document.getElementById('normalTemplateSelect');
     if (normalSelect) buildDropdown(normalSelect);
+
+    // Build custom styled list for normal-mode template dropdown
+    const normalList = document.getElementById('normalTemplateList');
+    if (normalList) {
+        const catIcons = {
+            "Neumología": "🫁", "Oftalmología": "👁️", "Imágenes": "🖼️",
+            "Endoscopía": "🔭", "Cardiología": "🫀", "Ginecología": "🌸",
+            "Neurología": "🧠", "ORL": "👂", "Quirúrgico": "🔪", "General": "📄"
+        };
+        normalList.innerHTML = '';
+        // General option
+        const generalItem = document.createElement('li');
+        generalItem.dataset.value = 'generico';
+        generalItem.textContent = '📋 Plantilla General';
+        generalItem.className = 'tmpl-list-general';
+        normalList.appendChild(generalItem);
+
+        for (const [cat, keys] of Object.entries(window.TEMPLATE_CATEGORIES || {})) {
+            const hasItems = keys.some(key => key !== 'generico' && window.MEDICAL_TEMPLATES[key]);
+            if (!hasItems) continue;
+            const header = document.createElement('li');
+            header.textContent = `${catIcons[cat] || ''} ${cat}`;
+            header.className = 'tmpl-list-header';
+            normalList.appendChild(header);
+            keys.forEach(key => {
+                if (key === 'generico') return;
+                const t = window.MEDICAL_TEMPLATES[key];
+                if (!t) return;
+                const item = document.createElement('li');
+                item.dataset.value = key;
+                item.textContent = t.name;
+                item.className = 'tmpl-list-item';
+                normalList.appendChild(item);
+            });
+        }
+    }
 }

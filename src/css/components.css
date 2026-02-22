@@ -1822,3 +1822,39 @@
         .editor-actions .btn-accent:hover {
             box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
         }
+
+        /* ============ NORMAL MODE TEMPLATE DROPDOWN LIST ============ */
+        .tmpl-list-item {
+            padding: 7px 14px 7px 22px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: background 0.15s;
+        }
+
+        .tmpl-list-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .tmpl-list-general {
+            padding: 8px 14px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: background 0.15s;
+        }
+
+        .tmpl-list-general:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .tmpl-list-header {
+            padding: 8px 14px 4px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.75rem;
+            font-weight: bold;
+            font-style: normal;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            pointer-events: none;
+        }
