@@ -289,7 +289,7 @@ if (printBtn) {
 }
 
 // Download controls
-const downloadDropdown = document.querySelector('.dropdown-menu'); // A function scope limit prevents collision
+const downloadDropdown = document.getElementById('downloadDropdown');
 if (downloadBtn && downloadDropdown) {
     downloadBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -379,7 +379,37 @@ ${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
 // ============ APPLY TEMPLATE BUTTON (Normal Mode) — dropdown ============
 const applyTemplateBtn = document.getElementById('btnApplyTemplate');
 const normalTemplateDropdown = document.getElementById('normalTemplateDropdown');
-const normalTemplateSelectEl = document.getElementById('normalTemplateSelect');
+const normalTemplateList = document.getElementById('normalTemplateList');
+
+function applyNormalTemplate(templateKey) {
+    normalTemplateDropdown.style.display = 'none';
+    const editorEl = document.getElementById('editor');
+    const rawText = editorEl ? editorEl.innerText : '';
+
+    if (!rawText.trim()) {
+        if (typeof showToast === 'function') showToast('No hay texto para aplicar plantilla', 'error');
+        return;
+    }
+    if (typeof MEDICAL_TEMPLATES === 'undefined') return;
+
+    const template = MEDICAL_TEMPLATES[templateKey];
+    const templateName = template ? template.name : 'General';
+
+    const structured = `<h2>${templateName}</h2>
+<h3>Datos del Paciente:</h3>
+<p>[Completar desde historial o manualmente]</p>
+<h3>Transcripción:</h3>
+${rawText.split('\n').filter(l => l.trim()).map(line => `<p>${line}</p>`).join('\n')}
+<h3>Conclusión:</h3>
+<p>[A completar por el profesional]</p>`;
+
+    if (editorEl) {
+        editorEl.innerHTML = structured;
+        if (typeof window.updateWordCount === 'function') window.updateWordCount();
+        if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURED');
+        if (typeof showToast === 'function') showToast(`✅ Plantilla "${templateName}" aplicada`, 'success');
+    }
+}
 
 if (applyTemplateBtn && normalTemplateDropdown) {
     applyTemplateBtn.addEventListener('click', (e) => {
@@ -392,37 +422,12 @@ if (applyTemplateBtn && normalTemplateDropdown) {
         if (normalTemplateDropdown) normalTemplateDropdown.style.display = 'none';
     });
 
-    if (normalTemplateSelectEl) {
-        normalTemplateSelectEl.addEventListener('change', () => {
-            normalTemplateDropdown.style.display = 'none';
-
-            const editorEl = document.getElementById('editor');
-            const rawText = editorEl ? editorEl.innerText : '';
-            const templateKey = normalTemplateSelectEl.value;
-
-            if (!rawText.trim()) {
-                if (typeof showToast === 'function') showToast('No hay texto para aplicar plantilla', 'error');
-                return;
-            }
-            if (typeof MEDICAL_TEMPLATES === 'undefined') return;
-
-            const template = MEDICAL_TEMPLATES[templateKey];
-            const templateName = template ? template.name : 'General';
-
-            const structured = `<h2>${templateName}</h2>
-<h3>Datos del Paciente:</h3>
-<p>[Completar desde historial o manualmente]</p>
-<h3>Transcripción:</h3>
-${rawText.split('\n').filter(l => l.trim()).map(line => `<p>${line}</p>`).join('\n')}
-<h3>Conclusión:</h3>
-<p>[A completar por el profesional]</p>`;
-
-            if (editorEl) {
-                editorEl.innerHTML = structured;
-                if (typeof window.updateWordCount === 'function') window.updateWordCount();
-                if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURED');
-                if (typeof showToast === 'function') showToast(`✅ Plantilla "${templateName}" aplicada`, 'success');
-            }
+    if (normalTemplateList) {
+        normalTemplateList.addEventListener('click', (e) => {
+            const item = e.target.closest('li[data-value]');
+            if (!item) return;
+            e.stopPropagation();
+            applyNormalTemplate(item.dataset.value);
         });
     }
 }

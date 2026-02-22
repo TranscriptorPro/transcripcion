@@ -126,15 +126,6 @@ window.initModals = function () {
         });
     }
 
-    // Escape closing
-    window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            if (helpModal) helpModal.classList.remove('active');
-            const wpModal = document.getElementById('workplaceModalOverlay');
-            if (wpModal) wpModal.classList.remove('active');
-        }
-    });
-
     // Workplace Modals (Basic Overlay Toggle)
     document.getElementById('btnAddWorkplace')?.addEventListener('click', () => {
         document.getElementById('workplaceModalOverlay')?.classList.add('active');
@@ -159,6 +150,68 @@ window.initModals = function () {
             if (typeof openPrintPreview === 'function') openPrintPreview();
         });
     }
+
+    // PDF Config Modal — close buttons
+    const pdfModalOverlay = document.getElementById('pdfModalOverlay');
+    const closePdfConfig = document.getElementById('closePdfConfig');
+    const btnClosePdfConfig = document.getElementById('btnClosePdfConfig');
+    const btnSavePdfConfig = document.getElementById('btnSavePdfConfig');
+    const btnPreviewFromConfig = document.getElementById('btnPreviewFromConfig');
+
+    const closePdfConfigModal = () => pdfModalOverlay?.classList.remove('active');
+
+    if (closePdfConfig) closePdfConfig.addEventListener('click', closePdfConfigModal);
+    if (btnClosePdfConfig) btnClosePdfConfig.addEventListener('click', closePdfConfigModal);
+
+    if (btnSavePdfConfig) {
+        btnSavePdfConfig.addEventListener('click', () => {
+            if (typeof savePdfConfiguration === 'function') savePdfConfiguration();
+        });
+    }
+
+    if (btnPreviewFromConfig) {
+        btnPreviewFromConfig.addEventListener('click', () => {
+            if (typeof openPrintPreview === 'function') openPrintPreview();
+        });
+    }
+
+    if (pdfModalOverlay) {
+        pdfModalOverlay.addEventListener('click', (e) => {
+            if (e.target === pdfModalOverlay) closePdfConfigModal();
+        });
+    }
+
+    // Print Preview Modal — close buttons
+    const printPreviewOverlay = document.getElementById('printPreviewOverlay');
+    const closePrintPreview = document.getElementById('closePrintPreview');
+    const btnDownloadFromPreview = document.getElementById('btnDownloadFromPreview');
+
+    const closePrintPreviewModal = () => printPreviewOverlay?.classList.remove('active');
+
+    if (closePrintPreview) closePrintPreview.addEventListener('click', closePrintPreviewModal);
+
+    if (btnDownloadFromPreview) {
+        btnDownloadFromPreview.addEventListener('click', () => {
+            if (typeof downloadPDF === 'function') downloadPDF();
+        });
+    }
+
+    if (printPreviewOverlay) {
+        printPreviewOverlay.addEventListener('click', (e) => {
+            if (e.target === printPreviewOverlay) closePrintPreviewModal();
+        });
+    }
+
+    // Escape key — close any open modal
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            if (helpModal) helpModal.classList.remove('active');
+            const wpModal = document.getElementById('workplaceModalOverlay');
+            if (wpModal) wpModal.classList.remove('active');
+            closePdfConfigModal();
+            closePrintPreviewModal();
+        }
+    });
 }
 
 window.initShortcuts = function () {

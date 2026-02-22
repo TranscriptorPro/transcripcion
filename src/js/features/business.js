@@ -97,6 +97,7 @@ window.initBusinessSuite = function () {
     if (typeof initShortcuts === 'function') initShortcuts();
     if (typeof initApiManagement === 'function') initApiManagement();
     if (typeof initWorkplaceManagement === 'function') initWorkplaceManagement();
+    if (typeof initStructurer === 'function') initStructurer();
 
     try {
         if (typeof applyProfessionalData === 'function') applyProfessionalData(adminProfData);
