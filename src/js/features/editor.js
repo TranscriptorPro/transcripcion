@@ -220,18 +220,68 @@ if (closeFindReplace && findReplacePanel) {
     closeFindReplace.addEventListener('click', () => findReplacePanel.classList.remove('active'));
 }
 
+// ---- Find & Replace helpers ----
+const btnMatchCase = $('btnMatchCase');
+const btnWholeWord = $('btnWholeWord');
+
+function isFRMatchCase() { return btnMatchCase?.getAttribute('aria-pressed') === 'true'; }
+function isFRWholeWord() { return btnWholeWord?.getAttribute('aria-pressed') === 'true'; }
+
+if (btnMatchCase) {
+    btnMatchCase.addEventListener('click', () => {
+        const active = btnMatchCase.getAttribute('aria-pressed') === 'true';
+        btnMatchCase.setAttribute('aria-pressed', String(!active));
+        btnMatchCase.classList.toggle('active', !active);
+    });
+}
+if (btnWholeWord) {
+    btnWholeWord.addEventListener('click', () => {
+        const active = btnWholeWord.getAttribute('aria-pressed') === 'true';
+        btnWholeWord.setAttribute('aria-pressed', String(!active));
+        btnWholeWord.classList.toggle('active', !active);
+    });
+}
+
+// Build regex respecting options
+function buildSearchRegex(find, forAll) {
+    let pattern = escapeRegex(find);
+    if (isFRWholeWord()) pattern = `(?<![\\w\u00C0-\u017E])` + pattern + `(?![\\w\u00C0-\u017E])`;
+    const flags = (isFRMatchCase() ? '' : 'i') + (forAll ? 'g' : '');
+    return new RegExp(pattern, flags);
+}
+
+// Replace text in DOM text nodes (preserves HTML formatting)
+function replaceInTextNodes(rootEl, regex, replaceWith) {
+    let count = 0;
+    const walker = document.createTreeWalker(rootEl, NodeFilter.SHOW_TEXT, null);
+    const nodes = [];
+    let node;
+    while ((node = walker.nextNode())) nodes.push(node);
+    for (const textNode of nodes) {
+        const original = textNode.nodeValue;
+        const replaced = original.replace(regex, replaceWith);
+        if (replaced !== original) {
+            count += (original.match(regex) || []).length;
+            textNode.nodeValue = replaced;
+        }
+    }
+    return count;
+}
+
 const findNextBtn = $('findNextBtn');
 if (findNextBtn && findInput && editor) {
     findNextBtn.addEventListener('click', () => {
         const text = findInput.value;
         if (!text) return;
-        const selection = window.getSelection();
-        const content = editor.innerText;
-        const start = content.indexOf(text, selection.anchorOffset || 0);
-        if (start >= 0) {
-            highlightText(text);
-        } else {
-            showToast('No encontrado', 'error');
+        try {
+            const regex = buildSearchRegex(text, false);
+            if (regex.test(editor.innerText)) {
+                highlightText(text);
+            } else {
+                showToast('No encontrado', 'error');
+            }
+        } catch (e) {
+            showToast('Expresión inválida', 'error');
         }
     });
 }
@@ -242,13 +292,18 @@ if (replaceBtn && findInput && replaceInput && editor) {
         const find = findInput.value;
         const replace = replaceInput.value;
         if (!find) return;
-        const html = editor.innerHTML;
-        const newHtml = html.replace(find, replace);
-        if (html !== newHtml) {
+        try {
+            const regex = buildSearchRegex(find, false);
             saveUndoState();
-            editor.innerHTML = newHtml;
-            if (typeof window.updateWordCount === 'function') window.updateWordCount();
-            showToast('Reemplazado', 'success');
+            const count = replaceInTextNodes(editor, regex, replace);
+            if (count > 0) {
+                if (typeof window.updateWordCount === 'function') window.updateWordCount();
+                showToast('Reemplazado', 'success');
+            } else {
+                showToast('No encontrado', 'error');
+            }
+        } catch (e) {
+            showToast('Expresión inválida', 'error');
         }
     });
 }
@@ -259,14 +314,15 @@ if (replaceAllBtn && findInput && replaceInput && editor) {
         const find = findInput.value;
         const replace = replaceInput.value;
         if (!find) return;
-        saveUndoState();
-        const regex = new RegExp(escapeRegex(find), 'gi');
-        const text = editor.innerText;
-        const count = (text.match(regex) || []).length;
-        // Note: assigning to innerText strips all HTML formatting
-        editor.innerText = text.replace(regex, replace);
-        if (typeof window.updateWordCount === 'function') window.updateWordCount();
-        showToast(`${count} reemplazado(s)`, 'success');
+        try {
+            const regex = buildSearchRegex(find, true);
+            saveUndoState();
+            const count = replaceInTextNodes(editor, regex, replace);
+            if (typeof window.updateWordCount === 'function') window.updateWordCount();
+            showToast(count > 0 ? `${count} reemplazado(s)` : 'No encontrado', count > 0 ? 'success' : 'error');
+        } catch (e) {
+            showToast('Expresión inválida', 'error');
+        }
     });
 }
 

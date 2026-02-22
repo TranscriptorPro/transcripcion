@@ -844,6 +844,31 @@
             border: 1px solid var(--border);
         }
 
+        /* Find-Replace toggle buttons (Aa / W) */
+        .find-replace-panel .fr-toggle {
+            padding: 0.4rem 0.55rem;
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+            flex-shrink: 0;
+        }
+        .find-replace-panel .fr-toggle:hover {
+            background: var(--bg-main);
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+        .find-replace-panel .fr-toggle.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
         /* Toast */
         .toast {
             position: fixed;
