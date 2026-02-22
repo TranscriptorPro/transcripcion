@@ -105,7 +105,7 @@ function handleFiles(files) {
         if (typeof showToast !== 'undefined') showToast('Archivos >25MB ignorados', 'error');
     }
 
-    window.uploadedFiles.push(...validFiles.map(f => ({ file: f, status: 'pending' })));
+    window.uploadedFiles.push(...validFiles.map(f => ({ file: f, status: 'pending', audioUrl: URL.createObjectURL(f) })));
     if (typeof updateFileList === 'function') updateFileList();
 
     const transcribeBtn = document.getElementById('transcribeBtn');
@@ -126,12 +126,79 @@ window.updateFileList = function () {
             <div class="file-item-name">${item.file.name}</div>
             <div class="file-item-status">${formatSize(item.file.size)} • ${item.status === 'done' ? '✓ Listo' : item.status === 'processing' ? 'Procesando...' : 'Pendiente'}</div>
         </div>
-        ${!window.isProcessing ? `<button class="file-item-remove" onclick="removeFile(${i})"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>` : ''}
+        <div class="file-item-actions">
+            ${item.audioUrl ? `<button class="file-item-play" title="${item._isPlaying ? 'Pausar audio' : 'Reproducir audio'}" onclick="togglePlayAudio(${i}, this)" data-playing="${item._isPlaying ? 'true' : 'false'}"><svg viewBox="0 0 24 24"><path d="${item._isPlaying ? 'M6 19h4V5H6v14zm8-14v14h4V5h-4z' : 'M8 5v14l11-7z'}"/></svg></button>` : ''}
+            ${!window.isProcessing ? `<button class="file-item-remove" onclick="removeFile(${i})" title="Eliminar"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>` : ''}
+        </div>
     </div>
 `).join('');
 }
 
+window._currentAudio = null;
+window._currentPlayBtn = null;
+
+window.togglePlayAudio = function (index, btn) {
+    const item = window.uploadedFiles[index];
+    if (!item || !item.audioUrl) return;
+
+    const isPlaying = btn.dataset.playing === 'true';
+
+    if (window._currentAudio && (!item._audio || window._currentAudio !== item._audio)) {
+        window._currentAudio.pause();
+        window._currentAudio.currentTime = 0;
+        if (window._currentPlayBtn) {
+            window._currentPlayBtn.dataset.playing = 'false';
+            window._currentPlayBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+            window._currentPlayBtn.title = 'Reproducir audio';
+        }
+        // Reset playing state on the previously playing item
+        const prevIndex = window.uploadedFiles.findIndex(f => f._audio === window._currentAudio);
+        if (prevIndex !== -1) window.uploadedFiles[prevIndex]._isPlaying = false;
+    }
+
+    if (!item._audio) {
+        item._audio = new Audio(item.audioUrl);
+        item._audio.onended = () => {
+            item._isPlaying = false;
+            window._currentAudio = null;
+            window._currentPlayBtn = null;
+            if (typeof updateFileList === 'function') updateFileList();
+        };
+    }
+
+    if (isPlaying) {
+        item._audio.pause();
+        item._isPlaying = false;
+        btn.dataset.playing = 'false';
+        btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+        btn.title = 'Reproducir audio';
+        window._currentAudio = null;
+        window._currentPlayBtn = null;
+    } else {
+        item._audio.play();
+        item._isPlaying = true;
+        btn.dataset.playing = 'true';
+        btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+        btn.title = 'Pausar audio';
+        window._currentAudio = item._audio;
+        window._currentPlayBtn = btn;
+    }
+};
+
 window.removeFile = i => {
+    const item = window.uploadedFiles[i];
+    if (item) {
+        if (item._audio) {
+            item._audio.pause();
+            if (window._currentAudio === item._audio) {
+                window._currentAudio = null;
+                window._currentPlayBtn = null;
+            }
+        }
+        if (item.audioUrl) {
+            URL.revokeObjectURL(item.audioUrl);
+        }
+    }
     window.uploadedFiles.splice(i, 1);
     updateFileList();
 

@@ -260,6 +260,49 @@
             fill: #ef4444;
         }
 
+        .file-item-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+
+        .file-item-play {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: none;
+            background: var(--primary, #0f766e);
+            color: white;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            flex-shrink: 0;
+            padding: 0;
+        }
+
+        .file-item-play:hover {
+            background: var(--primary-dark, #0d5e57);
+            transform: scale(1.1);
+        }
+
+        .file-item-play svg {
+            width: 14px;
+            height: 14px;
+            fill: white;
+        }
+
+        .file-item-play[data-playing="true"] {
+            background: #6366f1;
+        }
+
+        .file-item-play[data-playing="true"]:hover {
+            background: #4f46e5;
+        }
+
         /* Buttons */
         .btn {
             display: inline-flex;
