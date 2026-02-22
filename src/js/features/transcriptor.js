@@ -48,6 +48,13 @@ if (transcribeBtn) {
                     let text = await transcribeWithGroq(processedFile);
                     text = cleanTranscriptionText(text);
 
+                    // Enforce transcription length limit
+                    const MAX_TRANSCRIPTION_LENGTH = 20000;
+                    if (text.length > MAX_TRANSCRIPTION_LENGTH) {
+                        const truncationNote = '\n\n[Transcripción truncada por longitud excesiva]';
+                        text = text.slice(0, MAX_TRANSCRIPTION_LENGTH - truncationNote.length) + truncationNote;
+                    }
+
                     if (shouldJoin) {
                         joinedText += (joinedText ? '\n\n' : '') + text;
                     } else {

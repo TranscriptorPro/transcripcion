@@ -1,19 +1,8 @@
 // ============ EDITOR WYSIWYG ============
 
-function updateWordCount() {
-    if (!editor || !wordCount) return;
-    const text = editor.innerText.trim();
-    const words = text ? text.split(/\s+/).length : 0;
-    wordCount.textContent = `${words} palabras`;
-
-    const hasText = text.length > 0;
-    if (copyBtn) copyBtn.disabled = !hasText;
-    if (downloadBtn) downloadBtn.disabled = !hasText;
-}
-
 if (editor) {
     editor.addEventListener('input', () => {
-        updateWordCount();
+        if (typeof window.updateWordCount === 'function') window.updateWordCount();
         saveUndoState();
     });
 }
@@ -183,7 +172,7 @@ if (undoBtn) {
         if (undoStack.length > 1 && editor) {
             redoStack.push(undoStack.pop());
             editor.innerHTML = undoStack[undoStack.length - 1] || '';
-            updateWordCount();
+            if (typeof window.updateWordCount === 'function') window.updateWordCount();
         }
     });
 }
@@ -195,7 +184,7 @@ if (redoBtn) {
             const state = redoStack.pop();
             undoStack.push(state);
             editor.innerHTML = state;
-            updateWordCount();
+            if (typeof window.updateWordCount === 'function') window.updateWordCount();
         }
     });
 }
@@ -258,7 +247,7 @@ if (replaceBtn && findInput && replaceInput && editor) {
         if (html !== newHtml) {
             saveUndoState();
             editor.innerHTML = newHtml;
-            updateWordCount();
+            if (typeof window.updateWordCount === 'function') window.updateWordCount();
             showToast('Reemplazado', 'success');
         }
     });
@@ -274,8 +263,9 @@ if (replaceAllBtn && findInput && replaceInput && editor) {
         const regex = new RegExp(escapeRegex(find), 'gi');
         const text = editor.innerText;
         const count = (text.match(regex) || []).length;
+        // Note: assigning to innerText strips all HTML formatting
         editor.innerText = text.replace(regex, replace);
-        updateWordCount();
+        if (typeof window.updateWordCount === 'function') window.updateWordCount();
         showToast(`${count} reemplazado(s)`, 'success');
     });
 }
@@ -429,7 +419,7 @@ ${rawText.split('\n').filter(l => l.trim()).map(line => `<p>${line}</p>`).join('
 
             if (editorEl) {
                 editorEl.innerHTML = structured;
-                if (typeof updateWordCount === 'function') updateWordCount();
+                if (typeof window.updateWordCount === 'function') window.updateWordCount();
                 if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURED');
                 if (typeof showToast === 'function') showToast(`✅ Plantilla "${templateName}" aplicada`, 'success');
             }
