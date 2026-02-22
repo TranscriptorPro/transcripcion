@@ -12,8 +12,8 @@ window.updateButtonsVisibility = function (state) {
     const downloadBtn            = document.getElementById('downloadBtn');
     const downloadBtnContainer   = document.getElementById('downloadBtnContainer');
     const btnStructureAI         = document.getElementById('btnStructureAI');
-    const normalTemplateSelect   = document.getElementById('normalTemplateSelect');
     const btnApplyTemplate       = document.getElementById('btnApplyTemplate');
+    const applyTemplateWrapper   = document.getElementById('applyTemplateWrapper');
 
     const isTranscribed  = ['TRANSCRIBED', 'STRUCTURED', 'PREVIEWED'].includes(state);
     const isStructured   = ['STRUCTURED', 'PREVIEWED'].includes(state);
@@ -27,8 +27,8 @@ window.updateButtonsVisibility = function (state) {
     }
 
     // Normal mode template controls
-    if (normalTemplateSelect) {
-        normalTemplateSelect.style.display = isNormalMode ? 'inline-block' : 'none';
+    if (applyTemplateWrapper) {
+        applyTemplateWrapper.style.display = isNormalMode ? 'inline-block' : 'none';
     }
     if (btnApplyTemplate) {
         btnApplyTemplate.style.display = isNormalMode ? 'inline-flex' : 'none';
@@ -90,8 +90,6 @@ if (proModeToggle) {
 
 function setMode(mode, notify = false) {
     window.currentMode = mode;
-    const templateDropdown = document.getElementById('templateDropdownMain');
-    const templateDivider = document.getElementById('templateDivider');
     const templateSelectorContainer = document.getElementById('templateSelectorContainer'); // may not be on all views
 
     if (proModeToggle) proModeToggle.checked = (mode === 'pro');
@@ -101,12 +99,8 @@ function setMode(mode, notify = false) {
 
     if (mode === 'normal') {
         if (templateSelectorContainer) templateSelectorContainer.style.display = 'none';
-        if (templateDropdown) templateDropdown.style.display = 'none';
-        if (templateDivider) templateDivider.style.display = 'none';
-        if (notify && typeof showToast !== 'undefined') showToast('Modo Normal activado', 'info');
+        if (notify && typeof showToast !== 'undefined') showToast('🔄 Modo Normal activado', 'success');
     } else {
-        if (templateDropdown) templateDropdown.style.display = 'inline-block';
-        if (templateDivider) templateDivider.style.display = 'block';
         if (notify && typeof showToast !== 'undefined') showToast('Modo Pro ✨ activado', 'success');
     }
 
@@ -142,21 +136,11 @@ function initializeMode() {
 
 // Template Global Sync Listeners
 const templateSelect = document.getElementById('templateSelect');
-const templateDropdownMain = document.getElementById('templateDropdownMain');
 
 if (templateSelect) {
     templateSelect.addEventListener('change', (e) => {
         window.selectedTemplate = e.target.value;
-        if (templateDropdownMain) templateDropdownMain.value = e.target.value;
         if (typeof showToast !== 'undefined') showToast(`Plantilla: ${templateSelect.options[templateSelect.selectedIndex].text}`, 'success');
-    });
-}
-
-if (templateDropdownMain) {
-    templateDropdownMain.addEventListener('change', (e) => {
-        window.selectedTemplate = e.target.value;
-        if (templateSelect) templateSelect.value = e.target.value;
-        if (typeof showToast !== 'undefined') showToast(`Plantilla: ${e.target.options[e.target.selectedIndex].text}`, 'success');
     });
 }
 
