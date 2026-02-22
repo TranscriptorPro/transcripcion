@@ -29,7 +29,25 @@ window.openPdfConfigModal = function () {
                 el.closest('.field-group')?.classList.remove('locked');
             }
         });
+        // Admin: cargar campos de encabezado personalizado
+        const adminSec = document.getElementById('adminLetterheadSection');
+        if (adminSec) adminSec.style.display = '';
+        const setA = (id, v) => { const el = document.getElementById(id); if (el && v != null) el.value = v; };
+        setA('pdfInstitutionName', profData.institutionName);
+        setA('pdfHeaderColor', profData.headerColor || '#1a56a0');
     }
+
+    // Siempre limpiar datos del paciente y re-extraer desde el editor actual
+    const editorForExtract = window.editor || document.getElementById('editor');
+    const freshExtract = (editorForExtract && typeof extractPatientDataFromText === 'function')
+        ? extractPatientDataFromText(editorForExtract.innerText) : {};
+    ['pdfPatientName','pdfPatientDni','pdfPatientAge','pdfPatientSex',
+     'pdfPatientInsurance','pdfPatientAffiliateNum','pdfPatientPhone','pdfPatientBirthdate']
+        .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    if (freshExtract.name) { const el = document.getElementById('pdfPatientName'); if (el) el.value = freshExtract.name; }
+    if (freshExtract.dni)  { const el = document.getElementById('pdfPatientDni');  if (el) el.value = freshExtract.dni; }
+    if (freshExtract.age)  { const el = document.getElementById('pdfPatientAge');  if (el) el.value = freshExtract.age; }
+    if (freshExtract.sex)  { const el = document.getElementById('pdfPatientSex');  if (el) el.value = freshExtract.sex; }
 
     if (window.currentMode === 'pro' && window.selectedTemplate && window.MEDICAL_TEMPLATES?.[window.selectedTemplate]) {
         const studyTypeEl = document.getElementById('pdfStudyType');
@@ -78,99 +96,136 @@ window.openPdfConfigModal = function () {
 
 window.openPrintPreview = function () {
     const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
-    const config = JSON.parse(localStorage.getItem('pdf_config') || '{}');
-    const esc = (text) => {
-        if (!text) return '';
-        return text.toString()
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    };
+    const config   = JSON.parse(localStorage.getItem('pdf_config') || '{}');
 
-    const profName = esc(profData.nombre) || 'Dr. [Nombre]';
-    const matricula = esc(profData.matricula) || '';
-    const especialidad = esc(
-        Array.isArray(profData.specialties) ? profData.specialties.join(' / ') : (profData.especialidad || '')
-    );
+    const esc = (t) => t != null ? String(t)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;').replace(/'/g,'&#039;') : '';
 
-    const patientName = esc(config.patientName) || '';
-    const patientDni = esc(config.patientDni) || '';
-    const patientAge = esc(config.patientAge) || '';
-    const patientSex = config.patientSex === 'M' ? 'Masculino' : config.patientSex === 'F' ? 'Femenino' : (esc(config.patientSex) || '');
-    const patientInsurance = esc(config.patientInsurance) || '';
+    // Datos del profesional
+    const profName       = esc(profData.nombre) || 'Profesional Médico';
+    const matricula      = esc(profData.matricula || '');
+    const especialidad   = esc(Array.isArray(profData.specialties)
+        ? profData.specialties.filter(s => s && s !== 'Todas').join(' / ')
+        : (profData.especialidad || ''));
+    const institutionName = esc(profData.institutionName || '');
+    const accentColor    = profData.headerColor || '#1a56a0';
 
-    const studyType = esc(config.studyType) || '';
-    const studyDate = esc(config.studyDate) || '';
-    const studyReason = esc(config.studyReason) || '';
-    const referringDoctor = esc(config.referringDoctor) || '';
-    const footerText = esc(config.footerText) || '';
-    const workplaceAddress = esc(config.workplaceAddress) || '';
-    const workplacePhone = esc(config.workplacePhone) || '';
-    const reportNum = document.getElementById('pdfReportNumber')?.value || '';
+    // Extraer datos del paciente SIEMPRE frescos desde el editor
+    const editorEl  = window.editor || document.getElementById('editor');
+    const extracted = (editorEl && typeof extractPatientDataFromText === 'function')
+        ? extractPatientDataFromText(editorEl.innerText) : {};
 
-    const headerEl = document.getElementById('previewHeader');
-    if (headerEl) {
-        const logoSrc = localStorage.getItem('pdf_logo');
-        const logoHtml = (logoSrc && logoSrc.startsWith('data:image/')) ? `<img src="${logoSrc}" style="max-height:60px; float:right;" alt="Logo">` : '';
-        headerEl.innerHTML = `
-            ${logoHtml}
-            <h2 style="margin:0 0 4px 0; font-size:16pt;">${profName}</h2>
-            <p style="margin:2px 0; font-size:10pt; color:#555;">${matricula}${especialidad ? ' &bull; ' + especialidad : ''}</p>
-            ${workplaceAddress ? `<p style="margin:2px 0; font-size:9pt; color:#666;">📍 ${workplaceAddress}${workplacePhone ? ' &bull; 📞 ' + workplacePhone : ''}</p>` : ''}
-        `;
-    }
+    // Preferir lo extraído del audio; si no, lo ingresado manualmente en el modal
+    const patientName     = esc(extracted.name)  || esc(config.patientName)  || '';
+    const patientDni      = esc(extracted.dni)   || esc(config.patientDni)   || '';
+    const patientAge      = esc(extracted.age)   || esc(config.patientAge)   || '';
+    const rawSex          = extracted.sex || config.patientSex || '';
+    const patientSex      = rawSex === 'M' ? 'Masculino' : rawSex === 'F' ? 'Femenino' : esc(rawSex);
+    const patientInsurance = esc(config.patientInsurance || '');
 
-    const patientEl = document.getElementById('previewPatient');
-    if (patientEl) {
-        const rows = [];
-        if (patientName) rows.push(`<strong>Paciente:</strong> ${patientName}`);
-        if (patientDni) rows.push(`<strong>DNI:</strong> ${patientDni}`);
-        if (patientAge) rows.push(`<strong>Edad:</strong> ${patientAge} años`);
-        if (patientSex) rows.push(`<strong>Sexo:</strong> ${patientSex}`);
-        if (patientInsurance) rows.push(`<strong>Obra Social:</strong> ${patientInsurance}`);
-        patientEl.innerHTML = rows.length ? rows.map(r => `<p style="margin:3px 0;">${r}</p>`).join('') : '<p style="color:#999; margin:0;">Sin datos del paciente</p>';
-    }
-
-    const studyEl = document.getElementById('previewStudy');
-    if (studyEl) {
-        const rows = [];
-        if (studyType) rows.push(`<strong>Estudio:</strong> ${studyType}`);
-        if (studyDate) rows.push(`<strong>Fecha:</strong> ${studyDate}`);
-        if (studyReason) rows.push(`<strong>Motivo:</strong> ${studyReason}`);
-        if (referringDoctor) rows.push(`<strong>Médico solicitante:</strong> ${referringDoctor}`);
-        if (reportNum) rows.push(`<strong>Informe Nº:</strong> ${esc(reportNum)}`);
-        studyEl.innerHTML = rows.map(r => `<p style="margin:3px 0;">${r}</p>`).join('');
-    }
-
-    const contentEl = document.getElementById('previewContent');
-    if (contentEl) {
-        contentEl.innerHTML = window.editor ? window.editor.innerHTML : '';
-    }
-
-    const sigEl = document.getElementById('previewSignature');
+    // Datos del estudio
+    const studyType    = esc(config.studyType || '');
+    const rawDate      = config.studyDate || '';
+    const studyDate    = rawDate
+        ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', {day:'2-digit', month:'long', year:'numeric'})
+        : new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'long', year:'numeric'});
+    const studyReason  = esc(config.studyReason || '');
+    const refDoctor    = esc(config.referringDoctor || '');
+    const reportNum    = esc(document.getElementById('pdfReportNumber')?.value || config.reportNum || '');
+    const footerText   = esc(config.footerText || 'Este informe es válido únicamente con la firma del profesional a cargo.');
+    const wkAddr       = esc(config.workplaceAddress || '');
+    const wkPhone      = esc(config.workplacePhone   || '');
     const showSignLine = config.showSignLine ?? true;
     const showSignName = config.showSignName ?? true;
-    const showSignMatricula = config.showSignMatricula ?? true;
+    const showSignMat  = config.showSignMatricula ?? true;
+    const logoSrc      = localStorage.getItem('pdf_logo');
+    const sigSrc       = localStorage.getItem('pdf_signature');
+    const hasLogo      = logoSrc && logoSrc.startsWith('data:image/');
+    const hasSig       = sigSrc  && sigSrc.startsWith('data:image/');
+
+    // Aplicar color de acento a la página
+    const page = document.getElementById('previewPage');
+    if (page) page.style.setProperty('--pa', accentColor);
+
+    // ── ENCABEZADO ──────────────────────────────────────────────
+    const headerEl = document.getElementById('previewHeader');
+    if (headerEl) {
+        headerEl.innerHTML = `
+            <div class="pvh-body">
+                ${hasLogo ? `<img class="pvh-logo" src="${logoSrc}" alt="Logo">` : ''}
+                <div class="pvh-info">
+                    <div class="pvh-name">${profName}</div>
+                    ${especialidad   ? `<div class="pvh-spec">${especialidad}</div>`   : ''}
+                    ${matricula      ? `<div class="pvh-mat">Matrícula Profesional: ${matricula}</div>` : ''}
+                    ${institutionName? `<div class="pvh-inst">${institutionName}</div>` : ''}
+                    ${(wkAddr||wkPhone) ? `<div class="pvh-addr">${wkAddr}${wkAddr&&wkPhone?' &bull; ':''}${wkPhone}</div>` : ''}
+                </div>
+            </div>`;
+    }
+
+    // ── DATOS DEL PACIENTE ───────────────────────────────────────
+    const patientEl = document.getElementById('previewPatient');
+    if (patientEl) {
+        const cells = [];
+        if (patientName)      cells.push(`<div class="pvp-cell"><span class="pvp-lbl">Paciente</span><span class="pvp-val pvp-bold">${patientName}</span></div>`);
+        if (patientDni)       cells.push(`<div class="pvp-cell"><span class="pvp-lbl">DNI</span><span class="pvp-val">${patientDni}</span></div>`);
+        if (patientAge)       cells.push(`<div class="pvp-cell"><span class="pvp-lbl">Edad</span><span class="pvp-val">${patientAge} años</span></div>`);
+        if (patientSex)       cells.push(`<div class="pvp-cell"><span class="pvp-lbl">Sexo</span><span class="pvp-val">${patientSex}</span></div>`);
+        if (patientInsurance) cells.push(`<div class="pvp-cell"><span class="pvp-lbl">Cobertura</span><span class="pvp-val">${patientInsurance}</span></div>`);
+        patientEl.innerHTML = cells.length
+            ? `<div class="pvp-grid">${cells.join('')}</div>`
+            : `<div class="pvp-grid pvp-warn">⚠️ Sin datos del paciente — complete los datos en Configurar PDF</div>`;
+    }
+
+    // ── DATOS DEL ESTUDIO ────────────────────────────────────────
+    const studyEl = document.getElementById('previewStudy');
+    if (studyEl) {
+        const items = [];
+        if (studyType)   items.push(`<span><b>Estudio:</b> ${studyType}</span>`);
+        items.push(`<span><b>Fecha:</b> ${studyDate}</span>`);
+        if (reportNum)   items.push(`<span><b>Informe Nº:</b> ${reportNum}</span>`);
+        if (refDoctor)   items.push(`<span><b>Solicitante:</b> ${refDoctor}</span>`);
+        if (studyReason) items.push(`<span><b>Motivo:</b> ${studyReason}</span>`);
+        studyEl.innerHTML = `<div class="pvs-row">${items.join('<span class="pvs-sep"> | </span>')}</div>`;
+    }
+
+    // ── CONTENIDO DEL INFORME ────────────────────────────────────
+    const contentEl = document.getElementById('previewContent');
+    if (contentEl) {
+        contentEl.innerHTML = editorEl ? editorEl.innerHTML : '';
+        // Eliminar estilos de no-data dentro del preview (no imprimir en ámbar)
+        contentEl.querySelectorAll('.no-data').forEach(el => {
+            el.style.cssText = 'color:#888;border:none;background:none;font-style:italic;cursor:default;';
+        });
+        // Ocultar elementos de UI que no deben aparecer en el informe
+        contentEl.querySelectorAll('.no-print,.ai-note-panel,#aiNotePanel').forEach(el => {
+            el.style.display = 'none';
+        });
+    }
+
+    // ── FIRMA ────────────────────────────────────────────────────
+    const sigEl = document.getElementById('previewSignature');
     if (sigEl) {
-        const sigSrc = localStorage.getItem('pdf_signature');
-        const validSig = sigSrc && sigSrc.startsWith('data:image/') ? sigSrc : null;
-        let sigHtml = '';
-        if (validSig) sigHtml += `<img src="${validSig}" style="max-height:60px; display:block; margin-bottom:4px;" alt="Firma">`;
-        if (showSignLine) sigHtml += `<div style="border-top:1px solid #333; width:200px; margin-top:${validSig ? '0' : '40px'};"></div>`;
-        if (showSignName) sigHtml += `<p style="margin:4px 0 2px 0; font-size:10pt;">${profName}</p>`;
-        if (showSignMatricula && matricula) sigHtml += `<p style="margin:0; font-size:9pt; color:#555;">${matricula}</p>`;
+        let sigHtml = '<div class="pvsig-block">';
+        if (hasSig)       sigHtml += `<img src="${sigSrc}" class="pvsig-img" alt="Firma">`;
+        if (showSignLine) sigHtml += `<div class="pvsig-line"></div>`;
+        if (showSignName && profName) sigHtml += `<div class="pvsig-name">${profName}</div>`;
+        if (showSignMat  && matricula) sigHtml += `<div class="pvsig-mat">Mat. ${matricula}</div>`;
+        if (especialidad) sigHtml += `<div class="pvsig-spec">${especialidad}</div>`;
+        sigHtml += '</div>';
         sigEl.innerHTML = sigHtml;
     }
 
+    // ── PIE DE PÁGINA ─────────────────────────────────────────────
     const footerEl = document.getElementById('previewFooter');
     if (footerEl) {
-        let footerHtml = '';
-        if (footerText) footerHtml += `<p>${footerText}</p>`;
-        if (config.showDate) footerHtml += `<p>Impreso: ${new Date().toLocaleDateString('es-ES')}</p>`;
-        footerEl.innerHTML = footerHtml;
-        footerEl.style.display = footerHtml ? 'block' : 'none';
+        const parts = [];
+        if (footerText) parts.push(`<span>${footerText}</span>`);
+        if (config.showDate) parts.push(`<span>Impreso: ${new Date().toLocaleDateString('es-ES')}</span>`);
+        if (config.showPageNum) parts.push(`<span style="margin-left:auto;">Página 1</span>`);
+        footerEl.innerHTML = parts.length ? `<div class="pvf-wrap">${parts.join('')}</div>` : '';
+        footerEl.style.display = parts.length ? '' : 'none';
     }
 
     document.getElementById('printPreviewOverlay')?.classList.add('active');

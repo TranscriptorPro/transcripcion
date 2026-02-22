@@ -166,6 +166,23 @@ window.initModals = function () {
     if (btnSavePdfConfig) {
         btnSavePdfConfig.addEventListener('click', () => {
             if (typeof savePdfConfiguration === 'function') savePdfConfiguration();
+            // Admin: persistir personalización del encabezado en prof_data
+            if (typeof isAdminUser === 'function' && isAdminUser()) {
+                const profD = JSON.parse(localStorage.getItem('prof_data') || '{}');
+                const gv = (id) => document.getElementById(id)?.value || '';
+                const nom = gv('pdfProfName');
+                const mat = gv('pdfProfMatricula');
+                const esp = gv('pdfProfEspecialidad');
+                const inst = document.getElementById('pdfInstitutionName')?.value;
+                const col  = document.getElementById('pdfHeaderColor')?.value;
+                if (nom)  profD.nombre          = nom;
+                if (mat)  profD.matricula        = mat;
+                if (esp)  profD.especialidad     = esp;
+                if (inst != null) profD.institutionName = inst;
+                if (col  != null) profD.headerColor     = col;
+                localStorage.setItem('prof_data', JSON.stringify(profD));
+                if (typeof showToast === 'function') showToast('🏥 Encabezado guardado', 'success');
+            }
         });
     }
 

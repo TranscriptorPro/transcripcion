@@ -76,12 +76,17 @@ window.initWorkplaceManagement = function () {
 // ---- Original initBusinessSuite updated ----
 window.initBusinessSuite = function () {
     // Siempre establecer como Admin para esta app principal
+    // Preservar personalizaciones del admin (nombre, institución, color) ya guardadas
+    const existing = JSON.parse(localStorage.getItem('prof_data') || '{}');
     const adminProfData = {
-        nombre: 'Administrador',
-        matricula: 'ADMIN',
-        workplace: 'Panel de Administración',
-        specialties: ['Todas'],
-        studies: []
+        nombre:          existing.nombre          || 'Administrador',
+        matricula:       existing.matricula       || 'ADMIN',
+        workplace:       existing.workplace       || 'Panel de Administración',
+        specialties:     existing.specialties     || ['Todas'],
+        estudios:        existing.estudios        || [],
+        especialidad:    existing.especialidad    || '',
+        institutionName: existing.institutionName || '',
+        headerColor:     existing.headerColor     || '#1a56a0',
     };
     localStorage.setItem('prof_data', JSON.stringify(adminProfData));
     localStorage.setItem('onboarding_date', new Date().toISOString());

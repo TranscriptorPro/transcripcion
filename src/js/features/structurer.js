@@ -194,28 +194,33 @@ function showAINote(note, templateLabel) {
 
 // ---- Patient data check after structuring ----
 window.triggerPatientDataCheck = function(rawText) {
-    const extracted = typeof extractPatientDataFromText === 'function'
-        ? extractPatientDataFromText(rawText)
-        : {};
+    // Siempre limpia datos del paciente anterior — nunca hay carry-over entre informes
     const savedConfig = JSON.parse(localStorage.getItem('pdf_config') || '{}');
-    const hasName = extracted.name || savedConfig.patientName;
+    delete savedConfig.patientName;
+    delete savedConfig.patientDni;
+    delete savedConfig.patientAge;
+    delete savedConfig.patientSex;
+    localStorage.setItem('pdf_config', JSON.stringify(savedConfig));
 
-    if (!hasName) {
-        const set = (id, v) => { if (v !== undefined && v !== null && v !== '') { const el = document.getElementById(id); if (el) el.value = v; } };
-        set('reqPatientName', extracted.name || '');
-        set('reqPatientDni', extracted.dni || '');
-        set('reqPatientAge', extracted.age || '');
-        set('reqPatientSex', extracted.sex || '');
-        document.getElementById('patientDataRequiredOverlay')?.classList.add('active');
+    // Intentar extraer datos del paciente desde el audio transcripto
+    const extracted = typeof extractPatientDataFromText === 'function'
+        ? extractPatientDataFromText(rawText) : {};
+
+    if (extracted.name) {
+        // Encontrado en el audio — guardar y notificar
+        savedConfig.patientName = extracted.name;
+        if (extracted.dni) savedConfig.patientDni = extracted.dni;
+        if (extracted.age) savedConfig.patientAge = extracted.age;
+        if (extracted.sex) savedConfig.patientSex = extracted.sex;
+        localStorage.setItem('pdf_config', JSON.stringify(savedConfig));
+        if (typeof showToast === 'function')
+            showToast(`👤 Paciente detectado: ${extracted.name}`, 'success');
     } else {
-        const config = { ...savedConfig };
-        if (extracted.name && !config.patientName) config.patientName = extracted.name;
-        if (extracted.dni  && !config.patientDni)  config.patientDni  = extracted.dni;
-        if (extracted.age  && !config.patientAge)  config.patientAge  = extracted.age;
-        if (extracted.sex  && !config.patientSex)  config.patientSex  = extracted.sex;
-        localStorage.setItem('pdf_config', JSON.stringify(config));
-        if (extracted.name && typeof showToast === 'function')
-            showToast(`👤 Paciente: ${extracted.name}`, 'success');
+        // Sin datos en el audio → siempre pedir, siempre con campos vacíos
+        ['reqPatientName','reqPatientDni','reqPatientAge','reqPatientSex'].forEach(id => {
+            const el = document.getElementById(id); if (el) el.value = '';
+        });
+        document.getElementById('patientDataRequiredOverlay')?.classList.add('active');
     }
 }
 
