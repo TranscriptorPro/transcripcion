@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Tests: Retry & Repair System</title>
+    <style>
+        body { font-family: monospace; background: #0f172a; color: #e2e8f0; padding: 2rem; }
+        h1 { color: #38bdf8; }
+        .suite { margin-bottom: 2rem; }
+        .suite-title { color: #94a3b8; font-size: 1.1rem; margin-bottom: 0.5rem; border-bottom: 1px solid #334155; padding-bottom: 0.3rem; }
+        .test { display: flex; gap: 1rem; align-items: center; padding: 0.25rem 0; }
+        .pass { color: #4ade80; }
+        .fail { color: #f87171; }
+        .tag { font-size: 0.75rem; background: #1e293b; padding: 0.15rem 0.4rem; border-radius: 3px; color: #94a3b8; }
+        #summary { margin-top: 2rem; font-size: 1.2rem; padding: 1rem; border-radius: 8px; }
+        .sum-pass { background: #14532d; color: #4ade80; }
+        .sum-fail { background: #7f1d1d; color: #f87171; }
+    </style>
+</head>
+<body>
+<h1>🧪 Tests: Retry & Repair System</h1>
+<div id="results"></div>
+<div id="summary"></div>
+
+<script>
+// ─── Test runner ────────────────────────────────────────────────────────────
+const results = [];
+function test(suite, name, fn) {
+    try {
+        const r = fn();
+        if (r instanceof Promise) {
+            r.then(() => pass(suite, name)).catch(e => fail(suite, name, e.message));
+        } else {
+            pass(suite, name);
+        }
+    } catch (e) {
+        fail(suite, name, e.message);
+    }
+}
+function pass(suite, name) {
+    results.push({ suite, name, ok: true });
+    render();
+}
+function fail(suite, name, reason) {
+    results.push({ suite, name, ok: false, reason });
+    render();
+}
+function assert(cond, msg) { if (!cond) throw new Error(msg || 'assertion failed'); }
+
+function render() {
+    const byS = {};
+    results.forEach(r => { (byS[r.suite] = byS[r.suite] || []).push(r); });
+    let html = '';
+    for (const [suite, tests] of Object.entries(byS)) {
+        html += `<div class="suite"><div class="suite-title">${suite}</div>`;
+        tests.forEach(t => {
+            html += `<div class="test ${t.ok ? 'pass' : 'fail'}">
+                ${t.ok ? '✅' : '❌'}
+                <span>${t.name}</span>
+                ${t.reason ? `<span class="tag">${t.reason}</span>` : ''}
+            </div>`;
+        });
+        html += '</div>';
+    }
+    document.getElementById('results').innerHTML = html;
+
+    const total = results.length;
+    const passed = results.filter(r => r.ok).length;
+    const failed = total - passed;
+    const sumEl = document.getElementById('summary');
+    sumEl.className = failed === 0 ? 'sum-pass' : 'sum-fail';
+    sumEl.textContent = failed === 0
+        ? `✅ Todos los tests pasaron (${passed}/${total})`
+        : `❌ ${failed} test(s) fallaron — ${passed}/${total} OK`;
+}
+
+// ─── Stubs ──────────────────────────────────────────────────────────────────
+// Mínimos para que las funciones carguen
+window.GROQ_API_KEY = 'gsk_test';
+window.uploadedFiles = [];
+window.transcriptions = [];
+window.activeTabIndex = 0;
+window.isProcessing = false;
+window.isRecording = false;
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
+
+// Stub audioBufferToWav (usado en repairAudioFile)
+window.audioBufferToWav = function(buffer) {
+    return new Blob(['fakewav'], { type: 'audio/wav' });
+};
+
+// DOM stubs para modales
+document.body.insertAdjacentHTML('beforeend', `
+    <div id="audioRepairModal" style="display:none;">
+        <div id="audioRepairFileName"></div>
+        <div id="audioRepairError"></div>
+        <ul id="audioRepairSuggestions"></ul>
+        <input type="checkbox" id="repairNormalize" checked>
+        <input type="checkbox" id="repairNoise" checked>
+        <input type="checkbox" id="repairMono">
+        <button id="audioRepairCancelBtn">Cancelar</button>
+        <button id="audioRepairRetryBtn">Reparar</button>
+    </div>
+    <div id="batchFailModal" style="display:none;">
+        <div id="batchFailInfo"></div>
+        <button id="batchFailContinueBtn">Continuar</button>
+        <button id="batchFailCancelBtn">Cancelar</button>
+    </div>
+`);
+</script>
+
+<!-- Cargar módulos reales -->
+<script src="../src/js/utils/toast.js"></script>
+<script>
+// Stub showToast si no está disponible
+if (typeof showToast === 'undefined') window.showToast = (msg, type) => console.log(`[toast:${type}] ${msg}`);
+</script>
+<script src="../src/js/core/audio.js"></script>
+<script src="../src/js/features/transcriptor.js"></script>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// SUITE 1: Modal HTML — elementos clave presentes
+// ─────────────────────────────────────────────────────────────────────────────
+const S1 = 'SUITE 1 — Modal HTML';
+
+test(S1, '#audioRepairModal existe en el DOM', () => {
+    assert(document.getElementById('audioRepairModal') !== null, 'No existe #audioRepairModal');
+});
+test(S1, '#batchFailModal existe en el DOM', () => {
+    assert(document.getElementById('batchFailModal') !== null, 'No existe #batchFailModal');
+});
+test(S1, '#audioRepairRetryBtn existe', () => {
+    assert(document.getElementById('audioRepairRetryBtn') !== null);
+});
+test(S1, '#audioRepairCancelBtn existe', () => {
+    assert(document.getElementById('audioRepairCancelBtn') !== null);
+});
+test(S1, '#batchFailContinueBtn existe', () => {
+    assert(document.getElementById('batchFailContinueBtn') !== null);
+});
+test(S1, '#batchFailCancelBtn existe', () => {
+    assert(document.getElementById('batchFailCancelBtn') !== null);
+});
+test(S1, '#repairNormalize checkbox existe y está checked', () => {
+    const el = document.getElementById('repairNormalize');
+    assert(el !== null && el.checked);
+});
+test(S1, '#repairNoise checkbox existe y está checked', () => {
+    const el = document.getElementById('repairNoise');
+    assert(el !== null && el.checked);
+});
+test(S1, '#repairMono checkbox existe y NO checked por defecto', () => {
+    const el = document.getElementById('repairMono');
+    assert(el !== null && !el.checked);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SUITE 2: Funciones definidas
+// ─────────────────────────────────────────────────────────────────────────────
+const S2 = 'SUITE 2 — Funciones definidas';
+
+test(S2, 'classifyTranscriptionError está definida', () => {
+    assert(typeof classifyTranscriptionError === 'function');
+});
+test(S2, 'repairAudioFile está definida', () => {
+    assert(typeof repairAudioFile === 'function');
+});
+test(S2, 'transcribeWithRetry está definida', () => {
+    assert(typeof transcribeWithRetry === 'function');
+});
+test(S2, 'transcribeWithGroqParams está definida', () => {
+    assert(typeof transcribeWithGroqParams === 'function');
+});
+test(S2, 'askBatchDecision está definida', () => {
+    assert(typeof askBatchDecision === 'function');
+});
+test(S2, 'showAudioRepairModal está definida', () => {
+    assert(typeof showAudioRepairModal === 'function');
+});
+test(S2, 'validateAudioFile está definida', () => {
+    assert(typeof validateAudioFile === 'function');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SUITE 3: classifyTranscriptionError — clasificación correcta
+// ─────────────────────────────────────────────────────────────────────────────
+const S3 = 'SUITE 3 — classifyTranscriptionError';
+
+test(S3, 'Error 401 → tipo auth', () => {
+    const r = classifyTranscriptionError('API Key inválida o expirada');
+    assert(r.type === 'auth', `Esperado auth, got ${r.type}`);
+});
+test(S3, 'Error "corrupto" → tipo format', () => {
+    const r = classifyTranscriptionError('Archivo de audio inválido o corrupto');
+    assert(r.type === 'format', `Esperado format, got ${r.type}`);
+});
+test(S3, 'Error 429 → tipo ratelimit', () => {
+    const r = classifyTranscriptionError('Límite de requests excedido. Espera un momento');
+    assert(r.type === 'ratelimit', `Esperado ratelimit, got ${r.type}`);
+});
+test(S3, 'Error 503 → tipo network', () => {
+    const r = classifyTranscriptionError('Servicio de Groq temporalmente no disponible');
+    assert(r.type === 'network', `Esperado network, got ${r.type}`);
+});
+test(S3, 'Error desconocido → tipo unknown', () => {
+    const r = classifyTranscriptionError('algún error raro xyz');
+    assert(r.type === 'unknown', `Esperado unknown, got ${r.type}`);
+});
+test(S3, 'Siempre devuelve userMsg y suggestions array', () => {
+    const r = classifyTranscriptionError('cualquier error');
+    assert(typeof r.userMsg === 'string' && r.userMsg.length > 0);
+    assert(Array.isArray(r.suggestions) && r.suggestions.length > 0);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SUITE 4: validateAudioFile — validaciones correctas
+// ─────────────────────────────────────────────────────────────────────────────
+const S4 = 'SUITE 4 — validateAudioFile';
+
+test(S4, 'Archivo WAV válido pasa', () => {
+    const f = new File([new Uint8Array(100)], 'test.wav', { type: 'audio/wav' });
+    assert(validateAudioFile(f) === true);
+});
+test(S4, 'Archivo MP3 válido pasa', () => {
+    const f = new File([new Uint8Array(100)], 'test.mp3', { type: 'audio/mpeg' });
+    assert(validateAudioFile(f) === true);
+});
+test(S4, 'Archivo vacío lanza error', () => {
+    const f = new File([], 'vacío.wav', { type: 'audio/wav' });
+    let threw = false;
+    try { validateAudioFile(f); } catch (e) { threw = true; }
+    assert(threw, 'Debería lanzar error para archivo vacío');
+});
+test(S4, 'Archivo >25MB lanza error', () => {
+    const big = new Uint8Array(26 * 1024 * 1024);
+    const f = new File([big], 'grande.wav', { type: 'audio/wav' });
+    let threw = false;
+    try { validateAudioFile(f); } catch (e) { threw = true; }
+    assert(threw, 'Debería lanzar error para archivo >25MB');
+});
+test(S4, 'Formato .txt lanza error', () => {
+    const f = new File([new Uint8Array(100)], 'doc.txt', { type: 'text/plain' });
+    let threw = false;
+    try { validateAudioFile(f); } catch (e) { threw = true; }
+    assert(threw, 'Debería lanzar error para formato no soportado');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SUITE 5: askBatchDecision — modal retorna promise
+// ─────────────────────────────────────────────────────────────────────────────
+const S5 = 'SUITE 5 — askBatchDecision (modal)';
+
+test(S5, 'askBatchDecision retorna una Promise', () => {
+    const modal = document.getElementById('batchFailModal');
+    // Simular click en "Continuar" inmediatamente después de abrir
+    setTimeout(() => {
+        document.getElementById('batchFailContinueBtn').click();
+    }, 50);
+    const p = askBatchDecision('audio.wav', 2, 4);
+    assert(p instanceof Promise, 'No es una Promise');
+});
+
+test(S5, 'askBatchDecision resuelve "continue" al hacer click en Continuar', async () => {
+    setTimeout(() => document.getElementById('batchFailContinueBtn').click(), 30);
+    const decision = await askBatchDecision('audio2.wav', 1, 3);
+    assert(decision === 'continue', `Esperado "continue", got "${decision}"`);
+});
+
+test(S5, 'askBatchDecision resuelve "cancel" al hacer click en Cancelar', async () => {
+    setTimeout(() => document.getElementById('batchFailCancelBtn').click(), 30);
+    const decision = await askBatchDecision('audio3.wav', 1, 3);
+    assert(decision === 'cancel', `Esperado "cancel", got "${decision}"`);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SUITE 6: showAudioRepairModal — rellena datos y retorna promise
+// ─────────────────────────────────────────────────────────────────────────────
+const S6 = 'SUITE 6 — showAudioRepairModal (modal)';
+
+test(S6, 'Muestra el nombre del archivo en el modal', async () => {
+    const f = new File([new Uint8Array(100)], 'audio_test.mp3', { type: 'audio/mpeg' });
+    const errInfo = { userMsg: 'Archivo dañado', suggestions: ['Convertir a WAV'] };
+    setTimeout(() => document.getElementById('audioRepairCancelBtn').click(), 30);
+    await showAudioRepairModal(f, errInfo);
+    const shown = document.getElementById('audioRepairFileName').textContent;
+    assert(shown === 'audio_test.mp3', `Nombre no mostrado: "${shown}"`);
+});
+
+test(S6, 'Muestra el mensaje de error en el modal', async () => {
+    const f = new File([new Uint8Array(100)], 'test.wav', { type: 'audio/wav' });
+    const errInfo = { userMsg: 'Error de prueba XYZ', suggestions: ['Consejo 1'] };
+    setTimeout(() => document.getElementById('audioRepairCancelBtn').click(), 30);
+    await showAudioRepairModal(f, errInfo);
+    const shown = document.getElementById('audioRepairError').textContent;
+    assert(shown === 'Error de prueba XYZ', `Error msg no mostrado: "${shown}"`);
+});
+
+test(S6, 'Retorna null al cancelar', async () => {
+    const f = new File([new Uint8Array(100)], 'test.wav', { type: 'audio/wav' });
+    const errInfo = { userMsg: 'msg', suggestions: [] };
+    setTimeout(() => document.getElementById('audioRepairCancelBtn').click(), 30);
+    const result = await showAudioRepairModal(f, errInfo);
+    assert(result === null, `Esperado null, got ${result}`);
+});
+</script>
+</body>
+</html>

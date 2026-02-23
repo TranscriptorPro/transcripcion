@@ -24,6 +24,8 @@ if (transcribeBtn) {
         processingStatus.classList.add('active');
         let done = 0;
         let joinedText = '';
+        let skippedFiles = [];
+        let batchCancelled = false;
         const shouldJoin = chkJoinAudios ? chkJoinAudios.checked : false;
 
         try {
@@ -37,15 +39,14 @@ if (transcribeBtn) {
                 if (progressFill) progressFill.style.width = `${(done / pending.length) * 100}%`;
 
                 try {
-                    if (processingText) processingText.textContent = `Mejorando audio...`;
-                    // Asume processAudio function will be defined globally or imported
-                    let processedFile = item.file;
-                    if (typeof processAudio === 'function') {
-                        processedFile = await processAudio(item.file);
-                    }
+                    // 1. Validate file format/size/integrity before sending
+                    validateAudioFile(item.file);
 
-                    if (processingText) processingText.textContent = `Transcribiendo...`;
-                    let text = await transcribeWithGroq(processedFile);
+                    // 2. Transcribe with 4-attempt retry strategy
+                    if (processingText) processingText.textContent = `Transcribiendo: ${item.file.name}...`;
+                    let text = await transcribeWithRetry(item.file, (msg) => {
+                        if (processingText) processingText.textContent = msg;
+                    });
                     text = cleanTranscriptionText(text);
 
                     // Enforce transcription length limit
@@ -65,20 +66,58 @@ if (transcribeBtn) {
                     item.status = 'done';
                     done++;
                 } catch (err) {
-                    console.error(err);
-                    item.status = 'pending';
-                    showToast(`Error en ${item.file.name}: ${err.message}`, 'error');
+                    console.error('Transcription failed after all attempts:', err);
+                    item.status = 'error';
+                    const errorInfo = classifyTranscriptionError(err.message);
+                    const isBatch = shouldJoin && pending.length > 1;
+
+                    if (isBatch) {
+                        // Batch mode: ask user whether to continue without this audio
+                        const decision = await askBatchDecision(item.file.name, done + 1, pending.length);
+                        if (decision === 'cancel') {
+                            batchCancelled = true;
+                            break;
+                        }
+                        // 'continue': mark as skipped and go on
+                        skippedFiles.push(item.file.name);
+                    } else {
+                        // Single/individual mode: offer repair tools
+                        const repairedFile = await showAudioRepairModal(item.file, errorInfo);
+                        if (repairedFile) {
+                            if (processingText) processingText.textContent = `Reintentando con audio reparado...`;
+                            try {
+                                let repairedText = await transcribeWithGroqParams(repairedFile, { language: 'es' });
+                                repairedText = cleanTranscriptionText(repairedText);
+                                if (shouldJoin) {
+                                    joinedText += (joinedText ? '\n\n' : '') + repairedText;
+                                } else {
+                                    window.transcriptions.push({ fileName: item.file.name, text: repairedText || 'Sin audio detectado.' });
+                                    window.activeTabIndex = window.transcriptions.length - 1;
+                                }
+                                item.status = 'done';
+                                done++;
+                            } catch (repairErr) {
+                                item.status = 'error';
+                                showToast(`❌ "${item.file.name}" no pudo transcribirse incluso después de reparar. El problema es del archivo de audio.`, 'error');
+                            }
+                        }
+                    }
                 }
 
                 updateFileList();
                 if (progressFill) progressFill.style.width = `${(done / pending.length) * 100}%`;
             }
 
-            if (shouldJoin && joinedText) {
-                const combinedName = `Informe Combinado (${done} audios)`;
-                window.transcriptions.push({ fileName: combinedName, text: joinedText });
+            if (shouldJoin && (joinedText || skippedFiles.length > 0)) {
+                const skipStr = skippedFiles.length ? `, ${skippedFiles.length} omitido${skippedFiles.length > 1 ? 's' : ''}` : '';
+                const combinedName = `Informe Combinado (${done} audio${done !== 1 ? 's' : ''}${skipStr})`;
+                const skipNote = skippedFiles.length
+                    ? `\n\n⚠️ NOTA: Este informe puede estar incompleto. Los siguientes archivos no pudieron transcribirse:\n${skippedFiles.map(f => `• ${f}`).join('\n')}`
+                    : '';
+                const finalText = joinedText + skipNote;
+                window.transcriptions.push({ fileName: combinedName, text: finalText });
                 window.activeTabIndex = window.transcriptions.length - 1;
-                if (editor) editor.innerHTML = joinedText;
+                if (editor) editor.innerHTML = finalText;
             } else if (!shouldJoin && window.transcriptions.length > 0) {
                 if (editor) editor.innerHTML = window.transcriptions[window.activeTabIndex].text;
             }
@@ -117,9 +156,13 @@ if (transcribeBtn) {
             if (processingText) processingText.textContent = `✓ ${done} transcrito(s)`;
 
             // Show success message
-            if (done) {
+            if (done > 0 || skippedFiles.length > 0) {
                 setTimeout(() => {
-                    showToast(`${done} transcripción(es) lista(s)`, 'success');
+                    if (skippedFiles.length === 0) {
+                        showToast(`✅ ${done} transcripción(es) lista(s)`, 'success');
+                    } else {
+                        showToast(`⚠️ ${done} transcripto(s), ${skippedFiles.length} omitido(s) por error. Revisá el informe.`, 'warning');
+                    }
                 }, 500);
             }
 
@@ -149,11 +192,11 @@ if (transcribeBtn) {
     });
 }
 
-async function transcribeWithGroq(file) {
+async function transcribeWithGroqParams(file, { language = 'es', model = 'whisper-large-v3' } = {}) {
     const form = new FormData();
     form.append('file', file);
-    form.append('model', 'whisper-large-v3');
-    form.append('language', 'es');
+    form.append('model', model);
+    if (language) form.append('language', language);
     form.append('response_format', 'text');
 
     try {
@@ -198,6 +241,168 @@ function cleanTranscriptionText(text) {
         cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
     }
     return cleaned;
+}
+
+// ── Classify error for user-friendly messages ──────────────────────────────
+function classifyTranscriptionError(errMsg) {
+    const msg = (errMsg || '').toLowerCase();
+    if (msg.includes('api key') || msg.includes('401') || msg.includes('inválida o expirada')) {
+        return { type: 'auth', userMsg: 'API Key inválida o expirada. Verificá tu clave en Configuración.',
+            suggestions: ['Verificar que la clave comience con gsk_', 'Generar una nueva API Key en console.groq.com'] };
+    }
+    if (msg.includes('formato') || msg.includes('inválido') || msg.includes('corrupto') || msg.includes('400')) {
+        return { type: 'format', userMsg: 'El archivo de audio no es compatible o está dañado.',
+            suggestions: ['Usar las herramientas de reparación de abajo', 'Convertir a MP3 o WAV', 'Verificar que el archivo reproduzca correctamente'] };
+    }
+    if (msg.includes('25mb') || msg.includes('grande')) {
+        return { type: 'size', userMsg: 'El archivo supera el límite de 25 MB de la API.',
+            suggestions: ['Dividir el audio en partes más cortas', 'Comprimir el archivo antes de subirlo'] };
+    }
+    if (msg.includes('429') || msg.includes('límite')) {
+        return { type: 'ratelimit', userMsg: 'Límite de requests de Groq excedido.',
+            suggestions: ['Esperar unos minutos y reintentar', 'Verificar los límites del plan en console.groq.com'] };
+    }
+    if (msg.includes('503') || msg.includes('no disponible')) {
+        return { type: 'network', userMsg: 'Servicio de Groq temporalmente no disponible.',
+            suggestions: ['Verificar conexión a Internet', 'Intentar en unos minutos', 'Ver status.groq.com'] };
+    }
+    return { type: 'unknown', userMsg: errMsg || 'Error desconocido al procesar el audio.',
+        suggestions: ['Verificar que el archivo sea un audio válido', 'Intentar con otro formato de archivo', 'Verificar API Key y conexión a Internet'] };
+}
+
+// ── Repair audio with Web Audio API ────────────────────────────────────────
+async function repairAudioFile(file, { doNormalize = true, doNoise = true, doMono = false } = {}) {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const arrayBuffer = await file.arrayBuffer();
+        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+        audioCtx.close();
+        const targetRate = doMono ? 16000 : audioBuffer.sampleRate;
+        const numCh = doMono ? 1 : audioBuffer.numberOfChannels;
+        const offCtx = new OfflineAudioContext(numCh, Math.ceil(audioBuffer.duration * targetRate), targetRate);
+        const source = offCtx.createBufferSource();
+        source.buffer = audioBuffer;
+        let node = source;
+        if (doNormalize) {
+            const gain = offCtx.createGain();
+            let peak = 0;
+            for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
+                const d = audioBuffer.getChannelData(c);
+                for (let i = 0; i < d.length; i++) peak = Math.max(peak, Math.abs(d[i]));
+            }
+            gain.gain.value = peak > 0 ? 0.95 / peak : 1;
+            node.connect(gain); node = gain;
+        }
+        if (doNoise) {
+            const hp = offCtx.createBiquadFilter();
+            hp.type = 'highpass'; hp.frequency.value = 80;
+            node.connect(hp); node = hp;
+            const lp = offCtx.createBiquadFilter();
+            lp.type = 'lowpass'; lp.frequency.value = 12000;
+            node.connect(lp); node = lp;
+        }
+        node.connect(offCtx.destination);
+        source.start(0);
+        const rendered = await offCtx.startRendering();
+        if (typeof audioBufferToWav !== 'function') return file;
+        const wavBlob = audioBufferToWav(rendered);
+        const suffix = doMono ? '_mono16k' : '_reparado';
+        return new File([wavBlob], file.name.replace(/\.[^.]+$/, `${suffix}.wav`), { type: 'audio/wav' });
+    } catch (e) {
+        console.warn('repairAudioFile failed, returning original:', e);
+        return file;
+    }
+}
+
+// ── 4-attempt retry with progressive strategy ──────────────────────────────
+async function transcribeWithRetry(file, onStatusUpdate) {
+    const ATTEMPTS = 4;
+    let lastError = null;
+    let forcedFile = null;
+    for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
+        try {
+            if (attempt > 1) {
+                if (onStatusUpdate) onStatusUpdate(`Reintento ${attempt}/${ATTEMPTS}...`);
+                await new Promise(r => setTimeout(r, (attempt - 1) * 1500));
+            }
+            let fileToSend = file;
+            // Attempts 3 & 4: force full repair (normalize + noise + mono 16kHz)
+            if (attempt >= 3) {
+                if (!forcedFile) {
+                    if (onStatusUpdate) onStatusUpdate(`Reintento ${attempt}/${ATTEMPTS}: reparando audio...`);
+                    forcedFile = await repairAudioFile(file, { doNormalize: true, doNoise: true, doMono: true });
+                }
+                fileToSend = forcedFile;
+            }
+            // Attempts 2 & 4: auto-detect language (omit language param)
+            const langParam = (attempt === 2 || attempt === 4) ? null : 'es';
+            const text = await transcribeWithGroqParams(fileToSend, { language: langParam });
+            return text; // success
+        } catch (err) {
+            console.warn(`Transcription attempt ${attempt}/${ATTEMPTS} failed:`, err.message);
+            lastError = err;
+            // Auth or size errors: no point retrying
+            if (err.message.includes('API Key') || err.message.includes('401') ||
+                err.message.includes('25MB') || err.message.includes('grande')) {
+                throw err;
+            }
+        }
+    }
+    throw lastError;
+}
+
+// ── Batch failure decision modal ───────────────────────────────────────────
+function askBatchDecision(fileName, position, total) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('batchFailModal');
+        if (!modal) { resolve('continue'); return; }
+        const infoEl = document.getElementById('batchFailInfo');
+        if (infoEl) infoEl.innerHTML =
+            `<p>El <strong>audio ${position} de ${total}</strong> (<em>${fileName}</em>) no pudo transcribirse tras <strong>4 intentos</strong>.</p>
+             <p class="repair-note">⚠️ El problema es del archivo de audio, <strong>no de la aplicación</strong>.</p>
+             <p>¿Cómo querés continuar?</p>`;
+        modal.style.display = 'flex';
+        let resolved = false;
+        const done = (val) => { if (!resolved) { resolved = true; modal.style.display = 'none'; resolve(val); } };
+        document.getElementById('batchFailContinueBtn').onclick = () => done('continue');
+        document.getElementById('batchFailCancelBtn').onclick   = () => done('cancel');
+    });
+}
+
+// ── Audio repair modal ─────────────────────────────────────────────────────
+function showAudioRepairModal(file, errorInfo) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('audioRepairModal');
+        if (!modal) { resolve(null); return; }
+        const fnEl  = document.getElementById('audioRepairFileName');
+        const errEl = document.getElementById('audioRepairError');
+        const sugEl = document.getElementById('audioRepairSuggestions');
+        if (fnEl)  fnEl.textContent  = file.name;
+        if (errEl) errEl.textContent = errorInfo.userMsg;
+        if (sugEl) sugEl.innerHTML   = errorInfo.suggestions.map(s => `<li>${s}</li>`).join('');
+        modal.style.display = 'flex';
+        let resolved = false;
+        const done = (val) => { if (!resolved) { resolved = true; modal.style.display = 'none'; resolve(val); } };
+        document.getElementById('audioRepairCancelBtn').onclick = () => done(null);
+        modal.onclick = (e) => { if (e.target === modal) done(null); };
+        document.getElementById('audioRepairRetryBtn').onclick = async () => {
+            const btn = document.getElementById('audioRepairRetryBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Reparando...';
+            try {
+                const repaired = await repairAudioFile(file, {
+                    doNormalize: document.getElementById('repairNormalize').checked,
+                    doNoise:     document.getElementById('repairNoise').checked,
+                    doMono:      document.getElementById('repairMono').checked
+                });
+                done(repaired);
+            } catch (e) {
+                btn.disabled = false;
+                btn.textContent = '🔄 Reparar y reintentar';
+                if (typeof showToast === 'function') showToast('No se pudo procesar el audio', 'error');
+            }
+        };
+    });
 }
 
 // Validate audio file before processing

@@ -1229,6 +1229,46 @@
                 deferredPrompt = null;
             });
         })();
+
+        <!-- ── Modal: Reparación de Audio ──────────────────────────────────────── -->
+        <div class="modal-overlay" id="audioRepairModal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="audioRepairTitle">
+            <div class="modal" style="max-width:500px;">
+                <div class="modal-header">
+                    <h2 id="audioRepairTitle">🔧 Reparación de Audio</h2>
+                </div>
+                <div class="modal-body">
+                    <p class="repair-filename">📁 <strong id="audioRepairFileName"></strong></p>
+                    <p class="repair-error-msg" id="audioRepairError"></p>
+                    <div class="repair-note">⚠️ El problema es del archivo de audio, <strong>no de la aplicación</strong>. Se realizaron 4 intentos sin éxito.</div>
+                    <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.25rem;">Sugerencias:</p>
+                    <ul class="repair-suggestions" id="audioRepairSuggestions"></ul>
+                    <hr style="margin:1rem 0;border:none;border-top:1px solid var(--border);">
+                    <p style="font-weight:600;margin-bottom:0.6rem;">Aplicar correcciones automáticas y reintentar:</p>
+                    <label class="repair-option"><input type="checkbox" id="repairNormalize" checked> Normalizar volumen</label>
+                    <label class="repair-option"><input type="checkbox" id="repairNoise" checked> Reducir ruido de fondo</label>
+                    <label class="repair-option"><input type="checkbox" id="repairMono"> Convertir a mono 16&thinsp;kHz <span style="font-size:0.78rem;color:var(--text-secondary);">(fórmato óptimo para Whisper)</span></label>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" id="audioRepairCancelBtn">Cancelar</button>
+                    <button class="btn-primary" id="audioRepairRetryBtn">🔄 Reparar y reintentar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Modal: Batch fallido ─────────────────────────────────────────────── -->
+        <div class="modal-overlay" id="batchFailModal" style="display:none;" role="dialog" aria-modal="true">
+            <div class="modal" style="max-width:480px;">
+                <div class="modal-header">
+                    <h2>⚠️ Audio no transcripto</h2>
+                </div>
+                <div class="modal-body" id="batchFailInfo"></div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" id="batchFailCancelBtn">Cancelar proceso</button>
+                    <button class="btn-primary" id="batchFailContinueBtn">Continuar sin este audio</button>
+                </div>
+            </div>
+        </div>
+
         </script>
     </main>
 </body>

@@ -1157,6 +1157,41 @@
             z-index: 10000 !important;
         }
 
+        /* \u2500\u2500 Audio repair modal styles \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
+        .repair-filename { margin-bottom: 0.3rem; font-size: 0.9rem; }
+        .repair-error-msg { color: #dc2626; margin-bottom: 0.6rem; font-size: 0.9rem; font-weight: 500; }
+        .repair-note {
+            background: #fef9c3;
+            border-left: 3px solid #ca8a04;
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+            color: #713f12;
+        }
+        .repair-suggestions {
+            padding-left: 1.25rem;
+            margin: 0 0 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        .repair-suggestions li { margin-bottom: 0.25rem; }
+        .repair-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            padding: 0.35rem 0;
+            cursor: pointer;
+            user-select: none;
+        }
+        .repair-option input[type="checkbox"] {
+            width: 15px;
+            height: 15px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
         /* Toast above modals */
         .toast {
             z-index: 10001 !important;

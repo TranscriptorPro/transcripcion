@@ -270,7 +270,7 @@ function promptTemplateSelection(detectedKey) {
     });
 }
 
-async function structureTranscription(text, templateKey) {
+async function structureTranscription(text, templateKey, temperature = 0.1) {
     if (!GROQ_API_KEY) {
         showToast('Configura la API Key para el Modo Pro', 'error');
         return text;
@@ -328,9 +328,32 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepción:
         return data.choices[0].message.content.trim();
     } catch (error) {
         console.error('Structuring failed:', error);
-        showToast('Error al estructurar. Se usará texto plano.', 'warning');
-        return text; // Fallback a texto plano si falla 
+        throw error; // Propagate to structureWithRetry
     }
+}
+
+// ── 3-attempt retry wrapper for structuring ────────────────────────────
+async function structureWithRetry(text, templateKey) {
+    const temperatures = [0.1, 0.15, 0.2];
+    let lastError = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+            if (attempt > 0 && typeof showToast === 'function') {
+                showToast(`⏳ Reintentando estructurado (${attempt + 1}/3)...`, 'info');
+                await new Promise(r => setTimeout(r, 2000));
+            }
+            const result = await structureTranscription(text, templateKey, temperatures[attempt]);
+            // Sanity check: response should be substantial relative to input
+            if (result.length < 80 && text.length > 300) {
+                throw new Error('Respuesta del LLM muy corta o incompleta');
+            }
+            return result;
+        } catch (err) {
+            console.warn(`Structure attempt ${attempt + 1}/3 failed:`, err.message);
+            lastError = err;
+        }
+    }
+    throw lastError || new Error('No se pudo estructurar tras 3 intentos');
 }
 
 // ---- AI Note panel helper ----
@@ -406,6 +429,7 @@ window.initStructurer = function () {
                 return;
             }
             const rawText = editor.innerText;
+            const savedHTML = editor.innerHTML;
             const oldHTML = btnStructureAIEl.innerHTML;
             window._lastRawTranscription = rawText; // save for restore/toggle
             btnStructureAIEl.disabled = true;
@@ -424,7 +448,7 @@ window.initStructurer = function () {
                         currentTemplate = 'generico';
                     }
                 }
-                const rawMarkdown = await structureTranscription(rawText, currentTemplate);
+                const rawMarkdown = await structureWithRetry(rawText, currentTemplate);
                 const { body, note } = parseAIResponse(rawMarkdown);
                 editor.innerHTML = body;
                 window._lastStructuredHTML = body;
@@ -439,7 +463,9 @@ window.initStructurer = function () {
                 if (typeof showToast === 'function') showToast('✅ Texto estructurado con IA', 'success');
                 triggerPatientDataCheck(rawText);
             } catch (error) {
-                if (typeof showToast === 'function') showToast('Error al estructurar', 'error');
+                editor.innerHTML = savedHTML;
+                if (typeof showToast === 'function') showToast('❌ No se pudo estructurar tras 3 intentos. El texto original fue restaurado. El problema es con el servicio de IA, no con la app.', 'error');
+                if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
             } finally {
                 btnStructureAIEl.disabled = false;
                 btnStructureAIEl.innerHTML = oldHTML;
@@ -455,6 +481,7 @@ window.initStructurer = function () {
             if (!editor || !editor.innerText.trim()) return showToast('No hay texto para estructurar', 'error');
 
             const rawText = editor.innerText;
+            const savedHTML = editor.innerHTML;
             window._lastRawTranscription = rawText;
             const oldText = btnApplyStructure.textContent;
             btnApplyStructure.disabled = true;
@@ -463,7 +490,7 @@ window.initStructurer = function () {
             try {
                 const templateSelect = document.getElementById('templateSelect');
                 const templateKey = templateSelect ? templateSelect.value : 'generico';
-                const rawMarkdown = await structureTranscription(editor.innerText, templateKey);
+                const rawMarkdown = await structureWithRetry(editor.innerText, templateKey);
                 const { body, note } = parseAIResponse(rawMarkdown);
                 editor.innerHTML = body;
                 window._lastStructuredHTML = body;
@@ -481,7 +508,9 @@ window.initStructurer = function () {
                 if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURED');
                 triggerPatientDataCheck(rawText);
             } catch (e) {
-                if (typeof showToast === 'function') showToast('Error al estructurar', 'error');
+                editor.innerHTML = savedHTML;
+                if (typeof showToast === 'function') showToast('❌ No se pudo estructurar tras 3 intentos. El texto original fue restaurado. El problema es con el servicio de IA, no con la app.', 'error');
+                if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
             } finally {
                 btnApplyStructure.disabled = false;
                 btnApplyStructure.textContent = oldText;
