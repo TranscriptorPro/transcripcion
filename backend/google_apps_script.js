@@ -253,10 +253,7 @@ function doPost(e) {
 function createResponse(data) {
   return ContentService
     .createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON)
-    .setHeader('Access-Control-Allow-Origin', '*')
-    .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-    .setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 /**
@@ -283,15 +280,11 @@ function appendAdminLog(adminUser, accion, usuarioAfectado, detalles) {
 }
 
 /**
- * Maneja peticiones OPTIONS para CORS preflight
- * Requerido para que funcionen las peticiones POST desde otros dominios
+ * doOptions no es necesario — Google Apps Script maneja CORS automáticamente
+ * cuando el script está desplegado con acceso "Cualquier persona".
  */
 function doOptions(e) {
   return ContentService
     .createTextOutput('')
-    .setMimeType(ContentService.MimeType.TEXT)
-    .setHeader('Access-Control-Allow-Origin', '*')
-    .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-    .setHeader('Access-Control-Allow-Headers', 'Content-Type')
-    .setHeader('Access-Control-Max-Age', '86400'); // Cache preflight por 24 horas
+    .setMimeType(ContentService.MimeType.TEXT);
 }
