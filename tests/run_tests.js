@@ -25,11 +25,17 @@ const { LocalStorage } = (() => {
 global.localStorage      = new LocalStorage();
 global.window            = global;
 global.showToast         = () => {};
+global.showToastWithAction = () => {};
 global.GROQ_API_KEY      = null;
 global.fetch             = async () => {};
 global.selectedTemplate  = undefined;
 global.document          = { getElementById: () => null, querySelectorAll: () => [] };
 global.extractPatientDataFromText = () => ({});
+// Suprimir console.error/warn en tests (ruido de errores esperados/simulados)
+const _origConsoleError = console.error;
+const _origConsoleWarn  = console.warn;
+console.error = () => {};
+console.warn  = () => {};
 
 // ── Cargar funciones bajo test ───────────────────────────────────────────────
 const fs   = require('fs');
@@ -363,8 +369,259 @@ test('markdownToHtml produce HTML válido para resultado de cinecoronariografía
     assertEqual(h2opens, h2closes, 'h2 desbalanceados');
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 5: classifyStructError
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 5: classifyStructError ───────────────────────────────');
+
+test('401 → type auth, no espera, no cambia modelo', () => {
+    const r = global.classifyStructError(new Error('HTTP_401: invalid_api_key'));
+    assertEqual(r.type, 'auth');
+    assertEqual(r.wait, 0);
+    assertEqual(r.switchModel, false);
+});
+
+test('invalid_api_key en mensaje → type auth', () => {
+    const r = global.classifyStructError(new Error('Unauthorized: invalid_api_key provided'));
+    assertEqual(r.type, 'auth');
+});
+
+test('429 → type rate_limit, espera 8s, mismo modelo', () => {
+    const r = global.classifyStructError(new Error('HTTP_429: too many requests'));
+    assertEqual(r.type, 'rate_limit');
+    assertEqual(r.wait, 8000);
+    assertEqual(r.switchModel, false);
+});
+
+test('503 → type server_error, cambia modelo inmediatamente', () => {
+    const r = global.classifyStructError(new Error('HTTP_503: service unavailable'));
+    assertEqual(r.type, 'server_error');
+    assertEqual(r.switchModel, true);
+});
+
+test('504 → type server_error, cambia modelo', () => {
+    const r = global.classifyStructError(new Error('HTTP_504: gateway timeout'));
+    assertEqual(r.type, 'server_error');
+    assertEqual(r.switchModel, true);
+});
+
+test('TypeError (failed to fetch) → type network', () => {
+    const err = new TypeError('Failed to fetch');
+    const r = global.classifyStructError(err);
+    assertEqual(r.type, 'network');
+    assertEqual(r.wait, 0);
+});
+
+test('NetworkError string → type network', () => {
+    const r = global.classifyStructError(new Error('NetworkError when attempting to fetch resource'));
+    assertEqual(r.type, 'network');
+});
+
+test('Error desconocido → type unknown, sin cambio de modelo', () => {
+    const r = global.classifyStructError(new Error('algún error raro'));
+    assertEqual(r.type, 'unknown');
+    assertEqual(r.switchModel, false);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 6: GROQ_MODELS y structureTranscription sin key
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 6: GROQ_MODELS y structureTranscription ──────────────');
+
+test('GROQ_MODELS[0] es llama-3.3-70b-versatile', () => {
+    assertEqual(global.GROQ_MODELS[0], 'llama-3.3-70b-versatile');
+});
+
+test('GROQ_MODELS[1] es llama-3.1-70b-versatile', () => {
+    assertEqual(global.GROQ_MODELS[1], 'llama-3.1-70b-versatile');
+});
+
+test('GROQ_MODELS[2] es llama-3.1-8b-instant (no más mixtral deprecado)', () => {
+    assertEqual(global.GROQ_MODELS[2], 'llama-3.1-8b-instant');
+    assert(!global.GROQ_MODELS.includes('mixtral-8x7b-32768'), 'mixtral-8x7b-32768 no debe estar en la lista');
+});
+
+test('GROQ_MODELS tiene exactamente 3 entradas', () => {
+    assertEqual(global.GROQ_MODELS.length, 3);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 7: structureWithRetry — comportamientos con fetch simulado (async)
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 7: structureWithRetry (fetch simulado) ───────────────');
+
+async function asyncTest(name, fn) {
+    try {
+        await fn();
+        console.log(`  ✅  ${name}`);
+        passed++;
+    } catch(e) {
+        console.log(`  ❌  ${name}`);
+        console.log(`        → ${e.message}`);
+        failed++;
+    }
+}
+
+// Helpers para simular respuestas de fetch
+const makeFetchOk = (content) => async () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({ choices: [{ message: { content } }] })
+});
+
+const makeFetchErr = (status, message) => async () => ({
+    ok: false,
+    status,
+    json: async () => ({ error: { message } })
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 8: Cola de pendientes
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Los bloques 7 y 8 se ejecutan en un IIFE async para poder usar await
+(async () => {
+
+await asyncTest('structureTranscription lanza HTTP_401 cuando no hay API key', async () => {
+    global.GROQ_API_KEY = null;
+    try {
+        await global.structureTranscription('texto', 'generico');
+        throw new Error('No lanzó error');
+    } catch(e) {
+        assert(e.message.includes('HTTP_401'), `Se esperaba HTTP_401, se obtuvo: "${e.message}"`);
+    } finally { global.GROQ_API_KEY = 'gsk_test'; }
+});
+
+await asyncTest('structureWithRetry se detiene en el 1er intento con error 401 (sin reintentar)', async () => {
+    global.GROQ_API_KEY = 'gsk_test';
+    let callCount = 0;
+    global.fetch = async () => { callCount++; return makeFetchErr(401, 'invalid_api_key')(); };
+    try {
+        await global.structureWithRetry('texto de prueba', 'generico');
+        throw new Error('No lanzó error');
+    } catch(e) {
+        assert(e.message.includes('HTTP_401'), `Se esperaba HTTP_401`);
+        assertEqual(callCount, 1, 'Solo debe hacer 1 llamada con 401');
+        assert(!e.savedToPending, 'Error 401 no debe guardar en cola de pendientes');
+    }
+});
+
+await asyncTest('structureWithRetry guarda en cola con error de red (sin reintentar)', async () => {
+    global.GROQ_API_KEY = 'gsk_test';
+    localStorage.removeItem('struct_pending_queue');
+    let callCount = 0;
+    global.fetch = async () => { callCount++; throw new TypeError('Failed to fetch'); };
+    try {
+        await global.structureWithRetry('texto de red caída', 'cinecoro');
+        throw new Error('No lanzó error');
+    } catch(e) {
+        assert(e.savedToPending === true, 'Debe tener savedToPending = true');
+        assertEqual(callCount, 1, 'Solo 1 intento con error de red (inútil reintentar)');
+        const q = JSON.parse(localStorage.getItem('struct_pending_queue') || '[]');
+        assert(q.length > 0, 'Debe haber guardado en la cola');
+        assertEqual(q[0].templateKey, 'cinecoro');
+    }
+});
+
+await asyncTest('structureWithRetry tiene éxito en el 2do intento (1er falla con 503)', async () => {
+    global.GROQ_API_KEY = 'gsk_test';
+    localStorage.removeItem('struct_pending_queue');
+    let callCount = 0;
+    const GOOD = '## INFORME\n\nHallazgo extenso con mucho contenido clínico que supera los 80 caracteres requeridos.';
+    global.fetch = async () => {
+        callCount++;
+        return callCount === 1 ? makeFetchErr(503, 'service unavailable')() : makeFetchOk(GOOD)();
+    };
+    const result = await global.structureWithRetry('texto a estructurar', 'generico');
+    assertEqual(result, GOOD);
+    assertEqual(callCount, 2, 'Deben hacerse exactamente 2 llamadas');
+    const q = JSON.parse(localStorage.getItem('struct_pending_queue') || '[]');
+    assertEqual(q.length, 0, 'No debe guardar en cola en caso de éxito');
+});
+
+await asyncTest('structureWithRetry con 429 reintenta mismo modelo y luego tiene éxito', async () => {
+    global.GROQ_API_KEY = 'gsk_test';
+    const origTimeout = global.setTimeout;
+    global.setTimeout = (fn, _d) => origTimeout(fn, 0); // omitir wait de 8s
+    let callCount = 0;
+    const GOOD = 'Informe completo con suficiente contenido para superar el umbral de 80 caracteres mínimos.';
+    global.fetch = async () => {
+        callCount++;
+        return callCount === 1 ? makeFetchErr(429, 'rate limit exceeded')() : makeFetchOk(GOOD)();
+    };
+    const result = await global.structureWithRetry('texto con rate limit', 'generico');
+    assertEqual(result, GOOD);
+    assert(callCount >= 2, 'Debe reintentar después del 429');
+    global.setTimeout = origTimeout;
+});
+
+await asyncTest('structureWithRetry: todos fallan → savedToPending + texto en cola', async () => {
+    global.GROQ_API_KEY = 'gsk_test';
+    localStorage.removeItem('struct_pending_queue');
+    global.fetch = makeFetchErr(503, 'unavailable');
+    try {
+        await global.structureWithRetry('texto sin conexión persistente', 'generico');
+        throw new Error('No lanzó error');
+    } catch(e) {
+        assert(e.savedToPending === true, `savedToPending debe ser true, es: ${e.savedToPending}`);
+        const q = JSON.parse(localStorage.getItem('struct_pending_queue') || '[]');
+        assert(q.length > 0, 'Debe guardar en la cola');
+        assertIncludes(q[0].text, 'texto sin conexión persistente');
+    }
+});
+
+// ── Bloque 8 ──────────────────────────────────────────────────────────────────
+console.log('\n── Bloque 8: Cola de pendientes (struct_pending_queue) ─────────');
+
+test('addToStructurePendingQueue guarda una entrada con todos los campos', () => {
+    localStorage.removeItem('struct_pending_queue');
+    const entry = global.addToStructurePendingQueue('informe eco doppler', 'doppler');
+    assert(entry.id && typeof entry.id === 'number', 'Debe tener id numérico');
+    assertEqual(entry.templateKey, 'doppler');
+    assert(entry.preview.length <= 143, 'Preview debe ser corta'); // 140 + "..."
+    const q = JSON.parse(localStorage.getItem('struct_pending_queue'));
+    assertEqual(q.length, 1);
+});
+
+test('addToStructurePendingQueue inserta al inicio (más reciente primero)', () => {
+    global.addToStructurePendingQueue('texto A', 'generico');
+    global.addToStructurePendingQueue('texto B', 'cinecoro');
+    const q = global.getStructurePendingQueue();
+    assertEqual(q[0].templateKey, 'cinecoro', 'El más reciente debe estar primero');
+});
+
+test('addToStructurePendingQueue no supera 10 entradas', () => {
+    localStorage.removeItem('struct_pending_queue');
+    for (let i = 0; i < 12; i++) global.addToStructurePendingQueue(`texto ${i}`, 'generico');
+    const q = global.getStructurePendingQueue();
+    assert(q.length <= 10, `Máximo 10 entradas, hay ${q.length}`);
+});
+
+test('removeFromStructurePendingQueue elimina por id', () => {
+    // Usar ids manuales para evitar colisión de Date.now() en la misma ms
+    localStorage.setItem('struct_pending_queue', JSON.stringify([
+        { id: 2001, text: 'a conservar', templateKey: 'generico', savedAt: '1/1/2026', preview: 'a conservar' },
+        { id: 2000, text: 'a eliminar',  templateKey: 'generico', savedAt: '1/1/2026', preview: 'a eliminar'  }
+    ]));
+    global.removeFromStructurePendingQueue(2000);
+    const q = global.getStructurePendingQueue();
+    assertEqual(q.length, 1, `Esperaba 1 entrada, hay ${q.length}`);
+    assertEqual(q[0].text, 'a conservar');
+});
+
+test('getStructurePendingQueue retorna [] si localStorage está vacío o corrupto', () => {
+    localStorage.setItem('struct_pending_queue', 'invalid json{{{{');
+    const q = global.getStructurePendingQueue();
+    assert(Array.isArray(q) && q.length === 0, 'Debe retornar array vacío ante JSON corrupto');
+    localStorage.removeItem('struct_pending_queue');
+    const q2 = global.getStructurePendingQueue();
+    assert(Array.isArray(q2) && q2.length === 0, 'Debe retornar array vacío si no existe la key');
+});
+
 // ── Resumen ───────────────────────────────────────────────────────────────────
 console.log('\n─────────────────────────────────────────────────────────────────');
 console.log(`  Total: ${passed + failed} | ✅ Pasaron: ${passed} | ❌ Fallaron: ${failed}`);
 console.log('─────────────────────────────────────────────────────────────────\n');
 process.exit(failed > 0 ? 1 : 0);
+
+})();

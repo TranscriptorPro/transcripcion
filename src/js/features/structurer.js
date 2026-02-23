@@ -276,6 +276,7 @@ const GROQ_MODELS = [
     'llama-3.1-70b-versatile',
     'llama-3.1-8b-instant'   // fast fallback (mixtral-8x7b deprecado)
 ];
+if (typeof window !== 'undefined') window.GROQ_MODELS = GROQ_MODELS;
 
 async function structureTranscription(text, templateKey, temperature = 0.1, model = GROQ_MODELS[0]) {
     if (!GROQ_API_KEY) {
