@@ -10,3 +10,35 @@ function showToast(msg, type = 'success') {
         console.warn('Toast elements not found in DOM', msg);
     }
 }
+
+// Toast con botón de acción opcional
+window.showToastWithAction = function(msg, type = 'error', actionText = 'Ver', actionFn = null, duration = 5000) {
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toastMessage');
+    if (!toast || !toastMessage) { console.warn('Toast not found:', msg); return; }
+
+    // Limpiar botón previo si existía
+    const existing = toast.querySelector('.toast-action-btn');
+    if (existing) existing.remove();
+
+    toastMessage.textContent = msg;
+
+    if (actionFn) {
+        const btn = document.createElement('button');
+        btn.className = 'toast-action-btn';
+        btn.textContent = actionText;
+        btn.style.cssText = 'margin-left:8px;background:rgba(255,255,255,0.9);color:#1a1a1a;border:none;border-radius:4px;padding:2px 10px;cursor:pointer;font-size:0.78rem;font-weight:700;flex-shrink:0;';
+        btn.onclick = () => { toast.classList.remove('show'); actionFn(); };
+        toast.appendChild(btn);
+    }
+
+    toast.className = `toast ${type} show`;
+    const timer = setTimeout(() => {
+        toast.classList.remove('show');
+        const b = toast.querySelector('.toast-action-btn');
+        if (b) b.remove();
+    }, duration);
+    // Cancelar timer si el usuario hace clic en el botón
+    const btn2 = toast.querySelector('.toast-action-btn');
+    if (btn2) btn2.addEventListener('click', () => clearTimeout(timer), { once: true });
+};

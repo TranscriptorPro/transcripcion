@@ -381,6 +381,23 @@ window.initApiManagement = function () {
         }
         // Actualizar el status indicator
         if (typeof updateApiStatus === 'function') updateApiStatus(savedKey);
+
+        // Validación silenciosa al inicio (2.5 s de delay para no bloquear el init)
+        setTimeout(async () => {
+            try {
+                const res = await fetch('https://api.groq.com/openai/v1/models', {
+                    headers: { 'Authorization': 'Bearer ' + savedKey }
+                });
+                if (res.status === 401) {
+                    // Key almacenada pero inválida (revocada o expirada)
+                    const banner = document.getElementById('apiKeyWarningBanner');
+                    if (banner) banner.style.display = 'flex';
+                    if (typeof updateApiStatus === 'function') updateApiStatus('');
+                }
+            } catch (_) {
+                // Sin internet al inicio → no mostrar nada, la app funciona igual
+            }
+        }, 2500);
     }
 
     // Guardar API Key (con validación real contra Groq)

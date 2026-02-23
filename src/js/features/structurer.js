@@ -274,13 +274,12 @@ function promptTemplateSelection(detectedKey) {
 const GROQ_MODELS = [
     'llama-3.3-70b-versatile',
     'llama-3.1-70b-versatile',
-    'mixtral-8x7b-32768'
+    'llama-3.1-8b-instant'   // fast fallback (mixtral-8x7b deprecado)
 ];
 
 async function structureTranscription(text, templateKey, temperature = 0.1, model = GROQ_MODELS[0]) {
     if (!GROQ_API_KEY) {
-        showToast('Configura la API Key para el Modo Pro', 'error');
-        return text;
+        throw new Error('HTTP_401: API Key no configurada');
     }
 
     // Enforce character limit before sending to API
@@ -330,7 +329,11 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepción:
             })
         });
 
-        if (!res.ok) throw new Error('Error al estructurar');
+        if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            const errDetails = errBody?.error?.message || 'Error al estructurar';
+            throw new Error(`HTTP_${res.status}: ${errDetails}`);
+        }
         const data = await res.json();
         return data.choices[0].message.content.trim();
     } catch (error) {
@@ -339,39 +342,101 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepción:
     }
 }
 
-// ── 3-attempt retry wrapper con fallback de modelos ────────────────────────
+// ── Clasificación inteligente de errores de estructuración ───────────────────
+function classifyStructError(err) {
+    const msg = err.message || '';
+    if (msg.includes('HTTP_401') || msg.toLowerCase().includes('api key') || msg.includes('invalid_api_key')) {
+        return { type: 'auth', wait: 0, switchModel: false };
+    }
+    if (msg.includes('HTTP_429')) {
+        return { type: 'rate_limit', wait: 8000, switchModel: false };
+    }
+    if (msg.includes('HTTP_503') || msg.includes('HTTP_504') || msg.includes('HTTP_500')) {
+        return { type: 'server_error', wait: 1000, switchModel: true };
+    }
+    if (err instanceof TypeError || msg.toLowerCase().includes('failed to fetch') || msg.toLowerCase().includes('networkerror')) {
+        return { type: 'network', wait: 0, switchModel: false };
+    }
+    return { type: 'unknown', wait: 2000, switchModel: false };
+}
+
+// ── Pre-flight: verificar requisitos antes de estructurar ──────────────────
+function checkStructurePrerequisites() {
+    const key = window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '';
+    if (!key || !key.startsWith('gsk_')) {
+        if (typeof showToastWithAction === 'function') {
+            showToastWithAction('🔑 API Key no configurada.', 'error', '⚙️ Configurar', () => {
+                const card = document.getElementById('adminApiKeyCard');
+                if (card) card.scrollIntoView({ behavior: 'smooth' });
+                const input = document.getElementById('apiKeyInput');
+                if (input) { input.type = 'text'; input.focus(); input.select(); }
+            }, 7000);
+        } else if (typeof showToast === 'function') {
+            showToast('🔑 API Key no configurada. Ir a Configuración.', 'error');
+        }
+        return false;
+    }
+    return true;
+}
+
+// ── 4-attempt retry wrapper con fallback inteligente de modelos ───────────
 async function structureWithRetry(text, templateKey) {
-    // Estrategia progresiva: mismo modelo × 2, luego modelo alternativo
     const strategy = [
-        { model: GROQ_MODELS[0], temperature: 0.1 },
+        { model: GROQ_MODELS[0], temperature: 0.1  },
         { model: GROQ_MODELS[0], temperature: 0.15 },
-        { model: GROQ_MODELS[1], temperature: 0.1 }
+        { model: GROQ_MODELS[1], temperature: 0.1  },
+        { model: GROQ_MODELS[2], temperature: 0.1  }   // fast fallback
     ];
     let lastError = null;
-    for (let attempt = 0; attempt < strategy.length; attempt++) {
+    let idx = 0;
+
+    while (idx < strategy.length) {
+        const { model, temperature } = strategy[idx];
         try {
-            if (attempt > 0 && typeof showToast === 'function') {
-                const isModelChange = strategy[attempt].model !== strategy[attempt - 1].model;
-                const label = isModelChange ? ' con modelo alternativo' : '';
-                showToast(`⏳ Reintentando${label} (${attempt + 1}/3)...`, 'info');
-                await new Promise(r => setTimeout(r, 2000));
+            if (idx > 0 && typeof showToast === 'function') {
+                const isModelChange = model !== strategy[idx - 1].model;
+                const shortName = model.split('-').slice(0, 3).join('-');
+                const label = isModelChange ? ` — modelo: ${shortName}` : '';
+                showToast(`⏳ Reintentando${label} (${idx + 1}/${strategy.length})...`, 'info');
             }
-            const { model, temperature } = strategy[attempt];
             const result = await structureTranscription(text, templateKey, temperature, model);
             if (result.length < 80 && text.length > 300) {
                 throw new Error('Respuesta del LLM muy corta o incompleta');
             }
             return result;
         } catch (err) {
-            console.warn(`Structure attempt ${attempt + 1}/3 failed [${strategy[attempt].model}]:`, err.message);
             lastError = err;
-            // Key inválida → inútil reintentar
-            if (err.message.includes('401') || err.message.toLowerCase().includes('api key')) throw err;
+            const { type, wait, switchModel } = classifyStructError(err);
+            console.warn(`Structure [${idx + 1}/${strategy.length}] [${model}] → ${type}:`, err.message);
+
+            if (type === 'auth') {
+                // API Key inválida — no reintentar, el pre-flight debería haberlo evitado
+                throw err;
+            }
+
+            if (type === 'network') {
+                // Sin internet — inútil reintentar, ir directo a cola de pendientes
+                break;
+            }
+
+            if (wait > 0) await new Promise(r => setTimeout(r, wait));
+
+            if (switchModel) {
+                // Buscar el primer índice con modelo diferente
+                let found = false;
+                for (let i = idx + 1; i < strategy.length; i++) {
+                    if (strategy[i].model !== model) { idx = i; found = true; break; }
+                }
+                if (!found) break;
+            } else {
+                idx++;
+            }
         }
     }
+
     // Todos los intentos fallaron → guardar en cola de pendientes
     try { addToStructurePendingQueue(text, templateKey); } catch (_) {}
-    const finalErr = new Error(lastError?.message || 'No se pudo estructurar tras 3 intentos');
+    const finalErr = new Error(lastError?.message || 'No se pudo estructurar');
     finalErr.savedToPending = true;
     throw finalErr;
 }
@@ -542,6 +607,7 @@ window.initStructurer = function () {
             }
             const rawText = editor.innerText;
             const savedHTML = editor.innerHTML;
+            if (!checkStructurePrerequisites()) return;
             const oldHTML = btnStructureAIEl.innerHTML;
             window._lastRawTranscription = rawText; // save for restore/toggle
             btnStructureAIEl.disabled = true;
@@ -599,6 +665,7 @@ window.initStructurer = function () {
             const rawText = editor.innerText;
             const savedHTML = editor.innerHTML;
             window._lastRawTranscription = rawText;
+            if (!checkStructurePrerequisites()) return;
             const oldText = btnApplyStructure.textContent;
             btnApplyStructure.disabled = true;
             btnApplyStructure.textContent = "✨ Estructurando...";
