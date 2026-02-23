@@ -1052,13 +1052,13 @@
             margin-left: 1.5rem;
         }
         #editor .report-p {
-            margin: 0.05rem 0;
+            margin: 0 0 0.1rem;
             font-size: 0.9rem;
-            line-height: 1.65;
+            line-height: 1.4;
         }
         /* Espacio antes de cada sección (h2) para respirar, pero no entre párrafos */
-        #editor .report-h2 { margin-top: 0.9rem; margin-bottom: 0.2rem; }
-        #editor .report-h3 { margin-top: 0.6rem; margin-bottom: 0.15rem; }
+        #editor .report-h2 { margin-top: 0.65rem; margin-bottom: 0.15rem; }
+        #editor .report-h3 { margin-top: 0.45rem; margin-bottom: 0.1rem; }
 
         /* Print: hide UI-only elements */
         @media print {
@@ -2050,8 +2050,8 @@
             padding: 0 18mm 18mm;
             box-shadow: 0 4px 32px rgba(0,0,0,0.45);
             font-family: 'Times New Roman', Times, serif;
-            font-size: 10.5pt;
-            line-height: 1.55;
+            font-size: 10pt;
+            line-height: 1.4;
             color: #111;
             box-sizing: border-box;
             border-top: 5px solid var(--pa, #1a56a0);
@@ -2157,8 +2157,8 @@
             margin: 10px 0 4px;
         }
         .a4-page .preview-content p {
-            margin: 3px 0 6px;
-            line-height: 1.6;
+            margin: 1px 0 4px;
+            line-height: 1.4;
             text-align: justify;
         }
         .a4-page .preview-content ul,
@@ -2232,8 +2232,8 @@
             margin: 9px 0 4px;
         }
         .a4-page .report-p {
-            margin: 3px 0 5px;
-            line-height: 1.55;
+            margin: 1px 0 3px;
+            line-height: 1.4;
             text-align: justify;
         }
         .a4-page .report-list {

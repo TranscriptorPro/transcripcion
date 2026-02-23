@@ -168,12 +168,25 @@ function markdownToHtml(md) {
         }
     }
 
-    return html.join('\n')
-        .replace(/\[No especificado\]/g,
-            '<span class="no-data-field" contenteditable="false" data-field-empty="1">'
-            + '<span class="no-data-text">No especificado</span>'
-            + '<button class="no-data-edit-btn" tabindex="0" title="Completar campo" type="button">✏️</button>'
-            + '</span>');
+    const EMPTY_FIELD_HTML =
+        '<span class="no-data-field" contenteditable="false" data-field-empty="1">'
+        + '<span class="no-data-text">— campo vacío —</span>'
+        + '<button class="no-data-edit-btn" tabindex="0" title="Completar campo" type="button">✏️</button>'
+        + '</span>';
+
+    // Patrones que el AI puede generar cuando una estructura no fue evaluada
+    const NO_EVAL_PATTERNS = [
+        /\[No especificado\]/g,
+        /\bNo se evalu\u00f3\.?/gi,
+        /\bNo fue evaluad[ao]\.?/gi,
+        /\bNo evaluad[ao]\.?/gi,
+        /\bNo se realiz\u00f3\.?/gi,
+        /\bSin datos disponibles\.?/gi,
+    ];
+
+    let result = html.join('\n');
+    NO_EVAL_PATTERNS.forEach(rx => { result = result.replace(rx, EMPTY_FIELD_HTML); });
+    return result;
 }
 
 // Extract AI's meta-note and return { body: html, note: string|null }
@@ -315,14 +328,14 @@ async function structureTranscription(text, templateKey, temperature = 0.1, mode
 REGLAS ABSOLUTAS — cumplirlas todas sin excepción:
 1. PRESERVA TODO EL CONTENIDO: cada hallazgo, medición, valor y dato de la transcripción DEBE aparecer en el informe. Nunca descartes información clínica, aunque no encaje perfectamente en la plantilla.
 2. Si la transcripción contiene datos que no corresponden a las secciones propuestas, ubícalos en la sección más apropiada o crea una subsección adicional con un título descriptivo.
-3. Usa [No especificado] SOLO cuando un campo de la plantilla no tiene absolutamente ningún dato en la transcripción.
+3. Usa SIEMPRE el marcador [No especificado] cuando una estructura NO fue evaluada, NO fue mencionada O no tiene datos en la transcripción. NUNCA escribas "No se evaluó", "No fue evaluado", "No evaluado", "Sin datos" ni ninguna variante. El marcador [No especificado] se convierte en un campo editable interactivo para el médico.
 4. NO añadas información que no esté en la transcripción.
 5. NO añadas notas, comentarios ni advertencias propias en ningún lugar del informe.
 6. Devuelve ÚNICAMENTE el contenido del informe en markdown, sin texto introductorio ni final.
 7. No uses encabezados de nivel > 3 (###).
 8. FORMATO DE PÁRRAFOS (CRÍTICO): dentro de cada sección, escribe los hallazgos como un párrafo continuo y fluido. NO separes cada hallazgo con líneas en blanco. Los ítems de una misma sección van juntos, sin saltos de línea dobles entre ellos. Solo usa línea en blanco para separar SECCIONES distintas (##). La primera palabra de cada párrafo debe comenzar con mayúscula.
 9. NÚMEROS Y UNIDADES: Escribe siempre los valores numéricos con dígitos, nunca con letras. Ejemplos: "75%" no "setenta y cinco por ciento"; "40%" no "cuarenta por ciento"; "12 mm" no "doce milímetros"; "65%" no "sesenta y cinco por ciento"; "18 mm" no "dieciocho milímetros". Esta regla aplica a porcentajes, medidas, edades, frecuencias, presiones y cualquier valor cuantificable.
-10. ESTUDIOS MULTI-ÓRGANO / MULTI-SEGMENTO: En estudios que evalúan múltiples órganos, segmentos anatómicos o vasos (ecografía, colonoscopía, gastroscopía, cinecoronariografía, Doppler vascular, laringoscopía, nasofibroscopía, etc.) dedica una sección ## separada a CADA estructura evaluada. Si una estructura fue evaluada con resultado normal, descríbela en prosa (ej: "Tamaño y morfología conservados, sin lesiones focales."). Usa s/p ÚNICAMENTE cuando la estructura NO fue mencionada ni evaluada en la transcripción.
+10. ESTUDIOS MULTI-ÓRGANO / MULTI-SEGMENTO: En estudios que evalúan múltiples órganos, segmentos anatómicos o vasos (ecografía, colonoscopía, gastroscopía, cinecoronariografía, Doppler vascular, laringoscopía, nasofibroscopía, etc.) dedica una sección ## separada a CADA estructura evaluada. Si una estructura fue evaluada con resultado normal, descríbela en prosa. Si NO fue evaluada ni mencionada en la transcripción, escribe EXACTAMENTE el marcador [No especificado] como único contenido del párrafo de esa sección — NUNCA "No se evaluó", "s/p", "Sin datos" ni ninguna variante libre.
 11. CONCLUSIÓN (REGLA UNIVERSAL): En TODAS las plantillas, la CONCLUSIÓN debe: (a) incluir TODOS los hallazgos patológicos o positivos — ninguno puede omitirse, aunque sea leve; (b) NO incluir estructuras con resultado normal; (c) si absolutamente todo es normal, escribir "Estudio dentro de parámetros normales."; (d) NUNCA dejar la conclusión vacía, en blanco, ni como "[No especificado]"; (e) PROHIBIDO: inventar valores, porcentajes o datos no presentes en la transcripción; (f) PROHIBIDO: indicar tratamientos, medicación o derivaciones si el médico no los mencionó.` },
                     { role: "user", content: `Transcripción a estructurar:\n\n${text}` }
                 ],

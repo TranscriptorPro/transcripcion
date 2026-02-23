@@ -386,7 +386,40 @@ window.printFromPreview = function () {
             .no-print, .ai-note-panel { display: none !important; }
             @media print {
                 html, body { margin: 0; padding: 0; }
-                .a4-page { page-break-inside: avoid; }
+                /* Intenta que todo quepa en una hoja: márgenes mínimos y fuente ligeramente más chica */
+                @page { margin: 12mm; }
+                .a4-page {
+                    width: 100% !important;
+                    padding: 0 !important;
+                    border-top: 5px solid var(--pa, #1a56a0) !important;
+                }
+                /* Nunca cortar una página justo después de un título */
+                .a4-page .report-h1,
+                .a4-page .report-h2,
+                .a4-page .report-h3,
+                .a4-page .preview-content h1,
+                .a4-page .preview-content h2,
+                .a4-page .preview-content h3 {
+                    break-after: avoid;
+                    page-break-after: avoid;
+                    break-inside: avoid;
+                    page-break-inside: avoid;
+                }
+                /* Nunca dejar la firma sola en una página */
+                .preview-signature,
+                .pvsig-block {
+                    break-inside: avoid;
+                    page-break-inside: avoid;
+                    break-before: auto;
+                }
+                /* Evitar viudas/huérfanas */
+                .a4-page .report-p,
+                .a4-page .preview-content p {
+                    orphans: 3;
+                    widows: 3;
+                }
+                /* Ocultar UI */
+                .no-print, .ai-note-panel { display: none !important; }
             }
         </style>
     </head><body>${page.outerHTML}</body></html>`);

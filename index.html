@@ -587,7 +587,12 @@
                     </div>
                     <!-- Panel Escribir -->
                     <div id="efPanelWrite">
-                        <textarea id="efTextInput" rows="3" style="width:100%;padding:0.6rem 0.75rem;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:0.9rem;resize:vertical;background:var(--bg-card);color:var(--text-primary);" placeholder="Escribí el valor del campo..."></textarea>
+                        <!-- Opciones rápidas -->
+                        <div style="display:flex;gap:0.5rem;margin-bottom:0.6rem;flex-wrap:wrap;">
+                            <button type="button" class="btn btn-outline btn-sm ef-quick-btn" data-val="s/p" title="Sin particularidades al examen">s/p</button>
+                            <button type="button" class="btn btn-outline btn-sm ef-quick-btn" data-val="Sin particularidades" title="Sin particularidades">Sin particularidades</button>
+                        </div>
+                        <textarea id="efTextInput" rows="3" style="width:100%;padding:0.6rem 0.75rem;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:0.9rem;resize:vertical;background:var(--bg-card);color:var(--text-primary);" placeholder="O escribí el texto libremente..."></textarea>
                     </div>
                     <!-- Panel Grabar -->
                     <div id="efPanelRecord" style="display:none;">

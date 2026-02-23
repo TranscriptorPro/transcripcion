@@ -675,6 +675,13 @@ if (applyTemplateBtn && normalTemplateDropdown) {
         _switchTab('record');
     });
 
+    // Botones de opciones rápidas (s/p, Sin particularidades)
+    document.getElementById('efPanelWrite')?.addEventListener('click', (e) => {
+        const btn = e.target.closest('.ef-quick-btn');
+        if (!btn) return;
+        applyFieldValue(btn.dataset.val);
+    });
+
     // ── Grabación y transcripción ─────────────────────────────────
     function _stopRecordingEF() {
         if (_efRecorder && _efRecording) {
