@@ -6,6 +6,13 @@ window.createTabs = function () {
 
     tabsContainer.innerHTML = '';
 
+    // Show/hide tabs container based on transcription count
+    if (window.transcriptions.length > 0) {
+        tabsContainer.classList.add('active');
+    } else {
+        tabsContainer.classList.remove('active');
+    }
+
     // Safety check - force index to be within bounds
     if (window.activeTabIndex >= window.transcriptions.length) {
         window.activeTabIndex = window.transcriptions.length - 1;
