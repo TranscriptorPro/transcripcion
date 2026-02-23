@@ -743,4 +743,8 @@ if (applyTemplateBtn && normalTemplateDropdown) {
             }
         });
     }
+
+    // Exponer para tests y uso externo
+    window._openEditFieldModal = openEditFieldModal;
+    window._closeEditFieldModal = closeEditFieldModal;
 }());
