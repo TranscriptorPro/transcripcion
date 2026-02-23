@@ -1,0 +1,94 @@
+/**
+ * sw.js — Service Worker (PWA2)
+ * Cache-First para el app shell; Network-First para llamadas a la API de Groq.
+ */
+
+const CACHE_NAME   = 'transcriptor-pro-v1';
+const GROQ_ORIGIN  = 'api.groq.com';
+
+// Recursos del app shell que se cachean en la instalación
+const APP_SHELL = [
+    './',
+    './index.html',
+    './manifest.json',
+    './assets/icon-192.png',
+    './assets/icon-512.png',
+    './src/css/base.css',
+    './src/css/variables.css',
+    './src/css/layout.css',
+    './src/css/components.css',
+    './src/css/animations.css',
+    './src/js/config/config.js',
+    './src/js/config/templates.js',
+    './src/js/core/audio.js',
+    './src/js/core/state.js',
+    './src/js/utils/dom.js',
+    './src/js/utils/stateManager.js',
+    './src/js/utils/tabs.js',
+    './src/js/utils/toast.js',
+    './src/js/utils/ui.js',
+    './src/js/features/business.js',
+    './src/js/features/contact.js',
+    './src/js/features/editor.js',
+    './src/js/features/formHandler.js',
+    './src/js/features/medDictionary.js',
+    './src/js/features/patientRegistry.js',
+    './src/js/features/pdfMaker.js',
+    './src/js/features/pdfPreview.js',
+    './src/js/features/structurer.js',
+    './src/js/features/transcriptor.js'
+];
+
+// ── Install: pre-cachear app shell ───────────────────────────────────────────
+self.addEventListener('install', event => {
+    event.waitUntil(
+        caches.open(CACHE_NAME).then(cache => {
+            return cache.addAll(APP_SHELL).catch(err => {
+                console.warn('[SW] Algunos recursos no pudieron cachearse:', err);
+            });
+        }).then(() => self.skipWaiting())
+    );
+});
+
+// ── Activate: eliminar caches viejos ─────────────────────────────────────────
+self.addEventListener('activate', event => {
+    event.waitUntil(
+        caches.keys().then(keys => Promise.all(
+            keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+        )).then(() => self.clients.claim())
+    );
+});
+
+// ── Fetch ─────────────────────────────────────────────────────────────────────
+self.addEventListener('fetch', event => {
+    const url = new URL(event.request.url);
+
+    // Network-First: llamadas a la API de Groq (nunca cachear)
+    if (url.hostname.includes(GROQ_ORIGIN)) {
+        event.respondWith(fetch(event.request));
+        return;
+    }
+
+    // No manejar solicitudes no-GET
+    if (event.request.method !== 'GET') return;
+
+    // Cache-First: app shell y recursos estáticos
+    event.respondWith(
+        caches.match(event.request).then(cached => {
+            if (cached) return cached;
+            return fetch(event.request).then(response => {
+                if (!response || response.status !== 200 || response.type === 'opaque') {
+                    return response;
+                }
+                const clone = response.clone();
+                caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+                return response;
+            }).catch(() => {
+                // Offline fallback: devolver index.html para navegación
+                if (event.request.mode === 'navigate') {
+                    return caches.match('./index.html');
+                }
+            });
+        })
+    );
+});

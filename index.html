@@ -5,6 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Transcriptor Médico Pro | Audio a Texto</title>
+    <!-- PWA1: manifest + metas -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a56a0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TranscriptorPro">
+    <link rel="apple-touch-icon" href="assets/icon-192.png">
     <link rel="icon"
         href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%A5%3C/text%3E%3C/svg%3E">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -52,6 +59,12 @@
                     <svg viewBox="0 0 24 24">
                         <path
                             d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z" />
+                    </svg>
+                </button>
+                <!-- PWA3: Botón instalar app (se muestra solo si hay prompt pendiente) -->
+                <button class="theme-toggle" id="btnInstallPwa" title="Instalar app" style="display:none;">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5v-2z"/>
                     </svg>
                 </button>
                 <button class="theme-toggle" id="themeToggle" title="Cambiar tema">
@@ -1207,6 +1220,47 @@
                 // Medical dictionary modal
                 if (typeof initMedDictModal === 'function') initMedDictModal();
             });
+        </script>
+
+        <!-- PWA2+3: Service Worker + install prompt -->
+        <script>
+        (function () {
+            // Registrar Service Worker
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('./sw.js')
+                        .then(reg => console.log('[SW] Registrado:', reg.scope))
+                        .catch(err => console.warn('[SW] Error al registrar:', err));
+                });
+            }
+
+            // PWA3: capturar beforeinstallprompt
+            let deferredPrompt = null;
+            const btnInstall   = document.getElementById('btnInstallPwa');
+
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                if (btnInstall) btnInstall.style.display = '';
+            });
+
+            if (btnInstall) {
+                btnInstall.addEventListener('click', async () => {
+                    if (!deferredPrompt) return;
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log('[PWA] Install outcome:', outcome);
+                    deferredPrompt = null;
+                    btnInstall.style.display = 'none';
+                });
+            }
+
+            // Ocultar botón si ya está instalada
+            window.addEventListener('appinstalled', () => {
+                if (btnInstall) btnInstall.style.display = 'none';
+                deferredPrompt = null;
+            });
+        })();
         </script>
     </main>
 </body>

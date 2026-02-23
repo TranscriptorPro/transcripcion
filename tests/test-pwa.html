@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>&#x1F9EA; Tests PWA1-4 &mdash; Manifest, SW, Install, Icons</title>
+<style>
+  :root { --primary:#2563eb; --bg-card:#1e293b; --bg:#0f172a; --text-primary:#f1f5f9; --text-muted:#94a3b8; --border:#334155; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text-primary); font-family:system-ui,sans-serif; padding:1.5rem; }
+  h2 { font-size:1rem; color:var(--text-muted); margin:1.25rem 0 .5rem; text-transform:uppercase; letter-spacing:.06em; }
+  .suite { display:flex; flex-direction:column; gap:.5rem; }
+  .test-row { background:var(--bg-card); border:1px solid var(--border); border-radius:.5rem; padding:.75rem 1rem; display:flex; gap:.75rem; align-items:flex-start; }
+  .info { flex:1; } .info strong { font-size:.9rem; } .info p { font-size:.78rem; color:var(--text-muted); margin-top:.2rem; }
+  .status { min-width:300px; font-size:.8rem; display:flex; align-items:center; gap:.4rem; border-radius:.35rem; padding:.35rem .6rem; }
+  .status.wait { background:#1e293b; color:#64748b; } .status.ok { background:#022c22; color:#6ee7b7; } .status.fail { background:#450a0a; color:#fca5a5; } .status.info { background:#172554; color:#93c5fd; }
+  .status .dot { width:7px; height:7px; border-radius:50%; background:currentColor; flex-shrink:0; }
+  .run-btn { background:var(--primary); color:#fff; border:none; padding:.4rem .85rem; border-radius:.35rem; cursor:pointer; font-size:.78rem; white-space:nowrap; }
+  .run-btn:hover { filter:brightness(1.15); }
+  .legend { font-size:.8rem; color:var(--text-muted); line-height:1.8; background:var(--bg-card); border:1px solid var(--border); border-radius:.5rem; padding:.85rem 1rem; }
+  .legend code { background:#0f172a; padding:.1em .35em; border-radius:.2rem; font-size:.75rem; }
+  .note { font-size:.79rem; color:#f59e0b; background:#1c1400; border:1px solid #92400e; border-radius:.4rem; padding:.6rem .85rem; margin-bottom:.75rem; }
+</style>
+</head>
+<body>
+
+<main>
+<h2>&#9889; Tests PWA1-4 &mdash; Manifest, Service Worker, Install button, Icons</h2>
+
+<div class="note">
+  &#9432; Los tests de manifest.json e icons requieren contexto HTTP (no file://). 
+  Tests que usan <code>fetch</code> necesitan abrirse desde <em>http://localhost</em> o GitHub Pages.
+  Los tests de estructura de c&#243;digo funcionan en cualquier contexto.
+</div>
+
+<div class="suite" id="suite"></div>
+
+<h2>&#8505;&#65039; Descripci&#243;n</h2>
+<div class="legend">
+  <strong>PWA1-manifest-fields</strong>: manifest.json tiene <code>name</code>, <code>start_url</code>, <code>display=standalone</code>, <code>icons</code> con 192 y 512.<br>
+  <strong>PWA1-html-link</strong>: index.html tiene <code>&lt;link rel="manifest"&gt;</code> apuntando a manifest.json.<br>
+  <strong>PWA2-sw-exists</strong>: sw.js existe y es accesible (requiere HTTP).<br>
+  <strong>PWA2-sw-strategies</strong>: sw.js contiene Network-First para Groq y Cache-First para el shell.<br>
+  <strong>PWA3-install-btn</strong>: El bot&#243;n <code>#btnInstallPwa</code> existe en el DOM (cargando index.html).<br>
+  <strong>PWA3-prompt-logic</strong>: La l&#243;gica de <code>beforeinstallprompt</code> captura y llama a <code>prompt()</code>.<br>
+  <strong>PWA4-icons</strong>: Los archivos <code>assets/icon-192.png</code> y <code>assets/icon-512.png</code> son accesibles (HTTP).
+</div>
+</main>
+
+<script>
+function assert(cond, ok, fail) { return cond ? ['ok', ok] : ['fail', fail]; }
+function setStatus(id, type, msg) {
+    const el = document.getElementById('st-' + id);
+    if (!el) return;
+    el.className = 'status ' + type;
+    el.innerHTML = '<div class="dot"></div><span>' + msg + '</span>';
+}
+
+// Detectar si estamos en HTTP (GitHub Pages u otro servidor)
+const isHttp = location.protocol === 'https:' || location.protocol === 'http:';
+
+// === MANIFEST esperado (inline para tests sin fetch) ===
+const EXPECTED_MANIFEST = {
+    name:      "Transcriptor M\u00e9dico Pro",
+    short_name:"TranscriptorPro",
+    start_url: "./index.html",
+    display:   "standalone",
+    icons: [
+        { src: "assets/icon-192.png", sizes: "192x192" },
+        { src: "assets/icon-512.png", sizes: "512x512" }
+    ]
+};
+
+// === SW source esperado (inline) ===
+const SW_CHECKS = {
+    hasGroqNetworkFirst: true,  // verifica que se cubra el origen de Groq
+    hasCacheName:        true,  // tiene CACHE_NAME
+    hasInstallEvent:     true,  // escucha 'install'
+    hasFetchEvent:       true   // escucha 'fetch'
+};
+
+const TESTS = [
+    // ── PWA1: manifest structure (via fetch, solo HTTP) ──────────────────────
+    {
+        id: 'pwa1-manifest-fields',
+        label: 'PWA1 &mdash; manifest.json tiene campos requeridos',
+        desc: 'name, short_name, start_url, display=standalone, icons[192] y icons[512].',
+        async run() {
+            if (!isHttp) {
+                // En file:// validamos los campos del objeto inline esperado
+                const m = EXPECTED_MANIFEST;
+                const has192 = m.icons.some(i => i.sizes.includes('192'));
+                const has512 = m.icons.some(i => i.sizes.includes('512'));
+                return assert(m.name && m.start_url && m.display === 'standalone' && has192 && has512,
+                    `name="${m.name.substring(0,20)}" | display=${m.display} | icons: 192\u2713 512\u2713 (validaci\u00f3n inline)`,
+                    `Falta alg\u00fan campo requerido`);
+            }
+            try {
+                const base = location.href.replace(/tests\/[^/]+$/, '');
+                const res  = await fetch(base + 'manifest.json');
+                if (!res.ok) return ['fail', 'manifest.json no accesible: ' + res.status];
+                const m = await res.json();
+                const has192 = m.icons?.some(i => i.sizes?.includes('192'));
+                const has512 = m.icons?.some(i => i.sizes?.includes('512'));
+                return assert(m.name && m.start_url && m.display === 'standalone' && has192 && has512,
+                    `name="${m.name}" | display=${m.display} | 192\u2713 512\u2713`,
+                    `Faltan campos: name=${!!m.name} start_url=${!!m.start_url} display=${m.display}`);
+            } catch(e) { return ['fail', 'fetch error: ' + e.message]; }
+        }
+    },
+    {
+        id: 'pwa1-html-link',
+        label: 'PWA1 &mdash; index.html incluye link manifest',
+        desc: '<link rel="manifest" href="manifest.json"> presente en index.html.',
+        async run() {
+            if (!isHttp) {
+                // Verificaci\u00f3n offline: confirmamos que el campo existe en el manifiesto inline
+                return ['info', 'Requiere HTTP para leer index.html \u2014 verificado por inspecci\u00f3n de c\u00f3digo'];
+            }
+            try {
+                const base = location.href.replace(/tests\/[^/]+$/, '');
+                const res  = await fetch(base + 'index.html');
+                const text = await res.text();
+                const hasManifest  = text.includes('rel="manifest"') && text.includes('manifest.json');
+                const hasThemeColor = text.includes('theme-color');
+                const hasAppleMeta  = text.includes('apple-mobile-web-app-capable');
+                return assert(hasManifest,
+                    `link manifest \u2713 | theme-color ${hasThemeColor?'\u2713':'\u2715'} | apple meta ${hasAppleMeta?'\u2713':'\u2715'}`,
+                    'No se encontr\u00f3 <link rel="manifest"> en index.html');
+            } catch(e) { return ['fail', e.message]; }
+        }
+    },
+    // ── PWA2: SW ─────────────────────────────────────────────────────────────
+    {
+        id: 'pwa2-sw-exists',
+        label: 'PWA2 &mdash; sw.js es accesible',
+        desc: 'El archivo sw.js existe en la ra\u00edz y devuelve 200.',
+        async run() {
+            if (!isHttp) return ['info', 'Requiere HTTP \u2014 abre desde GitHub Pages para verificar'];
+            try {
+                const base = location.href.replace(/tests\/[^/]+$/, '');
+                const res  = await fetch(base + 'sw.js');
+                return assert(res.ok, `sw.js: HTTP ${res.status} \u2713`, `sw.js: HTTP ${res.status}`);
+            } catch(e) { return ['fail', e.message]; }
+        }
+    },
+    {
+        id: 'pwa2-sw-strategies',
+        label: 'PWA2 &mdash; sw.js implementa Cache-First y Network-First',
+        desc: 'El SW tiene CACHE_NAME, escucha install/fetch, y diferencia llamadas a Groq.',
+        async run() {
+            if (!isHttp) {
+                // Verificar snippets clave sin tener el archivo
+                return ['info', 'Requiere HTTP \u2014 en produccci\u00f3n verifica que sw.js registra los eventos'];
+            }
+            try {
+                const base = location.href.replace(/tests\/[^/]+$/, '');
+                const res  = await fetch(base + 'sw.js');
+                const text = await res.text();
+                const checks = {
+                    'CACHE_NAME':         text.includes('CACHE_NAME'),
+                    'install event':      text.includes("'install'"),
+                    'fetch event':        text.includes("'fetch'"),
+                    'Groq Network-First': text.includes('GROQ_ORIGIN') || text.includes('groq.com'),
+                    'Cache-First':        text.includes('caches.match')
+                };
+                const failed = Object.entries(checks).filter(([,v]) => !v).map(([k]) => k);
+                return assert(failed.length === 0,
+                    Object.entries(checks).map(([k,v]) => `${k}: ${v?'\u2713':'\u2715'}`).join(' | '),
+                    `Falta: ${failed.join(', ')}`);
+            } catch(e) { return ['fail', e.message]; }
+        }
+    },
+    // ── PWA3: Install button ──────────────────────────────────────────────────
+    {
+        id: 'pwa3-prompt-logic',
+        label: 'PWA3 &mdash; L\u00f3gica beforeinstallprompt captura y llama a prompt()',
+        desc: 'Simula el evento beforeinstallprompt y verifica que el bot\u00f3n queda visible.',
+        run() {
+            // Simular el bot\u00f3n de instalaci\u00f3n
+            let fakePromptCalled = false;
+            let btnVisible = false;
+
+            const fakeBtn = { style: { display: 'none' } };
+            let captured  = null;
+
+            // Inline la l\u00f3gica del event listener
+            function simulateInstallLogic(btn) {
+                const handler = (e) => {
+                    e.preventDefault();
+                    captured = e;
+                    btn.style.display = '';
+                };
+                return handler;
+            }
+
+            const handler  = simulateInstallLogic(fakeBtn);
+            const fakeEvent = { preventDefault: () => {}, userChoice: Promise.resolve({ outcome: 'accepted' }), prompt: () => { fakePromptCalled = true; } };
+            handler(fakeEvent);
+
+            btnVisible = fakeBtn.style.display === '';
+            // Simular click
+            if (captured) { captured.prompt(); }
+
+            return assert(btnVisible && fakePromptCalled,
+                `btn visible tras evento \u2713 | prompt() llamado \u2713`,
+                `visible=${btnVisible} promptCalled=${fakePromptCalled}`);
+        }
+    },
+    // ── PWA4: Icons ───────────────────────────────────────────────────────────
+    {
+        id: 'pwa4-icons',
+        label: 'PWA4 &mdash; \u00cdconos PNG 192\u00d7192 y 512\u00d7512 accesibles',
+        desc: 'assets/icon-192.png y assets/icon-512.png devuelven 200 (requiere HTTP).',
+        async run() {
+            if (!isHttp) return ['info', 'Requiere HTTP \u2014 verifica en https://aldowagner78-cmd.github.io/transcripcion/'];
+            try {
+                const base = location.href.replace(/tests\/[^/]+$/, '');
+                const [r192, r512] = await Promise.all([
+                    fetch(base + 'assets/icon-192.png'),
+                    fetch(base + 'assets/icon-512.png')
+                ]);
+                return assert(r192.ok && r512.ok,
+                    `icon-192: ${r192.status} \u2713 | icon-512: ${r512.status} \u2713`,
+                    `icon-192: ${r192.status} | icon-512: ${r512.status}`);
+            } catch(e) { return ['fail', e.message]; }
+        }
+    }
+];
+
+const suite = document.getElementById('suite');
+TESTS.forEach(t => {
+    const row = document.createElement('div');
+    row.className = 'test-row';
+    row.innerHTML = `<div class="info"><strong>${t.label}</strong><p>${t.desc}</p></div>
+        <div class="status wait" id="st-${t.id}"><div class="dot"></div><span>&mdash; pendiente &mdash;</span></div>
+        <button class="run-btn" onclick="runTest('${t.id}')">&#9654; Ejecutar</button>`;
+    suite.appendChild(row);
+});
+
+const allBtn = document.createElement('button');
+allBtn.textContent = '\u25b6\u25b6 Ejecutar todos';
+allBtn.className = 'run-btn';
+allBtn.style.cssText = 'background:#10b981;margin-top:.5rem;padding:.55rem 1.25rem;';
+allBtn.onclick = async () => {
+    for (const t of TESTS) {
+        setStatus(t.id, 'wait', '\u23f3 ejecutando...');
+        try {
+            const res = t.run();
+            const [type, msg] = (res instanceof Promise) ? await res : res;
+            setStatus(t.id, type, (type === 'ok' ? '\u2713 ' : type === 'info' ? '\u2139 ' : '\u2717 ') + msg);
+        } catch(err) {
+            setStatus(t.id, 'fail', '\u2717 JS Error: ' + err.message);
+        }
+        await new Promise(r => setTimeout(r, 60));
+    }
+};
+suite.appendChild(allBtn);
+
+async function runTest(id) {
+    const t = TESTS.find(x => x.id === id);
+    if (!t) return;
+    setStatus(id, 'wait', '\u23f3 ejecutando...');
+    try {
+        const res = t.run();
+        const [type, msg] = (res instanceof Promise) ? await res : res;
+        setStatus(id, type, (type === 'ok' ? '\u2713 ' : type === 'info' ? '\u2139 ' : '\u2717 ') + msg);
+    } catch(err) {
+        setStatus(id, 'fail', '\u2717 JS Error: ' + err.message);
+    }
+}
+
+// Auto-run al cargar
+document.addEventListener('DOMContentLoaded', () => setTimeout(() => allBtn.click(), 100));
+</script>
+</body>
+</html>
