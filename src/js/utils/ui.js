@@ -169,6 +169,12 @@ window.initModals = function () {
     if (closePdfConfig) closePdfConfig.addEventListener('click', closePdfConfigModal);
     if (btnClosePdfConfig) btnClosePdfConfig.addEventListener('click', closePdfConfigModal);
 
+    // Logo y firma: registrar listeners de carga de imagen
+    if (typeof handleImageUpload === 'function') {
+        handleImageUpload('pdfLogoUpload',      'pdfLogoPreview',      'pdf_logo');
+        handleImageUpload('pdfSignatureUpload', 'pdfSignaturePreview', 'pdf_signature');
+    }
+
     if (btnSavePdfConfig) {
         btnSavePdfConfig.addEventListener('click', () => {
             if (typeof savePdfConfiguration === 'function') savePdfConfiguration();
