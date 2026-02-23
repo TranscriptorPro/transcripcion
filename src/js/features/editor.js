@@ -385,7 +385,9 @@ async function downloadFile(format) {
     const fileDate = new Date().toISOString().split('T')[0];
 
     if (format === 'pdf' && typeof downloadPDFWrapper !== 'undefined') {
-        await downloadPDFWrapper(text, fileName, date, fileDate);
+        // Pasamos innerHTML para preservar H1/H2/H3/tablas/negritas del editor
+        const htmlContent = editor.innerHTML || text;
+        await downloadPDFWrapper(htmlContent, fileName, date, fileDate);
         return;
     }
 
