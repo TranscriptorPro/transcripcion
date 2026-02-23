@@ -531,91 +531,184 @@ if (applyTemplateBtn && normalTemplateDropdown) {
     }
 }
 
-// ============ INLINE POPOVER PARA [No especificado] ============
+// ============ MODAL EDITAR CAMPO [No especificado] ============
 (function () {
-    if (!editor) return;
+    const modal    = document.getElementById('editFieldModal');
+    const overlay  = modal; // es el propio modal-overlay
+    if (!modal) return;
 
-    let _pop  = null; // div del popover activo
-    let _span = null; // span .no-data activo
+    let _targetSpan = null; // span.no-data-field activo
+    let _efRecorder = null;
+    let _efChunks   = [];
+    let _efRecordInterval = null;
+    let _efRecording = false;
 
-    function _closePopover() {
-        if (_pop) { _pop.remove(); _pop = null; }
-        _span = null;
-    }
+    const isPro = () => !!(window.GROQ_API_KEY);
 
-    function _applyValue(span, raw) {
-        const val = raw.trim();
-        if (!val) { _closePopover(); return; } // vacío → mantener [No especificado]
-        // Reemplazar el span por texto plano
-        const node = document.createTextNode(val);
-        span.replaceWith(node);
-        // Notificar al editor para undo/conteo de palabras
-        editor.dispatchEvent(new Event('input', { bubbles: true }));
-        _closePopover();
-    }
+    // ── Abrir modal ──────────────────────────────────────────────
+    function openEditFieldModal(span) {
+        _targetSpan = span;
 
-    function _openPopover(span) {
-        _closePopover();
-        _span = span;
-
-        const pop = document.createElement('div');
-        pop.className = 'no-data-popover';
-        pop.innerHTML =
-            '<input class="no-data-input" type="text" placeholder="Escribir valor…" autocomplete="off" spellcheck="false">' +
-            '<button class="no-data-ok" title="Confirmar (Enter)">✓</button>' +
-            '<button class="no-data-cancel" title="Cancelar (Esc)">×</button>';
-
-        // Posicionar fijo en viewport debajo del span
-        const r  = span.getBoundingClientRect();
-        const vW = window.innerWidth;
-        const vH = window.innerHeight;
-
-        pop.style.top  = (r.bottom + 6) + 'px';
-        pop.style.left = r.left + 'px';
-        document.body.appendChild(pop);
-
-        // Ajustar si se sale por la derecha
-        const pW = pop.offsetWidth;
-        if (r.left + pW > vW - 8) {
-            pop.style.left = Math.max(8, vW - pW - 8) + 'px';
-        }
-        // Ajustar si se sale por abajo → mostrar arriba del span
-        const pH = pop.offsetHeight;
-        if (r.bottom + 6 + pH > vH - 8) {
-            pop.style.top = Math.max(8, r.top - pH - 6) + 'px';
+        // Obtener texto contexto (línea del párrafo que contiene el span)
+        const para = span.closest('p,li') || span.parentElement;
+        const ctx  = document.getElementById('editFieldContext');
+        if (ctx && para) {
+            const full = para.innerText || para.textContent;
+            ctx.textContent = full.length > 90 ? full.slice(0, 87) + '…' : full;
         }
 
-        const input = pop.querySelector('.no-data-input');
-        input.focus();
+        // Limpiar estado
+        document.getElementById('efTextInput').value     = '';
+        document.getElementById('efRecordResult').value  = '';
+        document.getElementById('efTranscribeStatus').textContent = '';
+        document.getElementById('efRecordTime').textContent = '00:00';
+        _stopRecordingEF();
 
-        pop.querySelector('.no-data-ok').addEventListener('click', () => _applyValue(_span, input.value));
-        pop.querySelector('.no-data-cancel').addEventListener('click', _closePopover);
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter')  { e.preventDefault(); _applyValue(_span, input.value); }
-            if (e.key === 'Escape') { e.preventDefault(); _closePopover(); }
-        });
+        // Pestaña por defecto
+        _switchTab('write');
 
-        _pop = pop;
+        // Ocultar tab Pro si no hay API key
+        const tabRec = document.getElementById('efTabRecord');
+        if (tabRec) tabRec.style.display = isPro() ? '' : 'none';
+
+        overlay.classList.add('active');
+        setTimeout(() => document.getElementById('efTextInput').focus(), 80);
     }
 
-    // Click en span .no-data dentro del editor
-    editor.addEventListener('click', (e) => {
-        const span = e.target.closest('.no-data');
-        if (span) {
-            e.preventDefault();
-            e.stopPropagation();
-            _openPopover(span);
+    // ── Cerrar modal ─────────────────────────────────────────────
+    function closeEditFieldModal() {
+        _stopRecordingEF();
+        overlay.classList.remove('active');
+        _targetSpan = null;
+    }
+
+    // ── Aplicar valor al span ────────────────────────────────────
+    function applyFieldValue(val) {
+        if (!_targetSpan) return;
+        const text = (val || '').trim();
+        if (!text) { closeEditFieldModal(); return; }
+        const node = document.createTextNode(text);
+        _targetSpan.replaceWith(node);
+        const editorEl = document.getElementById('editor');
+        if (editorEl) editorEl.dispatchEvent(new Event('input', { bubbles: true }));
+        closeEditFieldModal();
+    }
+
+    // ── Pestañas ─────────────────────────────────────────────────
+    function _switchTab(tab) {
+        const isWrite = tab === 'write';
+        document.getElementById('efPanelWrite').style.display   = isWrite ? '' : 'none';
+        document.getElementById('efPanelRecord').style.display  = isWrite ? 'none' : '';
+        document.getElementById('efTabWrite').style.background  = isWrite ? 'var(--primary)' : 'var(--bg-card)';
+        document.getElementById('efTabWrite').style.color       = isWrite ? '#fff' : 'var(--text-primary)';
+        document.getElementById('efTabRecord').style.background = isWrite ? 'var(--bg-card)' : 'var(--primary)';
+        document.getElementById('efTabRecord').style.color      = isWrite ? 'var(--text-primary)' : '#fff';
+    }
+
+    document.getElementById('efTabWrite')?.addEventListener('click', () => _switchTab('write'));
+    document.getElementById('efTabRecord')?.addEventListener('click', () => {
+        if (!isPro()) { showToast('Función disponible en Modo Pro (API Key requerida)', 'warning'); return; }
+        _switchTab('record');
+    });
+
+    // ── Grabación y transcripción ─────────────────────────────────
+    function _stopRecordingEF() {
+        if (_efRecorder && _efRecording) {
+            try { _efRecorder.stop(); } catch(e) {}
+        }
+        _efRecording = false;
+        clearInterval(_efRecordInterval);
+        const btn = document.getElementById('efRecordBtn');
+        if (btn) {
+            document.getElementById('efRecordIcon').textContent  = '🎙️';
+            document.getElementById('efRecordLabel').textContent = 'Iniciar grabación';
+            btn.classList.remove('recording-pulse');
+        }
+    }
+
+    document.getElementById('efRecordBtn')?.addEventListener('click', async () => {
+        if (!_efRecording) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                _efChunks = [];
+                _efRecorder = new MediaRecorder(stream);
+                _efRecorder.ondataavailable = e => _efChunks.push(e.data);
+                _efRecorder.onstop = async () => {
+                    stream.getTracks().forEach(t => t.stop());
+                    const blob = new Blob(_efChunks, { type: 'audio/wav' });
+                    const file = new File([blob], 'campo.wav', { type: 'audio/wav' });
+                    const status = document.getElementById('efTranscribeStatus');
+                    const result = document.getElementById('efRecordResult');
+                    if (status) status.textContent = '⏳ Transcribiendo...';
+                    try {
+                        const form = new FormData();
+                        form.append('file', file);
+                        form.append('model', 'whisper-large-v3-turbo');
+                        form.append('response_format', 'text');
+                        form.append('language', 'es');
+                        const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${window.GROQ_API_KEY}` },
+                            body: form
+                        });
+                        const txt = await res.text();
+                        if (result) result.value = txt.trim();
+                        if (status) status.textContent = '✅ Transcripción lista. Editá si es necesario y pulsá Aplicar.';
+                    } catch(e) {
+                        if (status) status.textContent = '❌ Error al transcribir. Intentá de nuevo.';
+                    }
+                };
+                _efRecorder.start();
+                _efRecording = true;
+                const start = Date.now();
+                _efRecordInterval = setInterval(() => {
+                    const d = Date.now() - start;
+                    const s = Math.floor((d/1000)%60), m = Math.floor(d/60000);
+                    const el = document.getElementById('efRecordTime');
+                    if (el) el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+                }, 1000);
+                document.getElementById('efRecordIcon').textContent  = '⏹️';
+                document.getElementById('efRecordLabel').textContent = 'Detener grabación';
+                document.getElementById('efRecordBtn').classList.add('recording-pulse');
+            } catch(err) {
+                showToast('No se pudo acceder al micrófono', 'error');
+            }
+        } else {
+            _stopRecordingEF();
         }
     });
 
-    // Cerrar al hacer clic fuera del popover y fuera del editor
-    document.addEventListener('click', (e) => {
-        if (!_pop) return;
-        if (!e.target.closest('.no-data-popover') && !e.target.closest('#editor')) {
-            _closePopover();
-        }
-    }, true);
+    // ── Confirmar ─────────────────────────────────────────────────
+    document.getElementById('btnConfirmEditField')?.addEventListener('click', () => {
+        const writePanel = document.getElementById('efPanelWrite');
+        const isWrite = writePanel && writePanel.style.display !== 'none';
+        const val = isWrite
+            ? document.getElementById('efTextInput').value
+            : document.getElementById('efRecordResult').value;
+        applyFieldValue(val);
+    });
 
-    // Cerrar al hacer scroll (el popover queda flotando si no)
-    document.addEventListener('scroll', () => _closePopover(), { passive: true, capture: true });
+    // ── Cancelar & cerrar ─────────────────────────────────────────
+    document.getElementById('btnCancelEditField')?.addEventListener('click', closeEditFieldModal);
+    document.getElementById('closeEditFieldModal')?.addEventListener('click', closeEditFieldModal);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeEditFieldModal(); });
+
+    // ── Teclas en textarea ────────────────────────────────────────
+    document.getElementById('efTextInput')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); document.getElementById('btnConfirmEditField').click(); }
+        if (e.key === 'Escape') closeEditFieldModal();
+    });
+
+    // ── Abrir desde botón lápiz en el editor ─────────────────────
+    if (editor) {
+        editor.addEventListener('click', (e) => {
+            const btn = e.target.closest('.no-data-edit-btn');
+            if (btn) {
+                e.preventDefault();
+                e.stopPropagation();
+                const span = btn.closest('.no-data-field');
+                if (span) openEditFieldModal(span);
+            }
+        });
+    }
 }());

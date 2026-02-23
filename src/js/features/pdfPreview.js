@@ -194,9 +194,10 @@ window.openPrintPreview = function () {
     const contentEl = document.getElementById('previewContent');
     if (contentEl) {
         contentEl.innerHTML = editorEl ? editorEl.innerHTML : '';
-        // Eliminar estilos de no-data dentro del preview (no imprimir en ámbar)
-        contentEl.querySelectorAll('.no-data').forEach(el => {
-            el.style.cssText = 'color:#888;border:none;background:none;font-style:italic;cursor:default;';
+        // Limpiar campos vacíos (.no-data-field): ocultar botón lápiz, quitar estilo ámbar
+        contentEl.querySelectorAll('.no-data-field').forEach(el => {
+            el.querySelectorAll('.no-data-edit-btn').forEach(b => b.remove());
+            el.style.cssText = 'color:#888;border:none;background:none;font-style:italic;';
         });
         // Ocultar elementos de UI que no deben aparecer en el informe
         contentEl.querySelectorAll('.no-print,.ai-note-panel,#aiNotePanel').forEach(el => {

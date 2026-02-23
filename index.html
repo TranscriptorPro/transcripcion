@@ -488,6 +488,44 @@
             </div>
         </div>
 
+        <!-- Modal: Editar campo del informe -->
+        <div class="modal-overlay" id="editFieldModal">
+            <div class="modal" style="max-width:480px;">
+                <div class="modal-header">
+                    <h2 id="editFieldModalTitle">✏️ Completar campo</h2>
+                    <button class="modal-close" id="closeEditFieldModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p id="editFieldContext" style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.9rem;"></p>
+                    <!-- Tabs Normal / Pro -->
+                    <div id="editFieldTabs" style="display:flex;gap:0px;margin-bottom:0.9rem;border-radius:8px;overflow:hidden;border:1px solid var(--border);">
+                        <button class="edit-field-tab active" id="efTabWrite" style="flex:1;padding:0.45rem 0;font-size:0.82rem;border:none;cursor:pointer;background:var(--primary);color:#fff;">✏️ Escribir</button>
+                        <button class="edit-field-tab" id="efTabRecord" style="flex:1;padding:0.45rem 0;font-size:0.82rem;border:none;cursor:pointer;background:var(--bg-card);color:var(--text-primary);">🎙️ Grabar y transcribir <span style="font-size:0.7rem;background:#0f766e;color:#fff;border-radius:4px;padding:1px 5px;margin-left:3px;">Pro</span></button>
+                    </div>
+                    <!-- Panel Escribir -->
+                    <div id="efPanelWrite">
+                        <textarea id="efTextInput" rows="3" style="width:100%;padding:0.6rem 0.75rem;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:0.9rem;resize:vertical;background:var(--bg-card);color:var(--text-primary);" placeholder="Escribí el valor del campo..."></textarea>
+                    </div>
+                    <!-- Panel Grabar -->
+                    <div id="efPanelRecord" style="display:none;">
+                        <div style="text-align:center;padding:0.5rem 0 0.75rem;">
+                            <button class="btn btn-outline" id="efRecordBtn" style="gap:0.4rem;">
+                                <span id="efRecordIcon">🎙️</span>
+                                <span id="efRecordLabel">Iniciar grabación</span>
+                            </button>
+                            <div id="efRecordTime" style="font-size:0.8rem;color:var(--text-secondary);margin-top:0.4rem;">00:00</div>
+                        </div>
+                        <div id="efTranscribeStatus" style="font-size:0.8rem;color:var(--text-secondary);text-align:center;min-height:1.2rem;"></div>
+                        <textarea id="efRecordResult" rows="3" style="width:100%;padding:0.6rem 0.75rem;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:0.9rem;resize:vertical;background:var(--bg-card);color:var(--text-primary);margin-top:0.6rem;" placeholder="El texto transcripto aparecerá aquí..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer" style="padding:0.9rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:0.5rem;justify-content:flex-end;">
+                    <button class="btn btn-outline" id="btnCancelEditField">Cancelar</button>
+                    <button class="btn btn-primary" id="btnConfirmEditField">✅ Aplicar</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Medical Dictionary Modal -->
         <div class="modal-overlay" id="medDictModal">
             <div class="modal" style="max-width:600px;">
@@ -869,12 +907,6 @@
                 <!-- Find and Replace Panel -->
                 <div id="aiProgressBar" style="display:none; width:100%; height:3px; background:var(--border); border-radius:2px; overflow:hidden; margin-bottom:0.5rem;">
                     <div id="aiProgressFill" style="height:100%; width:40%; background:linear-gradient(90deg, var(--primary), var(--primary-light)); border-radius:2px; animation:aiProgressAnim 1.4s ease-in-out infinite;"></div>
-                </div>
-                <!-- AI Note Panel (no-print) -->
-                <div id="aiNotePanel" class="ai-note-panel no-print" style="display:none;">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="flex-shrink:0; color:var(--primary);"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                    <span id="aiNoteContent"></span>
-                    <button class="ai-note-close" onclick="document.getElementById('aiNotePanel').style.display='none'" title="Cerrar">✕</button>
                 </div>
                 <!-- Find and Replace Panel -->
                 <div id="findReplacePanel" class="find-replace-panel">

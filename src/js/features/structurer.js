@@ -169,7 +169,11 @@ function markdownToHtml(md) {
     }
 
     return html.join('\n')
-        .replace(/\[No especificado\]/g, '<span class="no-data" tabindex="0" title="Clic para editar">[No especificado]</span>');
+        .replace(/\[No especificado\]/g,
+            '<span class="no-data-field" contenteditable="false" data-field-empty="1">'
+            + '<span class="no-data-text">No especificado</span>'
+            + '<button class="no-data-edit-btn" tabindex="0" title="Completar campo" type="button">✏️</button>'
+            + '</span>');
 }
 
 // Extract AI's meta-note and return { body: html, note: string|null }

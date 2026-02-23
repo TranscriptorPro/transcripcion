@@ -257,9 +257,9 @@ test('markdownToHtml capitaliza primer carácter del párrafo', () => {
     assertIncludes(html, 'Epiglotis', 'Primera letra debe ser mayúscula');
 });
 
-test('markdownToHtml envuelve [No especificado] en span.no-data', () => {
+test('markdownToHtml envuelve [No especificado] en span.no-data-field', () => {
     const html = markdownToHtml('Fonación: [No especificado].');
-    assertIncludes(html, 'class="no-data"', 'Falta clase no-data para [No especificado]');
+    assertIncludes(html, 'class="no-data-field"', 'Falta clase no-data-field para [No especificado]');
 });
 
 test('markdownToHtml procesa cinecoronariografía sin errores', () => {
