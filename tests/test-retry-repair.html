@@ -268,7 +268,9 @@ test(S5, 'askBatchDecision resuelve "continue" al hacer click en Continuar', asy
 });
 
 test(S5, 'askBatchDecision resuelve "cancel" al hacer click en Cancelar', async () => {
-    setTimeout(() => document.getElementById('batchFailCancelBtn').click(), 30);
+    // Esperar a que el test "continue" anterior termine antes de iniciar este
+    await new Promise(r => setTimeout(r, 120));
+    setTimeout(() => document.getElementById('batchFailCancelBtn').click(), 40);
     const decision = await askBatchDecision('audio3.wav', 1, 3);
     assert(decision === 'cancel', `Esperado "cancel", got "${decision}"`);
 });
