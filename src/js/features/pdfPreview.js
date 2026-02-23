@@ -91,6 +91,28 @@ window.openPdfConfigModal = function () {
     if (typeof populateWorkplaceDropdown === 'function') populateWorkplaceDropdown();
     if (typeof populatePatientDatalist === 'function') populatePatientDatalist();
 
+    // M-4/M-5: Admin ve todo editable; usuario solo ve toggles (sin edición de encabezado/pie/firma)
+    const isAdmin = typeof isAdminUser === 'function' && isAdminUser();
+    // Campos cuya edición es exclusiva del admin
+    const adminOnlyFields = [
+        'pdfLogoUpload',          // carga de logo
+        'pdfSignatureUpload',     // carga de firma
+        'pdfSignaturePreview',    // preview de firma
+        'pdfFooterText',          // texto del pie
+        'pdfInstitutionName',     // institución
+        'pdfHeaderColor',         // color encabezado
+    ];
+    adminOnlyFields.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        // Subir un nivel al field-group padre para ocultarlo completo (label + input)
+        const group = el.closest('.field-group') || el;
+        group.style.display = isAdmin ? '' : 'none';
+    });
+    // Logo preview también
+    const logoPreview = document.getElementById('pdfLogoPreview');
+    if (logoPreview) logoPreview.style.display = isAdmin ? '' : 'none';
+
     document.getElementById('pdfModalOverlay')?.classList.add('active');
 }
 
