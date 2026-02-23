@@ -326,7 +326,7 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepción:
 11. CONCLUSIÓN (REGLA UNIVERSAL): En TODAS las plantillas, la CONCLUSIÓN debe: (a) incluir TODOS los hallazgos patológicos o positivos — ninguno puede omitirse, aunque sea leve; (b) NO incluir estructuras con resultado normal; (c) si absolutamente todo es normal, escribir "Estudio dentro de parámetros normales."; (d) NUNCA dejar la conclusión vacía, en blanco, ni como "[No especificado]"; (e) PROHIBIDO: inventar valores, porcentajes o datos no presentes en la transcripción; (f) PROHIBIDO: indicar tratamientos, medicación o derivaciones si el médico no los mencionó.` },
                     { role: "user", content: `Transcripción a estructurar:\n\n${text}` }
                 ],
-                temperature: 0.1
+                temperature: temperature
             })
         });
 
