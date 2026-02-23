@@ -1886,48 +1886,35 @@
 
         /* ── Authentication ─────────────────────────────────────────────────── */
         (function checkAuth() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const fromApp = urlParams.get('fromApp');
-
-            if (fromApp === 'true') {
-                // Create automatic session without requiring login
-                const adminSession = {
+            // Sin login requerido. El admin es único y accede directamente.
+            // Se crea sesión automáticamente siempre.
+            if (!sessionStorage.getItem('adminSession')) {
+                sessionStorage.setItem('adminSession', JSON.stringify({
                     username: 'admin',
                     nombre: 'Administrador',
                     timestamp: Date.now(),
                     autoLogin: true
-                };
-                sessionStorage.setItem('adminSession', JSON.stringify(adminSession));
-                // Remove fromApp param from URL
+                }));
+            }
+            // Limpiar param ?fromApp de la URL si existe
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('fromApp')) {
                 window.history.replaceState({}, document.title, window.location.pathname);
-                return;
-            }
-
-            const raw = sessionStorage.getItem('adminSession');
-            if (!raw) {
-                window.location.href = 'login.html';
-                return;
-            }
-            try {
-                const session = JSON.parse(raw);
-                if ((Date.now() - session.timestamp) >= CONFIG.sessionTimeout) {
-                    sessionStorage.removeItem('adminSession');
-                    window.location.href = 'login.html';
-                }
-            } catch (err) {
-                console.error('Session parse error, clearing session:', err);
-                sessionStorage.removeItem('adminSession');
-                window.location.href = 'login.html';
             }
         })();
 
-        /* Auto-logout on inactivity after 8 hours */
+        /* Auto-refresh de sesión (nunca expira, solo renueva el timestamp) */
         let _inactivityTimer = null;
         function resetInactivityTimer() {
             clearTimeout(_inactivityTimer);
+            // Solo renovamos el timestamp, no redirigimos a ningún lado
             _inactivityTimer = setTimeout(() => {
-                sessionStorage.removeItem('adminSession');
-                window.location.href = 'login.html';
+                const raw = sessionStorage.getItem('adminSession');
+                if (raw) {
+                    const s = JSON.parse(raw);
+                    s.timestamp = Date.now();
+                    sessionStorage.setItem('adminSession', JSON.stringify(s));
+                }
             }, CONFIG.sessionTimeout);
         }
         ['click', 'keydown', 'mousemove', 'touchstart'].forEach(evt =>
@@ -2672,9 +2659,9 @@
 
         /* ── Event Listeners ─────────────────────────────────────────────────── */
         document.getElementById('btnLogout').addEventListener('click', () => {
-            localStorage.removeItem('adminSession');
+            // Sin login: simplemente recarga el panel
             sessionStorage.clear();
-            window.location.href = 'login.html';
+            window.location.reload();
         });
 
         document.getElementById('btnRefresh').addEventListener('click', () => loadDashboard());

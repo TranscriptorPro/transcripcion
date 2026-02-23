@@ -1,11 +1,32 @@
 # Apps Script Deployment Information
 
 ## Current Deployment
-- **Deployment ID:** `AKfycbw9xT0IdmPbpIsncavlktd3a9vJgao1wR-kwaEZA2PUUVXEo2GIIfV-FgJpBHE_-u9ofg`
-- **Web App URL:** `https://script.google.com/macros/s/AKfycbw9xT0IdmPbpIsncavlktd3a9vJgao1wR-kwaEZA2PUUVXEo2GIIfV-FgJpBHE_-u9ofg/exec`
-- **Library URL:** `https://script.google.com/macros/library/d/1Oj1P1a443VcU7uuHkVYASOi26_zMUmcCz_PZfJq9_i-NthvAlcD07JOS/2`
-- **Last Updated:** 2026-02-20
-- **Version:** 2 (includes CORS fix)
+- **Deployment ID:** `AKfycby2VEaj2Qy4TGrjL7ZG_YjfEO4ttI6fynnWLgAMafU8VMWoYoWgqJX48D5okxKOrgQiaw`
+- **Web App URL:** `https://script.google.com/macros/s/AKfycby2VEaj2Qy4TGrjL7ZG_YjfEO4ttI6fynnWLgAMafU8VMWoYoWgqJX48D5okxKOrgQiaw/exec`
+- **Last Updated:** 2026-02-23
+- **Version:** 3 (agrega admin_create_user y admin_update_user GET; unifica URL)
+
+## Configuration
+- **Sheet Name:** `Usuarios_Transcriptor`
+- **Admin Key:** Hardcodeado en `admin.html` / `login.html` como `ADMIN_SECRET_2026`. Cambiar en Script Properties en producción.
+- **Access Level:** Anyone, even anonymous (required for web app)
+
+## CORS Configuration
+✅ Incluye `Access-Control-Allow-Origin: *`
+✅ Soporta `OPTIONS` preflight via `doOptions()`
+✅ Compatible con GitHub Pages
+
+## Endpoints (activos)
+1. **GET** `?action=validate&id=USER_ID&deviceId=DEVICE_ID` — Valida usuario (app principal)
+2. **GET** `?action=admin_list_users&adminKey=XXX` — Lista todos los usuarios
+3. **GET** `?action=admin_update_user&userId=ID&updates=JSON&adminKey=XXX` — Edita campos de un usuario
+4. **GET** `?action=admin_create_user&updates=JSON&adminKey=XXX` — Crea nuevo usuario en el Sheet
+5. **POST** `action=update_usage` — Incrementa contador de uso
+6. **POST** `action=admin_update_user` — Edita usuario (método POST alternativo)
+
+## Notas
+- La URL cambia con cada nuevo despliegue. Actualizar en `admin.html`, `admin_config.json` y este archivo.
+- Después de cambiar el script: crear nueva versión en "Gestionar implementaciones" y copiar la nueva URL.
 
 ## Configuration
 - **Sheet Name:** `Usuarios_Transcriptor`

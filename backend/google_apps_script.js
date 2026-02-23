@@ -79,6 +79,58 @@ function doGet(e) {
     return createResponse({ users: users, total: users.length });
   }
 
+  // FIX B3: admin_update_user como GET (admin.html usa fetch GET con query params)
+  if (action === 'admin_update_user') {
+    const adminKey = e.parameter.adminKey;
+    if (adminKey !== ADMIN_KEY) return createResponse({ error: 'Unauthorized' });
+
+    const userId = e.parameter.userId;
+    let updates = {};
+    try { updates = JSON.parse(decodeURIComponent(e.parameter.updates || '{}')); } catch(ex) {}
+
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0]) === String(userId)) {
+        Object.keys(updates).forEach(key => {
+          const colIndex = headers.indexOf(key);
+          if (colIndex !== -1) sheet.getRange(i + 1, colIndex + 1).setValue(updates[key]);
+        });
+        return createResponse({ success: true, message: 'User updated' });
+      }
+    }
+    return createResponse({ error: 'User not found' });
+  }
+
+  // FIX B2: admin_create_user (nuevo endpoint — no existía)
+  if (action === 'admin_create_user') {
+    const adminKey = e.parameter.adminKey;
+    if (adminKey !== ADMIN_KEY) return createResponse({ error: 'Unauthorized' });
+
+    let userData = {};
+    try { userData = JSON.parse(decodeURIComponent(e.parameter.updates || '{}')); } catch(ex) {}
+
+    if (!userData.ID_Medico) return createResponse({ error: 'Falta ID_Medico' });
+
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    const headers = sheet.getDataRange().getValues()[0];
+
+    // Verificar que el ID no exista ya
+    const existing = sheet.getDataRange().getValues();
+    for (let i = 1; i < existing.length; i++) {
+      if (String(existing[i][0]) === String(userData.ID_Medico)) {
+        return createResponse({ error: 'ID_Medico ya existe: ' + userData.ID_Medico });
+      }
+    }
+
+    // Construir fila siguiendo el orden de los headers
+    const row = headers.map(h => (userData[h] !== undefined ? userData[h] : ''));
+    sheet.appendRow(row);
+    return createResponse({ success: true, userId: userData.ID_Medico });
+  }
+
   return createResponse({ error: 'Acción no válida' });
 }
 
