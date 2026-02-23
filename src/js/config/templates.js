@@ -840,6 +840,13 @@ window.detectStudyType = function (text) {
 }
 
 window.populateTemplateDropdown = function () {
+    // Filtro por allowedTemplates: si el array tiene elementos, solo muestra esas claves
+    const _allowed = (typeof CLIENT_CONFIG !== 'undefined' &&
+        Array.isArray(CLIENT_CONFIG.allowedTemplates) &&
+        CLIENT_CONFIG.allowedTemplates.length)
+        ? new Set(CLIENT_CONFIG.allowedTemplates)
+        : null;
+
     const buildDropdown = (selectEl) => {
         if (!selectEl) return;
         selectEl.innerHTML = '<option value="generico">📋 Plantilla General</option>';
@@ -854,6 +861,7 @@ window.populateTemplateDropdown = function () {
             let added = false;
             keys.forEach(key => {
                 if (key === 'generico') return;
+                if (_allowed && !_allowed.has(key)) return; // Bloque 4: filtro
                 const t = window.MEDICAL_TEMPLATES[key];
                 if (!t) return;
                 const option = document.createElement('option');
@@ -892,7 +900,7 @@ window.populateTemplateDropdown = function () {
         normalList.appendChild(generalItem);
 
         for (const [cat, keys] of Object.entries(window.TEMPLATE_CATEGORIES || {})) {
-            const hasItems = keys.some(key => key !== 'generico' && window.MEDICAL_TEMPLATES[key]);
+            const hasItems = keys.some(key => key !== 'generico' && window.MEDICAL_TEMPLATES[key] && (!_allowed || _allowed.has(key)));
             if (!hasItems) continue;
             const header = document.createElement('li');
             header.textContent = `${catIcons[cat] || ''} ${cat}`;
@@ -900,6 +908,7 @@ window.populateTemplateDropdown = function () {
             normalList.appendChild(header);
             keys.forEach(key => {
                 if (key === 'generico') return;
+                if (_allowed && !_allowed.has(key)) return; // Bloque 4: filtro
                 const t = window.MEDICAL_TEMPLATES[key];
                 if (!t) return;
                 const item = document.createElement('li');

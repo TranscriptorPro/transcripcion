@@ -7,7 +7,8 @@ const CLIENT_CONFIG = {
     trialDays: 0,
     hasProMode: true,
     hasDashboard: true,
-    canGenerateApps: true
+    canGenerateApps: true,
+    allowedTemplates: [] // [] = todas; ['key1','key2'] = solo esas
 };
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
