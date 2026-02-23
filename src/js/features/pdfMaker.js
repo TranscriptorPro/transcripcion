@@ -116,16 +116,16 @@ async function downloadPDFWrapper(text, fileName, fecha, fileDate) {
         doc.text(profName,  160, cy + 5,  { align: 'center' });
         doc.text(matricula, 160, cy + 10, { align: 'center' });
 
-        // --- Descarga sin Zone.Identifier (sin doc.save()) ---
+        // --- Descarga sin Zone.Identifier (File System Access API o fallback) ---
         const blob = doc.output('blob');
-        const url  = URL.createObjectURL(blob);
-        const a    = document.createElement('a');
-        a.href     = url;
-        a.download = `${fileName}_${fileDate}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        const saveBlob = (typeof window.saveToDisk === 'function') ? window.saveToDisk : async (b, name) => {
+            const url = URL.createObjectURL(b);
+            const a = document.createElement('a');
+            a.href = url; a.download = name;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        };
+        await saveBlob(blob, `${fileName}_${fileDate}.pdf`);
 
         showToast('PDF descargado ✓', 'success');
     } catch (e) {

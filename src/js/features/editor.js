@@ -371,7 +371,7 @@ document.querySelectorAll('.dropdown-item').forEach(item => {
     });
 });
 
-function downloadFile(format) {
+async function downloadFile(format) {
     if (!editor) return;
     const text = editor.innerText || '';
     if (!text.trim()) return showToast('No hay texto', 'error');
@@ -385,7 +385,7 @@ function downloadFile(format) {
     const fileDate = new Date().toISOString().split('T')[0];
 
     if (format === 'pdf' && typeof downloadPDFWrapper !== 'undefined') {
-        downloadPDFWrapper(text, fileName, date, fileDate);
+        await downloadPDFWrapper(text, fileName, date, fileDate);
         return;
     }
 
@@ -397,16 +397,56 @@ function downloadFile(format) {
     }
 
     if (blob) {
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `${fileName}_${fileDate}.${ext}`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        await saveToDisk(blob, `${fileName}_${fileDate}.${ext}`);
         showToast(`Descargado .${ext}`, 'success');
     }
 }
+
+/**
+ * Guarda un Blob en disco usando la File System Access API (no genera Zone.Identifier).
+ * Si el browser no la soporta, usa el método clásico anchor+click como fallback.
+ * @param {Blob} blob
+ * @param {string} filename
+ */
+async function saveToDisk(blob, filename) {
+    // File System Access API: disponible en Chrome/Edge 86+ cuando se sirve
+    // desde https o http://localhost. Los archivos NO reciben Zone.Identifier.
+    if (window.showSaveFilePicker) {
+        const ext = filename.split('.').pop().toLowerCase();
+        const mimeTypes = {
+            pdf:  'application/pdf',
+            rtf:  'application/rtf',
+            txt:  'text/plain',
+            html: 'text/html',
+        };
+        const types = [{
+            description: ext.toUpperCase() + ' file',
+            accept: { [mimeTypes[ext] || blob.type || 'application/octet-stream']: ['.' + ext] },
+        }];
+        try {
+            const handle = await window.showSaveFilePicker({ suggestedName: filename, types });
+            const writable = await handle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+            return;
+        } catch (err) {
+            // El usuario canceló el diálogo → no hacer nada
+            if (err.name === 'AbortError') return;
+            // Cualquier otro error → caer al método de fallback
+            console.warn('showSaveFilePicker falló, usando fallback:', err);
+        }
+    }
+    // Fallback: anchor + click (puede generar Zone.Identifier en Windows)
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+window.saveToDisk = saveToDisk;
 
 // Wrapper defaults globally
 window.downloadRTF = () => downloadFile('rtf');
