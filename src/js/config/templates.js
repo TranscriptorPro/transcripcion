@@ -370,7 +370,7 @@ Hallazgos o s/p — incluir solo si fue evaluada
 ## CONCLUSIÓN
 Mencionar SOLO los hallazgos positivos o patológicos detectados, como párrafo fluido. No repetir datos normales.
 
-REGLA DE CONCLUSIÓN: La conclusión debe mencionar Únicamente los hallazgos patológicos o positivos. No repetir descripciones de normalidad. No agregar recomendaciones ni interpretaciones que no estén en la transcripción.
+REGLA DE CONCLUSIÓN: Menciona SOLO los hallazgos patológicos o positivos. Podés redactar una síntesis diagnóstica breve usando terminología médica estándar que se derive directamente de los hallazgos dictados. PROHIBIDO: inventar valores o datos que no estén en la transcripción. PROHIBIDO: indicar tratamientos o procedimientos concretos si el médico no los mencionó.
 IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si una estructura no fue evaluada ni mencionada, omití su sección o escribí s/p.`
     },
 
@@ -413,7 +413,7 @@ Biopsias tomadas (localización, número), polipectomías, otras intervenciones.
 ## CONCLUSIÓN
 Mencionar SOLO los hallazgos positivos o patológicos detectados, como párrafo fluido. No repetir datos normales.
 
-REGLA DE CONCLUSIÓN: La conclusión debe mencionar únicamente los hallazgos patológicos o positivos. No repetir descripciones de normalidad. No agregar recomendaciones ni interpretaciones que no estén en la transcripción.
+REGLA DE CONCLUSIÓN: Menciona SOLO los hallazgos patológicos o positivos. Podés redactar una síntesis diagnóstica breve usando terminología médica estándar que se derive directamente de los hallazgos dictados. PROHIBIDO: inventar valores o datos que no estén en la transcripción. PROHIBIDO: indicar tratamientos o procedimientos concretos si el médico no los mencionó.
 IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si un segmento no fue evaluado ni mencionado, omití su sección o escribí s/p.`
     },
     colonoscopia: {
@@ -454,7 +454,7 @@ Biopsias, polipectomías (localización, tamaño, morfología, técnica), otras 
 ## CONCLUSIÓN
 Mencionar SOLO los hallazgos positivos o patológicos detectados, como párrafo fluido. No repetir datos normales.
 
-REGLA DE CONCLUSIÓN: La conclusión debe mencionar únicamente los hallazgos patológicos o positivos. No repetir descripciones de normalidad. No agregar recomendaciones ni interpretaciones que no estén en la transcripción.
+REGLA DE CONCLUSIÓN: Menciona SOLO los hallazgos patológicos o positivos. Podés redactar una síntesis diagnóstica breve usando terminología médica estándar que se derive directamente de los hallazgos dictados. PROHIBIDO: inventar valores o datos que no estén en la transcripción. PROHIBIDO: indicar tratamientos o procedimientos concretos si el médico no los mencionó.
 IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si un segmento no fue evaluado ni mencionado, omití su sección o escribí s/p.`
     },
     broncoscopia: {
@@ -595,7 +595,7 @@ Hallazgos (lesiones, estenosis %, dominancia) o s/p. Incluir ramas si fueron eva
 ## CONCLUSIÓN
 Mencionar SOLO los vasos con lesiones significativas, tipo de enfermedad (uni/bi/trivascular) y recomendación terapéutica. No repetir vasos sin lesiones.
 
-REGLA DE CONCLUSIÓN: La conclusión debe mencionar únicamente los hallazgos patológicos o positivos (vasos con lesiones). No repetir vasos sin lesiones. No agregar recomendaciones ni interpretaciones que no estén explícitamente en la transcripción.
+REGLA DE CONCLUSIÓN: Menciona SOLO los vasos con lesiones significativas. Podés incluir el tipo de enfermedad coronaria (uni/bi/trivascular) si se puede inferir directamente de los hallazgos dictados. PROHIBIDO: inventar valores, porcentajes o datos que no estén en la transcripción. PROHIBIDO: indicar tratamientos concretos (stent, CABG, medicación) si el médico no los mencionó explícitamente.
 IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si un vaso no fue evaluado ni mencionado, omití su sección o escribí s/p.`
     },
     ecg: {
