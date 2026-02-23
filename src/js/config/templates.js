@@ -333,23 +333,45 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
         name: "Ecografía Abdominal / Doppler",
         category: "Imágenes",
         keywords: ["ecografía abdominal", "ultrasonido abdominal", "ultrasonido", "Doppler abdominal", "hígado", "riñón", "vesícula", "bazo", "páncreas"],
-        prompt: `Actúa como radiólogo especializado. Estructura este informe ecográfico:
+        prompt: `Actúa como radiólogo especializado. Estructura este informe ecográfico aplicando el formato por órgano con s/p:
 
 # INFORME ECOGRÁFICO
 
 ## TIPO DE ESTUDIO
 Tipo de ecografía realizada (abdominal, pélvica, vascular, partes blandas, etc.).
 
-## HALLAZGOS POR ÓRGANO
-Descripción sistemática de cada órgano o estructura evaluada.
+## HÍGADO
+Hallazgos o s/p
+
+## VESÍCULA BILIAR
+Hallazgos o s/p
+
+## VÍAS BILIARES
+Hallazgos o s/p
+
+## PÁNCREAS
+Hallazgos o s/p
+
+## BAZO
+Hallazgos o s/p
+
+## RIÑÓN DERECHO
+Hallazgos o s/p
+
+## RIÑÓN IZQUIERDO
+Hallazgos o s/p
+
+## VEJIGA / PELVIS
+Hallazgos o s/p — incluir solo si fue evaluada
 
 ## DOPPLER
-(Si aplica) Velocidades, índices de resistencia, flujo.
+(Incluir solo si el estudio tiene componente Doppler) Velocidades, índices de resistencia, flujos.
 
 ## CONCLUSIÓN
-Diagnóstico ecográfico y recomendaciones.
+Mencionar SOLO los hallazgos positivos o patológicos detectados, como párrafo fluido. No repetir datos normales.
 
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
+REGLA CRÍTICA: Si un órgano no presenta hallazgos patológicos, su sección debe contener únicamente la palabra s/p. La conclusión NO debe incluir órganos con s/p.
+IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si un órgano no fue evaluado, no incluyas su sección.`
     },
 
     // ── ENDOSCOPÍA ──────────────────────────────────────────────
@@ -357,45 +379,83 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
         name: "Gastroscopía / EDA",
         category: "Endoscopía",
         keywords: ["gastroscopía", "endoscopía digestiva", "EDA", "esófago", "estómago", "duodeno", "Helicobacter"],
-        prompt: `Actúa como gastroenterólogo especializado. Estructura este informe de gastroscopía:
+        prompt: `Actúa como gastroenterólogo especializado. Estructura este informe de gastroscopía aplicando el formato por segmento con s/p:
 
 # INFORME DE GASTROSCOPÍA / ENDOSCOPÍA DIGESTIVA ALTA
 
 ## PREPARACIÓN
 Sedación utilizada, calidad de preparación, tolerancia del paciente.
 
-## HALLAZGOS
-Descripción sistemática: esófago, unión gastroesofágica, estómago (fondo, cuerpo, antro), píloro, duodeno (1ª y 2ª porción).
+## ESÓFAGO
+Hallazgos o s/p
+
+## UNIÓN GASTROESOFÁGICA
+Hallazgos o s/p
+
+## ESTÓMAGO — FONDO
+Hallazgos o s/p
+
+## ESTÓMAGO — CUERPO
+Hallazgos o s/p
+
+## ESTÓMAGO — ANTRO
+Hallazgos o s/p
+
+## PÍLORO
+Hallazgos o s/p
+
+## DUODENO
+Hallazgos o s/p (1ª y 2ª porción)
 
 ## MANIOBRAS
-Biopsias tomadas (localización, número), polipectomías, otras intervenciones.
+Biopsias tomadas (localización, número), polipectomías, otras intervenciones. Si no se realizaron: s/p
 
 ## CONCLUSIÓN
-Diagnósticos endoscópicos y correlación clínica.
+Mencionar SOLO los hallazgos positivos o patológicos detectados, como párrafo fluido. No repetir datos normales.
 
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
+REGLA CRÍTICA: Si un segmento no presenta hallazgos patológicos, su sección debe contener únicamente la palabra s/p. La conclusión NO debe incluir segmentos con s/p.
+IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción.`
     },
     colonoscopia: {
         name: "Colonoscopía",
         category: "Endoscopía",
         keywords: ["colonoscopía", "colon", "recto", "pólipo", "Boston", "íleon", "mucosa colónica"],
-        prompt: `Actúa como gastroenterólogo especializado. Estructura este informe de colonoscopía:
+        prompt: `Actúa como gastroenterólogo especializado. Estructura este informe de colonoscopía aplicando el formato por segmento con s/p:
 
 # INFORME DE COLONOSCOPÍA
 
 ## PREPARACIÓN
 Tipo de preparación, calidad (escala de Boston), sedación.
 
-## HALLAZGOS
-Descripción sistemática: recto, colon sigmoideo, colon descendente, colon transverso, colon ascendente, ciego, válvula ileocecal, íleon terminal (si se exploró).
+## RECTO
+Hallazgos o s/p
+
+## COLON SIGMOIDEO
+Hallazgos o s/p
+
+## COLON DESCENDENTE
+Hallazgos o s/p
+
+## COLON TRANSVERSO
+Hallazgos o s/p
+
+## COLON ASCENDENTE
+Hallazgos o s/p
+
+## CIEGO / VÁLVULA ILEOCECAL
+Hallazgos o s/p
+
+## ÍLEON TERMINAL
+Hallazgos o s/p — incluir solo si fue explorado
 
 ## MANIOBRAS
-Biopsias, polipectomías (localización, tamaño, morfología, técnica), otras intervenciones.
+Biopsias, polipectomías (localización, tamaño, morfología, técnica), otras intervenciones. Si no se realizaron: s/p
 
 ## CONCLUSIÓN
-Diagnósticos endoscópicos y recomendaciones de seguimiento.
+Mencionar SOLO los hallazgos positivos o patológicos detectados, como párrafo fluido. No repetir datos normales.
 
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
+REGLA CRÍTICA: Si un segmento no presenta hallazgos patológicos, su sección debe contener únicamente la palabra s/p. La conclusión NO debe incluir segmentos con s/p.
+IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción.`
     },
     broncoscopia: {
         name: "Broncoscopía",
@@ -510,7 +570,7 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
         name: "Cinecoronariografía",
         category: "Cardiología",
         keywords: ["cinecoronariografía", "coronarias", "coronariografía", "stent", "estenosis", "angioplastia", "ventriculografía"],
-        prompt: `Actúa como cardiólogo intervencionista. Estructura este informe de cinecoronariografía:
+        prompt: `Actúa como cardiólogo intervencionista. Estructura este informe de cinecoronariografía aplicando el formato por vaso con s/p:
 
 # INFORME DE CINECORONARIOGRAFÍA
 
@@ -520,13 +580,23 @@ Vía de acceso, tipo de catéter.
 ## VENTRICULOGRAFÍA
 FEVI, motilidad segmentaria, presiones.
 
-## CORONARIAS
-Descripción de: TCI, DA (y diagonales), CX (y marginales), CD (y ramas). Para cada vaso: dominancia, lesiones, grado de estenosis (%).
+## TCI — TRONCO CORONARIO IZQUIERDO
+Hallazgos o s/p
+
+## DA — DESCENDENTE ANTERIOR
+Hallazgos (lesiones, estenosis %) o s/p. Incluir diagonales si fueron evaluadas.
+
+## CX — CIRCUNFLEJA
+Hallazgos (lesiones, estenosis %) o s/p. Incluir marginales si fueron evaluadas.
+
+## CD — CORONARIA DERECHA
+Hallazgos (lesiones, estenosis %, dominancia) o s/p. Incluir ramas si fueron evaluadas.
 
 ## CONCLUSIÓN
-Diagnóstico angiográfico, enfermedad coronaria (uni/bi/trivascular) y recomendación terapéutica.
+Mencionar SOLO los vasos con lesiones significativas, tipo de enfermedad (uni/bi/trivascular) y recomendación terapéutica. No repetir vasos sin lesiones.
 
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
+REGLA CRÍTICA: Si un vaso no presenta lesiones, su sección debe contener únicamente la palabra s/p. La conclusión NO debe incluir vasos con s/p.
+IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción.`
     },
     ecg: {
         name: "ECG",

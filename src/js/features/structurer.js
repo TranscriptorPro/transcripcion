@@ -252,7 +252,8 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepción:
 5. NO añadas notas, comentarios ni advertencias propias en ningún lugar del informe.
 6. Devuelve ÚNICAMENTE el contenido del informe en markdown, sin texto introductorio ni final.
 7. No uses encabezados de nivel > 3 (###).
-8. FORMATO DE PÁRRAFOS (CRÍTICO): dentro de cada sección, escribe los hallazgos como un párrafo continuo y fluido. NO separes cada hallazgo con líneas en blanco. Los ítems de una misma sección van juntos, sin saltos de línea dobles entre ellos. Solo usa línea en blanco para separar SECCIONES distintas (##). La primera palabra de cada párrafo debe comenzar con mayúscula.` },
+8. FORMATO DE PÁRRAFOS (CRÍTICO): dentro de cada sección, escribe los hallazgos como un párrafo continuo y fluido. NO separes cada hallazgo con líneas en blanco. Los ítems de una misma sección van juntos, sin saltos de línea dobles entre ellos. Solo usa línea en blanco para separar SECCIONES distintas (##). La primera palabra de cada párrafo debe comenzar con mayúscula.
+9. ESTUDIOS MULTI-ÓRGANO / MULTI-SEGMENTO (s/p): En estudios que evalúan múltiples órganos, segmentos anatómicos o vasos (ecografía, colonoscopía, gastroscopía, cinecoronariografía, Doppler vascular, etc.) dedica una sección ## separada a CADA estructura evaluada que aparezca en el prompt de plantilla. Si una estructura no presenta hallazgos patológicos o relevantes, escribe únicamente la abreviatura s/p como único contenido de esa sección. En la CONCLUSIÓN incluye SOLAMENTE los hallazgos positivos o patológicos (aquellos que NO son s/p), redactados en un párrafo fluido. No repitas datos normales en la conclusión.` },
                     { role: "user", content: `Transcripción a estructurar:\n\n${text}` }
                 ],
                 temperature: 0.1

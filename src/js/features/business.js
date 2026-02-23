@@ -91,6 +91,12 @@ window.initBusinessSuite = function () {
     localStorage.setItem('prof_data', JSON.stringify(adminProfData));
     localStorage.setItem('onboarding_date', new Date().toISOString());
 
+    // Ocultar gestión de API Key si el usuario no es ADMIN
+    const apiKeyCard = document.getElementById('adminApiKeyCard');
+    if (apiKeyCard && typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type !== 'ADMIN') {
+        apiKeyCard.style.display = 'none';
+    }
+
     // Inicializar GROQ_API_KEY global desde localStorage
     window.GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
 
