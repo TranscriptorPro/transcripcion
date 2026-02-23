@@ -531,9 +531,10 @@ window.applyProfessionalData = function (data) {
     if (!data) return;
     const { nombre, matricula, specialties } = data;
 
-    // Header
+    // Header: ADMIN siempre mantiene su banner intacto
+    const isAdmin = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'ADMIN');
     const welcomeName = document.getElementById('doctorWelcomeName');
-    if (welcomeName) welcomeName.textContent = `Dr/a. ${nombre}`;
+    if (welcomeName && !isAdmin) welcomeName.textContent = `Dr/a. ${nombre}`;
 
     // Locked display in metadata card
     const lockName = document.getElementById('lockNameDisplay');
