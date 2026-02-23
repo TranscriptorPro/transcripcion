@@ -87,7 +87,9 @@ function initContactInline(cfg) {
     function validateForm() {
         const motivo  = document.getElementById('contactMotivo')?.value;
         const detalle = document.getElementById('contactDetalle')?.value?.trim();
-        if (sendBtn) sendBtn.disabled = !motivo || !detalle;
+        // Re-query cada vez para no depender de referencias obsoletas tras clonar el form
+        const sb = document.getElementById('btnSendContact');
+        if (sb) sb.disabled = !motivo || !detalle;
     }
 
     const motivoEl  = document.getElementById('contactMotivo');
@@ -105,7 +107,8 @@ function initContactInline(cfg) {
         overlay.classList.add('active');
         if (successMsg) successMsg.style.display = 'none';
         if (form) form.style.display = 'flex';
-        if (sendBtn) sendBtn.disabled = true;
+        const sb = document.getElementById('btnSendContact');
+        if (sb) sb.disabled = true;
     });
 
     function closeModal() { overlay.classList.remove('active'); }

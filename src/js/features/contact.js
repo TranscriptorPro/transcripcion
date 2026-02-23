@@ -26,7 +26,8 @@ window.initContact = function () {
     function validateForm() {
         const motivo  = document.getElementById('contactMotivo')?.value;
         const detalle = document.getElementById('contactDetalle')?.value?.trim();
-        if (sendBtn) sendBtn.disabled = !motivo || !detalle;
+        const sb = document.getElementById('btnSendContact');
+        if (sb) sb.disabled = !motivo || !detalle;
     }
 
     document.getElementById('contactMotivo')
