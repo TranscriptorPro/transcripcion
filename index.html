@@ -74,6 +74,12 @@
                         <path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5v-2z"/>
                     </svg>
                 </button>
+                <!-- ADMIN: Borrar todos los datos y arrancar desde cero -->
+                <button class="theme-toggle" id="btnResetApp" title="Resetear app (borrar todos los datos)" style="display:none; color:#ef4444;">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                    </svg>
+                </button>
                 <button class="theme-toggle" id="themeToggle" title="Cambiar tema">
                     <svg id="themeIcon" viewBox="0 0 24 24">
                         <path
@@ -479,6 +485,33 @@
                         <button class="btn btn-outline" id="btnCancelProfessional" style="display:none;">Cancelar</button>
                         <button class="btn btn-outline" id="btnCloseProfessionalModalBtn">Cerrar</button>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reset App Modal (solo admin) -->
+        <div class="modal-overlay" id="resetAppModal">
+            <div class="modal" style="max-width:440px;">
+                <div class="modal-header" style="border-bottom:2px solid #ef4444;">
+                    <h3 style="margin:0;color:#ef4444;">&#128465;&#65039; Resetear aplicación</h3>
+                    <button class="modal-close" id="btnCloseResetModal">&times;</button>
+                </div>
+                <div class="modal-body" style="padding:1.25rem 1.5rem;">
+                    <p style="font-size:0.9rem;margin:0 0 1rem;">Esta acción <strong>borra permanentemente</strong> todos los datos de la app. No se puede deshacer.</p>
+                    <p style="font-size:0.82rem;color:var(--text-secondary);margin:0 0 0.5rem;">Se eliminará:</p>
+                    <ul style="font-size:0.82rem;color:var(--text-secondary);margin:0 0 1rem;padding-left:1.3rem;line-height:1.7;">
+                        <li>Lugares de trabajo y sus profesionales</li>
+                        <li>Datos del profesional / configuración del informe</li>
+                        <li>Historial y registro de pacientes</li>
+                        <li>Logo y firma cargados</li>
+                        <li>Número de informe (contador)</li>
+                        <li>Estado de onboarding</li>
+                    </ul>
+                    <p style="font-size:0.82rem;color:var(--text-secondary);margin:0;"><strong>No se borra:</strong> API Key, tema visual.</p>
+                </div>
+                <div class="modal-footer" style="padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:.5rem;justify-content:flex-end;">
+                    <button class="btn btn-outline" id="btnCancelResetApp">Cancelar</button>
+                    <button class="btn" id="btnConfirmResetApp" style="background:#ef4444;color:#fff;border-color:#ef4444;">&#128465;&#65039; Sí, borrar todo</button>
                 </div>
             </div>
         </div>

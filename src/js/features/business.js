@@ -428,8 +428,57 @@ function _initAdmin() {
         btnAdminAccess.addEventListener('click', () => window.open('recursos/admin.html', '_blank'));
     }
 
+    // Mostrar botón de reseteo solo para admin e inicializar su lógica
+    const btnResetApp = document.getElementById('btnResetApp');
+    if (btnResetApp) {
+        btnResetApp.style.display = '';
+        _initResetApp();
+    }
+
     const onboardingOverlay = document.getElementById('onboardingOverlay');
     if (onboardingOverlay) onboardingOverlay.style.display = 'none';
+}
+
+// ─── Reset app (solo admin) ───────────────────────────────────────────────────
+function _initResetApp() {
+    const modal      = document.getElementById('resetAppModal');
+    const btnOpen    = document.getElementById('btnResetApp');
+    const btnClose   = document.getElementById('btnCloseResetModal');
+    const btnCancel  = document.getElementById('btnCancelResetApp');
+    const btnConfirm = document.getElementById('btnConfirmResetApp');
+    if (!modal) return;
+
+    const openModal  = () => modal.classList.add('active');
+    const closeModal = () => modal.classList.remove('active');
+
+    btnOpen?.addEventListener('click', openModal);
+    btnClose?.addEventListener('click', closeModal);
+    btnCancel?.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+    btnConfirm?.addEventListener('click', () => {
+        // Claves a borrar (se conserva: groq_api_key, app_theme, onboarding_date)
+        const keysToRemove = [
+            'workplace_profiles',
+            'prof_data',
+            'patient_registry',
+            'patient_history',
+            'pdf_config',
+            'pdf_logo',
+            'pdf_signature',
+            'onboarding_accepted',
+        ];
+        // Borrar también todos los contadores de informe (report_counter_YYYY)
+        Object.keys(localStorage)
+            .filter(k => /^report_counter_/.test(k))
+            .forEach(k => localStorage.removeItem(k));
+
+        keysToRemove.forEach(k => localStorage.removeItem(k));
+
+        closeModal();
+        if (typeof showToast === 'function') showToast('✅ App reseteada. Recargando...', 'success');
+        setTimeout(() => location.reload(), 1200);
+    });
 }
 
 // ─── Flujo CLIENTE (NORMAL / PRO / TRIAL) ────────────────────────────────────
