@@ -49,6 +49,19 @@ window.openPdfConfigModal = function () {
     if (freshExtract.age)  { const el = document.getElementById('pdfPatientAge');  if (el) el.value = freshExtract.age; }
     if (freshExtract.sex)  { const el = document.getElementById('pdfPatientSex');  if (el) el.value = freshExtract.sex; }
 
+    // Fallback: si los campos pdfPatient* siguen vacíos, copiar desde los campos req* del formulario de paciente
+    const rVal = (id) => document.getElementById(id)?.value?.trim() || '';
+    const fillIfEmpty = (pdfId, reqId) => {
+        const pdfEl = document.getElementById(pdfId);
+        if (pdfEl && !pdfEl.value) pdfEl.value = rVal(reqId);
+    };
+    fillIfEmpty('pdfPatientName',        'reqPatientName');
+    fillIfEmpty('pdfPatientDni',         'reqPatientDni');
+    fillIfEmpty('pdfPatientAge',         'reqPatientAge');
+    fillIfEmpty('pdfPatientSex',         'reqPatientSex');
+    fillIfEmpty('pdfPatientInsurance',   'reqPatientInsurance');
+    fillIfEmpty('pdfPatientAffiliateNum','reqPatientAffiliateNum');
+
     if (window.currentMode === 'pro' && window.selectedTemplate && window.MEDICAL_TEMPLATES?.[window.selectedTemplate]) {
         const studyTypeEl = document.getElementById('pdfStudyType');
         if (studyTypeEl && !studyTypeEl.value) {
@@ -138,13 +151,23 @@ window.openPrintPreview = function () {
     const extracted = (editorEl && typeof extractPatientDataFromText === 'function')
         ? extractPatientDataFromText(editorEl.innerText) : {};
 
-    // Preferir lo extraído del audio; si no, lo ingresado manualmente en el modal
-    const patientName     = esc(extracted.name)  || esc(config.patientName)  || '';
-    const patientDni      = esc(extracted.dni)   || esc(config.patientDni)   || '';
-    const patientAge      = esc(extracted.age)   || esc(config.patientAge)   || '';
-    const rawSex          = extracted.sex || config.patientSex || '';
+    // Fallback 3: datos ingresados en el formulario de paciente (reqPatientName, etc.)
+    const reqVal = (id) => document.getElementById(id)?.value?.trim() || '';
+    const formPatient = {
+        name:      reqVal('reqPatientName')      || reqVal('pdfPatientName'),
+        dni:       reqVal('reqPatientDni')        || reqVal('pdfPatientDni'),
+        age:       reqVal('reqPatientAge')        || reqVal('pdfPatientAge'),
+        sex:       reqVal('reqPatientSex')        || reqVal('pdfPatientSex'),
+        insurance: reqVal('reqPatientInsurance')  || reqVal('pdfPatientInsurance'),
+    };
+
+    // Preferir: 1) extraído del audio → 2) guardado en pdf_config → 3) formulario req* en pantalla
+    const patientName     = esc(extracted.name)  || esc(config.patientName)  || esc(formPatient.name)     || '';
+    const patientDni      = esc(extracted.dni)   || esc(config.patientDni)   || esc(formPatient.dni)      || '';
+    const patientAge      = esc(extracted.age)   || esc(config.patientAge)   || esc(formPatient.age)      || '';
+    const rawSex          = extracted.sex || config.patientSex || formPatient.sex || '';
     const patientSex      = rawSex === 'M' ? 'Masculino' : rawSex === 'F' ? 'Femenino' : esc(rawSex);
-    const patientInsurance = esc(config.patientInsurance || '');
+    const patientInsurance = esc(config.patientInsurance || formPatient.insurance || '');
 
     // Datos del estudio
     const studyType    = esc(config.studyType || '');
