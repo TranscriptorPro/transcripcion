@@ -4,6 +4,7 @@
 - **Deployment ID:** `AKfycby2VEaj2Qy4TGrjL7ZG_YjfEO4ttI6fynnWLgAMafU8VMWoYoWgqJX48D5okxKOrgQiaw`
 - **Web App URL:** `https://script.google.com/macros/s/AKfycby2VEaj2Qy4TGrjL7ZG_YjfEO4ttI6fynnWLgAMafU8VMWoYoWgqJX48D5okxKOrgQiaw/exec`
 - **Last Updated:** 2026-02-23
+- **Library URL:** `https://script.google.com/macros/library/d/1Oj1P1a443VcU7uuHkVYASOi26_zMUmcCz_PZfJq9_i-NthvAlcD07JOS/5`
 - **Version:** 3 (agrega admin_create_user y admin_update_user GET; unifica URL)
 
 ## Configuration
