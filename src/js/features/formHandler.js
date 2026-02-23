@@ -1,38 +1,38 @@
 // ============ FORM & PATIENT DATA HANDLER ============
 
-// ---- Patient History ----
-const MAX_PATIENT_HISTORY = 50;
-window.patientHistory = JSON.parse(localStorage.getItem('patient_history') || '[]');
+// ---- G2: Sistema unificado — patient_history MIGRADO a patient_registry ----
+// savePatientToHistory es ahora un alias transparente de savePatientToRegistry.
+// Al iniciar, migramos cualquier dato residual de patient_history → patient_registry.
+(function _migratePatientHistory() {
+    try {
+        const old = JSON.parse(localStorage.getItem('patient_history') || '[]');
+        if (old.length && typeof savePatientToRegistry === 'function') {
+            // Migrar cada paciente viejo al registro (no duplica si ya existe)
+            old.forEach(p => { if (p && p.name) savePatientToRegistry(p); });
+        }
+        // Borrar la clave obsoleta para no migrar de nuevo
+        localStorage.removeItem('patient_history');
+    } catch (_) { /* ignorar errores de migración */ }
+})();
 
 window.savePatientToHistory = function (patient) {
-    if (!patient || !patient.name) return;
-    window.patientHistory = window.patientHistory.filter(p => !(patient.dni && p.dni === patient.dni));
-    window.patientHistory.unshift(patient);
-    if (window.patientHistory.length > MAX_PATIENT_HISTORY) window.patientHistory.pop();
-    localStorage.setItem('patient_history', JSON.stringify(window.patientHistory));
-    // G2: puente — también guardar en el registro permanente (patientRegistry)
+    // Alias: delega 100% al registro unificado
     if (typeof savePatientToRegistry === 'function') savePatientToRegistry(patient);
+};
+
+// populatePatientDatalist → delega al de patientRegistry.js (que usa getRegistry)
+// Si patientRegistry aún no cargó, no-op.
+if (typeof window.populatePatientDatalist === 'undefined') {
+    window.populatePatientDatalist = function () {};
 }
 
-window.populatePatientDatalist = function () {
-    const datalist = document.getElementById('patientHistoryList');
-    if (!datalist) return;
-    datalist.innerHTML = '';
-    window.patientHistory.forEach((p, i) => {
-        const option = document.createElement('option');
-        option.value = p.dni ? `${p.name} - DNI: ${p.dni}` : p.name;
-        option.dataset.index = i;
-        datalist.appendChild(option);
-    });
-}
-
-// Initial binding for patient search
+// Initial binding for patient search — usa searchPatientRegistry (registro unificado)
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('patientSearch')?.addEventListener('input', (e) => {
         const val = e.target.value;
-        const selected = window.patientHistory.find(p =>
-            (p.dni && val.includes(p.dni)) || (p.name && val.includes(p.name))
-        );
+        if (!val || val.length < 2) return;
+        const results = typeof searchPatientRegistry === 'function' ? searchPatientRegistry(val) : [];
+        const selected = results[0];
         if (selected) {
             const set = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
             set('pdfPatientName', selected.name);
