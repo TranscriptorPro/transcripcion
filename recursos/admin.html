@@ -25,6 +25,56 @@
             --radius-sm: 10px;
         }
 
+        [data-theme="dark"] {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        [data-theme="dark"] .card,
+        [data-theme="dark"] .stat-card,
+        [data-theme="dark"] .metric-card {
+            background: var(--bg-card);
+            border-color: var(--border);
+        }
+
+        [data-theme="dark"] table th {
+            background: #1a2332;
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] table td {
+            border-color: var(--border);
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] table tr:hover td {
+            background: var(--bg-card);
+        }
+
+        [data-theme="dark"] input,
+        [data-theme="dark"] select,
+        [data-theme="dark"] textarea {
+            background: #0f172a;
+            color: var(--text-primary);
+            border-color: var(--border);
+        }
+
+        [data-theme="dark"] .modal {
+            background: var(--bg-card);
+        }
+
+        [data-theme="dark"] .modal-overlay {
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        [data-theme="dark"] .btn-icon {
+            color: rgba(255,255,255,0.85);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -3381,8 +3431,19 @@
         }
 
         /* ── Dark Mode button ────────────────────────────────────────── */
+        // Load saved theme on page load
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+
         document.getElementById('btnDarkMode')?.addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const newTheme = isDark ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
         });
     </script>
 
