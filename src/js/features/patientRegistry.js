@@ -79,40 +79,83 @@ window.populatePatientDatalist = function() {
     });
 };
 
-// ---- Autocompletar campos al seleccionar del datalist ----
+// ---- Autocompletar campos al seleccionar — live search con dropdown personalizado ----
 window.initPatientRegistrySearch = function() {
     const searchInput = document.getElementById('reqPatientSearch');
     if (!searchInput) return;
 
-    populatePatientDatalist();
+    // Desconectar el datalist nativo (no filtra en tiempo real)
+    searchInput.removeAttribute('list');
 
+    // Crear dropdown personalizado
+    let dropdown = document.getElementById('patientLiveSearchDropdown');
+    if (!dropdown) {
+        dropdown = document.createElement('div');
+        dropdown.id = 'patientLiveSearchDropdown';
+        Object.assign(dropdown.style, {
+            position: 'absolute', zIndex: '9999',
+            background: 'var(--bg-card)', border: '1px solid var(--border)',
+            borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+            maxHeight: '220px', overflowY: 'auto',
+            width: '100%', display: 'none', marginTop: '2px'
+        });
+        // El padre del input debe tener position:relative
+        const wrap = searchInput.parentElement;
+        if (wrap) { wrap.style.position = 'relative'; wrap.appendChild(dropdown); }
+    }
+
+    function hideDropdown() { dropdown.style.display = 'none'; }
+
+    function showResults(results) {
+        if (!results.length) { hideDropdown(); return; }
+        dropdown.innerHTML = results.map((p, i) => {
+            const label = p.name + (p.dni ? ` — DNI ${p.dni}` : '') + (p.age ? `, ${p.age}a` : '');
+            return `<div data-idx="${i}" style="padding:0.5rem 0.85rem;cursor:pointer;font-size:0.82rem;border-bottom:1px solid var(--border);"
+                onmouseenter="this.style.background='var(--bg-hover,#2a2a2a)'"
+                onmouseleave="this.style.background=''">${label}</div>`;
+        }).join('');
+        dropdown.style.display = 'block';
+
+        // Click en resultado
+        dropdown.querySelectorAll('[data-idx]').forEach(el => {
+            el.addEventListener('mousedown', (e) => {
+                e.preventDefault(); // evita que el input pierda foco antes
+                const p = results[parseInt(el.dataset.idx)];
+                const setVal = (id, v) => { const el2 = document.getElementById(id); if (el2 && v != null) el2.value = v; };
+                setVal('reqPatientSearch',      p.name + (p.dni ? ` — DNI ${p.dni}` : ''));
+                setVal('reqPatientName',        p.name);
+                setVal('reqPatientDni',         p.dni);
+                setVal('reqPatientAge',         p.age);
+                setVal('reqPatientInsurance',   p.insurance);
+                setVal('reqPatientAffiliateNum',p.affiliateNum);
+                const sexEl = document.getElementById('reqPatientSex');
+                if (sexEl && p.sex) sexEl.value = p.sex;
+                hideDropdown();
+                if (typeof showToast === 'function') showToast(`✅ ${p.name}`, 'success');
+            });
+        });
+    }
+
+    // Buscar mientras escribe (debounce 120ms)
+    let debounceTimer;
     searchInput.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
         const query = searchInput.value.trim();
-        if (query.length < 2) return;
+        if (query.length < 2) { hideDropdown(); return; }
+        debounceTimer = setTimeout(() => {
+            const results = searchPatientRegistry(query);
+            showResults(results);
+        }, 120);
+    });
 
-        // Buscar coincidencia exacta (usuario seleccionó del datalist)
-        const reg     = getRegistry();
-        const normQ   = _normStr(query);
-        const dniOnly = query.replace(/\D/g, '');
+    // Cerrar dropdown al perder foco
+    searchInput.addEventListener('blur', () => {
+        setTimeout(hideDropdown, 200); // delay para permitir click en resultado
+    });
 
-        const found = reg.find(p =>
-            (p.name && (_normStr(`${p.name} — DNI ${p.dni}`) === normQ ||
-                        _normStr(p.name) === normQ)) ||
-            (p.dni  && dniOnly && p.dni.replace(/\D/g, '') === dniOnly)
-        );
-
-        if (found) {
-            const setVal = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
-            setVal('reqPatientName',        found.name);
-            setVal('reqPatientDni',         found.dni);
-            setVal('reqPatientAge',         found.age);
-            setVal('reqPatientInsurance',   found.insurance);
-            setVal('reqPatientAffiliateNum',found.affiliateNum);
-            const sexEl = document.getElementById('reqPatientSex');
-            if (sexEl && found.sex) sexEl.value = found.sex;
-            if (typeof showToast === 'function')
-                showToast(`✅ Paciente cargado: ${found.name}`, 'success');
-        }
+    // Cerrar al hacer click fuera
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) hideDropdown();
     });
 };
 
