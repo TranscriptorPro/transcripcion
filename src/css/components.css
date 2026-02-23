@@ -120,6 +120,51 @@
         }
 
         /* Join Audios Option - Enhanced Styling */
+        /* ── Diálogo inline confirmación unir audios ── */
+        .join-confirm-dialog {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: var(--bg-card, #fff);
+            border: 1.5px solid var(--primary, #0f766e);
+            border-radius: 10px;
+            padding: 0.7rem 1rem;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 2px 12px rgba(15, 118, 110, 0.12);
+            flex-wrap: wrap;
+        }
+        .join-confirm-icon {
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+        .join-confirm-body {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.1rem;
+        }
+        .join-confirm-title {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-primary, #0f172a);
+        }
+        .join-confirm-sub {
+            font-size: 0.75rem;
+            color: var(--text-secondary, #64748b);
+        }
+        .join-confirm-actions {
+            display: flex;
+            gap: 0.4rem;
+            flex-shrink: 0;
+        }
+        .btn-sm {
+            padding: 0.3rem 0.75rem !important;
+            font-size: 0.78rem !important;
+            height: auto !important;
+            min-height: unset !important;
+        }
+
         .join-audios-option {
             background: rgba(99, 102, 241, 0.1);
             border: 2px solid rgba(99, 102, 241, 0.3);

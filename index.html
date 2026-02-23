@@ -697,6 +697,21 @@
                     </div>
                 </div>
 
+                <!-- Diálogo inline: confirmar unir audios -->
+                <div id="joinAudiosDialog" style="display:none;">
+                    <div class="join-confirm-dialog">
+                        <span class="join-confirm-icon">🔗</span>
+                        <div class="join-confirm-body">
+                            <strong class="join-confirm-title" id="joinAudiosDialogTitle">Subiste varios audios</strong>
+                            <span class="join-confirm-sub">¿Querés unirlos en una sola pestaña o transcribirlos por separado?</span>
+                        </div>
+                        <div class="join-confirm-actions">
+                            <button class="btn btn-primary btn-sm" id="joinAudiosYes">Sí, unir</button>
+                            <button class="btn btn-outline btn-sm" id="joinAudiosNo">No, por separado</button>
+                        </div>
+                    </div>
+                </div>
+
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 1rem;">
                     <button class="btn btn-primary" id="transcribeBtn" disabled>
                         <svg viewBox="0 0 24 24">

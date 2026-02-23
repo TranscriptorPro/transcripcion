@@ -44,48 +44,33 @@ window.showToastWithAction = function(msg, type = 'error', actionText = 'Ver', a
 };
 
 /**
- * Muestra un toast preguntando si unir los audios.
- * Devuelve una Promise<boolean>: true = sí unir, false = no (timeout o botón No).
- * Se muestra cuando hay múltiples archivos y el checkbox no está tildado.
+ * Muestra un diálogo inline junto al botón Transcribir preguntando si unir audios.
+ * Devuelve una Promise<boolean>: true = sí unir, false = no.
+ * No tiene tiempo de expiración: espera la decisión del usuario.
  */
-window.askJoinAudiosPromise = function(fileCount, timeoutMs = 7000) {
+window.askJoinAudiosPromise = function(fileCount) {
     return new Promise((resolve) => {
-        const toast = document.getElementById('toast');
-        const toastMessage = document.getElementById('toastMessage');
-        if (!toast || !toastMessage) { resolve(false); return; }
+        const dialog  = document.getElementById('joinAudiosDialog');
+        const title   = document.getElementById('joinAudiosDialogTitle');
+        const btnYes  = document.getElementById('joinAudiosYes');
+        const btnNo   = document.getElementById('joinAudiosNo');
 
-        // Limpiar botones previos
-        toast.querySelectorAll('.toast-action-btn').forEach(b => b.remove());
+        if (!dialog || !btnYes || !btnNo) { resolve(false); return; }
 
-        toastMessage.textContent = `Subiste ${fileCount} audios. ¿Querés unirlos en una sola pestaña?`;
+        if (title) title.textContent = `Subiste ${fileCount} audio${fileCount !== 1 ? 's' : ''}`;
 
-        const btnYes = document.createElement('button');
-        btnYes.className = 'toast-action-btn';
-        btnYes.textContent = 'Sí, unir';
-        btnYes.style.cssText = 'margin-left:8px;background:rgba(255,255,255,0.95);color:#1a56a0;border:none;border-radius:4px;padding:2px 10px;cursor:pointer;font-size:0.78rem;font-weight:700;flex-shrink:0;';
+        // Mostrar
+        dialog.style.display = 'block';
 
-        const btnNo = document.createElement('button');
-        btnNo.className = 'toast-action-btn';
-        btnNo.textContent = 'No';
-        btnNo.style.cssText = 'margin-left:4px;background:rgba(255,255,255,0.3);color:#fff;border:1px solid rgba(255,255,255,0.5);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:0.78rem;flex-shrink:0;';
-
-        let resolved = false;
         const finish = (value) => {
-            if (resolved) return;
-            resolved = true;
-            clearTimeout(timer);
-            toast.classList.remove('show');
-            toast.querySelectorAll('.toast-action-btn').forEach(b => b.remove());
+            dialog.style.display = 'none';
+            // Clonar para limpiar listeners anteriores
+            btnYes.replaceWith(btnYes.cloneNode(true));
+            btnNo.replaceWith(btnNo.cloneNode(true));
             resolve(value);
         };
 
-        btnYes.addEventListener('click', () => finish(true),  { once: true });
-        btnNo.addEventListener ('click', () => finish(false), { once: true });
-
-        toast.appendChild(btnYes);
-        toast.appendChild(btnNo);
-        toast.className = 'toast info show';
-
-        const timer = setTimeout(() => finish(false), timeoutMs);
+        document.getElementById('joinAudiosYes').addEventListener('click', () => finish(true),  { once: true });
+        document.getElementById('joinAudiosNo') .addEventListener('click', () => finish(false), { once: true });
     });
 };
