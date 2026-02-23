@@ -1249,6 +1249,8 @@
         .field-group input,
         .field-group select,
         .field-group textarea {
+            width: 100%;
+            box-sizing: border-box;
             padding: 0.75rem;
             border: 2px solid var(--border);
             border-radius: var(--radius-sm);
@@ -2254,7 +2256,21 @@
         /* ── Global Metrics ──────────────────────────────────────────────────── */
         async function loadGlobalStats() {
             try {
-                const data = await API.getGlobalStats();
+                const resp = await API.getGlobalStats();
+                // La API devuelve { stats: {...} } — mapeamos a la estructura que espera renderGlobalStats
+                const s = resp.stats || resp;
+                const data = {
+                    transcripciones_mes: s.totalTranscripciones ?? s.transcripciones_mes ?? 0,
+                    palabras_mes:        (s.totalTranscripciones ?? 0) * 180,
+                    mrr:                 (s.pro ?? 0) * 29 + (s.enterprise ?? 0) * 99,
+                    activos_hoy:         s.active ?? s.activos_hoy ?? 0,
+                    activos_semana:      s.active ?? s.activos_semana ?? 0,
+                    conversion:          (s.trial + s.pro + s.enterprise) > 0
+                                            ? Math.round(((s.pro ?? 0) / (s.trial + s.pro + s.enterprise)) * 100)
+                                            : 0,
+                    crecimiento_30dias:  s.crecimiento_30dias || buildMockGlobalStats().crecimiento_30dias,
+                    top_usuarios:        s.top_usuarios || buildMockGlobalStats().top_usuarios
+                };
                 renderGlobalStats(data);
             } catch (_) {
                 renderGlobalStats(buildMockGlobalStats());
@@ -3389,7 +3405,7 @@
     </div>
 
     <div class="modal-overlay" id="newUserModal" style="display:none;">
-        <div class="modal" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal" style="max-width: 800px; max-height: 90vh; overflow-y: auto; width: 100%;">
             <div class="modal-header">
                 <h2>➕ Crear Nuevo Usuario</h2>
                 <button class="modal-close" id="btnCloseNewUser">&times;</button>
