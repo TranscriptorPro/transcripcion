@@ -35,11 +35,11 @@ window.disableButtons = function () {
 window.showBlocker = function (msg, isContactRequired) {
     const body = document.body;
     body.innerHTML = `
-        <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f1f5f9; font-family: sans-serif; text-align: center; padding: 2rem;">
-            <h1 style="color: #0f766e; margin-bottom: 1rem;">💼 Suscripción</h1>
-            <p style="font-size: 1.2rem; color: #475569; max-width: 500px;">${msg}</p>
+        <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg-main); font-family: sans-serif; text-align: center; padding: 2rem;">
+            <h1 style="color: var(--primary, #0f766e); margin-bottom: 1rem;">💼 Suscripción</h1>
+            <p style="font-size: 1.2rem; color: var(--text-secondary, #475569); max-width: 500px;">${msg}</p>
             ${isContactRequired ? '<button onclick="window.location.reload()" class="btn btn-primary" style="margin-top: 2rem; padding: 1rem 2rem;">Reintentar</button>' : ''}
-            <p style="margin-top: 2rem; font-size: 0.85rem; color: #94a3b8;">Contacta con el desarrollador para habilitar tu licencia.</p>
+            <p style="margin-top: 2rem; font-size: 0.85rem; color: var(--text-secondary, #94a3b8);">Contacta con el desarrollador para habilitar tu licencia.</p>
         </div>
     `;
 }

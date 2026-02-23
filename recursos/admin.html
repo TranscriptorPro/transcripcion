@@ -68,7 +68,7 @@
         }
 
         [data-theme="dark"] .modal {
-            background: var(--bg-card);
+            background: var(--bg-card) !important;
         }
 
         [data-theme="dark"] .modal-overlay {
@@ -77,6 +77,36 @@
 
         [data-theme="dark"] .btn-icon {
             color: rgba(255,255,255,0.85);
+        }
+
+        [data-theme="dark"] .notification {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+
+        [data-theme="dark"] .toast {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+
+        [data-theme="dark"] .modal-header {
+            background: var(--bg-card);
+            border-bottom-color: var(--border);
+        }
+
+        [data-theme="dark"] .modal-header h2 {
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] .form-group input[readonly] {
+            background: var(--bg-main);
+            color: var(--text-secondary);
+        }
+
+        [data-theme="dark"] .modal-footer {
+            border-top-color: var(--border);
         }
 
         * {

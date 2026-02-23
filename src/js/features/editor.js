@@ -145,7 +145,7 @@ if (insertTableBtn && editor) {
             for (let i = 0; i < parseInt(rows); i++) {
                 tableHTML += '<tr>';
                 for (let j = 0; j < parseInt(cols); j++) {
-                    tableHTML += '<td style="border: 1px solid #ddd; padding: 8px;">&nbsp;</td>';
+                    tableHTML += '<td style="border: 1px solid var(--border, #ddd); padding: 8px;">&nbsp;</td>';
                 }
                 tableHTML += '</tr>';
             }

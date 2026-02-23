@@ -985,6 +985,47 @@
             border-color: #f59e0b;
         }
 
+        /* ── Dark mode overrides ── */
+        [data-theme="dark"] .file-item-remove:hover {
+            background: rgba(239, 68, 68, 0.15);
+        }
+        [data-theme="dark"] .modal-close:hover {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+        }
+        [data-theme="dark"] .repair-note {
+            background: rgba(202, 138, 4, 0.12);
+            border-left-color: #eab308;
+            color: #fde68a;
+        }
+        [data-theme="dark"] .repair-error-msg {
+            color: #f87171;
+        }
+        [data-theme="dark"] .template-selector {
+            background: var(--bg-card);
+        }
+        [data-theme="dark"] .config-select {
+            background: var(--bg-main);
+            border-color: var(--border);
+            color: var(--text-primary);
+        }
+        [data-theme="dark"] .slider {
+            background-color: #475569;
+        }
+        [data-theme="dark"] .slider:before {
+            background-color: var(--bg-card);
+        }
+        [data-theme="dark"] .print-preview-container {
+            background: #1a1a2e;
+        }
+        [data-theme="dark"] .pending-item {
+            background: var(--bg-hover);
+            border-color: var(--border);
+        }
+        [data-theme="dark"] .med-dict-dict-from {
+            color: #f87171;
+        }
+
         /* Small icon button (restore original, medical check) */
         .btn-sm-icon {
             padding: 0.3rem 0.5rem;
