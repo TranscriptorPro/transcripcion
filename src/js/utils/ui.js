@@ -245,8 +245,20 @@ window.initModals = function () {
     if (btnClosePrintPreviewFooter) btnClosePrintPreviewFooter.addEventListener('click', closePrintPreviewModal);
 
     if (btnDownloadFromPreview) {
-        btnDownloadFromPreview.addEventListener('click', () => {
-            if (typeof downloadPDF === 'function') downloadPDF();
+        btnDownloadFromPreview.addEventListener('click', async () => {
+            const editorEl = window.editor || document.getElementById('editor');
+            if (!editorEl || !editorEl.innerHTML.trim()) {
+                if (typeof showToast === 'function') showToast('No hay contenido en el editor', 'error');
+                return;
+            }
+            if (typeof downloadPDFWrapper === 'function') {
+                const safeT = typeof transcriptions !== 'undefined' ? transcriptions : [];
+                const safeI = typeof activeTabIndex !== 'undefined' ? activeTabIndex : 0;
+                const fName = (safeT[safeI]?.fileName || 'informe').replace(/\.[^/.]+$/, '');
+                const fecha = new Date().toLocaleDateString('es-ES');
+                const fDate = new Date().toISOString().split('T')[0];
+                await downloadPDFWrapper(editorEl.innerHTML, fName, fecha, fDate);
+            }
         });
     }
 
