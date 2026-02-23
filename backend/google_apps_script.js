@@ -171,6 +171,159 @@ function doGet(e) {
     return createResponse({ success: true, userId: userData.ID_Medico });
   }
 
+  // admin_get_logs — lee la hoja Admin_Logs con filtros opcionales
+  if (action === 'admin_get_logs') {
+    const adminKey = e.parameter.adminKey;
+    if (adminKey !== ADMIN_KEY) return createResponse({ error: 'Unauthorized' });
+
+    try {
+      const logSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_LOGS);
+      if (!logSheet) return createResponse({ logs: [], message: 'Hoja Admin_Logs no encontrada' });
+
+      const data = logSheet.getDataRange().getValues();
+      if (data.length <= 1) return createResponse({ logs: [] });
+
+      const headers = data[0];
+      const filterDate = e.parameter.date || '';
+      const filterType = (e.parameter.type || '').toLowerCase();
+
+      const logs = [];
+      for (let i = data.length - 1; i >= 1; i--) { // más recientes primero
+        const row = {};
+        headers.forEach((h, idx) => { row[h] = data[i][idx]; });
+
+        const ts = String(row['Timestamp'] || row['Fecha'] || '');
+        const accion = String(row['Accion'] || '').toLowerCase();
+
+        if (filterDate && !ts.startsWith(filterDate)) continue;
+        if (filterType && filterType !== 'todos' && filterType !== 'all' && accion !== filterType) continue;
+
+        logs.push({
+          timestamp:        ts,
+          admin:            row['Admin_User']        || '—',
+          type:             row['Accion']            || '—',
+          userId:           row['Usuario_Afectado']  || '—',
+          details:          row['Detalles']          || '—'
+        });
+
+        if (logs.length >= 200) break; // límite de seguridad
+      }
+
+      return createResponse({ logs: logs, total: logs.length });
+    } catch(err) {
+      return createResponse({ error: 'Error leyendo logs: ' + err.message });
+    }
+  }
+
+  // admin_log_action — escribe una acción de admin en Admin_Logs
+  if (action === 'admin_log_action') {
+    const adminKey = e.parameter.adminKey;
+    if (adminKey !== ADMIN_KEY) return createResponse({ error: 'Unauthorized' });
+
+    const adminUser      = decodeURIComponent(e.parameter.adminUser  || 'unknown');
+    const logAction      = decodeURIComponent(e.parameter.logAction  || 'view');
+    const userId         = decodeURIComponent(e.parameter.userId     || '');
+    const details        = decodeURIComponent(e.parameter.details    || '');
+
+    appendAdminLog(adminUser, logAction, userId, details);
+    return createResponse({ success: true });
+  }
+
+  // admin_get_metrics — métricas de un usuario específico desde Metricas_Uso
+  if (action === 'admin_get_metrics') {
+    const adminKey = e.parameter.adminKey;
+    if (adminKey !== ADMIN_KEY) return createResponse({ error: 'Unauthorized' });
+
+    const userId = e.parameter.userId || '';
+
+    try {
+      const metSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_METRICAS);
+      if (!metSheet) return createResponse({ metrics: [], message: 'Hoja Metricas_Uso no encontrada' });
+
+      const data = metSheet.getDataRange().getValues();
+      if (data.length <= 1) return createResponse({ metrics: [] });
+
+      const headers = data[0];
+      const idCol = headers.indexOf('ID_Medico');
+
+      const metrics = [];
+      for (let i = 1; i < data.length; i++) {
+        if (userId && String(data[i][idCol]) !== String(userId)) continue;
+        const row = {};
+        headers.forEach((h, idx) => { row[h] = data[i][idx]; });
+        metrics.push(row);
+      }
+
+      // Totales
+      const totalTranscripciones = metrics.reduce((s, r) => s + (Number(r['Transcripciones_Realizadas']) || 0), 0);
+      const totalPalabras         = metrics.reduce((s, r) => s + (Number(r['Palabras_Transcritas'])       || 0), 0);
+      const totalMinutos          = metrics.reduce((s, r) => s + (Number(r['Minutos_Audio'])              || 0), 0);
+
+      return createResponse({
+        metrics: metrics.slice(-100), // últimas 100 filas
+        totals: { transcripciones: totalTranscripciones, palabras: totalPalabras, minutos: totalMinutos }
+      });
+    } catch(err) {
+      return createResponse({ error: 'Error leyendo métricas: ' + err.message });
+    }
+  }
+
+  // admin_get_global_stats — estadísticas globales de todos los usuarios
+  if (action === 'admin_get_global_stats') {
+    const adminKey = e.parameter.adminKey;
+    if (adminKey !== ADMIN_KEY) return createResponse({ error: 'Unauthorized' });
+
+    try {
+      const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+      const data = sheet.getDataRange().getValues();
+      if (data.length <= 1) return createResponse({ stats: {} });
+
+      const headers = data[0];
+      const estadoCol  = headers.indexOf('Estado');
+      const planCol    = headers.indexOf('Plan');
+      const usageCol   = headers.indexOf('Usage_Count');
+      const fechaCol   = headers.indexOf('Fecha_Registro');
+
+      const now = new Date();
+      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+      let totalUsers = 0, active = 0, inactive = 0, expired = 0, banned = 0, trial = 0, pro = 0, enterprise = 0;
+      let totalUsage = 0, newThisWeek = 0;
+
+      for (let i = 1; i < data.length; i++) {
+        if (!data[i][0]) continue; // fila vacía
+        totalUsers++;
+        const estado = String(data[i][estadoCol] || '').toLowerCase();
+        const plan   = String(data[i][planCol]   || '').toLowerCase();
+        const usage  = Number(data[i][usageCol]  || 0);
+        const fecha  = data[i][fechaCol] ? new Date(data[i][fechaCol]) : null;
+
+        if (estado === 'active')   active++;
+        else if (estado === 'inactive') inactive++;
+        else if (estado === 'expired')  expired++;
+        else if (estado === 'banned')   banned++;
+
+        if (plan === 'trial')      trial++;
+        else if (plan === 'pro')   pro++;
+        else if (plan === 'enterprise') enterprise++;
+
+        totalUsage += usage;
+        if (fecha && fecha >= oneWeekAgo) newThisWeek++;
+      }
+
+      return createResponse({
+        stats: {
+          totalUsers, active, inactive, expired, banned,
+          trial, pro, enterprise,
+          totalTranscripciones: totalUsage,
+          newThisWeek
+        }
+      });
+    } catch(err) {
+      return createResponse({ error: 'Error calculando estadísticas: ' + err.message });
+    }
+  }
+
   return createResponse({ error: 'Acción no válida' });
 }
 
