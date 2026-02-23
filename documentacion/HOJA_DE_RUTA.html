@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hoja de Ruta — Transcriptor Médico Pro</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3250;
+    --text: #e2e8f0;
+    --muted: #8892b0;
+    --green: #22c55e;
+    --green-bg: #052e16;
+    --red: #ef4444;
+    --red-bg: #2d0a0a;
+    --yellow: #f59e0b;
+    --yellow-bg: #2d1e06;
+    --blue: #3b82f6;
+    --blue-bg: #0c1a3a;
+    --orange: #f97316;
+    --orange-bg: #2a1206;
+    --purple: #a855f7;
+    --accent: #6366f1;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    padding: 0 0 60px;
+  }
+
+  /* ── HEADER ── */
+  .page-header {
+    background: linear-gradient(135deg, #1e1b4b 0%, #1a1d27 60%);
+    border-bottom: 1px solid var(--border);
+    padding: 32px 48px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .page-header h1 { font-size: 22px; font-weight: 700; color: #fff; }
+  .page-header .meta { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .nav-pills {
+    display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+  }
+  .nav-pill {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--muted); padding: 4px 14px; border-radius: 20px;
+    font-size: 12px; cursor: pointer; text-decoration: none;
+    transition: all .15s;
+  }
+  .nav-pill:hover { color: #fff; border-color: var(--accent); }
+
+  /* ── LAYOUT ── */
+  .container { max-width: 1100px; margin: 0 auto; padding: 40px 48px; }
+
+  /* ── SECTIONS ── */
+  .section { margin-bottom: 56px; }
+  .section-title {
+    font-size: 18px; font-weight: 700; color: #fff;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 10px; margin-bottom: 24px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-title .icon { font-size: 22px; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px 24px; margin-bottom: 12px;
+  }
+  .card-title {
+    font-size: 15px; font-weight: 600; color: #fff;
+    margin-bottom: 12px; display: flex; align-items: center; gap-8px;
+    gap: 8px;
+  }
+
+  /* ── TABLES ── */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    background: var(--surface2); color: var(--muted);
+    text-align: left; padding: 8px 12px; font-weight: 600;
+    font-size: 11px; text-transform: uppercase; letter-spacing: .5px;
+    border-bottom: 1px solid var(--border);
+  }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,.02); }
+
+  /* ── BADGES ── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
+    white-space: nowrap;
+  }
+  .badge-green  { background: var(--green-bg);  color: var(--green);  }
+  .badge-red    { background: var(--red-bg);    color: var(--red);    }
+  .badge-yellow { background: var(--yellow-bg); color: var(--yellow); }
+  .badge-orange { background: var(--orange-bg); color: var(--orange); }
+  .badge-blue   { background: var(--blue-bg);   color: var(--blue);   }
+
+  /* ── ETAPAS ── */
+  .etapa {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; margin-bottom: 20px; overflow: hidden;
+  }
+  .etapa-header {
+    padding: 16px 24px; cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between;
+    transition: background .15s; user-select: none;
+  }
+  .etapa-header:hover { background: var(--surface2); }
+  .etapa-header-left { display: flex; align-items: center; gap: 14px; }
+  .etapa-num {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; flex-shrink: 0;
+  }
+  .etapa-num-red    { background: var(--red-bg);    color: var(--red);    border: 1.5px solid var(--red);    }
+  .etapa-num-orange { background: var(--orange-bg); color: var(--orange); border: 1.5px solid var(--orange); }
+  .etapa-num-yellow { background: var(--yellow-bg); color: var(--yellow); border: 1.5px solid var(--yellow); }
+  .etapa-num-blue   { background: var(--blue-bg);   color: var(--blue);   border: 1.5px solid var(--blue);   }
+  .etapa-num-muted  { background: var(--surface2);  color: var(--muted);  border: 1.5px solid var(--border); }
+  .etapa-title { font-size: 15px; font-weight: 600; color: #fff; }
+  .etapa-subtitle { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .etapa-chevron { color: var(--muted); font-size: 16px; transition: transform .2s; }
+  .etapa.open .etapa-chevron { transform: rotate(90deg); }
+  .etapa-body { padding: 0 24px 20px; display: none; }
+  .etapa.open .etapa-body { display: block; }
+  .etapa-body h4 { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .6px; margin: 18px 0 8px; }
+
+  /* ── FLOW STEPS ── */
+  .flow { list-style: none; }
+  .flow li {
+    display: flex; gap: 12px; padding: 7px 0;
+    border-bottom: 1px dotted var(--border);
+  }
+  .flow li:last-child { border-bottom: none; }
+  .flow-num {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--accent); color: #fff;
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 2px;
+  }
+
+  /* ── QUESTIONS ── */
+  .questions { background: var(--surface2); border-radius: 8px; padding: 14px 18px; margin-top: 14px; }
+  .questions .q-label {
+    font-size: 11px; font-weight: 600; color: var(--yellow); text-transform: uppercase;
+    letter-spacing: .5px; margin-bottom: 8px;
+  }
+  .questions ol { padding-left: 18px; color: var(--text); }
+  .questions ol li { margin-bottom: 5px; }
+
+  /* ── BUG TABLE ── */
+  .bug-id { font-family: monospace; font-weight: 700; color: var(--red); }
+  td code {
+    background: var(--surface2); color: #a5d6ff;
+    padding: 1px 6px; border-radius: 4px; font-size: 12px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+  }
+
+  /* ── PRIORITIES ── */
+  .priority-list { list-style: none; }
+  .priority-item {
+    display: flex; gap: 16px; align-items: flex-start;
+    padding: 12px 16px; border-radius: 8px; margin-bottom: 6px;
+    border: 1px solid var(--border);
+  }
+  .priority-item:hover { background: var(--surface2); }
+  .priority-rank {
+    font-size: 11px; font-weight: 700; color: var(--muted);
+    white-space: nowrap; min-width: 20px; padding-top: 2px;
+  }
+  .priority-content { flex: 1; }
+  .priority-name { font-weight: 600; color: #fff; font-size: 14px; }
+  .priority-why { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* ── CALLOUT ── */
+  .callout {
+    border-radius: 8px; padding: 16px 20px; margin-bottom: 16px;
+    border-left: 4px solid;
+  }
+  .callout-red    { background: var(--red-bg);    border-color: var(--red);    }
+  .callout-yellow { background: var(--yellow-bg); border-color: var(--yellow); }
+  .callout-blue   { background: var(--blue-bg);   border-color: var(--blue);   }
+  .callout-title  { font-weight: 700; margin-bottom: 6px; font-size: 13px; }
+  .callout-red    .callout-title { color: var(--red);    }
+  .callout-yellow .callout-title { color: var(--yellow); }
+  .callout-blue   .callout-title { color: var(--blue);   }
+  .callout ul { padding-left: 18px; color: var(--text); font-size: 13px; }
+  .callout ul li { margin-bottom: 4px; }
+
+  /* ── CHIP EXAMPLE ── */
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0; }
+  .chip {
+    background: var(--surface2); border: 1px solid var(--border);
+    padding: 2px 10px; border-radius: 20px; font-size: 12px; color: var(--text);
+  }
+
+  /* ── URL BOX ── */
+  .url-box {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 10px 14px; font-family: monospace;
+    font-size: 11px; color: #a5d6ff; word-break: break-all;
+    margin: 6px 0;
+  }
+
+  /* ── FOOTER NOTE ── */
+  .footer-note {
+    text-align: center; color: var(--muted); font-size: 12px;
+    font-style: italic; margin-top: 48px; padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── RESPONSIVE ── */
+  @media(max-width: 700px){
+    .page-header { padding: 20px 20px; }
+    .container { padding: 24px 20px; }
+    table { font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HEADER ═══════════ -->
+<div class="page-header">
+  <h1>🗺️ Transcriptor Médico Pro — Hoja de Ruta</h1>
+  <div class="meta">Actualizado: 23 de febrero de 2026 &nbsp;·&nbsp; Documento de planificación interna &nbsp;·&nbsp; No subir al deploy</div>
+  <div class="nav-pills">
+    <a class="nav-pill" href="#hecho">✅ Lo que está hecho</a>
+    <a class="nav-pill" href="#diagnostico">🔍 Diagnóstico backend</a>
+    <a class="nav-pill" href="#bugs">🐛 Bugs críticos</a>
+    <a class="nav-pill" href="#etapas">🗺️ Etapas pendientes</a>
+    <a class="nav-pill" href="#prioridades">🔴 Prioridades</a>
+    <a class="nav-pill" href="#preguntas">❓ Decisiones abiertas</a>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ═══════════ LO QUE ESTÁ HECHO ═══════════ -->
+<div class="section" id="hecho">
+  <div class="section-title"><span class="icon">✅</span> Lo que ya está hecho</div>
+
+  <div class="card">
+    <div class="card-title">Base de la aplicación</div>
+    <table>
+      <thead><tr><th>Bloque</th><th>Descripción</th></tr></thead>
+      <tbody>
+        <tr><td>Core de grabación y transcripción</td><td>Audio en vivo + subida de archivo → Whisper Groq</td></tr>
+        <tr><td>Editor WYSIWYG</td><td>Negrita, cursiva, listas, tablas, edición inline</td></tr>
+        <tr><td>Exportación PDF</td><td>jsPDF con encabezado, firma, QR, perfiles de consultorio</td></tr>
+        <tr><td>Exportación Word</td><td>.docx desde el editor</td></tr>
+        <tr><td>Modo Normal / Modo Pro</td><td>Control según <code>CLIENT_CONFIG.type</code></td></tr>
+        <tr><td>32+ plantillas médicas</td><td>Estructuración automática por especialidad (LLaMA 3.3-70b)</td></tr>
+        <tr><td>Detección automática de plantilla</td><td><code>autoDetectTemplateKey</code> con scoring y proximidad</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Mejoras del sprint F1 — todas completadas</div>
+    <table>
+      <thead><tr><th>ID</th><th>Descripción</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr><td><code>F1-A1+A2</code></td><td>Formato por órgano con s/p + conclusión solo positivos</td><td><span class="badge badge-green">✅ Hecho</span></td></tr>
+        <tr><td><code>F1-B1</code></td><td>Ocultar tab Grabar en modal edición (Modo Normal)</td><td><span class="badge badge-green">✅ Hecho</span></td></tr>
+        <tr><td><code>F1-B2</code></td><td>Tab Grabar con candado 🔒 en Modo Normal</td><td><span class="badge badge-green">✅ Hecho</span></td></tr>
+        <tr><td><code>F1-C1</code></td><td>Nombre del campo en título del modal de edición</td><td><span class="badge badge-green">✅ Hecho</span></td></tr>
+        <tr><td><code>F1-C2</code></td><td>Botón "Dejar en blanco" en modal de edición</td><td><span class="badge badge-green">✅ Hecho</span></td></tr>
+        <tr><td><code>F1-D1</code></td><td>Nueva plantilla: Ecocardiograma transtorácico (ETT)</td><td><span class="badge badge-green">✅ Hecho</span></td></tr>
+        <tr><td><code>F1-D2</code></td><td>Nueva plantilla: Eco Doppler vascular</td><td><span class="badge badge-green">✅ Hecho</span></td></tr>
+        <tr><td><code>F1-D3</code></td><td>Nueva plantilla: Nota de evolución</td><td><span class="badge badge-green">✅ Hecho</span></td></tr>
+        <tr><td><code>F1-D4</code></td><td>Nueva plantilla: Epicrisis / Resumen de internación</td><td><span class="badge badge-green">✅ Hecho</span></td></tr>
+        <tr><td><code>F1-E1</code></td><td>Toast con plantilla detectada + opción "Cambiar"</td><td><span class="badge badge-green">✅ Hecho</span></td></tr>
+        <tr><td><code>F1-G1</code></td><td>Panel de gestión del registro de pacientes (modal)</td><td><span class="badge badge-green">✅ Hecho</span></td></tr>
+        <tr><td><code>F1-G2</code></td><td>Unificación patientHistory + patientRegistry (bridge)</td><td><span class="badge badge-green">✅ Hecho</span></td></tr>
+        <tr><td><code>F1-K1</code></td><td>Flujo de primer uso: bienvenida + T&amp;C + datos precargados</td><td><span class="badge badge-green">✅ Hecho</span></td></tr>
+        <tr><td><code>F1-K2</code></td><td>UI separada admin vs cliente (adminApiKeyCard oculto)</td><td><span class="badge badge-green">✅ Hecho</span></td></tr>
+        <tr><td><code>F1-K3</code></td><td>Botón "Contacto" con modal motivo + detalle + mailto</td><td><span class="badge badge-green">✅ Hecho</span></td></tr>
+        <tr><td><code>F1-PWA1</code></td><td>manifest.json (instalación como app)</td><td><span class="badge badge-green">✅ Hecho</span></td></tr>
+        <tr><td><code>F1-PWA2</code></td><td>Service Worker (cache offline del app shell)</td><td><span class="badge badge-green">✅ Hecho</span></td></tr>
+        <tr><td><code>F1-PWA3</code></td><td>Botón de instalación (beforeinstallprompt)</td><td><span class="badge badge-green">✅ Hecho</span></td></tr>
+        <tr><td><code>F1-PWA4</code></td><td>Íconos PWA 192×192 y 512×512</td><td><span class="badge badge-green">✅ Hecho</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════ DIAGNÓSTICO BACKEND ═══════════ -->
+<div class="section" id="diagnostico">
+  <div class="section-title"><span class="icon">🔍</span> Diagnóstico del sistema backend + dashboard</div>
+
+  <div class="callout callout-yellow">
+    <div class="callout-title">INVESTIGACIÓN BASADA EN ARCHIVOS REALES — sin suposiciones</div>
+    <ul>
+      <li>Leídos: <code>backend/google_apps_script.js</code>, <code>admin_config.json</code>, <code>DEPLOYMENT_INFO.md</code>, <code>GOOGLE_SHEET_SETUP.md</code></li>
+      <li>Leídos: <code>recursos/admin.html</code> (3464 líneas), <code>recursos/login.html</code> (263 líneas)</li>
+    </ul>
+  </div>
+
+  <!-- APPS SCRIPT -->
+  <div class="card">
+    <div class="card-title">📄 backend/google_apps_script.js — Script en producción</div>
+
+    <h4 style="color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.6px; margin-bottom:8px;">⚠️ Dos URLs distintas detectadas</h4>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">En <code>backend/admin_config.json</code> + <code>DEPLOYMENT_INFO.md</code></div>
+        <div class="url-box">…AKfycbw9xT0IdmPbpIsncavlktd3a9vJgao1wR-kwaEZA2PUUVXEo2GIIfV-FgJpBHE_-u9ofg</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">En <code>recursos/admin.html</code> + <code>recursos/login.html</code></div>
+        <div class="url-box">…AKfycby2VEaj2Qy4TGrjL7ZG_YjfEO4ttI6fynnWLgAMafU8VMWoYoWgqJX48D5okxKOrgQiaw</div>
+      </div>
+    </div>
+
+    <h4 style="color:var(--green); font-size:11px; text-transform:uppercase; letter-spacing:.6px; margin-bottom:8px;">Endpoints que SÍ existen</h4>
+    <table style="margin-bottom:16px;">
+      <thead><tr><th>Método</th><th>Acción</th><th>Descripción</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge badge-blue">GET</span></td><td><code>validate</code></td><td>Valida usuario por <code>id</code> + <code>deviceId</code>, registra device, devuelve todos sus datos</td></tr>
+        <tr><td><span class="badge badge-blue">GET</span></td><td><code>admin_list_users</code></td><td>Lista todos los usuarios del Sheet (requiere <code>adminKey</code>)</td></tr>
+        <tr><td><span class="badge badge-orange">POST</span></td><td><code>update_usage</code></td><td>Incrementa <code>Usage_Count</code> del médico en 1</td></tr>
+        <tr><td><span class="badge badge-orange">POST</span></td><td><code>admin_update_user</code></td><td>Actualiza campos del usuario (requiere <code>adminKey</code> en body)</td></tr>
+      </tbody>
+    </table>
+
+    <h4 style="color:var(--red); font-size:11px; text-transform:uppercase; letter-spacing:.6px; margin-bottom:8px;">Endpoints que FALTAN (la UI los llama pero no existen)</h4>
+    <table>
+      <thead><tr><th>Llamado desde</th><th>Acción esperada</th><th>Resultado real</th></tr></thead>
+      <tbody>
+        <tr><td><code>login.html</code> → GET</td><td><code>admin_login</code></td><td><span class="badge badge-red">❌ No existe — login SIEMPRE falla</span></td></tr>
+        <tr><td><code>admin.html</code> <code>API.createUser</code> → GET</td><td><code>admin_create_user</code></td><td><span class="badge badge-red">❌ No existe — "Nuevo Usuario" SIEMPRE falla</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ADMIN.HTML -->
+  <div class="card">
+    <div class="card-title">🖥️ recursos/admin.html — Panel de administración (3 464 líneas)</div>
+    <div class="callout callout-blue" style="margin-bottom:16px;">
+      <div class="callout-title">Panel REAL y funcional — no es un mockup</div>
+      <ul>
+        <li>Tiene tabs reales: Usuarios · Métricas · Logs</li>
+        <li>Skeleton loaders, toast notifications, dark mode toggle</li>
+        <li>Auto-refresh cada 5 minutos</li>
+        <li>Acceso directo desde la app principal con <code>?fromApp=true</code></li>
+      </ul>
+    </div>
+    <table>
+      <thead><tr><th>Funcionalidad</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr><td>Autenticación por sesión (8h auto-logout)</td><td><span class="badge badge-green">✅ Implementado</span></td></tr>
+        <tr><td>Tab Usuarios — tabla con stats, filtros, búsqueda</td><td><span class="badge badge-green">✅ Implementado</span></td></tr>
+        <tr><td>Acciones por fila: Editar / Métricas / Banear / Activar</td><td><span class="badge badge-green">✅ UI ok</span></td></tr>
+        <tr><td>Modal "Editar Usuario" con todos los campos</td><td><span class="badge badge-yellow">⚠️ UI ok — falla por bug B3 (método HTTP)</span></td></tr>
+        <tr><td>Modal "Métricas del usuario"</td><td><span class="badge badge-yellow">⚠️ UI ok — datos ficticios (no vienen del Sheet)</span></td></tr>
+        <tr><td>Tab Métricas globales (MRR, conversión, top usuarios)</td><td><span class="badge badge-yellow">⚠️ UI ok — calculado desde tabla, no del Sheet</span></td></tr>
+        <tr><td>Tab Logs (historial con filtros)</td><td><span class="badge badge-yellow">⚠️ UI ok — datos simulados (no hay tabla Logs en Sheet)</span></td></tr>
+        <tr><td>Modal "Nuevo Usuario" (form completo)</td><td><span class="badge badge-red">❌ UI ok — falla: endpoint <code>admin_create_user</code> no existe</span></td></tr>
+        <tr><td>URL del script configurada</td><td><span class="badge badge-yellow">⚠️ Tiene la URL…<code>AKfycby2…</code> — puede ser stale</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- LOGIN.HTML -->
+  <div class="card">
+    <div class="card-title">🔐 recursos/login.html — Pantalla de login del admin</div>
+    <table>
+      <thead><tr><th>Funcionalidad</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr><td>Form usuario + contraseña</td><td><span class="badge badge-green">✅ UI implementada</span></td></tr>
+        <tr><td>Llamada a <code>action=admin_login</code></td><td><span class="badge badge-red">❌ Endpoint no existe — login NUNCA funciona</span></td></tr>
+        <tr><td>Si hay sesión activa → redirige a admin.html</td><td><span class="badge badge-green">✅ Implementado</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- INDEX.HTML BACKEND -->
+  <div class="card">
+    <div class="card-title">📱 index.html (app principal) — Conexión con el backend</div>
+    <div class="callout callout-red" style="margin-bottom:16px;">
+      <div class="callout-title">La app principal hoy no habla con el backend para nada</div>
+    </div>
+    <table>
+      <thead><tr><th>Funcionalidad</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr><td>Llamada a <code>validate</code> al iniciar (verificar licencia)</td><td><span class="badge badge-red">❌ No implementada</span></td></tr>
+        <tr><td>Llamada a <code>update_usage</code> tras cada transcripción</td><td><span class="badge badge-red">❌ No implementada</span></td></tr>
+        <tr><td><code>device_id</code> generado y guardado en localStorage</td><td><span class="badge badge-red">❌ No implementado</span></td></tr>
+        <tr><td><code>ID_Medico</code> en config para identificarse ante el backend</td><td><span class="badge badge-red">❌ No implementado</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SHEET SETUP -->
+  <div class="card">
+    <div class="card-title">📊 GOOGLE_SHEET_SETUP.md — Columnas del Sheet</div>
+    <table>
+      <thead><tr><th>Columna</th><th>Documentada</th></tr></thead>
+      <tbody>
+        <tr><td><code>ID_Medico</code>, <code>Nombre</code>, <code>Matricula</code>, <code>Email</code>, <code>Especialidad</code>, <code>Plan</code>, <code>Estado</code>, <code>Fecha_Registro</code>, <code>Fecha_Vencimiento</code>, <code>Devices_Max</code>, <code>Devices_Logged</code>, <code>Usage_Count</code>, <code>Notas_Admin</code></td><td><span class="badge badge-green">✅ Documentadas</span></td></tr>
+        <tr><td><code>Telefono</code></td><td><span class="badge badge-yellow">⚠️ Usada por admin.html "Nuevo Usuario" pero NO documentada</span></td></tr>
+        <tr><td><code>Lugares_Trabajo</code></td><td><span class="badge badge-yellow">⚠️ Usada por admin.html pero NO documentada</span></td></tr>
+        <tr><td><code>Estudios_JSON</code></td><td><span class="badge badge-yellow">⚠️ Usada por admin.html pero NO documentada</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════ BUGS ═══════════ -->
+<div class="section" id="bugs">
+  <div class="section-title"><span class="icon">🐛</span> Bugs críticos confirmados</div>
+  <div class="card">
+    <table>
+      <thead><tr><th>#</th><th>Problema</th><th>Impacto real</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="bug-id">B1</span></td>
+          <td><code>action=admin_login</code> no existe en el script</td>
+          <td><span class="badge badge-red">Login del admin SIEMPRE falla</span></td>
+        </tr>
+        <tr>
+          <td><span class="bug-id">B2</span></td>
+          <td><code>action=admin_create_user</code> no existe en el script</td>
+          <td><span class="badge badge-red">"Nuevo Usuario" SIEMPRE falla</span></td>
+        </tr>
+        <tr>
+          <td><span class="bug-id">B3</span></td>
+          <td><code>admin_update_user</code> está como POST en el script, admin.html lo llama como GET</td>
+          <td><span class="badge badge-red">Ediciones SIEMPRE fallan silenciosamente</span></td>
+        </tr>
+        <tr>
+          <td><span class="bug-id">B4</span></td>
+          <td>Dos URLs distintas en los archivos (<code>backend/</code> vs <code>recursos/</code>)</td>
+          <td><span class="badge badge-orange">Una URL es obsoleta — inconsistencia</span></td>
+        </tr>
+        <tr>
+          <td><span class="bug-id">B5</span></td>
+          <td><code>adminKey</code> hardcodeada como <code>ADMIN_SECRET_2026</code> en admin.html y login.html</td>
+          <td><span class="badge badge-orange">Inseguro si no se cambió en Apps Script Properties</span></td>
+        </tr>
+        <tr>
+          <td><span class="bug-id">B6</span></td>
+          <td>Columnas <code>Telefono</code>, <code>Lugares_Trabajo</code>, <code>Estudios_JSON</code> no documentadas</td>
+          <td><span class="badge badge-yellow">Setup del Sheet incompleto para nuevos deployments</span></td>
+        </tr>
+        <tr>
+          <td><span class="bug-id">B7</span></td>
+          <td>App principal no llama a <code>validate</code> ni a <code>update_usage</code></td>
+          <td><span class="badge badge-red">Sistema de licencias completamente inoperativo</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════ ETAPAS ═══════════ -->
+<div class="section" id="etapas">
+  <div class="section-title"><span class="icon">🗺️</span> Etapas pendientes</div>
+  <p style="color:var(--muted); font-size:13px; margin-bottom:20px;">Nada aquí está decidido todavía. Cada etapa termina con preguntas que necesito que respondas antes de escribir código.</p>
+
+  <!-- ETAPA 1 -->
+  <div class="etapa open" onclick="toggleEtapa(this)">
+    <div class="etapa-header">
+      <div class="etapa-header-left">
+        <div class="etapa-num etapa-num-red">1</div>
+        <div>
+          <div class="etapa-title">Reparar el Apps Script</div>
+          <div class="etapa-subtitle">Bugs B1 · B2 · B3 — Login, crear usuarios y editar están rotos</div>
+        </div>
+      </div>
+      <span class="etapa-chevron">▶</span>
+    </div>
+    <div class="etapa-body">
+      <h4>Qué hay que hacer</h4>
+      <ul style="padding-left:18px; color:var(--text);">
+        <li>Agregar <code>action=admin_login</code> al script → necesita saber contra qué verificar (¿hoja Admins? ¿Script Properties?)</li>
+        <li>Agregar <code>action=admin_create_user</code> → recibe datos del nuevo usuario, crea fila en el Sheet</li>
+        <li>Corregir <code>admin_update_user</code>: cambiar <code>admin.html</code> para que envíe POST correctamente (o mover al endpoint a GET)</li>
+      </ul>
+      <div class="questions">
+        <div class="q-label">❓ Preguntas antes de escribir código</div>
+        <ol>
+          <li>¿Los admins (los que acceden al dashboard) están en el mismo Sheet <code>Usuarios_Transcriptor</code>, o querés una hoja separada <code>Admins</code>?</li>
+          <li>¿La contraseña del admin se guarda en el Sheet (permite múltiples admins) o contra <code>ADMIN_KEY</code> en Script Properties (1 solo admin)?</li>
+          <li>¿Cuál de las dos URLs es la correcta y activa hoy? ¿La del <code>backend/admin_config.json</code> (<code>…bw9…</code>) o la del <code>recursos/admin.html</code> (<code>…by2…</code>)?</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- ETAPA 2 -->
+  <div class="etapa" onclick="toggleEtapa(this)">
+    <div class="etapa-header">
+      <div class="etapa-header-left">
+        <div class="etapa-num etapa-num-red">2</div>
+        <div>
+          <div class="etapa-title">Unificar URLs y asegurar el adminKey</div>
+          <div class="etapa-subtitle">Bugs B4 · B5 · B6 — Coherencia y seguridad mínima</div>
+        </div>
+      </div>
+      <span class="etapa-chevron">▶</span>
+    </div>
+    <div class="etapa-body">
+      <h4>Qué hay que hacer</h4>
+      <ul style="padding-left:18px; color:var(--text);">
+        <li>Decidir qué URL es la activa y actualizarla en todos los archivos: <code>admin.html</code>, <code>login.html</code>, <code>admin_config.json</code>, <code>DEPLOYMENT_INFO.md</code></li>
+        <li>Cambiar <code>adminKey</code> de <code>ADMIN_SECRET_2026</code> por una clave real en Apps Script Properties (no en código fuente)</li>
+        <li>Actualizar <code>GOOGLE_SHEET_SETUP.md</code> con las columnas faltantes (<code>Telefono</code>, <code>Lugares_Trabajo</code>, <code>Estudios_JSON</code>)</li>
+      </ul>
+      <div class="questions">
+        <div class="q-label">❓ Preguntas</div>
+        <ol>
+          <li>¿Tenés acceso al Apps Script desplegado? ¿Ya cambiaste la <code>ADMIN_KEY</code> en Script Properties, o sigue siendo <code>ADMIN_SECRET_2026</code>?</li>
+          <li>¿Cuál URL querés mantener como definitiva?</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- ETAPA 3 -->
+  <div class="etapa" onclick="toggleEtapa(this)">
+    <div class="etapa-header">
+      <div class="etapa-header-left">
+        <div class="etapa-num etapa-num-orange">3</div>
+        <div>
+          <div class="etapa-title">Conectar la app principal al backend</div>
+          <div class="etapa-subtitle">Bug B7 — Sistema de licencias completamente inoperativo</div>
+        </div>
+      </div>
+      <span class="etapa-chevron">▶</span>
+    </div>
+    <div class="etapa-body">
+      <h4>El endpoint <code>validate</code> ya existe y devuelve todo el perfil — la app solo necesita llamarlo</h4>
+      <div style="margin:12px 0;">
+        <ul class="flow">
+          <li><span class="flow-num">1</span><span>Primer uso: generar <code>device_id</code> único → guardar en <code>localStorage</code></span></li>
+          <li><span class="flow-num">2</span><span>Al abrir la app: llamar <code>GET ?id=ID_Medico&amp;deviceId=device_id</code></span></li>
+          <li><span class="flow-num">3</span><span>Script devuelve <code>{ Estado, Plan, Fecha_Vencimiento, Devices_Logged, ... }</code></span></li>
+          <li><span class="flow-num">4</span><span>Si <code>Estado === 'expired'</code> o <code>'banned'</code> → mostrar pantalla de licencia vencida</span></li>
+          <li><span class="flow-num">5</span><span>Si <code>Estado === 'active'</code> o <code>'trial'</code> → sobrescribir <code>CLIENT_CONFIG.type</code> con el <code>Plan</code> del Sheet</span></li>
+          <li><span class="flow-num">6</span><span>Llamar <code>POST update_usage</code> cuando se complete una transcripción exitosa</span></li>
+        </ul>
+      </div>
+      <p style="color:var(--muted); font-size:13px; margin-bottom:12px;">El <code>ID_Medico</code> del cliente debe llegar pre-configurado en <code>config.js</code> antes de entregar la app (igual que nombre y matrícula).</p>
+      <div class="questions">
+        <div class="q-label">❓ Preguntas</div>
+        <ol>
+          <li>¿Qué pasa si el cliente no tiene internet? ¿Gracia offline usando última validación guardada si tiene menos de N días?</li>
+          <li>¿El rol ADMIN también llama al <code>validate</code>, o el admin nunca necesita licencia?</li>
+          <li>¿El <code>ID_Medico</code> se agrega a <code>CLIENT_CONFIG</code> en <code>config.js</code>?</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- ETAPA 4 -->
+  <div class="etapa" onclick="toggleEtapa(this)">
+    <div class="etapa-header">
+      <div class="etapa-header-left">
+        <div class="etapa-num etapa-num-yellow">4</div>
+        <div>
+          <div class="etapa-title">Historial de informes por paciente</div>
+          <div class="etapa-subtitle">patientRegistry hoy no guarda los informes generados</div>
+        </div>
+      </div>
+      <span class="etapa-chevron">▶</span>
+    </div>
+    <div class="etapa-body">
+      <h4>Situación actual</h4>
+      <p style="color:var(--text); margin-bottom:12px;">El <code>patientRegistry</code> guarda nombre, matrícula, obra social y contador de visitas. <strong>No guarda los informes generados.</strong> Si el médico quiere ver el informe de la semana pasada, no puede.</p>
+      <h4>Propuesta base</h4>
+      <ul style="padding-left:18px; color:var(--text); margin-bottom:12px;">
+        <li>Guardar en localStorage los últimos N informes por paciente (HTML + fecha + tipo de estudio)</li>
+        <li>Acceder desde el modal del registro de pacientes</li>
+        <li>"Ver informe anterior" → abre en el editor con opción de re-exportar a PDF</li>
+      </ul>
+      <div class="questions">
+        <div class="q-label">❓ Preguntas</div>
+        <ol>
+          <li>¿Cuántos informes por paciente querés guardar? (localStorage tiene ~5MB de límite total)</li>
+          <li>¿El médico puede editar un informe histórico o solo leerlo?</li>
+          <li>¿Querés exportar/importar el historial como backup (JSON)?</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- ETAPA 5 -->
+  <div class="etapa" onclick="toggleEtapa(this)">
+    <div class="etapa-header">
+      <div class="etapa-header-left">
+        <div class="etapa-num etapa-num-yellow">5</div>
+        <div>
+          <div class="etapa-title">Autocompletado de campos con valores frecuentes</div>
+          <div class="etapa-subtitle">Chips de sugerencias al editar un campo [No especificado]</div>
+        </div>
+      </div>
+      <span class="etapa-chevron">▶</span>
+    </div>
+    <div class="etapa-body">
+      <h4>Ejemplo de chips por campo</h4>
+      <div style="margin:8px 0 12px;">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Campo "Preparación"</div>
+        <div class="chip-row">
+          <span class="chip">Ayuno de 8hs</span>
+          <span class="chip">Sin preparación especial</span>
+          <span class="chip">Preparación colónica completa</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin:8px 0 4px;">Campo "Acceso"</div>
+        <div class="chip-row">
+          <span class="chip">Oral</span><span class="chip">Nasal</span><span class="chip">Transanal</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin:8px 0 4px;">Campo "Sexo"</div>
+        <div class="chip-row">
+          <span class="chip">Masculino</span><span class="chip">Femenino</span>
+        </div>
+      </div>
+      <div class="questions">
+        <div class="q-label">❓ Preguntas</div>
+        <ol>
+          <li>¿Querés que los valores sugeridos sean fijos por campo (definidos por vos), o que la app aprenda de lo que el médico escribe frecuentemente?</li>
+          <li>¿Los chips van dentro del modal de edición existente, o preferís algo más liviano (desplegable bajo el input)?</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- ETAPA 6 -->
+  <div class="etapa" onclick="toggleEtapa(this)">
+    <div class="etapa-header">
+      <div class="etapa-header-left">
+        <div class="etapa-num etapa-num-blue">6</div>
+        <div>
+          <div class="etapa-title">Mejoras visuales del PDF</div>
+          <div class="etapa-subtitle">F1 s/p discreto · F2 QR verificación · F3 logo institución</div>
+        </div>
+      </div>
+      <span class="etapa-chevron">▶</span>
+    </div>
+    <div class="etapa-body">
+      <h4>Qué hay planificado</h4>
+      <ul style="padding-left:18px; color:var(--text); margin-bottom:12px;">
+        <li><strong>F1:</strong> Campos "s/p" en el PDF más discretos (texto gris, tamaño menor)</li>
+        <li><strong>F2:</strong> QR de autenticidad → URL de verificación (requiere backend implementado)</li>
+        <li><strong>F3:</strong> Logo de institución en encabezado del PDF (UI para cargarlo ya existe, falta renderizarlo en jsPDF)</li>
+      </ul>
+      <div class="questions">
+        <div class="q-label">❓ Preguntas</div>
+        <ol>
+          <li>¿El logo en PDF es prioridad, o lo dejamos para después de resolver las licencias?</li>
+          <li>¿El QR actual verifica algo real, o es decorativo?</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- ETAPA 7 -->
+  <div class="etapa" onclick="toggleEtapa(this)">
+    <div class="etapa-header">
+      <div class="etapa-header-left">
+        <div class="etapa-num etapa-num-muted">7</div>
+        <div>
+          <div class="etapa-title">Internacionalización / idioma del informe</div>
+          <div class="etapa-subtitle">Selector: español · inglés · portugués</div>
+        </div>
+      </div>
+      <span class="etapa-chevron">▶</span>
+    </div>
+    <div class="etapa-body">
+      <p style="color:var(--text); margin-bottom:12px;">El prompt se envía siempre en español. Agregar un selector de idioma del informe. Estado: no implementado. Prioridad baja según el brainstorm.</p>
+      <div class="questions">
+        <div class="q-label">❓ Pregunta</div>
+        <ol><li>¿Es relevante para tu base de clientes actual, o lo dejamos para una versión futura?</li></ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- ETAPA 8 -->
+  <div class="etapa" onclick="toggleEtapa(this)">
+    <div class="etapa-header">
+      <div class="etapa-header-left">
+        <div class="etapa-num etapa-num-muted">8</div>
+        <div>
+          <div class="etapa-title">Versionado del informe en el editor</div>
+          <div class="etapa-subtitle">Snapshots: crudo · estructurado · editado + "ver historial"</div>
+        </div>
+      </div>
+      <span class="etapa-chevron">▶</span>
+    </div>
+    <div class="etapa-body">
+      <p style="color:var(--text); margin-bottom:12px;">Guardar snapshots automáticos: (1) texto crudo transcrito, (2) texto estructurado por IA, (3) versión editada manualmente. Botón "ver historial / comparar versiones". Estado: no implementado.</p>
+      <div class="questions">
+        <div class="q-label">❓ Pregunta</div>
+        <ol><li>¿Es útil para tu flujo de trabajo real, o el médico raramente quiere volver a una versión anterior?</li></ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ PRIORIDADES ═══════════ -->
+<div class="section" id="prioridades">
+  <div class="section-title"><span class="icon">🔴</span> Prioridades sugeridas</div>
+  <p style="color:var(--muted); font-size:13px; margin-bottom:20px;">Mi lectura del orden lógico. No es definitivo — consultame si cambia algo.</p>
+  <ul class="priority-list">
+    <li class="priority-item"><span class="priority-rank">1</span><div class="priority-content"><div class="priority-name">Reparar Apps Script — bugs B1 + B2 + B3 &nbsp;<span class="badge badge-red">Etapa 1</span></div><div class="priority-why">Sin esto el login y el botón "Nuevo Usuario" fallan siempre. El dashboard no sirve.</div></div></li>
+    <li class="priority-item"><span class="priority-rank">2</span><div class="priority-content"><div class="priority-name">Unificar URLs + adminKey — bugs B4 + B5 + B6 &nbsp;<span class="badge badge-red">Etapa 2</span></div><div class="priority-why">Coherencia técnica y seguridad mínima. Rápido de hacer una vez decidida la URL.</div></div></li>
+    <li class="priority-item"><span class="priority-rank">3</span><div class="priority-content"><div class="priority-name">Conectar app al backend — bug B7 &nbsp;<span class="badge badge-orange">Etapa 3</span></div><div class="priority-why">Sin esto el negocio no controla licencias. Un cliente puede usar la app con licencia vencida.</div></div></li>
+    <li class="priority-item"><span class="priority-rank">4</span><div class="priority-content"><div class="priority-name">Historial de informes por paciente &nbsp;<span class="badge badge-yellow">Etapa 4</span></div><div class="priority-why">Alta demanda de usuarios médicos. Pueden perder informes ya generados.</div></div></li>
+    <li class="priority-item"><span class="priority-rank">5</span><div class="priority-content"><div class="priority-name">Autocompletado de campos &nbsp;<span class="badge badge-yellow">Etapa 5</span></div><div class="priority-why">Velocidad en el flujo diario del médico.</div></div></li>
+    <li class="priority-item"><span class="priority-rank">6</span><div class="priority-content"><div class="priority-name">Mejoras visuales del PDF &nbsp;<span class="badge badge-blue">Etapa 6</span></div><div class="priority-why">Pedido frecuente de clientes (logo institución).</div></div></li>
+    <li class="priority-item"><span class="priority-rank">7</span><div class="priority-content"><div class="priority-name">Internacionalización &nbsp;<span class="badge badge-blue">Etapa 7</span></div><div class="priority-why">Según demanda de mercado.</div></div></li>
+    <li class="priority-item"><span class="priority-rank">8</span><div class="priority-content"><div class="priority-name">Versionado del editor &nbsp;<span class="badge badge-blue">Etapa 8</span></div><div class="priority-why">Nice to have.</div></div></li>
+  </ul>
+</div>
+
+<!-- ═══════════ DECISIONES ABIERTAS ═══════════ -->
+<div class="section" id="preguntas">
+  <div class="section-title"><span class="icon">❓</span> Decisiones abiertas</div>
+  <div class="callout callout-red">
+    <div class="callout-title">Necesito respuestas sobre la Etapa 1 antes de escribir nada</div>
+    <ul>
+      <li>Hay 3 bugs críticos que impiden que <code>login.html</code> y el botón "Nuevo Usuario" funcionen</li>
+      <li>Requiere definir si hay una hoja de Admins separada o una sola contraseña en Script Properties</li>
+      <li>Requiere confirmar cuál de las dos deploy URLs está activa hoy</li>
+    </ul>
+  </div>
+  <p style="color:var(--muted); font-size:13px; margin-top:16px;">El resto de las etapas las podemos ir decidiendo una por una, en orden.</p>
+</div>
+
+<div class="footer-note">No se escribe código hasta que confirmes qué etapa encaramos y respondas las preguntas correspondientes.</div>
+
+</div><!-- /container -->
+
+<script>
+  function toggleEtapa(el) {
+    // Prevent toggle when clicking links inside
+    el.classList.toggle('open');
+  }
+  // Smooth scroll for nav pills
+  document.querySelectorAll('a.nav-pill').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+</script>
+</body>
+</html>

@@ -104,6 +104,30 @@ window.openPdfConfigModal = function () {
     if (typeof populateWorkplaceDropdown === 'function') populateWorkplaceDropdown();
     if (typeof populatePatientDatalist === 'function') populatePatientDatalist();
 
+    // Restaurar profesional activo y sincronizar los selectores
+    const pdfCfgRestore = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+    const activeProRestore = pdfCfgRestore.activeProfessional;
+    if (activeProRestore) {
+        set('pdfProfName',        activeProRestore.nombre        || '');
+        set('pdfProfMatricula',   activeProRestore.matricula     || '');
+        set('pdfProfEspecialidad',activeProRestore.especialidades|| '');
+    }
+    const restoredWpIdx  = pdfCfgRestore.activeWorkplaceIndex;
+    const restoredProIdx = pdfCfgRestore.activeProfessionalIndex;
+    if (restoredWpIdx !== undefined && restoredWpIdx !== null) {
+        const wpSel = document.getElementById('pdfWorkplace');
+        if (wpSel) {
+            wpSel.value = String(restoredWpIdx);
+            wpSel.dispatchEvent(new Event('change'));
+            if (restoredProIdx !== undefined) {
+                setTimeout(() => {
+                    const proSel = document.getElementById('pdfProfessional');
+                    if (proSel) proSel.value = String(restoredProIdx);
+                }, 60);
+            }
+        }
+    }
+
     // M-4/M-5: Admin ve todo editable; usuario solo ve toggles (sin edición de encabezado/pie/firma)
     const isAdmin = typeof isAdminUser === 'function' && isAdminUser();
     // Campos cuya edición es exclusiva del admin
@@ -137,14 +161,17 @@ window.openPrintPreview = function () {
         .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
         .replace(/"/g,'&quot;').replace(/'/g,'&#039;') : '';
 
-    // Datos del profesional
-    const profName       = esc(profData.nombre) || 'Profesional Médico';
-    const matricula      = esc(profData.matricula || '');
-    const especialidad   = esc(Array.isArray(profData.specialties)
-        ? profData.specialties.filter(s => s && s !== 'Todas').join(' / ')
-        : (profData.especialidad || ''));
+    // Datos del profesional (profesional activo tiene prioridad)
+    const activePro      = config.activeProfessional || null;
+    const profName       = esc(activePro?.nombre     || profData.nombre) || 'Profesional Médico';
+    const matricula      = esc(activePro?.matricula  || profData.matricula || '');
+    const especialidadRaw = activePro?.especialidades
+        || (Array.isArray(profData.specialties)
+            ? profData.specialties.filter(s => s && s !== 'Todas').join(' / ')
+            : (profData.especialidad || ''));
+    const especialidad    = esc(especialidadRaw);
     const institutionName = esc(profData.institutionName || '');
-    const accentColor    = profData.headerColor || '#1a56a0';
+    const accentColor     = profData.headerColor || '#1a56a0';
 
     // Extraer datos del paciente SIEMPRE frescos desde el editor
     const editorEl  = window.editor || document.getElementById('editor');
@@ -184,10 +211,11 @@ window.openPrintPreview = function () {
     const showSignLine = config.showSignLine ?? true;
     const showSignName = config.showSignName ?? true;
     const showSignMat  = config.showSignMatricula ?? true;
-    const logoSrc      = localStorage.getItem('pdf_logo');
-    const sigSrc       = localStorage.getItem('pdf_signature');
-    const hasLogo      = logoSrc && logoSrc.startsWith('data:image/');
-    const hasSig       = sigSrc  && sigSrc.startsWith('data:image/');
+    // Logo/firma: profesional activo sobreescribe los globales
+    const logoSrc = (activePro?.logo  && activePro.logo.startsWith('data:'))  ? activePro.logo  : localStorage.getItem('pdf_logo');
+    const sigSrc  = (activePro?.firma && activePro.firma.startsWith('data:')) ? activePro.firma : localStorage.getItem('pdf_signature');
+    const hasLogo = logoSrc && logoSrc.startsWith('data:image/');
+    const hasSig  = sigSrc  && sigSrc.startsWith('data:image/');
 
     // Aplicar color de acento a la página
     const page = document.getElementById('previewPage');

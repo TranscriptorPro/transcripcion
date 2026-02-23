@@ -200,6 +200,16 @@
                             </div>
                             <button class="btn-sm" id="btnAddWorkplace" title="Agregar nuevo lugar">+ Agregar</button>
                         </div>
+                        <!-- Selector de profesional (se muestra cuando el lugar tiene profesionales cargados) -->
+                        <div class="field-group has-btn" id="pdfProfessionalGroup" style="display:none;">
+                            <div style="flex:1">
+                                <label>🩺 Profesional del informe</label>
+                                <select id="pdfProfessional">
+                                    <option value="">Seleccionar profesional...</option>
+                                </select>
+                            </div>
+                            <button class="btn-sm" id="btnManageProfessionals" title="Agregar / editar profesionales de este lugar">Gestionar</button>
+                        </div>
                         <div class="field-group">
                             <label>📍 Dirección</label>
                             <input type="text" id="pdfWorkplaceAddress" placeholder="Dirección del lugar de trabajo">
@@ -408,6 +418,67 @@
                     style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; gap: 0.5rem; justify-content: flex-end;">
                     <button class="btn btn-primary" id="btnSaveWorkplace">💾 Guardar lugar</button>
                     <button class="btn btn-outline" id="btnCancelWorkplaceBtn">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Professional Management Modal -->
+        <div class="modal-overlay" id="professionalModalOverlay">
+            <div class="modal" style="max-width:560px;">
+                <div class="modal-header">
+                    <h3 id="professionalModalTitle" style="margin:0;">🩺 Profesionales</h3>
+                    <button class="modal-close" id="btnCloseProfessionalModal">&times;</button>
+                </div>
+                <div class="modal-body" style="max-height:65vh;overflow-y:auto;padding:1rem 1.25rem;">
+                    <div id="professionalList"></div>
+                    <!-- Formulario: oculto por defecto, se muestra al agregar/editar -->
+                    <div id="professionalFormSection" style="display:none;border-top:1px solid var(--border);padding-top:1rem;margin-top:0.5rem;">
+                        <h4 id="professionalFormTitle" style="margin:0 0 0.75rem;font-size:0.95rem;color:var(--primary);">&#10133; Agregar profesional</h4>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Nombre completo</label>
+                                <input type="text" id="proNombre" placeholder="Dr/a. Nombre Apellido">
+                            </div>
+                            <div class="field-group">
+                                <label>Matrícula</label>
+                                <input type="text" id="proMatricula" placeholder="MN 12345">
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label>Especialidades</label>
+                            <input type="text" id="proEspecialidades" placeholder="Cardiología, Ecografía...">
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Teléfono</label>
+                                <input type="text" id="proTelefono" placeholder="+54 11 xxxx-xxxx">
+                            </div>
+                            <div class="field-group">
+                                <label>Email</label>
+                                <input type="email" id="proEmail" placeholder="dr@ejemplo.com">
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Firma digital (PNG)</label>
+                                <input type="file" id="proFirmaUpload" accept="image/png">
+                                <div id="proFirmaPreview" class="signature-preview" style="max-height:60px;overflow:hidden;"></div>
+                            </div>
+                            <div class="field-group">
+                                <label>Logo propio (opcional)</label>
+                                <input type="file" id="proLogoUpload" accept="image/*">
+                                <div id="proLogoPreview" class="logo-preview" style="max-height:60px;overflow:hidden;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="padding:1rem 1.25rem;border-top:1px solid var(--border);display:flex;gap:.5rem;justify-content:space-between;align-items:center;">
+                    <button class="btn btn-primary btn-sm" id="btnToggleProfessionalForm">➕ Agregar profesional</button>
+                    <div style="display:flex;gap:.5rem;">
+                        <button class="btn btn-primary" id="btnSaveProfessional" style="display:none;">💾 Guardar</button>
+                        <button class="btn btn-outline" id="btnCancelProfessional" style="display:none;">Cancelar</button>
+                        <button class="btn btn-outline" id="btnCloseProfessionalModalBtn">Cerrar</button>
+                    </div>
                 </div>
             </div>
         </div>

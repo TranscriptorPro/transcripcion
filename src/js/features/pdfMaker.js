@@ -23,14 +23,20 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
         // ── Datos de configuración ───────────────────────────────────
-        const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
-        const config   = JSON.parse(localStorage.getItem('pdf_config') || '{}');
-        const logoB64  = localStorage.getItem('pdf_logo')      || '';
-        const sigB64   = localStorage.getItem('pdf_signature') || '';
+        const profData  = JSON.parse(localStorage.getItem('prof_data') || '{}');
+        const config    = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        const activePro = config.activeProfessional || null;
 
-        const profName     = profData.nombre      || '';
-        const matricula    = profData.matricula   || '';
-        const especialidad = profData.specialties || profData.especialidades || '';
+        // Logo/firma: profesional activo tiene prioridad sobre los globales
+        const logoB64 = (activePro?.logo  && activePro.logo.startsWith('data:'))
+            ? activePro.logo  : (localStorage.getItem('pdf_logo')      || '');
+        const sigB64  = (activePro?.firma && activePro.firma.startsWith('data:'))
+            ? activePro.firma : (localStorage.getItem('pdf_signature') || '');
+
+        // Datos del profesional: activo sobreescribe prof_data
+        const profName     = activePro?.nombre         || profData.nombre      || '';
+        const matricula    = activePro?.matricula      || profData.matricula   || '';
+        const especialidad = activePro?.especialidades || profData.specialties || profData.especialidades || '';
         const institutionName = profData.institutionName || '';
         const accent       = _hexToRgb(profData.headerColor || '#1a56a0');
 

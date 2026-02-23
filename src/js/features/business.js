@@ -1,48 +1,331 @@
 
-// ============ WORKPLACE PROFILES ============
+// ============ WORKPLACE PROFILES + PROFESIONALES ============
 window.initWorkplaceManagement = function () {
     let workplaceProfiles = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
 
+    // ── helpers de persistencia ──────────────────────────────────────────────
+    function saveProfiles() {
+        localStorage.setItem('workplace_profiles', JSON.stringify(workplaceProfiles));
+    }
+
+    function getProfConfig() {
+        return JSON.parse(localStorage.getItem('pdf_config') || '{}');
+    }
+
+    function setProfConfig(cfg) {
+        localStorage.setItem('pdf_config', JSON.stringify(cfg));
+    }
+
+    // ── dropdown de lugares ──────────────────────────────────────────────────
     function populateWorkplaceDropdown() {
-        const sel = document.getElementById('pdfWorkplace');
+        const sel   = document.getElementById('pdfWorkplace');
         const quick = document.getElementById('quickWorkplaceSelector');
         if (!sel && !quick) return;
         const current = sel?.value;
-        if (sel) sel.innerHTML = '<option value="">Seleccionar lugar...</option>';
+        if (sel)   sel.innerHTML   = '<option value="">Seleccionar lugar...</option>';
         if (quick) quick.innerHTML = '<option value="">🏥 Lugar de trabajo</option>';
         workplaceProfiles.forEach((p, i) => {
             const label = p.name || `Lugar ${i + 1}`;
-            if (sel) {
-                const opt = document.createElement('option');
-                opt.value = i; opt.textContent = label;
-                sel.appendChild(opt);
-            }
-            if (quick) {
-                const opt = document.createElement('option');
-                opt.value = i; opt.textContent = label;
-                quick.appendChild(opt);
-            }
+            if (sel)   { const o = document.createElement('option'); o.value = i; o.textContent = label; sel.appendChild(o); }
+            if (quick) { const o = document.createElement('option'); o.value = i; o.textContent = label; quick.appendChild(o); }
         });
         if (sel && current !== '') sel.value = current;
     }
+    // exponer globalmente para pdfPreview.js
+    window.populateWorkplaceDropdown = populateWorkplaceDropdown;
 
     function loadWorkplaceProfile(index) {
         const profile = workplaceProfiles[index];
         if (!profile) return;
-        const addr = document.getElementById('pdfWorkplaceAddress');
+        const addr  = document.getElementById('pdfWorkplaceAddress');
         const phone = document.getElementById('pdfWorkplacePhone');
         const email = document.getElementById('pdfWorkplaceEmail');
-        const logo = document.getElementById('pdfLogoPreview');
-        if (addr) addr.value = profile.address || '';
-        if (phone) phone.value = profile.phone || '';
-        if (email) email.value = profile.email || '';
+        const logo  = document.getElementById('pdfLogoPreview');
+        if (addr)  addr.value  = profile.address || '';
+        if (phone) phone.value = profile.phone   || '';
+        if (email) email.value = profile.email   || '';
         if (logo && profile.logo && profile.logo.startsWith('data:image/')) {
             logo.innerHTML = `<img src="${profile.logo}" alt="Logo">`;
         }
+        // Mostrar / ocultar selector de profesionales
+        populateProfessionalsDropdown(index);
     }
 
+    // ── dropdown de profesionales ────────────────────────────────────────────
+    function populateProfessionalsDropdown(wpIndex) {
+        const group = document.getElementById('pdfProfessionalGroup');
+        const sel   = document.getElementById('pdfProfessional');
+        if (!group || !sel) return;
+
+        const profile = workplaceProfiles[wpIndex];
+        const profs = (profile && profile.professionals) ? profile.professionals : [];
+
+        if (profs.length === 0) {
+            group.style.display = 'none';
+            sel.innerHTML = '<option value="">Seleccionar profesional...</option>';
+            return;
+        }
+
+        group.style.display = '';
+        sel.innerHTML = '<option value="">— Sin selección —</option>';
+        profs.forEach((p, i) => {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = p.nombre || `Profesional ${i + 1}`;
+            sel.appendChild(opt);
+        });
+
+        // Restaurar selección previa si corresponde al mismo lugar
+        const cfg = getProfConfig();
+        if (String(cfg.activeWorkplaceIndex) === String(wpIndex) && cfg.activeProfessionalIndex !== undefined) {
+            sel.value = String(cfg.activeProfessionalIndex);
+        }
+    }
+
+    function loadProfessionalProfile(wpIndex, profIndex) {
+        const prof = workplaceProfiles[wpIndex]?.professionals?.[profIndex];
+        if (!prof) return;
+        const cfg = getProfConfig();
+        cfg.activeWorkplaceIndex    = String(wpIndex);
+        cfg.activeProfessionalIndex = String(profIndex);
+        cfg.activeProfessional      = prof;
+        setProfConfig(cfg);
+        if (typeof showToast === 'function') showToast(`🩺 ${prof.nombre || 'Profesional'} seleccionado`, 'success');
+    }
+
+    // ── modal de gestión de profesionales ───────────────────────────────────
+    let _editingProfIndex = null;  // null = nuevo, número = editar
+    let _currentWpIndex   = null;
+
+    function openProfessionalModal(wpIndex) {
+        _currentWpIndex   = wpIndex;
+        _editingProfIndex = null;
+        const prof = workplaceProfiles[wpIndex];
+        const title = document.getElementById('professionalModalTitle');
+        if (title) title.textContent = `🩺 Profesionales — ${prof?.name || 'Lugar ' + (wpIndex + 1)}`;
+        renderProfessionalList(wpIndex);
+        resetProfessionalForm();
+        document.getElementById('professionalModalOverlay')?.classList.add('active');
+    }
+
+    function closeProfessionalModal() {
+        document.getElementById('professionalModalOverlay')?.classList.remove('active');
+        if (_currentWpIndex !== null) populateProfessionalsDropdown(_currentWpIndex);
+    }
+
+    function resetProfessionalForm() {
+        ['proNombre','proMatricula','proEspecialidades','proTelefono','proEmail'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+        ['proFirmaPreview','proLogoPreview'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = '';
+        });
+        const sec = document.getElementById('professionalFormSection');
+        if (sec) sec.style.display = 'none';
+        const toggleBtn  = document.getElementById('btnToggleProfessionalForm');
+        const saveBtn    = document.getElementById('btnSaveProfessional');
+        const cancelBtn  = document.getElementById('btnCancelProfessional');
+        const formTitle  = document.getElementById('professionalFormTitle');
+        if (toggleBtn)  { toggleBtn.style.display = ''; toggleBtn.textContent = '➕ Agregar profesional'; }
+        if (saveBtn)    saveBtn.style.display    = 'none';
+        if (cancelBtn)  cancelBtn.style.display  = 'none';
+        if (formTitle)  formTitle.textContent    = '➕ Agregar profesional';
+        _editingProfIndex = null;
+    }
+
+    function renderProfessionalList(wpIndex) {
+        const container = document.getElementById('professionalList');
+        if (!container) return;
+        const profs = workplaceProfiles[wpIndex]?.professionals || [];
+        if (profs.length === 0) {
+            container.innerHTML = '<p style="color:var(--text-secondary);font-size:0.85rem;margin:0 0 0.5rem;">Aún no hay profesionales. Agrega el primero ↓</p>';
+            return;
+        }
+        container.innerHTML = profs.map((p, i) => `
+            <div class="field-row" style="align-items:center;gap:0.5rem;padding:0.35rem 0;border-bottom:1px solid var(--border);">
+                <span style="flex:1;font-size:0.9rem;"><strong>${p.nombre || '(sin nombre)'}</strong>${p.matricula ? ' — ' + p.matricula : ''}</span>
+                <button class="btn-sm" data-edit="${i}">✏️ Editar</button>
+                <button class="btn-sm btn-danger-sm" data-del="${i}">🗑️</button>
+            </div>
+        `).join('');
+    }
+
+    function openProfessionalForm(wpIndex, editIndex) {
+        const sec       = document.getElementById('professionalFormSection');
+        const saveBtn   = document.getElementById('btnSaveProfessional');
+        const cancelBtn = document.getElementById('btnCancelProfessional');
+        const toggleBtn = document.getElementById('btnToggleProfessionalForm');
+        const formTitle = document.getElementById('professionalFormTitle');
+
+        if (sec)       sec.style.display       = '';
+        if (saveBtn)   saveBtn.style.display   = '';
+        if (cancelBtn) cancelBtn.style.display = '';
+        if (toggleBtn) toggleBtn.style.display = 'none';
+
+        if (editIndex !== undefined && editIndex !== null) {
+            _editingProfIndex = editIndex;
+            const p = workplaceProfiles[wpIndex].professionals[editIndex];
+            if (formTitle) formTitle.textContent = '✏️ Editar profesional';
+            document.getElementById('proNombre').value          = p.nombre          || '';
+            document.getElementById('proMatricula').value       = p.matricula       || '';
+            document.getElementById('proEspecialidades').value  = p.especialidades  || '';
+            document.getElementById('proTelefono').value        = p.telefono        || '';
+            document.getElementById('proEmail').value           = p.email           || '';
+            const fp = document.getElementById('proFirmaPreview');
+            if (fp) fp.innerHTML = p.firma  ? `<img src="${p.firma}"  style="max-height:50px;">` : '';
+            const lp = document.getElementById('proLogoPreview');
+            if (lp) lp.innerHTML = p.logo   ? `<img src="${p.logo}"   style="max-height:50px;">` : '';
+        } else {
+            _editingProfIndex = null;
+            if (formTitle) formTitle.textContent = '➕ Agregar profesional';
+        }
+    }
+
+    function saveProfessional(wpIndex) {
+        const nombre = document.getElementById('proNombre')?.value?.trim();
+        if (!nombre) { if (typeof showToast === 'function') showToast('El nombre es obligatorio', 'error'); return; }
+
+        const buildAndSave = (firmaB64, logoB64) => {
+            if (!workplaceProfiles[wpIndex].professionals) workplaceProfiles[wpIndex].professionals = [];
+            const prof = {
+                id:            `PRO_${Date.now()}`,
+                nombre,
+                matricula:     document.getElementById('proMatricula')?.value?.trim()      || '',
+                especialidades:document.getElementById('proEspecialidades')?.value?.trim() || '',
+                telefono:      document.getElementById('proTelefono')?.value?.trim()       || '',
+                email:         document.getElementById('proEmail')?.value?.trim()          || '',
+                firma:         firmaB64,
+                logo:          logoB64,
+            };
+            if (_editingProfIndex !== null) {
+                // Conservar id original
+                prof.id = workplaceProfiles[wpIndex].professionals[_editingProfIndex].id || prof.id;
+                workplaceProfiles[wpIndex].professionals[_editingProfIndex] = prof;
+            } else {
+                workplaceProfiles[wpIndex].professionals.push(prof);
+            }
+            saveProfiles();
+            renderProfessionalList(wpIndex);
+            resetProfessionalForm();
+            if (typeof showToast === 'function') showToast('Profesional guardado ✓', 'success');
+        };
+
+        const existingFirma = (_editingProfIndex !== null)
+            ? (workplaceProfiles[wpIndex].professionals[_editingProfIndex]?.firma || null) : null;
+        const existingLogo  = (_editingProfIndex !== null)
+            ? (workplaceProfiles[wpIndex].professionals[_editingProfIndex]?.logo  || null) : null;
+
+        const firmaFile = document.getElementById('proFirmaUpload')?.files?.[0];
+        const logoFile  = document.getElementById('proLogoUpload')?.files?.[0];
+
+        // Leer archivos si los hay
+        const readFile = (file) => new Promise(resolve => {
+            const r = new FileReader();
+            r.onload = e => resolve(e.target.result);
+            r.readAsDataURL(file);
+        });
+
+        Promise.all([
+            firmaFile ? readFile(firmaFile) : Promise.resolve(existingFirma),
+            logoFile  ? readFile(logoFile)  : Promise.resolve(existingLogo),
+        ]).then(([firmaB64, logoB64]) => buildAndSave(firmaB64, logoB64));
+    }
+
+    function deleteProfessional(wpIndex, profIndex) {
+        const p = workplaceProfiles[wpIndex]?.professionals?.[profIndex];
+        if (!p) return;
+        if (!confirm(`¿Eliminar a ${p.nombre || 'este profesional'}?`)) return;
+        workplaceProfiles[wpIndex].professionals.splice(profIndex, 1);
+        // si era el activo, limpiar
+        const cfg = getProfConfig();
+        if (String(cfg.activeWorkplaceIndex) === String(wpIndex) &&
+            String(cfg.activeProfessionalIndex) === String(profIndex)) {
+            delete cfg.activeProfessional;
+            delete cfg.activeProfessionalIndex;
+            delete cfg.activeWorkplaceIndex;
+            setProfConfig(cfg);
+        }
+        saveProfiles();
+        renderProfessionalList(wpIndex);
+        populateProfessionalsDropdown(wpIndex);
+        if (typeof showToast === 'function') showToast('Profesional eliminado', 'info');
+    }
+
+    // ── eventos ──────────────────────────────────────────────────────────────
+
     document.getElementById('pdfWorkplace')?.addEventListener('change', (e) => {
-        if (e.target.value !== '') loadWorkplaceProfile(parseInt(e.target.value));
+        if (e.target.value !== '') {
+            loadWorkplaceProfile(parseInt(e.target.value));
+        } else {
+            // Si se deselecciona el lugar, ocultar el grupo de profesionales
+            const group = document.getElementById('pdfProfessionalGroup');
+            if (group) group.style.display = 'none';
+        }
+    });
+
+    document.getElementById('pdfProfessional')?.addEventListener('change', (e) => {
+        const wpIdx  = parseInt(document.getElementById('pdfWorkplace')?.value);
+        const proIdx = e.target.value;
+        if (isNaN(wpIdx) || proIdx === '') {
+            // Limpiar activo
+            const cfg = getProfConfig();
+            delete cfg.activeProfessional;
+            delete cfg.activeProfessionalIndex;
+            setProfConfig(cfg);
+            return;
+        }
+        loadProfessionalProfile(wpIdx, parseInt(proIdx));
+    });
+
+    document.getElementById('btnManageProfessionals')?.addEventListener('click', () => {
+        const wpIdx = parseInt(document.getElementById('pdfWorkplace')?.value);
+        if (isNaN(wpIdx)) { if (typeof showToast === 'function') showToast('Seleccioná un lugar primero', 'warning'); return; }
+        openProfessionalModal(wpIdx);
+    });
+
+    document.getElementById('btnCloseProfessionalModal')?.addEventListener('click', closeProfessionalModal);
+    document.getElementById('btnCloseProfessionalModalBtn')?.addEventListener('click', closeProfessionalModal);
+    document.getElementById('professionalModalOverlay')?.addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closeProfessionalModal();
+    });
+
+    document.getElementById('btnToggleProfessionalForm')?.addEventListener('click', () => {
+        openProfessionalForm(_currentWpIndex, null);
+    });
+
+    document.getElementById('btnSaveProfessional')?.addEventListener('click', () => {
+        if (_currentWpIndex === null) return;
+        saveProfessional(_currentWpIndex);
+    });
+
+    document.getElementById('btnCancelProfessional')?.addEventListener('click', resetProfessionalForm);
+
+    // Delegación en la lista de profesionales (editar / borrar)
+    document.getElementById('professionalList')?.addEventListener('click', (e) => {
+        const editIdx = e.target.dataset.edit;
+        const delIdx  = e.target.dataset.del;
+        if (editIdx !== undefined) openProfessionalForm(_currentWpIndex, parseInt(editIdx));
+        if (delIdx  !== undefined) deleteProfessional(_currentWpIndex, parseInt(delIdx));
+    });
+
+    // Preview de firma / logo en el formulario
+    document.getElementById('proFirmaUpload')?.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        const preview = document.getElementById('proFirmaPreview');
+        if (!file || !preview) return;
+        const r = new FileReader();
+        r.onload = ev => { preview.innerHTML = `<img src="${ev.target.result}" style="max-height:50px;">`; };
+        r.readAsDataURL(file);
+    });
+    document.getElementById('proLogoUpload')?.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        const preview = document.getElementById('proLogoPreview');
+        if (!file || !preview) return;
+        const r = new FileReader();
+        r.onload = ev => { preview.innerHTML = `<img src="${ev.target.result}" style="max-height:50px;">`; };
+        r.readAsDataURL(file);
     });
 
     // Selector rápido de lugar de trabajo (barra del editor)
@@ -50,18 +333,16 @@ window.initWorkplaceManagement = function () {
         const idx = e.target.value;
         if (idx === '') return;
         loadWorkplaceProfile(parseInt(idx));
-        // Sincronizar con el select del modal de config PDF
         const pdfSel = document.getElementById('pdfWorkplace');
         if (pdfSel) pdfSel.value = idx;
-        // Persistir en pdf_config
-        const config = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        const config  = getProfConfig();
         const profile = workplaceProfiles[parseInt(idx)];
         if (profile) {
             config.selectedWorkplace = idx;
-            config.workplaceAddress = profile.address || '';
-            config.workplacePhone   = profile.phone   || '';
-            config.workplaceEmail   = profile.email   || '';
-            localStorage.setItem('pdf_config', JSON.stringify(config));
+            config.workplaceAddress  = profile.address || '';
+            config.workplacePhone    = profile.phone   || '';
+            config.workplaceEmail    = profile.email   || '';
+            setProfConfig(config);
         }
         if (typeof showToast === 'function') showToast(`🏥 ${profile?.name || 'Lugar'} seleccionado`, 'success');
     });
@@ -73,16 +354,17 @@ window.initWorkplaceManagement = function () {
         const logoInput = document.getElementById('wpLogo');
         const profile = {
             name,
-            address: document.getElementById('wpAddress')?.value?.trim() || '',
-            phone: document.getElementById('wpPhone')?.value?.trim() || '',
-            email: document.getElementById('wpEmail')?.value?.trim() || '',
-            footer: document.getElementById('wpFooter')?.value?.trim() || '',
-            logo: null
+            address:       document.getElementById('wpAddress')?.value?.trim() || '',
+            phone:         document.getElementById('wpPhone')?.value?.trim()   || '',
+            email:         document.getElementById('wpEmail')?.value?.trim()   || '',
+            footer:        document.getElementById('wpFooter')?.value?.trim()  || '',
+            logo:          null,
+            professionals: [],
         };
 
         const save = () => {
             workplaceProfiles.push(profile);
-            localStorage.setItem('workplace_profiles', JSON.stringify(workplaceProfiles));
+            saveProfiles();
             populateWorkplaceDropdown();
             document.getElementById('workplaceModalOverlay')?.classList.remove('active');
             showToast('Lugar guardado ✓', 'success');
@@ -90,10 +372,7 @@ window.initWorkplaceManagement = function () {
 
         if (logoInput?.files?.[0]) {
             const reader = new FileReader();
-            reader.onload = (e) => {
-                profile.logo = e.target.result;
-                save();
-            };
+            reader.onload = (e) => { profile.logo = e.target.result; save(); };
             reader.readAsDataURL(logoInput.files[0]);
         } else {
             save();

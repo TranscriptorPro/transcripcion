@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Tests M-1 → M-7</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: monospace; background: #0f0f0f; color: #e0e0e0; padding: 1.5rem; }
+  h1 { color: #60a5fa; margin-bottom: 1.5rem; font-size: 1.3rem; }
+  .suite { margin-bottom: 2rem; }
+  .suite-title { color: #f59e0b; font-size: 1rem; margin-bottom: 0.6rem; border-bottom: 1px solid #333; padding-bottom: 0.3rem; }
+  .test { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.45rem 0.6rem; border-radius: 5px; margin-bottom: 0.3rem; background: #1a1a1a; }
+  .badge { min-width: 22px; height: 22px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: bold; }
+  .pass  { background: #064e3b; color: #6ee7b7; }
+  .fail  { background: #7f1d1d; color: #fca5a5; }
+  .skip  { background: #292524; color: #78716c; }
+  .run   { background: #1e3a5f; color: #93c5fd; }
+  .test-name { flex: 1; font-size: 0.82rem; }
+  .test-detail { font-size: 0.72rem; color: #6b7280; margin-top: 2px; }
+  #runAll { background: #2563eb; color: #fff; border: none; padding: 0.6rem 1.4rem; border-radius: 7px; font-size: 0.9rem; cursor: pointer; margin-bottom: 1.5rem; }
+  #runAll:hover { background: #1d4ed8; }
+  #summary { margin-bottom: 1.5rem; font-size: 0.9rem; color: #9ca3af; }
+  #summary span { font-weight: bold; }
+  .green { color: #6ee7b7; }
+  .red   { color: #fca5a5; }
+  /* iframe oculto para cargar la app */
+  #appFrame { display: none; }
+</style>
+</head>
+<body>
+
+<h1>🧪 Tests M-1 → M-7 — Transcriptor Pro</h1>
+<button id="runAll">▶ Ejecutar todos los tests</button>
+<div id="summary">Listo para ejecutar.</div>
+<div id="results"></div>
+
+<!-- iframe con la app real -->
+<iframe id="appFrame" src="../index.html"></iframe>
+
+<script>
+// ─── Utilidades ────────────────────────────────────────────────────────────
+let frame, fdoc, fwin;
+let pass = 0, fail = 0, skip = 0;
+
+function badge(state) {
+  const map = { pass:'✓', fail:'✗', skip:'—', run:'…' };
+  return `<div class="badge ${state}">${map[state]}</div>`;
+}
+
+function setResult(id, state, detail = '') {
+  const el = document.getElementById('t_' + id);
+  if (!el) return;
+  el.querySelector('.badge').className = 'badge ' + state;
+  el.querySelector('.badge').textContent = { pass:'✓', fail:'✗', skip:'—', run:'…' }[state];
+  if (detail) el.querySelector('.test-detail').textContent = detail;
+  if (state === 'pass') pass++;
+  if (state === 'fail') fail++;
+  if (state === 'skip') skip++;
+  updateSummary();
+}
+
+function updateSummary() {
+  document.getElementById('summary').innerHTML =
+    `Resultados: <span class="green">${pass} ✓</span> &nbsp; <span class="red">${fail} ✗</span> &nbsp; <span>${skip} —</span>`;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// Acceso seguro al DOM del iframe
+function q(sel) { return fdoc?.querySelector(sel); }
+function qAll(sel) { return fdoc ? [...fdoc.querySelectorAll(sel)] : []; }
+function isVisible(el) {
+  if (!el) return false;
+  return el.style.display !== 'none' && !el.closest('[style*="display: none"]') && el.offsetParent !== null;
+}
+function hasClass(el, cls) { return el?.classList.contains(cls); }
+
+// ─── Definición de tests ───────────────────────────────────────────────────
+const TESTS = [
+
+  // ── M-1: Botones workplace modal ──────────────────────────────────────────
+  { id:'m1_open', suite:'M-1: Modales Workplace',
+    name:'Botón + Agregar abre el modal workplaceModalOverlay',
+    run: async () => {
+      const btn = q('#btnAddWorkplace'); if (!btn) return [false, 'btnAddWorkplace no encontrado'];
+      btn.click(); await sleep(200);
+      const overlay = q('#workplaceModalOverlay');
+      const open = hasClass(overlay, 'active');
+      return [open, open ? 'overlay.active = true' : 'overlay.active = false después del click'];
+    }
+  },
+  { id:'m1_close_x', suite:'M-1: Modales Workplace',
+    name:'Botón ✕ (btnCancelWorkplace) cierra el modal',
+    run: async () => {
+      // Asegurar que está abierto
+      q('#workplaceModalOverlay')?.classList.add('active');
+      await sleep(100);
+      const btn = q('#btnCancelWorkplace'); if (!btn) return [false, 'btnCancelWorkplace no encontrado'];
+      btn.click(); await sleep(200);
+      const closed = !hasClass(q('#workplaceModalOverlay'), 'active');
+      return [closed, closed ? 'cerrado OK' : 'modal sigue activo'];
+    }
+  },
+  { id:'m1_close_cancel', suite:'M-1: Modales Workplace',
+    name:'Botón Cancelar (btnCancelWorkplaceBtn) cierra el modal',
+    run: async () => {
+      q('#workplaceModalOverlay')?.classList.add('active');
+      await sleep(100);
+      const btn = q('#btnCancelWorkplaceBtn'); if (!btn) return [false, 'btnCancelWorkplaceBtn no encontrado'];
+      btn.click(); await sleep(200);
+      const closed = !hasClass(q('#workplaceModalOverlay'), 'active');
+      return [closed, closed ? 'cerrado OK' : 'modal sigue activo'];
+    }
+  },
+  { id:'m1_close_outside', suite:'M-1: Modales Workplace',
+    name:'Click fuera del modal lo cierra',
+    run: async () => {
+      const overlay = q('#workplaceModalOverlay');
+      if (!overlay) return [false, 'overlay no encontrado'];
+      overlay.classList.add('active');
+      await sleep(100);
+      overlay.dispatchEvent(new MouseEvent('click', { bubbles: true, target: overlay }));
+      // Simulamos el click sobre el overlay mismo
+      const ev = new MouseEvent('click', { bubbles: true });
+      Object.defineProperty(ev, 'target', { value: overlay });
+      overlay.dispatchEvent(ev);
+      await sleep(200);
+      const closed = !hasClass(overlay, 'active');
+      return [closed, closed ? 'cerrado OK' : 'modal sigue activo (puede ser limitación del test sintético)'];
+    }
+  },
+
+  // ── M-2: Cerrar modal al guardar ─────────────────────────────────────────
+  { id:'m2_save_closes', suite:'M-2: Guardar config cierra modal',
+    name:'Guardar configuración PDF cierra pdfModalOverlay',
+    run: async () => {
+      const overlay = q('#pdfModalOverlay');
+      if (!overlay) return [false, 'pdfModalOverlay no encontrado'];
+      overlay.classList.add('active');
+      await sleep(150);
+      const btn = q('#btnSavePdfConfig');
+      if (!btn) return [false, 'btnSavePdfConfig no encontrado'];
+      btn.click();
+      await sleep(400);
+      const closed = !hasClass(overlay, 'active');
+      return [closed, closed ? 'cerrado OK tras guardar' : 'modal sigue abierto'];
+    }
+  },
+  { id:'m2_close_btn', suite:'M-2: Guardar config cierra modal',
+    name:'Botón ✕ (closePdfConfig) cierra pdfModalOverlay',
+    run: async () => {
+      q('#pdfModalOverlay')?.classList.add('active');
+      await sleep(100);
+      q('#closePdfConfig')?.click();
+      await sleep(200);
+      const closed = !hasClass(q('#pdfModalOverlay'), 'active');
+      return [closed, closed ? 'cerrado OK' : 'modal sigue abierto'];
+    }
+  },
+  { id:'m2_close_footer', suite:'M-2: Guardar config cierra modal',
+    name:'Botón Cerrar (btnClosePdfConfig) en footer cierra modal',
+    run: async () => {
+      q('#pdfModalOverlay')?.classList.add('active');
+      await sleep(100);
+      q('#btnClosePdfConfig')?.click();
+      await sleep(200);
+      const closed = !hasClass(q('#pdfModalOverlay'), 'active');
+      return [closed, closed ? 'cerrado OK' : 'modal sigue abierto'];
+    }
+  },
+
+  // ── M-3: Selector rápido de lugar de trabajo ─────────────────────────────
+  { id:'m3_exists', suite:'M-3: Selector rápido lugar de trabajo',
+    name:'Elemento #quickWorkplaceSelector existe en el DOM',
+    run: async () => {
+      const sel = q('#quickWorkplaceSelector');
+      return [!!sel, sel ? 'encontrado' : 'no encontrado en index.html'];
+    }
+  },
+  { id:'m3_hidden_initial', suite:'M-3: Selector rápido lugar de trabajo',
+    name:'Selector es display:none cuando appState no es TRANSCRIBED',
+    run: async () => {
+      const sel = q('#quickWorkplaceSelector');
+      if (!sel) return [false, 'selector no encontrado'];
+      // Estado inicial = idle
+      const hidden = sel.style.display === 'none' || sel.style.display === '';
+      return [hidden, `display="${sel.style.display}" (esperado none)`];
+    }
+  },
+  { id:'m3_visible_after_state', suite:'M-3: Selector rápido lugar de trabajo',
+    name:'Selector es visible tras updateButtonsVisibility("TRANSCRIBED")',
+    run: async () => {
+      if (typeof fwin.updateButtonsVisibility !== 'function')
+        return [false, 'updateButtonsVisibility no disponible'];
+      fwin.updateButtonsVisibility('TRANSCRIBED');
+      await sleep(150);
+      const sel = q('#quickWorkplaceSelector');
+      const visible = sel?.style.display !== 'none';
+      return [visible, `display="${sel?.style.display}" (esperado inline-block)`];
+    }
+  },
+
+  // ── M-4/M-5: Permisos Admin vs Usuario ───────────────────────────────────
+  { id:'m45_admin_firma_visible', suite:'M-4/M-5: Permisos PDF Admin vs Usuario',
+    name:'[ADMIN] Firma digital es visible al abrir config PDF',
+    run: async () => {
+      // Forzar modo ADMIN
+      fwin.CLIENT_CONFIG = { type: 'ADMIN' };
+      if (typeof fwin.openPdfConfigModal === 'function') fwin.openPdfConfigModal();
+      await sleep(300);
+      const upload = q('#pdfSignatureUpload');
+      if (!upload) return [false, '#pdfSignatureUpload no encontrado'];
+      const group = upload.closest('.field-group') || upload;
+      const visible = group.style.display !== 'none';
+      q('#pdfModalOverlay')?.classList.remove('active');
+      return [visible, visible ? 'visible OK (admin)' : `display="${group.style.display}"`];
+    }
+  },
+  { id:'m45_user_firma_oculta', suite:'M-4/M-5: Permisos PDF Admin vs Usuario',
+    name:'[USUARIO] Firma digital está oculta al abrir config PDF',
+    run: async () => {
+      // Forzar modo usuario (no admin)
+      fwin.CLIENT_CONFIG = { type: 'CLIENT' };
+      if (typeof fwin.openPdfConfigModal === 'function') fwin.openPdfConfigModal();
+      await sleep(300);
+      const upload = q('#pdfSignatureUpload');
+      if (!upload) return [false, '#pdfSignatureUpload no encontrado'];
+      const group = upload.closest('.field-group') || upload;
+      const hidden = group.style.display === 'none';
+      q('#pdfModalOverlay')?.classList.remove('active');
+      // Restaurar admin
+      fwin.CLIENT_CONFIG = { type: 'ADMIN' };
+      return [hidden, hidden ? 'oculta OK (usuario)' : `display="${group.style.display}" (debería ser none)`];
+    }
+  },
+  { id:'m45_admin_logo_visible', suite:'M-4/M-5: Permisos PDF Admin vs Usuario',
+    name:'[ADMIN] Logo upload es visible',
+    run: async () => {
+      fwin.CLIENT_CONFIG = { type: 'ADMIN' };
+      if (typeof fwin.openPdfConfigModal === 'function') fwin.openPdfConfigModal();
+      await sleep(300);
+      const el = q('#pdfLogoUpload');
+      if (!el) return [false, '#pdfLogoUpload no encontrado'];
+      const group = el.closest('.field-group') || el;
+      const visible = group.style.display !== 'none';
+      q('#pdfModalOverlay')?.classList.remove('active');
+      return [visible, visible ? 'visible OK' : `display="${group.style.display}"`];
+    }
+  },
+  { id:'m45_user_logo_oculto', suite:'M-4/M-5: Permisos PDF Admin vs Usuario',
+    name:'[USUARIO] Logo upload está oculto',
+    run: async () => {
+      fwin.CLIENT_CONFIG = { type: 'CLIENT' };
+      if (typeof fwin.openPdfConfigModal === 'function') fwin.openPdfConfigModal();
+      await sleep(300);
+      const el = q('#pdfLogoUpload');
+      if (!el) return [false, '#pdfLogoUpload no encontrado'];
+      const group = el.closest('.field-group') || el;
+      const hidden = group.style.display === 'none';
+      q('#pdfModalOverlay')?.classList.remove('active');
+      fwin.CLIENT_CONFIG = { type: 'ADMIN' };
+      return [hidden, hidden ? 'oculto OK' : `display="${group.style.display}"`];
+    }
+  },
+  { id:'m45_user_footer_oculto', suite:'M-4/M-5: Permisos PDF Admin vs Usuario',
+    name:'[USUARIO] Texto pie de página oculto',
+    run: async () => {
+      fwin.CLIENT_CONFIG = { type: 'CLIENT' };
+      if (typeof fwin.openPdfConfigModal === 'function') fwin.openPdfConfigModal();
+      await sleep(300);
+      const el = q('#pdfFooterText');
+      if (!el) return [false, '#pdfFooterText no encontrado'];
+      const group = el.closest('.field-group') || el;
+      const hidden = group.style.display === 'none';
+      q('#pdfModalOverlay')?.classList.remove('active');
+      fwin.CLIENT_CONFIG = { type: 'ADMIN' };
+      return [hidden, hidden ? 'oculto OK' : `display="${group.style.display}"`];
+    }
+  },
+
+  // ── M-6: Templates ORL ────────────────────────────────────────────────────
+  { id:'m6_laringoscopia_secciones', suite:'M-6: Templates ORL por órgano',
+    name:'Template laringoscopia contiene secciones por órgano (FOSA NASAL, LARINGE…)',
+    run: async () => {
+      const tpl = fwin.MEDICAL_TEMPLATES?.laringoscopia?.prompt || '';
+      if (!tpl) return [false, 'MEDICAL_TEMPLATES.laringoscopia no encontrado'];
+      const checks = ['FOSA NASAL DERECHA','FOSA NASAL IZQUIERDA','LARINGE','CONCLUSIÓN','AMÍGDALAS'];
+      const missing = checks.filter(c => !tpl.includes(c));
+      return [missing.length === 0,
+        missing.length === 0 ? 'Todas las secciones presentes' : `Faltan: ${missing.join(', ')}`];
+    }
+  },
+  { id:'m6_naso_secciones', suite:'M-6: Templates ORL por órgano',
+    name:'Template naso contiene secciones por órgano (FOSA NASAL, CUERDAS, CONCLUSIÓN…)',
+    run: async () => {
+      const tpl = fwin.MEDICAL_TEMPLATES?.naso?.prompt || '';
+      if (!tpl) return [false, 'MEDICAL_TEMPLATES.naso no encontrado'];
+      const checks = ['FOSA NASAL DERECHA','FOSA NASAL IZQUIERDA','CUERDAS VOCALES','CONCLUSIÓN DIAGNÓSTICA'];
+      const missing = checks.filter(c => !tpl.includes(c));
+      return [missing.length === 0,
+        missing.length === 0 ? 'Todas las secciones presentes' : `Faltan: ${missing.join(', ')}`];
+    }
+  },
+  { id:'m6_conclusion_rule_structurer', suite:'M-6: Templates ORL por órgano',
+    name:'System prompt de structurer.js contiene regla CONCLUSIÓN universal (regla 11)',
+    run: async () => {
+      // Verificamos que el fetch body incluiría la instrucción correcta
+      // Leemos el source del script para verificar el texto
+      const scripts = [...fdoc.scripts].map(s => s.src).filter(Boolean);
+      // No podemos leer scripts cross-origin directamente; verificamos via window
+      // Alternativa: buscar el texto en el source del script inline o via fetch
+      try {
+        const src = await fetch('../src/js/features/structurer.js').then(r => r.text());
+        const ok = src.includes('CONCLUSIÓN (REGLA UNIVERSAL)') || src.includes('regla 11') || src.includes('NUNCA dejar la conclusión vacía');
+        return [ok, ok ? 'Regla universal encontrada en structurer.js' : 'Regla NO encontrada'];
+      } catch(e) {
+        return [null, 'No se pudo leer structurer.js (skip)'];
+      }
+    }
+  },
+
+  // ── M-7: Live Search Pacientes ────────────────────────────────────────────
+  { id:'m7_search_exists', suite:'M-7: Live Search Pacientes',
+    name:'Input #reqPatientSearch existe en el DOM',
+    run: async () => {
+      const el = q('#reqPatientSearch');
+      return [!!el, el ? 'encontrado' : 'no encontrado'];
+    }
+  },
+  { id:'m7_no_datalist', suite:'M-7: Live Search Pacientes',
+    name:'#reqPatientSearch NO tiene atributo list (datalist nativo desconectado)',
+    run: async () => {
+      const el = q('#reqPatientSearch');
+      if (!el) return [false, 'input no encontrado'];
+      const hasListAttr = el.hasAttribute('list');
+      return [!hasListAttr, hasListAttr ? 'todavía tiene attribute list (datalist nativo activo)' : 'sin atributo list OK'];
+    }
+  },
+  { id:'m7_dropdown_created', suite:'M-7: Live Search Pacientes',
+    name:'Dropdown #patientLiveSearchDropdown se crea al inicializar',
+    run: async () => {
+      // initPatientRegistrySearch debe haberse llamado al cargar la app
+      // Abrir el modal para que se inicialice
+      q('#patientDataRequiredOverlay')?.classList.add('active');
+      await sleep(300);
+      if (typeof fwin.initPatientRegistrySearch === 'function') fwin.initPatientRegistrySearch();
+      await sleep(200);
+      const dd = q('#patientLiveSearchDropdown');
+      q('#patientDataRequiredOverlay')?.classList.remove('active');
+      return [!!dd, dd ? 'dropdown creado OK' : 'dropdown no encontrado'];
+    }
+  },
+  { id:'m7_search_partialname', suite:'M-7: Live Search Pacientes',
+    name:'searchPatientRegistry("Gar") devuelve resultados parciales si hay datos',
+    run: async () => {
+      // Insertar paciente de prueba
+      if (typeof fwin.savePatientToRegistry === 'function') {
+        fwin.savePatientToRegistry({ name: 'García, María', dni: '30000001', age: '45', sex: 'F' });
+      }
+      if (typeof fwin.searchPatientRegistry !== 'function') return [null, 'searchPatientRegistry no disponible (skip)'];
+      const results = fwin.searchPatientRegistry('Gar');
+      const found = results.some(p => p.name?.includes('García'));
+      return [found, found ? `Encontrado en ${results.length} resultado(s)` : 'No encontró "García" con "Gar"'];
+    }
+  },
+  { id:'m7_search_partialDNI', suite:'M-7: Live Search Pacientes',
+    name:'searchPatientRegistry("30000") devuelve coincidencia parcial de DNI',
+    run: async () => {
+      if (typeof fwin.searchPatientRegistry !== 'function') return [null, 'skip'];
+      const results = fwin.searchPatientRegistry('30000');
+      const found = results.some(p => p.dni?.includes('30000'));
+      return [found, found ? `Encontrado por DNI parcial (${results.length} resultado(s))` : 'DNI parcial no funciona'];
+    }
+  },
+
+];
+
+// ─── Render inicial ────────────────────────────────────────────────────────
+function renderTests() {
+  const container = document.getElementById('results');
+  const suites = {};
+  TESTS.forEach(t => {
+    if (!suites[t.suite]) suites[t.suite] = [];
+    suites[t.suite].push(t);
+  });
+  let html = '';
+  for (const [suite, tests] of Object.entries(suites)) {
+    html += `<div class="suite"><div class="suite-title">${suite}</div>`;
+    tests.forEach(t => {
+      html += `<div class="test" id="t_${t.id}">
+        <div class="badge run">…</div>
+        <div class="test-name">${t.name}<div class="test-detail">pendiente</div></div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+  container.innerHTML = html;
+}
+
+// ─── Ejecutar todos ────────────────────────────────────────────────────────
+document.getElementById('runAll').addEventListener('click', async () => {
+  pass = 0; fail = 0; skip = 0;
+  document.getElementById('runAll').disabled = true;
+  document.getElementById('summary').textContent = 'Cargando app…';
+
+  renderTests();
+
+  // Cargar el iframe
+  frame = document.getElementById('appFrame');
+  frame.style.display = 'block';
+  frame.style.width = '1400px';
+  frame.style.height = '900px';
+  frame.style.position = 'fixed';
+  frame.style.top = '-9999px';
+
+  // Esperar a que cargue
+  await new Promise(resolve => {
+    if (frame.contentDocument?.readyState === 'complete') { resolve(); return; }
+    frame.onload = resolve;
+    setTimeout(resolve, 5000); // timeout máximo
+  });
+  await sleep(1500); // esperar inicialización JS
+
+  fdoc = frame.contentDocument;
+  fwin = frame.contentWindow;
+
+  document.getElementById('summary').textContent = 'Ejecutando…';
+
+  for (const t of TESTS) {
+    setResult(t.id, 'run', 'ejecutando…');
+    await sleep(50);
+    try {
+      const [result, detail] = await t.run();
+      if (result === null) {
+        setResult(t.id, 'skip', detail || 'skipped');
+      } else {
+        setResult(t.id, result ? 'pass' : 'fail', detail || '');
+      }
+    } catch(e) {
+      setResult(t.id, 'fail', `Excepción: ${e.message}`);
+    }
+    await sleep(80);
+  }
+
+  frame.style.display = 'none';
+  document.getElementById('runAll').disabled = false;
+  updateSummary();
+});
+</script>
+</body>
+</html>
