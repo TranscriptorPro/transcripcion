@@ -483,20 +483,47 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
         name: "Laringoscopía",
         category: "Endoscopía",
         keywords: ["laringoscopía", "laringe", "cuerdas vocales", "glotis", "epiglotis", "fonación"],
-        prompt: `Actúa como otorrinolaringólogo especializado. Estructura este informe de laringoscopía:
+        prompt: `Actúa como otorrinolaringólogo especializado. Estructura este informe de laringoscopía/videonasofibrolaringoscopía.
+
+REGLAS OBLIGATORIAS PARA ESTE INFORME:
+- Crea una sección ## separada para CADA estructura anatómica evaluada.
+- Si una estructura fue evaluada y es normal, descríbela en prosa breve.
+- Usa s/p SOLO si una estructura NO fue mencionada ni evaluada en la transcripción.
+- En la CONCLUSIÓN: incluye ÚNICAMENTE los hallazgos positivos (patológicos o anormales). NUNCA dejar vacía ni como [No especificado].
 
 # INFORME DE LARINGOSCOPÍA
 
-## HALLAZGOS
-Descripción de: epiglotis, repliegues ariepiglóticos, aritenoides, cuerdas vocales (movilidad, color, morfología), glotis, subglotis.
+## FOSA NASAL DERECHA
+Permeabilidad, tabique, cornetes, mucosa, secreción.
+
+## FOSA NASAL IZQUIERDA
+Permeabilidad, tabique, cornetes, mucosa, secreción.
+
+## NASOFARINGE / CAVUM
+Coanás, adenoides, paredes.
+
+## ORÓFARINGE
+Paladar blando, pilares, pared posterior.
+
+## AMÍGDALAS PALATINAS
+Tamaño (grado), morfología, unión.
+
+## VÍA AÉREA SUPERIOR
+Base de lengua, valéculas, cordones laterales, piriformes. Comportamiento en maniobras (ronquido, Muller).
+
+## EPIGLOTIS
+Morfología, movilidad.
+
+## LARINGE Y CUERDAS VOCALES
+Cuerdas vocales (movilidad, color, morfología), glotis, subglotis, comisuras.
 
 ## FONACIÓN
 Cierre glótico, calidad vibratoria, simetría.
 
 ## CONCLUSIÓN
-Diagnóstico laringoscópico y recomendaciones.
+Solo hallazgos positivos (patológicos). No incluir estructuras normales. Si todo es normal: "Estudio dentro de parámetros normales."
 
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
+IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción.`
     },
 
     // ── CARDIOLOGÍA ─────────────────────────────────────────────
@@ -734,20 +761,47 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
         name: "Videonaso / Laringoscopía",
         category: "ORL",
         keywords: ["videonasofibrolaringoscopía", "nasofibroscopía", "fosas nasales", "rinofaringe", "laringe", "cuerdas vocales"],
-        prompt: `Actúa como especialista ORL. Estructura este informe de videonasofibrolaringoscopía:
+        prompt: `Actúa como especialista ORL. Estructura este informe de videonasofibrolaringoscopía.
+
+REGLAS OBLIGATORIAS:
+- Crea una sección ## separada para CADA estructura evaluada.
+- Si una estructura es normal, descríbela en prosa breve.
+- Usa s/p solo si una estructura NO fue mencionada en la transcripción.
+- CONCLUSIÓN: solo hallazgos positivos (patológicos). NUNCA vacía ni [No especificado]. Si todo es normal: "Estudio dentro de parámetros normales."
 
 # INFORME DE VIDEONASOFIBROLARINGOSCOPÍA
 
-## I. FOSAS NASALES Y RINOFARINGE
-Descripción de cornetes, tabique, cavum y adenoides (si aplica).
+## FOSA NASAL DERECHA
+Permeabilidad, septum, cornetes, mucosa, secreción.
 
-## II. FARINGE Y LARINGE
-Orofaringe, hipofaringe, epiglotis, cuerdas vocales (movilidad, morfología), glotis.
+## FOSA NASAL IZQUIERDA
+Permeabilidad, septum, cornetes, mucosa, secreción.
 
-## III. CONCLUSIÓN DIAGNÓSTICA
-Diagnósticos y recomendaciones.
+## NASOFARINGE / CAVUM
+Coanás, adenoides.
 
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
+## ORÓFARINGE Y VELÓFARINGE
+Paladar blando, pilares, pared posterior.
+
+## AMÍGDALAS PALATINAS
+Tamaño, unión, morfología.
+
+## VÍA AÉREA Y FARINGE INFERIOR
+Base de lengua, valéculas, cordones laterales, piriformes. Comportamiento dinámico.
+
+## EPIGLOTIS
+Morfología y movilidad.
+
+## CUERDAS VOCALES Y LARINGE
+Cuerdas vocales, movilidad, glotis, comisuras.
+
+## FONACIÓN
+Cierre glótico, calidad vibratoria.
+
+## CONCLUSIÓN DIAGNÓSTICA
+Solo hallazgos positivos o patológicos. Si todo es normal: "Estudio dentro de parámetros normales."
+
+IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción.`
     },
     endoscopia_otologica: {
         name: "Endoscopía Otológica",
