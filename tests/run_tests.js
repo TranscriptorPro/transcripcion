@@ -26,6 +26,7 @@ global.localStorage      = new LocalStorage();
 global.window            = global;
 global.showToast         = () => {};
 global.showToastWithAction = () => {};
+global.askJoinAudiosPromise = async () => false;
 global.GROQ_API_KEY      = null;
 global.fetch             = async () => {};
 global.selectedTemplate  = undefined;

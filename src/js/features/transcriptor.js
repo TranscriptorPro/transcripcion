@@ -26,7 +26,16 @@ if (transcribeBtn) {
         let joinedText = '';
         let skippedFiles = [];
         let batchCancelled = false;
-        const shouldJoin = chkJoinAudios ? chkJoinAudios.checked : false;
+        let shouldJoin = chkJoinAudios ? chkJoinAudios.checked : false;
+
+        // Preguntar si unir cuando hay múltiples archivos y el checkbox no está tildado
+        if (!shouldJoin && pending.length > 1 && typeof askJoinAudiosPromise === 'function') {
+            const wantsJoin = await askJoinAudiosPromise(pending.length);
+            if (wantsJoin) {
+                shouldJoin = true;
+                if (chkJoinAudios) chkJoinAudios.checked = true;
+            }
+        }
 
         // Limpiar transcripciones anteriores para empezar con pestañas frescas
         window.transcriptions = [];
