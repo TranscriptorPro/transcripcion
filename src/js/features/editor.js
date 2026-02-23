@@ -543,7 +543,11 @@ if (applyTemplateBtn && normalTemplateDropdown) {
     let _efRecordInterval = null;
     let _efRecording = false;
 
-    const isPro = () => !!(window.GROQ_API_KEY);
+    // Pro = tiene API key Y el modo del cliente lo permite
+    const isPro = () => !!(window.GROQ_API_KEY) &&
+        (typeof CLIENT_CONFIG === 'undefined' ||
+         CLIENT_CONFIG.type === 'ADMIN' ||
+         CLIENT_CONFIG.hasProMode === true);
 
     // ── Abrir modal ──────────────────────────────────────────────
     function openEditFieldModal(span) {
@@ -555,6 +559,24 @@ if (applyTemplateBtn && normalTemplateDropdown) {
         if (ctx && para) {
             const full = para.innerText || para.textContent;
             ctx.textContent = full.length > 90 ? full.slice(0, 87) + '…' : full;
+        }
+
+        // C1: Extraer nombre del campo (texto del párrafo ANTES del span)
+        const title = document.getElementById('editFieldModalTitle');
+        if (title && para) {
+            let labelText = '';
+            for (const node of para.childNodes) {
+                if (node === span || (node.nodeType === 1 && node.contains && node.contains(span))) break;
+                labelText += node.textContent || '';
+            }
+            labelText = labelText.trim().replace(/:+\s*$/, '').trim();
+            // Si hay varios segmentos con ':', tomar el último
+            const colonIdx = labelText.lastIndexOf(':');
+            if (colonIdx >= 0) labelText = labelText.slice(colonIdx + 1).trim();
+            if (labelText.length > 40) labelText = labelText.slice(0, 40) + '…';
+            title.textContent = labelText
+                ? '✏️ ' + labelText.charAt(0).toUpperCase() + labelText.slice(1)
+                : '✏️ Completar campo';
         }
 
         // Limpiar estado
@@ -677,6 +699,16 @@ if (applyTemplateBtn && normalTemplateDropdown) {
             _stopRecordingEF();
         }
     });
+
+    // C2: Dejar en blanco — elimina el span del DOM
+    function clearFieldValue() {
+        if (!_targetSpan) return;
+        _targetSpan.remove();
+        const editorEl = document.getElementById('editor');
+        if (editorEl) editorEl.dispatchEvent(new Event('input', { bubbles: true }));
+        closeEditFieldModal();
+    }
+    document.getElementById('btnBlankEditField')?.addEventListener('click', clearFieldValue);
 
     // ── Confirmar ─────────────────────────────────────────────────
     document.getElementById('btnConfirmEditField')?.addEventListener('click', () => {
