@@ -28,6 +28,10 @@ if (transcribeBtn) {
         let batchCancelled = false;
         const shouldJoin = chkJoinAudios ? chkJoinAudios.checked : false;
 
+        // Limpiar transcripciones anteriores para empezar con pestañas frescas
+        window.transcriptions = [];
+        window.activeTabIndex = 0;
+
         try {
             for (let i = 0; i < window.uploadedFiles.length; i++) {
                 const item = window.uploadedFiles[i];
@@ -69,19 +73,23 @@ if (transcribeBtn) {
                     console.error('Transcription failed after all attempts:', err);
                     item.status = 'error';
                     const errorInfo = classifyTranscriptionError(err.message);
-                    const isBatch = shouldJoin && pending.length > 1;
+                    const isMultiFile = pending.length > 1;
 
-                    if (isBatch) {
-                        // Batch mode: ask user whether to continue without this audio
+                    if (shouldJoin && isMultiFile) {
+                        // Modo unir + múltiples archivos: preguntar si continuar o cancelar todo
                         const decision = await askBatchDecision(item.file.name, done + 1, pending.length);
                         if (decision === 'cancel') {
                             batchCancelled = true;
                             break;
                         }
-                        // 'continue': mark as skipped and go on
+                        // 'continue': saltear este archivo y seguir
+                        skippedFiles.push(item.file.name);
+                    } else if (!shouldJoin && isMultiFile) {
+                        // Modo pestañas separadas + múltiples archivos: saltear con toast, NO bloquear
+                        showToast(`❌ "${item.file.name}" no pudo transcribirse (${errorInfo.type}). Continuando con los demás...`, 'error');
                         skippedFiles.push(item.file.name);
                     } else {
-                        // Single/individual mode: offer repair tools
+                        // Archivo único: ofrecer herramientas de reparación
                         const repairedFile = await showAudioRepairModal(item.file, errorInfo);
                         if (repairedFile) {
                             if (processingText) processingText.textContent = `Reintentando con audio reparado...`;

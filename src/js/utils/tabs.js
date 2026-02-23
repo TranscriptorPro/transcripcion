@@ -27,7 +27,13 @@ window.createTabs = function () {
         tab.className = `tab ${index === window.activeTabIndex ? 'active' : ''}`;
 
         const titleSpan = document.createElement('span');
-        titleSpan.textContent = `Transcripción ${index + 1}`;
+        // Mostrar nombre del archivo si está disponible, sino número de pestaña
+        const rawName = item.fileName || '';
+        const displayName = rawName
+            ? rawName.replace(/\.[^/.]+$/, '').substring(0, 28) + (rawName.replace(/\.[^/.]+$/, '').length > 28 ? '…' : '')
+            : `Transcripción ${index + 1}`;
+        titleSpan.textContent = displayName;
+        titleSpan.title = rawName || `Transcripción ${index + 1}`; // tooltip con nombre completo
         tab.appendChild(titleSpan);
 
         const closeBtn = document.createElement('button');
