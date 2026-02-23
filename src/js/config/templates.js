@@ -595,7 +595,7 @@ Hallazgos (lesiones, estenosis %, dominancia) o s/p. Incluir ramas si fueron eva
 ## CONCLUSIÓN
 Mencionar SOLO los vasos con lesiones significativas, tipo de enfermedad (uni/bi/trivascular) y recomendación terapéutica. No repetir vasos sin lesiones.
 
-REGLA DE CONCLUSIÓN: Menciona SOLO los vasos con lesiones significativas. Podés incluir el tipo de enfermedad coronaria (uni/bi/trivascular) si se puede inferir directamente de los hallazgos dictados. PROHIBIDO: inventar valores, porcentajes o datos que no estén en la transcripción. PROHIBIDO: indicar tratamientos concretos (stent, CABG, medicación) si el médico no los mencionó explícitamente.
+REGLA DE CONCLUSIÓN: Estructura la conclusión en una sola oración o párrafo corto siguiendo este orden exacto: (1) tipo de enfermedad coronaria (ej: "Enfermedad coronaria univascular"), (2) cada vaso con lesión mencionado UNA SOLA VEZ con su localización y porcentaje de estenosis. NO repitas el mismo dato dos veces. NO reescribas lo que ya dijiste en el punto (1) con otras palabras. PROHIBIDO: inventar valores o datos que no estén en la transcripción. PROHIBIDO: indicar tratamientos concretos (stent, CABG, medicación) si el médico no los mencionó explícitamente.
 IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si un vaso no fue evaluado ni mencionado, omití su sección o escribí s/p.`
     },
     ecg: {
