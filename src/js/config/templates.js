@@ -370,8 +370,8 @@ Hallazgos o s/p — incluir solo si fue evaluada
 ## CONCLUSIÓN
 Mencionar SOLO los hallazgos positivos o patológicos detectados, como párrafo fluido. No repetir datos normales.
 
-REGLA CRÍTICA: Si un órgano no presenta hallazgos patológicos, su sección debe contener únicamente la palabra s/p. La conclusión NO debe incluir órganos con s/p.
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si un órgano no fue evaluado, no incluyas su sección.`
+REGLA DE CONCLUSIÓN: La conclusión debe mencionar Únicamente los hallazgos patológicos o positivos. No repetir descripciones de normalidad. No agregar recomendaciones ni interpretaciones que no estén en la transcripción.
+IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si una estructura no fue evaluada ni mencionada, omití su sección o escribí s/p.`
     },
 
     // ── ENDOSCOPÍA ──────────────────────────────────────────────
@@ -413,8 +413,8 @@ Biopsias tomadas (localización, número), polipectomías, otras intervenciones.
 ## CONCLUSIÓN
 Mencionar SOLO los hallazgos positivos o patológicos detectados, como párrafo fluido. No repetir datos normales.
 
-REGLA CRÍTICA: Si un segmento no presenta hallazgos patológicos, su sección debe contener únicamente la palabra s/p. La conclusión NO debe incluir segmentos con s/p.
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción.`
+REGLA DE CONCLUSIÓN: La conclusión debe mencionar únicamente los hallazgos patológicos o positivos. No repetir descripciones de normalidad. No agregar recomendaciones ni interpretaciones que no estén en la transcripción.
+IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si un segmento no fue evaluado ni mencionado, omití su sección o escribí s/p.`
     },
     colonoscopia: {
         name: "Colonoscopía",
@@ -454,8 +454,8 @@ Biopsias, polipectomías (localización, tamaño, morfología, técnica), otras 
 ## CONCLUSIÓN
 Mencionar SOLO los hallazgos positivos o patológicos detectados, como párrafo fluido. No repetir datos normales.
 
-REGLA CRÍTICA: Si un segmento no presenta hallazgos patológicos, su sección debe contener únicamente la palabra s/p. La conclusión NO debe incluir segmentos con s/p.
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción.`
+REGLA DE CONCLUSIÓN: La conclusión debe mencionar únicamente los hallazgos patológicos o positivos. No repetir descripciones de normalidad. No agregar recomendaciones ni interpretaciones que no estén en la transcripción.
+IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si un segmento no fue evaluado ni mencionado, omití su sección o escribí s/p.`
     },
     broncoscopia: {
         name: "Broncoscopía",
@@ -595,8 +595,8 @@ Hallazgos (lesiones, estenosis %, dominancia) o s/p. Incluir ramas si fueron eva
 ## CONCLUSIÓN
 Mencionar SOLO los vasos con lesiones significativas, tipo de enfermedad (uni/bi/trivascular) y recomendación terapéutica. No repetir vasos sin lesiones.
 
-REGLA CRÍTICA: Si un vaso no presenta lesiones, su sección debe contener únicamente la palabra s/p. La conclusión NO debe incluir vasos con s/p.
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción.`
+REGLA DE CONCLUSIÓN: La conclusión debe mencionar únicamente los hallazgos patológicos o positivos (vasos con lesiones). No repetir vasos sin lesiones. No agregar recomendaciones ni interpretaciones que no estén explícitamente en la transcripción.
+IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si un vaso no fue evaluado ni mencionado, omití su sección o escribí s/p.`
     },
     ecg: {
         name: "ECG",
