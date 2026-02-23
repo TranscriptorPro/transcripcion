@@ -10,6 +10,8 @@ window.savePatientToHistory = function (patient) {
     window.patientHistory.unshift(patient);
     if (window.patientHistory.length > MAX_PATIENT_HISTORY) window.patientHistory.pop();
     localStorage.setItem('patient_history', JSON.stringify(window.patientHistory));
+    // G2: puente — también guardar en el registro permanente (patientRegistry)
+    if (typeof savePatientToRegistry === 'function') savePatientToRegistry(patient);
 }
 
 window.populatePatientDatalist = function () {

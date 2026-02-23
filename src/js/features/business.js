@@ -166,6 +166,7 @@ function _initCommonModules() {
     if (typeof initWorkplaceManagement === 'function') initWorkplaceManagement();
     if (typeof initStructurer === 'function') initStructurer();
     if (typeof initContact === 'function') initContact();
+    if (typeof initPatientRegistryPanel === 'function') initPatientRegistryPanel();
 }
 
 // ─── Onboarding de cliente: primer uso ───────────────────────────────────────

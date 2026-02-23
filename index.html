@@ -460,9 +460,13 @@
                     </p>
                     <!-- Buscador del registro de pacientes -->
                     <div class="field-group" style="margin-bottom:0.9rem;">
-                        <label style="font-size:0.8rem;">🔍 Buscar paciente anterior (apellido o DNI)</label>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.3rem;">
+                            <label style="font-size:0.8rem;">&#x1F50D; Buscar paciente anterior (apellido o DNI)</label>
+                            <button type="button" id="btnOpenRegistryPanel" class="btn btn-secondary"
+                                style="padding:.2rem .6rem;font-size:.72rem;">&#x1F4CB; Gestionar registro</button>
+                        </div>
                         <input type="text" id="reqPatientSearch" class="toolbar-input" style="width:100%;"
-                            placeholder="Escribí apellido o DNI para autocompletar..."
+                            placeholder="Escrib&#237; apellido o DNI para autocompletar..."
                             list="reqPatientDatalist" autocomplete="off">
                         <datalist id="reqPatientDatalist"></datalist>
                     </div>
@@ -1074,6 +1078,73 @@
         <script src="src/js/features/business.js"></script>
         <script src="src/js/features/pdfPreview.js"></script>
         <script src="src/js/features/pdfMaker.js"></script>
+
+        <!-- G1: Modal Panel Registro de Pacientes -->
+        <div class="modal-overlay" id="registryPanelOverlay">
+            <div class="modal" style="max-width:760px;">
+                <div class="modal-header">
+                    <h3 style="margin:0;">&#x1F4CB; Registro de Pacientes</h3>
+                    <button class="btn-icon" id="btnCloseRegistryPanel" title="Cerrar">&times;</button>
+                </div>
+                <div class="modal-body" style="padding:1rem 1.25rem;">
+                    <!-- Barra de búsqueda + acciones -->
+                    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.85rem;">
+                        <input type="text" id="registrySearch" class="toolbar-input"
+                            style="flex:1;min-width:160px;"
+                            placeholder="&#x1F50D; Filtrar por nombre o DNI...">
+                        <button class="btn btn-secondary" id="btnExportRegistryJson" style="font-size:.78rem;">&#x2B07; JSON</button>
+                        <button class="btn btn-secondary" id="btnExportRegistryCsv"  style="font-size:.78rem;">&#x2B07; CSV</button>
+                        <label class="btn btn-secondary" style="font-size:.78rem;cursor:pointer;">
+                            &#x2B06; Importar JSON
+                            <input type="file" id="inputImportRegistry" accept=".json" style="display:none;">
+                        </label>
+                    </div>
+                    <!-- Formulario de edición inline (oculto por defecto) -->
+                    <div id="registryEditForm" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:.4rem;padding:.75rem;margin-bottom:.85rem;">
+                        <p style="font-size:.8rem;font-weight:600;margin-bottom:.5rem;">&#x270F;&#xFE0F; Editar paciente</p>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
+                            <div><label class="sidebar-label">Nombre</label>
+                                <input id="reName" type="text" class="toolbar-input" style="width:100%;"></div>
+                            <div><label class="sidebar-label">DNI</label>
+                                <input id="reDni" type="text" class="toolbar-input" style="width:100%;"></div>
+                            <div><label class="sidebar-label">Edad</label>
+                                <input id="reAge" type="number" class="toolbar-input" style="width:100%;"></div>
+                            <div><label class="sidebar-label">Sexo</label>
+                                <select id="reSex" class="toolbar-input" style="width:100%;">
+                                    <option value="">--</option>
+                                    <option value="M">M</option>
+                                    <option value="F">F</option>
+                                    <option value="X">X</option>
+                                </select></div>
+                            <div><label class="sidebar-label">Obra Social</label>
+                                <input id="reInsurance" type="text" class="toolbar-input" style="width:100%;"></div>
+                            <div><label class="sidebar-label">N&#xBA; Afiliado</label>
+                                <input id="reAffiliateNum" type="text" class="toolbar-input" style="width:100%;"></div>
+                        </div>
+                        <div style="display:flex;gap:.5rem;margin-top:.5rem;justify-content:flex-end;">
+                            <button id="btnCancelRegistryEdit" class="btn btn-secondary" style="font-size:.78rem;">Cancelar</button>
+                            <button id="btnSaveRegistryEdit"  class="btn btn-primary"   style="font-size:.78rem;">&#x1F4BE; Guardar</button>
+                        </div>
+                    </div>
+                    <!-- Tabla -->
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+                            <thead>
+                                <tr style="border-bottom:1px solid var(--border);">
+                                    <th style="text-align:left;padding:.4rem .5rem;">Nombre</th>
+                                    <th style="text-align:left;padding:.4rem .5rem;">DNI</th>
+                                    <th style="text-align:left;padding:.4rem .5rem;">Edad</th>
+                                    <th style="text-align:left;padding:.4rem .5rem;">&#xDA;ltima visita</th>
+                                    <th style="text-align:center;padding:.4rem .5rem;">Visitas</th>
+                                    <th style="text-align:center;padding:.4rem .5rem;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="registryTbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- K3: Modal Contacto -->
         <div class="modal-overlay" id="contactModalOverlay">

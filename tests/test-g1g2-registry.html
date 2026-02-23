@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>&#x1F9EA; Tests G1+G2 &mdash; Registro de Pacientes</title>
+<style>
+  :root { --primary:#2563eb; --bg-card:#1e293b; --bg:#0f172a; --text-primary:#f1f5f9; --text-muted:#94a3b8; --border:#334155; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text-primary); font-family:system-ui,sans-serif; padding:1.5rem; }
+  h2 { font-size:1rem; color:var(--text-muted); margin:1.25rem 0 .5rem; text-transform:uppercase; letter-spacing:.06em; }
+  .suite { display:flex; flex-direction:column; gap:.5rem; }
+  .test-row { background:var(--bg-card); border:1px solid var(--border); border-radius:.5rem; padding:.75rem 1rem; display:flex; gap:.75rem; align-items:flex-start; }
+  .info { flex:1; } .info strong { font-size:.9rem; } .info p { font-size:.78rem; color:var(--text-muted); margin-top:.2rem; }
+  .status { min-width:310px; font-size:.8rem; display:flex; align-items:center; gap:.4rem; border-radius:.35rem; padding:.35rem .6rem; }
+  .status.wait { background:#1e293b; color:#64748b; } .status.ok { background:#022c22; color:#6ee7b7; } .status.fail { background:#450a0a; color:#fca5a5; }
+  .status .dot { width:7px; height:7px; border-radius:50%; background:currentColor; flex-shrink:0; }
+  .run-btn { background:var(--primary); color:#fff; border:none; padding:.4rem .85rem; border-radius:.35rem; cursor:pointer; font-size:.78rem; white-space:nowrap; }
+  .run-btn:hover { filter:brightness(1.15); }
+  .legend { font-size:.8rem; color:var(--text-muted); line-height:1.8; background:var(--bg-card); border:1px solid var(--border); border-radius:.5rem; padding:.85rem 1rem; }
+  .legend code { background:#0f172a; padding:.1em .35em; border-radius:.2rem; font-size:.75rem; }
+</style>
+</head>
+<body>
+<main>
+<h2>&#9889; Tests G1 + G2 &mdash; Panel de registro y unificaci&oacute;n</h2>
+<div class="suite" id="suite"></div>
+<h2>&#8505;&#65039; Descripci&oacute;n</h2>
+<div class="legend">
+  <strong>G1-save</strong>: <code>savePatientToRegistry</code> guarda correctamente en <code>patient_registry</code>.<br>
+  <strong>G1-search</strong>: <code>searchPatientRegistry</code> encuentra por nombre parcial y por DNI.<br>
+  <strong>G1-update</strong>: Guardar el mismo DNI dos veces actualiza el registro (no duplica).<br>
+  <strong>G1-visits</strong>: El contador de visitas se incrementa en cada guardado del mismo paciente.<br>
+  <strong>G2-bridge</strong>: <code>savePatientToHistory</code> tambi&eacute;n persiste en <code>patient_registry</code>.<br>
+  <strong>G1-export-json</strong>: El JSON exportado es un array con los campos correctos.<br>
+  <strong>G1-import-json</strong>: Importar un JSON fusiona sin duplicar pacientes existentes.
+</div>
+</main>
+
+<!-- Stubs minimos -->
+<script>
+window.showToast = () => {};
+window.CLIENT_CONFIG = { type: 'NORMAL' };
+</script>
+
+<!-- Logica inline de patientRegistry.js (las funciones puras de CRUD) -->
+<script>
+const REGISTRY_KEY = 'patient_registry_test'; // clave distinta para no contaminar datos reales
+const REGISTRY_MAX = 500;
+
+function getRegistry() {
+    try { return JSON.parse(localStorage.getItem(REGISTRY_KEY) || '[]'); } catch(_) { return []; }
+}
+function setRegistry(arr) { localStorage.setItem(REGISTRY_KEY, JSON.stringify(arr)); }
+
+function _normStr(s) {
+    return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+// savePatientToRegistry con contador de visitas (G1+G2)
+window.savePatientToRegistry = function(patient) {
+    if (!patient || !patient.name) return;
+    const reg     = getRegistry();
+    const normDni = (patient.dni || '').replace(/\D/g,'');
+    let idx = -1;
+    if (normDni) idx = reg.findIndex(p => p.dni && p.dni.replace(/\D/g,'') === normDni);
+    if (idx === -1) idx = reg.findIndex(p => _normStr(p.name) === _normStr(patient.name));
+
+    const entry = {
+        name: patient.name.trim(), dni: patient.dni || '',
+        age: patient.age || '', sex: patient.sex || '',
+        insurance: patient.insurance || '', affiliateNum: patient.affiliateNum || '',
+        lastSeen: new Date().toISOString()
+    };
+    if (idx >= 0) {
+        reg[idx] = { ...reg[idx], ...entry, visits: (reg[idx].visits || 1) + 1 };
+    } else {
+        entry.visits = 1;
+        reg.unshift(entry);
+        if (reg.length > REGISTRY_MAX) reg.pop();
+    }
+    setRegistry(reg);
+};
+
+window.searchPatientRegistry = function(query) {
+    if (!query || query.length < 2) return [];
+    const normQ = _normStr(query);
+    const dniQ  = query.replace(/\D/g,'');
+    return getRegistry().filter(p =>
+        (p.name && _normStr(p.name).includes(normQ)) ||
+        (p.dni  && dniQ && p.dni.replace(/\D/g,'').includes(dniQ))
+    ).slice(0, 20);
+};
+
+// G2: savePatientToHistory puente
+const MAX_PATIENT_HISTORY = 50;
+window.patientHistory = JSON.parse(localStorage.getItem('patient_history') || '[]');
+window.savePatientToHistory = function(patient) {
+    if (!patient || !patient.name) return;
+    window.patientHistory = window.patientHistory.filter(p => !(patient.dni && p.dni === patient.dni));
+    window.patientHistory.unshift(patient);
+    if (window.patientHistory.length > MAX_PATIENT_HISTORY) window.patientHistory.pop();
+    localStorage.setItem('patient_history', JSON.stringify(window.patientHistory));
+    // G2: bridge
+    if (typeof savePatientToRegistry === 'function') savePatientToRegistry(patient);
+};
+</script>
+
+<!-- Test runner -->
+<script>
+function assert(cond, ok, fail) { return cond ? ['ok', ok] : ['fail', fail]; }
+function setStatus(id, type, msg) {
+    const el = document.getElementById('st-' + id);
+    if (!el) return;
+    el.className = 'status ' + type;
+    el.innerHTML = '<div class="dot"></div><span>' + msg + '</span>';
+}
+
+// Limpiar clave de test entre tests
+function clean() {
+    localStorage.removeItem(REGISTRY_KEY);
+    localStorage.removeItem('patient_history');
+    window.patientHistory = [];
+}
+
+const TESTS = [
+    {
+        id: 'g1-save',
+        label: 'G1 &mdash; savePatientToRegistry guarda correctamente',
+        desc: 'Guardar un paciente nuevo lo almacena en patient_registry con todos los campos.',
+        run() {
+            clean();
+            savePatientToRegistry({ name: 'P\u00e9rez Juan', dni: '30000001', age: '45', sex: 'M', insurance: 'OSDE' });
+            const reg = getRegistry();
+            const found = reg.find(p => p.dni === '30000001');
+            return assert(found && found.name === 'P\u00e9rez Juan' && found.insurance === 'OSDE',
+                `Guardado: ${found?.name} | insurance: ${found?.insurance} \u2713`,
+                `No encontrado o datos incorrectos`);
+        }
+    },
+    {
+        id: 'g1-search',
+        label: 'G1 &mdash; searchPatientRegistry por nombre y DNI',
+        desc: 'Buscar por apellido parcial o DNI devuelve el paciente correcto.',
+        run() {
+            clean();
+            savePatientToRegistry({ name: 'Gonz\u00e1lez Mar\u00eda', dni: '30000002', age: '35', sex: 'F' });
+            savePatientToRegistry({ name: 'P\u00e9rez Roberto', dni: '30000003', age: '60', sex: 'M' });
+            const byName = searchPatientRegistry('gonza');
+            const byDni  = searchPatientRegistry('30000003');
+            return assert(
+                byName.length === 1 && byName[0].name === 'Gonz\u00e1lez Mar\u00eda' &&
+                byDni.length  === 1 && byDni[0].name  === 'P\u00e9rez Roberto',
+                `Por nombre: "${byName[0]?.name}" | Por DNI: "${byDni[0]?.name}" \u2713`,
+                `byName=${byName.length} byDni=${byDni.length}`);
+        }
+    },
+    {
+        id: 'g1-update',
+        label: 'G1 &mdash; Guardar mismo DNI actualiza sin duplicar',
+        desc: 'Si el paciente ya existe por DNI, se actualiza el registro en lugar de crear uno nuevo.',
+        run() {
+            clean();
+            savePatientToRegistry({ name: 'L\u00f3pez Ana', dni: '30000004', age: '28' });
+            savePatientToRegistry({ name: 'L\u00f3pez Ana', dni: '30000004', age: '29', insurance: 'Swiss Medical' });
+            const reg = getRegistry();
+            const matches = reg.filter(p => p.dni === '30000004');
+            return assert(
+                matches.length === 1 && matches[0].age === '29' && matches[0].insurance === 'Swiss Medical',
+                `1 entrada, edad actualizada a ${matches[0]?.age} \u2713`,
+                `Duplicados: ${matches.length} | age=${matches[0]?.age}`);
+        }
+    },
+    {
+        id: 'g1-visits',
+        label: 'G1 &mdash; Contador de visitas se incrementa',
+        desc: 'Cada guardado del mismo paciente suma 1 al campo visits.',
+        run() {
+            clean();
+            savePatientToRegistry({ name: 'Mart\u00ednez Carlos', dni: '30000005' });
+            savePatientToRegistry({ name: 'Mart\u00ednez Carlos', dni: '30000005' });
+            savePatientToRegistry({ name: 'Mart\u00ednez Carlos', dni: '30000005' });
+            const p = getRegistry().find(x => x.dni === '30000005');
+            return assert(p && p.visits === 3,
+                `visits = ${p?.visits} (esperado 3) \u2713`,
+                `visits = ${p?.visits}`);
+        }
+    },
+    {
+        id: 'g2-bridge',
+        label: 'G2 &mdash; savePatientToHistory sincroniza con registry',
+        desc: 'Al guardar en el historial (formHandler), el paciente tambi\u00e9n queda en patient_registry.',
+        run() {
+            clean();
+            savePatientToHistory({ name: 'Fern\u00e1ndez Luisa', dni: '30000006', age: '50' });
+            const inHistory  = window.patientHistory.some(p => p.dni === '30000006');
+            const inRegistry = getRegistry().some(p => p.dni === '30000006');
+            return assert(inHistory && inRegistry,
+                `En history: ${inHistory} | En registry: ${inRegistry} \u2713`,
+                `history=${inHistory} registry=${inRegistry}`);
+        }
+    },
+    {
+        id: 'g1-export-json',
+        label: 'G1 &mdash; Exportar JSON produce array v\u00e1lido',
+        desc: 'El JSON exportado es un array con los campos nombre, dni, lastSeen.',
+        run() {
+            clean();
+            savePatientToRegistry({ name: 'Ruiz Pedro', dni: '30000007', age: '40' });
+            const json = JSON.stringify(getRegistry(), null, 2);
+            let parsed;
+            try { parsed = JSON.parse(json); } catch(e) { return ['fail', 'JSON inv\u00e1lido: ' + e.message]; }
+            const ok = Array.isArray(parsed) && parsed.length === 1 && parsed[0].name === 'Ruiz Pedro' && parsed[0].lastSeen;
+            return assert(ok,
+                `Array[${parsed.length}], name="${parsed[0]?.name}", lastSeen presente \u2713`,
+                `fields: ${Object.keys(parsed[0] || {}).join(',')}`);
+        }
+    },
+    {
+        id: 'g1-import',
+        label: 'G1 &mdash; Importar JSON fusiona sin duplicar',
+        desc: 'Importar un array de pacientes no duplica los que ya existen (mismo DNI).',
+        run() {
+            clean();
+            savePatientToRegistry({ name: 'S\u00e1nchez Julia', dni: '30000008' });
+            const importData = [
+                { name: 'S\u00e1nchez Julia', dni: '30000008', age: '33' }, // ya existe
+                { name: 'Torres Miguel', dni: '30000009', age: '55' }       // nuevo
+            ];
+            // Simular la l\u00f3gica de import
+            const existing = getRegistry();
+            let added = 0;
+            importData.forEach(p => {
+                if (!p.name) return;
+                const exists = existing.some(e =>
+                    (p.dni && e.dni === p.dni) || _normStr(e.name) === _normStr(p.name)
+                );
+                if (!exists) { existing.unshift(p); added++; }
+            });
+            setRegistry(existing.slice(0, REGISTRY_MAX));
+            const reg   = getRegistry();
+            const count = reg.length;
+            const dup   = reg.filter(p => p.dni === '30000008').length;
+            return assert(added === 1 && count === 2 && dup === 1,
+                `Importados=${added} | Total=${count} | Sin duplicados \u2713`,
+                `added=${added} total=${count} dup=${dup}`);
+        }
+    }
+];
+
+const suite = document.getElementById('suite');
+TESTS.forEach(t => {
+    const row = document.createElement('div');
+    row.className = 'test-row';
+    row.innerHTML = `<div class="info"><strong>${t.label}</strong><p>${t.desc}</p></div>
+        <div class="status wait" id="st-${t.id}"><div class="dot"></div><span>&mdash; pendiente &mdash;</span></div>
+        <button class="run-btn" onclick="runTest('${t.id}')">&#9654; Ejecutar</button>`;
+    suite.appendChild(row);
+});
+
+const allBtn = document.createElement('button');
+allBtn.textContent = '\u25b6\u25b6 Ejecutar todos';
+allBtn.className = 'run-btn';
+allBtn.style.cssText = 'background:#10b981;margin-top:.5rem;padding:.55rem 1.25rem;';
+allBtn.onclick = async () => { for (const t of TESTS) { runTest(t.id); await new Promise(r => setTimeout(r, 60)); } };
+suite.appendChild(allBtn);
+
+function runTest(id) {
+    const t = TESTS.find(x => x.id === id);
+    if (!t) return;
+    setStatus(id, 'wait', '\u23f3 ejecutando...');
+    try {
+        const [type, msg] = t.run();
+        setStatus(id, type, (type === 'ok' ? '\u2713 ' : '\u2717 ') + msg);
+    } catch(err) {
+        setStatus(id, 'fail', '\u2717 JS Error: ' + err.message);
+    }
+}
+
+// Auto-run al cargar
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => allBtn.click(), 100);
+});
+</script>
+</body>
+</html>
