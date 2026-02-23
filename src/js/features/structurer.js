@@ -209,6 +209,67 @@ function parseAIResponse(raw) {
     return { body: markdownToHtml(body.trim()), note };
 }
 
+// ─── Toast interactivo: confirmar/cambiar plantilla detectada ─────────────────
+// Devuelve una Promise que resuelve con la clave de plantilla elegida.
+// Auto-confirma tras 5 s si el usuario no interactúa.
+function promptTemplateSelection(detectedKey) {
+    return new Promise((resolve) => {
+        const tmpl = window.MEDICAL_TEMPLATES || {};
+        const name = tmpl[detectedKey]?.name || detectedKey;
+
+        // Eliminar toast anterior si existiera
+        const prev = document.getElementById('toastTemplate');
+        if (prev) prev.remove();
+
+        const el = document.createElement('div');
+        el.id = 'toastTemplate';
+        el.className = 'toast-action';
+        el.innerHTML = `
+            <span class="toast-action__text">&#128269; Plantilla: <strong>${name}</strong></span>
+            <button class="toast-action__btn" id="toastTemplateCambiar">Cambiar</button>
+        `;
+        document.body.appendChild(el);
+        requestAnimationFrame(() => el.classList.add('show'));
+
+        let timer;
+        const done = (key) => {
+            clearTimeout(timer);
+            el.classList.remove('show');
+            setTimeout(() => el.remove(), 350);
+            resolve(key);
+        };
+
+        // Auto-confirma en 5 s
+        timer = setTimeout(() => done(detectedKey), 5000);
+
+        document.getElementById('toastTemplateCambiar').addEventListener('click', () => {
+            clearTimeout(timer);
+            // Filtrar por allowedTemplates si existe (Bloque 4)
+            const allowed = (typeof CLIENT_CONFIG !== 'undefined' && Array.isArray(CLIENT_CONFIG.allowedTemplates) && CLIENT_CONFIG.allowedTemplates.length)
+                ? CLIENT_CONFIG.allowedTemplates
+                : Object.keys(tmpl).filter(k => k !== 'generico');
+            const options = allowed
+                .map(k => `<option value="${k}"${k === detectedKey ? ' selected' : ''}>${tmpl[k]?.name || k}</option>`)
+                .join('');
+            el.innerHTML = `
+                <select id="toastTemplateSelect" class="toast-action__select">${options}</select>
+                <button class="toast-action__btn" id="toastTemplateConfirm">&#10003; Confirmar</button>
+                <button class="toast-action__btn toast-action__btn--ghost" id="toastTemplateCancel">&#10005;</button>
+            `;
+            document.getElementById('toastTemplateConfirm').addEventListener('click', () => {
+                const sel = document.getElementById('toastTemplateSelect');
+                done(sel ? sel.value : detectedKey);
+            });
+            document.getElementById('toastTemplateCancel').addEventListener('click', () => done(detectedKey));
+            // 10 s adicionales para que el usuario elija
+            timer = setTimeout(() => {
+                const sel = document.getElementById('toastTemplateSelect');
+                done(sel ? sel.value : detectedKey);
+            }, 10000);
+        });
+    });
+}
+
 async function structureTranscription(text, templateKey) {
     if (!GROQ_API_KEY) {
         showToast('Configura la API Key para el Modo Pro', 'error');
@@ -355,7 +416,8 @@ window.initStructurer = function () {
                 if (!currentTemplate || currentTemplate === 'generico') {
                     const detected = autoDetectTemplateKey(rawText);
                     if (detected !== 'generico') {
-                        currentTemplate = detected;
+                        // Ofrecer al usuario confirmar o cambiar la plantilla (5 s timeout)
+                        currentTemplate = await promptTemplateSelection(detected);
                         autoDetected = true;
                     } else {
                         currentTemplate = 'generico';

@@ -1062,6 +1062,77 @@
             flex-shrink: 0;
         }
 
+        /* ─── Toast de acción (E1: selección de plantilla) ─── */
+        .toast-action {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 10002;
+            background: var(--bg-card);
+            border: 1.5px solid var(--primary);
+            border-radius: var(--radius-sm);
+            padding: 0.7rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+            font-size: 0.84rem;
+            color: var(--text-primary);
+            transform: translateY(120px);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            max-width: 92vw;
+            flex-wrap: wrap;
+        }
+
+        .toast-action.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast-action__text strong {
+            color: var(--primary);
+        }
+
+        .toast-action__btn {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 0.32rem 0.8rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            white-space: nowrap;
+            line-height: 1.4;
+        }
+
+        .toast-action__btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .toast-action__btn--ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .toast-action__btn--ghost:hover {
+            background: var(--bg-hover, rgba(0,0,0,0.06));
+            color: var(--text-primary);
+        }
+
+        .toast-action__select {
+            background: var(--bg-input, var(--bg-card));
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 0.3rem 0.5rem;
+            font-size: 0.82rem;
+            max-width: 220px;
+            cursor: pointer;
+        }
+
         /* Help Modal */
         .modal-overlay {
             position: fixed;
