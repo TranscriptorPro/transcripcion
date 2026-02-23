@@ -51,8 +51,12 @@
             color: var(--text-primary);
         }
 
-        [data-theme="dark"] table tr:hover td {
-            background: var(--bg-card);
+        [data-theme="dark"] .users-table tbody tr:hover td {
+            background: #253448;
+        }
+
+        [data-theme="dark"] .user-matricula {
+            color: var(--text-secondary);
         }
 
         [data-theme="dark"] input,
@@ -394,16 +398,10 @@
 
         .users-table tbody tr {
             border-bottom: 1px solid var(--border);
-            transition: background 0.15s;
-            height: 60px;
         }
 
         .users-table tbody tr:last-child {
             border-bottom: none;
-        }
-
-        .users-table tbody tr:hover {
-            background: #f8fafc;
         }
 
         .users-table td {
@@ -413,15 +411,40 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            transition: background 0.15s;
+        }
+
+        .users-table tbody tr:hover td {
+            background: #f0fafa;
         }
 
         .users-table td.user-name-cell {
             white-space: normal;
-            max-width: 180px;
+            min-width: 150px;
+            max-width: 200px;
         }
 
-        .email-cell {
-            max-width: 200px;
+        .user-name-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .user-full-name {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .user-matricula {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
         }
 
         .text-center {
@@ -477,21 +500,34 @@
         }
 
         /* Action buttons */
+        .actions-cell {
+            white-space: nowrap;
+        }
+
         .btn-action {
             border: none;
             background: transparent;
             cursor: pointer;
-            font-size: 1.2rem;
-            padding: 0.3rem;
+            font-size: 1rem;
+            width: 32px;
+            height: 32px;
+            padding: 0;
             border-radius: 6px;
             transition: background 0.15s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             line-height: 1;
+            vertical-align: middle;
         }
 
-        .btn-edit:hover  { background: #e0f2fe; }
-        .btn-ban:hover   { background: #fee2e2; }
-        .btn-clone       { background: #fef9c3; color: #713f12; }
-        .btn-clone:hover { background: #fef08a; }
+        .btn-action:hover {
+            background: var(--bg-hover);
+        }
+
+        [data-theme="dark"] .btn-action:hover {
+            background: rgba(255,255,255,0.08);
+        }
 
         /* ── Modal ── */
         .modal-overlay {
@@ -1705,7 +1741,6 @@
                         <tr>
                             <th>ID</th>
                             <th>Nombre</th>
-                            <th>Email</th>
                             <th>Especialidad</th>
                             <th>Plan</th>
                             <th>Estado</th>
@@ -1717,7 +1752,7 @@
                     </thead>
                     <tbody id="tableBody">
                         <tr class="loading-row">
-                            <td colspan="10" class="text-center">⏳ Cargando usuarios...</td>
+                            <td colspan="9" class="text-center">⏳ Cargando usuarios...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -2549,7 +2584,7 @@
         function renderTable(users) {
             const tbody = document.getElementById('tableBody');
             if (!users || users.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" class="text-center">No hay usuarios registrados</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center">No hay usuarios registrados</td></tr>';
                 return;
             }
 
@@ -2572,8 +2607,7 @@
                 return `
                 <tr data-user-id="${id}" class="${isBanned ? 'row-banned' : ''}">
                     <td data-label="ID"><span class="user-id">${id}</span></td>
-                    <td data-label="Nombre" class="user-name-cell"><strong>${escapeHtml(user.Nombre)}</strong>${isActiveToday ? '<span class="active-indicator" title="Activo hoy">🔥</span>' : ''}<br><small class="text-muted">${escapeHtml(user.Matricula || '')}</small></td>
-                    <td data-label="Email" class="email-cell"><small>${escapeHtml(user.Email)}</small></td>
+                    <td data-label="Nombre" class="user-name-cell"><div class="user-name-wrap"><span class="user-full-name"><strong>${escapeHtml(user.Nombre)}</strong>${isActiveToday ? '<span class="active-indicator" title="Activo hoy">🔥</span>' : ''}</span><span class="user-matricula">${escapeHtml(user.Matricula || '')}</span></div></td>
                     <td data-label="Especialidad"><span class="badge badge-specialty">${escapeHtml(user.Especialidad)}</span></td>
                     <td data-label="Plan"><span class="badge badge-plan badge-${escapeHtml(plan)}">${escapeHtml(plan.toUpperCase())}</span></td>
                     <td data-label="Estado"><span class="status-badge status-${escapeHtml(user.Estado)}">${getStatusText(user.Estado)}</span></td>
@@ -2586,13 +2620,14 @@
                     </td>
                     <td data-label="Última Actividad" class="col-activity">${activityDisplay}</td>
                     <td data-label="Acciones" class="actions-cell">
-                        <button class="btn-action btn-edit" data-action="edit" data-user-id="${id}" title="Editar">✏️</button>
-                        <button class="btn-action" data-action="metrics" data-user-id="${id}" title="Ver Métricas" style="font-size:1rem;">📊</button>
-                        <button class="btn-action btn-clone" data-action="clone" data-user-id="${id}" title="Crear App para este usuario">📦</button>
-                        ${isTrial || isExpired ? `<button class="btn-action btn-activate" data-action="activate" data-user-id="${id}" title="Activar PRO">✅</button>` : ''}
+                        <button class="btn-action" data-action="edit" data-user-id="${id}" title="Editar">✏️</button>
+                        <button class="btn-action" data-action="metrics" data-user-id="${id}" title="Ver Métricas">📊</button>
+                        <button class="btn-action" data-action="clone" data-user-id="${id}" title="Crear App para este usuario">📦</button>
+                        <button class="btn-action" data-action="mail" data-user-id="${id}" title="Ver email: ${escapeHtml(user.Email)}">📧</button>
+                        ${isTrial || isExpired ? `<button class="btn-action" data-action="activate" data-user-id="${id}" title="Activar PRO">✅</button>` : ''}
                         <button class="btn-action" data-action="diag" data-user-id="${id}" title="Ver último diagnóstico">🔍</button>
                         <button class="btn-action" data-action="reqdiag" data-user-id="${id}" title="Solicitar diagnóstico remoto">📡</button>
-                        <button class="btn-action btn-ban"  data-action="ban"  data-user-id="${id}" title="${isBanned ? 'Desbloquear' : 'Bloquear'}">${isBanned ? '🔓' : '🚫'}</button>
+                        <button class="btn-action" data-action="ban" data-user-id="${id}" title="${isBanned ? 'Desbloquear' : 'Bloquear'}">${isBanned ? '🔓' : '🚫'}</button>
                     </td>
                 </tr>`;
             }).join('');
@@ -2816,7 +2851,7 @@
         async function loadDashboard(silent = false) {
             if (!silent) {
                 document.getElementById('tableBody').innerHTML =
-                    '<tr><td colspan="10" class="text-center">⏳ Cargando datos...</td></tr>';
+                    '<tr><td colspan="9" class="text-center">⏳ Cargando datos...</td></tr>';
             }
 
             try {
@@ -2829,7 +2864,7 @@
                 }
             } catch (error) {
                 document.getElementById('tableBody').innerHTML =
-                    `<tr><td colspan="10" class="text-center">❌ Error al cargar datos: ${escapeHtml(error.message)}</td></tr>`;
+                    `<tr><td colspan="9" class="text-center">❌ Error al cargar datos: ${escapeHtml(error.message)}</td></tr>`;
             }
         }
 
@@ -2867,6 +2902,10 @@
             else if (btn.dataset.action === 'activate') activateUser(userId);
             else if (btn.dataset.action === 'diag') openDiagModal(userId);
             else if (btn.dataset.action === 'reqdiag') requestDiagFromAdmin(userId);
+            else if (btn.dataset.action === 'mail') {
+                const user = allUsers.find(u => String(u.ID_Medico) === String(userId));
+                if (user?.Email) window.open('mailto:' + user.Email, '_blank');
+            }
         });
 
         document.getElementById('closeModal').addEventListener('click', closeEditModal);
