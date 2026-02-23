@@ -438,8 +438,10 @@
             line-height: 1;
         }
 
-        .btn-edit:hover { background: #e0f2fe; }
-        .btn-ban:hover  { background: #fee2e2; }
+        .btn-edit:hover  { background: #e0f2fe; }
+        .btn-ban:hover   { background: #fee2e2; }
+        .btn-clone       { background: #fef9c3; color: #713f12; }
+        .btn-clone:hover { background: #fef08a; }
 
         /* ── Modal ── */
         .modal-overlay {
@@ -450,7 +452,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 200;
+            z-index: 20000;
             padding: 1rem;
         }
 
@@ -2406,6 +2408,7 @@
                     <td data-label="Acciones" class="actions-cell">
                         <button class="btn-action btn-edit" data-action="edit" data-user-id="${id}" title="Editar">✏️</button>
                         <button class="btn-action" data-action="metrics" data-user-id="${id}" title="Ver Métricas" style="font-size:1rem;">📊</button>
+                        <button class="btn-action btn-clone" data-action="clone" data-user-id="${id}" title="Crear App para este usuario">📦</button>
                         ${isTrial || isExpired ? `<button class="btn-action btn-activate" data-action="activate" data-user-id="${id}" title="Activar PRO">✅</button>` : ''}
                         <button class="btn-action btn-ban"  data-action="ban"  data-user-id="${id}" title="${isBanned ? 'Desbloquear' : 'Bloquear'}">${isBanned ? '🔓' : '🚫'}</button>
                     </td>
@@ -2677,6 +2680,7 @@
             const userId = btn.dataset.userId;
             if (btn.dataset.action === 'edit') openEditUserModal(userId);
             else if (btn.dataset.action === 'metrics') openUserMetrics(userId);
+            else if (btn.dataset.action === 'clone') openCloneFactory(userId);
             else if (btn.dataset.action === 'ban') quickBan(userId);
             else if (btn.dataset.action === 'activate') activateUser(userId);
         });
@@ -2717,6 +2721,7 @@
                 closeUserMetrics();
                 closeNewUserModal();
                 closeEditUserModal();
+                closeCloneFactory();
             }
         });
 
@@ -2747,6 +2752,12 @@
                 if (e.target === this) closeEditUserModal();
             });
             document.getElementById('editUserForm')?.addEventListener('submit', handleEditUserSubmit);
+
+            // Fábrica de clones — listeners
+            document.getElementById('btnCloseCloneFactory')?.addEventListener('click', closeCloneFactory);
+            document.getElementById('cloneFactoryModal')?.addEventListener('click', function(e) {
+                if (e.target === this) closeCloneFactory();
+            });
         });
 
         // ========== NUEVO USUARIO ==========
@@ -2918,6 +2929,24 @@
         }
 
         // ========== FIN EDITAR USUARIO ==========
+
+        // ========== FÁBRICA DE CLONES ==========
+        function openCloneFactory(userId) {
+            const user = allUsers.find(u => String(u.ID_Medico) === String(userId));
+            if (!user) return;
+            // Rellenar datos en el modal
+            document.getElementById('cfUserId').textContent      = user.ID_Medico  || '—';
+            document.getElementById('cfUserName').textContent    = user.Nombre     || '—';
+            document.getElementById('cfMatricula').textContent   = user.Matricula  || '—';
+            document.getElementById('cfEspecialidad').textContent= user.Especialidad|| '—';
+            document.getElementById('cfPlan').textContent        = (user.Plan || 'trial').toUpperCase();
+            document.getElementById('cfEmail').textContent       = user.Email      || '—';
+            document.getElementById('cloneFactoryModal').style.display = 'flex';
+        }
+        function closeCloneFactory() {
+            document.getElementById('cloneFactoryModal').style.display = 'none';
+        }
+        // ========== FIN FÁBRICA DE CLONES ==========
 
         // Abrir modal
         document.getElementById('btnNewUser')?.addEventListener('click', () => {
@@ -3316,6 +3345,49 @@
     </div>
 
     <!-- Modal Nuevo Usuario -->
+    <!-- ── Fábrica de Clones Modal ── -->
+    <div class="modal-overlay" id="cloneFactoryModal" style="display:none;">
+        <div class="modal" style="max-width:620px;">
+            <div class="modal-header">
+                <h2>📦 Crear App para Usuario</h2>
+                <button class="modal-close" id="btnCloseCloneFactory">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:1rem 1.2rem;margin-bottom:1.2rem;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem 1.5rem;font-size:.88rem;">
+                        <div><span style="color:#64748b;">ID Médico:</span> <strong id="cfUserId">—</strong></div>
+                        <div><span style="color:#64748b;">Nombre:</span> <strong id="cfUserName">—</strong></div>
+                        <div><span style="color:#64748b;">Matrícula:</span> <strong id="cfMatricula">—</strong></div>
+                        <div><span style="color:#64748b;">Plan:</span> <strong id="cfPlan">—</strong></div>
+                        <div><span style="color:#64748b;">Especialidad:</span> <strong id="cfEspecialidad">—</strong></div>
+                        <div><span style="color:#64748b;">Email:</span> <strong id="cfEmail">—</strong></div>
+                    </div>
+                </div>
+                <div style="background:#fef9c3;border:1px solid #fde68a;border-radius:10px;padding:1rem 1.2rem;margin-bottom:1rem;">
+                    <p style="font-size:.85rem;color:#78350f;margin:0;">⚙️ <strong>Fábrica de Clones — próximamente</strong><br>
+                    Aquí se generará automáticamente una versión personalizada de la app con los datos de este médico
+                    (nombre, matrícula, ID, especialidades, plantillas permitidas, firma, colores) lista para distribuir.</p>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:.6rem;">
+                    <label style="font-size:.83rem;color:#64748b;">Seleccionar plantillas permitidas (próximamente)</label>
+                    <select disabled style="opacity:.5;cursor:not-allowed;">
+                        <option>Todas las plantillas</option>
+                    </select>
+                    <label style="font-size:.83rem;color:#64748b;">Canal de distribución (próximamente)</label>
+                    <select disabled style="opacity:.5;cursor:not-allowed;">
+                        <option>Generar ZIP para GitHub Pages</option>
+                        <option>Deploy automático en subdominio</option>
+                        <option>Exportar config JSON</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeCloneFactory()">Cerrar</button>
+                <button class="btn-primary" disabled style="opacity:.5;cursor:not-allowed;" title="Disponible en próxima versión">🚀 Generar App (próximamente)</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="newUserModal" style="display:none;">
         <div class="modal" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
             <div class="modal-header">
