@@ -1,5 +1,5 @@
 /* {{CONFIG_IDENTITY}} */
-const CLIENT_CONFIG = {
+window.CLIENT_CONFIG = {
     type: 'ADMIN',        // ADMIN, TRIAL, NORMAL, PRO
     status: 'active',
     specialties: ['ALL'], // ALL = todas las especialidades
