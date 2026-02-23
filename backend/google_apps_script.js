@@ -37,9 +37,10 @@ function doGet(e) {
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
     const data = sheet.getDataRange().getValues();
     const headers = data[0];
+    const idCol = headers.indexOf('ID_Medico'); // buscar el índice real, no asumir columna 0
 
     for (let i = 1; i < data.length; i++) {
-      if (data[i][0] == id) {
+      if (String(data[i][idCol]) === String(id)) {
         const doctor = {};
         headers.forEach((h, index) => doctor[h] = data[i][index]);
 
@@ -127,9 +128,10 @@ function doGet(e) {
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
     const data = sheet.getDataRange().getValues();
     const headers = data[0];
+    const idCol = headers.indexOf('ID_Medico');
 
     for (let i = 1; i < data.length; i++) {
-      if (String(data[i][0]) === String(userId)) {
+      if (String(data[i][idCol]) === String(userId)) {
         Object.keys(updates).forEach(key => {
           const colIndex = headers.indexOf(key);
           if (colIndex !== -1) sheet.getRange(i + 1, colIndex + 1).setValue(updates[key]);
@@ -189,8 +191,9 @@ function doPost(e) {
     const now = new Date().toISOString();
 
     // Incrementar Usage_Count en hoja Usuarios
+    const idCol = headers.indexOf('ID_Medico');
     for (let i = 1; i < data.length; i++) {
-      if (data[i][0] == id) {
+      if (String(data[i][idCol]) === String(id)) {
         const usageIndex = headers.indexOf('Usage_Count') + 1;
         const currentUsage = data[i][headers.indexOf('Usage_Count')] || 0;
         sheet.getRange(i + 1, usageIndex).setValue(Number(currentUsage) + 1);
@@ -232,8 +235,9 @@ function doPost(e) {
     const userId = payload.userId;
     const updates = payload.updates; // { Estado: 'active', Plan: 'pro', ... }
 
+    const idColPost = headers.indexOf('ID_Medico');
     for (let i = 1; i < data.length; i++) {
-      if (data[i][0] === userId) { // Match ID_Medico
+      if (String(data[i][idColPost]) === String(userId)) { // Match ID_Medico
         Object.keys(updates).forEach(key => {
           const colIndex = headers.indexOf(key);
           if (colIndex !== -1) {
