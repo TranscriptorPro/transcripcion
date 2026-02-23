@@ -115,6 +115,10 @@ window.handleImageUpload = function (inputId, previewId, storageKey) {
 window.savePdfConfiguration = function () {
     const val = (id) => document.getElementById(id)?.value || '';
     const chk = (id, def) => document.getElementById(id)?.checked ?? def;
+
+    // Preservar datos del profesional activo que fueron seteados por business.js
+    const existing = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+
     const config = {
         studyType: val('pdfStudyType'),
         studyDate: val('pdfStudyDate'),
@@ -151,6 +155,12 @@ window.savePdfConfiguration = function () {
         workplacePhone: val('pdfWorkplacePhone'),
         workplaceEmail: val('pdfWorkplaceEmail')
     };
+
+    // Preservar campos de profesional activo (seteados por business.js)
+    if (existing.activeProfessional)      config.activeProfessional      = existing.activeProfessional;
+    if (existing.activeProfessionalIndex !== undefined) config.activeProfessionalIndex = existing.activeProfessionalIndex;
+    if (existing.activeWorkplaceIndex    !== undefined) config.activeWorkplaceIndex    = existing.activeWorkplaceIndex;
+
     localStorage.setItem('pdf_config', JSON.stringify(config));
     if (typeof showToast === 'function') showToast('💾 Configuración PDF guardada', 'success');
 }

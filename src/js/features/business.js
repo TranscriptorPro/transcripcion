@@ -90,6 +90,24 @@ window.initWorkplaceManagement = function () {
         cfg.activeProfessionalIndex = String(profIndex);
         cfg.activeProfessional      = prof;
         setProfConfig(cfg);
+
+        // Sincronizar logo/firma del profesional a localStorage como fallback
+        // para que pdfMaker siempre los encuentre aunque pdf_config se reconstruya
+        try {
+            if (prof.logo  && prof.logo.startsWith('data:'))  localStorage.setItem('pdf_logo', prof.logo);
+            if (prof.firma && prof.firma.startsWith('data:')) localStorage.setItem('pdf_signature', prof.firma);
+        } catch (_) { /* quota */ }
+
+        // Actualizar previews si están visibles
+        if (prof.logo && prof.logo.startsWith('data:')) {
+            const lp = document.getElementById('pdfLogoPreview');
+            if (lp) lp.innerHTML = `<img src="${prof.logo}" alt="Logo" style="max-height:80px;">`;
+        }
+        if (prof.firma && prof.firma.startsWith('data:')) {
+            const sp = document.getElementById('pdfSignaturePreview');
+            if (sp) sp.innerHTML = `<img src="${prof.firma}" alt="Firma" style="max-height:80px;">`;
+        }
+
         if (typeof showToast === 'function') showToast(`🩺 ${prof.nombre || 'Profesional'} seleccionado`, 'success');
     }
 
