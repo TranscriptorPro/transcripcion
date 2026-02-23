@@ -165,6 +165,7 @@ function _initCommonModules() {
     if (typeof initApiManagement === 'function') initApiManagement();
     if (typeof initWorkplaceManagement === 'function') initWorkplaceManagement();
     if (typeof initStructurer === 'function') initStructurer();
+    if (typeof initContact === 'function') initContact();
 }
 
 // ─── Onboarding de cliente: primer uso ───────────────────────────────────────

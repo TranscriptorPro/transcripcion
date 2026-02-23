@@ -42,6 +42,12 @@
                             d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 6h2v2h-2V7zm0 4h2v6h-2v-6z" />
                     </svg>
                 </button>
+                <!-- K3: Botón Contacto (solo visible para usuarios no-admin) -->
+                <button class="theme-toggle" id="btnContacto" title="Contactar soporte" style="display:none">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                    </svg>
+                </button>
                 <button class="theme-toggle" id="helpBtn" title="Ayuda / Manual">
                     <svg viewBox="0 0 24 24">
                         <path
@@ -1062,11 +1068,52 @@
         <script src="src/js/features/transcriptor.js"></script>
         <script src="src/js/features/structurer.js"></script>
         <script src="src/js/features/medDictionary.js"></script>
+        <script src="src/js/features/contact.js"></script>
         <script src="src/js/features/patientRegistry.js"></script>
         <script src="src/js/features/formHandler.js"></script>
         <script src="src/js/features/business.js"></script>
         <script src="src/js/features/pdfPreview.js"></script>
         <script src="src/js/features/pdfMaker.js"></script>
+
+        <!-- K3: Modal Contacto -->
+        <div class="modal-overlay" id="contactModalOverlay">
+            <div class="modal" id="contactModal" style="max-width:460px;">
+                <div class="modal-header">
+                    <h3 style="margin:0;">&#x2709;&#xfe0f; Contactar soporte</h3>
+                    <button class="btn-icon" id="btnCloseContactModal" title="Cerrar">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="contactForm" style="display:flex;flex-direction:column;gap:.85rem;">
+                        <div>
+                            <label class="sidebar-label">Motivo <span style="color:var(--error)">*</span></label>
+                            <select id="contactMotivo" class="toolbar-input" style="width:100%;">
+                                <option value="">Selecion&#225; un motivo...</option>
+                                <option value="Problema con la API Key">Problema con la API Key</option>
+                                <option value="Error en la transcripci&#243;n">Error en la transcripci&#243;n</option>
+                                <option value="Error en el informe generado">Error en el informe generado</option>
+                                <option value="Consulta general">Consulta general</option>
+                                <option value="Sugerencia de mejora">Sugerencia de mejora</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="sidebar-label">Descripci&#243;n <span style="color:var(--error)">*</span></label>
+                            <textarea id="contactDetalle" class="toolbar-input" rows="4"
+                                placeholder="Describ&#237; el problema o consulta en detalle..."
+                                style="width:100%;resize:vertical;"></textarea>
+                        </div>
+                        <button type="submit" id="btnSendContact" class="btn btn-primary" disabled>
+                            &#x2709; Enviar mensaje
+                        </button>
+                    </form>
+                    <div id="contactSuccess" style="display:none;text-align:center;padding:1.5rem 0;">
+                        <p style="font-size:1.4rem;">&#x2705;</p>
+                        <p style="color:var(--success);font-weight:600;">&#161;Mensaje enviado!</p>
+                        <p style="font-size:.85rem;color:var(--text-secondary);margin-top:.4rem;">Se abri&#243; tu cliente de correo. Si no se abri&#243;, contact&#225;nos a <strong>soporte@transcriptorpro.app</strong>.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Initialization -->
         <script>
