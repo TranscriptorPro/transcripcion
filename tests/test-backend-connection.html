@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Test — Conexión Backend</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f1117; color: #e2e8f0; font-family: 'Segoe UI', sans-serif; font-size: 14px; padding: 32px; }
+  h1 { font-size: 20px; margin-bottom: 6px; }
+  .meta { color: #8892b0; font-size: 12px; margin-bottom: 32px; }
+  .card { background: #1a1d27; border: 1px solid #2e3250; border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  .card-title { font-weight: 700; font-size: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .btn {
+    background: #3b82f6; color: #fff; border: none; border-radius: 6px;
+    padding: 8px 18px; cursor: pointer; font-size: 13px; font-weight: 600;
+    margin-right: 8px; margin-bottom: 8px; transition: background .15s;
+  }
+  .btn:hover { background: #2563eb; }
+  .btn:disabled { background: #374151; color: #6b7280; cursor: not-allowed; }
+  .btn-green { background: #16a34a; } .btn-green:hover { background: #15803d; }
+  .btn-red   { background: #dc2626; } .btn-red:hover   { background: #b91c1c; }
+  .result {
+    margin-top: 12px; background: #0d1117; border: 1px solid #2e3250;
+    border-radius: 6px; padding: 12px; font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 12px; white-space: pre-wrap; word-break: break-all;
+    max-height: 260px; overflow-y: auto; display: none;
+  }
+  .result.show { display: block; }
+  .status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 12px; margin-left: 10px; }
+  .status-ok      { background: #052e16; color: #22c55e; }
+  .status-fail    { background: #2d0a0a; color: #ef4444; }
+  .status-pending { background: #1e1b4b; color: #818cf8; }
+  .status-running { background: #2d1e06; color: #f59e0b; }
+  label { font-size: 12px; color: #8892b0; display: block; margin-bottom: 4px; margin-top: 10px; }
+  input[type=text] {
+    background: #0d1117; border: 1px solid #2e3250; color: #e2e8f0;
+    border-radius: 6px; padding: 7px 12px; font-size: 13px; width: 100%; max-width: 480px;
+  }
+  .divider { border: none; border-top: 1px solid #2e3250; margin: 24px 0; }
+  .summary { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+  .summary-chip {
+    padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 700;
+    background: #1a1d27; border: 1px solid #2e3250;
+  }
+  #btnRunAll { font-size: 15px; padding: 10px 28px; margin-bottom: 24px; }
+</style>
+</head>
+<body>
+
+<h1>🔌 Test de Conexión — Backend Transcriptor Pro</h1>
+<div class="meta">Prueba cada endpoint del Apps Script contra el Sheet real.<br>Abrí la consola del browser (F12) para ver detalles de errores de red.</div>
+
+<div class="summary">
+  <div class="summary-chip" id="chip_total">Tests: 0</div>
+  <div class="summary-chip" id="chip_ok" style="color:#22c55e">✅ OK: 0</div>
+  <div class="summary-chip" id="chip_fail" style="color:#ef4444">❌ Fallos: 0</div>
+</div>
+
+<button class="btn" id="btnRunAll" onclick="runAll()">▶ Ejecutar todos los tests</button>
+
+<!-- CONFIG -->
+<div class="card">
+  <div class="card-title">⚙️ Configuración</div>
+  <label>URL del Apps Script</label>
+  <input type="text" id="cfgUrl" value="https://script.google.com/macros/s/AKfycby2VEaj2Qy4TGrjL7ZG_YjfEO4ttI6fynnWLgAMafU8VMWoYoWgqJX48D5okxKOrgQiaw/exec">
+  <label>Admin Key (la que está en admin.html)</label>
+  <input type="text" id="cfgKey" value="ADMIN_SECRET_2026">
+  <label>ID de médico existente en el Sheet (para test de validate)</label>
+  <input type="text" id="cfgUserId" placeholder="Ej: DR001">
+</div>
+
+<hr class="divider">
+
+<!-- TEST 1: admin_list_users -->
+<div class="card" id="card_1">
+  <div class="card-title">
+    T1 — <code>admin_list_users</code>
+    <span class="status status-pending" id="st_1">⏳ Pendiente</span>
+  </div>
+  <p style="color:#8892b0; font-size:12px; margin-bottom:12px;">Verifica que el script se conecta al Sheet y devuelve la lista de usuarios.</p>
+  <button class="btn" onclick="testListUsers()">Ejecutar T1</button>
+  <div class="result" id="res_1"></div>
+</div>
+
+<!-- TEST 2: validate -->
+<div class="card" id="card_2">
+  <div class="card-title">
+    T2 — <code>validate</code>
+    <span class="status status-pending" id="st_2">⏳ Pendiente</span>
+  </div>
+  <p style="color:#8892b0; font-size:12px; margin-bottom:12px;">Valida un médico por ID. Ingresá un ID que exista en el Sheet arriba y ejecutá.</p>
+  <button class="btn" onclick="testValidate()">Ejecutar T2</button>
+  <div class="result" id="res_2"></div>
+</div>
+
+<!-- TEST 3: validate con ID inexistente -->
+<div class="card" id="card_3">
+  <div class="card-title">
+    T3 — <code>validate</code> con ID inexistente
+    <span class="status status-pending" id="st_3">⏳ Pendiente</span>
+  </div>
+  <p style="color:#8892b0; font-size:12px; margin-bottom:12px;">Debe devolver <code>{"error":"Médico no encontrado"}</code>.</p>
+  <button class="btn" onclick="testValidateUnknown()">Ejecutar T3</button>
+  <div class="result" id="res_3"></div>
+</div>
+
+<!-- TEST 4: admin_create_user -->
+<div class="card" id="card_4">
+  <div class="card-title">
+    T4 — <code>admin_create_user</code>
+    <span class="status status-pending" id="st_4">⏳ Pendiente</span>
+  </div>
+  <p style="color:#8892b0; font-size:12px; margin-bottom:12px;">Crea un usuario de prueba <code>TEST_DELETE_ME</code> en el Sheet. Podés borrarlo después manualmente.</p>
+  <button class="btn btn-green" onclick="testCreateUser()">Ejecutar T4</button>
+  <div class="result" id="res_4"></div>
+</div>
+
+<!-- TEST 5: admin_update_user -->
+<div class="card" id="card_5">
+  <div class="card-title">
+    T5 — <code>admin_update_user</code>
+    <span class="status status-pending" id="st_5">⏳ Pendiente</span>
+  </div>
+  <p style="color:#8892b0; font-size:12px; margin-bottom:12px;">Edita el usuario <code>TEST_DELETE_ME</code> creado en T4. Si T4 falló, este también falla.</p>
+  <button class="btn" onclick="testUpdateUser()">Ejecutar T5</button>
+  <div class="result" id="res_5"></div>
+</div>
+
+<!-- TEST 6: admin_key incorrecta -->
+<div class="card" id="card_6">
+  <div class="card-title">
+    T6 — Seguridad: admin_key incorrecta
+    <span class="status status-pending" id="st_6">⏳ Pendiente</span>
+  </div>
+  <p style="color:#8892b0; font-size:12px; margin-bottom:12px;">Debe devolver <code>{"error":"Unauthorized"}</code> al usar una clave incorrecta.</p>
+  <button class="btn btn-red" onclick="testBadKey()">Ejecutar T6</button>
+  <div class="result" id="res_6"></div>
+</div>
+
+<hr class="divider">
+<p style="color:#8892b0; font-size:12px;">⚠️ El usuario <code>TEST_DELETE_ME</code> creado en T4 queda en el Sheet — borralo manualmente después de testear.</p>
+
+<script>
+  function cfg(id) { return document.getElementById(id).value.trim(); }
+
+  function setStatus(id, type, text) {
+    const el = document.getElementById('st_' + id);
+    el.className = 'status status-' + type;
+    el.textContent = text;
+    updateSummary();
+  }
+
+  function showResult(id, data, ok) {
+    const el = document.getElementById('res_' + id);
+    el.className = 'result show';
+    el.style.color = ok ? '#22c55e' : '#ef4444';
+    el.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+  }
+
+  function updateSummary() {
+    const all = document.querySelectorAll('[id^="st_"]');
+    let ok = 0, fail = 0;
+    all.forEach(el => {
+      if (el.className.includes('ok')) ok++;
+      if (el.className.includes('fail')) fail++;
+    });
+    document.getElementById('chip_total').textContent = 'Tests: ' + all.length;
+    document.getElementById('chip_ok').textContent = '✅ OK: ' + ok;
+    document.getElementById('chip_fail').textContent = '❌ Fallos: ' + fail;
+  }
+
+  async function callGet(params) {
+    const url = cfg('cfgUrl') + '?' + new URLSearchParams(params).toString();
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
+  }
+
+  // ── T1: list users ──
+  async function testListUsers() {
+    setStatus(1, 'running', '⏳ Ejecutando...');
+    try {
+      const data = await callGet({ action: 'admin_list_users', adminKey: cfg('cfgKey') });
+      if (data.error) throw new Error(data.error);
+      const ok = Array.isArray(data.users);
+      setStatus(1, ok ? 'ok' : 'fail', ok ? '✅ OK — ' + data.total + ' usuarios' : '❌ Respuesta inesperada');
+      showResult(1, data, ok);
+      // Auto-fill ID si no hay ninguno
+      if (ok && data.users.length > 0 && !cfg('cfgUserId')) {
+        document.getElementById('cfgUserId').value = data.users[0].ID_Medico;
+      }
+    } catch(e) {
+      setStatus(1, 'fail', '❌ Error');
+      showResult(1, e.message, false);
+    }
+  }
+
+  // ── T2: validate con ID real ──
+  async function testValidate() {
+    const id = cfg('cfgUserId');
+    if (!id) { alert('Ingresá un ID de médico en la configuración primero (o ejecutá T1 para auto-completarlo).'); return; }
+    setStatus(2, 'running', '⏳ Ejecutando...');
+    try {
+      const data = await callGet({ id: id, deviceId: 'TEST_DEVICE_001' });
+      if (data.error) throw new Error(data.error);
+      const ok = !!data.ID_Medico || !!data.Nombre;
+      setStatus(2, ok ? 'ok' : 'fail', ok ? '✅ OK — ' + (data.Nombre || data.ID_Medico) : '❌ Sin datos de médico');
+      showResult(2, data, ok);
+    } catch(e) {
+      setStatus(2, 'fail', '❌ Error');
+      showResult(2, e.message, false);
+    }
+  }
+
+  // ── T3: validate con ID inexistente ──
+  async function testValidateUnknown() {
+    setStatus(3, 'running', '⏳ Ejecutando...');
+    try {
+      const data = await callGet({ id: 'ID_QUE_NO_EXISTE_XYZ999' });
+      const ok = data.error === 'Médico no encontrado';
+      setStatus(3, ok ? 'ok' : 'fail', ok ? '✅ OK — devuelve error correcto' : '❌ Respuesta inesperada');
+      showResult(3, data, ok);
+    } catch(e) {
+      setStatus(3, 'fail', '❌ Error de red');
+      showResult(3, e.message, false);
+    }
+  }
+
+  // ── T4: create user ──
+  async function testCreateUser() {
+    setStatus(4, 'running', '⏳ Ejecutando...');
+    const userData = {
+      ID_Medico: 'TEST_DELETE_ME',
+      Nombre: 'Usuario Test (borrar)',
+      Matricula: '000000',
+      Email: 'test@test.com',
+      Especialidad: 'Testing',
+      Plan: 'trial',
+      Estado: 'trial',
+      Fecha_Registro: new Date().toISOString().split('T')[0],
+      Fecha_Vencimiento: '2026-12-31',
+      Devices_Max: 1,
+      Devices_Logged: '[]',
+      Usage_Count: 0,
+      Notas_Admin: 'Creado por test automático — BORRAR'
+    };
+    try {
+      const data = await callGet({
+        action: 'admin_create_user',
+        adminKey: cfg('cfgKey'),
+        updates: encodeURIComponent(JSON.stringify(userData))
+      });
+      if (data.error) throw new Error(data.error);
+      const ok = data.success === true;
+      setStatus(4, ok ? 'ok' : 'fail', ok ? '✅ OK — usuario creado en Sheet' : '❌ No se creó');
+      showResult(4, data, ok);
+    } catch(e) {
+      setStatus(4, 'fail', '❌ Error');
+      showResult(4, e.message, false);
+    }
+  }
+
+  // ── T5: update user ──
+  async function testUpdateUser() {
+    setStatus(5, 'running', '⏳ Ejecutando...');
+    const updates = { Notas_Admin: 'Editado por T5 — ' + new Date().toISOString(), Estado: 'active' };
+    try {
+      const data = await callGet({
+        action: 'admin_update_user',
+        adminKey: cfg('cfgKey'),
+        userId: 'TEST_DELETE_ME',
+        updates: encodeURIComponent(JSON.stringify(updates))
+      });
+      if (data.error) throw new Error(data.error);
+      const ok = data.success === true;
+      setStatus(5, ok ? 'ok' : 'fail', ok ? '✅ OK — usuario editado en Sheet' : '❌ No se editó');
+      showResult(5, data, ok);
+    } catch(e) {
+      setStatus(5, 'fail', '❌ Error');
+      showResult(5, e.message, false);
+    }
+  }
+
+  // ── T6: bad key ──
+  async function testBadKey() {
+    setStatus(6, 'running', '⏳ Ejecutando...');
+    try {
+      const data = await callGet({ action: 'admin_list_users', adminKey: 'CLAVE_INCORRECTA_XYZ' });
+      const ok = data.error === 'Unauthorized';
+      setStatus(6, ok ? 'ok' : 'fail', ok ? '✅ OK — rechaza clave incorrecta' : '❌ Debería rechazar pero aceptó');
+      showResult(6, data, ok);
+    } catch(e) {
+      setStatus(6, 'fail', '❌ Error de red');
+      showResult(6, e.message, false);
+    }
+  }
+
+  // ── Ejecutar todos ──
+  async function runAll() {
+    const btn = document.getElementById('btnRunAll');
+    btn.disabled = true;
+    btn.textContent = '⏳ Ejecutando...';
+    await testListUsers();
+    await new Promise(r => setTimeout(r, 600));
+    await testValidate();
+    await new Promise(r => setTimeout(r, 600));
+    await testValidateUnknown();
+    await new Promise(r => setTimeout(r, 600));
+    await testCreateUser();
+    await new Promise(r => setTimeout(r, 600));
+    await testUpdateUser();
+    await new Promise(r => setTimeout(r, 600));
+    await testBadKey();
+    btn.disabled = false;
+    btn.textContent = '▶ Ejecutar todos los tests';
+  }
+
+  updateSummary();
+</script>
+</body>
+</html>
