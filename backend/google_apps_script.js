@@ -1,14 +1,18 @@
 /**
  * BACKEND API PARA TRANSCRIPTOR MÉDICO PRO
  * Instrucciones:
- * 1. Crear un Google Sheet con las columnas definidas en GOOGLE_SHEET_SETUP.md
+ * 1. Crear un Google Sheet con las hojas definidas en GOOGLE_SHEET_SETUP.md
  * 2. Ir a Extensiones -> Apps Script.
  * 3. Pegar este código y cambiar el nombre del proyecto.
  * 4. Implementar como "Aplicación Web" (Cualquier persona, incluso anónima).
- * 5. IMPORTANT: Set ADMIN_KEY in Script Properties: File > Project Properties > Script Properties > Add: ADMIN_KEY = <your-secret>
+ * 5. IMPORTANT: Set ADMIN_KEY in Script Properties: Archivo > Propiedades del proyecto > Propiedades de script > ADMIN_KEY = <tu-clave>
  */
 
-const SHEET_NAME = 'Usuarios_Transcriptor';
+// Nombres exactos de las pestañas del Sheet
+const SHEET_NAME      = 'Usuarios';
+const SHEET_METRICAS  = 'Metricas_Uso';
+const SHEET_DEVICES   = 'Dispositivos';
+const SHEET_LOGS      = 'Admin_Logs';
 
 // SECURITY: Read from Apps Script Script Properties (not hardcoded).
 // In Apps Script editor: File > Project Properties > Script Properties > Add: ADMIN_KEY = <your-secret>
@@ -36,17 +40,49 @@ function doGet(e) {
 
     for (let i = 1; i < data.length; i++) {
       if (data[i][0] == id) {
-        // Encontramos al médico
         const doctor = {};
         headers.forEach((h, index) => doctor[h] = data[i][index]);
 
-        // Lógica de registro de dispositivos (Punto 29 del task)
+        // Actualizar Devices_Logged en hoja Usuarios
         let devices = [];
         try { devices = JSON.parse(doctor.Devices_Logged || '[]'); } catch(e) {}
-
-        if (!devices.includes(deviceId)) {
+        const isNewDevice = !devices.includes(deviceId);
+        if (isNewDevice && deviceId) {
           devices.push(deviceId);
           sheet.getRange(i + 1, headers.indexOf('Devices_Logged') + 1).setValue(JSON.stringify(devices));
+        }
+
+        // Registrar en hoja Dispositivos (upsert por ID_Device)
+        if (deviceId) {
+          try {
+            const devSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_DEVICES);
+            if (devSheet) {
+              const devData = devSheet.getDataRange().getValues();
+              const devHeaders = devData[0]; // ID_Device, ID_Medico, Device_Name, Device_Type, OS_Version, Fecha_Registro, Ultima_Conexion, Estado
+              const now = new Date().toISOString();
+              let found = false;
+              for (let d = 1; d < devData.length; d++) {
+                if (String(devData[d][0]) === String(deviceId)) {
+                  // Actualizar Ultima_Conexion
+                  devSheet.getRange(d + 1, devHeaders.indexOf('Ultima_Conexion') + 1).setValue(now);
+                  found = true;
+                  break;
+                }
+              }
+              if (!found) {
+                // Nuevo dispositivo: crear fila
+                const devRow = devHeaders.map(h => {
+                  if (h === 'ID_Device') return deviceId;
+                  if (h === 'ID_Medico') return id;
+                  if (h === 'Fecha_Registro') return now;
+                  if (h === 'Ultima_Conexion') return now;
+                  if (h === 'Estado') return 'active';
+                  return '';
+                });
+                devSheet.appendRow(devRow);
+              }
+            }
+          } catch(devErr) { /* no interrumpir si falla el registro de device */ }
         }
 
         return createResponse(doctor);
@@ -98,6 +134,7 @@ function doGet(e) {
           const colIndex = headers.indexOf(key);
           if (colIndex !== -1) sheet.getRange(i + 1, colIndex + 1).setValue(updates[key]);
         });
+        appendAdminLog('admin', 'edit_user', userId, JSON.stringify(updates));
         return createResponse({ success: true, message: 'User updated' });
       }
     }
@@ -128,6 +165,7 @@ function doGet(e) {
     // Construir fila siguiendo el orden de los headers
     const row = headers.map(h => (userData[h] !== undefined ? userData[h] : ''));
     sheet.appendRow(row);
+    appendAdminLog('admin', 'create_user', userData.ID_Medico, userData.Nombre || '');
     return createResponse({ success: true, userId: userData.ID_Medico });
   }
 
@@ -142,17 +180,46 @@ function doPost(e) {
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
 
-  // EXISTING: update usage count
+  // EXISTING: update usage count + escribe en Metricas_Uso
   if (action === 'update_usage') {
     const id = payload.id;
+    const deviceId = payload.deviceId || '';
+    const palabras = payload.palabras || 0;
+    const minutos = payload.minutos || 0;
+    const now = new Date().toISOString();
+
+    // Incrementar Usage_Count en hoja Usuarios
     for (let i = 1; i < data.length; i++) {
       if (data[i][0] == id) {
         const usageIndex = headers.indexOf('Usage_Count') + 1;
         const currentUsage = data[i][headers.indexOf('Usage_Count')] || 0;
         sheet.getRange(i + 1, usageIndex).setValue(Number(currentUsage) + 1);
-        return createResponse({ success: true });
+        break;
       }
     }
+
+    // Escribir fila en Metricas_Uso
+    try {
+      const metSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_METRICAS);
+      if (metSheet) {
+        const metHeaders = metSheet.getDataRange().getValues()[0];
+        // ID_Metrica, ID_Medico, Fecha, Transcripciones_Realizadas, Palabras_Transcritas, Minutos_Audio, Device_ID, Timestamp
+        const metRow = metHeaders.map(h => {
+          if (h === 'ID_Metrica') return 'MET_' + Date.now();
+          if (h === 'ID_Medico') return id;
+          if (h === 'Fecha') return now.split('T')[0];
+          if (h === 'Transcripciones_Realizadas') return 1;
+          if (h === 'Palabras_Transcritas') return palabras;
+          if (h === 'Minutos_Audio') return minutos;
+          if (h === 'Device_ID') return deviceId;
+          if (h === 'Timestamp') return now;
+          return '';
+        });
+        metSheet.appendRow(metRow);
+      }
+    } catch(metErr) { /* no interrumpir si falla el log de métricas */ }
+
+    return createResponse({ success: true });
   }
 
   // NEW: admin endpoint - update a user's fields (e.g. Estado, Plan)
@@ -190,6 +257,29 @@ function createResponse(data) {
     .setHeader('Access-Control-Allow-Origin', '*')
     .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
     .setHeader('Access-Control-Allow-Headers', 'Content-Type');
+}
+
+/**
+ * Escribe una fila en Admin_Logs.
+ * ID_Log, Admin_User, Accion, Usuario_Afectado, Detalles, Timestamp
+ */
+function appendAdminLog(adminUser, accion, usuarioAfectado, detalles) {
+  try {
+    const logSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_LOGS);
+    if (!logSheet) return;
+    const headers = logSheet.getDataRange().getValues()[0];
+    const now = new Date().toISOString();
+    const row = headers.map(h => {
+      if (h === 'ID_Log') return 'LOG_' + Date.now();
+      if (h === 'Admin_User') return adminUser;
+      if (h === 'Accion') return accion;
+      if (h === 'Usuario_Afectado') return usuarioAfectado;
+      if (h === 'Detalles') return detalles;
+      if (h === 'Timestamp') return now;
+      return '';
+    });
+    logSheet.appendRow(row);
+  } catch(e) { /* no interrumpir flujo principal si falla el log */ }
 }
 
 /**
