@@ -75,7 +75,17 @@ window.initWorkplaceManagement = function () {
 
 // ---- Original initBusinessSuite updated ----
 window.initBusinessSuite = function () {
-    // Siempre establecer como Admin para esta app principal
+    const isAdmin = (typeof CLIENT_CONFIG === 'undefined' || CLIENT_CONFIG.type === 'ADMIN');
+
+    if (isAdmin) {
+        _initAdmin();
+    } else {
+        _initClient();
+    }
+};
+
+// ─── Flujo ADMIN ─────────────────────────────────────────────────────────────
+function _initAdmin() {
     // Preservar personalizaciones del admin (nombre, institución, color) ya guardadas
     const existing = JSON.parse(localStorage.getItem('prof_data') || '{}');
     const adminProfData = {
@@ -91,16 +101,62 @@ window.initBusinessSuite = function () {
     localStorage.setItem('prof_data', JSON.stringify(adminProfData));
     localStorage.setItem('onboarding_date', new Date().toISOString());
 
-    // Ocultar gestión de API Key si el usuario no es ADMIN
-    const apiKeyCard = document.getElementById('adminApiKeyCard');
-    if (apiKeyCard && typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type !== 'ADMIN') {
-        apiKeyCard.style.display = 'none';
-    }
-
-    // Inicializar GROQ_API_KEY global desde localStorage
+    // Admin siempre ve el card de API Key
     window.GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
 
-    // Initialize UI modules
+    _initCommonModules();
+
+    try {
+        if (typeof applyProfessionalData === 'function') applyProfessionalData(adminProfData);
+        if (typeof updatePersonalization === 'function') updatePersonalization(adminProfData);
+        if (typeof initializeMode === 'function') initializeMode();
+    } catch (e) {
+        console.error('Error inicializando datos admin:', e);
+    }
+
+    const btnAdminAccess = document.getElementById('btnAdminAccess');
+    if (btnAdminAccess) {
+        btnAdminAccess.addEventListener('click', () => window.open('recursos/admin.html', '_blank'));
+    }
+
+    const onboardingOverlay = document.getElementById('onboardingOverlay');
+    if (onboardingOverlay) onboardingOverlay.style.display = 'none';
+}
+
+// ─── Flujo CLIENTE (NORMAL / PRO / TRIAL) ────────────────────────────────────
+function _initClient() {
+    // K2: ocultar panel de API Key del admin
+    const apiKeyCard = document.getElementById('adminApiKeyCard');
+    if (apiKeyCard) apiKeyCard.style.display = 'none';
+
+    const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
+    const savedKey = localStorage.getItem('groq_api_key') || '';
+    const needsOnboarding = !profData.nombre || !savedKey;
+
+    // K1: mostrar onboarding en primer uso (sin perfil o sin API key)
+    if (needsOnboarding) {
+        _showClientOnboarding(profData, savedKey);
+        return; // los módulos se inicializan dentro del submit
+    }
+
+    // Ya configurado: inicializar normalmente
+    window.GROQ_API_KEY = savedKey;
+    _initCommonModules();
+
+    try {
+        if (typeof applyProfessionalData === 'function') applyProfessionalData(profData);
+        if (typeof updatePersonalization === 'function') updatePersonalization(profData);
+        if (typeof initializeMode === 'function') initializeMode();
+    } catch (e) {
+        console.error('Error inicializando datos cliente:', e);
+    }
+
+    const onboardingOverlay = document.getElementById('onboardingOverlay');
+    if (onboardingOverlay) onboardingOverlay.style.display = 'none';
+}
+
+// ─── Módulos comunes (admin + cliente) ───────────────────────────────────────
+function _initCommonModules() {
     if (typeof initTheme === 'function') initTheme();
     if (typeof updateApiStatus === 'function') updateApiStatus(localStorage.getItem('groq_api_key'));
     if (typeof populateTemplateDropdown === 'function') populateTemplateDropdown();
@@ -109,24 +165,100 @@ window.initBusinessSuite = function () {
     if (typeof initApiManagement === 'function') initApiManagement();
     if (typeof initWorkplaceManagement === 'function') initWorkplaceManagement();
     if (typeof initStructurer === 'function') initStructurer();
+}
 
-    try {
-        if (typeof applyProfessionalData === 'function') applyProfessionalData(adminProfData);
-        if (typeof updatePersonalization === 'function') updatePersonalization(adminProfData);
-        if (typeof initializeMode === 'function') initializeMode();
-    } catch (e) {
-        console.error("Error inicializando datos admin:", e);
+// ─── Onboarding de cliente: primer uso ───────────────────────────────────────
+function _showClientOnboarding(existingProf, existingKey) {
+    const overlay = document.getElementById('onboardingOverlay');
+    if (!overlay) return;
+
+    // Mostrar el campo de API key (solo para clientes)
+    const apiStep = document.getElementById('onboardingApiKeyStep');
+    if (apiStep) {
+        apiStep.style.display = '';
+        // Precargar key si ya existía (solo falta el perfil)
+        const apiInput = document.getElementById('onboardingApiKey');
+        if (apiInput && existingKey) apiInput.value = existingKey;
     }
 
-    // Listener para el botón de administración
-    const btnAdminAccess = document.getElementById('btnAdminAccess');
-    if (btnAdminAccess) {
-        btnAdminAccess.addEventListener('click', () => {
-            window.open('recursos/admin.html', '_blank');
+    // Precargar datos si ya había perfil (solo falta la key)
+    if (existingProf.nombre) {
+        const n = document.getElementById('profName');
+        const m = document.getElementById('profMatricula');
+        if (n) n.value = existingProf.nombre;
+        if (m) m.value = existingProf.matricula || '';
+    }
+
+    overlay.style.display = 'flex';
+
+    // Wire up accept-terms → habilitar botón submit
+    const acceptTerms = document.getElementById('acceptTerms');
+    const submitBtn   = document.getElementById('btnSubmitOnboarding');
+    if (acceptTerms && submitBtn) {
+        acceptTerms.addEventListener('change', () => {
+            submitBtn.disabled = !acceptTerms.checked;
         });
     }
 
-    // Forzar la ocultación del modal de onboarding
-    const onboardingOverlay = document.getElementById('onboardingOverlay');
-    if (onboardingOverlay) onboardingOverlay.style.display = 'none';
+    // ── Submit del formulario ──
+    const form = document.getElementById('onboardingForm');
+    if (!form) return;
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const nombre    = document.getElementById('profName')?.value?.trim();
+        const matricula = document.getElementById('profMatricula')?.value?.trim();
+        const workplace = document.getElementById('profWorkplace')?.value?.trim();
+        const apiKey    = document.getElementById('onboardingApiKey')?.value?.trim();
+
+        if (!nombre || !matricula) {
+            if (typeof showToast === 'function') showToast('Completá nombre y matrícula', 'error');
+            return;
+        }
+        if (!apiKey) {
+            if (typeof showToast === 'function') showToast('Ingresá tu API Key de Groq para continuar', 'error');
+            return;
+        }
+
+        // Guardar especialidades marcadas
+        const specialties = Array.from(
+            document.querySelectorAll('input[name="specialty"]:checked')
+        ).map(cb => cb.value);
+
+        // Guardar lugares de trabajo
+        const workplaces = workplace
+            ? workplace.split(/[\n,]/).map(s => s.trim()).filter(Boolean)
+            : [];
+
+        const profData = {
+            nombre,
+            matricula,
+            workplace:  workplaces[0] || '',
+            workplaces,
+            specialties,
+            estudios:        [],
+            especialidad:    specialties[0] || '',
+            institutionName: '',
+            headerColor:     '#1a56a0',
+        };
+
+        localStorage.setItem('prof_data', JSON.stringify(profData));
+        localStorage.setItem('onboarding_date', new Date().toISOString());
+        localStorage.setItem('groq_api_key', apiKey);
+        window.GROQ_API_KEY = apiKey;
+
+        overlay.style.display = 'none';
+
+        _initCommonModules();
+        try {
+            if (typeof applyProfessionalData === 'function') applyProfessionalData(profData);
+            if (typeof updatePersonalization === 'function') updatePersonalization(profData);
+            if (typeof initializeMode === 'function') initializeMode();
+        } catch (err) {
+            console.error('Error tras onboarding:', err);
+        }
+
+        if (typeof showToast === 'function') showToast('¡Configuración guardada! Bienvenido/a 🎉', 'success');
+    });
 }
