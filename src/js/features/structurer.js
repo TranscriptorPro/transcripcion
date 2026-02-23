@@ -270,7 +270,14 @@ function promptTemplateSelection(detectedKey) {
     });
 }
 
-async function structureTranscription(text, templateKey, temperature = 0.1) {
+// ── Modelos disponibles en Groq (en orden de preferencia) ──────────────────
+const GROQ_MODELS = [
+    'llama-3.3-70b-versatile',
+    'llama-3.1-70b-versatile',
+    'mixtral-8x7b-32768'
+];
+
+async function structureTranscription(text, templateKey, temperature = 0.1, model = GROQ_MODELS[0]) {
     if (!GROQ_API_KEY) {
         showToast('Configura la API Key para el Modo Pro', 'error');
         return text;
@@ -301,7 +308,7 @@ async function structureTranscription(text, templateKey, temperature = 0.1) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: "llama-3.3-70b-versatile",
+                model: model,
                 messages: [
                     { role: "system", content: prompt + `
 
@@ -332,29 +339,134 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepción:
     }
 }
 
-// ── 3-attempt retry wrapper for structuring ────────────────────────────
+// ── 3-attempt retry wrapper con fallback de modelos ────────────────────────
 async function structureWithRetry(text, templateKey) {
-    const temperatures = [0.1, 0.15, 0.2];
+    // Estrategia progresiva: mismo modelo × 2, luego modelo alternativo
+    const strategy = [
+        { model: GROQ_MODELS[0], temperature: 0.1 },
+        { model: GROQ_MODELS[0], temperature: 0.15 },
+        { model: GROQ_MODELS[1], temperature: 0.1 }
+    ];
     let lastError = null;
-    for (let attempt = 0; attempt < 3; attempt++) {
+    for (let attempt = 0; attempt < strategy.length; attempt++) {
         try {
             if (attempt > 0 && typeof showToast === 'function') {
-                showToast(`⏳ Reintentando estructurado (${attempt + 1}/3)...`, 'info');
+                const isModelChange = strategy[attempt].model !== strategy[attempt - 1].model;
+                const label = isModelChange ? ' con modelo alternativo' : '';
+                showToast(`⏳ Reintentando${label} (${attempt + 1}/3)...`, 'info');
                 await new Promise(r => setTimeout(r, 2000));
             }
-            const result = await structureTranscription(text, templateKey, temperatures[attempt]);
-            // Sanity check: response should be substantial relative to input
+            const { model, temperature } = strategy[attempt];
+            const result = await structureTranscription(text, templateKey, temperature, model);
             if (result.length < 80 && text.length > 300) {
                 throw new Error('Respuesta del LLM muy corta o incompleta');
             }
             return result;
         } catch (err) {
-            console.warn(`Structure attempt ${attempt + 1}/3 failed:`, err.message);
+            console.warn(`Structure attempt ${attempt + 1}/3 failed [${strategy[attempt].model}]:`, err.message);
             lastError = err;
+            // Key inválida → inútil reintentar
+            if (err.message.includes('401') || err.message.toLowerCase().includes('api key')) throw err;
         }
     }
-    throw lastError || new Error('No se pudo estructurar tras 3 intentos');
+    // Todos los intentos fallaron → guardar en cola de pendientes
+    try { addToStructurePendingQueue(text, templateKey); } catch (_) {}
+    const finalErr = new Error(lastError?.message || 'No se pudo estructurar tras 3 intentos');
+    finalErr.savedToPending = true;
+    throw finalErr;
 }
+
+// ── Cola de textos pendientes de estructuración ──────────────────────────────
+const STRUCT_QUEUE_KEY = 'struct_pending_queue';
+
+function addToStructurePendingQueue(text, templateKey) {
+    const queue = getStructurePendingQueue();
+    const entry = {
+        id: Date.now(),
+        text,
+        templateKey: templateKey || 'generico',
+        savedAt: new Date().toLocaleString('es-AR'),
+        preview: text.slice(0, 140) + (text.length > 140 ? '...' : '')
+    };
+    queue.unshift(entry);
+    if (queue.length > 10) queue.pop(); // máximo 10
+    localStorage.setItem(STRUCT_QUEUE_KEY, JSON.stringify(queue));
+    updatePendingQueueBadge();
+    return entry;
+}
+
+function getStructurePendingQueue() {
+    try { return JSON.parse(localStorage.getItem(STRUCT_QUEUE_KEY) || '[]'); }
+    catch (_) { return []; }
+}
+
+function removeFromStructurePendingQueue(id) {
+    const filtered = getStructurePendingQueue().filter(e => e.id !== Number(id));
+    localStorage.setItem(STRUCT_QUEUE_KEY, JSON.stringify(filtered));
+    updatePendingQueueBadge();
+}
+
+function updatePendingQueueBadge() {
+    const count = getStructurePendingQueue().length;
+    const badge = document.getElementById('pendingQueueCount');
+    const btn   = document.getElementById('btnPendingQueue');
+    if (badge) badge.textContent = count;
+    if (btn)   btn.style.display = count > 0 ? '' : 'none';
+}
+
+function renderPendingQueueModal() {
+    const queue  = getStructurePendingQueue();
+    const listEl = document.getElementById('pendingQueueList');
+    if (!listEl) return;
+    if (queue.length === 0) {
+        listEl.innerHTML = '<p style="color:var(--text-secondary);font-size:0.9rem;">No hay textos pendientes.</p>';
+        return;
+    }
+    listEl.innerHTML = queue.map(entry => `
+        <div class="pending-item" data-id="${entry.id}">
+            <div class="pending-item-meta">
+                <span class="pending-item-date">📅 ${entry.savedAt}</span>
+                <span class="pending-item-tmpl">Plantilla: ${entry.templateKey}</span>
+            </div>
+            <p class="pending-item-preview">${entry.preview.replace(/</g,'&lt;')}</p>
+            <div class="pending-item-actions">
+                <button class="btn-primary btn-sm" onclick="processPendingItem(${entry.id})">✨ Estructurar ahora</button>
+                <button class="btn-secondary btn-sm" onclick="deletePendingItem(${entry.id})">🗑️ Eliminar</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+window.processPendingItem = async function(id) {
+    const queue = getStructurePendingQueue();
+    const entry = queue.find(e => e.id === id);
+    if (!entry) return;
+    const editor = document.getElementById('editor');
+    if (editor) { editor.innerHTML = entry.text; }
+    // Cerrar modal de pendientes
+    document.getElementById('pendingQueueModal').style.display = 'none';
+    // Ejecutar estructurado
+    if (editor) {
+        try {
+            if (typeof showToast === 'function') showToast('⏳ Procesando texto pendiente...', 'info');
+            const rawMarkdown = await structureWithRetry(entry.text, entry.templateKey);
+            const { body } = parseAIResponse(rawMarkdown);
+            editor.innerHTML = body;
+            removeFromStructurePendingQueue(id);
+            if (typeof showToast === 'function') showToast('✅ Texto pendiente estructurado', 'success');
+            if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURED');
+            if (typeof triggerPatientDataCheck === 'function') triggerPatientDataCheck(entry.text);
+        } catch (err) {
+            if (typeof showToast === 'function') showToast('❌ No se pudo estructurar. Se mantiene en la cola.', 'error');
+        }
+    }
+};
+
+window.deletePendingItem = function(id) {
+    if (!confirm('¿Eliminar este texto pendiente?')) return;
+    removeFromStructurePendingQueue(id);
+    renderPendingQueueModal();
+};
 
 // ---- AI Note panel helper ----
 // templateLabel: optional string to show which template was used
@@ -464,7 +576,11 @@ window.initStructurer = function () {
                 triggerPatientDataCheck(rawText);
             } catch (error) {
                 editor.innerHTML = savedHTML;
-                if (typeof showToast === 'function') showToast('❌ No se pudo estructurar tras 3 intentos. El texto original fue restaurado. El problema es con el servicio de IA, no con la app.', 'error');
+                const msg = error.savedToPending
+                    ? '📋 Sin conexión con la IA. El texto fue guardado para procesar más tarde.'
+                    : '❌ No se pudo estructurar. El texto original fue restaurado. (El problema es del servicio de IA, no de la app.)';
+                const type = error.savedToPending ? 'warning' : 'error';
+                if (typeof showToast === 'function') showToast(msg, type);
                 if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
             } finally {
                 btnStructureAIEl.disabled = false;
@@ -509,12 +625,36 @@ window.initStructurer = function () {
                 triggerPatientDataCheck(rawText);
             } catch (e) {
                 editor.innerHTML = savedHTML;
-                if (typeof showToast === 'function') showToast('❌ No se pudo estructurar tras 3 intentos. El texto original fue restaurado. El problema es con el servicio de IA, no con la app.', 'error');
+                const msg2 = e.savedToPending
+                    ? '📋 Sin conexión con la IA. El texto fue guardado para procesar más tarde.'
+                    : '❌ No se pudo estructurar. El texto original fue restaurado. (El problema es del servicio de IA, no de la app.)';
+                const type2 = e.savedToPending ? 'warning' : 'error';
+                if (typeof showToast === 'function') showToast(msg2, type2);
                 if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
             } finally {
                 btnApplyStructure.disabled = false;
                 btnApplyStructure.textContent = oldText;
             }
+        });
+    }
+
+    // Inicializar badge de cola pendiente
+    updatePendingQueueBadge();
+
+    // Wiring del modal de pendientes
+    const btnPQ = document.getElementById('btnPendingQueue');
+    if (btnPQ) {
+        btnPQ.addEventListener('click', () => {
+            renderPendingQueueModal();
+            const modal = document.getElementById('pendingQueueModal');
+            if (modal) modal.style.display = 'flex';
+        });
+    }
+    const closePQBtn = document.getElementById('closePendingQueueBtn');
+    if (closePQBtn) {
+        closePQBtn.addEventListener('click', () => {
+            const modal = document.getElementById('pendingQueueModal');
+            if (modal) modal.style.display = 'none';
         });
     }
 }

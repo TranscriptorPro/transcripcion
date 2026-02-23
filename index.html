@@ -839,6 +839,8 @@
                         <button class="btn btn-outline btn-sm-icon" id="btnRestoreOriginal" style="display:none;" title="Ver texto original">&#8617;</button>
                         <!-- Medical terminology checker -->
                         <button class="btn btn-outline btn-sm-icon" id="btnMedicalCheck" style="display:none;" title="Revisar terminología médica">🩺</button>
+                        <!-- Cola de pendientes -->
+                        <button class="btn btn-outline btn-sm-icon" id="btnPendingQueue" style="display:none;" title="Textos pendientes de estructuración">📋 <span id="pendingQueueCount" style="font-size:0.7em;font-weight:700;">0</span></button>
                         <!-- Apply Template (Normal mode) - shown after transcription -->
                         <div style="position: relative; display: none;" id="applyTemplateWrapper">
                           <button class="btn-ai-magic" id="btnApplyTemplate" style="display:inline-flex;" title="Seleccionar y Aplicar Plantilla">
@@ -1270,6 +1272,21 @@
         </div>
 
         </script>
+
+        <!-- Modal: Cola de textos pendientes de estructuración -->
+        <div class="modal-overlay" id="pendingQueueModal" style="display:none;">
+            <div class="modal" style="max-width:580px;">
+                <div class="modal-header">
+                    <h2>📋 Textos pendientes de estructuración</h2>
+                    <button class="modal-close" id="closePendingQueueBtn" title="Cerrar">✕</button>
+                </div>
+                <div class="modal-body">
+                    <p style="color:var(--text-secondary);font-size:0.9em;margin-bottom:1rem;">Textos guardados automáticamente cuando la IA no estaba disponible. Podés reintentarlos ahora o descartarlos.</p>
+                    <div id="pendingQueueList"></div>
+                </div>
+            </div>
+        </div>
+
     </main>
 </body>
 

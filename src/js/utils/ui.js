@@ -383,9 +383,9 @@ window.initApiManagement = function () {
         if (typeof updateApiStatus === 'function') updateApiStatus(savedKey);
     }
 
-    // Guardar API Key
+    // Guardar API Key (con validación real contra Groq)
     if (saveApiKeyBtn && apiKeyInput) {
-        saveApiKeyBtn.addEventListener('click', () => {
+        saveApiKeyBtn.addEventListener('click', async () => {
             const key = apiKeyInput.value.trim();
             if (!key || key === '••••••••••••••••') {
                 if (typeof showToast === 'function') showToast('⚠️ Ingresá una API Key válida', 'error');
@@ -395,10 +395,49 @@ window.initApiManagement = function () {
                 if (typeof showToast === 'function') showToast('❌ La API Key debe empezar con gsk_', 'error');
                 return;
             }
-            localStorage.setItem('groq_api_key', key);
-            window.GROQ_API_KEY = key;
-            if (typeof updateApiStatus === 'function') updateApiStatus(key);
-            if (typeof showToast === 'function') showToast('✅ API Key guardada correctamente', 'success');
+
+            const origText = saveApiKeyBtn.textContent;
+            saveApiKeyBtn.disabled = true;
+            saveApiKeyBtn.textContent = '⏳ Validando...';
+
+            try {
+                const res = await fetch('https://api.groq.com/openai/v1/models', {
+                    headers: { 'Authorization': 'Bearer ' + key }
+                });
+
+                if (res.status === 401) {
+                    if (typeof showToast === 'function') showToast('❌ API Key inválida. No fue guardada.', 'error');
+                    return;
+                }
+
+                if (res.ok) {
+                    localStorage.setItem('groq_api_key', key);
+                    window.GROQ_API_KEY = key;
+                    if (typeof updateApiStatus === 'function') updateApiStatus(key);
+                    if (typeof showToast === 'function') showToast('✅ Clave válida y guardada.', 'success');
+                    return;
+                }
+
+                // Otro código HTTP inesperado
+                throw new Error('HTTP ' + res.status);
+
+            } catch (err) {
+                if (err.message && err.message.startsWith('HTTP')) {
+                    if (typeof showToast === 'function') showToast('⚠️ Error inesperado (' + err.message + '). Intentá de nuevo.', 'error');
+                    return;
+                }
+                // Error de red / sin conexión
+                const guardar = window.confirm('⚠️ No se pudo verificar la clave (sin conexión a internet).\n\n¿Gauardar de todas formas?');
+                if (guardar) {
+                    localStorage.setItem('groq_api_key', key);
+                    window.GROQ_API_KEY = key;
+                    if (typeof updateApiStatus === 'function') updateApiStatus(key);
+                    if (typeof showToast === 'function') showToast('💾 Clave guardada sin verificar (sin conexión).', 'warning');
+                }
+            } finally {
+                saveApiKeyBtn.disabled = false;
+                saveApiKeyBtn.textContent = origText;
+            }
         });
     }
 
