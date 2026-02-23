@@ -531,15 +531,91 @@ if (applyTemplateBtn && normalTemplateDropdown) {
     }
 }
 
-// Clickable [No especificado] — selecciona el texto al hacer clic para reemplazarlo
-if (editor) {
+// ============ INLINE POPOVER PARA [No especificado] ============
+(function () {
+    if (!editor) return;
+
+    let _pop  = null; // div del popover activo
+    let _span = null; // span .no-data activo
+
+    function _closePopover() {
+        if (_pop) { _pop.remove(); _pop = null; }
+        _span = null;
+    }
+
+    function _applyValue(span, raw) {
+        const val = raw.trim();
+        if (!val) { _closePopover(); return; } // vacío → mantener [No especificado]
+        // Reemplazar el span por texto plano
+        const node = document.createTextNode(val);
+        span.replaceWith(node);
+        // Notificar al editor para undo/conteo de palabras
+        editor.dispatchEvent(new Event('input', { bubbles: true }));
+        _closePopover();
+    }
+
+    function _openPopover(span) {
+        _closePopover();
+        _span = span;
+
+        const pop = document.createElement('div');
+        pop.className = 'no-data-popover';
+        pop.innerHTML =
+            '<input class="no-data-input" type="text" placeholder="Escribir valor…" autocomplete="off" spellcheck="false">' +
+            '<button class="no-data-ok" title="Confirmar (Enter)">✓</button>' +
+            '<button class="no-data-cancel" title="Cancelar (Esc)">×</button>';
+
+        // Posicionar fijo en viewport debajo del span
+        const r  = span.getBoundingClientRect();
+        const vW = window.innerWidth;
+        const vH = window.innerHeight;
+
+        pop.style.top  = (r.bottom + 6) + 'px';
+        pop.style.left = r.left + 'px';
+        document.body.appendChild(pop);
+
+        // Ajustar si se sale por la derecha
+        const pW = pop.offsetWidth;
+        if (r.left + pW > vW - 8) {
+            pop.style.left = Math.max(8, vW - pW - 8) + 'px';
+        }
+        // Ajustar si se sale por abajo → mostrar arriba del span
+        const pH = pop.offsetHeight;
+        if (r.bottom + 6 + pH > vH - 8) {
+            pop.style.top = Math.max(8, r.top - pH - 6) + 'px';
+        }
+
+        const input = pop.querySelector('.no-data-input');
+        input.focus();
+
+        pop.querySelector('.no-data-ok').addEventListener('click', () => _applyValue(_span, input.value));
+        pop.querySelector('.no-data-cancel').addEventListener('click', _closePopover);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter')  { e.preventDefault(); _applyValue(_span, input.value); }
+            if (e.key === 'Escape') { e.preventDefault(); _closePopover(); }
+        });
+
+        _pop = pop;
+    }
+
+    // Click en span .no-data dentro del editor
     editor.addEventListener('click', (e) => {
-        const noData = e.target.closest('.no-data');
-        if (!noData) return;
-        const range = document.createRange();
-        range.selectNodeContents(noData);
-        const sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(range);
+        const span = e.target.closest('.no-data');
+        if (span) {
+            e.preventDefault();
+            e.stopPropagation();
+            _openPopover(span);
+        }
     });
-}
+
+    // Cerrar al hacer clic fuera del popover y fuera del editor
+    document.addEventListener('click', (e) => {
+        if (!_pop) return;
+        if (!e.target.closest('.no-data-popover') && !e.target.closest('#editor')) {
+            _closePopover();
+        }
+    }, true);
+
+    // Cerrar al hacer scroll (el popover queda flotando si no)
+    document.addEventListener('scroll', () => _closePopover(), { passive: true, capture: true });
+}());
