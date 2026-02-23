@@ -370,7 +370,7 @@ Hallazgos o s/p — incluir solo si fue evaluada
 ## CONCLUSIÓN
 Mencionar SOLO los hallazgos positivos o patológicos detectados, como párrafo fluido. No repetir datos normales.
 
-REGLA DE CONCLUSIÓN: Menciona SOLO los hallazgos patológicos o positivos. Podés redactar una síntesis diagnóstica breve usando terminología médica estándar que se derive directamente de los hallazgos dictados. PROHIBIDO: inventar valores o datos que no estén en la transcripción. PROHIBIDO: indicar tratamientos o procedimientos concretos si el médico no los mencionó.
+REGLA DE CONCLUSIÓN: Incluye TODOS los hallazgos patológicos o positivos — ninguno puede omitirse, aunque sea leve. No incluyas estructuras con resultado normal. Podés redactar una síntesis diagnóstica breve con terminología médica estándar derivada directamente de los hallazgos dictados. PROHIBIDO: inventar valores o datos que no estén en la transcripción. PROHIBIDO: indicar tratamientos o procedimientos concretos si el médico no los mencionó.
 IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si una estructura no fue evaluada ni mencionada, omití su sección o escribí s/p.`
     },
 
@@ -413,7 +413,7 @@ Biopsias tomadas (localización, número), polipectomías, otras intervenciones.
 ## CONCLUSIÓN
 Mencionar SOLO los hallazgos positivos o patológicos detectados, como párrafo fluido. No repetir datos normales.
 
-REGLA DE CONCLUSIÓN: Menciona SOLO los hallazgos patológicos o positivos. Podés redactar una síntesis diagnóstica breve usando terminología médica estándar que se derive directamente de los hallazgos dictados. PROHIBIDO: inventar valores o datos que no estén en la transcripción. PROHIBIDO: indicar tratamientos o procedimientos concretos si el médico no los mencionó.
+REGLA DE CONCLUSIÓN: Incluye TODOS los hallazgos patológicos o positivos — ninguno puede omitirse, aunque sea leve. No incluyas segmentos con resultado normal. Podés redactar una síntesis diagnóstica breve con terminología médica estándar derivada directamente de los hallazgos dictados. PROHIBIDO: inventar valores o datos que no estén en la transcripción. PROHIBIDO: indicar tratamientos o procedimientos concretos si el médico no los mencionó.
 IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si un segmento no fue evaluado ni mencionado, omití su sección o escribí s/p.`
     },
     colonoscopia: {
@@ -454,7 +454,7 @@ Biopsias, polipectomías (localización, tamaño, morfología, técnica), otras 
 ## CONCLUSIÓN
 Mencionar SOLO los hallazgos positivos o patológicos detectados, como párrafo fluido. No repetir datos normales.
 
-REGLA DE CONCLUSIÓN: Menciona SOLO los hallazgos patológicos o positivos. Podés redactar una síntesis diagnóstica breve usando terminología médica estándar que se derive directamente de los hallazgos dictados. PROHIBIDO: inventar valores o datos que no estén en la transcripción. PROHIBIDO: indicar tratamientos o procedimientos concretos si el médico no los mencionó.
+REGLA DE CONCLUSIÓN: Incluye TODOS los hallazgos patológicos o positivos — ninguno puede omitirse, aunque sea leve. No incluyas segmentos con resultado normal. Podés redactar una síntesis diagnóstica breve con terminología médica estándar derivada directamente de los hallazgos dictados. PROHIBIDO: inventar valores o datos que no estén en la transcripción. PROHIBIDO: indicar tratamientos o procedimientos concretos si el médico no los mencionó.
 IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si un segmento no fue evaluado ni mencionado, omití su sección o escribí s/p.`
     },
     broncoscopia: {
@@ -595,7 +595,7 @@ Hallazgos (lesiones, estenosis %, dominancia) o s/p. Incluir ramas si fueron eva
 ## CONCLUSIÓN
 Mencionar SOLO los vasos con lesiones significativas, tipo de enfermedad (uni/bi/trivascular) y recomendación terapéutica. No repetir vasos sin lesiones.
 
-REGLA DE CONCLUSIÓN: Estructura la conclusión en una sola oración o párrafo corto siguiendo este orden exacto: (1) tipo de enfermedad coronaria (ej: "Enfermedad coronaria univascular"), (2) cada vaso con lesión mencionado UNA SOLA VEZ con su localización y porcentaje de estenosis. NO repitas el mismo dato dos veces. NO reescribas lo que ya dijiste en el punto (1) con otras palabras. PROHIBIDO: inventar valores o datos que no estén en la transcripción. PROHIBIDO: indicar tratamientos concretos (stent, CABG, medicación) si el médico no los mencionó explícitamente.
+REGLA DE CONCLUSIÓN: Estructura la conclusión en un párrafo corto siguiendo este orden: (1) tipo de enfermedad coronaria (ej: "Enfermedad coronaria univascular/bivascular/trivascular"), (2) TODOS los vasos que tengan cualquier lesión mencionada, cada uno UNA SOLA VEZ con su localización y porcentaje de estenosis — sin importar si la lesión es significativa o no, si fue dictada debe aparecer. NO omitas ningún vaso con lesión. NO repitas el mismo dato dos veces. PROHIBIDO: inventar valores o datos que no estén en la transcripción. PROHIBIDO: indicar tratamientos concretos (stent, CABG, medicación) si el médico no los mencionó explícitamente.
 IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si un vaso no fue evaluado ni mencionado, omití su sección o escribí s/p.`
     },
     ecg: {
