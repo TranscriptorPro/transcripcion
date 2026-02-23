@@ -12,7 +12,8 @@
 const SHEET_NAME      = 'Usuarios';
 const SHEET_METRICAS  = 'Metricas_Uso';
 const SHEET_DEVICES   = 'Dispositivos';
-const SHEET_LOGS      = 'Admin_Logs';
+const SHEET_LOGS         = 'Admin_Logs';
+const SHEET_DIAGNOSTICOS = 'Diagnosticos';
 
 // SECURITY: Read from Apps Script Script Properties (not hardcoded).
 // In Apps Script editor: File > Project Properties > Script Properties > Add: ADMIN_KEY = <your-secret>
@@ -84,6 +85,16 @@ function doGet(e) {
               }
             }
           } catch(devErr) { /* no interrumpir si falla el registro de device */ }
+        }
+
+        // Diagnóstico remoto: si admin solicitó diagnóstico, set flag y resetear
+        const diagPendCol = headers.indexOf('Diagnostico_Pendiente');
+        if (diagPendCol !== -1) {
+          const diagVal = String(data[i][diagPendCol] || '').toLowerCase();
+          if (diagVal === 'true') {
+            doctor.diagnostico_solicitado = true;
+            sheet.getRange(i + 1, diagPendCol + 1).setValue('false');
+          }
         }
 
         return createResponse(doctor);
@@ -324,6 +335,67 @@ function doGet(e) {
     }
   }
 
+  // admin_request_diagnostic — marca Diagnostico_Pendiente=true para un usuario
+  if (action === 'admin_request_diagnostic') {
+    const adminKey = e.parameter.adminKey;
+    if (adminKey !== ADMIN_KEY) return createResponse({ error: 'Unauthorized' });
+
+    const userId = e.parameter.userId || '';
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const idCol = headers.indexOf('ID_Medico');
+    let diagPendCol = headers.indexOf('Diagnostico_Pendiente');
+
+    // Si la columna no existe aún, crearla al final
+    if (diagPendCol === -1) {
+      const lastCol = headers.length;
+      sheet.getRange(1, lastCol + 1).setValue('Diagnostico_Pendiente');
+      diagPendCol = lastCol;
+    }
+
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][idCol]) === String(userId)) {
+        sheet.getRange(i + 1, diagPendCol + 1).setValue('true');
+        appendAdminLog('admin', 'request_diagnostic', userId, 'Solicitud de diagnóstico remoto');
+        return createResponse({ success: true, message: 'Diagnóstico solicitado para ' + userId });
+      }
+    }
+    return createResponse({ error: 'Usuario no encontrado: ' + userId });
+  }
+
+  // admin_get_diagnostic — retorna el último diagnóstico guardado de un usuario
+  if (action === 'admin_get_diagnostic') {
+    const adminKey = e.parameter.adminKey;
+    if (adminKey !== ADMIN_KEY) return createResponse({ error: 'Unauthorized' });
+
+    const userId = e.parameter.userId || '';
+    try {
+      const diagSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_DIAGNOSTICOS);
+      if (!diagSheet) return createResponse({ diagnostic: null, message: 'Hoja Diagnosticos no existe aún' });
+
+      const data = diagSheet.getDataRange().getValues();
+      if (data.length <= 1) return createResponse({ diagnostic: null });
+
+      const headers = data[0];
+      const idCol = headers.indexOf('ID_Medico');
+
+      // Recorrer en reversa para obtener el más reciente
+      for (let i = data.length - 1; i >= 1; i--) {
+        if (!userId || String(data[i][idCol]) === String(userId)) {
+          const row = {};
+          headers.forEach((h, idx) => { row[h] = data[i][idx]; });
+          let report = {};
+          try { report = JSON.parse(row['Report_JSON'] || '{}'); } catch(e) {}
+          return createResponse({ diagnostic: { ...row, report } });
+        }
+      }
+      return createResponse({ diagnostic: null });
+    } catch(err) {
+      return createResponse({ error: 'Error leyendo diagnósticos: ' + err.message });
+    }
+  }
+
   return createResponse({ error: 'Acción no válida' });
 }
 
@@ -334,6 +406,38 @@ function doPost(e) {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
+
+  // save_diagnostic — guarda el diagnóstico del cliente en la hoja Diagnosticos
+  if (action === 'save_diagnostic') {
+    const id = payload.id || 'unknown';
+    const deviceId = payload.deviceId || '';
+    const report = payload.report || {};
+    const now = new Date().toISOString();
+
+    try {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      let diagSheet = ss.getSheetByName(SHEET_DIAGNOSTICOS);
+
+      // Crear la hoja si no existe con headers
+      if (!diagSheet) {
+        diagSheet = ss.insertSheet(SHEET_DIAGNOSTICOS);
+        diagSheet.appendRow(['ID_Diag', 'ID_Medico', 'Device_ID', 'Timestamp', 'Report_JSON']);
+        diagSheet.setFrozenRows(1);
+      }
+
+      diagSheet.appendRow([
+        'DIAG_' + Date.now(),
+        id,
+        deviceId,
+        now,
+        JSON.stringify(report)
+      ]);
+
+      return createResponse({ success: true });
+    } catch(err) {
+      return createResponse({ error: 'Error guardando diagnóstico: ' + err.message });
+    }
+  }
 
   // EXISTING: update usage count + escribe en Metricas_Uso
   if (action === 'update_usage') {
