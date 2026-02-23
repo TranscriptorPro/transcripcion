@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>🧪 Tests K1+K2 — Primer uso y separacion admin/cliente</title>
+<title> Tests K1+K2  Bienvenida cliente + separacion admin/cliente</title>
 <style>
   :root {
     --primary:#2563eb; --bg-card:#1e293b; --bg:#0f172a;
@@ -18,7 +18,7 @@
   .info { flex:1; }
   .info strong { font-size:.9rem; }
   .info p { font-size:.78rem; color:var(--text-muted); margin-top:.2rem; }
-  .status { min-width:300px; font-size:.8rem; display:flex; align-items:center; gap:.4rem;
+  .status { min-width:320px; font-size:.8rem; display:flex; align-items:center; gap:.4rem;
     border-radius:.35rem; padding:.35rem .6rem; }
   .status.wait   { background:#1e293b; color:#64748b; }
   .status.ok     { background:#022c22; color:#6ee7b7; }
@@ -34,35 +34,32 @@
 </head>
 <body>
 
-<!-- DOM fixtures que la logica necesita -->
+<!-- DOM fixtures -->
 <div id="fixtures" style="display:none">
-  <!-- K2 fixtures -->
   <div id="adminApiKeyCard"></div>
   <div id="onboardingOverlay" style="display:none">
+    <span id="onboardingDisplayNombre"></span>
+    <span id="onboardingDisplayMatricula"></span>
     <div id="onboardingApiKeyStep" style="display:none">
       <input id="onboardingApiKey" type="text">
     </div>
-    <form id="onboardingForm">
-      <input id="profName" type="text">
-      <input id="profMatricula" type="text">
-      <textarea id="profWorkplace"></textarea>
-      <input id="acceptTerms" type="checkbox">
-      <button id="btnSubmitOnboarding" type="submit" disabled></button>
-    </form>
+    <input id="acceptTerms" type="checkbox">
+    <button id="btnSubmitOnboarding" type="button" disabled></button>
   </div>
 </div>
 
 <main>
-<h2>&#9889; Tests K1 + K2 — Primer uso y separacion admin/cliente</h2>
+<h2>&#9889; Tests K1 + K2  Bienvenida cliente y separacion admin/cliente</h2>
 <div class="suite" id="suite"></div>
 
 <h2>&#8505;&#65039; Que verifica cada test</h2>
 <div class="legend">
-  <strong>K2-admin</strong>: Con <code>CLIENT_CONFIG.type='ADMIN'</code>, <code>adminApiKeyCard</code> NO se oculta.<br>
-  <strong>K2-normal</strong>: Con <code>CLIENT_CONFIG.type='NORMAL'</code>, <code>adminApiKeyCard</code> se oculta.<br>
-  <strong>K1-onboarding-shows</strong>: Sin <code>prof_data</code> ni API key en localStorage, se muestra el onboarding y el campo de API key es visible.<br>
-  <strong>K1-submit</strong>: Al hacer submit con nombre + matricula + API key, se guardan en localStorage y <code>window.GROQ_API_KEY</code> queda seteado.<br>
-  <strong>K1-no-repeat</strong>: Si ya hay <code>prof_data</code> y <code>groq_api_key</code>, el onboarding NO se muestra.
+  <strong>K2-admin</strong>: El flujo admin NO llama a _initClient y <code>adminApiKeyCard</code> permanece visible.<br>
+  <strong>K2-normal</strong>: _initClient (rol NORMAL) siempre oculta <code>adminApiKeyCard</code>.<br>
+  <strong>K1-shows</strong>: Sin <code>onboarding_accepted</code>, el overlay aparece y muestra nombre/matricula precargados.<br>
+  <strong>K1-no-api-key-input</strong>: <code>#onboardingApiKeyStep</code> permanece oculto para clientes.<br>
+  <strong>K1-accept</strong>: Al marcar T&amp;C y hacer click, se guarda <code>onboarding_accepted=true</code> y el overlay desaparece.<br>
+  <strong>K1-no-repeat</strong>: Con <code>onboarding_accepted=true</code> ya guardado, el overlay NO aparece.
 </div>
 </main>
 
@@ -77,12 +74,14 @@ window.initShortcuts = () => {};
 window.initApiManagement = () => {};
 window.initWorkplaceManagement = () => {};
 window.initStructurer = () => {};
+window.initContact = () => {};
+window.initPatientRegistryPanel = () => {};
 window.applyProfessionalData = () => {};
 window.updatePersonalization = () => {};
 window.initializeMode = () => {};
 </script>
 
-<!-- Logica de _initClient / _showClientOnboarding inline (de business.js) -->
+<!-- Logica de _initClient / _showClientOnboarding (copiada de business.js) -->
 <script>
 function _initCommonModules() {
     if (typeof initTheme === 'function') initTheme();
@@ -93,24 +92,26 @@ function _initCommonModules() {
     if (typeof initApiManagement === 'function') initApiManagement();
     if (typeof initWorkplaceManagement === 'function') initWorkplaceManagement();
     if (typeof initStructurer === 'function') initStructurer();
+    if (typeof initContact === 'function') initContact();
+    if (typeof initPatientRegistryPanel === 'function') initPatientRegistryPanel();
 }
 
-function _showClientOnboarding(existingProf, existingKey) {
+function _showClientOnboarding() {
     const overlay = document.getElementById('onboardingOverlay');
     if (!overlay) return;
+
+    const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
+
+    const displayNombre    = document.getElementById('onboardingDisplayNombre');
+    const displayMatricula = document.getElementById('onboardingDisplayMatricula');
+    if (displayNombre)    displayNombre.textContent    = profData.nombre    || '(no configurado)';
+    if (displayMatricula) displayMatricula.textContent = profData.matricula || '(no configurado)';
+
     const apiStep = document.getElementById('onboardingApiKeyStep');
-    if (apiStep) {
-        apiStep.style.display = '';
-        const apiInput = document.getElementById('onboardingApiKey');
-        if (apiInput && existingKey) apiInput.value = existingKey;
-    }
-    if (existingProf.nombre) {
-        const n = document.getElementById('profName');
-        const m = document.getElementById('profMatricula');
-        if (n) n.value = existingProf.nombre;
-        if (m) m.value = existingProf.matricula || '';
-    }
+    if (apiStep) apiStep.style.display = 'none';
+
     overlay.style.display = 'flex';
+
     const acceptTerms = document.getElementById('acceptTerms');
     const submitBtn   = document.getElementById('btnSubmitOnboarding');
     if (acceptTerms && submitBtn) {
@@ -118,63 +119,60 @@ function _showClientOnboarding(existingProf, existingKey) {
             submitBtn.disabled = !acceptTerms.checked;
         });
     }
-    const form = document.getElementById('onboardingForm');
-    if (!form) return;
-    form.addEventListener('submit', function handler(e) {
-        e.preventDefault();
-        const nombre    = document.getElementById('profName')?.value?.trim();
-        const matricula = document.getElementById('profMatricula')?.value?.trim();
-        const workplace = document.getElementById('profWorkplace')?.value?.trim();
-        const apiKey    = document.getElementById('onboardingApiKey')?.value?.trim();
-        if (!nombre || !matricula) { window.showToast('Completá nombre y matrícula', 'error'); return; }
-        if (!apiKey) { window.showToast('Ingresá tu API Key de Groq para continuar', 'error'); return; }
-        const specialties = Array.from(document.querySelectorAll('input[name="specialty"]:checked')).map(cb => cb.value);
-        const workplaces  = workplace ? workplace.split(/[\n,]/).map(s => s.trim()).filter(Boolean) : [];
-        const profData = { nombre, matricula, workplace: workplaces[0]||'', workplaces, specialties,
-            estudios:[], especialidad: specialties[0]||'', institutionName:'', headerColor:'#1a56a0' };
-        localStorage.setItem('prof_data', JSON.stringify(profData));
-        localStorage.setItem('onboarding_date', new Date().toISOString());
-        localStorage.setItem('groq_api_key', apiKey);
-        window.GROQ_API_KEY = apiKey;
-        overlay.style.display = 'none';
-        _initCommonModules();
-        form.removeEventListener('submit', handler);
-    });
+
+    if (submitBtn) {
+        submitBtn.addEventListener('click', function handler() {
+            if (!acceptTerms || !acceptTerms.checked) return;
+            localStorage.setItem('onboarding_accepted', 'true');
+            overlay.style.display = 'none';
+            window.GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
+            _initCommonModules();
+            try {
+                if (typeof applyProfessionalData === 'function') applyProfessionalData(profData);
+                if (typeof updatePersonalization === 'function') updatePersonalization(profData);
+                if (typeof initializeMode === 'function') initializeMode();
+            } catch (err) {
+                console.error('Error tras onboarding cliente:', err);
+            }
+            submitBtn.removeEventListener('click', handler);
+        });
+    }
 }
 
-function _initClient(cfg) {
-    // K2: ocultar panel de API Key del admin
+function _initClient() {
     const apiKeyCard = document.getElementById('adminApiKeyCard');
     if (apiKeyCard) apiKeyCard.style.display = 'none';
-    const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
-    const savedKey = localStorage.getItem('groq_api_key') || '';
-    const needsOnboarding = !profData.nombre || !savedKey;
-    if (needsOnboarding) {
-        _showClientOnboarding(profData, savedKey);
+
+    const accepted = localStorage.getItem('onboarding_accepted');
+    if (!accepted) {
+        _showClientOnboarding();
         return true; // onboarding shown
     }
-    window.GROQ_API_KEY = savedKey;
+
+    const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
+    window.GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
     _initCommonModules();
+
+    try {
+        if (typeof applyProfessionalData === 'function') applyProfessionalData(profData);
+        if (typeof updatePersonalization === 'function') updatePersonalization(profData);
+        if (typeof initializeMode === 'function') initializeMode();
+    } catch (e) {
+        console.error('Error inicializando datos cliente:', e);
+    }
+
     const onboardingOverlay = document.getElementById('onboardingOverlay');
     if (onboardingOverlay) onboardingOverlay.style.display = 'none';
     return false; // no onboarding
-}
-
-function adminCheck() {
-    // K2 admin: adminApiKeyCard debe permanecer visible
-    const apiKeyCard = document.getElementById('adminApiKeyCard');
-    apiKeyCard.style.display = ''; // reset
-    // Admin no llama a _initClient, no oculta el card
-    return apiKeyCard.style.display !== 'none';
 }
 </script>
 
 <!-- Logica de tests -->
 <script>
-// limpieza del localStorage entre tests
 function lsClean() {
     localStorage.removeItem('prof_data');
     localStorage.removeItem('groq_api_key');
+    localStorage.removeItem('onboarding_accepted');
     localStorage.removeItem('onboarding_date');
 }
 function resetFixtures() {
@@ -184,11 +182,17 @@ function resetFixtures() {
     if (apiStep) apiStep.style.display = 'none';
     const apiCard = document.getElementById('adminApiKeyCard');
     if (apiCard) apiCard.style.display = '';
-    const form = document.getElementById('onboardingForm');
-    if (form) { const clone = form.cloneNode(true); form.parentNode.replaceChild(clone, form); }
+    // Clonar para eliminar listeners
+    const terms = document.getElementById('acceptTerms');
+    if (terms) { const c = terms.cloneNode(true); c.checked = false; terms.replaceWith(c); }
+    const btn = document.getElementById('btnSubmitOnboarding');
+    if (btn) { const c = btn.cloneNode(true); c.disabled = true; btn.replaceWith(c); }
+    const dn = document.getElementById('onboardingDisplayNombre');
+    if (dn) dn.textContent = '';
+    const dm = document.getElementById('onboardingDisplayMatricula');
+    if (dm) dm.textContent = '';
 }
 function assert(cond, ok, fail) { return cond ? ['ok', ok] : ['fail', fail]; }
-
 function setStatus(id, type, msg) {
     const el = document.getElementById('st-' + id);
     if (!el) return;
@@ -199,95 +203,116 @@ function setStatus(id, type, msg) {
 const TESTS = [
     {
         id: 'k2-admin',
-        label: 'K2 — Admin: adminApiKeyCard visible',
-        desc: 'Cuando CLIENT_CONFIG.type=ADMIN el card de API Key NO se oculta.',
+        label: 'K2  Admin: adminApiKeyCard visible',
+        desc: 'El flujo admin NO llama a _initClient, adminApiKeyCard permanece intacto.',
         run() {
             resetFixtures();
             const card = document.getElementById('adminApiKeyCard');
-            card.style.display = ''; // simula estado inicial
-            // Admin NO llama a _initClient, por lo tanto el card no se toca
-            // Verificamos que _initClient sería quien lo oculta y que admin no lo llama
-            const wouldHide = false; // admin path no oculta
-            return assert(!wouldHide && card.style.display !== 'none',
-                'adminApiKeyCard visible (admin path no oculta) ✓',
+            card.style.display = '';
+            // Admin path no llama _initClient  el card queda visible
+            return assert(card.style.display !== 'none',
+                'adminApiKeyCard visible (admin path no oculta) ',
                 'Card fue ocultado para admin');
         }
     },
     {
         id: 'k2-normal',
-        label: 'K2 — Normal: adminApiKeyCard oculto',
-        desc: 'Cuando CLIENT_CONFIG.type=NORMAL _initClient oculta el card de API Key.',
+        label: 'K2  Normal: adminApiKeyCard oculto',
+        desc: '_initClient siempre oculta adminApiKeyCard (independiente de si hay onboarding).',
         run() {
             lsClean();
             resetFixtures();
+            localStorage.setItem('onboarding_accepted', 'true');
+            localStorage.setItem('prof_data', JSON.stringify({ nombre: 'Dr. Test', matricula: 'MN 1' }));
+            localStorage.setItem('groq_api_key', 'gsk_x');
             const card = document.getElementById('adminApiKeyCard');
             card.style.display = '';
-            _initClient(); // llama a la funcion
+            _initClient();
             return assert(
                 card.style.display === 'none',
-                'adminApiKeyCard: display:none ✓',
-                `display="${card.style.display}" — esperado none`
+                'adminApiKeyCard: display:none ',
+                'display="' + card.style.display + '"  esperado none'
             );
         }
     },
     {
         id: 'k1-shows',
-        label: 'K1 — Sin datos: muestra onboarding con campo API key',
-        desc: 'Sin prof_data ni api key en localStorage, onboarding visible y campo API key visible.',
+        label: 'K1  Sin onboarding_accepted: bienvenida con datos precargados',
+        desc: 'Sin la flag en localStorage, el overlay aparece y muestra nombre/matricula del prof_data del admin.',
         run() {
             lsClean();
             resetFixtures();
+            localStorage.setItem('prof_data', JSON.stringify({ nombre: 'Dra. Garcia', matricula: 'MP 77777' }));
             _initClient();
             const overlay = document.getElementById('onboardingOverlay');
-            const apiStep = document.getElementById('onboardingApiKeyStep');
+            const nombre  = document.getElementById('onboardingDisplayNombre') ? document.getElementById('onboardingDisplayNombre').textContent : null;
+            const matr    = document.getElementById('onboardingDisplayMatricula') ? document.getElementById('onboardingDisplayMatricula').textContent : null;
             const shown   = overlay && overlay.style.display !== 'none';
-            const keyStep = apiStep && apiStep.style.display !== 'none';
-            return assert(shown && keyStep,
-                'Onboarding visible ✓ · Campo API key visible ✓',
-                `overlay shown=${shown} · apiStep shown=${keyStep}`
+            return assert(
+                shown && nombre === 'Dra. Garcia' && matr === 'MP 77777',
+                'Overlay visible, nombre="' + nombre + '", matricula="' + matr + '" ',
+                'overlay shown=' + shown + ' nombre="' + nombre + '" mat="' + matr + '"'
             );
         }
     },
     {
-        id: 'k1-submit',
-        label: 'K1 — Submit guarda profData y API key en localStorage',
-        desc: 'Tras rellenar formulario + submit, prof_data y groq_api_key quedan en localStorage.',
+        id: 'k1-no-api-key-input',
+        label: 'K1  Campo API key siempre oculto para clientes',
+        desc: '#onboardingApiKeyStep permanece display:none  cliente nunca ingresa su API key.',
         run() {
             lsClean();
             resetFixtures();
+            localStorage.setItem('prof_data', JSON.stringify({ nombre: 'Dr. Test', matricula: 'MN 1' }));
             _initClient();
-            // Rellenar el formulario
-            document.getElementById('profName').value      = 'Dr. Test';
-            document.getElementById('profMatricula').value = 'MN 99999';
-            document.getElementById('onboardingApiKey').value = 'gsk_test_fake_key_123';
-            // Simular submit
-            document.getElementById('onboardingForm').dispatchEvent(new Event('submit'));
-            const prof     = JSON.parse(localStorage.getItem('prof_data') || 'null');
-            const savedKey = localStorage.getItem('groq_api_key');
-            const groqGlobal = window.GROQ_API_KEY;
+            const apiStep = document.getElementById('onboardingApiKeyStep');
             return assert(
-                prof?.nombre === 'Dr. Test' && savedKey === 'gsk_test_fake_key_123' && groqGlobal === 'gsk_test_fake_key_123',
-                `prof_data="${prof?.nombre}" | groq_api_key guardada ✓ | window.GROQ_API_KEY ✓`,
-                `prof=${prof?.nombre} key=${savedKey} global=${groqGlobal}`
+                !apiStep || apiStep.style.display === 'none',
+                '#onboardingApiKeyStep oculto para clientes ',
+                'apiStep display="' + (apiStep ? apiStep.style.display : 'N/A') + '"  esperado none'
+            );
+        }
+    },
+    {
+        id: 'k1-accept',
+        label: 'K1  Aceptar T&C: guarda flag y oculta overlay',
+        desc: 'Al marcar T&C y click, onboarding_accepted=true queda en localStorage y el overlay desaparece.',
+        run() {
+            lsClean();
+            resetFixtures();
+            localStorage.setItem('prof_data', JSON.stringify({ nombre: 'Dr. Test', matricula: 'MN 2' }));
+            _initClient();
+            const terms = document.getElementById('acceptTerms');
+            const btn   = document.getElementById('btnSubmitOnboarding');
+            if (!terms || !btn) return ['fail', 'fixtures no encontrados después de _initClient'];
+            terms.checked = true;
+            terms.dispatchEvent(new Event('change'));
+            btn.click();
+            const flagSaved   = localStorage.getItem('onboarding_accepted') === 'true';
+            const overlay     = document.getElementById('onboardingOverlay');
+            const overlayHide = !overlay || overlay.style.display === 'none';
+            return assert(
+                flagSaved && overlayHide,
+                'onboarding_accepted=true  | overlay oculto ',
+                'flag="' + localStorage.getItem('onboarding_accepted') + '" overlay="' + (overlay ? overlay.style.display : 'N/A') + '"'
             );
         }
     },
     {
         id: 'k1-no-repeat',
-        label: 'K1 — Con datos existentes: onboarding NO se muestra',
-        desc: 'Si ya hay prof_data y groq_api_key, el onboarding no aparece.',
+        label: 'K1  Con onboarding_accepted: overlay NO se muestra',
+        desc: 'Si la flag ya está guardada, el onboarding es omitido completamente.',
         run() {
             lsClean();
             resetFixtures();
-            // Simular usuario ya configurado
-            localStorage.setItem('prof_data', JSON.stringify({ nombre: 'Dr. Test', matricula: 'MN 99999' }));
-            localStorage.setItem('groq_api_key', 'gsk_existing_key');
+            localStorage.setItem('onboarding_accepted', 'true');
+            localStorage.setItem('prof_data', JSON.stringify({ nombre: 'Dr. Test', matricula: 'MN 3' }));
+            localStorage.setItem('groq_api_key', 'gsk_existing');
             const showed = _initClient();
             const overlay = document.getElementById('onboardingOverlay');
             return assert(
                 showed === false && (!overlay || overlay.style.display === 'none'),
-                'Onboarding oculto para usuario ya configurado ✓',
-                `showed=${showed} overlay display="${overlay?.style.display}"`
+                'Onboarding omitido para usuario que ya acepto T&C ',
+                'showed=' + showed + ' overlay="' + (overlay ? overlay.style.display : 'N/A') + '"'
             );
         }
     }
@@ -297,34 +322,34 @@ const suite = document.getElementById('suite');
 TESTS.forEach(t => {
     const row = document.createElement('div');
     row.className = 'test-row';
-    row.innerHTML = `
-        <div class="info"><strong>${t.label}</strong><p>${t.desc}</p></div>
-        <div class="status wait" id="st-${t.id}"><div class="dot"></div><span>— pendiente —</span></div>
-        <button class="run-btn" onclick="runTest('${t.id}')">&#9654; Ejecutar</button>`;
+    row.innerHTML =
+        '<div class="info"><strong>' + t.label + '</strong><p>' + t.desc + '</p></div>' +
+        '<div class="status wait" id="st-' + t.id + '"><div class="dot"></div><span> pendiente </span></div>' +
+        '<button class="run-btn" onclick="runOne(\'' + t.id + '\')">&#9654; Ejecutar</button>';
     suite.appendChild(row);
 });
 
 const allBtn = document.createElement('button');
-allBtn.textContent = '\u25b6\u25b6 Ejecutar todos';
+allBtn.textContent = ' Ejecutar todos';
 allBtn.className = 'run-btn';
 allBtn.style.cssText = 'background:#10b981;margin-top:.5rem;padding:.55rem 1.25rem;';
 allBtn.onclick = async () => {
     for (const t of TESTS) {
-        runTest(t.id);
-        await new Promise(r => setTimeout(r, 80));
+        runOne(t.id);
+        await new Promise(r => setTimeout(r, 100));
     }
 };
 suite.appendChild(allBtn);
 
-function runTest(id) {
+function runOne(id) {
     const t = TESTS.find(x => x.id === id);
     if (!t) return;
-    setStatus(id, 'wait', '\u23f3 ejecutando...');
+    setStatus(id, 'wait', ' ejecutando...');
     try {
         const [type, msg] = t.run();
-        setStatus(id, type, (type === 'ok' ? '\u2713 ' : '\u2717 ') + msg);
+        setStatus(id, type, (type === 'ok' ? ' ' : ' ') + msg);
     } catch(err) {
-        setStatus(id, 'fail', '\u2717 JS Error: ' + err.message);
+        setStatus(id, 'fail', ' JS Error: ' + err.message);
     }
 }
 </script>

@@ -83,92 +83,56 @@
         <div class="modal-overlay" id="onboardingOverlay">
             <div class="modal" style="max-width: 500px;">
                 <div class="modal-header">
-                    <h2>🩺 ¡Bienvenido/a al generador de informes médicos!</h2>
+                    <h2>🩺 ¡Bienvenido/a a Transcriptor Pro!</h2>
                 </div>
                 <div class="modal-body">
-                    <p
-                        style="text-align: center; color: var(--primary); font-weight: 700; margin-bottom: 1.5rem; font-size: 1.1rem;">
-                        ¡Tus grabaciones de audio a texto en un instante! 🎙️✨
+                    <p style="text-align: center; color: var(--primary); font-weight: 700; margin-bottom: 1.5rem; font-size: 1.1rem;">
+                        ¡Tus grabaciones de audio a informe médico en instantes! 🎙️✨
                     </p>
-                    <p style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
-                        Para comenzar, por favor completa tu perfil profesional. Estos datos se usarán para personalizar
-                        tus reportes y habilitar tu cuenta.
+                    <p style="margin-bottom: 1.25rem; color: var(--text-secondary); font-size: 0.9rem;">
+                        Tu cuenta fue configurada por tu administrador. Confirmá tus datos y aceptá los términos para activar la app.
                     </p>
-                    <form id="onboardingForm">
-                        <div class="help-section">
-                            <label class="sidebar-label">Nombre y Apellido:</label>
-                            <input type="text" id="profName" class="toolbar-input" style="width: 100%;"
-                                placeholder="Ej: Dr. Juan Pérez" required>
+
+                    <!-- Datos precargados por el admin (solo lectura) -->
+                    <div style="background: rgba(26,86,160,0.06); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em;">Datos de tu cuenta</p>
+                        <div style="display:flex; gap: 0.5rem; align-items: baseline; margin-bottom: 0.4rem;">
+                            <span style="font-size: 0.85rem; color: var(--text-secondary); min-width: 80px;">Profesional:</span>
+                            <strong id="onboardingDisplayNombre" style="color: var(--text-primary);">—</strong>
                         </div>
-                        <div class="help-section">
-                            <label class="sidebar-label">Matrícula (MN/MP):</label>
-                            <input type="text" id="profMatricula" class="toolbar-input" style="width: 100%;"
-                                placeholder="Ej: MN 12345" required>
+                        <div style="display:flex; gap: 0.5rem; align-items: baseline;">
+                            <span style="font-size: 0.85rem; color: var(--text-secondary); min-width: 80px;">Matrícula:</span>
+                            <strong id="onboardingDisplayMatricula" style="color: var(--text-primary);">—</strong>
                         </div>
-                        <div class="help-section">
-                            <label class="sidebar-label">Especialidades (selecciona las que aplicas):</label>
-                            <div id="specialtiesGrid"
-                                style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem;">
-                                <label class="audio-option"><input type="checkbox" name="specialty" value="Cardiología">
-                                    Cardiología</label>
-                                <label class="audio-option"><input type="checkbox" name="specialty" value="Ecografía">
-                                    Ecografía</label>
-                                <label class="audio-option"><input type="checkbox" name="specialty"
-                                        value="Gastroenterología"> Gastroenterología</label>
-                                <label class="audio-option"><input type="checkbox" name="specialty" value="ORL">
-                                    ORL</label>
-                                <label class="audio-option"><input type="checkbox" name="specialty" value="General">
-                                    Medicina General</label>
-                                <label class="audio-option"><input type="checkbox" name="specialty" value="Quirúrgico">
-                                    Quirúrgico</label>
-                            </div>
-                        </div>
-                        <div class="help-section" id="onboardingStudiesSection" style="display: none;">
-                            <label class="sidebar-label">Estudios que realiza:</label>
-                            <div id="studiesGrid"
-                                style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem; background: rgba(0,0,0,0.02); padding: 0.5rem; border-radius: 4px;">
-                            </div>
-                        </div>
-                        <div class="help-section">
-                            <label class="sidebar-label">Lugares de Trabajo (uno por línea o separados por
-                                coma):</label>
-                            <textarea id="profWorkplace" class="config-textarea" style="width: 100%; min-height: 60px;"
-                                placeholder="Ej: Hospital Italiano, Sanatorio Parque, Consultorio 2"
-                                required></textarea>
-                        </div>
-                        <!-- K1: API Key step (solo para usuarios cliente, ocultado por JS para ADMIN) -->
-                        <div class="help-section" id="onboardingApiKeyStep" style="display:none;">
-                            <label class="sidebar-label">🔑 API Key de Groq:</label>
-                            <input type="text" id="onboardingApiKey" class="toolbar-input" style="width:100%;"
-                                placeholder="gsk_..." autocomplete="off">
-                            <small style="display:block;margin-top:.4rem;font-size:.72rem;color:var(--text-secondary);">
-                                Obtenela gratis en
-                                <a href="https://console.groq.com/keys" target="_blank"
-                                    style="color:var(--primary-light);">console.groq.com/keys</a>.
-                                Se guarda solo en este dispositivo.
-                            </small>
-                        </div>
-                        <div
-                            style="background: rgba(15, 118, 110, 0.05); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
-                            <p style="font-size: 0.75rem; color: var(--primary-dark);">
-                                ⚠️ <strong>IMPORTANTE:</strong> Los datos de Nombre y Matrícula no podrán ser
-                                modificados posteriormente.
-                            </p>
-                        </div>
-                        <div class="terms-section"
-                            style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-main); border-radius: 8px; margin-bottom: 1rem;">
-                            <label style="display: flex; align-items: start; gap: 0.5rem; cursor: pointer;">
-                                <input type="checkbox" id="acceptTerms" required style="margin-top: 0.25rem;">
-                                <span style="font-size: 0.85rem; color: var(--text-secondary);">
-                                    Acepto los <a href="#" id="linkTerms"
-                                        style="color: var(--primary); text-decoration: underline;">términos y
-                                        condiciones</a> de uso
-                                </span>
-                            </label>
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-full" id="btnSubmitOnboarding" disabled>Activar
-                            Mi Licencia</button>
-                    </form>
+                    </div>
+
+                    <!-- K1: API Key step (oculto para clientes, solo admin lo ve) -->
+                    <div class="help-section" id="onboardingApiKeyStep" style="display:none;">
+                        <label class="sidebar-label">🔑 API Key de Groq:</label>
+                        <input type="text" id="onboardingApiKey" class="toolbar-input" style="width:100%;"
+                            placeholder="gsk_..." autocomplete="off">
+                        <small style="display:block;margin-top:.4rem;font-size:.72rem;color:var(--text-secondary);">
+                            Obtenela gratis en
+                            <a href="https://console.groq.com/keys" target="_blank"
+                                style="color:var(--primary-light);">console.groq.com/keys</a>.
+                            Se guarda solo en este dispositivo.
+                        </small>
+                    </div>
+
+                    <div class="terms-section"
+                        style="margin-top: 1rem; padding: 1rem; background: var(--bg-main); border-radius: 8px; margin-bottom: 1.25rem;">
+                        <label style="display: flex; align-items: start; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" id="acceptTerms" required style="margin-top: 0.25rem;">
+                            <span style="font-size: 0.85rem; color: var(--text-secondary);">
+                                Acepto los <a href="#" id="linkTerms"
+                                    style="color: var(--primary); text-decoration: underline;">términos y
+                                    condiciones</a> de uso
+                            </span>
+                        </label>
+                    </div>
+                    <button type="button" class="btn btn-primary btn-full" id="btnSubmitOnboarding" disabled>
+                        Comenzar a usar la app
+                    </button>
                 </div>
             </div>
         </div>

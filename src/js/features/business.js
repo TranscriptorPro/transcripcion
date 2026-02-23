@@ -129,18 +129,17 @@ function _initClient() {
     const apiKeyCard = document.getElementById('adminApiKeyCard');
     if (apiKeyCard) apiKeyCard.style.display = 'none';
 
-    const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
-    const savedKey = localStorage.getItem('groq_api_key') || '';
-    const needsOnboarding = !profData.nombre || !savedKey;
-
-    // K1: mostrar onboarding en primer uso (sin perfil o sin API key)
-    if (needsOnboarding) {
-        _showClientOnboarding(profData, savedKey);
-        return; // los módulos se inicializan dentro del submit
+    // K1: el criterio de primer uso es la aceptación de T&C, NO la ausencia de datos.
+    // Los datos (nombre, matrícula, API key) los precarga el admin antes de entregar la app.
+    const accepted = localStorage.getItem('onboarding_accepted');
+    if (!accepted) {
+        _showClientOnboarding();
+        return; // los módulos se inicializan dentro del handler de aceptación
     }
 
-    // Ya configurado: inicializar normalmente
-    window.GROQ_API_KEY = savedKey;
+    // Ya aceptó T&C: inicializar con los datos precargados por el admin
+    const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
+    window.GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
     _initCommonModules();
 
     try {
@@ -169,31 +168,27 @@ function _initCommonModules() {
     if (typeof initPatientRegistryPanel === 'function') initPatientRegistryPanel();
 }
 
-// ─── Onboarding de cliente: primer uso ───────────────────────────────────────
-function _showClientOnboarding(existingProf, existingKey) {
+// ─── Onboarding de cliente: bienvenida + T&C + confirmación de datos precargados ─
+function _showClientOnboarding() {
     const overlay = document.getElementById('onboardingOverlay');
     if (!overlay) return;
 
-    // Mostrar el campo de API key (solo para clientes)
-    const apiStep = document.getElementById('onboardingApiKeyStep');
-    if (apiStep) {
-        apiStep.style.display = '';
-        // Precargar key si ya existía (solo falta el perfil)
-        const apiInput = document.getElementById('onboardingApiKey');
-        if (apiInput && existingKey) apiInput.value = existingKey;
-    }
+    // Leer datos que el admin precargó en localStorage antes de entregar la app
+    const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
 
-    // Precargar datos si ya había perfil (solo falta la key)
-    if (existingProf.nombre) {
-        const n = document.getElementById('profName');
-        const m = document.getElementById('profMatricula');
-        if (n) n.value = existingProf.nombre;
-        if (m) m.value = existingProf.matricula || '';
-    }
+    // Rellenar la tarjeta de datos precargados (solo lectura)
+    const displayNombre    = document.getElementById('onboardingDisplayNombre');
+    const displayMatricula = document.getElementById('onboardingDisplayMatricula');
+    if (displayNombre)    displayNombre.textContent    = profData.nombre    || '(no configurado)';
+    if (displayMatricula) displayMatricula.textContent = profData.matricula || '(no configurado)';
+
+    // Ocultar el step de API Key (solo lo usa el flujo admin, nunca el cliente)
+    const apiStep = document.getElementById('onboardingApiKeyStep');
+    if (apiStep) apiStep.style.display = 'none';
 
     overlay.style.display = 'flex';
 
-    // Wire up accept-terms → habilitar botón submit
+    // T&C → habilitar botón
     const acceptTerms = document.getElementById('acceptTerms');
     const submitBtn   = document.getElementById('btnSubmitOnboarding');
     if (acceptTerms && submitBtn) {
@@ -202,65 +197,27 @@ function _showClientOnboarding(existingProf, existingKey) {
         });
     }
 
-    // ── Submit del formulario ──
-    const form = document.getElementById('onboardingForm');
-    if (!form) return;
+    // Aceptación
+    if (submitBtn) {
+        submitBtn.addEventListener('click', () => {
+            if (!acceptTerms?.checked) return;
 
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
+            localStorage.setItem('onboarding_accepted', 'true');
+            overlay.style.display = 'none';
 
-        const nombre    = document.getElementById('profName')?.value?.trim();
-        const matricula = document.getElementById('profMatricula')?.value?.trim();
-        const workplace = document.getElementById('profWorkplace')?.value?.trim();
-        const apiKey    = document.getElementById('onboardingApiKey')?.value?.trim();
+            window.GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
+            _initCommonModules();
 
-        if (!nombre || !matricula) {
-            if (typeof showToast === 'function') showToast('Completá nombre y matrícula', 'error');
-            return;
-        }
-        if (!apiKey) {
-            if (typeof showToast === 'function') showToast('Ingresá tu API Key de Groq para continuar', 'error');
-            return;
-        }
+            try {
+                if (typeof applyProfessionalData === 'function') applyProfessionalData(profData);
+                if (typeof updatePersonalization === 'function') updatePersonalization(profData);
+                if (typeof initializeMode === 'function') initializeMode();
+            } catch (err) {
+                console.error('Error tras onboarding cliente:', err);
+            }
 
-        // Guardar especialidades marcadas
-        const specialties = Array.from(
-            document.querySelectorAll('input[name="specialty"]:checked')
-        ).map(cb => cb.value);
-
-        // Guardar lugares de trabajo
-        const workplaces = workplace
-            ? workplace.split(/[\n,]/).map(s => s.trim()).filter(Boolean)
-            : [];
-
-        const profData = {
-            nombre,
-            matricula,
-            workplace:  workplaces[0] || '',
-            workplaces,
-            specialties,
-            estudios:        [],
-            especialidad:    specialties[0] || '',
-            institutionName: '',
-            headerColor:     '#1a56a0',
-        };
-
-        localStorage.setItem('prof_data', JSON.stringify(profData));
-        localStorage.setItem('onboarding_date', new Date().toISOString());
-        localStorage.setItem('groq_api_key', apiKey);
-        window.GROQ_API_KEY = apiKey;
-
-        overlay.style.display = 'none';
-
-        _initCommonModules();
-        try {
-            if (typeof applyProfessionalData === 'function') applyProfessionalData(profData);
-            if (typeof updatePersonalization === 'function') updatePersonalization(profData);
-            if (typeof initializeMode === 'function') initializeMode();
-        } catch (err) {
-            console.error('Error tras onboarding:', err);
-        }
-
-        if (typeof showToast === 'function') showToast('¡Configuración guardada! Bienvenido/a 🎉', 'success');
-    });
+            const saludo = profData.nombre ? `¡Bienvenido/a, ${profData.nombre}! 🎉` : '¡Bienvenido/a! 🎉';
+            if (typeof showToast === 'function') showToast(saludo, 'success');
+        });
+    }
 }
