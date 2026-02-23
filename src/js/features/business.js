@@ -5,16 +5,25 @@ window.initWorkplaceManagement = function () {
 
     function populateWorkplaceDropdown() {
         const sel = document.getElementById('pdfWorkplace');
-        if (!sel) return;
-        const current = sel.value;
-        sel.innerHTML = '<option value="">Seleccionar lugar...</option>';
+        const quick = document.getElementById('quickWorkplaceSelector');
+        if (!sel && !quick) return;
+        const current = sel?.value;
+        if (sel) sel.innerHTML = '<option value="">Seleccionar lugar...</option>';
+        if (quick) quick.innerHTML = '<option value="">🏥 Lugar de trabajo</option>';
         workplaceProfiles.forEach((p, i) => {
-            const opt = document.createElement('option');
-            opt.value = i;
-            opt.textContent = p.name || `Lugar ${i + 1}`;
-            sel.appendChild(opt);
+            const label = p.name || `Lugar ${i + 1}`;
+            if (sel) {
+                const opt = document.createElement('option');
+                opt.value = i; opt.textContent = label;
+                sel.appendChild(opt);
+            }
+            if (quick) {
+                const opt = document.createElement('option');
+                opt.value = i; opt.textContent = label;
+                quick.appendChild(opt);
+            }
         });
-        if (current !== '') sel.value = current;
+        if (sel && current !== '') sel.value = current;
     }
 
     function loadWorkplaceProfile(index) {
@@ -34,6 +43,27 @@ window.initWorkplaceManagement = function () {
 
     document.getElementById('pdfWorkplace')?.addEventListener('change', (e) => {
         if (e.target.value !== '') loadWorkplaceProfile(parseInt(e.target.value));
+    });
+
+    // Selector rápido de lugar de trabajo (barra del editor)
+    document.getElementById('quickWorkplaceSelector')?.addEventListener('change', (e) => {
+        const idx = e.target.value;
+        if (idx === '') return;
+        loadWorkplaceProfile(parseInt(idx));
+        // Sincronizar con el select del modal de config PDF
+        const pdfSel = document.getElementById('pdfWorkplace');
+        if (pdfSel) pdfSel.value = idx;
+        // Persistir en pdf_config
+        const config = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        const profile = workplaceProfiles[parseInt(idx)];
+        if (profile) {
+            config.selectedWorkplace = idx;
+            config.workplaceAddress = profile.address || '';
+            config.workplacePhone   = profile.phone   || '';
+            config.workplaceEmail   = profile.email   || '';
+            localStorage.setItem('pdf_config', JSON.stringify(config));
+        }
+        if (typeof showToast === 'function') showToast(`🏥 ${profile?.name || 'Lugar'} seleccionado`, 'success');
     });
 
     document.getElementById('btnSaveWorkplace')?.addEventListener('click', () => {

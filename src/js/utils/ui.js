@@ -126,13 +126,19 @@ window.initModals = function () {
         });
     }
 
-    // Workplace Modals (Basic Overlay Toggle)
+    // Workplace Modal — abrir
     document.getElementById('btnAddWorkplace')?.addEventListener('click', () => {
         document.getElementById('workplaceModalOverlay')?.classList.add('active');
     });
 
-    document.getElementById('btnCloseWorkplace')?.addEventListener('click', () => {
+    // Workplace Modal — cerrar (X en header Y botón Cancelar en footer)
+    const closeWorkplaceModal = () =>
         document.getElementById('workplaceModalOverlay')?.classList.remove('active');
+    document.getElementById('btnCancelWorkplace')?.addEventListener('click', closeWorkplaceModal);
+    document.getElementById('btnCancelWorkplaceBtn')?.addEventListener('click', closeWorkplaceModal);
+    // Cerrar al click fuera del modal
+    document.getElementById('workplaceModalOverlay')?.addEventListener('click', (e) => {
+        if (e.target === document.getElementById('workplaceModalOverlay')) closeWorkplaceModal();
     });
 
     // PDF Config Main button
@@ -181,8 +187,10 @@ window.initModals = function () {
                 if (inst != null) profD.institutionName = inst;
                 if (col  != null) profD.headerColor     = col;
                 localStorage.setItem('prof_data', JSON.stringify(profD));
-                if (typeof showToast === 'function') showToast('🏥 Encabezado guardado', 'success');
             }
+            // M-2: cerrar el modal después de guardar
+            closePdfConfigModal();
+            if (typeof showToast === 'function') showToast('✅ Configuración guardada', 'success');
         });
     }
 

@@ -855,6 +855,11 @@
                           </div>
                         </div>
                         <div style="width: 1px; height: 20px; background: var(--border); margin: 0 0.25rem;"></div>
+                        <!-- Selector rápido de lugar de trabajo (visible solo cuando los botones del editor son visibles) -->
+                        <select id="quickWorkplaceSelector" style="display:none; padding:0.3rem 0.5rem; border:1px solid var(--border); border-radius:6px; background:var(--bg-card); color:var(--text-primary); font-size:0.8rem; max-width:160px; cursor:pointer;" title="Cambiar lugar de trabajo">
+                            <option value="">🏥 Lugar de trabajo</option>
+                        </select>
+                        <div style="width: 1px; height: 20px; background: var(--border); margin: 0 0.25rem;"></div>
                         <!-- PDF Controls - managed by state machine -->
                         <button class="btn btn-action-green" id="btnConfigPdfMain" style="display:none;"
                             title="Configurar PDF">

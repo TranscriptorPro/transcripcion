@@ -14,6 +14,7 @@ window.updateButtonsVisibility = function (state) {
     const btnStructureAI         = document.getElementById('btnStructureAI');
     const btnApplyTemplate       = document.getElementById('btnApplyTemplate');
     const applyTemplateWrapper   = document.getElementById('applyTemplateWrapper');
+    const quickWorkplaceSelector = document.getElementById('quickWorkplaceSelector');
 
     const isTranscribed  = ['TRANSCRIBED', 'STRUCTURED', 'PREVIEWED'].includes(state);
     const isStructured   = ['STRUCTURED', 'PREVIEWED'].includes(state);
@@ -42,6 +43,10 @@ window.updateButtonsVisibility = function (state) {
     if (btnPreviewPdfMain) {
         btnPreviewPdfMain.style.display = isTranscribed ? 'inline-flex' : 'none';
         btnPreviewPdfMain.disabled = !isTranscribed;
+    }
+    // Selector rápido de lugar de trabajo: visible junto con los botones del editor
+    if (quickWorkplaceSelector) {
+        quickWorkplaceSelector.style.display = isTranscribed ? 'inline-block' : 'none';
     }
 
     // Copy & Download: visible after transcription
