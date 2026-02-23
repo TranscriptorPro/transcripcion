@@ -84,20 +84,21 @@ function initContactInline(cfg) {
 
     if (!overlay) { window.open = origOpen; return; }
 
+    // Clonar form PRIMERO (limpia listeners de submit previos)
+    // LUEGO añadir todos los listeners a los elementos frescos del clon
+    if (form) {
+        const newForm = form.cloneNode(true);
+        form.parentNode.replaceChild(newForm, form);
+    }
+
     function validateForm() {
         const motivo  = document.getElementById('contactMotivo')?.value;
         const detalle = document.getElementById('contactDetalle')?.value?.trim();
-        // Re-query cada vez para no depender de referencias obsoletas tras clonar el form
         const sb = document.getElementById('btnSendContact');
         if (sb) sb.disabled = !motivo || !detalle;
     }
 
-    const motivoEl  = document.getElementById('contactMotivo');
-    const detalleEl = document.getElementById('contactDetalle');
-    const newMotivoEl  = motivoEl  ? motivoEl.cloneNode(true)  : null;
-    const newDetalleEl = detalleEl ? detalleEl.cloneNode(true) : null;
-    if (newMotivoEl  && motivoEl)  { motivoEl.parentNode.replaceChild(newMotivoEl, motivoEl); }
-    if (newDetalleEl && detalleEl) { detalleEl.parentNode.replaceChild(newDetalleEl, detalleEl); }
+    // Listeners de validación sobre los elementos dentro del form ya clonado
     document.getElementById('contactMotivo')?.addEventListener('change', validateForm);
     document.getElementById('contactDetalle')?.addEventListener('input',  validateForm);
 
@@ -106,7 +107,8 @@ function initContactInline(cfg) {
     document.getElementById('btnContacto').addEventListener('click', () => {
         overlay.classList.add('active');
         if (successMsg) successMsg.style.display = 'none';
-        if (form) form.style.display = 'flex';
+        const f = document.getElementById('contactForm');
+        if (f) f.style.display = 'flex';
         const sb = document.getElementById('btnSendContact');
         if (sb) sb.disabled = true;
     });
@@ -119,25 +121,22 @@ function initContactInline(cfg) {
     }
     overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
 
-    if (form) {
-        const newForm = form.cloneNode(true);
-        form.parentNode.replaceChild(newForm, form);
-        document.getElementById('contactForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const motivo  = document.getElementById('contactMotivo')?.value  || 'Sin motivo';
-            const detalle = document.getElementById('contactDetalle')?.value?.trim() || '';
-            const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
-            const nombre  = profData.nombre || 'M\u00e9dico';
-            const mat     = profData.matricula || '';
-            const contactEmail = (window.CLIENT_CONFIG && window.CLIENT_CONFIG.contactEmail)
-                ? window.CLIENT_CONFIG.contactEmail : 'soporte@transcriptorpro.app';
-            const subject = encodeURIComponent(`[TranscriptorPro] ${motivo}`);
-            const body    = encodeURIComponent(`Motivo: ${motivo}\n\n${detalle}\n\n---\nDr./Dra. ${nombre} | Mat. ${mat}\nApp: TranscriptorPro`);
-            window.open(`mailto:${contactEmail}?subject=${subject}&body=${body}`, '_blank');
-            if (document.getElementById('contactForm')) document.getElementById('contactForm').style.display = 'none';
-            if (successMsg) successMsg.style.display = 'block';
-        });
-    }
+    document.getElementById('contactForm')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const motivo  = document.getElementById('contactMotivo')?.value  || 'Sin motivo';
+        const detalle = document.getElementById('contactDetalle')?.value?.trim() || '';
+        const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
+        const nombre  = profData.nombre || 'M\u00e9dico';
+        const mat     = profData.matricula || '';
+        const contactEmail = (window.CLIENT_CONFIG && window.CLIENT_CONFIG.contactEmail)
+            ? window.CLIENT_CONFIG.contactEmail : 'soporte@transcriptorpro.app';
+        const subject = encodeURIComponent(`[TranscriptorPro] ${motivo}`);
+        const body    = encodeURIComponent(`Motivo: ${motivo}\n\n${detalle}\n\n---\nDr./Dra. ${nombre} | Mat. ${mat}\nApp: TranscriptorPro`);
+        window.open(`mailto:${contactEmail}?subject=${subject}&body=${body}`, '_blank');
+        const cf = document.getElementById('contactForm');
+        if (cf) cf.style.display = 'none';
+        if (successMsg) successMsg.style.display = 'block';
+    });
 
     window.open = origOpen;
 }
