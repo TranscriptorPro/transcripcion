@@ -19,17 +19,14 @@ window.initWorkplaceManagement = function () {
     // ── dropdown de lugares ──────────────────────────────────────────────────
     function populateWorkplaceDropdown() {
         const sel   = document.getElementById('pdfWorkplace');
-        const quick = document.getElementById('quickWorkplaceSelector');
-        if (!sel && !quick) return;
-        const current = sel?.value;
-        if (sel)   sel.innerHTML   = '<option value="">Seleccionar lugar...</option>';
-        if (quick) quick.innerHTML = '<option value="">🏥 Lugar de trabajo</option>';
+        if (!sel) return;
+        const current = sel.value;
+        sel.innerHTML = '<option value="">Seleccionar lugar...</option>';
         workplaceProfiles.forEach((p, i) => {
             const label = p.name || `Lugar ${i + 1}`;
-            if (sel)   { const o = document.createElement('option'); o.value = i; o.textContent = label; sel.appendChild(o); }
-            if (quick) { const o = document.createElement('option'); o.value = i; o.textContent = label; quick.appendChild(o); }
+            const o = document.createElement('option'); o.value = i; o.textContent = label; sel.appendChild(o);
         });
-        if (sel && current !== '') sel.value = current;
+        if (current !== '') sel.value = current;
     }
     // exponer globalmente para pdfPreview.js
     window.populateWorkplaceDropdown = populateWorkplaceDropdown;
@@ -349,24 +346,7 @@ window.initWorkplaceManagement = function () {
         r.readAsDataURL(file);
     });
 
-    // Selector rápido de lugar de trabajo (barra del editor)
-    document.getElementById('quickWorkplaceSelector')?.addEventListener('change', (e) => {
-        const idx = e.target.value;
-        if (idx === '') return;
-        loadWorkplaceProfile(parseInt(idx));
-        const pdfSel = document.getElementById('pdfWorkplace');
-        if (pdfSel) pdfSel.value = idx;
-        const config  = getProfConfig();
-        const profile = workplaceProfiles[parseInt(idx)];
-        if (profile) {
-            config.selectedWorkplace = idx;
-            config.workplaceAddress  = profile.address || '';
-            config.workplacePhone    = profile.phone   || '';
-            config.workplaceEmail    = profile.email   || '';
-            setProfConfig(config);
-        }
-        if (typeof showToast === 'function') showToast(`🏥 ${profile?.name || 'Lugar'} seleccionado`, 'success');
-    });
+    // (quickWorkplaceSelector eliminado — reemplazado por quickProfileSelector en outputProfiles.js)
 
     document.getElementById('btnSaveWorkplace')?.addEventListener('click', () => {
         const name = document.getElementById('wpName')?.value?.trim();
@@ -542,6 +522,7 @@ function _initCommonModules() {
     if (typeof initShortcuts === 'function') initShortcuts();
     if (typeof initApiManagement === 'function') initApiManagement();
     if (typeof initWorkplaceManagement === 'function') initWorkplaceManagement();
+    if (typeof initOutputProfiles === 'function') initOutputProfiles();
     if (typeof initStructurer === 'function') initStructurer();
     if (typeof initContact === 'function') initContact();
     if (typeof initDiagnostic === 'function') initDiagnostic();

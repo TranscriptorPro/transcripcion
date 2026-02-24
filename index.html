@@ -165,6 +165,18 @@
                     <button class="modal-close" id="closePdfConfig">&times;</button>
                 </div>
                 <div class="pdf-config-modal-body">
+                    <!-- Profile Bar -->
+                    <div class="profile-bar">
+                        <div class="profile-bar-row">
+                            <select id="profileSelector" class="profile-select" title="Perfiles guardados">
+                                <option value="">— Seleccionar perfil —</option>
+                            </select>
+                            <button class="btn-profile" id="btnSaveAsProfile" title="Guardar configuración actual como perfil">💾 Guardar</button>
+                            <button class="btn-profile" id="btnUpdateProfile" title="Actualizar perfil seleccionado" style="display:none;">🔄</button>
+                            <button class="btn-profile btn-profile-star" id="btnSetDefaultProfile" title="Marcar como predeterminado" style="display:none;">⭐</button>
+                            <button class="btn-profile btn-profile-danger" id="btnDeleteProfile" title="Eliminar perfil" style="display:none;">🗑️</button>
+                        </div>
+                    </div>
                     <!-- Section 1: Report Header -->
                     <div class="pdf-config-section">
                         <h3>📄 Encabezado del Informe</h3>
@@ -994,9 +1006,9 @@
                           </div>
                         </div>
                         <div style="width: 1px; height: 20px; background: var(--border); margin: 0 0.25rem;"></div>
-                        <!-- Selector rápido de lugar de trabajo (visible solo cuando los botones del editor son visibles) -->
-                        <select id="quickWorkplaceSelector" style="display:none; padding:0.3rem 0.5rem; border:1px solid var(--border); border-radius:6px; background:var(--bg-card); color:var(--text-primary); font-size:0.8rem; max-width:160px; cursor:pointer;" title="Cambiar lugar de trabajo">
-                            <option value="">🏥 Lugar de trabajo</option>
+                        <!-- Selector rápido de perfil de salida (visible tras transcripción) -->
+                        <select id="quickProfileSelector" class="quick-profile-selector" style="display:none;" title="Cambiar perfil de salida">
+                            <option value="">📋 Perfil de salida</option>
                         </select>
                         <div style="width: 1px; height: 20px; background: var(--border); margin: 0 0.25rem;"></div>
                         <!-- PDF Controls - managed by state machine -->
@@ -1198,6 +1210,7 @@
         <script src="src/js/features/patientRegistry.js"></script>
         <script src="src/js/features/formHandler.js"></script>
         <script src="src/js/features/business.js"></script>
+        <script src="src/js/features/outputProfiles.js"></script>
         <script src="src/js/features/pdfPreview.js"></script>
         <script src="src/js/features/pdfMaker.js"></script>
 

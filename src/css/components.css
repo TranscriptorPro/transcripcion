@@ -648,6 +648,79 @@
             color: white;
         }
 
+        /* ── Profile Bar (dentro del modal PDF) ── */
+        .profile-bar {
+            background: var(--bg-hover, #f0fdfa);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.5rem 0.65rem;
+            margin-bottom: 0.75rem;
+        }
+        .profile-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+        .profile-select {
+            flex: 1;
+            min-width: 140px;
+            padding: 0.35rem 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 0.8rem;
+        }
+        .btn-profile {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.3rem 0.6rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn-profile:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        .btn-profile-star:hover {
+            background: #f59e0b;
+            border-color: #f59e0b;
+        }
+        .btn-profile-danger:hover {
+            background: #ef4444;
+            border-color: #ef4444;
+        }
+
+        /* ── Quick Profile Selector (toolbar) ── */
+        .quick-profile-selector {
+            padding: 0.3rem 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            max-width: 180px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .quick-profile-selector:hover {
+            border-color: var(--primary);
+        }
+        .quick-profile-selector:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.15);
+        }
+
         /* Tabs */
         .tabs-container {
             display: none;
