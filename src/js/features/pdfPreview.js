@@ -323,24 +323,7 @@ window.populateWorkplaceDropdown = function () {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('pdfWorkplace')?.addEventListener('change', (e) => {
-        const idx = e.target.value;
-        if (idx === "") return;
-        const wp = window.workplaceProfiles[idx];
-        if (wp) {
-            const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
-            set('pdfWorkplaceAddress', wp.address);
-            set('pdfWorkplacePhone', wp.phone);
-            set('pdfWorkplaceEmail', wp.email);
-            set('pdfFooterText', wp.footer);
-            // apply logo if exists
-            if (wp.logo) {
-                localStorage.setItem('pdf_logo', wp.logo);
-                const lp = document.getElementById('pdfLogoPreview');
-                if (lp) lp.innerHTML = `<img src="${wp.logo}" alt="Logo" style="max-height:80px;">`;
-            }
-        }
-    });
+    // Listener de workplace ya está en business.js — no duplicar
 });
 
 // ============ IMPRIMIR DESDE VISTA PREVIA ============

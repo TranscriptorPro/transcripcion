@@ -202,8 +202,9 @@ window.initModals = function () {
 
     if (btnPreviewFromConfig) {
         btnPreviewFromConfig.addEventListener('click', () => {
-            // Save config silently before opening preview
+            // Save config silently before opening preview — preservando datos del profesional activo
             if (typeof savePdfConfiguration === 'function') {
+                const existing = JSON.parse(localStorage.getItem('pdf_config') || '{}');
                 const val = (id) => document.getElementById(id)?.value || '';
                 const chk = (id, def) => document.getElementById(id)?.checked ?? def;
                 const config = {
@@ -226,6 +227,10 @@ window.initModals = function () {
                     workplaceAddress: val('pdfWorkplaceAddress'), workplacePhone: val('pdfWorkplacePhone'),
                     workplaceEmail: val('pdfWorkplaceEmail')
                 };
+                // Preservar campos de profesional activo (seteados por business.js)
+                if (existing.activeProfessional)                       config.activeProfessional      = existing.activeProfessional;
+                if (existing.activeProfessionalIndex !== undefined)     config.activeProfessionalIndex = existing.activeProfessionalIndex;
+                if (existing.activeWorkplaceIndex    !== undefined)     config.activeWorkplaceIndex    = existing.activeWorkplaceIndex;
                 localStorage.setItem('pdf_config', JSON.stringify(config));
             }
             if (typeof openPrintPreview === 'function') openPrintPreview();

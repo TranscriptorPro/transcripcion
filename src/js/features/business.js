@@ -37,15 +37,18 @@ window.initWorkplaceManagement = function () {
     function loadWorkplaceProfile(index) {
         const profile = workplaceProfiles[index];
         if (!profile) return;
-        const addr  = document.getElementById('pdfWorkplaceAddress');
-        const phone = document.getElementById('pdfWorkplacePhone');
-        const email = document.getElementById('pdfWorkplaceEmail');
-        const logo  = document.getElementById('pdfLogoPreview');
-        if (addr)  addr.value  = profile.address || '';
-        if (phone) phone.value = profile.phone   || '';
-        if (email) email.value = profile.email   || '';
-        if (logo && profile.logo && profile.logo.startsWith('data:image/')) {
-            logo.innerHTML = `<img src="${profile.logo}" alt="Logo">`;
+        const addr    = document.getElementById('pdfWorkplaceAddress');
+        const phone   = document.getElementById('pdfWorkplacePhone');
+        const email   = document.getElementById('pdfWorkplaceEmail');
+        const footer  = document.getElementById('pdfFooterText');
+        const logo    = document.getElementById('pdfLogoPreview');
+        if (addr)   addr.value   = profile.address || '';
+        if (phone)  phone.value  = profile.phone   || '';
+        if (email)  email.value  = profile.email   || '';
+        if (footer) footer.value = profile.footer   || '';
+        if (profile.logo && profile.logo.startsWith('data:image/')) {
+            localStorage.setItem('pdf_logo', profile.logo);
+            if (logo) logo.innerHTML = `<img src="${profile.logo}" alt="Logo">`;
         }
         // Mostrar / ocultar selector de profesionales
         populateProfessionalsDropdown(index);

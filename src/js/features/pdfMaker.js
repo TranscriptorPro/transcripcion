@@ -20,12 +20,37 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
 
     try {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
-        // ── Datos de configuración ───────────────────────────────────
+        // ── Datos de configuración (leer ANTES de crear el doc) ──────
         const profData  = JSON.parse(localStorage.getItem('prof_data') || '{}');
         const config    = JSON.parse(localStorage.getItem('pdf_config') || '{}');
         const activePro = config.activeProfessional || null;
+
+        // ── Crear documento con formato/orientación del usuario ──────
+        const pgSize = (config.pageSize || 'a4').toLowerCase();
+        const orient = (config.orientation || 'portrait').toLowerCase();
+        const doc = new jsPDF({ unit: 'mm', format: pgSize, orientation: orient });
+
+        const PAGE_W = doc.internal.pageSize.getWidth();
+        const PAGE_H = doc.internal.pageSize.getHeight();
+
+        // ── Márgenes configurables ───────────────────────────────────
+        const marginMap = { narrow: 10, normal: 20, wide: 30 };
+        const ML       = marginMap[config.margins] || 20;
+        const MR       = marginMap[config.margins] || 20;
+        const CW       = PAGE_W - ML - MR;
+        const FOOTER_Y = PAGE_H - 12;
+
+        // ── Fuente y tamaño configurables ────────────────────────────
+        const mainFont     = config.font || 'helvetica';
+        const mainFontSize = parseInt(config.fontSize) || 10;
+        const mainLineH    = mainFontSize * 0.5;
+
+        // ── Flags de visibilidad ─────────────────────────────────────
+        const cfgShowHeader  = config.showHeader  !== false;
+        const cfgShowFooter  = config.showFooter  !== false;
+        const cfgShowPageNum = config.showPageNum !== false;
+        const cfgShowDate    = config.showDate    === true;
 
         // Logo/firma: profesional activo tiene prioridad sobre los globales
         const logoB64 = (activePro?.logo  && activePro.logo.startsWith('data:'))
@@ -36,9 +61,17 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         // Datos del profesional: activo sobreescribe prof_data
         const profName     = activePro?.nombre         || profData.nombre      || '';
         const matricula    = activePro?.matricula      || profData.matricula   || '';
-        const especialidad = activePro?.especialidades || profData.specialties || profData.especialidades || '';
-        const institutionName = profData.institutionName || '';
-        const accent       = _hexToRgb(profData.headerColor || '#1a56a0');
+        // especialidad puede ser Array → convertir a string
+        const rawEsp       = activePro?.especialidades || profData.specialties || profData.especialidades || '';
+        const especialidad = Array.isArray(rawEsp)
+            ? rawEsp.filter(e => e && e !== 'Todas').join(' / ')
+            : (rawEsp || '');
+        const institutionName = activePro?.institutionName || profData.institutionName || '';
+        const accent       = _hexToRgb(activePro?.headerColor || profData.headerColor || '#1a56a0');
+
+        // Datos del lugar de trabajo
+        const wpAddress = config.workplaceAddress || '';
+        const wpPhone   = config.workplacePhone   || '';
 
         const pName      = config.patientName      || '';
         const pDni       = config.patientDni       || '';
@@ -56,14 +89,6 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const showSignLine = config.showSignLine !== false;
         const showSignName = config.showSignName !== false;
         const showSignMat  = config.showSignMatricula !== false;
-
-        // ── Constantes de layout ─────────────────────────────────────
-        const PAGE_W    = 210;
-        const PAGE_H    = 297;
-        const ML        = 20;   // margen izquierdo
-        const MR        = 20;   // margen derecho
-        const CW        = PAGE_W - ML - MR;  // ancho de contenido
-        const FOOTER_Y  = 285;
 
         let cy      = 10;
         let pageNum = 1;
@@ -91,25 +116,30 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             if (cy + needed > FOOTER_Y - 10) {
                 doc.addPage();
                 pageNum++;
-                drawFooter(pageNum);
-                cy = headerH;
+                if (cfgShowFooter || cfgShowPageNum) drawFooter(pageNum);
+                cy = 10;  // margen superior limpio en páginas 2+
             }
         }
 
         // ── Pie de página ─────────────────────────────────────────────
         function drawFooter(num) {
+            if (!cfgShowFooter && !cfgShowPageNum) return;
             doc.setFontSize(8);
-            doc.setFont('helvetica', 'italic');
+            doc.setFont(mainFont, 'italic');
             setGray(120);
             const parts = [];
-            if (footerText) parts.push(footerText);
-            parts.push(`Página ${num}`);
-            doc.text(parts.join('  •  '), PAGE_W / 2, FOOTER_Y, { align: 'center' });
+            if (cfgShowFooter && footerText) parts.push(footerText);
+            if (cfgShowDate) parts.push(`Fecha: ${pDate}`);
+            if (cfgShowPageNum) parts.push(`Página ${num}`);
+            if (parts.length) {
+                doc.text(parts.join('  •  '), PAGE_W / 2, FOOTER_Y, { align: 'center' });
+            }
             setBlack();
         }
 
         // ── Encabezado (solo página 1) ───────────────────────────────
         function drawHeader() {
+            if (!cfgShowHeader) { cy = 10; headerH = 10; return; }
             cy = 10;
             let infoX = ML;
 
@@ -117,7 +147,6 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             if (logoB64) {
                 try {
                     const imgW = 28, imgH = 18;
-                    // Detectar tipo de imagen por cabecera base64
                     const imgType = logoB64.includes('data:image/png') ? 'PNG' : 'JPEG';
                     const b64data = logoB64.includes(',') ? logoB64.split(',')[1] : logoB64;
                     doc.addImage(b64data, imgType, ML, cy, imgW, imgH);
@@ -131,14 +160,14 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             let iy = cy + 5;
             if (profName) {
                 doc.setFontSize(13);
-                doc.setFont('helvetica', 'bold');
+                doc.setFont(mainFont, 'bold');
                 setAccent();
                 doc.text(profName, infoX, iy);
                 iy += 5;
             }
             if (especialidad) {
                 doc.setFontSize(9);
-                doc.setFont('helvetica', 'normal');
+                doc.setFont(mainFont, 'normal');
                 setGray(70);
                 doc.text(especialidad, infoX, iy);
                 iy += 4;
@@ -147,6 +176,18 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                 doc.setFontSize(8.5);
                 setGray(80);
                 doc.text(institutionName, infoX, iy);
+                iy += 4;
+            }
+            if (wpAddress) {
+                doc.setFontSize(8);
+                setGray(90);
+                doc.text(wpAddress, infoX, iy);
+                iy += 4;
+            }
+            if (wpPhone) {
+                doc.setFontSize(8);
+                setGray(90);
+                doc.text('Tel: ' + wpPhone, infoX, iy);
                 iy += 4;
             }
             if (matricula) {
@@ -358,7 +399,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                     [...(headers.length ? [headers[0]] : []), ...bodyRows].forEach(row => {
                         ensureSpace(6);
                         doc.setFontSize(9);
-                        doc.setFont('helvetica', 'normal');
+                        doc.setFont(mainFont, 'normal');
                         doc.text(row.join('  |  '), ML, cy);
                         cy += 5;
                     });
@@ -374,13 +415,13 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                     idx++;
                     const bullet = tag === 'ul' ? '• ' : `${idx}. `;
                     ensureSpace(7);
-                    doc.setFontSize(10);
-                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(mainFontSize);
+                    doc.setFont(mainFont, 'normal');
                     setBlack();
                     const txt = bullet + li.textContent.trim();
                     const lines = doc.splitTextToSize(txt, CW - 6);
                     doc.text(lines, ML + 5, cy);
-                    cy += lines.length * 5 + 1;
+                    cy += lines.length * mainLineH + 1;
                 });
                 cy += 2;
                 return;
@@ -398,13 +439,15 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                 if (!hasBold && !hasItalic) {
                     // Texto plano → splitTextToSize para wrapping correcto
                     ensureSpace(8);
-                    doc.setFontSize(10);
-                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(mainFontSize);
+                    doc.setFont(mainFont, 'normal');
                     setBlack();
                     const lines = doc.splitTextToSize(txt, CW);
-                    const blockH = lines.length * 5;
+                    const blockH = lines.length * mainLineH;
                     if (cy + blockH > FOOTER_Y - 10) {
-                        doc.addPage(); pageNum++; drawFooter(pageNum); cy = headerH;
+                        doc.addPage(); pageNum++;
+                        if (cfgShowFooter || cfgShowPageNum) drawFooter(pageNum);
+                        cy = 10;
                     }
                     doc.text(lines, ML, cy);
                     cy += blockH + 2;
@@ -423,8 +466,8 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
 
         // ── Renderizado de párrafo con bold/italic inline ────────────
         function renderInlineParagraph(node) {
-            const LINE_H   = 5;
-            const FONT_SZ  = 10;
+            const LINE_H   = mainLineH;
+            const FONT_SZ  = mainFontSize;
             const MAX_W    = CW;
             doc.setFontSize(FONT_SZ);
 
@@ -452,7 +495,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                             : seg.bold              ? 'bold'
                             : seg.italic            ? 'italic'
                             : 'normal';
-                doc.setFont('helvetica', style);
+                doc.setFont(mainFont, style);
                 setBlack();
 
                 // Dividir en palabras preservando espacios
@@ -463,7 +506,9 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                     if (tok.trim() && usedW + tw > MAX_W) {
                         lineY += LINE_H;
                         if (lineY > FOOTER_Y - 10) {
-                            doc.addPage(); pageNum++; drawFooter(pageNum); lineY = headerH;
+                            doc.addPage(); pageNum++;
+                            if (cfgShowFooter || cfgShowPageNum) drawFooter(pageNum);
+                            lineY = 10;
                         }
                         lineX = ML;
                         usedW = 0;
@@ -495,7 +540,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                 cy += 4;
             }
             doc.setFontSize(9);
-            doc.setFont('helvetica', 'normal');
+            doc.setFont(mainFont, 'normal');
             setBlack();
             if (showSignName && profName) {
                 doc.text(profName, 160, cy, { align: 'center' });
@@ -512,7 +557,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
 
         // ── ¡Ejecutar todo! ───────────────────────────────────────────
         drawHeader();
-        drawFooter(1);
+        if (cfgShowFooter || cfgShowPageNum) drawFooter(1);
         drawStudyInfo();
         drawPatientBlock();
 

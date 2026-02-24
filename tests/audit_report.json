@@ -2,8 +2,8 @@
   "auditResults": [
     {
       "test": "Bienvenida Personalizada",
-      "status": "PASS",
-      "detail": "Dr/a. Administrador"
+      "status": "FAIL",
+      "detail": "Audio → Texto con IA"
     },
     {
       "test": "Activación Modo Pro",
