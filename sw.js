@@ -36,7 +36,10 @@ const APP_SHELL = [
     './src/js/features/pdfMaker.js',
     './src/js/features/pdfPreview.js',
     './src/js/features/structurer.js',
-    './src/js/features/transcriptor.js'
+    './src/js/features/transcriptor.js',
+    './src/js/features/outputProfiles.js',
+    './src/js/features/diagnostic.js',
+    './src/js/features/userGuide.js'
 ];
 
 // ── Install: pre-cachear app shell ───────────────────────────────────────────

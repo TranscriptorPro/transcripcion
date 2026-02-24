@@ -704,26 +704,164 @@
             </div>
         </div>
 
-        <!-- Help Modal -->
+        <!-- Help / Guide Modal (comprehensive) -->
         <div class="modal-overlay" id="helpModal">
-            <div class="modal" style="max-width: 600px;">
+            <div class="modal" style="max-width: 640px; display:flex; flex-direction:column; max-height:90vh;">
                 <div class="modal-header">
-                    <h2>📖 Guía de Uso</h2>
+                    <h2>📖 Centro de Ayuda</h2>
                     <button class="modal-close" id="closeHelp">&times;</button>
                 </div>
-                <div class="modal-body">
-                    <section class="help-section">
-                        <h3>🎙️ Grabación y Carga</h3>
-                        <p>Usa el botón "Grabar" para dictar en tiempo real o arrastra archivos de audio.</p>
-                    </section>
-                    <section class="help-section">
-                        <h3>📝 Transcripción</h3>
-                        <p>Una vez cargados, pulsa "Transcribir". El texto aparecerá en el editor.</p>
-                    </section>
-                    <section class="help-section">
-                        <h3>✨ Modo Pro (Estructura IA)</h3>
-                        <p>Usa plantillas para organizar automáticamente el dictado en informes profesionales.</p>
-                    </section>
+                <!-- Tabs -->
+                <div class="help-tabs">
+                    <button class="help-tab active" data-help-tab="guide">🚀 Guía rápida</button>
+                    <button class="help-tab" data-help-tab="faq">❓ FAQ</button>
+                    <button class="help-tab" data-help-tab="shortcuts">⌨️ Atajos</button>
+                    <button class="help-tab" data-help-tab="about">ℹ️ Acerca de</button>
+                </div>
+                <div class="modal-body" style="overflow-y:auto; flex:1;">
+                    <!-- TAB: Guía rápida -->
+                    <div class="help-tab-content active" id="helpTabGuide" data-help-panel="guide">
+                        <div class="guide-steps">
+                            <div class="guide-step">
+                                <div class="guide-step-number">1</div>
+                                <div class="guide-step-body">
+                                    <h4>🎙️ Grabá o subí tu audio</h4>
+                                    <p>Usá el botón <strong>Grabar Audio</strong> para dictar en vivo, o arrastrá archivos de audio (MP3, WAV, M4A, OGG) a la zona de carga.</p>
+                                </div>
+                            </div>
+                            <div class="guide-step">
+                                <div class="guide-step-number">2</div>
+                                <div class="guide-step-body">
+                                    <h4>⚡ Transcribí automáticamente</h4>
+                                    <p>Pulsá <strong>Transcribir</strong>. La IA (Whisper) convierte tu audio a texto en segundos.</p>
+                                </div>
+                            </div>
+                            <div class="guide-step">
+                                <div class="guide-step-number">3</div>
+                                <div class="guide-step-body">
+                                    <h4>✨ Estructura inteligente (Modo Pro)</h4>
+                                    <p>La app detecta automáticamente el tipo de estudio y organiza el informe con secciones, hallazgos y conclusión usando plantillas médicas.</p>
+                                </div>
+                            </div>
+                            <div class="guide-step">
+                                <div class="guide-step-number">4</div>
+                                <div class="guide-step-body">
+                                    <h4>✏️ Editá y completá</h4>
+                                    <p>Los campos vacíos aparecen como <span style="background:#fef3c7; padding:1px 6px; border-radius:4px; font-size:0.82rem;">[No especificado]</span>. Hacé clic en el botón ✏️ para completarlos rápidamente.</p>
+                                </div>
+                            </div>
+                            <div class="guide-step">
+                                <div class="guide-step-number">5</div>
+                                <div class="guide-step-body">
+                                    <h4>📄 Exportá tu informe</h4>
+                                    <p>Descargá como <strong>PDF profesional</strong> con encabezado, firma y logo, o exportá en Word (RTF), TXT o HTML.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="help-tip" style="margin-top:1rem;">
+                            <strong>💡 Consejo:</strong> Configurá tus datos profesionales y lugar de trabajo en el botón <strong>🖨️ Configurar Impresión</strong> para que tus PDFs salgan completos desde el primer uso.
+                        </div>
+                        <div style="text-align:center; margin-top:1.25rem;">
+                            <button class="btn btn-primary" id="btnStartTour">🎯 Iniciar tour interactivo</button>
+                        </div>
+                    </div>
+
+                    <!-- TAB: FAQ -->
+                    <div class="help-tab-content" id="helpTabFaq" data-help-panel="faq">
+                        <div class="faq-list">
+                            <details class="faq-item">
+                                <summary>¿Necesito internet para usar la app?</summary>
+                                <p>Sí, para transcribir y estructurar (usan IA en la nube). El editor, la configuración y la exportación a PDF funcionan sin conexión.</p>
+                            </details>
+                            <details class="faq-item">
+                                <summary>¿Se guardan mis audios en algún servidor?</summary>
+                                <p>No. El audio se envía a Groq para transcribir y se descarta inmediatamente. Solo queda el texto en tu navegador. Ningún dato se almacena en servidores externos.</p>
+                            </details>
+                            <details class="faq-item">
+                                <summary>¿Puedo usar la app en el celular?</summary>
+                                <p>Sí. Instalá la app desde el botón "Instalar app" en el encabezado. Funciona como una aplicación nativa en Android e iOS (Safari → Agregar a pantalla de inicio).</p>
+                            </details>
+                            <details class="faq-item">
+                                <summary>¿Cuántas plantillas de informe hay?</summary>
+                                <p>Más de 36 plantillas organizadas por especialidad: cardiología, gastroenterología, neumología, oftalmología, ginecología, neurología, y más. La app detecta automáticamente cuál usar.</p>
+                            </details>
+                            <details class="faq-item">
+                                <summary>¿Puedo agregar plantillas personalizadas?</summary>
+                                <p>Actualmente las plantillas son las incluidas en la app. Contactá con soporte para solicitar nuevas plantillas para tu especialidad.</p>
+                            </details>
+                            <details class="faq-item">
+                                <summary>¿Es seguro para datos de pacientes?</summary>
+                                <p>Los datos se procesan en tu navegador y se guardan solo en tu dispositivo (localStorage). No se transmiten a servidores excepto el audio para transcripción (que no se almacena). Es tu responsabilidad profesional la custodia de los datos.</p>
+                            </details>
+                            <details class="faq-item">
+                                <summary>La transcripción tiene errores, ¿qué hago?</summary>
+                                <p>Algunos consejos: dictá en un ambiente silencioso, hablá claro y a ritmo constante, usá el Diccionario Médico (botón 📚) para corregir términos técnicos automáticamente.</p>
+                            </details>
+                            <details class="faq-item">
+                                <summary>¿Cómo cambio la plantilla detectada?</summary>
+                                <p>Al estructurar, aparece un toast con la plantilla detectada y un botón "Cambiar". También podés seleccionar manualmente desde el selector de plantillas antes de estructurar.</p>
+                            </details>
+                            <details class="faq-item">
+                                <summary>El PDF no muestra el logo o la firma</summary>
+                                <p>Abrí <strong>🖨️ Configurar Impresión</strong>, subí tu logo (PNG) y firma digital (PNG con fondo transparente). Guardá la configuración y volvé a previsualizar.</p>
+                            </details>
+                            <details class="faq-item">
+                                <summary>¿Cómo actualizo la app?</summary>
+                                <p>Si usás la versión PWA instalada, cerrá y reabrí la app. Si accedés por navegador, recargá la página (Ctrl+Shift+R en el navegador, no el atajo de la app). Las actualizaciones se aplican automáticamente.</p>
+                            </details>
+                            <details class="faq-item">
+                                <summary>¿Dónde se guardan mis datos?</summary>
+                                <p>Todo se guarda en el <strong>localStorage</strong> de tu navegador: configuración, perfiles, registro de pacientes. Si borrás los datos del navegador, se pierden. Recomendamos exportar periódicamente el registro de pacientes como backup.</p>
+                            </details>
+                            <details class="faq-item">
+                                <summary>¿Cómo cambio mis datos profesionales?</summary>
+                                <p>Abrí <strong>🖨️ Configurar Impresión</strong> → sección "Datos del Profesional". Si tu cuenta fue creada por un administrador, algunos campos pueden estar bloqueados.</p>
+                            </details>
+                        </div>
+                    </div>
+
+                    <!-- TAB: Atajos de teclado -->
+                    <div class="help-tab-content" id="helpTabShortcuts" data-help-panel="shortcuts">
+                        <section class="help-section">
+                            <h3>⌨️ Atajos de teclado</h3>
+                            <div class="shortcuts-grid">
+                                <div class="shortcut-row"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd> <span>Re-estructurar con IA</span></div>
+                                <div class="shortcut-row"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> <span>Guardar configuración</span></div>
+                                <div class="shortcut-row"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> <span>Previsualizar PDF</span></div>
+                                <div class="shortcut-row"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd> <span>Descargar formato favorito</span></div>
+                                <div class="shortcut-row"><kbd>Ctrl</kbd>+<kbd>B</kbd> <span>Negrita</span></div>
+                                <div class="shortcut-row"><kbd>Ctrl</kbd>+<kbd>I</kbd> <span>Cursiva</span></div>
+                                <div class="shortcut-row"><kbd>Ctrl</kbd>+<kbd>Z</kbd> <span>Deshacer</span></div>
+                                <div class="shortcut-row"><kbd>Ctrl</kbd>+<kbd>Y</kbd> <span>Rehacer</span></div>
+                            </div>
+                        </section>
+                        <section class="help-section">
+                            <h3>🔄 Guardado automático</h3>
+                            <p>Tu trabajo se guarda automáticamente cada 30 segundos. Si cerrás y reabrís la app, se restaura tu última sesión (hasta 2 horas).</p>
+                        </section>
+                    </div>
+
+                    <!-- TAB: Acerca de -->
+                    <div class="help-tab-content" id="helpTabAbout" data-help-panel="about">
+                        <section class="help-section">
+                            <h3>ℹ️ Transcriptor Médico Pro</h3>
+                            <p>Aplicación web profesional para transcripción y estructuración automática de informes médicos mediante inteligencia artificial.</p>
+                            <div style="background:var(--bg-hover); border-radius:8px; padding:1rem; margin-top:1rem;">
+                                <div style="display:grid; grid-template-columns:auto 1fr; gap:0.4rem 1rem; font-size:0.88rem;">
+                                    <span style="color:var(--text-secondary);">Versión:</span><strong>1.0.0</strong>
+                                    <span style="color:var(--text-secondary);">Motor IA:</span><strong>Whisper + LLaMA 3.3</strong>
+                                    <span style="color:var(--text-secondary);">Plantillas:</span><strong>36+ especialidades</strong>
+                                    <span style="color:var(--text-secondary);">Exportación:</span><strong>PDF, RTF, TXT, HTML</strong>
+                                    <span style="color:var(--text-secondary);">Offline:</span><strong>Editor + PDF (PWA)</strong>
+                                </div>
+                            </div>
+                        </section>
+                        <section class="help-section">
+                            <h3>📞 Soporte</h3>
+                            <p>¿Necesitás ayuda? Usá el botón <strong>✉️ Contacto</strong> en el encabezado o escribinos directamente.</p>
+                            <button class="btn btn-outline btn-full" id="btnContactFromHelp" style="margin-top:0.75rem;">✉️ Contactar soporte</button>
+                        </section>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1219,6 +1357,7 @@
         <script src="src/js/features/outputProfiles.js"></script>
         <script src="src/js/features/pdfPreview.js"></script>
         <script src="src/js/features/pdfMaker.js"></script>
+        <script src="src/js/features/userGuide.js"></script>
 
         <!-- G1: Modal Panel Registro de Pacientes -->
         <div class="modal-overlay" id="registryPanelOverlay">
