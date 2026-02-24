@@ -241,6 +241,10 @@ if (resetBtn) {
         if (reportMetadataCard) reportMetadataCard.style.display = 'none';
 
         if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('IDLE');
+
+        // Re-asegurar que la API key siga visible en la UI tras el reset
+        if (typeof updateApiStatus === 'function') updateApiStatus();
+
         if (typeof showToast !== 'undefined') showToast('Limpiado ✓', 'success');
     });
 }

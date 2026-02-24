@@ -834,14 +834,43 @@ document.addEventListener('keydown', (e) => {
         // Solo restaurar si el editor está vacío
         if (editor.innerText.trim().length > 0) return;
 
-        editor.innerHTML = saved;
-        if (typeof updateWordCount === 'function') updateWordCount();
+        // Preguntar al usuario antes de restaurar
+        const mins = Math.floor(ageMs / 60000);
+        const timeLabel = mins < 1 ? 'menos de 1 min' : mins + ' min';
+
+        // Crear toast con opciones Restaurar / Descartar
         if (typeof showToast === 'function') {
-            const mins = Math.floor(ageMs / 60000);
-            showToast(`♻️ Sesión anterior restaurada (hace ${mins < 1 ? '<1' : mins} min)`, 'info', 4000);
+            const toastId = 'restore-prompt-' + Date.now();
+            showToast(
+                `♻️ Hay un borrador guardado (hace ${timeLabel}). ` +
+                `<a href="#" id="${toastId}-yes" style="color:#fff;font-weight:700;text-decoration:underline;margin-left:4px;">Restaurar</a>` +
+                ` · <a href="#" id="${toastId}-no" style="color:#fca5a5;font-weight:600;text-decoration:underline;margin-left:4px;">Descartar</a>`,
+                'info', 10000
+            );
+
+            // Listener para "Restaurar"
+            setTimeout(() => {
+                const yesLink = document.getElementById(toastId + '-yes');
+                const noLink = document.getElementById(toastId + '-no');
+                if (yesLink) {
+                    yesLink.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        editor.innerHTML = saved;
+                        if (typeof updateWordCount === 'function') updateWordCount();
+                        if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
+                        showToast('✅ Borrador restaurado', 'success', 2000);
+                    });
+                }
+                if (noLink) {
+                    noLink.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        localStorage.removeItem(AUTOSAVE_KEY);
+                        localStorage.removeItem(AUTOSAVE_META_KEY);
+                        showToast('🗑️ Borrador descartado', 'success', 2000);
+                    });
+                }
+            }, 100);
         }
-        // Restore state to at least TRANSCRIBED so buttons are visible
-        if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
     }
 
     // Exponer globalmente
