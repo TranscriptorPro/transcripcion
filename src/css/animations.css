@@ -28,7 +28,9 @@
         /* Gemini-style animated gradient for Pro button */
         @keyframes geminiGradient {
             0%   { background-position: 0% 50%; }
+            25%  { background-position: 50% 0%; }
             50%  { background-position: 100% 50%; }
+            75%  { background-position: 50% 100%; }
             100% { background-position: 0% 50%; }
         }
         @keyframes geminiBorder {
@@ -40,6 +42,8 @@
         }
         @keyframes geminiSparkle {
             0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
-            50%      { transform: scale(1.15) rotate(15deg); opacity: 0.85; }
+            25%      { transform: scale(1.2) rotate(10deg); opacity: 0.9; }
+            50%      { transform: scale(1.1) rotate(-5deg); opacity: 0.8; }
+            75%      { transform: scale(1.25) rotate(15deg); opacity: 0.85; }
         }
 
