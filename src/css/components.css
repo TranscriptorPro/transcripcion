@@ -420,26 +420,62 @@
             color: white;
         }
 
-        /* Botón Transcribir y Estructurar (Pro) */
+        /* Botón Transcribir y Estructurar (Pro) — Gemini animated */
         .btn-transcribe-structure {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 0.3rem;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 0.88rem;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark, #0e7490));
             border: none;
             color: #fff;
-            transition: opacity 0.15s, box-shadow 0.15s;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            background: linear-gradient(135deg, #4285f4, #9b72cb, #d96570, #d96570, #9b72cb, #4285f4);
+            background-size: 300% 300%;
+            animation: geminiGradient 4s ease infinite;
+            box-shadow: 0 2px 12px rgba(66,133,244,0.25), 0 0 20px rgba(155,114,203,0.15);
+            transition: box-shadow 0.3s, transform 0.15s;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        .btn-transcribe-structure::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            z-index: -1;
+            border-radius: inherit;
+            background: linear-gradient(135deg, #4285f4, #9b72cb, #d96570, #f4b400, #0f9d58, #4285f4);
+            background-size: 400% 400%;
+            animation: geminiBorder 3s ease infinite;
+            opacity: 0.6;
+            filter: blur(6px);
         }
         .btn-transcribe-structure:hover:not(:disabled) {
-            opacity: 0.92;
-            box-shadow: 0 3px 12px rgba(15,118,110,0.3);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px rgba(66,133,244,0.35), 0 0 30px rgba(155,114,203,0.25), 0 0 10px rgba(217,101,112,0.2);
+        }
+        .btn-transcribe-structure:hover:not(:disabled)::before {
+            opacity: 0.85;
+            filter: blur(8px);
+        }
+        .btn-transcribe-structure:active:not(:disabled) {
+            transform: translateY(0);
         }
         .btn-transcribe-structure:disabled {
-            opacity: 0.5;
+            opacity: 0.4;
             cursor: not-allowed;
+            animation: none;
+            background: linear-gradient(135deg, #9ca3af, #6b7280);
+            box-shadow: none;
+        }
+        .btn-transcribe-structure:disabled::before {
+            display: none;
+        }
+        .btn-transcribe-structure .sparkle-icon {
+            filter: drop-shadow(0 0 3px rgba(255,255,255,0.6));
+            animation: geminiSparkle 2s ease-in-out infinite;
         }
         .pro-badge-sm {
             display: inline-block;
@@ -1302,6 +1338,88 @@
             background: rgba(245,158,11,0.1);
             border-color: rgba(245,158,11,0.4);
             color: #fbbf24;
+        }
+
+        /* ── Comparison side-by-side view ────────────────────── */
+        .comparison-container {
+            display: flex;
+            gap: 1rem;
+            flex: 1;
+            min-height: 0;
+        }
+        .comparison-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            background: var(--bg-card);
+        }
+        .comparison-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.4rem 0.75rem;
+            background: var(--bg-main);
+            border-bottom: 1px solid var(--border);
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            user-select: none;
+        }
+        .comparison-panel-header .panel-label {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .comparison-panel-header .panel-actions {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .comparison-panel-header .panel-actions button {
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 0.15rem 0.4rem;
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            transition: all 0.15s;
+        }
+        .comparison-panel-header .panel-actions button:hover {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+        .comparison-panel-body {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            line-height: 1.7;
+            font-size: 15px;
+        }
+        .comparison-panel.panel-original .comparison-panel-header {
+            background: rgba(245,158,11,0.08);
+            color: #b45309;
+        }
+        [data-theme="dark"] .comparison-panel.panel-original .comparison-panel-header {
+            background: rgba(245,158,11,0.1);
+            color: #fbbf24;
+        }
+        .comparison-panel.panel-structured .comparison-panel-header {
+            background: rgba(15,118,110,0.06);
+            color: var(--primary);
+        }
+        [data-theme="dark"] .comparison-panel.panel-structured .comparison-panel-header {
+            color: var(--primary-light, #5eead4);
+        }
+        /* Responsive: stack on small screens */
+        @media (max-width: 768px) {
+            .comparison-container {
+                flex-direction: column;
+            }
         }
 
         /* Botón Eliminar campo en modal */

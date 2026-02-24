@@ -404,6 +404,133 @@ window.initModals = function () {
         });
     }
 
+    // ── Comparison side-by-side view ──────────────────────────────────────
+    const btnCompareView = document.getElementById('btnCompareView');
+    const comparisonContainer = document.getElementById('comparisonContainer');
+    const editorForCompare = document.getElementById('editor');
+
+    window._isComparisonMode = false;
+
+    function enterComparisonMode() {
+        if (!window._lastRawTranscription || !window._lastStructuredHTML) {
+            if (typeof showToast === 'function') showToast('Se necesita texto original y estructurado para comparar', 'error');
+            return;
+        }
+        // Save current structured state if editor has been edited
+        window._lastStructuredHTML = editorForCompare ? editorForCompare.innerHTML : window._lastStructuredHTML;
+
+        // Populate panels
+        const compOriginal = document.getElementById('comparisonOriginal');
+        const compStructured = document.getElementById('comparisonStructured');
+        if (compOriginal) {
+            compOriginal.innerHTML = window._lastRawTranscription
+                .split('\n').filter(l => l.trim())
+                .map(l => `<p style="margin:0.4em 0;">${l}</p>`).join('');
+        }
+        if (compStructured) {
+            compStructured.innerHTML = window._lastStructuredHTML;
+        }
+
+        // Show comparison, hide editor
+        if (editorForCompare) editorForCompare.style.display = 'none';
+        if (comparisonContainer) comparisonContainer.style.display = 'flex';
+
+        // Update button state
+        if (btnCompareView) {
+            btnCompareView.innerHTML = '✕ Cerrar';
+            btnCompareView.classList.add('toggle-active');
+        }
+        // Disable main copy/print while in comparison
+        const mainCopy = document.getElementById('copyBtn');
+        const mainPrint = document.getElementById('printBtn');
+        if (mainCopy) { mainCopy.disabled = true; mainCopy.title = 'Usá los botones de cada panel en modo comparación'; }
+        if (mainPrint) { mainPrint.disabled = true; mainPrint.title = 'Usá los botones de cada panel en modo comparación'; }
+
+        // Hide toggle original button (mutually exclusive)
+        if (btnRestoreOriginal) btnRestoreOriginal.style.display = 'none';
+
+        window._isComparisonMode = true;
+    }
+
+    function exitComparisonMode() {
+        if (editorForCompare) editorForCompare.style.display = '';
+        if (comparisonContainer) comparisonContainer.style.display = 'none';
+
+        if (btnCompareView) {
+            btnCompareView.innerHTML = '⧉ Comparar';
+            btnCompareView.classList.remove('toggle-active');
+        }
+        // Re-enable main copy/print
+        const mainCopy = document.getElementById('copyBtn');
+        const mainPrint = document.getElementById('printBtn');
+        if (mainCopy) { mainCopy.disabled = false; mainCopy.title = 'Copiar todo'; }
+        if (mainPrint) { mainPrint.disabled = false; mainPrint.title = 'Imprimir'; }
+
+        // Show toggle original button again
+        if (btnRestoreOriginal) btnRestoreOriginal.style.display = '';
+
+        window._isComparisonMode = false;
+    }
+
+    if (btnCompareView) {
+        btnCompareView.addEventListener('click', () => {
+            if (window._isComparisonMode) {
+                exitComparisonMode();
+            } else {
+                // If showing original, go back to structured first
+                if (btnRestoreOriginal && btnRestoreOriginal._showingOriginal) {
+                    btnRestoreOriginal.click();
+                }
+                enterComparisonMode();
+            }
+        });
+    }
+
+    // Panel-level copy buttons
+    document.getElementById('btnCopyOriginal')?.addEventListener('click', () => {
+        if (!window._lastRawTranscription) return;
+        navigator.clipboard.writeText(window._lastRawTranscription).then(() => {
+            if (typeof showToast === 'function') showToast('📋 Texto original copiado', 'success');
+        });
+    });
+    document.getElementById('btnCopyStructured')?.addEventListener('click', () => {
+        const compStructured = document.getElementById('comparisonStructured');
+        const text = compStructured ? compStructured.innerText : '';
+        if (!text.trim()) return;
+        navigator.clipboard.writeText(text).then(() => {
+            if (typeof showToast === 'function') showToast('📋 Texto estructurado copiado', 'success');
+        });
+    });
+
+    // Panel-level print buttons
+    function printPanelContent(htmlContent, title) {
+        const printWin = window.open('', '_blank', 'width=800,height=600');
+        if (!printWin) { if (typeof showToast === 'function') showToast('No se pudo abrir ventana de impresión', 'error'); return; }
+        printWin.document.write(`<!DOCTYPE html><html><head><title>${title}</title>
+            <style>body{font-family:Georgia,serif;line-height:1.7;padding:2rem;color:#1a1a1a;max-width:800px;margin:0 auto;}
+            h1,h2,h3{color:#0f766e;}p{margin:0.5em 0;}.no-data-field{color:#888;font-style:italic;}</style>
+            </head><body>${htmlContent}</body></html>`);
+        printWin.document.close();
+        printWin.focus();
+        setTimeout(() => { printWin.print(); printWin.close(); }, 300);
+    }
+
+    document.getElementById('btnPrintOriginal')?.addEventListener('click', () => {
+        if (!window._lastRawTranscription) return;
+        const html = window._lastRawTranscription
+            .split('\n').filter(l => l.trim())
+            .map(l => `<p>${l}</p>`).join('');
+        printPanelContent(html, 'Texto Original');
+    });
+    document.getElementById('btnPrintStructured')?.addEventListener('click', () => {
+        const compStructured = document.getElementById('comparisonStructured');
+        if (!compStructured || !compStructured.innerHTML.trim()) return;
+        printPanelContent(compStructured.innerHTML, 'Informe Estructurado');
+    });
+
+    // Expose exit for reset handler
+    window.exitComparisonMode = exitComparisonMode;
+
     // Medical check button
     const btnMedicalCheck = document.getElementById('btnMedicalCheck');
     if (btnMedicalCheck) {

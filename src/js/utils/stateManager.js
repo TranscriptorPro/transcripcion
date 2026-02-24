@@ -27,6 +27,16 @@ window.updateButtonsVisibility = function (state) {
         btnStructureAI.disabled = !isTranscribed;
     }
 
+    // btnCompareView: visible after structuring (need both original + structured)
+    const btnCompareView = document.getElementById('btnCompareView');
+    if (btnCompareView) {
+        btnCompareView.style.display = isStructured ? '' : 'none';
+        // Exit comparison if going back to a non-structured state
+        if (!isStructured && window._isComparisonMode && typeof window.exitComparisonMode === 'function') {
+            window.exitComparisonMode();
+        }
+    }
+
     // Normal mode template controls
     if (applyTemplateWrapper) {
         applyTemplateWrapper.style.display = isNormalMode ? 'inline-block' : 'none';
@@ -193,6 +203,11 @@ if (resetBtn) {
         window.transcriptions = [];
         window.activeTabIndex = 0;
         window.isProcessing = false;
+
+        // Exit comparison mode if active
+        if (window._isComparisonMode && typeof window.exitComparisonMode === 'function') {
+            window.exitComparisonMode();
+        }
 
         // Reset editor
         const editor = document.getElementById('editor');

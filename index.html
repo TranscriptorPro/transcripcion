@@ -998,9 +998,9 @@
                     </button>
                 </div>
                 <!-- Botón Pro: Transcribir y Estructurar (solo visible en modo Pro) -->
-                <button class="btn btn-accent btn-full btn-transcribe-structure" id="transcribeAndStructureBtn" disabled
+                <button class="btn btn-full btn-transcribe-structure" id="transcribeAndStructureBtn" disabled
                     style="display:none; margin-top:0.5rem;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="white" style="margin-right:0.3rem;">
+                    <svg class="sparkle-icon" width="16" height="16" viewBox="0 0 24 24" fill="white" style="margin-right:0.3rem;">
                         <path d="M12 2C12 2 13.5 8 20 12C13.5 16 12 22 12 22C12 22 10.5 16 4 12C10.5 8 12 2 12 2Z"/>
                     </svg>
                     Transcribir y Estructurar
@@ -1139,6 +1139,8 @@
                         </button>
                         <!-- Restore/Toggle original text -->
                         <button class="btn btn-outline btn-sm-icon toggle-comparison-btn" id="btnRestoreOriginal" style="display:none;" title="Ver texto original">↩ Original</button>
+                        <!-- Side-by-side comparison -->
+                        <button class="btn btn-outline btn-sm-icon" id="btnCompareView" style="display:none;" title="Vista comparativa lado a lado">⧉ Comparar</button>
                         <!-- Medical terminology checker -->
                         <button class="btn btn-outline btn-sm-icon" id="btnMedicalCheck" style="display:none;" title="Revisar terminología médica">🩺</button>
                         <!-- Cola de pendientes -->
@@ -1328,6 +1330,29 @@
                     style="flex: 1; position: relative; display: flex; flex-direction: column;">
                     <div id="editor" class="editor-content" contenteditable="true" spellcheck="true"
                         style="flex: 1; min-height: 450px; padding: 1.5rem; outline: none; line-height: 1.8; font-size: 16px; overflow-y: auto; background: var(--bg-card); color: var(--text-primary); border-radius: 8px; border: 1px solid var(--border);">
+                    </div>
+                    <!-- Comparison side-by-side (hidden by default) -->
+                    <div id="comparisonContainer" class="comparison-container" style="display:none; min-height:450px;">
+                        <div class="comparison-panel panel-original">
+                            <div class="comparison-panel-header">
+                                <span class="panel-label">📝 Original (sin estructurar)</span>
+                                <span class="panel-actions">
+                                    <button id="btnCopyOriginal" title="Copiar original">📋 Copiar</button>
+                                    <button id="btnPrintOriginal" title="Imprimir original">🖨️ Imprimir</button>
+                                </span>
+                            </div>
+                            <div class="comparison-panel-body" id="comparisonOriginal"></div>
+                        </div>
+                        <div class="comparison-panel panel-structured">
+                            <div class="comparison-panel-header">
+                                <span class="panel-label">✨ Estructurado (IA)</span>
+                                <span class="panel-actions">
+                                    <button id="btnCopyStructured" title="Copiar estructurado">📋 Copiar</button>
+                                    <button id="btnPrintStructured" title="Imprimir estructurado">🖨️ Imprimir</button>
+                                </span>
+                            </div>
+                            <div class="comparison-panel-body" id="comparisonStructured"></div>
+                        </div>
                     </div>
                     <div class="word-count"
                         style="padding: 0.5rem 1rem; border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--text-secondary); display: flex; justify-content: flex-end; background: var(--bg-main); border-radius: 0 0 8px 8px;">

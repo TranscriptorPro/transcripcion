@@ -1117,6 +1117,7 @@ function createMockDOM() {
     mkEl('templateSelect', 'select');
     mkEl('editor', 'div');
     mkEl('fileInput', 'input');
+    mkEl('btnCompareView');
 
     // Override document.getElementById
     const origGetById = global.document.getElementById;
@@ -1580,6 +1581,84 @@ test('Cambio de modo Pro→Normal actualiza botones correctamente', () => {
     assertEqual(mock.elements.transcribeAndStructureBtn.style.display, 'none', 'Normal: T+S oculto');
     assertEqual(mock.elements.applyTemplateWrapper.style.display, 'inline-block', 'Normal: template visible');
 
+    mock.restore();
+});
+
+// ── Bloque 32: Botón Gemini animado + Vista comparativa ───────────────
+console.log('\n── Bloque 32: Botón Gemini + Vista comparativa ──────────────────');
+
+test('index.html — botón T+S tiene clase btn-transcribe-structure', () => {
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
+    assert(html.includes('btn-transcribe-structure'), 'Debe tener clase btn-transcribe-structure');
+    assert(html.includes('sparkle-icon'), 'SVG debe tener clase sparkle-icon');
+});
+
+test('CSS — btn-transcribe-structure tiene animación Gemini', () => {
+    const css = fs.readFileSync(path.join(root, 'src/css/components.css'), 'utf-8');
+    assert(css.includes('geminiGradient'), 'Debe usar animación geminiGradient');
+    assert(css.includes('#4285f4'), 'Debe tener color azul Gemini');
+    assert(css.includes('#9b72cb'), 'Debe tener color púrpura Gemini');
+    assert(css.includes('#d96570'), 'Debe tener color rosa Gemini');
+});
+
+test('CSS — animaciones Gemini definidas en animations.css', () => {
+    const css = fs.readFileSync(path.join(root, 'src/css/animations.css'), 'utf-8');
+    assert(css.includes('@keyframes geminiGradient'), 'Debe definir geminiGradient');
+    assert(css.includes('@keyframes geminiBorder'), 'Debe definir geminiBorder');
+    assert(css.includes('@keyframes geminiSparkle'), 'Debe definir geminiSparkle');
+});
+
+test('index.html — botón Comparar existe', () => {
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
+    assert(html.includes('id="btnCompareView"'), 'btnCompareView debe existir');
+    assert(html.includes('Comparar'), 'Debe decir Comparar');
+});
+
+test('index.html — comparisonContainer con paneles', () => {
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
+    assert(html.includes('id="comparisonContainer"'), 'comparisonContainer debe existir');
+    assert(html.includes('id="comparisonOriginal"'), 'Panel original debe existir');
+    assert(html.includes('id="comparisonStructured"'), 'Panel estructurado debe existir');
+});
+
+test('index.html — botones copiar/imprimir en cada panel', () => {
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
+    assert(html.includes('id="btnCopyOriginal"'), 'btnCopyOriginal debe existir');
+    assert(html.includes('id="btnPrintOriginal"'), 'btnPrintOriginal debe existir');
+    assert(html.includes('id="btnCopyStructured"'), 'btnCopyStructured debe existir');
+    assert(html.includes('id="btnPrintStructured"'), 'btnPrintStructured debe existir');
+});
+
+test('CSS — estilos de comparison-container presentes', () => {
+    const css = fs.readFileSync(path.join(root, 'src/css/components.css'), 'utf-8');
+    assert(css.includes('.comparison-container'), 'Debe tener .comparison-container');
+    assert(css.includes('.comparison-panel'), 'Debe tener .comparison-panel');
+    assert(css.includes('.comparison-panel-header'), 'Debe tener .comparison-panel-header');
+    assert(css.includes('.panel-original'), 'Debe tener .panel-original');
+    assert(css.includes('.panel-structured'), 'Debe tener .panel-structured');
+});
+
+test('ui.js — lógica de comparación implementada', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/utils/ui.js'), 'utf-8');
+    assert(code.includes('enterComparisonMode'), 'Debe tener enterComparisonMode');
+    assert(code.includes('exitComparisonMode'), 'Debe tener exitComparisonMode');
+    assert(code.includes('_isComparisonMode'), 'Debe trackear modo comparación');
+    assert(code.includes('printPanelContent'), 'Debe tener printPanelContent');
+});
+
+test('State Machine — btnCompareView oculto antes de STRUCTURED', () => {
+    const mock = createMockDOM();
+    window.currentMode = 'pro';
+    updateButtonsVisibility('TRANSCRIBED');
+    assertEqual(mock.elements.btnCompareView.style.display, 'none', 'Comparar oculto en TRANSCRIBED');
+    mock.restore();
+});
+
+test('State Machine — btnCompareView visible en STRUCTURED', () => {
+    const mock = createMockDOM();
+    window.currentMode = 'pro';
+    updateButtonsVisibility('STRUCTURED');
+    assertEqual(mock.elements.btnCompareView.style.display, '', 'Comparar visible en STRUCTURED');
     mock.restore();
 });
 
