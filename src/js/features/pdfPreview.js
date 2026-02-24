@@ -418,3 +418,75 @@ window.printFromPreview = function () {
         }, 400);
     };
 };
+
+// ============ CONFIG COMPLETENESS TRAFFIC LIGHT ============
+
+/**
+ * Evalúa la completitud de la configuración del PDF/impresión.
+ * @returns {{ level: 'red'|'yellow'|'green', missing: string[] }}
+ */
+window.evaluateConfigCompleteness = function () {
+    const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
+    const pdfConfig = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+    const missing = [];
+
+    // Campos críticos (sin ellos el PDF sale muy incompleto)
+    if (!profData.nombre)      missing.push('Nombre del profesional');
+    if (!profData.matricula)   missing.push('Matrícula');
+
+    // Campos importantes
+    const specs = Array.isArray(profData.specialties) ? profData.specialties.join('') : (profData.especialidad || '');
+    if (!specs) missing.push('Especialidad');
+
+    // Workplace
+    const workplaces = JSON.parse(localStorage.getItem('workplaces') || '[]');
+    if (workplaces.length === 0 && !pdfConfig.selectedWorkplace) {
+        missing.push('Lugar de trabajo');
+    }
+
+    if (missing.length === 0) return { level: 'green', missing };
+    if (missing.length <= 2 && profData.nombre) return { level: 'yellow', missing };
+    return { level: 'red', missing };
+};
+
+/**
+ * Actualiza el indicador visual del semáforo en el botón de configuración.
+ */
+window.updateConfigTrafficLight = function () {
+    const dot = document.getElementById('configTrafficLight');
+    if (!dot) return;
+
+    const { level } = window.evaluateConfigCompleteness();
+    dot.className = 'config-traffic-light tl-' + level;
+    dot.style.display = '';
+    dot.title = level === 'green' ? 'Configuración completa'
+              : level === 'yellow' ? 'Configuración parcial — faltan algunos datos'
+              : 'Configuración incompleta — configura tus datos profesionales';
+};
+
+/**
+ * Interceptor de validación antes de descargar PDF.
+ * Retorna true si se puede continuar, false si debe cancelar.
+ */
+window.validateBeforeDownload = function (format) {
+    if (format !== 'pdf') return true; // Otros formatos no necesitan config
+    const { level, missing } = window.evaluateConfigCompleteness();
+    if (level === 'green') return true;
+
+    if (level === 'red') {
+        if (typeof showToast === 'function') {
+            showToast('⚠️ Configura tus datos profesionales antes de generar el PDF', 'warning', 5000);
+        }
+        // Abrir el modal de configuración automáticamente
+        setTimeout(() => {
+            if (typeof openPdfConfigModal === 'function') openPdfConfigModal();
+        }, 300);
+        return false;
+    }
+
+    // Yellow: avisar pero dejar continuar
+    if (typeof showToast === 'function') {
+        showToast(`ℹ️ Faltan: ${missing.join(', ')}. El PDF puede quedar incompleto.`, 'info', 4000);
+    }
+    return true;
+};

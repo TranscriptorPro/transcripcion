@@ -38,6 +38,10 @@ window.updateButtonsVisibility = function (state) {
     if (btnConfigPdfMain) {
         btnConfigPdfMain.style.display = isTranscribed ? 'inline-flex' : 'none';
         btnConfigPdfMain.disabled = !isTranscribed;
+        // Actualizar semáforo de completitud al mostrar el botón
+        if (isTranscribed && typeof updateConfigTrafficLight === 'function') {
+            updateConfigTrafficLight();
+        }
     }
     if (btnPreviewPdfMain) {
         btnPreviewPdfMain.style.display = isTranscribed ? 'inline-flex' : 'none';
@@ -63,6 +67,10 @@ window.updateButtonsVisibility = function (state) {
     }
     if (downloadBtn) {
         downloadBtn.disabled = !isTranscribed;
+    }
+    const downloadBtnMain = document.getElementById('downloadBtnMain');
+    if (downloadBtnMain) {
+        downloadBtnMain.disabled = !isTranscribed;
     }
 
     // downloadPdfBtn (separate button, if present)
@@ -215,16 +223,20 @@ window.enableButtons = function () {
     const copyBtn = document.getElementById('copyBtn');
     const printBtn = document.getElementById('printBtn');
     const downloadBtn = document.getElementById('downloadBtn');
+    const downloadBtnMain = document.getElementById('downloadBtnMain');
     if (copyBtn) copyBtn.disabled = false;
     if (printBtn) printBtn.disabled = false;
     if (downloadBtn) downloadBtn.disabled = false;
+    if (downloadBtnMain) downloadBtnMain.disabled = false;
 }
 
 window.disableButtons = function () {
     const copyBtn = document.getElementById('copyBtn');
     const printBtn = document.getElementById('printBtn');
     const downloadBtn = document.getElementById('downloadBtn');
+    const downloadBtnMain = document.getElementById('downloadBtnMain');
     if (copyBtn) copyBtn.disabled = true;
     if (printBtn) printBtn.disabled = true;
     if (downloadBtn) downloadBtn.disabled = true;
+    if (downloadBtnMain) downloadBtnMain.disabled = true;
 }

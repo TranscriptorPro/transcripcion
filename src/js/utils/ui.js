@@ -197,6 +197,8 @@ window.initModals = function () {
             // M-2: cerrar el modal después de guardar
             closePdfConfigModal();
             if (typeof showToast === 'function') showToast('✅ Configuración guardada', 'success');
+            // Actualizar semáforo tras guardar
+            if (typeof updateConfigTrafficLight === 'function') updateConfigTrafficLight();
         });
     }
 
@@ -566,3 +568,128 @@ window.applyProfessionalData = function (data) {
 window.updatePersonalization = function (data) {
     window.applyProfessionalData(data);
 }
+
+// ============ KEYBOARD SHORTCUTS ============
+document.addEventListener('keydown', (e) => {
+    // Ctrl+Shift+R: Re-estructurar con IA
+    if (e.ctrlKey && e.shiftKey && e.key === 'R') {
+        e.preventDefault();
+        const states = ['TRANSCRIBED', 'STRUCTURED', 'PREVIEWED'];
+        if (states.includes(window.appState) && typeof autoStructure === 'function') {
+            autoStructure({ silent: false });
+        }
+        return;
+    }
+
+    // Ctrl+Shift+S: Guardar configuración de impresión
+    if (e.ctrlKey && e.shiftKey && e.key === 'S') {
+        e.preventDefault();
+        if (typeof savePdfConfiguration === 'function') {
+            savePdfConfiguration();
+            if (typeof showToast === 'function') showToast('✅ Configuración guardada', 'success');
+        }
+        return;
+    }
+
+    // Ctrl+Shift+P: Previsualizar PDF
+    if (e.ctrlKey && e.shiftKey && e.key === 'P') {
+        e.preventDefault();
+        const states = ['TRANSCRIBED', 'STRUCTURED', 'PREVIEWED'];
+        if (states.includes(window.appState) && typeof openPrintPreview === 'function') {
+            openPrintPreview();
+        }
+        return;
+    }
+
+    // Ctrl+Shift+D: Descargar formato favorito
+    if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+        e.preventDefault();
+        const states = ['TRANSCRIBED', 'STRUCTURED', 'PREVIEWED'];
+        if (states.includes(window.appState) && typeof downloadFile !== 'undefined') {
+            const fav = localStorage.getItem('preferred_download_format') || 'pdf';
+            if (window.downloadPDF && fav === 'pdf') window.downloadPDF();
+            else if (window.downloadRTF && fav === 'rtf') window.downloadRTF();
+            else if (window.downloadTXT && fav === 'txt') window.downloadTXT();
+            else if (window.downloadHTML && fav === 'html') window.downloadHTML();
+        }
+        return;
+    }
+});
+
+// ============ AUTO-SAVE (cada 30s) ============
+(function initAutoSave() {
+    const AUTOSAVE_KEY = 'editor_autosave';
+    const AUTOSAVE_META_KEY = 'editor_autosave_meta';
+    const INTERVAL_MS = 30000;
+    let _autoSaveTimer = null;
+
+    function saveEditorContent() {
+        const editor = document.getElementById('editor');
+        if (!editor) return;
+        const content = editor.innerHTML;
+        if (!content || content.trim() === '' || content === '<br>') return;
+        localStorage.setItem(AUTOSAVE_KEY, content);
+        localStorage.setItem(AUTOSAVE_META_KEY, JSON.stringify({
+            timestamp: Date.now(),
+            mode: window.currentMode || 'normal',
+            template: window.selectedTemplate || '',
+            tabIndex: window.activeTabIndex || 0
+        }));
+    }
+
+    function startAutoSave() {
+        if (_autoSaveTimer) clearInterval(_autoSaveTimer);
+        _autoSaveTimer = setInterval(saveEditorContent, INTERVAL_MS);
+    }
+
+    function restoreAutoSave() {
+        const saved = localStorage.getItem(AUTOSAVE_KEY);
+        const meta = JSON.parse(localStorage.getItem(AUTOSAVE_META_KEY) || '{}');
+        if (!saved || !meta.timestamp) return;
+
+        // Solo restaurar si tiene menos de 2 horas
+        const ageMs = Date.now() - meta.timestamp;
+        if (ageMs > 2 * 60 * 60 * 1000) {
+            localStorage.removeItem(AUTOSAVE_KEY);
+            localStorage.removeItem(AUTOSAVE_META_KEY);
+            return;
+        }
+
+        const editor = document.getElementById('editor');
+        if (!editor) return;
+        // Solo restaurar si el editor está vacío
+        if (editor.innerText.trim().length > 0) return;
+
+        editor.innerHTML = saved;
+        if (typeof updateWordCount === 'function') updateWordCount();
+        if (typeof showToast === 'function') {
+            const mins = Math.floor(ageMs / 60000);
+            showToast(`♻️ Sesión anterior restaurada (hace ${mins < 1 ? '<1' : mins} min)`, 'info', 4000);
+        }
+        // Restore state to at least TRANSCRIBED so buttons are visible
+        if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
+    }
+
+    // Exponer globalmente
+    window.autoSaveEditorContent = saveEditorContent;
+
+    // Intentar restaurar al cargar
+    window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(restoreAutoSave, 500);
+        startAutoSave();
+    });
+
+    // Guardar al cerrar/salir
+    window.addEventListener('beforeunload', saveEditorContent);
+
+    // Limpiar autosave al resetear
+    const origReset = window.resetBtn?.onclick;
+    const resetBtnEl = document.getElementById('resetBtn');
+    if (resetBtnEl) {
+        // El botón ya tiene listener del stateManager; agregar limpieza
+        resetBtnEl.addEventListener('click', () => {
+            localStorage.removeItem(AUTOSAVE_KEY);
+            localStorage.removeItem(AUTOSAVE_META_KEY);
+        });
+    }
+})();

@@ -2500,6 +2500,60 @@
             cursor: not-allowed;
         }
 
+        /* ===== Config Traffic Light (semáforo de completitud) ===== */
+        .config-traffic-light {
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 2px solid var(--bg-card, #fff);
+            z-index: 2;
+            transition: background-color 0.3s ease;
+        }
+        .config-traffic-light.tl-red    { background-color: #ef4444; box-shadow: 0 0 4px rgba(239, 68, 68, 0.5); }
+        .config-traffic-light.tl-yellow { background-color: #f59e0b; box-shadow: 0 0 4px rgba(245, 158, 11, 0.5); }
+        .config-traffic-light.tl-green  { background-color: #22c55e; box-shadow: 0 0 4px rgba(34, 197, 94, 0.5); }
+
+        /* ===== Download Favorite Star ===== */
+        .dropdown-content button .fav-star {
+            margin-left: auto;
+            font-size: 0.75rem;
+            opacity: 0.4;
+            transition: opacity 0.2s ease;
+            cursor: pointer;
+        }
+        .dropdown-content button .fav-star:hover,
+        .dropdown-content button .fav-star.active {
+            opacity: 1;
+        }
+        /* ===== Download Split Button ===== */
+        .download-split {
+            display: inline-flex;
+            align-items: stretch;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .download-split .btn-download-main {
+            border-radius: 8px 0 0 8px;
+            border-right: 1px solid rgba(255,255,255,0.25);
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+            padding: 0 10px;
+        }
+        .download-split .btn-download-chevron {
+            border-radius: 0 8px 8px 0;
+            padding: 0 6px;
+            min-width: 24px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         /* Download button consistent height */
         #downloadBtn {
             height: 36px;

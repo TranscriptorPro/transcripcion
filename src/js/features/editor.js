@@ -350,18 +350,69 @@ if (printBtn) {
 
 // Download controls
 const downloadDropdown = document.getElementById('downloadDropdown');
-if (downloadBtn && downloadDropdown) {
-    downloadBtn.addEventListener('click', (e) => {
+const downloadBtnMain = document.getElementById('downloadBtnMain');
+const downloadBtnChevron = document.getElementById('downloadBtn');
+
+// ── Download Favorite System ──
+const FORMAT_LABELS = { pdf: 'PDF', rtf: 'RTF', txt: 'TXT', html: 'HTML' };
+
+function getPreferredFormat() {
+    return localStorage.getItem('preferred_download_format') || 'pdf';
+}
+
+function setPreferredFormat(fmt) {
+    localStorage.setItem('preferred_download_format', fmt);
+    updateFavUI();
+}
+
+function updateFavUI() {
+    const fav = getPreferredFormat();
+    // Update main button label
+    const label = document.getElementById('downloadFavLabel');
+    if (label) label.textContent = FORMAT_LABELS[fav] || 'PDF';
+    // Update stars in dropdown
+    document.querySelectorAll('#downloadDropdown .fav-star').forEach(star => {
+        const fmt = star.dataset.fmt;
+        star.textContent = fmt === fav ? '⭐' : '☆';
+        star.classList.toggle('active', fmt === fav);
+    });
+}
+
+// Main button: 1-click download with favorite format
+if (downloadBtnMain) {
+    downloadBtnMain.addEventListener('click', (e) => {
+        e.stopPropagation();
+        downloadFile(getPreferredFormat());
+    });
+}
+
+// Chevron: toggle dropdown
+if (downloadBtnChevron && downloadDropdown) {
+    downloadBtnChevron.addEventListener('click', (e) => {
         e.stopPropagation();
         downloadDropdown.classList.toggle('open');
     });
 
     document.addEventListener('click', e => {
-        if (!downloadBtn.contains(e.target) && !downloadDropdown.contains(e.target)) {
+        if (!downloadBtnChevron.contains(e.target) && !downloadDropdown.contains(e.target)
+            && !(downloadBtnMain && downloadBtnMain.contains(e.target))) {
             downloadDropdown.classList.remove('open');
         }
     });
 }
+
+// Star click handlers (set favorite)
+document.querySelectorAll('#downloadDropdown .fav-star').forEach(star => {
+    star.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        setPreferredFormat(star.dataset.fmt);
+        if (typeof showToast === 'function') showToast(`⭐ Formato favorito: ${FORMAT_LABELS[star.dataset.fmt]}`, 'success');
+    });
+});
+
+// Init favorite UI on load
+updateFavUI();
 
 document.querySelectorAll('.dropdown-item').forEach(item => {
     item.addEventListener('click', () => {
@@ -375,6 +426,9 @@ async function downloadFile(format) {
     if (!editor) return;
     const text = editor.innerText || '';
     if (!text.trim()) return showToast('No hay texto', 'error');
+
+    // Validación de config antes de PDF
+    if (typeof validateBeforeDownload === 'function' && !validateBeforeDownload(format)) return;
 
     // Need globals transcriptions and activeTabIndex
     const safeTranscriptions = typeof transcriptions !== 'undefined' ? transcriptions : [];
