@@ -34,6 +34,20 @@ global.fetch             = async () => {};
 global.selectedTemplate  = undefined;
 global.document          = { getElementById: () => null, querySelectorAll: () => [], addEventListener: () => {} };
 global.extractPatientDataFromText = () => ({});
+global._shouldAutoStructure = false;
+global.document.createElement = (tag) => ({
+    tagName: tag.toUpperCase(),
+    className: '', innerHTML: '', textContent: '',
+    style: {},
+    setAttribute: () => {},
+    addEventListener: () => {},
+    querySelector: () => null,
+    querySelectorAll: () => [],
+    classList: { add() {}, remove() {}, contains() { return false; } },
+    insertBefore: () => {},
+    get firstChild() { return null; }
+});
+global.document.body = { style: { borderTop: '' } };
 // Suprimir console.error/warn en tests (ruido de errores esperados/simulados)
 const _origConsoleError = console.error;
 const _origConsoleWarn  = console.warn;
@@ -60,6 +74,7 @@ load('src/js/config/templates.js');
 load('src/js/features/structurer.js');
 load('src/js/features/patientRegistry.js');
 load('src/js/features/formHandler.js');
+load('src/js/utils/stateManager.js');
 
 // ── Utilidades de test ────────────────────────────────────────────────────────
 let passed = 0, failed = 0;
@@ -1035,6 +1050,537 @@ test('generateReportNumber incrementa secuencialmente', () => {
     assert(n1.endsWith('-0001'), `Primero debe ser 0001, obtuvo: ${n1}`);
     assert(n2.endsWith('-0002'), `Segundo debe ser 0002, obtuvo: ${n2}`);
     assert(n3.endsWith('-0003'), `Tercero debe ser 0003, obtuvo: ${n3}`);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 19: Flujo Pro completo — State Machine + Buttons + Pipeline
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 19: Flujo Pro — State Machine + Buttons ────────────────');
+
+// Helper: simular getElementById para los botones del state manager
+function createMockDOM() {
+    const elements = {};
+    const mkEl = (id, tag = 'button') => {
+        const el = {
+            id, tagName: tag.toUpperCase(),
+            style: { display: '', borderTop: 'none' },
+            disabled: false,
+            innerHTML: '', textContent: '',
+            dataset: {},
+            classList: {
+                _classes: new Set(),
+                add(c) { this._classes.add(c); },
+                remove(c) { this._classes.delete(c); },
+                contains(c) { return this._classes.has(c); },
+                toggle(c, force) { force ? this._classes.add(c) : this._classes.delete(c); }
+            },
+            closest: () => null,
+            querySelector: () => null,
+            querySelectorAll: () => [],
+            scrollIntoView: () => {},
+            focus: () => {},
+            select: () => {},
+            addEventListener: () => {},
+            click: () => {},
+            remove: () => {},
+            dispatchEvent: () => {},
+            insertBefore: () => {},
+            get firstChild() { return null; },
+            set value(v) { this._val = v; },
+            get value() { return this._val || ''; },
+            get checked() { return this._checked || false; },
+            set checked(v) { this._checked = v; }
+        };
+        elements[id] = el;
+        return el;
+    };
+
+    // Botones del state manager
+    mkEl('structureBtn');
+    mkEl('downloadPdfBtn');
+    mkEl('btnConfigPdfMain');
+    mkEl('btnPreviewPdfMain');
+    mkEl('copyBtn');
+    mkEl('printBtn');
+    mkEl('downloadBtn');
+    mkEl('downloadBtnContainer', 'div');
+    mkEl('btnStructureAI');
+    mkEl('btnApplyTemplate');
+    mkEl('applyTemplateWrapper', 'div');
+    mkEl('transcribeBtn');
+    mkEl('transcribeAndStructureBtn');
+    mkEl('quickProfileSelector', 'select');
+    mkEl('downloadBtnMain');
+    mkEl('proModeToggle', 'input');
+    mkEl('proToggleContainer', 'div');
+    mkEl('resetBtn');
+    mkEl('templateSelect', 'select');
+    mkEl('editor', 'div');
+    mkEl('fileInput', 'input');
+
+    // Override document.getElementById
+    const origGetById = global.document.getElementById;
+    global.document.getElementById = (id) => elements[id] || null;
+
+    return {
+        elements,
+        restore: () => { global.document.getElementById = origGetById; }
+    };
+}
+
+test('State Machine — IDLE: todos los botones de acción ocultos/deshabilitados', () => {
+    const mock = createMockDOM();
+    window.currentMode = 'pro';
+    updateButtonsVisibility('IDLE');
+    const e = mock.elements;
+    assertEqual(e.btnStructureAI.style.display, 'none', 'btnStructureAI oculto en IDLE');
+    assertEqual(e.btnConfigPdfMain.style.display, 'none', 'btnConfigPdfMain oculto en IDLE');
+    assertEqual(e.btnPreviewPdfMain.style.display, 'none', 'btnPreviewPdfMain oculto en IDLE');
+    assertEqual(e.copyBtn.style.display, 'none', 'copyBtn oculto en IDLE');
+    assertEqual(e.printBtn.style.display, 'none', 'printBtn oculto en IDLE');
+    assertEqual(e.downloadBtnContainer.style.display, 'none', 'downloadBtnContainer oculto en IDLE');
+    assertEqual(e.downloadPdfBtn.style.display, 'none', 'downloadPdfBtn oculto en IDLE');
+    assertEqual(e.applyTemplateWrapper.style.display, 'none', 'applyTemplateWrapper oculto en IDLE Pro');
+    mock.restore();
+});
+
+test('State Machine — FILES_LOADED: aún sin botones de acción post-transcripción', () => {
+    const mock = createMockDOM();
+    window.currentMode = 'pro';
+    updateButtonsVisibility('FILES_LOADED');
+    const e = mock.elements;
+    assertEqual(e.btnStructureAI.style.display, 'none', 'btnStructureAI oculto en FILES_LOADED');
+    assertEqual(e.btnConfigPdfMain.style.display, 'none', 'Config oculto en FILES_LOADED');
+    assertEqual(e.copyBtn.style.display, 'none', 'Copy oculto en FILES_LOADED');
+    mock.restore();
+});
+
+test('State Machine — TRANSCRIBED Pro: btnStructureAI visible, botonera activa', () => {
+    const mock = createMockDOM();
+    window.currentMode = 'pro';
+    updateButtonsVisibility('TRANSCRIBED');
+    const e = mock.elements;
+    assertEqual(e.btnStructureAI.style.display, 'inline-flex', 'btnStructureAI visible en TRANSCRIBED Pro');
+    assertEqual(e.btnStructureAI.disabled, false, 'btnStructureAI habilitado');
+    assertEqual(e.btnConfigPdfMain.style.display, 'inline-flex', 'Config visible');
+    assertEqual(e.btnPreviewPdfMain.style.display, 'inline-flex', 'Preview visible');
+    assertEqual(e.copyBtn.style.display, 'inline-flex', 'Copy visible');
+    assertEqual(e.printBtn.style.display, 'inline-flex', 'Print visible');
+    assertEqual(e.downloadBtnContainer.style.display, 'block', 'Download container visible');
+    // Normal-mode controls hidden in Pro
+    assertEqual(e.applyTemplateWrapper.style.display, 'none', 'applyTemplateWrapper oculto en Pro');
+    assertEqual(e.downloadPdfBtn.style.display, 'none', 'downloadPdfBtn oculto pre-structure');
+    mock.restore();
+});
+
+test('State Machine — TRANSCRIBED Normal: applyTemplate visible, btnStructureAI oculto', () => {
+    const mock = createMockDOM();
+    window.currentMode = 'normal';
+    updateButtonsVisibility('TRANSCRIBED');
+    const e = mock.elements;
+    assertEqual(e.btnStructureAI.style.display, 'none', 'btnStructureAI oculto en Normal');
+    assertEqual(e.applyTemplateWrapper.style.display, 'inline-block', 'applyTemplateWrapper visible en Normal');
+    assertEqual(e.btnApplyTemplate.style.display, 'inline-flex', 'btnApplyTemplate visible en Normal');
+    // transcribeAndStructureBtn hidden in Normal
+    assertEqual(e.transcribeAndStructureBtn.style.display, 'none', 'T+S btn hidden in Normal');
+    mock.restore();
+});
+
+test('State Machine — STRUCTURED Pro: btnStructureAI oculto, downloadPdfBtn visible', () => {
+    const mock = createMockDOM();
+    window.currentMode = 'pro';
+    updateButtonsVisibility('STRUCTURED');
+    const e = mock.elements;
+    assertEqual(e.btnStructureAI.style.display, 'none', 'btnStructureAI oculto después de estructurar');
+    assertEqual(e.downloadPdfBtn.style.display, 'inline-flex', 'downloadPdfBtn visible en STRUCTURED');
+    assertEqual(e.downloadPdfBtn.disabled, false, 'downloadPdfBtn habilitado');
+    assertEqual(e.copyBtn.style.display, 'inline-flex', 'Copy sigue visible');
+    assertEqual(e.btnConfigPdfMain.style.display, 'inline-flex', 'Config sigue visible');
+    mock.restore();
+});
+
+test('State Machine — PREVIEWED Pro: todo visible/activo como STRUCTURED', () => {
+    const mock = createMockDOM();
+    window.currentMode = 'pro';
+    updateButtonsVisibility('PREVIEWED');
+    const e = mock.elements;
+    assertEqual(e.btnStructureAI.style.display, 'none', 'btnStructureAI oculto en PREVIEWED');
+    assertEqual(e.downloadPdfBtn.style.display, 'inline-flex', 'downloadPdfBtn visible en PREVIEWED');
+    assertEqual(e.copyBtn.disabled, false, 'Copy habilitado');
+    assertEqual(e.printBtn.disabled, false, 'Print habilitado');
+    mock.restore();
+});
+
+test('State Machine — transcribeAndStructureBtn visible solo en Pro', () => {
+    const mock = createMockDOM();
+    // En Pro: visible
+    window.currentMode = 'pro';
+    updateButtonsVisibility('IDLE');
+    assertEqual(mock.elements.transcribeAndStructureBtn.style.display, '', 'T+S visible en Pro (display empty = inherited)');
+    // En Normal: oculto
+    window.currentMode = 'normal';
+    updateButtonsVisibility('IDLE');
+    assertEqual(mock.elements.transcribeAndStructureBtn.style.display, 'none', 'T+S oculto en Normal');
+    mock.restore();
+});
+
+test('State Machine — transcribeAndStructureBtn sync disabled con transcribeBtn', () => {
+    const mock = createMockDOM();
+    window.currentMode = 'pro';
+    // Simular transcribeBtn disabled (sin archivos)
+    mock.elements.transcribeBtn.disabled = true;
+    updateButtonsVisibility('IDLE');
+    assertEqual(mock.elements.transcribeAndStructureBtn.disabled, true, 'T+S disabled cuando transcribe disabled');
+    // Simular transcribeBtn enabled (con archivos)
+    mock.elements.transcribeBtn.disabled = false;
+    updateButtonsVisibility('FILES_LOADED');
+    assertEqual(mock.elements.transcribeAndStructureBtn.disabled, false, 'T+S enabled cuando transcribe enabled');
+    mock.restore();
+});
+
+// ── Bloque 20: _shouldAutoStructure flag mechanics ──────────────────────
+console.log('\n── Bloque 20: Flag _shouldAutoStructure ────────────────────────');
+
+test('_shouldAutoStructure flag — inicia en false', () => {
+    assertEqual(window._shouldAutoStructure, false, '_shouldAutoStructure debe ser false por defecto');
+});
+
+test('_shouldAutoStructure flag — se puede setear y resetear', () => {
+    window._shouldAutoStructure = true;
+    assertEqual(window._shouldAutoStructure, true, 'Se puede setear a true');
+    window._shouldAutoStructure = false;
+    assertEqual(window._shouldAutoStructure, false, 'Se puede resetear');
+});
+
+// ── Bloque 21: triggerPatientDataCheck — detección + placeholder ────────
+console.log('\n── Bloque 21: triggerPatientDataCheck ──────────────────────────');
+
+test('triggerPatientDataCheck limpia datos del paciente anterior', () => {
+    localStorage.setItem('pdf_config', JSON.stringify({
+        patientName: 'Viejo, Paciente',
+        patientDni: '11111111',
+        doctorName: 'Dr. Test'
+    }));
+    triggerPatientDataCheck('Texto sin datos de paciente.');
+    const config = JSON.parse(localStorage.getItem('pdf_config'));
+    assertEqual(config.patientName, undefined, 'patientName debe borrarse');
+    assertEqual(config.patientDni, undefined, 'patientDni debe borrarse');
+    assertEqual(config.doctorName, 'Dr. Test', 'doctorName NO debe borrarse');
+});
+
+test('triggerPatientDataCheck extrae nombre del audio y lo guarda', () => {
+    localStorage.setItem('pdf_config', JSON.stringify({}));
+    triggerPatientDataCheck('Paciente González Marcelo de 50 años consulta por dolor torácico.');
+    const config = JSON.parse(localStorage.getItem('pdf_config'));
+    assert(config.patientName && config.patientName.includes('González'),
+        `Nombre debe incluir González, obtuvo: ${config.patientName}`);
+});
+
+test('triggerPatientDataCheck sin datos → no guarda nombre', () => {
+    localStorage.setItem('pdf_config', JSON.stringify({}));
+    triggerPatientDataCheck('Se realiza espirometría. CVF normal.');
+    const config = JSON.parse(localStorage.getItem('pdf_config'));
+    assert(!config.patientName, 'No debe extraer nombre de texto sin datos de paciente');
+});
+
+// ── Bloque 22: Pipeline de detección → estructura ─────────────────────
+console.log('\n── Bloque 22: Pipeline detección → structuring ──────────────────');
+
+test('Pipeline: texto de cinecoro → detecta plantilla → tiene prompt', () => {
+    const text = TEXTS.cinecoronariografia;
+    const key = autoDetectTemplateKey(text);
+    assertEqual(key, 'cinecoro');
+    const tmpl = window.MEDICAL_TEMPLATES[key];
+    assert(tmpl, 'Plantilla debe existir');
+    assert(tmpl.prompt.length > 100, 'Prompt debe ser sustancial');
+    assert(Array.isArray(tmpl.keywords), 'Keywords deben ser array');
+});
+
+test('Pipeline: texto de eco_stress → detecta plantilla → prompt existe', () => {
+    const text = TEXTS.eco_stress;
+    const key = autoDetectTemplateKey(text);
+    assertEqual(key, 'eco_stress');
+    const tmpl = window.MEDICAL_TEMPLATES[key];
+    assert(tmpl && tmpl.prompt.length > 100, 'eco_stress debe tener prompt largo');
+});
+
+test('Pipeline: todas las plantillas tienen nombre, prompt, keywords', () => {
+    const keys = Object.keys(window.MEDICAL_TEMPLATES);
+    assert(keys.length >= 10, `Debe haber >= 10 plantillas, hay ${keys.length}`);
+    for (const k of keys) {
+        const t = window.MEDICAL_TEMPLATES[k];
+        assert(t.name, `${k} debe tener name`);
+        assert(t.prompt && t.prompt.length > 20, `${k} debe tener prompt`);
+        // generico puede no tener keywords
+        if (k !== 'generico') {
+            assert(Array.isArray(t.keywords), `${k} debe tener keywords array`);
+        }
+    }
+});
+
+test('Pipeline: markdownToHtml marca [No especificado] como editable', () => {
+    const md = '## HALLAZGOS\n\nEpiglotis: [No especificado].\nCuerdas: normales.';
+    const html = markdownToHtml(md);
+    assertIncludes(html, 'no-data-field', 'Debe contener span.no-data-field');
+    assertIncludes(html, 'no-data-edit-btn', 'Debe contener botón de edición');
+});
+
+test('Pipeline: markdownToHtml marca [Sin datos disponibles] como editable', () => {
+    const md = '## TEST\n\nCampo: Sin datos disponibles.';
+    const html = markdownToHtml(md);
+    assertIncludes(html, 'no-data-field', 'Debe marcar Sin datos disponibles como editable');
+});
+
+test('Pipeline: markdownToHtml marca [No evaluado] como editable', () => {
+    const md = '## TEST\n\nCampo: [No evaluado en este estudio].';
+    const html = markdownToHtml(md);
+    assertIncludes(html, 'no-data-field', 'Debe marcar [No evaluado...] como editable');
+});
+
+// ── Bloque 23: Toggle original/estructurado ─────────────────────────────
+console.log('\n── Bloque 23: Toggle original/estructurado ────────────────────');
+
+test('Toggle: _lastRawTranscription se preserva globalmente', () => {
+    window._lastRawTranscription = 'Texto crudo original del audio.';
+    assertEqual(window._lastRawTranscription, 'Texto crudo original del audio.');
+});
+
+test('Toggle: _lastStructuredHTML se preserva globalmente', () => {
+    window._lastStructuredHTML = '<h2>HALLAZGOS</h2><p>Texto estructurado</p>';
+    assertEqual(window._lastStructuredHTML, '<h2>HALLAZGOS</h2><p>Texto estructurado</p>');
+});
+
+// ── Bloque 24: Advertencia de descarga sin datos de paciente ────────────
+console.log('\n── Bloque 24: Advertencia descarga sin paciente ────────────────');
+
+test('Descarga: pdf_config sin patientName → se detecta vacío', () => {
+    localStorage.setItem('pdf_config', JSON.stringify({ doctorName: 'Dr. Test' }));
+    const config = JSON.parse(localStorage.getItem('pdf_config'));
+    assert(!config.patientName, 'Sin patientName → requiere advertencia');
+});
+
+test('Descarga: pdf_config con patientName → no necesita advertencia', () => {
+    localStorage.setItem('pdf_config', JSON.stringify({ patientName: 'López, Ana', doctorName: 'Dr. Test' }));
+    const config = JSON.parse(localStorage.getItem('pdf_config'));
+    assert(config.patientName, 'Con patientName → no requiere advertencia');
+});
+
+// ── Bloque 25: Quick options en modal de edición ────────────────────────
+console.log('\n── Bloque 25: Quick options modal edición ──────────────────────');
+
+test('Quick options: index.html contiene s/p, Sin particularidades, No evaluado', () => {
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
+    assert(html.includes('data-val="s/p"'), 'Debe tener quick option s/p');
+    assert(html.includes('data-val="Sin particularidades"'), 'Debe tener quick option Sin particularidades');
+    assert(html.includes('data-val="No evaluado"'), 'Debe tener quick option No evaluado');
+});
+
+test('Quick options: index.html tiene botón Eliminar campo', () => {
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
+    assert(html.includes('id="btnDeleteFieldSection"'), 'Debe tener btnDeleteFieldSection');
+    assert(html.includes('Eliminar campo'), 'Debe mostrar texto Eliminar campo');
+});
+
+test('Quick options: index.html tiene botón Dejar en blanco', () => {
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
+    assert(html.includes('id="btnBlankEditField"'), 'Debe tener btnBlankEditField');
+});
+
+// ── Bloque 26: Separación botones Transcribir / Transcribir+Estructurar ─
+console.log('\n── Bloque 26: Botones Transcribir separados ────────────────────');
+
+test('index.html tiene botón transcribeBtn', () => {
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
+    assert(html.includes('id="transcribeBtn"'), 'transcribeBtn debe existir');
+});
+
+test('index.html tiene botón transcribeAndStructureBtn', () => {
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
+    assert(html.includes('id="transcribeAndStructureBtn"'), 'transcribeAndStructureBtn debe existir');
+    assert(html.includes('Transcribir y Estructurar') || html.includes('Transcribir y<br>Estructurar'),
+        'Debe decir Transcribir y Estructurar');
+});
+
+test('transcriptor.js setea _shouldAutoStructure en click de T+S', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/transcriptor.js'), 'utf-8');
+    assert(code.includes('_shouldAutoStructure = true'), 'T+S debe setear flag');
+    assert(code.includes('_shouldAutoStructure = false'), 'Transcribe debe resetear flag');
+    assert(code.includes('shouldAutoStructureNow'), 'Debe capturar el flag antes de resetear');
+});
+
+test('transcriptor.js auto-pipeline solo corre con shouldAutoStructureNow', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/transcriptor.js'), 'utf-8');
+    assert(code.includes('if (shouldAutoStructureNow'), 
+        'Auto-pipeline debe estar gated por shouldAutoStructureNow');
+});
+
+test('stateManager.js oculta T+S btn en Normal mode', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/utils/stateManager.js'), 'utf-8');
+    assert(code.includes('isProMode') && code.includes('transcribeAndStructureBtn'),
+        'stateManager debe controlar T+S por modo');
+});
+
+// ── Bloque 27: API Key collapse cuando conectada ──────────────────────
+console.log('\n── Bloque 27: API Key collapse ───────────────────────────────────');
+
+test('ui.js colapsa API key card cuando está conectada', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/utils/ui.js'), 'utf-8');
+    assert(code.includes('api-key-collapsible'), 'Debe usar clase api-key-collapsible');
+    assert(code.includes("style.display = 'none'") || code.includes("display = 'none'"),
+        'Debe ocultar los elementos colapsables');
+    assert(code.includes('Conectada'), 'Debe mostrar badge Conectada');
+});
+
+test('index.html tiene elementos con clase api-key-collapsible', () => {
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
+    assert(html.includes('api-key-collapsible'), 'Debe haber elementos api-key-collapsible');
+});
+
+// ── Bloque 28: Patient placeholder banner ──────────────────────────────
+console.log('\n── Bloque 28: Patient placeholder banner ──────────────────────');
+
+test('structurer.js tiene insertPatientPlaceholder', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/structurer.js'), 'utf-8');
+    assert(code.includes('function insertPatientPlaceholder'), 'Debe tener insertPatientPlaceholder');
+    assert(code.includes('patient-placeholder-banner'), 'Debe usar clase patient-placeholder-banner');
+    assert(code.includes('Completar datos del paciente'), 'Debe mostrar texto informativo');
+});
+
+test('structurer.js tiene removePatientPlaceholder', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/structurer.js'), 'utf-8');
+    assert(code.includes('function removePatientPlaceholder'), 'Debe tener removePatientPlaceholder');
+    assert(code.includes("window.removePatientPlaceholder"), 'Debe exponerse globalmente');
+});
+
+test('structurer.js NO abre modal automáticamente después de estructurar', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/structurer.js'), 'utf-8');
+    // triggerPatientDataCheck no debe contener openPatientDataModal
+    const fnBody = code.substring(
+        code.indexOf('window.triggerPatientDataCheck'),
+        code.indexOf('function insertPatientPlaceholder')
+    );
+    assert(!fnBody.includes('openPatientDataModal'),
+        'triggerPatientDataCheck NO debe abrir modal directamente');
+});
+
+// ── Bloque 29: deleteFieldSection en editor.js ─────────────────────────
+console.log('\n── Bloque 29: Eliminar campo (deleteFieldSection) ──────────────');
+
+test('editor.js contiene función deleteFieldSection', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/editor.js'), 'utf-8');
+    assert(code.includes('function deleteFieldSection'), 'Debe tener deleteFieldSection');
+    assert(code.includes('btnDeleteFieldSection'), 'Debe estar wired a btnDeleteFieldSection');
+    assert(code.includes('confirm('), 'Debe pedir confirmación antes de eliminar');
+});
+
+test('editor.js: deleteFieldSection encuentra heading H2/H3', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/editor.js'), 'utf-8');
+    assert(code.includes("closest('h2, h3") || code.includes('closest("h2, h3'),
+        'Debe buscar heading H2/H3 cercano');
+    assert(code.includes('headingLevel'), 'Debe calcular nivel del heading');
+    assert(code.includes('toRemove'), 'Debe recolectar elementos a eliminar');
+});
+
+// ── Bloque 30: editor.js — Download warning sin paciente ───────────────
+console.log('\n── Bloque 30: Download warning sin datos paciente ──────────────');
+
+test('editor.js advierte al descargar sin datos del paciente', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/editor.js'), 'utf-8');
+    assert(code.includes('patientName') && code.includes('confirm('),
+        'Debe verificar patientName y usar confirm()');
+    assert(code.includes('El informe no tiene datos del paciente') || 
+           code.includes('no tiene datos del paciente'),
+        'Debe mostrar mensaje sobre datos faltantes');
+});
+
+// ── Bloque 31: Validación integral de archivos de código ────────────────
+console.log('\n── Bloque 31: Integridad archivos de código ────────────────────');
+
+test('stateManager.js — maneja todos los estados sin error', () => {
+    const mock = createMockDOM();
+    const states = ['IDLE', 'FILES_LOADED', 'TRANSCRIBED', 'STRUCTURED', 'PREVIEWED'];
+    for (const mode of ['pro', 'normal']) {
+        window.currentMode = mode;
+        for (const state of states) {
+            try {
+                updateButtonsVisibility(state);
+            } catch (e) {
+                throw new Error(`updateButtonsVisibility('${state}') en modo ${mode} lanzó error: ${e.message}`);
+            }
+        }
+    }
+    mock.restore();
+    assert(true, 'Todos los estados/modos procesados sin error');
+});
+
+test('Transición flujo completo Pro: IDLE → FILES → TRANSCRIBED → STRUCTURED → PREVIEWED', () => {
+    const mock = createMockDOM();
+    window.currentMode = 'pro';
+    const e = mock.elements;
+
+    // IDLE: nada visible
+    updateButtonsVisibility('IDLE');
+    assertEqual(e.btnStructureAI.style.display, 'none');
+    assertEqual(e.copyBtn.style.display, 'none');
+
+    // FILES_LOADED: aún nada
+    updateButtonsVisibility('FILES_LOADED');
+    assertEqual(e.btnStructureAI.style.display, 'none');
+
+    // TRANSCRIBED: btnStructureAI aparece
+    updateButtonsVisibility('TRANSCRIBED');
+    assertEqual(e.btnStructureAI.style.display, 'inline-flex');
+    assertEqual(e.copyBtn.style.display, 'inline-flex');
+    assertEqual(e.downloadPdfBtn.style.display, 'none', 'PDF aún no hasta STRUCTURED');
+
+    // STRUCTURED: btnStructureAI oculto, PDF visible
+    updateButtonsVisibility('STRUCTURED');
+    assertEqual(e.btnStructureAI.style.display, 'none');
+    assertEqual(e.downloadPdfBtn.style.display, 'inline-flex');
+    assertEqual(e.copyBtn.style.display, 'inline-flex');
+
+    // PREVIEWED: igual que STRUCTURED
+    updateButtonsVisibility('PREVIEWED');
+    assertEqual(e.btnStructureAI.style.display, 'none');
+    assertEqual(e.downloadPdfBtn.style.display, 'inline-flex');
+
+    mock.restore();
+});
+
+test('Transición flujo completo Normal: IDLE → FILES → TRANSCRIBED → no STRUCTURED', () => {
+    const mock = createMockDOM();
+    window.currentMode = 'normal';
+    const e = mock.elements;
+
+    updateButtonsVisibility('IDLE');
+    assertEqual(e.applyTemplateWrapper.style.display, 'none');
+    assertEqual(e.transcribeAndStructureBtn.style.display, 'none');
+
+    updateButtonsVisibility('TRANSCRIBED');
+    assertEqual(e.applyTemplateWrapper.style.display, 'inline-block', 'Template wrapper visible');
+    assertEqual(e.btnApplyTemplate.style.display, 'inline-flex', 'btnApplyTemplate visible');
+    assertEqual(e.btnStructureAI.style.display, 'none', 'btnStructureAI oculto en Normal');
+    assertEqual(e.transcribeAndStructureBtn.style.display, 'none', 'T+S oculto en Normal');
+    assertEqual(e.copyBtn.style.display, 'inline-flex', 'Copy visible después de transcribir');
+
+    mock.restore();
+});
+
+test('Cambio de modo Pro→Normal actualiza botones correctamente', () => {
+    const mock = createMockDOM();
+    window.currentMode = 'pro';
+    updateButtonsVisibility('TRANSCRIBED');
+    assertEqual(mock.elements.btnStructureAI.style.display, 'inline-flex', 'Pro: btnStructureAI visible');
+    assertEqual(mock.elements.transcribeAndStructureBtn.style.display, '', 'Pro: T+S visible');
+
+    // Cambio a Normal
+    window.currentMode = 'normal';
+    updateButtonsVisibility('TRANSCRIBED');
+    assertEqual(mock.elements.btnStructureAI.style.display, 'none', 'Normal: btnStructureAI oculto');
+    assertEqual(mock.elements.transcribeAndStructureBtn.style.display, 'none', 'Normal: T+S oculto');
+    assertEqual(mock.elements.applyTemplateWrapper.style.display, 'inline-block', 'Normal: template visible');
+
+    mock.restore();
 });
 
 // ── Resumen ───────────────────────────────────────────────────────────────────
