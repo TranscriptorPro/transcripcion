@@ -1235,6 +1235,50 @@
             box-shadow: 0 2px 8px rgba(96,165,250,0.2);
         }
 
+        /* Toggle comparison button (Original / Estructurado) */
+        .toggle-comparison-btn {
+            font-size: 0.75rem !important;
+            padding: 0.25rem 0.65rem !important;
+            border-radius: 6px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .toggle-comparison-btn.toggle-active {
+            background: var(--primary) !important;
+            color: #fff !important;
+            border-color: var(--primary) !important;
+        }
+
+        /* Banner indicador de texto original */
+        .original-text-banner {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 0.9rem;
+            margin-bottom: 0.75rem;
+            background: rgba(245,158,11,0.1);
+            border: 1.5px dashed #f59e0b;
+            border-radius: 8px;
+            color: #b45309;
+            font-size: 0.82rem;
+            font-weight: 600;
+            user-select: none;
+        }
+        [data-theme="dark"] .original-text-banner {
+            background: rgba(245,158,11,0.1);
+            border-color: rgba(245,158,11,0.4);
+            color: #fbbf24;
+        }
+
+        /* Botón Eliminar campo en modal */
+        #btnDeleteFieldSection {
+            transition: background 0.15s, color 0.15s;
+        }
+        #btnDeleteFieldSection:hover {
+            background: #ef4444 !important;
+            color: #fff !important;
+        }
+
         /* Print: hide UI-only elements */
         @media print {
             .no-print,

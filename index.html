@@ -655,7 +655,9 @@
                     </div>
                 </div>
                 <div class="modal-footer" style="padding:0.9rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:0.5rem;align-items:center;">
-                    <button class="btn btn-outline" id="btnBlankEditField" style="margin-right:auto;font-size:0.8rem;color:var(--text-secondary);border-color:var(--border);">🗑️ Dejar en blanco</button>
+                    <button class="btn btn-outline" id="btnBlankEditField" style="font-size:0.8rem;color:var(--text-secondary);border-color:var(--border);">🗑️ Dejar en blanco</button>
+                    <button class="btn btn-outline" id="btnDeleteFieldSection" style="font-size:0.8rem;color:#ef4444;border-color:#ef4444;" title="Eliminar esta sección completa del informe">🗑️ Eliminar campo</button>
+                    <span style="flex:1;"></span>
                     <button class="btn btn-outline" id="btnCancelEditField">Cancelar</button>
                     <button class="btn btn-primary" id="btnConfirmEditField">✅ Aplicar</button>
                 </div>
@@ -1126,7 +1128,7 @@
                             <span>IA</span>
                         </button>
                         <!-- Restore/Toggle original text -->
-                        <button class="btn btn-outline btn-sm-icon" id="btnRestoreOriginal" style="display:none;" title="Ver texto original">&#8617;</button>
+                        <button class="btn btn-outline btn-sm-icon toggle-comparison-btn" id="btnRestoreOriginal" style="display:none;" title="Ver texto original">↩ Original</button>
                         <!-- Medical terminology checker -->
                         <button class="btn btn-outline btn-sm-icon" id="btnMedicalCheck" style="display:none;" title="Revisar terminología médica">🩺</button>
                         <!-- Cola de pendientes -->

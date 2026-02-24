@@ -592,7 +592,7 @@ async function applyNormalTemplate(templateKey) {
             window._lastStructuredHTML = body;
             if (typeof showAINote === 'function') showAINote(note, templateName);
             const btnR = document.getElementById('btnRestoreOriginal');
-            if (btnR) { btnR.style.display = ''; btnR._showingOriginal = false; btnR.textContent = '↩'; }
+            if (btnR) { btnR.style.display = ''; btnR._showingOriginal = false; btnR.innerHTML = '↩ Original'; btnR.classList.remove('toggle-active'); }
             const btnM = document.getElementById('btnMedicalCheck');
             if (btnM) btnM.style.display = '';
             if (typeof window.updateWordCount === 'function') window.updateWordCount();
@@ -823,6 +823,66 @@ if (applyTemplateBtn && normalTemplateDropdown) {
         closeEditFieldModal();
     }
     document.getElementById('btnBlankEditField')?.addEventListener('click', clearFieldValue);
+
+    // Eliminar campo — quita la sección completa (H2/H3 + contenido hasta el siguiente H2/H3)
+    function deleteFieldSection() {
+        if (!_targetSpan) return;
+        const editorEl = document.getElementById('editor');
+        if (!editorEl) return;
+
+        // Encontrar el heading (h2/h3) que contiene o precede al span
+        let heading = _targetSpan.closest('h2, h3, .report-h2, .report-h3');
+        if (!heading) {
+            // Buscar el heading anterior en el DOM
+            let node = _targetSpan.closest('p, li, div') || _targetSpan.parentElement;
+            while (node && node !== editorEl) {
+                let prev = node.previousElementSibling;
+                while (prev) {
+                    const tag = prev.tagName?.toLowerCase();
+                    if (tag === 'h2' || tag === 'h3' || prev.classList?.contains('report-h2') || prev.classList?.contains('report-h3')) {
+                        heading = prev;
+                        break;
+                    }
+                    prev = prev.previousElementSibling;
+                }
+                if (heading) break;
+                node = node.parentElement;
+            }
+        }
+
+        if (!heading) {
+            // Fallback: solo eliminar el span y su contenedor
+            const para = _targetSpan.closest('p, li') || _targetSpan.parentElement;
+            if (para && para !== editorEl) para.remove();
+            closeEditFieldModal();
+            return;
+        }
+
+        // Recolectar todos los elementos entre este heading y el siguiente heading del mismo o mayor nivel
+        const headingLevel = heading.tagName?.toLowerCase() === 'h2' || heading.classList?.contains('report-h2') ? 2 : 3;
+        const toRemove = [heading];
+        let sibling = heading.nextElementSibling;
+        while (sibling) {
+            const sibTag = sibling.tagName?.toLowerCase();
+            const sibIsH2 = sibTag === 'h2' || sibling.classList?.contains('report-h2');
+            const sibIsH3 = sibTag === 'h3' || sibling.classList?.contains('report-h3');
+            const sibLevel = sibIsH2 ? 2 : sibIsH3 ? 3 : 99;
+            if (sibLevel <= headingLevel) break; // Siguiente sección del mismo nivel o superior
+            toRemove.push(sibling);
+            sibling = sibling.nextElementSibling;
+        }
+
+        toRemove.forEach(el => el.remove());
+        editorEl.dispatchEvent(new Event('input', { bubbles: true }));
+        closeEditFieldModal();
+        if (typeof showToast === 'function') showToast('🗑️ Sección eliminada del informe', 'info');
+    }
+    document.getElementById('btnDeleteFieldSection')?.addEventListener('click', () => {
+        const sectionName = document.getElementById('editFieldModalTitle')?.textContent?.replace(/^✏️\s*/, '') || 'esta sección';
+        if (confirm(`¿Eliminar "${sectionName}" del informe?\nEsta acción no se puede deshacer.`)) {
+            deleteFieldSection();
+        }
+    });
 
     // ── Confirmar ─────────────────────────────────────────────────
     document.getElementById('btnConfirmEditField')?.addEventListener('click', () => {

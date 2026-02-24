@@ -382,18 +382,21 @@ window.initModals = function () {
             if (btnRestoreOriginal._showingOriginal) {
                 // Volver al estructurado
                 if (window._lastStructuredHTML) editorEl.innerHTML = window._lastStructuredHTML;
-                btnRestoreOriginal.textContent = '↩';
-                btnRestoreOriginal.title = 'Ver texto original';
+                btnRestoreOriginal.innerHTML = '↩ Original';
+                btnRestoreOriginal.title = 'Ver texto original (sin estructurar)';
+                btnRestoreOriginal.classList.remove('toggle-active');
                 btnRestoreOriginal._showingOriginal = false;
             } else {
                 // Mostrar original
                 if (window._lastRawTranscription) {
                     window._lastStructuredHTML = editorEl.innerHTML;
-                    editorEl.innerHTML = window._lastRawTranscription
+                    editorEl.innerHTML = '<div class="original-text-banner" contenteditable="false">📝 Texto original (sin estructurar)</div>' +
+                        window._lastRawTranscription
                         .split('\n').filter(l => l.trim())
                         .map(l => `<p class="report-p">${l}</p>`).join('\n');
-                    btnRestoreOriginal.textContent = '⟳';
+                    btnRestoreOriginal.innerHTML = '⟳ Estructurado';
                     btnRestoreOriginal.title = 'Volver al texto estructurado';
+                    btnRestoreOriginal.classList.add('toggle-active');
                     btnRestoreOriginal._showingOriginal = true;
                 }
             }

@@ -673,7 +673,7 @@ window.autoStructure = async function (options = {}) {
         window._lastStructuredHTML = body;
         showAINote(null, null);
         const btnR = document.getElementById('btnRestoreOriginal');
-        if (btnR) { btnR.style.display = ''; btnR._showingOriginal = false; btnR.textContent = '↩'; }
+        if (btnR) { btnR.style.display = ''; btnR._showingOriginal = false; btnR.innerHTML = '↩ Original'; btnR.classList.remove('toggle-active'); }
         const btnM = document.getElementById('btnMedicalCheck');
         if (btnM) btnM.style.display = '';
         if (typeof updateWordCount === 'function') updateWordCount();
@@ -740,7 +740,7 @@ window.initStructurer = function () {
                 // No mostrar el panel de plantilla/nota — solo el informe
                 showAINote(null, null);
                 const btnR2 = document.getElementById('btnRestoreOriginal');
-                if (btnR2) { btnR2.style.display = ''; btnR2._showingOriginal = false; btnR2.textContent = '↩'; }
+                if (btnR2) { btnR2.style.display = ''; btnR2._showingOriginal = false; btnR2.innerHTML = '↩ Original'; btnR2.classList.remove('toggle-active'); }
                 const btnM2 = document.getElementById('btnMedicalCheck');
                 if (btnM2) btnM2.style.display = '';
                 if (typeof updateWordCount === 'function') updateWordCount();
