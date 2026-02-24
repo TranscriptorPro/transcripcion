@@ -103,6 +103,12 @@ window.updateButtonsVisibility = function (state) {
         const tBtn = document.getElementById('transcribeBtn');
         tAndSBtn.disabled = tBtn ? tBtn.disabled : true;
     }
+
+    // Botón "Continuar grabando" (Pro only): visible tras transcripción/estructurado
+    const btnAppendRecord = document.getElementById('btnAppendRecord');
+    if (btnAppendRecord) {
+        btnAppendRecord.style.display = (isProMode && isTranscribed) ? 'inline-flex' : 'none';
+    }
 };
 
 const proModeToggle = document.getElementById('proModeToggle');

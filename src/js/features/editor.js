@@ -433,13 +433,33 @@ async function downloadFile(format) {
     // Advertencia si no hay datos del paciente
     const pdfConfig = JSON.parse(localStorage.getItem('pdf_config') || '{}');
     if (!pdfConfig.patientName) {
-        const proceed = confirm('⚠️ El informe no tiene datos del paciente.\n¿Desea descargarlo así?');
-        if (!proceed) {
-            // Abrir modal de datos del paciente
-            if (typeof window.openPatientDataModal === 'function') window.openPatientDataModal();
-            return;
-        }
+        return new Promise(resolve => {
+            const overlay = document.getElementById('customConfirmModal');
+            if (!overlay) { resolve(true); return; }
+            const titleEl = document.getElementById('customConfirmTitle');
+            const msgEl = document.getElementById('customConfirmMessage');
+            const acceptBtn = document.getElementById('customConfirmAccept');
+            const cancelBtn = document.getElementById('customConfirmCancel');
+            titleEl.textContent = '⚠️ Sin datos del paciente';
+            msgEl.textContent = 'El informe no tiene datos del paciente. ¿Desea descargarlo así?';
+            overlay.classList.add('active');
+            function cleanup() { overlay.classList.remove('active'); acceptBtn.removeEventListener('click', onYes); cancelBtn.removeEventListener('click', onNo); overlay.removeEventListener('click', onBg); }
+            function onYes() { cleanup(); _doDownload(format, text); }
+            function onNo() { cleanup(); if (typeof window.openPatientDataModal === 'function') window.openPatientDataModal(); }
+            function onBg(e) { if (e.target === overlay) { cleanup(); } }
+            acceptBtn.addEventListener('click', onYes);
+            cancelBtn.addEventListener('click', onNo);
+            overlay.addEventListener('click', onBg);
+        });
+        return; // La descarga se dispara dentro de onYes → _doDownload
     }
+
+    await _doDownload(format, text);
+}
+
+async function _doDownload(format, text) {
+    const editor = document.getElementById('editor');
+    if (!editor) return;
 
     // Need globals transcriptions and activeTabIndex
     const safeTranscriptions = typeof transcriptions !== 'undefined' ? transcriptions : [];
@@ -872,16 +892,56 @@ if (applyTemplateBtn && normalTemplateDropdown) {
             sibling = sibling.nextElementSibling;
         }
 
-        toRemove.forEach(el => el.remove());
+        toRemove.forEach(el => {
+            // También eliminar nodos de texto vacíos (saltos de línea, br) entre secciones
+            let nextNode = el.nextSibling;
+            while (nextNode && (nextNode.nodeType === 3 && nextNode.textContent.trim() === '' || nextNode.nodeName === 'BR')) {
+                const toKill = nextNode;
+                nextNode = nextNode.nextSibling;
+                toKill.remove();
+            }
+            el.remove();
+        });
         editorEl.dispatchEvent(new Event('input', { bubbles: true }));
         closeEditFieldModal();
         if (typeof showToast === 'function') showToast('🗑️ Sección eliminada del informe', 'info');
     }
+
+    // Modal de confirmación custom (reemplaza confirm() nativo)
+    function showCustomConfirm(title, message, onAccept) {
+        const overlay = document.getElementById('customConfirmModal');
+        const titleEl = document.getElementById('customConfirmTitle');
+        const msgEl = document.getElementById('customConfirmMessage');
+        const acceptBtn = document.getElementById('customConfirmAccept');
+        const cancelBtn = document.getElementById('customConfirmCancel');
+        if (!overlay) { if (onAccept) onAccept(); return; }
+
+        titleEl.textContent = title;
+        msgEl.textContent = message;
+        overlay.classList.add('active');
+
+        function cleanup() {
+            overlay.classList.remove('active');
+            acceptBtn.removeEventListener('click', onYes);
+            cancelBtn.removeEventListener('click', onNo);
+            overlay.removeEventListener('click', onOverlay);
+        }
+        function onYes() { cleanup(); onAccept(); }
+        function onNo() { cleanup(); }
+        function onOverlay(e) { if (e.target === overlay) cleanup(); }
+
+        acceptBtn.addEventListener('click', onYes);
+        cancelBtn.addEventListener('click', onNo);
+        overlay.addEventListener('click', onOverlay);
+    }
+
     document.getElementById('btnDeleteFieldSection')?.addEventListener('click', () => {
         const sectionName = document.getElementById('editFieldModalTitle')?.textContent?.replace(/^✏️\s*/, '') || 'esta sección';
-        if (confirm(`¿Eliminar "${sectionName}" del informe?\nEsta acción no se puede deshacer.`)) {
-            deleteFieldSection();
-        }
+        showCustomConfirm(
+            '🗑️ Eliminar campo',
+            `¿Eliminar "${sectionName}" del informe? Esta acción no se puede deshacer.`,
+            () => deleteFieldSection()
+        );
     });
 
     // ── Confirmar ─────────────────────────────────────────────────

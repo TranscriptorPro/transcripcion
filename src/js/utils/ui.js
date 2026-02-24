@@ -539,6 +539,104 @@ window.initModals = function () {
         });
     }
 
+    // ── Botón "Continuar grabando" (append audio transcription) ── Pro only ──
+    const btnAppendRecord = document.getElementById('btnAppendRecord');
+    if (btnAppendRecord) {
+        let _appendRecording = false;
+        let _appendMediaRecorder = null;
+        let _appendChunks = [];
+        let _appendStream = null;
+        let _appendTimer = null;
+        let _appendStartTime = 0;
+
+        btnAppendRecord.addEventListener('click', async () => {
+            if (_appendRecording) {
+                // Stop recording
+                if (_appendMediaRecorder && _appendMediaRecorder.state === 'recording') {
+                    _appendMediaRecorder.stop();
+                }
+                _appendRecording = false;
+                btnAppendRecord.classList.remove('recording-pulse');
+                btnAppendRecord.title = 'Grabar y agregar texto al final del informe';
+                if (_appendTimer) clearInterval(_appendTimer);
+                return;
+            }
+
+            // Start recording
+            try {
+                _appendStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                _appendMediaRecorder = new MediaRecorder(_appendStream);
+                _appendChunks = [];
+
+                _appendMediaRecorder.ondataavailable = (e) => _appendChunks.push(e.data);
+                _appendMediaRecorder.onstop = async () => {
+                    _appendStream.getTracks().forEach(t => t.stop());
+                    const blob = new Blob(_appendChunks, { type: 'audio/wav' });
+                    const file = new File([blob], 'append_audio.wav', { type: 'audio/wav' });
+
+                    // Transcribe with Groq
+                    if (typeof showToast === 'function') showToast('⏳ Transcribiendo audio adicional...', 'info', 3000);
+                    try {
+                        const apiKey = window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '';
+                        if (!apiKey) {
+                            showToast('❌ No hay API key configurada', 'error');
+                            return;
+                        }
+                        const form = new FormData();
+                        form.append('file', file);
+                        form.append('model', 'whisper-large-v3');
+                        form.append('language', 'es');
+                        form.append('response_format', 'text');
+
+                        const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+                            method: 'POST',
+                            headers: { 'Authorization': 'Bearer ' + apiKey },
+                            body: form
+                        });
+
+                        if (!res.ok) throw new Error('Error ' + res.status);
+                        const newText = (await res.text()).trim();
+
+                        if (newText) {
+                            const editor = document.getElementById('editor');
+                            if (editor) {
+                                // Append as new paragraph
+                                const p = document.createElement('p');
+                                p.textContent = newText;
+                                editor.appendChild(p);
+                                editor.dispatchEvent(new Event('input', { bubbles: true }));
+                                if (typeof updateWordCount === 'function') updateWordCount();
+                                showToast('✅ Texto agregado al final del informe', 'success');
+                                // Scroll to bottom
+                                editor.scrollTop = editor.scrollHeight;
+                            }
+                        }
+                    } catch (err) {
+                        if (typeof showToast === 'function') showToast('❌ Error al transcribir: ' + err.message, 'error');
+                    }
+                };
+
+                _appendMediaRecorder.start();
+                _appendRecording = true;
+                btnAppendRecord.classList.add('recording-pulse');
+                btnAppendRecord.title = '⏹ Detener grabación';
+
+                // Timer visual en toast
+                _appendStartTime = Date.now();
+                if (typeof showToast === 'function') showToast('🎙️ Grabando... Pulsa de nuevo para detener', 'info', 60000);
+                _appendTimer = setInterval(() => {
+                    const diff = Date.now() - _appendStartTime;
+                    const s = Math.floor((diff / 1000) % 60);
+                    const m = Math.floor((diff / (1000 * 60)) % 60);
+                    btnAppendRecord.title = `⏹ Grabando ${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')} — click para detener`;
+                }, 1000);
+
+            } catch (err) {
+                if (typeof showToast === 'function') showToast('❌ No se pudo acceder al micrófono', 'error');
+            }
+        });
+    }
+
     // Escape key — close any open modal
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
@@ -831,45 +929,29 @@ document.addEventListener('keydown', (e) => {
 
         const editor = document.getElementById('editor');
         if (!editor) return;
-        // Solo restaurar si el editor está vacío
+        // Solo ofrecer si el editor está vacío
         if (editor.innerText.trim().length > 0) return;
 
-        // Preguntar al usuario antes de restaurar
         const mins = Math.floor(ageMs / 60000);
         const timeLabel = mins < 1 ? 'menos de 1 min' : mins + ' min';
 
-        // Crear toast con opciones Restaurar / Descartar
-        if (typeof showToast === 'function') {
-            const toastId = 'restore-prompt-' + Date.now();
-            showToast(
-                `♻️ Hay un borrador guardado (hace ${timeLabel}). ` +
-                `<a href="#" id="${toastId}-yes" style="color:#fff;font-weight:700;text-decoration:underline;margin-left:4px;">Restaurar</a>` +
-                ` · <a href="#" id="${toastId}-no" style="color:#fca5a5;font-weight:600;text-decoration:underline;margin-left:4px;">Descartar</a>`,
-                'info', 10000
-            );
+        // Mostrar botón de restaurar sesión
+        const restoreBtn = document.getElementById('btnRestoreSession');
+        if (restoreBtn) {
+            restoreBtn.textContent = `♻️ Restaurar sesión anterior (hace ${timeLabel})`;
+            restoreBtn.style.display = '';
+            restoreBtn.onclick = () => {
+                editor.innerHTML = saved;
+                if (typeof updateWordCount === 'function') updateWordCount();
+                if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
+                if (typeof showToast === 'function') showToast('✅ Borrador restaurado', 'success', 2000);
+                restoreBtn.style.display = 'none';
+            };
+        }
 
-            // Listener para "Restaurar"
-            setTimeout(() => {
-                const yesLink = document.getElementById(toastId + '-yes');
-                const noLink = document.getElementById(toastId + '-no');
-                if (yesLink) {
-                    yesLink.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        editor.innerHTML = saved;
-                        if (typeof updateWordCount === 'function') updateWordCount();
-                        if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
-                        showToast('✅ Borrador restaurado', 'success', 2000);
-                    });
-                }
-                if (noLink) {
-                    noLink.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        localStorage.removeItem(AUTOSAVE_KEY);
-                        localStorage.removeItem(AUTOSAVE_META_KEY);
-                        showToast('🗑️ Borrador descartado', 'success', 2000);
-                    });
-                }
-            }, 100);
+        // También mostrar toast discreto
+        if (typeof showToast === 'function') {
+            showToast(`♻️ Hay un borrador guardado (hace ${timeLabel}). Usá el botón para restaurarlo.`, 'info', 5000);
         }
     }
 
@@ -886,13 +968,14 @@ document.addEventListener('keydown', (e) => {
     window.addEventListener('beforeunload', saveEditorContent);
 
     // Limpiar autosave al resetear
-    const origReset = window.resetBtn?.onclick;
     const resetBtnEl = document.getElementById('resetBtn');
     if (resetBtnEl) {
-        // El botón ya tiene listener del stateManager; agregar limpieza
         resetBtnEl.addEventListener('click', () => {
             localStorage.removeItem(AUTOSAVE_KEY);
             localStorage.removeItem(AUTOSAVE_META_KEY);
+            // Ocultar botón restaurar si estaba visible
+            const restoreBtn = document.getElementById('btnRestoreSession');
+            if (restoreBtn) restoreBtn.style.display = 'none';
         });
     }
 })();

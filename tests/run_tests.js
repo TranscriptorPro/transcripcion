@@ -1118,6 +1118,8 @@ function createMockDOM() {
     mkEl('editor', 'div');
     mkEl('fileInput', 'input');
     mkEl('btnCompareView');
+    mkEl('btnAppendRecord');
+    mkEl('btnRestoreSession');
 
     // Override document.getElementById
     const origGetById = global.document.getElementById;
@@ -1660,6 +1662,78 @@ test('State Machine — btnCompareView visible en STRUCTURED', () => {
     updateButtonsVisibility('STRUCTURED');
     assertEqual(mock.elements.btnCompareView.style.display, '', 'Comparar visible en STRUCTURED');
     mock.restore();
+});
+
+// ── Bloque 33: Restaurar sesión + Modal confirm custom + Append record ────────
+// ── Bloque 33: Restaurar sesión + Modal confirm custom + Append record ──────
+console.log('\n── Bloque 33: Restaurar sesión + Modal confirm + Append record ──');
+
+test('index.html — botón btnRestoreSession existe', () => {
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
+    assert(html.includes('id="btnRestoreSession"'), 'Debe tener botón restaurar sesión');
+    assert(html.includes('Restaurar sesión anterior'), 'Texto del botón visible');
+});
+
+test('index.html — modal customConfirmModal existe', () => {
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
+    assert(html.includes('id="customConfirmModal"'), 'Debe tener modal de confirm custom');
+    assert(html.includes('id="customConfirmAccept"'), 'Debe tener botón Aceptar');
+    assert(html.includes('id="customConfirmCancel"'), 'Debe tener botón Cancelar');
+});
+
+test('editor.js — usa showCustomConfirm en vez de confirm()', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/editor.js'), 'utf-8');
+    assert(code.includes('showCustomConfirm'), 'Debe tener función showCustomConfirm');
+    // No debe usar confirm() nativo para eliminar campo
+    const deleteBlock = code.substring(code.indexOf('btnDeleteFieldSection'));
+    assert(!deleteBlock.includes('confirm('), 'No debe usar confirm() nativo en eliminar campo');
+});
+
+test('editor.js — deleteFieldSection elimina nodos vacíos residuales', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/editor.js'), 'utf-8');
+    assert(code.includes('nextNode') || code.includes('nextSibling'), 'Debe limpiar nodos vacíos entre secciones');
+});
+
+test('index.html — botón btnAppendRecord existe', () => {
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
+    assert(html.includes('id="btnAppendRecord"'), 'Debe tener botón continuar grabando');
+});
+
+test('ui.js — lógica de append recording', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/utils/ui.js'), 'utf-8');
+    assert(code.includes('btnAppendRecord'), 'ui.js debe referenciar btnAppendRecord');
+    assert(code.includes('_appendRecording'), 'Debe trackear estado de grabación append');
+    assert(code.includes('appendMediaRecorder') || code.includes('_appendMediaRecorder'), 'Debe tener MediaRecorder para append');
+});
+
+test('State Machine — btnAppendRecord oculto en modo Normal', () => {
+    const mock = createMockDOM();
+    window.currentMode = 'normal';
+    updateButtonsVisibility('TRANSCRIBED');
+    assertEqual(mock.elements.btnAppendRecord.style.display, 'none', 'Append oculto en Normal');
+    mock.restore();
+});
+
+test('State Machine — btnAppendRecord visible en Pro tras TRANSCRIBED', () => {
+    const mock = createMockDOM();
+    window.currentMode = 'pro';
+    updateButtonsVisibility('TRANSCRIBED');
+    assertEqual(mock.elements.btnAppendRecord.style.display, 'inline-flex', 'Append visible en Pro+TRANSCRIBED');
+    mock.restore();
+});
+
+test('State Machine — btnAppendRecord visible en Pro tras STRUCTURED', () => {
+    const mock = createMockDOM();
+    window.currentMode = 'pro';
+    updateButtonsVisibility('STRUCTURED');
+    assertEqual(mock.elements.btnAppendRecord.style.display, 'inline-flex', 'Append visible en Pro+STRUCTURED');
+    mock.restore();
+});
+
+test('ui.js — restoreAutoSave usa botón btnRestoreSession', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/utils/ui.js'), 'utf-8');
+    assert(code.includes('btnRestoreSession'), 'Debe referenciar btnRestoreSession');
+    assert(!code.includes('Sesión anterior restaurada'), 'No debe restaurar automáticamente');
 });
 
 // ── Resumen ───────────────────────────────────────────────────────────────────
