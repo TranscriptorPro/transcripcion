@@ -290,6 +290,30 @@ window.initModals = function () {
     // Patient Data Required Modal
     const patientOverlay = document.getElementById('patientDataRequiredOverlay');
     const btnSavePatientData = document.getElementById('btnSavePatientData');
+    const btnSkipPatientData = document.getElementById('btnSkipPatientData');
+    const btnClosePatientModal = document.getElementById('btnClosePatientModal');
+
+    // Función global para abrir el modal de datos del paciente
+    window.openPatientDataModal = function() {
+        // Limpiar campos
+        ['reqPatientName','reqPatientDni','reqPatientAge','reqPatientSex',
+         'reqPatientInsurance','reqPatientAffiliateNum','reqPatientSearch'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) { el.value = ''; el.style.borderColor = ''; }
+        });
+        patientOverlay?.classList.add('active');
+        if (typeof initPatientRegistrySearch === 'function') initPatientRegistrySearch();
+    };
+
+    // Cerrar modal (X o Omitir)
+    function closePatientModal() {
+        patientOverlay?.classList.remove('active');
+    }
+    if (btnClosePatientModal) btnClosePatientModal.addEventListener('click', closePatientModal);
+    if (btnSkipPatientData) btnSkipPatientData.addEventListener('click', () => {
+        closePatientModal();
+        if (typeof showToast === 'function') showToast('ℹ️ Podés completar los datos del paciente luego desde el placeholder en el informe', 'info', 4000);
+    });
 
     if (btnSavePatientData) {
         btnSavePatientData.addEventListener('click', () => {
@@ -316,6 +340,8 @@ window.initModals = function () {
             localStorage.setItem('pdf_config', JSON.stringify(config));
             patientOverlay?.classList.remove('active');
             if (typeof showToast === 'function') showToast('✅ Datos del paciente guardados', 'success');
+            // Quitar placeholder del editor
+            if (typeof removePatientPlaceholder === 'function') removePatientPlaceholder();
             // Guardar en el registro de pacientes
             if (typeof savePatientToRegistry === 'function') {
                 savePatientToRegistry({ name, dni, age, sex, insurance, affiliateNum });

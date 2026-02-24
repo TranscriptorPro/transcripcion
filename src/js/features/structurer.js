@@ -584,18 +584,37 @@ window.triggerPatientDataCheck = function(rawText) {
         localStorage.setItem('pdf_config', JSON.stringify(savedConfig));
         if (typeof showToast === 'function')
             showToast(`👤 Paciente detectado: ${extracted.name}`, 'success');
+        // Quitar placeholder si existía
+        removePatientPlaceholder();
     } else {
-        // Sin datos en el audio → siempre pedir, siempre con campos vacíos
-        ['reqPatientName','reqPatientDni','reqPatientAge','reqPatientSex',
-         'reqPatientInsurance','reqPatientAffiliateNum','reqPatientSearch'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) { el.value = ''; el.style.borderColor = ''; }
-        });
-        document.getElementById('patientDataRequiredOverlay')?.classList.add('active');
-        // Inicializar buscador de registro
-        if (typeof initPatientRegistrySearch === 'function') initPatientRegistrySearch();
+        // Sin datos en el audio → insertar placeholder clickeable (NO abrir modal)
+        insertPatientPlaceholder();
     }
 }
+
+// ---- Placeholder clickeable para completar datos del paciente ----
+function insertPatientPlaceholder() {
+    const editor = document.getElementById('editor');
+    if (!editor) return;
+    // No duplicar si ya existe
+    if (editor.querySelector('.patient-placeholder-banner')) return;
+    const banner = document.createElement('div');
+    banner.className = 'patient-placeholder-banner';
+    banner.setAttribute('contenteditable', 'false');
+    banner.innerHTML = '👤 <span>Completar datos del paciente</span> — Click aquí';
+    banner.addEventListener('click', () => {
+        if (typeof window.openPatientDataModal === 'function') window.openPatientDataModal();
+    });
+    editor.insertBefore(banner, editor.firstChild);
+}
+
+function removePatientPlaceholder() {
+    const editor = document.getElementById('editor');
+    if (!editor) return;
+    const banner = editor.querySelector('.patient-placeholder-banner');
+    if (banner) banner.remove();
+}
+window.removePatientPlaceholder = removePatientPlaceholder;
 
 // ---- Medical terminology checker — abre el modal del diccionario ----
 window.checkMedicalTerminology = function() {

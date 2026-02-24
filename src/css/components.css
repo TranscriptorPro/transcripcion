@@ -1200,6 +1200,41 @@
         #editor .report-h2 { margin-top: 0.65rem; margin-bottom: 0.15rem; }
         #editor .report-h3 { margin-top: 0.45rem; margin-bottom: 0.1rem; }
 
+        /* Placeholder clickeable para completar datos del paciente */
+        .patient-placeholder-banner {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.65rem 1rem;
+            margin-bottom: 0.75rem;
+            background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(59,130,246,0.04));
+            border: 1.5px dashed var(--primary);
+            border-radius: 8px;
+            color: var(--primary);
+            font-size: 0.88rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+            user-select: none;
+        }
+        .patient-placeholder-banner:hover {
+            background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(59,130,246,0.08));
+            box-shadow: 0 2px 8px rgba(59,130,246,0.15);
+        }
+        .patient-placeholder-banner span {
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+        [data-theme="dark"] .patient-placeholder-banner {
+            background: linear-gradient(135deg, rgba(96,165,250,0.1), rgba(96,165,250,0.05));
+            border-color: rgba(96,165,250,0.5);
+            color: #93bbfc;
+        }
+        [data-theme="dark"] .patient-placeholder-banner:hover {
+            background: linear-gradient(135deg, rgba(96,165,250,0.18), rgba(96,165,250,0.1));
+            box-shadow: 0 2px 8px rgba(96,165,250,0.2);
+        }
+
         /* Print: hide UI-only elements */
         @media print {
             .no-print,

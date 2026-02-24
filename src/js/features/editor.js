@@ -430,6 +430,17 @@ async function downloadFile(format) {
     // Validación de config antes de PDF
     if (typeof validateBeforeDownload === 'function' && !validateBeforeDownload(format)) return;
 
+    // Advertencia si no hay datos del paciente
+    const pdfConfig = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+    if (!pdfConfig.patientName) {
+        const proceed = confirm('⚠️ El informe no tiene datos del paciente.\n¿Desea descargarlo así?');
+        if (!proceed) {
+            // Abrir modal de datos del paciente
+            if (typeof window.openPatientDataModal === 'function') window.openPatientDataModal();
+            return;
+        }
+    }
+
     // Need globals transcriptions and activeTabIndex
     const safeTranscriptions = typeof transcriptions !== 'undefined' ? transcriptions : [];
     const safeActiveIndex = typeof activeTabIndex !== 'undefined' ? activeTabIndex : 0;
