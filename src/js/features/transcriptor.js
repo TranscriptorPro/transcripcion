@@ -28,10 +28,15 @@ if (transcribeBtn) {
         let batchCancelled = false;
         let shouldJoin = false;
 
-        // Siempre preguntar cuando hay múltiples archivos pendientes (ignorar estado previo del checkbox)
-        if (pending.length > 1 && typeof askJoinAudiosPromise === 'function') {
-            shouldJoin = await askJoinAudiosPromise(pending.length);
-            if (chkJoinAudios) chkJoinAudios.checked = shouldJoin;
+        // Si el checkbox "Unir audios" ya está marcado, auto-unir sin preguntar
+        // Solo mostrar diálogo si hay múltiples archivos y el checkbox NO está marcado
+        if (pending.length > 1) {
+            if (chkJoinAudios && chkJoinAudios.checked) {
+                shouldJoin = true;
+            } else if (typeof askJoinAudiosPromise === 'function') {
+                shouldJoin = await askJoinAudiosPromise(pending.length);
+                if (chkJoinAudios) chkJoinAudios.checked = shouldJoin;
+            }
         }
 
         // Limpiar transcripciones anteriores para empezar con pestañas frescas

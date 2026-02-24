@@ -1026,7 +1026,7 @@
                 <div class="api-status disconnected" id="apiStatus" style="padding: 4px 8px; font-size: 0.7rem;">
                     <span>No configurada</span>
                 </div>
-                <div style="margin-top: 0.5rem; display: flex; gap: 4px;">
+                <div class="api-key-collapsible" style="margin-top: 0.5rem; display: flex; gap: 4px;">
                     <input type="password" id="apiKeyInput" class="toolbar-input"
                         style="flex: 1; font-size: 0.8rem; padding: 4px 8px;" placeholder="gsk_...">
                     <button class="btn btn-primary" id="saveApiKey" style="padding: 0 8px;"
@@ -1034,8 +1034,8 @@
                     <button class="btn btn-secondary" id="testApiKey" style="padding: 0 8px;"
                         title="Probar Conexión">🔌</button>
                 </div>
-                <div id="apiTestResult" style="margin-top: 0.5rem; font-size: 0.75rem; display: none;"></div>
-                <small style="display: block; margin-top: 0.5rem; font-size: 0.7rem; color: var(--text-secondary);">
+                <div class="api-key-collapsible" id="apiTestResult" style="margin-top: 0.5rem; font-size: 0.75rem; display: none;"></div>
+                <small class="api-key-collapsible" style="display: block; margin-top: 0.5rem; font-size: 0.7rem; color: var(--text-secondary);">
                     Obtén tu API key gratis en:
                     <a href="https://console.groq.com/keys" target="_blank"
                         style="color: var(--primary-light);">console.groq.com/keys</a>

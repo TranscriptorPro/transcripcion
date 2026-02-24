@@ -89,6 +89,10 @@ window.updateApiStatus = function (apiKey) {
     const apiKeyInput = document.getElementById('apiKeyInput');
     if (!apiStatus) return;
 
+    // Elementos colapsables del card de API key
+    const apiCard = document.getElementById('adminApiKeyCard');
+    const apiCardCollapsible = apiCard ? apiCard.querySelectorAll('.api-key-collapsible') : [];
+
     if (apiKey) {
         apiStatus.className = 'api-status connected';
         apiStatus.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg><span>Conectada ✓</span>';
@@ -96,6 +100,15 @@ window.updateApiStatus = function (apiKey) {
             apiKeyInput.value = '••••••••••••••••';
             apiKeyInput.dataset.hasKey = 'true';
         }
+        // Ocultar input/botones/link cuando está conectada
+        apiCardCollapsible.forEach(el => el.style.display = 'none');
+        // Hacer clickeable el status para expandir/editar
+        apiStatus.style.cursor = 'pointer';
+        apiStatus.title = 'Click para editar la API Key';
+        apiStatus.onclick = () => {
+            const isHidden = apiCardCollapsible.length > 0 && apiCardCollapsible[0].style.display === 'none';
+            apiCardCollapsible.forEach(el => el.style.display = isHidden ? '' : 'none');
+        };
     } else {
         apiStatus.className = 'api-status disconnected';
         apiStatus.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg><span>No configurada</span>';
@@ -103,6 +116,11 @@ window.updateApiStatus = function (apiKey) {
             apiKeyInput.value = '';
             delete apiKeyInput.dataset.hasKey;
         }
+        // Mostrar input/botones/link cuando no está configurada
+        apiCardCollapsible.forEach(el => el.style.display = '');
+        apiStatus.style.cursor = '';
+        apiStatus.title = '';
+        apiStatus.onclick = null;
     }
 }
 
