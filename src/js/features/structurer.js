@@ -605,68 +605,95 @@ window.checkMedicalTerminology = function() {
 }
 
 // ============ AI BUTTON HANDLERS ============
-window.initStructurer = function () {
-    const btnStructureAIEl = document.getElementById('btnStructureAI');
-    const aiProgressBar = document.getElementById('aiProgressBar');
 
+// ── Función reutilizable de auto-estructuración ──────────────────
+// Usada por btnStructureAI (click manual) y por el auto-pipeline (post-transcripción)
+window.autoStructure = async function (options = {}) {
+    const editor = document.getElementById('editor');
+    if (!editor || !editor.innerText.trim()) {
+        if (typeof showToast === 'function') showToast('No hay texto para estructurar', 'error');
+        return false;
+    }
+    const rawText = editor.innerText;
+    const savedHTML = editor.innerHTML;
+    if (!checkStructurePrerequisites()) return false;
+
+    window._lastRawTranscription = rawText;
+
+    const aiProgressBar = document.getElementById('aiProgressBar');
     const showProgress = () => { if (aiProgressBar) aiProgressBar.style.display = 'block'; };
     const hideProgress = () => { if (aiProgressBar) aiProgressBar.style.display = 'none'; };
 
+    const btnStructureAIEl = document.getElementById('btnStructureAI');
+    let oldHTML = '';
     if (btnStructureAIEl) {
-        btnStructureAIEl.addEventListener('click', async () => {
-            const editor = document.getElementById('editor');
-            if (!editor || !editor.innerText.trim()) {
-                if (typeof showToast === 'function') showToast('No hay texto para estructurar', 'error');
-                return;
-            }
-            const rawText = editor.innerText;
-            const savedHTML = editor.innerHTML;
-            if (!checkStructurePrerequisites()) return;
-            const oldHTML = btnStructureAIEl.innerHTML;
-            window._lastRawTranscription = rawText; // save for restore/toggle
-            btnStructureAIEl.disabled = true;
-            btnStructureAIEl.innerHTML = '⏳ IA...';
-            showProgress();
-            try {
-                let currentTemplate = typeof selectedTemplate !== 'undefined' ? selectedTemplate : 'generico';
-                let autoDetected = false;
-                if (!currentTemplate || currentTemplate === 'generico') {
-                    const detected = autoDetectTemplateKey(rawText);
-                    if (detected !== 'generico') {
-                        // Ofrecer al usuario confirmar o cambiar la plantilla (5 s timeout)
-                        currentTemplate = await promptTemplateSelection(detected);
-                        autoDetected = true;
-                    } else {
-                        currentTemplate = 'generico';
-                    }
+        oldHTML = btnStructureAIEl.innerHTML;
+        btnStructureAIEl.disabled = true;
+        btnStructureAIEl.innerHTML = '⏳ IA...';
+    }
+    showProgress();
+
+    try {
+        let currentTemplate = typeof selectedTemplate !== 'undefined' ? selectedTemplate : 'generico';
+        if (!currentTemplate || currentTemplate === 'generico') {
+            const detected = autoDetectTemplateKey(rawText);
+            if (detected !== 'generico') {
+                // En auto-pipeline silencioso, usar la plantilla detectada sin prompt
+                if (options.silent) {
+                    currentTemplate = detected;
+                } else {
+                    currentTemplate = await promptTemplateSelection(detected);
                 }
-                const rawMarkdown = await structureWithRetry(rawText, currentTemplate);
-                const { body, note } = parseAIResponse(rawMarkdown);
-                editor.innerHTML = body;
-                window._lastStructuredHTML = body;
-                // No mostrar el panel de plantilla/nota — solo el informe estructurado
-                showAINote(null, null);
-                const btnR = document.getElementById('btnRestoreOriginal');
-                if (btnR) { btnR.style.display = ''; btnR._showingOriginal = false; btnR.textContent = '↩'; }
-                const btnM = document.getElementById('btnMedicalCheck');
-                if (btnM) btnM.style.display = '';
-                if (typeof updateWordCount === 'function') updateWordCount();
-                if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURED');
-                if (typeof showToast === 'function') showToast('✅ Texto estructurado con IA', 'success');
-                triggerPatientDataCheck(rawText);
-            } catch (error) {
-                editor.innerHTML = savedHTML;
-                const msg = error.savedToPending
-                    ? '📋 Sin conexión con la IA. El texto fue guardado para procesar más tarde.'
-                    : '❌ No se pudo estructurar. El texto original fue restaurado. (El problema es del servicio de IA, no de la app.)';
-                const type = error.savedToPending ? 'warning' : 'error';
-                if (typeof showToast === 'function') showToast(msg, type);
-                if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
-            } finally {
-                btnStructureAIEl.disabled = false;
-                btnStructureAIEl.innerHTML = oldHTML;
-                hideProgress();
+            } else {
+                currentTemplate = 'generico';
             }
+        }
+        const rawMarkdown = await structureWithRetry(rawText, currentTemplate);
+        const { body, note } = parseAIResponse(rawMarkdown);
+        editor.innerHTML = body;
+        window._lastStructuredHTML = body;
+        showAINote(null, null);
+        const btnR = document.getElementById('btnRestoreOriginal');
+        if (btnR) { btnR.style.display = ''; btnR._showingOriginal = false; btnR.textContent = '↩'; }
+        const btnM = document.getElementById('btnMedicalCheck');
+        if (btnM) btnM.style.display = '';
+        if (typeof updateWordCount === 'function') updateWordCount();
+        if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURED');
+        if (typeof showToast === 'function') showToast('✅ Texto estructurado con IA', 'success');
+        triggerPatientDataCheck(rawText);
+
+        // Notificación desktop si la ventana no está enfocada
+        if (document.hidden && Notification.permission === 'granted') {
+            new Notification('Transcriptor Pro', {
+                body: '✅ Informe estructurado y listo',
+                icon: 'assets/icon-192.png'
+            });
+        }
+        return true;
+    } catch (error) {
+        editor.innerHTML = savedHTML;
+        const msg = error.savedToPending
+            ? '📋 Sin conexión con la IA. El texto fue guardado para procesar más tarde.'
+            : '❌ No se pudo estructurar. El texto original fue restaurado.';
+        const type = error.savedToPending ? 'warning' : 'error';
+        if (typeof showToast === 'function') showToast(msg, type);
+        if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
+        return false;
+    } finally {
+        if (btnStructureAIEl) {
+            btnStructureAIEl.disabled = false;
+            btnStructureAIEl.innerHTML = oldHTML;
+        }
+        hideProgress();
+    }
+};
+
+window.initStructurer = function () {
+    const btnStructureAIEl = document.getElementById('btnStructureAI');
+
+    if (btnStructureAIEl) {
+        btnStructureAIEl.addEventListener('click', () => {
+            window.autoStructure({ silent: false });
         });
     }
 

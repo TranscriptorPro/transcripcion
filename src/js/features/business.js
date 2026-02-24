@@ -518,6 +518,11 @@ function _initCommonModules() {
     if (typeof initTheme === 'function') initTheme();
     if (typeof updateApiStatus === 'function') updateApiStatus(localStorage.getItem('groq_api_key'));
     if (typeof populateTemplateDropdown === 'function') populateTemplateDropdown();
+
+    // Pedir permiso de notificaciones desktop (no-blocking)
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
     if (typeof initModals === 'function') initModals();
     if (typeof initShortcuts === 'function') initShortcuts();
     if (typeof initApiManagement === 'function') initApiManagement();

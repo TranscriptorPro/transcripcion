@@ -145,7 +145,7 @@ if (transcribeBtn) {
                 populateLimitedTemplates();
             }
 
-            // Auto-detect template in Pro mode
+            // Auto-detect template in Pro mode AND auto-structure pipeline
             if (window.currentMode === 'pro' && editor && editor.innerText.trim().length > 50) {
                 if (typeof detectStudyType === 'function') {
                     const detection = detectStudyType(editor.innerText);
@@ -159,15 +159,28 @@ if (transcribeBtn) {
                         if (typeof MEDICAL_TEMPLATES !== 'undefined') {
                             const templateName = MEDICAL_TEMPLATES[detection.type]?.name || detection.type;
                             setTimeout(() => {
-                                showToast(`🤖 Plantilla detectada: ${templateName}`, 'success');
-                            }, 700);
+                                showToast(`🤖 Plantilla detectada: ${templateName} — Estructurando...`, 'success');
+                            }, 300);
                         }
                     }
                 }
+
+                // ── Auto-pipeline: Transcripción → Estructuración automática ──
+                // Esperar un momento para que la UI se actualice, luego estructurar
+                setTimeout(() => {
+                    if (typeof window.autoStructure === 'function') {
+                        window.autoStructure({ silent: true });
+                    }
+                }, 1200);
             }
 
             if (progressFill) progressFill.style.width = '100%';
-            if (processingText) processingText.textContent = `✓ ${done} transcrito(s)`;
+            if (processingText) {
+                const isPipeline = window.currentMode === 'pro' && editor && editor.innerText.trim().length > 50;
+                processingText.textContent = isPipeline
+                    ? `✓ ${done} transcrito(s) — Estructurando con IA...`
+                    : `✓ ${done} transcrito(s)`;
+            }
 
             // Show success message
             if (done > 0 || skippedFiles.length > 0) {
