@@ -981,7 +981,7 @@
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 1rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 1rem;" id="transcribeButtonsGrid">
                     <button class="btn btn-primary" id="transcribeBtn" disabled>
                         <svg viewBox="0 0 24 24">
                             <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
@@ -996,6 +996,15 @@
                         Limpiar
                     </button>
                 </div>
+                <!-- Botón Pro: Transcribir y Estructurar (solo visible en modo Pro) -->
+                <button class="btn btn-accent btn-full btn-transcribe-structure" id="transcribeAndStructureBtn" disabled
+                    style="display:none; margin-top:0.5rem;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="white" style="margin-right:0.3rem;">
+                        <path d="M12 2C12 2 13.5 8 20 12C13.5 16 12 22 12 22C12 22 10.5 16 4 12C10.5 8 12 2 12 2Z"/>
+                    </svg>
+                    Transcribir y Estructurar
+                    <span class="pro-badge-sm">Pro</span>
+                </button>
             </div>
 
             <!-- Wizard: Template Selection (Contextual) -->

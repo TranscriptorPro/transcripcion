@@ -20,9 +20,10 @@ window.updateButtonsVisibility = function (state) {
     const isProMode      = window.currentMode === 'pro';
     const isNormalMode   = isTranscribed && !isProMode;
 
-    // btnStructureAI: visible in pro mode after transcription
+    // btnStructureAI: visible in pro mode after transcription, hidden after structuring
     if (btnStructureAI) {
-        btnStructureAI.style.display = (isTranscribed && isProMode) ? 'inline-flex' : 'none';
+        const showStructureBtn = isTranscribed && isProMode && !isStructured;
+        btnStructureAI.style.display = showStructureBtn ? 'inline-flex' : 'none';
         btnStructureAI.disabled = !isTranscribed;
     }
 
@@ -82,6 +83,15 @@ window.updateButtonsVisibility = function (state) {
     // structureBtn (sidebar/wizard button, if present)
     if (structureBtn) {
         structureBtn.disabled = !isTranscribed;
+    }
+
+    // Botón "Transcribir y Estructurar" (Pro only): visible en Pro mode, sync disabled con transcribeBtn
+    const tAndSBtn = document.getElementById('transcribeAndStructureBtn');
+    if (tAndSBtn) {
+        tAndSBtn.style.display = isProMode ? '' : 'none';
+        // Solo habilitar si transcribeBtn está habilitado (hay archivos pendientes)
+        const tBtn = document.getElementById('transcribeBtn');
+        tAndSBtn.disabled = tBtn ? tBtn.disabled : true;
     }
 };
 
@@ -200,6 +210,8 @@ if (resetBtn) {
         // Disable action buttons
         const transcribeBtn = document.getElementById('transcribeBtn');
         if (transcribeBtn) transcribeBtn.disabled = true;
+        const tAndSReset = document.getElementById('transcribeAndStructureBtn');
+        if (tAndSReset) tAndSReset.disabled = true;
 
         if (typeof disableButtons === 'function') disableButtons();
 

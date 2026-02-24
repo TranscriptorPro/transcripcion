@@ -110,6 +110,8 @@ function handleFiles(files) {
 
     const transcribeBtn = document.getElementById('transcribeBtn');
     if (transcribeBtn) transcribeBtn.disabled = false;
+    const tAndS1 = document.getElementById('transcribeAndStructureBtn');
+    if (tAndS1) tAndS1.disabled = false;
     if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('FILES_LOADED');
 }
 
@@ -204,6 +206,8 @@ window.removeFile = i => {
 
     const transcribeBtn = document.getElementById('transcribeBtn');
     if (transcribeBtn) transcribeBtn.disabled = !window.uploadedFiles.length;
+    const tAndS2 = document.getElementById('transcribeAndStructureBtn');
+    if (tAndS2) tAndS2.disabled = !window.uploadedFiles.length;
 
     if (!window.uploadedFiles.length) {
         if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('IDLE');

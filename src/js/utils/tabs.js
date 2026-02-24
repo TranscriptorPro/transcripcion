@@ -103,6 +103,8 @@ window.closeTab = function (index) {
             // Re-enable transcribe if files are still loaded
             transcribeBtn.disabled = !(window.uploadedFiles && window.uploadedFiles.length > 0);
         }
+        const tAndSTabs = document.getElementById('transcribeAndStructureBtn');
+        if (tAndSTabs) tAndSTabs.disabled = transcribeBtn ? transcribeBtn.disabled : true;
     } else {
         if (index <= window.activeTabIndex && window.activeTabIndex > 0) {
             window.activeTabIndex--;

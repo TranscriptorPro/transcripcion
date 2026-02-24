@@ -1,9 +1,25 @@
 // ============ TRANSCRIPTION & GROQ API ============
 
+// Flag para controlar si se auto-estructura después de transcribir
+window._shouldAutoStructure = false;
+
+// Botón "Transcribir y Estructurar" (Pro) — setea flag y dispara transcripción
+const transcribeAndStructureBtn = document.getElementById('transcribeAndStructureBtn');
+if (transcribeAndStructureBtn) {
+    transcribeAndStructureBtn.addEventListener('click', () => {
+        window._shouldAutoStructure = true;
+        if (transcribeBtn && !transcribeBtn.disabled) transcribeBtn.click();
+    });
+}
+
 if (transcribeBtn) {
     transcribeBtn.addEventListener('click', async () => {
         const pending = window.uploadedFiles.filter(item => item.status === 'pending');
         if (pending.length === 0 || window.isProcessing) return;
+
+        // Capturar el flag antes de resetear
+        const shouldAutoStructureNow = window._shouldAutoStructure;
+        window._shouldAutoStructure = false;
 
         // Enhanced API Key validation
         if (!window.GROQ_API_KEY) {
@@ -21,6 +37,8 @@ if (transcribeBtn) {
 
         window.isProcessing = true;
         transcribeBtn.disabled = true;
+        const tAndSBtnSync = document.getElementById('transcribeAndStructureBtn');
+        if (tAndSBtnSync) tAndSBtnSync.disabled = true;
         processingStatus.classList.add('active');
         let done = 0;
         let joinedText = '';
@@ -151,7 +169,8 @@ if (transcribeBtn) {
             }
 
             // Auto-detect template in Pro mode AND auto-structure pipeline
-            if (window.currentMode === 'pro' && editor && editor.innerText.trim().length > 50) {
+            // Solo auto-estructurar si se usó el botón "Transcribir y Estructurar"
+            if (shouldAutoStructureNow && window.currentMode === 'pro' && editor && editor.innerText.trim().length > 50) {
                 if (typeof detectStudyType === 'function') {
                     const detection = detectStudyType(editor.innerText);
                     if (detection.confidence >= 2) {
@@ -207,6 +226,8 @@ if (transcribeBtn) {
         } finally {
             window.isProcessing = false;
             transcribeBtn.disabled = window.uploadedFiles.every(f => f.status === 'done');
+            const tAndSFinal = document.getElementById('transcribeAndStructureBtn');
+            if (tAndSFinal) tAndSFinal.disabled = transcribeBtn.disabled;
 
             // ALWAYS hide processing status after completion
             setTimeout(() => {
