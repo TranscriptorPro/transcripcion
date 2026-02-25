@@ -779,6 +779,13 @@ window.initModals = function () {
                                 showToast('✅ Texto agregado al final del informe', 'success');
                                 // Scroll to bottom
                                 editor.scrollTop = editor.scrollHeight;
+
+                                // Sincronizar: agregar texto crudo al original para coherencia comparativa
+                                if (window._lastRawTranscription != null) {
+                                    window._lastRawTranscription = window._lastRawTranscription.trimEnd() + '\n' + newText;
+                                }
+                                // Actualizar también el HTML estructurado guardado
+                                window._lastStructuredHTML = editor.innerHTML;
                             }
                         }
                     } catch (err) {
