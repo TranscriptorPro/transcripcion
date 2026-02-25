@@ -407,8 +407,41 @@ window.initModals = function () {
             if (typeof window.openPatientDataModal === 'function') window.openPatientDataModal();
         });
         editorEl.insertBefore(header, editorEl.firstChild);
+
+        // Si estamos viendo el texto original, sincronizar también el HTML estructurado guardado
+        const btnR = document.getElementById('btnRestoreOriginal');
+        if (btnR && btnR._showingOriginal && window._lastStructuredHTML) {
+            const temp = document.createElement('div');
+            temp.innerHTML = window._lastStructuredHTML;
+            const oldH = temp.querySelector('.patient-data-header');
+            if (oldH) oldH.remove();
+            const oldP = temp.querySelector('.patient-placeholder-banner');
+            if (oldP) oldP.remove();
+            // Insertar encabezado de texto plano (sin event listener, se re-creará al volver)
+            const headerHTML = `<div class="patient-data-header" contenteditable="false"><div class="patient-data-content">${lines.join(' &nbsp;·&nbsp; ')}</div><button class="patient-data-edit-btn" title="Editar datos del paciente">✏️</button></div>`;
+            temp.insertAdjacentHTML('afterbegin', headerHTML);
+            window._lastStructuredHTML = temp.innerHTML;
+        }
     }
     window._insertPatientDataInEditor = _insertPatientDataInEditor;
+
+    // ── Refrescar encabezado de paciente desde localStorage ──
+    function _refreshPatientHeader() {
+        const cfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        if (cfg.patientName) {
+            _insertPatientDataInEditor({
+                name: cfg.patientName,
+                dni: cfg.patientDni,
+                age: cfg.patientAge,
+                sex: cfg.patientSex,
+                insurance: cfg.patientInsurance,
+                affiliateNum: cfg.patientAffiliateNum
+            });
+        } else if (typeof insertPatientPlaceholder === 'function') {
+            insertPatientPlaceholder();
+        }
+    }
+    window._refreshPatientHeader = _refreshPatientHeader;
 
     // Limpiar borde rojo al escribir
     document.getElementById('reqPatientName')?.addEventListener('input', (e) => {
@@ -428,6 +461,8 @@ window.initModals = function () {
                 btnRestoreOriginal.title = 'Ver texto original (sin estructurar)';
                 btnRestoreOriginal.classList.remove('toggle-active');
                 btnRestoreOriginal._showingOriginal = false;
+                // Re-insertar datos del paciente actualizados
+                _refreshPatientHeader();
             } else {
                 // Mostrar original
                 if (window._lastRawTranscription) {
@@ -436,6 +471,8 @@ window.initModals = function () {
                         window._lastRawTranscription
                         .split('\n').filter(l => l.trim())
                         .map(l => `<p class="report-p">${l}</p>`).join('\n');
+                    // Insertar datos del paciente también en la vista original
+                    _refreshPatientHeader();
                     btnRestoreOriginal.innerHTML = '⟳ Estructurado';
                     btnRestoreOriginal.title = 'Volver al texto estructurado';
                     btnRestoreOriginal.classList.add('toggle-active');
