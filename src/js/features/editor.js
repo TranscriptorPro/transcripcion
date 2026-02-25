@@ -746,12 +746,21 @@ if (applyTemplateBtn && normalTemplateDropdown) {
     // ── Pestañas ─────────────────────────────────────────────────
     function _switchTab(tab) {
         const isWrite = tab === 'write';
+        const tabWrite = document.getElementById('efTabWrite');
+        const tabRecord = document.getElementById('efTabRecord');
         document.getElementById('efPanelWrite').style.display   = isWrite ? '' : 'none';
         document.getElementById('efPanelRecord').style.display  = isWrite ? 'none' : '';
-        document.getElementById('efTabWrite').style.background  = isWrite ? 'var(--primary)' : 'var(--bg-card)';
-        document.getElementById('efTabWrite').style.color       = isWrite ? '#fff' : 'var(--text-primary)';
-        document.getElementById('efTabRecord').style.background = isWrite ? 'var(--bg-card)' : 'var(--primary)';
-        document.getElementById('efTabRecord').style.color      = isWrite ? 'var(--text-primary)' : '#fff';
+        // Tab Escribir: estilo simple
+        tabWrite.style.background  = isWrite ? 'var(--primary)' : 'var(--bg-card)';
+        tabWrite.style.color       = isWrite ? '#fff' : 'var(--text-primary)';
+        // Tab Grabar (Pro): animación Gemini cuando NO activo, estilo activo cuando seleccionado
+        if (isWrite) {
+            tabRecord.classList.add('btn-pro-animated');
+        } else {
+            tabRecord.classList.remove('btn-pro-animated');
+            tabRecord.style.background = 'var(--primary)';
+            tabRecord.style.color = '#fff';
+        }
     }
 
     document.getElementById('efTabWrite')?.addEventListener('click', () => _switchTab('write'));

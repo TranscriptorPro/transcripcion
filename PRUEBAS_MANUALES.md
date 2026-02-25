@@ -130,7 +130,7 @@
 
 ### C8. Word count se actualiza
 - **Hacer:** Verificar que el contador de palabras refleja el texto transcripto.
-- [ ] ✅ Funciona
+- [si] ✅ Funciona
 - [ ] ❌ No funciona → Motivo: _____
 
 ---

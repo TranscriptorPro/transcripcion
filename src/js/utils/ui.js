@@ -313,11 +313,20 @@ window.initModals = function () {
 
     // Función global para abrir el modal de datos del paciente
     window.openPatientDataModal = function() {
-        // Limpiar campos
-        ['reqPatientName','reqPatientDni','reqPatientAge','reqPatientSex',
-         'reqPatientInsurance','reqPatientAffiliateNum','reqPatientSearch'].forEach(id => {
+        // Pre-rellenar con datos existentes (si se re-edita)
+        const cfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        const prefill = {
+            reqPatientName: cfg.patientName || '',
+            reqPatientDni: cfg.patientDni || '',
+            reqPatientAge: cfg.patientAge || '',
+            reqPatientSex: cfg.patientSex || '',
+            reqPatientInsurance: cfg.patientInsurance || '',
+            reqPatientAffiliateNum: cfg.patientAffiliateNum || '',
+            reqPatientSearch: ''
+        };
+        Object.entries(prefill).forEach(([id, val]) => {
             const el = document.getElementById(id);
-            if (el) { el.value = ''; el.style.borderColor = ''; }
+            if (el) { el.value = val; el.style.borderColor = ''; }
         });
         patientOverlay?.classList.add('active');
         if (typeof initPatientRegistrySearch === 'function') initPatientRegistrySearch();
@@ -358,8 +367,8 @@ window.initModals = function () {
             localStorage.setItem('pdf_config', JSON.stringify(config));
             patientOverlay?.classList.remove('active');
             if (typeof showToast === 'function') showToast('✅ Datos del paciente guardados', 'success');
-            // Quitar placeholder del editor
-            if (typeof removePatientPlaceholder === 'function') removePatientPlaceholder();
+            // Insertar/reemplazar datos del paciente en el editor
+            _insertPatientDataInEditor({ name, dni, age, sex, insurance, affiliateNum });
             // Guardar en el registro de pacientes
             if (typeof savePatientToRegistry === 'function') {
                 savePatientToRegistry({ name, dni, age, sex, insurance, affiliateNum });
@@ -367,6 +376,38 @@ window.initModals = function () {
             }
         });
     }
+
+    // ── Insertar datos del paciente como encabezado en el editor ──
+    function _insertPatientDataInEditor(data) {
+        const editorEl = document.getElementById('editor');
+        if (!editorEl) return;
+        // Remover banner placeholder o banner de datos previo
+        const oldPlaceholder = editorEl.querySelector('.patient-placeholder-banner');
+        if (oldPlaceholder) oldPlaceholder.remove();
+        const oldHeader = editorEl.querySelector('.patient-data-header');
+        if (oldHeader) oldHeader.remove();
+
+        // Construir líneas de datos
+        const lines = [];
+        if (data.name) lines.push(`<strong>Paciente:</strong> ${data.name}`);
+        if (data.dni)  lines.push(`<strong>DNI:</strong> ${data.dni}`);
+        if (data.age)  lines.push(`<strong>Edad:</strong> ${data.age} años`);
+        if (data.sex)  lines.push(`<strong>Sexo:</strong> ${data.sex}`);
+        if (data.insurance) lines.push(`<strong>Obra Social:</strong> ${data.insurance}`);
+        if (data.affiliateNum) lines.push(`<strong>Nº Afiliado:</strong> ${data.affiliateNum}`);
+        if (lines.length === 0) return;
+
+        const header = document.createElement('div');
+        header.className = 'patient-data-header';
+        header.setAttribute('contenteditable', 'false');
+        header.innerHTML = `<div class="patient-data-content">${lines.join(' &nbsp;·&nbsp; ')}</div>`
+            + `<button class="patient-data-edit-btn" title="Editar datos del paciente">✏️</button>`;
+        header.querySelector('.patient-data-edit-btn').addEventListener('click', () => {
+            if (typeof window.openPatientDataModal === 'function') window.openPatientDataModal();
+        });
+        editorEl.insertBefore(header, editorEl.firstChild);
+    }
+    window._insertPatientDataInEditor = _insertPatientDataInEditor;
 
     // Limpiar borde rojo al escribir
     document.getElementById('reqPatientName')?.addEventListener('input', (e) => {

@@ -646,7 +646,7 @@
                     <!-- Tabs Normal / Pro -->
                     <div id="editFieldTabs" style="display:flex;gap:0px;margin-bottom:0.9rem;border-radius:8px;overflow:hidden;border:1px solid var(--border);">
                         <button class="edit-field-tab active" id="efTabWrite" style="flex:1;padding:0.45rem 0;font-size:0.82rem;border:none;cursor:pointer;background:var(--primary);color:#fff;">✏️ Escribir</button>
-                        <button class="edit-field-tab" id="efTabRecord" style="flex:1;padding:0.45rem 0;font-size:0.82rem;border:none;cursor:pointer;background:var(--bg-card);color:var(--text-primary);">🎙️ Grabar y transcribir <span style="font-size:0.7rem;background:#0f766e;color:#fff;border-radius:4px;padding:1px 5px;margin-left:3px;">Pro</span></button>
+                        <button class="edit-field-tab btn-pro-animated" id="efTabRecord" style="flex:1;padding:0.45rem 0;font-size:0.82rem;border:none;cursor:pointer;">🎙️ Grabar y transcribir <span class="pro-badge" style="font-size:0.7rem;border-radius:4px;padding:1px 5px;margin-left:3px;">Pro</span></button>
                     </div>
                     <!-- Panel Escribir -->
                     <div id="efPanelWrite">
@@ -1217,7 +1217,7 @@
                             </svg>
                         </button>
                         <!-- Botón continuar grabando (Pro only) — append audio al final del informe -->
-                        <button class="btn btn-action-green" id="btnAppendRecord" style="display:none;" title="Grabar y agregar texto al final del informe">
+                        <button class="btn btn-pro-animated" id="btnAppendRecord" style="display:none;position:relative;padding:0.45rem 0.55rem;border-radius:8px;" title="Grabar y agregar texto al final del informe">
                             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
                                 <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
                                 <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
