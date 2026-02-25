@@ -368,6 +368,14 @@ window.initModals = function () {
         });
     }
 
+    // Botón Ejecutar Tests (admin only)
+    const btnRunTests = document.getElementById('btnRunTests');
+    if (btnRunTests) {
+        btnRunTests.addEventListener('click', () => {
+            window.open('tests/auto-test-full.html', '_blank');
+        });
+    }
+
     // Patient Data Required Modal
     const patientOverlay = document.getElementById('patientDataRequiredOverlay');
     const btnSavePatientData = document.getElementById('btnSavePatientData');

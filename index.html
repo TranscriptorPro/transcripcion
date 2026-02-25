@@ -527,15 +527,17 @@
                 </div>
                 <div class="print-preview-container" id="printPreviewContainer">
                     <div class="a4-page" id="previewPage">
+                        <div class="preview-workplace" id="previewWorkplace"></div>
                         <div class="preview-header" id="previewHeader"></div>
                         <div class="preview-patient" id="previewPatient"></div>
                         <div class="preview-study" id="previewStudy"></div>
                         <div class="preview-content" id="previewContent"></div>
                         <div class="preview-signature" id="previewSignature"></div>
-                        <div class="preview-footer" id="previewFooter"></div>
                         <div class="preview-qr" id="previewQR"></div>
+                        <div class="preview-footer" id="previewFooter"></div>
                     </div>
                 </div>
+                <div class="preview-page-nav" id="previewPageNav" style="display:none;"></div>
                 <div class="modal-footer"
                     style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; gap: 0.5rem; justify-content: flex-end;">
                     <button class="btn btn-primary" id="btnDownloadFromPreview">📥 Descargar PDF</button>
@@ -1065,6 +1067,9 @@
                     <a href="https://console.groq.com/keys" target="_blank"
                         style="color: var(--primary-light);">console.groq.com/keys</a>
                 </small>
+                <button class="btn btn-outline" id="btnRunTests"
+                    style="margin-top: 0.75rem; width: 100%; font-size: 0.75rem; padding: 6px 10px; opacity: 0.7;"
+                    title="Ejecutar pruebas automatizadas">🧪 Ejecutar Tests</button>
             </div>
         </aside>
 

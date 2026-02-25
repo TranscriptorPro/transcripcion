@@ -215,6 +215,13 @@ window.openPrintPreview = function () {
     const institutionName = esc(profData.institutionName || '');
     const accentColor     = profData.headerColor || '#1a56a0';
 
+    // Datos del lugar de trabajo (desde workplace_profiles)
+    const wpProfiles = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+    const wpIdx = config.activeWorkplaceIndex;
+    const activeWp = (wpIdx !== undefined && wpIdx !== null) ? wpProfiles[Number(wpIdx)] : wpProfiles[0];
+    const wpName = esc(activeWp?.name || '');
+    const wpEmail = esc(activeWp?.email || config.workplaceEmail || '');
+
     // Extraer datos del paciente SIEMPRE frescos desde el editor
     const editorEl  = window.editor || document.getElementById('editor');
     const extracted = (editorEl && typeof extractPatientDataFromText === 'function')
@@ -237,6 +244,7 @@ window.openPrintPreview = function () {
     const rawSex          = extracted.sex || config.patientSex || formPatient.sex || '';
     const patientSex      = rawSex === 'M' ? 'Masculino' : rawSex === 'F' ? 'Femenino' : esc(rawSex);
     const patientInsurance = esc(config.patientInsurance || formPatient.insurance || '');
+    const affiliateNum = esc(config.patientAffiliateNum || reqVal('reqPatientAffiliateNum') || reqVal('pdfPatientAffiliateNum') || '');
 
     // Datos del estudio
     const studyType    = esc(config.studyType || '');
@@ -263,7 +271,25 @@ window.openPrintPreview = function () {
     const page = document.getElementById('previewPage');
     if (page) page.style.setProperty('--pa', accentColor);
 
-    // ── ENCABEZADO ──────────────────────────────────────────────
+    // ── LUGAR DE TRABAJO (arriba de todo) ────────────────────────
+    const wpHeaderEl = document.getElementById('previewWorkplace');
+    if (wpHeaderEl) {
+        const hasWpData = wpName || wkAddr || wkPhone || wpEmail;
+        if (hasWpData) {
+            wpHeaderEl.style.display = '';
+            let wpHtml = '<div class="pvw-block">';
+            if (wpName)  wpHtml += `<div class="pvw-name">${wpName}</div>`;
+            const wpDetails = [wkAddr, wkPhone ? 'Tel: ' + wkPhone : '', wpEmail].filter(Boolean);
+            if (wpDetails.length) wpHtml += `<div class="pvw-details">${wpDetails.join(' &nbsp;•&nbsp; ')}</div>`;
+            wpHtml += '</div>';
+            wpHeaderEl.innerHTML = wpHtml;
+        } else {
+            wpHeaderEl.innerHTML = '';
+            wpHeaderEl.style.display = 'none';
+        }
+    }
+
+    // ── ENCABEZADO PROFESIONAL ───────────────────────────────────
     const headerEl = document.getElementById('previewHeader');
     if (headerEl) {
         // Ocultar encabezado si es ADMIN sin profesional activo configurado
@@ -280,9 +306,7 @@ window.openPrintPreview = function () {
                     <div class="pvh-info">
                         <div class="pvh-name">${profName}</div>
                         ${especialidad   ? `<div class="pvh-spec">${especialidad}</div>`   : ''}
-                        ${matricula      ? `<div class="pvh-mat">Matrícula Profesional: ${matricula}</div>` : ''}
-                        ${institutionName? `<div class="pvh-inst">${institutionName}</div>` : ''}
-                        ${(wkAddr||wkPhone) ? `<div class="pvh-addr">${wkAddr}${wkAddr&&wkPhone?' &bull; ':''}${wkPhone}</div>` : ''}
+                        ${matricula      ? `<div class="pvh-mat">Mat. ${matricula}</div>` : ''}
                     </div>
                 </div>`;
         }
@@ -297,6 +321,7 @@ window.openPrintPreview = function () {
         if (patientAge)       cells.push(`<div class="pvp-cell"><span class="pvp-lbl">Edad</span><span class="pvp-val">${patientAge} años</span></div>`);
         if (patientSex)       cells.push(`<div class="pvp-cell"><span class="pvp-lbl">Sexo</span><span class="pvp-val">${patientSex}</span></div>`);
         if (patientInsurance) cells.push(`<div class="pvp-cell"><span class="pvp-lbl">Cobertura</span><span class="pvp-val">${patientInsurance}</span></div>`);
+        if (affiliateNum) cells.push(`<div class="pvp-cell"><span class="pvp-lbl">Nº Afiliado</span><span class="pvp-val">${affiliateNum}</span></div>`);
         if (cells.length) {
             patientEl.innerHTML = `<div class="pvp-grid">${cells.join('')}</div>`;
             patientEl.style.display = '';
@@ -369,7 +394,7 @@ window.openPrintPreview = function () {
         footerEl.style.display = parts.length ? '' : 'none';
     }
 
-    // ── CÓDIGO QR DE VERIFICACIÓN ─────────────────────────────────
+    // ── CÓDIGO QR DE VERIFICACIÓN (debajo de la firma) ─────────────
     const qrEl = document.getElementById('previewQR');
     if (qrEl) {
         const showQR = config.showQR ?? false;
@@ -381,8 +406,8 @@ window.openPrintPreview = function () {
                 patientName ? `Paciente: ${patientName}` : '',
             ].filter(Boolean).join(' | ');
             const qrImgSrc = generateQRCode(qrData || 'Transcriptor Médico Pro');
-            qrEl.innerHTML = `<img src="${qrImgSrc}" alt="QR" style="width:80px;height:80px;">
-                <span style="font-size:0.6rem;color:#888;display:block;text-align:center;">Verificación</span>`;
+            qrEl.innerHTML = `<img src="${qrImgSrc}" alt="QR" style="width:72px;height:72px;">
+                <span class="pvqr-label">Código de verificación</span>`;
             qrEl.style.display = '';
         } else {
             qrEl.innerHTML = '';
@@ -392,18 +417,49 @@ window.openPrintPreview = function () {
 
     document.getElementById('printPreviewOverlay')?.classList.add('active');
 
-    // Calcular número de páginas real después de renderizar
+    // Calcular número de páginas y configurar navegación
     setTimeout(() => {
         const pageEl = document.getElementById('previewPage');
         const pageNumEl = document.querySelector('.pvf-pagenum');
-        if (pageEl && pageNumEl) {
-            const pageHeightMM = 297; // A4 height in mm
-            const pageHeightPx = pageEl.scrollHeight;
-            const onePagePx = pageHeightMM * (96 / 25.4); // ~1122px
-            const totalPages = Math.max(1, Math.ceil(pageHeightPx / onePagePx));
+        const pageHeightMM = 297;
+        const onePagePx = pageHeightMM * (96 / 25.4); // ~1122px
+        const totalPages = Math.max(1, Math.ceil((pageEl?.scrollHeight || 0) / onePagePx));
+
+        if (pageNumEl) {
             pageNumEl.textContent = totalPages > 1 ? `Página 1 de ${totalPages}` : 'Página 1 de 1';
         }
-    }, 100);
+
+        // Navegación multi-página
+        const navEl = document.getElementById('previewPageNav');
+        if (navEl && totalPages > 1) {
+            navEl.style.display = 'flex';
+            navEl.innerHTML = `
+                <button class="btn btn-outline btn-sm" id="pvNavPrev" disabled>◀ Anterior</button>
+                <span class="pvnav-info">Página <strong>1</strong> de ${totalPages}</span>
+                <button class="btn btn-outline btn-sm" id="pvNavNext">Siguiente ▶</button>`;
+            let currentPage = 1;
+            const container = document.getElementById('printPreviewContainer');
+            const update = () => {
+                document.getElementById('pvNavPrev').disabled = currentPage <= 1;
+                document.getElementById('pvNavNext').disabled = currentPage >= totalPages;
+                navEl.querySelector('.pvnav-info').innerHTML = `Página <strong>${currentPage}</strong> de ${totalPages}`;
+                if (pageNumEl) pageNumEl.textContent = `Página ${currentPage} de ${totalPages}`;
+            };
+            document.getElementById('pvNavPrev')?.addEventListener('click', () => {
+                if (currentPage > 1) { currentPage--; container.scrollTop = (currentPage - 1) * onePagePx; update(); }
+            });
+            document.getElementById('pvNavNext')?.addEventListener('click', () => {
+                if (currentPage < totalPages) { currentPage++; container.scrollTop = (currentPage - 1) * onePagePx; update(); }
+            });
+            // Sincronizar página con scroll manual
+            container?.addEventListener('scroll', () => {
+                const newPage = Math.min(totalPages, Math.max(1, Math.floor(container.scrollTop / onePagePx) + 1));
+                if (newPage !== currentPage) { currentPage = newPage; update(); }
+            });
+        } else if (navEl) {
+            navEl.style.display = 'none';
+        }
+    }, 150);
 }
 
 // ============ ENVIAR POR EMAIL DESDE VISTA PREVIA ============
