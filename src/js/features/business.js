@@ -699,24 +699,25 @@ function _loadAdminTestData() {
     // ══════════════════════════════════════════════════════════════════
     // ██ REGISTRO DE PACIENTES — 15 pacientes ficticios
     // ══════════════════════════════════════════════════════════════════
+    // Campos deben coincidir con patientRegistry.js: name, dni, age, sex (M/F/X), insurance, affiliateNum
     const existingPatients = JSON.parse(localStorage.getItem('patient_registry') || '[]');
     if (existingPatients.length === 0) {
         const testPatients = [
-            { id: 'p01', nombre: 'María Elena Rodríguez',   dni: '25.890.145', sexo: 'Femenino',  edad: '54', obraSocial: 'OSDE 310',           telefono: '(011) 4555-1201', email: 'me.rodriguez@email.com',   lastVisit: '2026-02-20', visits: 3 },
-            { id: 'p02', nombre: 'Jorge Alberto Sánchez',    dni: '18.432.567', sexo: 'Masculino', edad: '68', obraSocial: 'PAMI',                telefono: '(011) 4555-1202', email: 'ja.sanchez@email.com',     lastVisit: '2026-02-18', visits: 7 },
-            { id: 'p03', nombre: 'Ana Laura Martínez',       dni: '32.150.890', sexo: 'Femenino',  edad: '41', obraSocial: 'Swiss Medical',       telefono: '(011) 4555-1203', email: 'al.martinez@email.com',    lastVisit: '2026-02-22', visits: 1 },
-            { id: 'p04', nombre: 'Carlos Eduardo Pérez',     dni: '20.765.432', sexo: 'Masculino', edad: '59', obraSocial: 'Galeno',              telefono: '(0341) 421-5504', email: 'ce.perez@email.com',       lastVisit: '2026-02-15', visits: 5 },
-            { id: 'p05', nombre: 'Silvia Beatriz Gómez',     dni: '28.901.234', sexo: 'Femenino',  edad: '47', obraSocial: 'OSECAC',              telefono: '(011) 4555-1205', email: 'sb.gomez@email.com',       lastVisit: '2026-02-24', visits: 2 },
-            { id: 'p06', nombre: 'Ricardo Daniel Moreno',    dni: '14.567.890', sexo: 'Masculino', edad: '73', obraSocial: 'IOMA',                telefono: '(011) 4241-6606', email: 'rd.moreno@email.com',      lastVisit: '2026-01-30', visits: 12 },
-            { id: 'p07', nombre: 'Laura Cristina Díaz',      dni: '35.234.567', sexo: 'Femenino',  edad: '36', obraSocial: 'Medifé',              telefono: '(0341) 449-7707', email: 'lc.diaz@email.com',        lastVisit: '2026-02-10', visits: 4 },
-            { id: 'p08', nombre: 'Héctor Raúl Fernández',    dni: '22.345.678', sexo: 'Masculino', edad: '62', obraSocial: 'Accord Salud',        telefono: '(011) 4555-1208', email: 'hr.fernandez@email.com',   lastVisit: '2026-02-21', visits: 2 },
-            { id: 'p09', nombre: 'Graciela Marta Aguirre',   dni: '16.789.012', sexo: 'Femenino',  edad: '71', obraSocial: 'PAMI',                telefono: '(0223) 472-3344', email: 'gm.aguirre@email.com',     lastVisit: '2026-02-12', visits: 9 },
-            { id: 'p10', nombre: 'Roberto Fabián Castro',    dni: '30.456.789', sexo: 'Masculino', edad: '44', obraSocial: 'OSDE 210',            telefono: '(0351) 481-5566', email: 'rf.castro@email.com',      lastVisit: '2026-02-19', visits: 1 },
-            { id: 'p11', nombre: 'Claudia Susana Benítez',   dni: '27.123.456', sexo: 'Femenino',  edad: '52', obraSocial: 'Sancor Salud',        telefono: '(0341) 430-7788', email: 'cs.benitez@email.com',     lastVisit: '2026-02-23', visits: 6 },
-            { id: 'p12', nombre: 'Omar Darío Villalba',      dni: '21.654.321', sexo: 'Masculino', edad: '65', obraSocial: 'IOMA',                telefono: '(0230) 442-1122', email: 'od.villalba@email.com',    lastVisit: '2026-01-28', visits: 3 },
-            { id: 'p13', nombre: 'Verónica Soledad Ruiz',    dni: '33.987.654', sexo: 'Femenino',  edad: '38', obraSocial: 'Swiss Medical',       telefono: '(011) 4788-3344', email: 'vs.ruiz@email.com',        lastVisit: '2026-02-25', visits: 2 },
-            { id: 'p14', nombre: 'Ernesto Julio Domínguez',  dni: '19.876.543', sexo: 'Masculino', edad: '70', obraSocial: 'Galeno',              telefono: '(02291) 45-6677', email: 'ej.dominguez@email.com',   lastVisit: '2026-02-14', visits: 8 },
-            { id: 'p15', nombre: 'Alejandra Noemí Torres',   dni: '29.345.678', sexo: 'Femenino',  edad: '49', obraSocial: 'OSECAC',              telefono: '(011) 4254-8899', email: 'an.torres@email.com',      lastVisit: '2026-02-17', visits: 4 }
+            { name: 'María Elena Rodríguez',   dni: '25.890.145', sex: 'F', age: '54', insurance: 'OSDE 310',      affiliateNum: '1100-25890145-03', lastSeen: '2026-02-20T10:00:00Z', visits: 3 },
+            { name: 'Jorge Alberto Sánchez',    dni: '18.432.567', sex: 'M', age: '68', insurance: 'PAMI',          affiliateNum: '10-18432567-01',   lastSeen: '2026-02-18T14:30:00Z', visits: 7 },
+            { name: 'Ana Laura Martínez',       dni: '32.150.890', sex: 'F', age: '41', insurance: 'Swiss Medical', affiliateNum: 'SM-832150890',     lastSeen: '2026-02-22T09:15:00Z', visits: 1 },
+            { name: 'Carlos Eduardo Pérez',     dni: '20.765.432', sex: 'M', age: '59', insurance: 'Galeno',        affiliateNum: 'GAL-207654',       lastSeen: '2026-02-15T11:00:00Z', visits: 5 },
+            { name: 'Silvia Beatriz Gómez',     dni: '28.901.234', sex: 'F', age: '47', insurance: 'OSECAC',        affiliateNum: 'OSE-289012-00',    lastSeen: '2026-02-24T16:45:00Z', visits: 2 },
+            { name: 'Ricardo Daniel Moreno',    dni: '14.567.890', sex: 'M', age: '73', insurance: 'IOMA',          affiliateNum: 'IOMA-14567890',    lastSeen: '2026-01-30T08:20:00Z', visits: 12 },
+            { name: 'Laura Cristina Díaz',      dni: '35.234.567', sex: 'F', age: '36', insurance: 'Medifé',        affiliateNum: 'MED-352345',       lastSeen: '2026-02-10T15:00:00Z', visits: 4 },
+            { name: 'Héctor Raúl Fernández',    dni: '22.345.678', sex: 'M', age: '62', insurance: 'Accord Salud',  affiliateNum: 'ACC-223456-02',    lastSeen: '2026-02-21T10:30:00Z', visits: 2 },
+            { name: 'Graciela Marta Aguirre',   dni: '16.789.012', sex: 'F', age: '71', insurance: 'PAMI',          affiliateNum: '10-16789012-01',   lastSeen: '2026-02-12T09:00:00Z', visits: 9 },
+            { name: 'Roberto Fabián Castro',    dni: '30.456.789', sex: 'M', age: '44', insurance: 'OSDE 210',      affiliateNum: '1100-30456789-01', lastSeen: '2026-02-19T13:00:00Z', visits: 1 },
+            { name: 'Claudia Susana Benítez',   dni: '27.123.456', sex: 'F', age: '52', insurance: 'Sancor Salud',  affiliateNum: 'SAN-271234-05',    lastSeen: '2026-02-23T11:20:00Z', visits: 6 },
+            { name: 'Omar Darío Villalba',      dni: '21.654.321', sex: 'M', age: '65', insurance: 'IOMA',          affiliateNum: 'IOMA-21654321',    lastSeen: '2026-01-28T17:00:00Z', visits: 3 },
+            { name: 'Verónica Soledad Ruiz',    dni: '33.987.654', sex: 'F', age: '38', insurance: 'Swiss Medical', affiliateNum: 'SM-833987654',     lastSeen: '2026-02-25T08:45:00Z', visits: 2 },
+            { name: 'Ernesto Julio Domínguez',  dni: '19.876.543', sex: 'M', age: '70', insurance: 'Galeno',        affiliateNum: 'GAL-198765',       lastSeen: '2026-02-14T14:00:00Z', visits: 8 },
+            { name: 'Alejandra Noemí Torres',   dni: '29.345.678', sex: 'F', age: '49', insurance: 'OSECAC',        affiliateNum: 'OSE-293456-00',    lastSeen: '2026-02-17T10:10:00Z', visits: 4 }
         ];
         localStorage.setItem('patient_registry', JSON.stringify(testPatients));
     }
