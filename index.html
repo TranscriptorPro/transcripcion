@@ -100,6 +100,36 @@
             <button onclick="this.closest('#apiKeyWarningBanner').style.display='none';" style="background:transparent;border:none;cursor:pointer;font-size:1.1rem;font-weight:700;padding:0 4px;">✕</button>
         </div>
         <!-- Modals moved to top for early DOM parsing -->
+
+        <!-- Session Assistant — se abre cada vez que carga la app -->
+        <div class="modal-overlay sa-overlay" id="sessionAssistantOverlay">
+            <div class="sa-card">
+                <div class="sa-header">
+                    <span class="sa-icon">🩺</span>
+                    <h2 class="sa-title" id="saGreeting">Buenos días, Doctor/a 👋</h2>
+                    <p class="sa-subtitle" id="saSubtitle">¿En qué lugar trabajás hoy?</p>
+                </div>
+                <div class="sa-body">
+                    <!-- Paso 1: Lugar de trabajo -->
+                    <div class="sa-field">
+                        <label class="sa-label" for="saWorkplaceSelect">📍 Lugar de trabajo</label>
+                        <select id="saWorkplaceSelect" class="sa-select"></select>
+                    </div>
+                    <!-- Paso 2: Profesional (se muestra si hay profesionales) -->
+                    <div class="sa-field" id="saProfGroup" style="display:none;">
+                        <label class="sa-label" for="saProfSelect">🩺 Profesional</label>
+                        <select id="saProfSelect" class="sa-select"></select>
+                    </div>
+                    <!-- Estado: resumen de selección -->
+                    <div id="saStatus" style="text-align:center;min-height:1.5rem;margin-top:0.5rem;"></div>
+                </div>
+                <div class="sa-footer">
+                    <button class="btn btn-primary sa-btn-confirm" id="saBtnConfirm">Comenzar sesión ▶</button>
+                    <button class="sa-btn-skip" id="saBtnSkip">Omitir por ahora</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Onboarding / Welcome Modal -->
         <div class="modal-overlay" id="onboardingOverlay">
             <div class="modal" style="max-width: 500px;">
@@ -1451,6 +1481,7 @@
         <script src="src/js/features/patientRegistry.js"></script>
         <script src="src/js/features/formHandler.js"></script>
         <script src="src/js/features/business.js"></script>
+        <script src="src/js/features/sessionAssistant.js"></script>
         <script src="src/js/features/outputProfiles.js"></script>
         <script src="src/js/features/pdfPreview.js"></script>
         <script src="src/js/features/pdfMaker.js"></script>

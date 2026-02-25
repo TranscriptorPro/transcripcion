@@ -203,23 +203,29 @@ window.openPrintPreview = function () {
         .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
         .replace(/"/g,'&quot;').replace(/'/g,'&#039;') : '';
 
+    // Helper: normalizar + escapar
+    const norm = typeof normalizeFieldText === 'function' ? normalizeFieldText : (t) => t || '';
+    const escName = (t) => esc(norm(t || '', 'name'));     // Nombres: Cada Palabra Capitalizada
+    const escUpper = (t) => esc((t || '').toUpperCase());   // MAYÚSCULAS: OSDE, IAPOS
+    const escSentence = (t) => esc(norm(t || '', 'sentence')); // Modo oración
+
     // Datos del profesional (profesional activo tiene prioridad)
     const activePro      = config.activeProfessional || null;
-    const profName       = esc(activePro?.nombre     || profData.nombre) || 'Profesional Médico';
+    const profName       = escName(activePro?.nombre     || profData.nombre) || 'Profesional Médico';
     const matricula      = esc(activePro?.matricula  || profData.matricula || '');
     const especialidadRaw = activePro?.especialidades
         || (Array.isArray(profData.specialties)
             ? profData.specialties.filter(s => s && s !== 'Todas').join(' / ')
             : (profData.especialidad || ''));
-    const especialidad    = esc(especialidadRaw);
-    const institutionName = esc(profData.institutionName || '');
+    const especialidad    = escSentence(especialidadRaw);
+    const institutionName = escName(profData.institutionName || '');
     const accentColor     = profData.headerColor || '#1a56a0';
 
     // Datos del lugar de trabajo (desde workplace_profiles)
     const wpProfiles = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
     const wpIdx = config.activeWorkplaceIndex;
     const activeWp = (wpIdx !== undefined && wpIdx !== null) ? wpProfiles[Number(wpIdx)] : wpProfiles[0];
-    const wpName = esc(activeWp?.name || '');
+    const wpName = escName(activeWp?.name || '');
     const wpEmail = esc(activeWp?.email || config.workplaceEmail || '');
 
     // Extraer datos del paciente SIEMPRE frescos desde el editor
@@ -238,24 +244,23 @@ window.openPrintPreview = function () {
     };
 
     // Preferir: 1) extraído del audio → 2) guardado en pdf_config → 3) formulario req* en pantalla
-    const patientName     = esc(extracted.name)  || esc(config.patientName)  || esc(formPatient.name)     || '';
-    const patientDni      = esc(extracted.dni)   || esc(config.patientDni)   || esc(formPatient.dni)      || '';
-    const patientAge      = esc(extracted.age)   || esc(config.patientAge)   || esc(formPatient.age)      || '';
+    // Normalización: nombres→name, cobertura→UPPER, resto→sentence
+    const patientName     = escName(extracted.name || config.patientName || formPatient.name || '');
+    const patientDni      = esc(extracted.dni   || config.patientDni   || formPatient.dni      || '');
+    const patientAge      = esc(extracted.age   || config.patientAge   || formPatient.age      || '');
     const rawSex          = extracted.sex || config.patientSex || formPatient.sex || '';
-    const patientSex      = rawSex === 'M' ? 'Masculino' : rawSex === 'F' ? 'Femenino' : esc(rawSex);
-    // Normalizar cobertura a MAYÚSCULAS (ej: IaPos → IAPOS)
-    const rawInsurance = config.patientInsurance || formPatient.insurance || '';
-    const patientInsurance = esc(typeof normalizeFieldText === 'function' ? rawInsurance.toUpperCase() : rawInsurance);
+    const patientSex      = rawSex === 'M' ? 'Masculino' : rawSex === 'F' ? 'Femenino' : escName(rawSex);
+    const patientInsurance = escUpper(config.patientInsurance || formPatient.insurance || '');
     const affiliateNum = esc(config.patientAffiliateNum || reqVal('reqPatientAffiliateNum') || reqVal('pdfPatientAffiliateNum') || '');
 
     // Datos del estudio
-    const studyType    = esc(config.studyType || '');
+    const studyType    = escSentence(config.studyType || '');
     const rawDate      = config.studyDate || '';
     const studyDate    = rawDate
         ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'})
         : new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'});
-    const studyReason  = esc(config.studyReason || '');
-    const refDoctor    = esc(config.referringDoctor || '');
+    const studyReason  = escSentence(config.studyReason || '');
+    const refDoctor    = escName(config.referringDoctor || '');
     const reportNum    = esc(document.getElementById('pdfReportNumber')?.value || config.reportNum || '');
     const footerText   = esc(config.footerText || 'Este informe es válido únicamente con la firma del profesional a cargo.');
     const wkAddr       = esc(config.workplaceAddress || '');

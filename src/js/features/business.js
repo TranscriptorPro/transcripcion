@@ -439,6 +439,9 @@ function _initAdmin() {
         console.error('Error inicializando datos admin:', e);
     }
 
+    // Session Assistant — se abre cada vez que carga la app
+    _launchSessionAssistant();
+
     const btnAdminAccess = document.getElementById('btnAdminAccess');
     if (btnAdminAccess) {
         btnAdminAccess.addEventListener('click', () => window.open('recursos/admin.html', '_blank'));
@@ -526,6 +529,9 @@ function _initClient() {
 
     const onboardingOverlay = document.getElementById('onboardingOverlay');
     if (onboardingOverlay) onboardingOverlay.style.display = 'none';
+
+    // Session Assistant — se abre cada vez que carga la app
+    _launchSessionAssistant();
 }
 
 // ─── Módulos comunes (admin + cliente) ───────────────────────────────────────
@@ -599,6 +605,18 @@ function _showClientOnboarding() {
 
             const saludo = profData.nombre ? `¡Bienvenido/a, ${profData.nombre}! 🎉` : '¡Bienvenido/a! 🎉';
             if (typeof showToast === 'function') showToast(saludo, 'success');
+
+            // Session Assistant — abrir tras onboarding
+            _launchSessionAssistant();
         });
     }
+}
+
+// ─── Helper: inicializar y abrir Session Assistant ────────────────────────────
+function _launchSessionAssistant() {
+    if (typeof initSessionAssistant === 'function') initSessionAssistant();
+    // Pequeño delay para que la UI se estabilice
+    setTimeout(() => {
+        if (typeof openSessionAssistant === 'function') openSessionAssistant();
+    }, 350);
 }
