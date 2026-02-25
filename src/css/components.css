@@ -1663,6 +1663,11 @@
             z-index: 10000 !important;
         }
 
+        /* Confirm modal must appear above ALL other modals */
+        #customConfirmModal {
+            z-index: 10050 !important;
+        }
+
         /* \u2500\u2500 Audio repair modal styles \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
         .repair-filename { margin-bottom: 0.3rem; font-size: 0.9rem; }
         .repair-error-msg { color: #dc2626; margin-bottom: 0.6rem; font-size: 0.9rem; font-weight: 500; }
