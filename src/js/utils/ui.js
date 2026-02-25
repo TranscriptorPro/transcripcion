@@ -238,10 +238,9 @@ window.initModals = function () {
         });
     }
 
-    // Logo y firma: registrar listeners de carga de imagen
+    // Logo: registrar listener de carga de imagen (firma se configura en clones)
     if (typeof handleImageUpload === 'function') {
         handleImageUpload('pdfLogoUpload',      'pdfLogoPreview',      'pdf_logo');
-        handleImageUpload('pdfSignatureUpload', 'pdfSignaturePreview', 'pdf_signature');
     }
 
     if (btnSavePdfConfig) {
@@ -298,6 +297,7 @@ window.initModals = function () {
                     showPageNum: chk('pdfShowPageNum', true), showDate: chk('pdfShowDate', false),
                     showQR: chk('pdfShowQR', false), showSignLine: chk('pdfShowSignLine', true),
                     showSignName: chk('pdfShowSignName', true), showSignMatricula: chk('pdfShowSignMatricula', true),
+                    showSignImage: chk('pdfShowSignImage', false),
                     footerText: val('pdfFooterText'), selectedWorkplace: val('pdfWorkplace'),
                     workplaceAddress: val('pdfWorkplaceAddress'), workplacePhone: val('pdfWorkplacePhone'),
                     workplaceEmail: val('pdfWorkplaceEmail')

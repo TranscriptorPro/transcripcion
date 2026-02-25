@@ -176,11 +176,9 @@ window.openPdfConfigModal = function () {
         }
     }
 
-    // ── Firma: upload solo admin, info para usuario ──
-    const sigUploadGroup = document.getElementById('signatureUploadGroup');
-    const sigInfoUser    = document.getElementById('signatureInfoUser');
-    if (sigUploadGroup) sigUploadGroup.style.display = isAdmin ? '' : 'none';
-    if (sigInfoUser)    sigInfoUser.style.display    = isAdmin ? 'none' : '';
+    // ── Firma: checkbox de mostrar imagen (la imagen se define en los clones) ──
+    const showSignImageChk = document.getElementById('pdfShowSignImage');
+    if (showSignImageChk) showSignImageChk.checked = pdfCfgRestore.showSignImage ?? false;
 
     // ── Logo upload: solo visible al agregar lugar nuevo (en el panel de detalles) ──
     // No se oculta globalmente aquí porque el panel entero ya está oculto
@@ -337,15 +335,26 @@ window.openPrintPreview = function () {
 
     // ── FIRMA ────────────────────────────────────────────────────
     const sigEl = document.getElementById('previewSignature');
+    const showSignImage = config.showSignImage ?? false;
     if (sigEl) {
-        let sigHtml = '<div class="pvsig-block">';
-        if (hasSig)       sigHtml += `<img src="${sigSrc}" class="pvsig-img" alt="Firma">`;
-        if (showSignLine) sigHtml += `<div class="pvsig-line"></div>`;
-        if (showSignName && profName) sigHtml += `<div class="pvsig-name">${profName}</div>`;
-        if (showSignMat  && matricula) sigHtml += `<div class="pvsig-mat">Mat. ${matricula}</div>`;
-        if (especialidad) sigHtml += `<div class="pvsig-spec">${especialidad}</div>`;
-        sigHtml += '</div>';
-        sigEl.innerHTML = sigHtml;
+        // Ocultar firma si es ADMIN sin profesional activo
+        const isAdminSig = (!activePro || !activePro.nombre) &&
+            (!profData.nombre || profData.nombre === 'Administrador' || profData.nombre === 'Admin');
+        if (isAdminSig) {
+            sigEl.innerHTML = '';
+            sigEl.style.display = 'none';
+        } else {
+            sigEl.style.display = '';
+            let sigHtml = '<div class="pvsig-block">';
+            // Imagen de firma va ENCIMA de la línea
+            if (showSignImage && hasSig) sigHtml += `<img src="${sigSrc}" class="pvsig-img" alt="Firma">`;
+            if (showSignLine) sigHtml += `<div class="pvsig-line"></div>`;
+            if (showSignName && profName) sigHtml += `<div class="pvsig-name">${profName}</div>`;
+            if (showSignMat  && matricula) sigHtml += `<div class="pvsig-mat">Mat. ${matricula}</div>`;
+            if (especialidad) sigHtml += `<div class="pvsig-spec">${especialidad}</div>`;
+            sigHtml += '</div>';
+            sigEl.innerHTML = sigHtml;
+        }
     }
 
     // ── PIE DE PÁGINA ─────────────────────────────────────────────
