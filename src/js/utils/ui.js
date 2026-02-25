@@ -440,8 +440,62 @@ window.initModals = function () {
         } else if (typeof insertPatientPlaceholder === 'function') {
             insertPatientPlaceholder();
         }
+        // Insertar botón inline de grabar si aplica
+        if (typeof window._insertInlineAppendBtn === 'function') window._insertInlineAppendBtn();
     }
     window._refreshPatientHeader = _refreshPatientHeader;
+
+    // ── Botón inline "Grabar y agregar" dentro del editor (Pro only) ──
+    window._insertInlineAppendBtn = function () {
+        const editor = document.getElementById('editor');
+        if (!editor) return;
+
+        // Remover existente si hay
+        const existing = editor.querySelector('.btn-append-inline');
+        if (existing) existing.remove();
+
+        // Solo Pro mode con contenido en el editor
+        const isProMode = window.currentMode === 'pro' ||
+            (window.CLIENT_CONFIG && window.CLIENT_CONFIG.hasProMode);
+        if (!isProMode) return;
+        if (!editor.innerText.trim()) return;
+
+        // Crear wrapper contenteditable=false
+        const wrap = document.createElement('div');
+        wrap.className = 'btn-append-inline';
+        wrap.setAttribute('contenteditable', 'false');
+        wrap.innerHTML = `<button class="btn btn-pro-animated" title="🎙️ Grabar y agregar texto al final del informe">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+            </svg>
+            <span>🎙️ Grabar y agregar +</span>
+        </button>`;
+
+        // Sincronizar estado de grabación si ya estaba activa
+        if (window._appendRecordingActive) {
+            const innerBtn = wrap.querySelector('button');
+            innerBtn.classList.add('recording-pulse');
+            innerBtn.classList.remove('btn-pro-animated');
+            innerBtn.querySelector('span').textContent = '⏹ Grabando…';
+        }
+
+        // Click → delegar al botón oculto original (mantiene toda la lógica de grabación)
+        wrap.querySelector('button').addEventListener('click', () => {
+            const hiddenBtn = document.getElementById('btnAppendRecord');
+            if (hiddenBtn) hiddenBtn.click();
+        });
+
+        // Insertar después del header de paciente/placeholder/banner original
+        const anchor = editor.querySelector('.patient-data-header') ||
+                       editor.querySelector('.patient-placeholder-banner') ||
+                       editor.querySelector('.original-text-banner');
+        if (anchor) {
+            anchor.after(wrap);
+        } else {
+            editor.insertBefore(wrap, editor.firstChild);
+        }
+    };
 
     // Limpiar borde rojo al escribir
     document.getElementById('reqPatientName')?.addEventListener('input', (e) => {
@@ -644,6 +698,9 @@ window.initModals = function () {
                 btnAppendRecord.classList.remove('recording-pulse');
                 btnAppendRecord.title = 'Grabar y agregar texto al final del informe';
                 if (_appendTimer) clearInterval(_appendTimer);
+                // Sincronizar botón inline
+                window._appendRecordingActive = false;
+                _syncInlineAppendBtn();
                 return;
             }
 
@@ -711,6 +768,9 @@ window.initModals = function () {
                 _appendRecording = true;
                 btnAppendRecord.classList.add('recording-pulse');
                 btnAppendRecord.title = '⏹ Detener grabación';
+                // Sincronizar botón inline
+                window._appendRecordingActive = true;
+                _syncInlineAppendBtn();
 
                 // Timer visual en toast
                 _appendStartTime = Date.now();
@@ -727,6 +787,23 @@ window.initModals = function () {
                 if (typeof showToast === 'function') showToast('❌ No se pudo acceder al micrófono', 'error');
             }
         });
+
+        // Sincronizar estado visual del botón inline con la grabación
+        function _syncInlineAppendBtn() {
+            const inlineBtn = document.querySelector('.btn-append-inline button');
+            if (!inlineBtn) return;
+            if (window._appendRecordingActive) {
+                inlineBtn.classList.add('recording-pulse');
+                inlineBtn.classList.remove('btn-pro-animated');
+                const span = inlineBtn.querySelector('span');
+                if (span) span.textContent = '⏹ Grabando…';
+            } else {
+                inlineBtn.classList.remove('recording-pulse');
+                inlineBtn.classList.add('btn-pro-animated');
+                const span = inlineBtn.querySelector('span');
+                if (span) span.textContent = '🎙️ Grabar y agregar +';
+            }
+        }
     }
 
     // Escape key — close any open modal

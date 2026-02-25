@@ -104,10 +104,9 @@ window.updateButtonsVisibility = function (state) {
         tAndSBtn.disabled = tBtn ? tBtn.disabled : true;
     }
 
-    // Botón "Continuar grabando" (Pro only): visible tras transcripción/estructurado
-    const btnAppendRecord = document.getElementById('btnAppendRecord');
-    if (btnAppendRecord) {
-        btnAppendRecord.style.display = (isProMode && isTranscribed) ? 'inline-flex' : 'none';
+    // Botón "Continuar grabando" (Pro only): insertado inline en el editor
+    if (typeof window._insertInlineAppendBtn === 'function') {
+        window._insertInlineAppendBtn();
     }
 
     // Botón "Original" — visible tras estructurar para alternar vista

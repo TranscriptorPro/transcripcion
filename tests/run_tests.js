@@ -1695,40 +1695,35 @@ test('editor.js — deleteFieldSection elimina nodos vacíos residuales', () => 
     assert(code.includes('nextNode') || code.includes('nextSibling'), 'Debe limpiar nodos vacíos entre secciones');
 });
 
-test('index.html — botón btnAppendRecord existe', () => {
+test('index.html — botón btnAppendRecord existe (oculto en toolbar)', () => {
     const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
     assert(html.includes('id="btnAppendRecord"'), 'Debe tener botón continuar grabando');
+    assert(html.includes('display:none!important'), 'btnAppendRecord debe estar oculto permanentemente en toolbar');
 });
 
-test('ui.js — lógica de append recording', () => {
+test('ui.js — lógica de append recording + inline button', () => {
     const code = fs.readFileSync(path.join(root, 'src/js/utils/ui.js'), 'utf-8');
     assert(code.includes('btnAppendRecord'), 'ui.js debe referenciar btnAppendRecord');
     assert(code.includes('_appendRecording'), 'Debe trackear estado de grabación append');
     assert(code.includes('appendMediaRecorder') || code.includes('_appendMediaRecorder'), 'Debe tener MediaRecorder para append');
+    assert(code.includes('_insertInlineAppendBtn'), 'Debe tener función de inserción inline del botón append');
+    assert(code.includes('_appendRecordingActive'), 'Debe sincronizar estado de grabación con botón inline');
+    assert(code.includes('_syncInlineAppendBtn'), 'Debe tener función de sincronización visual');
+    assert(code.includes('btn-append-inline'), 'Debe usar clase btn-append-inline');
 });
 
-test('State Machine — btnAppendRecord oculto en modo Normal', () => {
-    const mock = createMockDOM();
-    window.currentMode = 'normal';
-    updateButtonsVisibility('TRANSCRIBED');
-    assertEqual(mock.elements.btnAppendRecord.style.display, 'none', 'Append oculto en Normal');
-    mock.restore();
+test('State Machine — append inline invocado desde stateManager', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/utils/stateManager.js'), 'utf-8');
+    assert(code.includes('_insertInlineAppendBtn'), 'stateManager debe llamar a _insertInlineAppendBtn');
 });
 
-test('State Machine — btnAppendRecord visible en Pro tras TRANSCRIBED', () => {
-    const mock = createMockDOM();
-    window.currentMode = 'pro';
-    updateButtonsVisibility('TRANSCRIBED');
-    assertEqual(mock.elements.btnAppendRecord.style.display, 'inline-flex', 'Append visible en Pro+TRANSCRIBED');
-    mock.restore();
-});
-
-test('State Machine — btnAppendRecord visible en Pro tras STRUCTURED', () => {
-    const mock = createMockDOM();
-    window.currentMode = 'pro';
-    updateButtonsVisibility('STRUCTURED');
-    assertEqual(mock.elements.btnAppendRecord.style.display, 'inline-flex', 'Append visible en Pro+STRUCTURED');
-    mock.restore();
+test('CSS — botón append inline oculto en @media print', () => {
+    const css = fs.readFileSync(path.join(root, 'src/css/components.css'), 'utf-8');
+    assert(css.includes('btn-append-inline'), 'CSS debe contener estilos para btn-append-inline');
+    // Verificar que está en @media print
+    const printIdx = css.indexOf('@media print');
+    const printBlock = css.slice(printIdx, css.indexOf('}', css.indexOf('}', printIdx) + 1) + 1);
+    assert(printBlock.includes('btn-append-inline'), 'btn-append-inline debe estar oculto en @media print');
 });
 
 test('ui.js — restoreAutoSave usa botón btnRestoreSession', () => {

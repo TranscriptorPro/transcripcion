@@ -1218,14 +1218,8 @@
                                 <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
                             </svg>
                         </button>
-                        <!-- Botón continuar grabando (Pro only) — append audio al final del informe -->
-                        <button class="btn btn-pro-animated" id="btnAppendRecord" style="display:none;position:relative;padding:0.45rem 0.55rem;border-radius:8px;" title="Grabar y agregar texto al final del informe">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
-                                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-                                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
-                            </svg>
-                            <span style="font-size:0.65rem;font-weight:700;position:absolute;bottom:2px;right:2px;color:#0f766e;">+</span>
-                        </button>
+                        <!-- Botón continuar grabando (Pro only) — lógica JS, permanece oculto en toolbar -->
+                        <button class="btn" id="btnAppendRecord" style="display:none!important;" aria-hidden="true"></button>
                         <div class="dropdown-container" id="downloadBtnContainer" style="display:none;">
                             <div class="download-split">
                                 <button class="btn btn-accent btn-download-main" id="downloadBtnMain" title="Descargar formato favorito">

@@ -1375,6 +1375,39 @@
             border-color: rgba(16,185,129,0.4);
         }
 
+        /* Botón inline "Grabar y agregar" dentro del editor (Pro only) */
+        .btn-append-inline {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.75rem;
+            user-select: none;
+        }
+        .btn-append-inline button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-append-inline button:hover {
+            transform: scale(1.04);
+            box-shadow: 0 3px 14px rgba(66,133,244,0.35), 0 0 20px rgba(155,114,203,0.2);
+        }
+        .btn-append-inline button.recording-pulse {
+            animation: recordingPulse 1s ease infinite !important;
+            background: #ef4444 !important;
+            color: #fff !important;
+        }
+        @keyframes recordingPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.5); }
+            50% { box-shadow: 0 0 0 10px rgba(239,68,68,0); }
+        }
+
         /* Toggle comparison button (Original / Estructurado) */
         .toggle-comparison-btn {
             font-size: 0.75rem !important;
@@ -1512,7 +1545,8 @@
             .find-replace-panel,
             .tabs-container,
             .editor-actions,
-            #editorToolbar {
+            #editorToolbar,
+            .btn-append-inline {
                 display: none !important;
             }
         }
