@@ -199,6 +199,45 @@ window.initModals = function () {
     if (closePdfConfig) closePdfConfig.addEventListener('click', closePdfConfigModal);
     if (btnClosePdfConfig) btnClosePdfConfig.addEventListener('click', closePdfConfigModal);
 
+    // Mostrar/ocultar detalles del lugar al seleccionar del dropdown
+    const wpSelect = document.getElementById('pdfWorkplace');
+    const wpDetailsPanel = document.getElementById('workplaceDetailsPanel');
+    if (wpSelect && wpDetailsPanel) {
+        wpSelect.addEventListener('change', () => {
+            // Mostrar detalles solo si se seleccionó un lugar
+            wpDetailsPanel.style.display = wpSelect.value ? '' : 'none';
+        });
+    }
+
+    // Botón Agregar lugar: muestra panel de detalles vacío para crear uno nuevo
+    const btnAddWp = document.getElementById('btnAddWorkplace');
+    if (btnAddWp && wpDetailsPanel) {
+        // El listener de agregar ya existe en business.js — aquí solo aseguramos que el panel se muestre
+        btnAddWp.addEventListener('click', () => {
+            wpDetailsPanel.style.display = '';
+        });
+    }
+
+    // Tipo de estudio: si elige "Otro", mostrar un input de texto libre
+    const studyTypeSelect = document.getElementById('pdfStudyType');
+    if (studyTypeSelect) {
+        studyTypeSelect.addEventListener('change', () => {
+            const hint = document.getElementById('pdfStudyTypeHint');
+            if (studyTypeSelect.value === '__other__') {
+                const custom = prompt('Ingrese el tipo de estudio:');
+                if (custom && custom.trim()) {
+                    // Agregar opción temporal
+                    const opt = document.createElement('option');
+                    opt.value = custom.trim();
+                    opt.textContent = custom.trim();
+                    studyTypeSelect.insertBefore(opt, studyTypeSelect.querySelector('[value="__other__"]'));
+                    studyTypeSelect.value = custom.trim();
+                }
+                if (hint) hint.style.display = 'none';
+            }
+        });
+    }
+
     // Logo y firma: registrar listeners de carga de imagen
     if (typeof handleImageUpload === 'function') {
         handleImageUpload('pdfLogoUpload',      'pdfLogoPreview',      'pdf_logo');
@@ -215,14 +254,18 @@ window.initModals = function () {
                 const nom = gv('pdfProfName');
                 const mat = gv('pdfProfMatricula');
                 const esp = gv('pdfProfEspecialidad');
-                const inst = document.getElementById('pdfInstitutionName')?.value;
                 const col  = document.getElementById('pdfHeaderColor')?.value;
                 if (nom)  profD.nombre          = nom;
                 if (mat)  profD.matricula        = mat;
                 if (esp)  profD.especialidad     = esp;
-                if (inst != null) profD.institutionName = inst;
                 if (col  != null) profD.headerColor     = col;
                 localStorage.setItem('prof_data', JSON.stringify(profD));
+            }
+            // Color del encabezado: guardarlo siempre en prof_data (visible para todos en pestaña Formato)
+            if (!(typeof isAdminUser === 'function' && isAdminUser())) {
+                const profD = JSON.parse(localStorage.getItem('prof_data') || '{}');
+                const col = document.getElementById('pdfHeaderColor')?.value;
+                if (col) { profD.headerColor = col; localStorage.setItem('prof_data', JSON.stringify(profD)); }
             }
             // M-2: cerrar el modal después de guardar
             closePdfConfigModal();

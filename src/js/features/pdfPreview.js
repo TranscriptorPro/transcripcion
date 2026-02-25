@@ -31,44 +31,81 @@ window.openPdfConfigModal = function () {
 
     const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+    const isAdmin = typeof isAdminUser === 'function' && isAdminUser();
+    const isPro = window.currentMode === 'pro';
 
+    // ── Datos del profesional (locked para no-admin) ──
     set('pdfProfName', profData.nombre);
     set('pdfProfMatricula', profData.matricula);
     const specs = Array.isArray(profData.specialties) ? profData.specialties.join(' / ') : (profData.especialidad || '');
     set('pdfProfEspecialidad', specs);
 
-    if (typeof isAdminUser === 'function' && isAdminUser()) {
-        const fields = ['pdfProfName', 'pdfProfMatricula', 'pdfProfEspecialidad'];
-        fields.forEach(id => {
+    if (isAdmin) {
+        ['pdfProfName', 'pdfProfMatricula', 'pdfProfEspecialidad'].forEach(id => {
             const el = document.getElementById(id);
             if (el) {
-                el.readOnly = false;
-                el.disabled = false;
+                el.readOnly = false; el.disabled = false;
                 el.style.backgroundColor = '';
                 el.closest('.field-group')?.classList.remove('locked');
             }
         });
-        // Admin: cargar campos de encabezado personalizado
-        const adminSec = document.getElementById('adminLetterheadSection');
-        if (adminSec) adminSec.style.display = '';
-        const setA = (id, v) => { const el = document.getElementById(id); if (el && v != null) el.value = v; };
-        setA('pdfInstitutionName', profData.institutionName);
-        setA('pdfHeaderColor', profData.headerColor || '#1a56a0');
     }
 
-    // Siempre limpiar datos del paciente y re-extraer desde el editor actual
+    // ── Color del encabezado (ahora en pestaña Formato, visible para todos) ──
+    const headerColorEl = document.getElementById('pdfHeaderColor');
+    if (headerColorEl) headerColorEl.value = profData.headerColor || '#1a56a0';
+
+    // ── Lugar de trabajo: botón Agregar solo para Pro ──
+    const btnAdd = document.getElementById('btnAddWorkplace');
+    if (btnAdd) btnAdd.style.display = isPro ? '' : 'none';
+
+    // ── Panel de detalles del lugar: oculto por defecto ──
+    const detailsPanel = document.getElementById('workplaceDetailsPanel');
+    if (detailsPanel) detailsPanel.style.display = 'none';
+
+    // ── Poblar dropdown de Tipo de Estudio con las plantillas ──
+    const studyTypeSelect = document.getElementById('pdfStudyType');
+    if (studyTypeSelect && studyTypeSelect.options.length <= 1) {
+        // Solo poblar una vez
+        const templates = window.MEDICAL_TEMPLATES || {};
+        const names = Object.values(templates).map(t => t.name).filter(Boolean).sort();
+        const unique = [...new Set(names)];
+        unique.forEach(name => {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            studyTypeSelect.appendChild(opt);
+        });
+        // Opción "Otro" para escribir manualmente
+        const otherOpt = document.createElement('option');
+        otherOpt.value = '__other__';
+        otherOpt.textContent = 'Otro (escribir manualmente)';
+        studyTypeSelect.appendChild(otherOpt);
+    }
+
+    // ── En modo Pro: autoseleccionar tipo de estudio desde plantilla detectada ──
+    if (isPro && window.selectedTemplate && window.MEDICAL_TEMPLATES?.[window.selectedTemplate]) {
+        const tplName = window.MEDICAL_TEMPLATES[window.selectedTemplate].name || '';
+        if (studyTypeSelect && tplName) {
+            studyTypeSelect.value = tplName;
+            const hint = document.getElementById('pdfStudyTypeHint');
+            if (hint) { hint.textContent = '✨ Auto-detectado desde la plantilla'; hint.style.display = ''; }
+        }
+    }
+
+    // ── Datos del paciente: extraer del editor ──
     const editorForExtract = window.editor || document.getElementById('editor');
     const freshExtract = (editorForExtract && typeof extractPatientDataFromText === 'function')
         ? extractPatientDataFromText(editorForExtract.innerText) : {};
     ['pdfPatientName','pdfPatientDni','pdfPatientAge','pdfPatientSex',
      'pdfPatientInsurance','pdfPatientAffiliateNum','pdfPatientPhone','pdfPatientBirthdate']
         .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-    if (freshExtract.name) { const el = document.getElementById('pdfPatientName'); if (el) el.value = freshExtract.name; }
-    if (freshExtract.dni)  { const el = document.getElementById('pdfPatientDni');  if (el) el.value = freshExtract.dni; }
-    if (freshExtract.age)  { const el = document.getElementById('pdfPatientAge');  if (el) el.value = freshExtract.age; }
-    if (freshExtract.sex)  { const el = document.getElementById('pdfPatientSex');  if (el) el.value = freshExtract.sex; }
+    if (freshExtract.name) set('pdfPatientName', freshExtract.name);
+    if (freshExtract.dni)  set('pdfPatientDni',  freshExtract.dni);
+    if (freshExtract.age)  set('pdfPatientAge',  freshExtract.age);
+    if (freshExtract.sex)  set('pdfPatientSex',  freshExtract.sex);
 
-    // Fallback: si los campos pdfPatient* siguen vacíos, copiar desde los campos req* del formulario de paciente
+    // Fallback desde formulario req*
     const rVal = (id) => document.getElementById(id)?.value?.trim() || '';
     const fillIfEmpty = (pdfId, reqId) => {
         const pdfEl = document.getElementById(pdfId);
@@ -81,14 +118,7 @@ window.openPdfConfigModal = function () {
     fillIfEmpty('pdfPatientInsurance',   'reqPatientInsurance');
     fillIfEmpty('pdfPatientAffiliateNum','reqPatientAffiliateNum');
 
-    if (window.currentMode === 'pro' && window.selectedTemplate && window.MEDICAL_TEMPLATES?.[window.selectedTemplate]) {
-        const studyTypeEl = document.getElementById('pdfStudyType');
-        if (studyTypeEl && !studyTypeEl.value) {
-            studyTypeEl.value = window.MEDICAL_TEMPLATES[window.selectedTemplate].name || '';
-        }
-    }
-
-    if (window.currentMode === 'pro' && window.editor && window.editor.innerText.trim().length > 0) {
+    if (isPro && window.editor && window.editor.innerText.trim().length > 0) {
         if (typeof extractPatientDataFromText === 'function') {
             const extracted = extractPatientDataFromText(window.editor.innerText);
             const setIfEmpty = (id, v) => {
@@ -103,16 +133,15 @@ window.openPdfConfigModal = function () {
         }
     }
 
+    // ── Informe Nº, fecha y hora ──
     const reportNumEl = document.getElementById('pdfReportNumber');
     if (reportNumEl && !reportNumEl.value && typeof generateReportNumber === 'function') {
         reportNumEl.value = generateReportNumber();
     }
-
     const studyDateEl = document.getElementById('pdfStudyDate');
     if (studyDateEl && !studyDateEl.value) {
         studyDateEl.value = new Date().toISOString().split('T')[0];
     }
-
     const studyTimeEl = document.getElementById('pdfStudyTime');
     if (studyTimeEl && !studyTimeEl.value) {
         const now = new Date();
@@ -123,7 +152,7 @@ window.openPdfConfigModal = function () {
     if (typeof populateWorkplaceDropdown === 'function') populateWorkplaceDropdown();
     if (typeof populatePatientDatalist === 'function') populatePatientDatalist();
 
-    // Restaurar profesional activo y sincronizar los selectores
+    // Restaurar profesional activo
     const pdfCfgRestore = JSON.parse(localStorage.getItem('pdf_config') || '{}');
     const activeProRestore = pdfCfgRestore.activeProfessional;
     if (activeProRestore) {
@@ -147,27 +176,23 @@ window.openPdfConfigModal = function () {
         }
     }
 
-    // M-4/M-5: Admin ve todo editable; usuario solo ve toggles (sin edición de encabezado/pie/firma)
-    const isAdmin = typeof isAdminUser === 'function' && isAdminUser();
-    // Campos cuya edición es exclusiva del admin
-    const adminOnlyFields = [
-        'pdfLogoUpload',          // carga de logo
-        'pdfSignatureUpload',     // carga de firma
-        'pdfSignaturePreview',    // preview de firma
-        'pdfFooterText',          // texto del pie
-        'pdfInstitutionName',     // institución
-        'pdfHeaderColor',         // color encabezado
-    ];
-    adminOnlyFields.forEach(id => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        // Subir un nivel al field-group padre para ocultarlo completo (label + input)
-        const group = el.closest('.field-group') || el;
-        group.style.display = isAdmin ? '' : 'none';
-    });
-    // Logo preview también
-    const logoPreview = document.getElementById('pdfLogoPreview');
-    if (logoPreview) logoPreview.style.display = isAdmin ? '' : 'none';
+    // ── Firma: upload solo admin, info para usuario ──
+    const sigUploadGroup = document.getElementById('signatureUploadGroup');
+    const sigInfoUser    = document.getElementById('signatureInfoUser');
+    if (sigUploadGroup) sigUploadGroup.style.display = isAdmin ? '' : 'none';
+    if (sigInfoUser)    sigInfoUser.style.display    = isAdmin ? 'none' : '';
+
+    // ── Logo upload: solo visible al agregar lugar nuevo (en el panel de detalles) ──
+    // No se oculta globalmente aquí porque el panel entero ya está oculto
+
+    // ── Restaurar tipo de estudio desde config guardada ──
+    if (studyTypeSelect && pdfCfgRestore.studyType) {
+        // Intentar seleccionar del dropdown
+        const opts = Array.from(studyTypeSelect.options).map(o => o.value);
+        if (opts.includes(pdfCfgRestore.studyType)) {
+            studyTypeSelect.value = pdfCfgRestore.studyType;
+        }
+    }
 
     document.getElementById('pdfModalOverlay')?.classList.add('active');
 }

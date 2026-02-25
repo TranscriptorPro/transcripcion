@@ -202,20 +202,6 @@
                                     <input type="text" id="pdfProfEspecialidad" readonly disabled placeholder="---">
                                 </div>
                             </div>
-                            <!-- Admin: encabezado personalizado -->
-                            <div id="adminLetterheadSection" style="display:none;">
-                                <div class="field-group">
-                                    <label>🏥 Institución / Consultorio</label>
-                                    <input type="text" id="pdfInstitutionName" placeholder="Ej: Centro Médico San Martín">
-                                </div>
-                                <div class="field-group">
-                                    <label>🎨 Color del encabezado del informe</label>
-                                    <div style="display:flex;align-items:center;gap:0.75rem;">
-                                        <input type="color" id="pdfHeaderColor" value="#1a56a0" style="width:44px;height:32px;padding:2px;border-radius:4px;cursor:pointer;border:1px solid var(--border);">
-                                        <span style="font-size:0.8rem;color:var(--text-secondary);">Barra superior, líneas divisorias y texto de secciones</span>
-                                    </div>
-                                </div>
-                            </div>
                             <div class="field-group has-btn">
                                 <div style="flex:1">
                                     <label>🏥 Lugar de trabajo</label>
@@ -223,7 +209,7 @@
                                         <option value="">Seleccionar lugar...</option>
                                     </select>
                                 </div>
-                                <button class="btn-sm" id="btnAddWorkplace" title="Agregar nuevo lugar">+ Agregar</button>
+                                <button class="btn-sm btn-pro-only-feature" id="btnAddWorkplace" title="Agregar nuevo lugar (solo Pro)" style="display:none;">+ Agregar</button>
                             </div>
                             <div class="field-group has-btn" id="pdfProfessionalGroup" style="display:none;">
                                 <div style="flex:1">
@@ -232,26 +218,29 @@
                                         <option value="">Seleccionar profesional...</option>
                                     </select>
                                 </div>
-                                <button class="btn-sm" id="btnManageProfessionals" title="Agregar / editar profesionales de este lugar">Gestionar</button>
+                                <button class="btn-sm" id="btnManageProfessionals" title="Gestionar profesionales">Gestionar</button>
                             </div>
-                            <div class="field-group">
-                                <label>📍 Dirección</label>
-                                <input type="text" id="pdfWorkplaceAddress" placeholder="Dirección del lugar de trabajo">
-                            </div>
-                            <div class="field-row">
+                            <!-- Campos de detalle del lugar: se muestran al seleccionar un lugar o al agregar uno nuevo -->
+                            <div id="workplaceDetailsPanel" style="display:none;">
                                 <div class="field-group">
-                                    <label>📞 Teléfono</label>
-                                    <input type="text" id="pdfWorkplacePhone" placeholder="Teléfono del consultorio">
+                                    <label>📍 Dirección</label>
+                                    <input type="text" id="pdfWorkplaceAddress" placeholder="Dirección del lugar de trabajo">
                                 </div>
-                                <div class="field-group">
-                                    <label>📧 Email</label>
-                                    <input type="email" id="pdfWorkplaceEmail" placeholder="Email profesional">
+                                <div class="field-row">
+                                    <div class="field-group">
+                                        <label>📞 Teléfono</label>
+                                        <input type="text" id="pdfWorkplacePhone" placeholder="Teléfono del consultorio">
+                                    </div>
+                                    <div class="field-group">
+                                        <label>📧 Email</label>
+                                        <input type="email" id="pdfWorkplaceEmail" placeholder="Email profesional">
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="field-group">
-                                <label>🖼️ Logo (opcional)</label>
-                                <input type="file" id="pdfLogoUpload" accept="image/*">
-                                <div id="pdfLogoPreview" class="logo-preview"></div>
+                                <div class="field-group" id="logoUploadGroup">
+                                    <label>🖼️ Logo (opcional)</label>
+                                    <input type="file" id="pdfLogoUpload" accept="image/*">
+                                    <div id="pdfLogoPreview" class="logo-preview"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -261,7 +250,10 @@
                         <div class="pdf-config-section">
                             <div class="field-group">
                                 <label>Tipo de estudio</label>
-                                <input type="text" id="pdfStudyType" placeholder="Auto desde plantilla en Pro / Manual en Normal">
+                                <select id="pdfStudyType">
+                                    <option value="">— Seleccionar tipo —</option>
+                                </select>
+                                <small id="pdfStudyTypeHint" style="display:none;"></small>
                             </div>
                             <div class="field-row">
                                 <div class="field-group">
@@ -287,7 +279,7 @@
                             </div>
                             <div class="field-group">
                                 <label>Técnica (opcional)</label>
-                                <textarea id="pdfTechnique" rows="2" placeholder="Auto desde plantilla en Pro / Manual en Normal"></textarea>
+                                <textarea id="pdfTechnique" rows="2" placeholder="Descripción de la técnica utilizada"></textarea>
                             </div>
                             <div class="field-group">
                                 <label>Informe Nº</label>
@@ -300,6 +292,13 @@
                     <!-- TAB 3: Formato del archivo -->
                     <div class="config-tab-panel" id="cfgTabFormat">
                         <div class="pdf-config-section">
+                            <div class="field-group">
+                                <label>🎨 Color del encabezado del informe</label>
+                                <div style="display:flex;align-items:center;gap:0.75rem;">
+                                    <input type="color" id="pdfHeaderColor" value="#1a56a0" style="width:44px;height:32px;padding:2px;border-radius:4px;cursor:pointer;border:1px solid var(--border);">
+                                    <span style="font-size:0.8rem;color:var(--text-secondary);">Barra superior, líneas divisorias y texto de secciones</span>
+                                </div>
+                            </div>
                             <div class="field-row">
                                 <div class="field-group">
                                     <label>Tamaño de papel</label>
@@ -376,11 +375,16 @@
                                 <label><input type="checkbox" id="pdfShowSignName" checked> Incluir nombre debajo de firma</label>
                                 <label><input type="checkbox" id="pdfShowSignMatricula" checked> Incluir matrícula debajo de firma</label>
                             </div>
-                            <div class="field-group" style="margin-top:0.75rem;">
+                            <!-- Firma digital: solo visible para admin (preconfigurada en el clon) -->
+                            <div class="field-group admin-only-field" id="signatureUploadGroup" style="margin-top:0.75rem; display:none;">
                                 <label>Firma digital (imagen PNG transparente)</label>
                                 <input type="file" id="pdfSignatureUpload" accept="image/png">
                                 <div id="pdfSignaturePreview" class="signature-preview"></div>
-                                <small>Suba una imagen de su firma escaneada (fondo transparente recomendado)</small>
+                                <small>Solo administradores: se preconfigura al generar el clon de la app</small>
+                            </div>
+                            <!-- Info para usuario normal -->
+                            <div id="signatureInfoUser" style="margin-top:0.75rem;">
+                                <small style="color:var(--text-secondary);">💡 La firma digital se configura por el administrador al preparar su copia de la app.</small>
                             </div>
                         </div>
                     </div>
