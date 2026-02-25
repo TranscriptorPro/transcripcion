@@ -155,8 +155,8 @@ function setMode(mode, notify = false) {
         if (notify && typeof showToast !== 'undefined') showToast('Modo Pro ✨ activado', 'success');
     }
 
-    if (typeof updateButtonsVisibility !== 'undefined' && typeof appState !== 'undefined') {
-        updateButtonsVisibility(appState);
+    if (typeof updateButtonsVisibility !== 'undefined') {
+        updateButtonsVisibility(window.appState || 'IDLE');
     }
     updateUIByMode();
 }

@@ -966,7 +966,21 @@ async function startTests() {
 
     // Esperar a que el iframe cargue completamente
     await new Promise((resolve) => {
+        appFrame.onload = () => setTimeout(resolve, 2000);
+    });
+
+    // ── Paso 2b: Desregistrar SW que la app acaba de registrar y forzar recarga limpia ──
+    try {
+        const iframeRegs = await appFrame.contentWindow.navigator.serviceWorker.getRegistrations();
+        for (const reg of iframeRegs) await reg.unregister();
+        const iframeCaches = await appFrame.contentWindow.caches.keys();
+        for (const name of iframeCaches) await appFrame.contentWindow.caches.delete(name);
+    } catch(e) { console.warn('iframe SW cleanup:', e); }
+
+    // Recargar forzando bypass de HTTP cache (true = forceReload)
+    await new Promise((resolve) => {
         appFrame.onload = () => setTimeout(resolve, 3500);
+        appFrame.contentWindow.location.reload(true);
     });
 
     // Capturar errores de consola del iframe
