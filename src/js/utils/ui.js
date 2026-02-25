@@ -185,6 +185,17 @@ window.initModals = function () {
 
     const closePdfConfigModal = () => pdfModalOverlay?.classList.remove('active');
 
+    // Config tabs switching
+    document.querySelectorAll('.config-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.config-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.config-tab-panel').forEach(p => p.classList.remove('active'));
+            tab.classList.add('active');
+            const panel = document.getElementById(tab.dataset.tab);
+            if (panel) panel.classList.add('active');
+        });
+    });
+
     if (closePdfConfig) closePdfConfig.addEventListener('click', closePdfConfigModal);
     if (btnClosePdfConfig) btnClosePdfConfig.addEventListener('click', closePdfConfigModal);
 

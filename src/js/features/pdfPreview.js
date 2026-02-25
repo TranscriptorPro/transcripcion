@@ -1,5 +1,24 @@
 // ============ PDF MODAL & PRINT PREVIEW HANDLER ============
 
+/**
+ * Genera un código QR como data URL (imagen PNG base64).
+ * Usa qrcode-generator (CDN). Retorna un dataURL o '' si falla.
+ * @param {string} text - Texto a codificar
+ * @returns {string} data:image/gif;base64,...
+ */
+window.generateQRCode = function (text) {
+    try {
+        if (typeof qrcode !== 'function') return '';
+        const qr = qrcode(0, 'M');
+        qr.addData(text || 'Transcriptor Médico Pro');
+        qr.make();
+        return qr.createDataURL(4, 0);
+    } catch (e) {
+        console.warn('QR generation failed:', e);
+        return '';
+    }
+};
+
 window.updatePdfModalByMode = function () {
     const proElements = document.querySelectorAll('.pro-only');
     proElements.forEach(el => {
@@ -300,6 +319,27 @@ window.openPrintPreview = function () {
         if (config.showPageNum) parts.push(`<span style="margin-left:auto;">Página 1</span>`);
         footerEl.innerHTML = parts.length ? `<div class="pvf-wrap">${parts.join('')}</div>` : '';
         footerEl.style.display = parts.length ? '' : 'none';
+    }
+
+    // ── CÓDIGO QR DE VERIFICACIÓN ─────────────────────────────────
+    const qrEl = document.getElementById('previewQR');
+    if (qrEl) {
+        const showQR = config.showQR ?? false;
+        if (showQR && typeof generateQRCode === 'function') {
+            const qrData = [
+                reportNum   ? `Informe: ${reportNum}`   : '',
+                studyDate   ? `Fecha: ${studyDate}`      : '',
+                profName    ? `Prof: ${profName}`         : '',
+                patientName ? `Paciente: ${patientName}` : '',
+            ].filter(Boolean).join(' | ');
+            const qrImgSrc = generateQRCode(qrData || 'Transcriptor Médico Pro');
+            qrEl.innerHTML = `<img src="${qrImgSrc}" alt="QR" style="width:80px;height:80px;">
+                <span style="font-size:0.6rem;color:#888;display:block;text-align:center;">Verificación</span>`;
+            qrEl.style.display = '';
+        } else {
+            qrEl.innerHTML = '';
+            qrEl.style.display = 'none';
+        }
     }
 
     document.getElementById('printPreviewOverlay')?.classList.add('active');

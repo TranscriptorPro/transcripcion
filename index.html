@@ -17,6 +17,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
     <link rel="stylesheet" href="src/css/variables.css">
     <link rel="stylesheet" href="src/css/animations.css">
     <link rel="stylesheet" href="src/css/base.css">
@@ -157,235 +158,230 @@
             </div>
         </div>
 
-        <!-- PDF Config Modal (New Comprehensive) -->
+        <!-- Config Informe Modal (Tabs) -->
         <div class="modal-overlay" id="pdfModalOverlay">
             <div class="modal" style="max-width: 680px; display: flex; flex-direction: column; max-height: 92vh;">
                 <div class="modal-header">
-                    <h2>🖨️ Configurar Impresión</h2>
+                    <h2>⚙️ Configurar Informe</h2>
                     <button class="modal-close" id="closePdfConfig">&times;</button>
                 </div>
-                <div class="pdf-config-modal-body">
-                    <!-- Profile Bar -->
-                    <div class="profile-bar">
-                        <div class="profile-bar-row">
-                            <select id="profileSelector" class="profile-select" title="Perfiles guardados">
-                                <option value="">— Seleccionar perfil —</option>
-                            </select>
-                            <button class="btn-profile" id="btnSaveAsProfile" title="Guardar configuración actual como perfil">💾 Guardar</button>
-                            <button class="btn-profile" id="btnUpdateProfile" title="Actualizar perfil seleccionado" style="display:none;">🔄</button>
-                            <button class="btn-profile btn-profile-star" id="btnSetDefaultProfile" title="Marcar como predeterminado" style="display:none;">⭐</button>
-                            <button class="btn-profile btn-profile-danger" id="btnDeleteProfile" title="Eliminar perfil" style="display:none;">🗑️</button>
-                        </div>
+                <!-- Profile Bar (siempre visible) -->
+                <div class="profile-bar" style="padding: 0.5rem 1.5rem; border-bottom: 1px solid var(--border);">
+                    <div class="profile-bar-row">
+                        <select id="profileSelector" class="profile-select" title="Perfiles guardados">
+                            <option value="">— Seleccionar perfil —</option>
+                        </select>
+                        <button class="btn-profile" id="btnSaveAsProfile" title="Guardar configuración actual como perfil">💾 Guardar</button>
+                        <button class="btn-profile" id="btnUpdateProfile" title="Actualizar perfil seleccionado" style="display:none;">🔄</button>
+                        <button class="btn-profile btn-profile-star" id="btnSetDefaultProfile" title="Marcar como predeterminado" style="display:none;">⭐</button>
+                        <button class="btn-profile btn-profile-danger" id="btnDeleteProfile" title="Eliminar perfil" style="display:none;">🗑️</button>
                     </div>
-                    <!-- Section 1: Report Header -->
-                    <div class="pdf-config-section">
-                        <h3>📄 Encabezado del Informe</h3>
-                        <div class="field-group locked">
-                            <label>🔒 Profesional</label>
-                            <input type="text" id="pdfProfName" readonly disabled
-                                placeholder="[Sin datos profesionales]">
-                        </div>
-                        <div class="field-row">
+                </div>
+                <!-- Tabs de navegación -->
+                <div class="config-tabs">
+                    <button class="config-tab active" data-tab="cfgTabHeader">📄 Encabezado</button>
+                    <button class="config-tab" data-tab="cfgTabStudy">📝 Estudio</button>
+                    <button class="config-tab" data-tab="cfgTabFormat">🎨 Formato</button>
+                    <button class="config-tab" data-tab="cfgTabSignature">✍️ Firma</button>
+                </div>
+                <div class="pdf-config-modal-body">
+                    <!-- TAB 1: Encabezado del Informe -->
+                    <div class="config-tab-panel active" id="cfgTabHeader">
+                        <div class="pdf-config-section">
                             <div class="field-group locked">
-                                <label>🔒 Matrícula</label>
-                                <input type="text" id="pdfProfMatricula" readonly disabled placeholder="---">
+                                <label>🔒 Profesional</label>
+                                <input type="text" id="pdfProfName" readonly disabled placeholder="[Sin datos profesionales]">
                             </div>
-                            <div class="field-group locked">
-                                <label>🔒 Especialidad</label>
-                                <input type="text" id="pdfProfEspecialidad" readonly disabled placeholder="---">
-                            </div>
-                        </div>
-                        <!-- Admin: encabezado personalizado -->
-                        <div id="adminLetterheadSection" style="display:none;">
-                            <div class="field-group">
-                                <label>🏥 Institución / Consultorio</label>
-                                <input type="text" id="pdfInstitutionName" placeholder="Ej: Centro Médico San Martín">
-                            </div>
-                            <div class="field-group">
-                                <label>🎨 Color del encabezado del informe</label>
-                                <div style="display:flex;align-items:center;gap:0.75rem;">
-                                    <input type="color" id="pdfHeaderColor" value="#1a56a0" style="width:44px;height:32px;padding:2px;border-radius:4px;cursor:pointer;border:1px solid var(--border);">
-                                    <span style="font-size:0.8rem;color:var(--text-secondary);">Barra superior, líneas divisorias y texto de secciones</span>
+                            <div class="field-row">
+                                <div class="field-group locked">
+                                    <label>🔒 Matrícula</label>
+                                    <input type="text" id="pdfProfMatricula" readonly disabled placeholder="---">
+                                </div>
+                                <div class="field-group locked">
+                                    <label>🔒 Especialidad</label>
+                                    <input type="text" id="pdfProfEspecialidad" readonly disabled placeholder="---">
                                 </div>
                             </div>
-                        </div>
-                        <div class="field-group has-btn">
-                            <div style="flex:1">
-                                <label>🏥 Lugar de trabajo</label>
-                                <select id="pdfWorkplace">
-                                    <option value="">Seleccionar lugar...</option>
-                                </select>
+                            <!-- Admin: encabezado personalizado -->
+                            <div id="adminLetterheadSection" style="display:none;">
+                                <div class="field-group">
+                                    <label>🏥 Institución / Consultorio</label>
+                                    <input type="text" id="pdfInstitutionName" placeholder="Ej: Centro Médico San Martín">
+                                </div>
+                                <div class="field-group">
+                                    <label>🎨 Color del encabezado del informe</label>
+                                    <div style="display:flex;align-items:center;gap:0.75rem;">
+                                        <input type="color" id="pdfHeaderColor" value="#1a56a0" style="width:44px;height:32px;padding:2px;border-radius:4px;cursor:pointer;border:1px solid var(--border);">
+                                        <span style="font-size:0.8rem;color:var(--text-secondary);">Barra superior, líneas divisorias y texto de secciones</span>
+                                    </div>
+                                </div>
                             </div>
-                            <button class="btn-sm" id="btnAddWorkplace" title="Agregar nuevo lugar">+ Agregar</button>
-                        </div>
-                        <!-- Selector de profesional (se muestra cuando el lugar tiene profesionales cargados) -->
-                        <div class="field-group has-btn" id="pdfProfessionalGroup" style="display:none;">
-                            <div style="flex:1">
-                                <label>🩺 Profesional del informe</label>
-                                <select id="pdfProfessional">
-                                    <option value="">Seleccionar profesional...</option>
-                                </select>
+                            <div class="field-group has-btn">
+                                <div style="flex:1">
+                                    <label>🏥 Lugar de trabajo</label>
+                                    <select id="pdfWorkplace">
+                                        <option value="">Seleccionar lugar...</option>
+                                    </select>
+                                </div>
+                                <button class="btn-sm" id="btnAddWorkplace" title="Agregar nuevo lugar">+ Agregar</button>
                             </div>
-                            <button class="btn-sm" id="btnManageProfessionals" title="Agregar / editar profesionales de este lugar">Gestionar</button>
-                        </div>
-                        <div class="field-group">
-                            <label>📍 Dirección</label>
-                            <input type="text" id="pdfWorkplaceAddress" placeholder="Dirección del lugar de trabajo">
-                        </div>
-                        <div class="field-row">
+                            <div class="field-group has-btn" id="pdfProfessionalGroup" style="display:none;">
+                                <div style="flex:1">
+                                    <label>🩺 Profesional del informe</label>
+                                    <select id="pdfProfessional">
+                                        <option value="">Seleccionar profesional...</option>
+                                    </select>
+                                </div>
+                                <button class="btn-sm" id="btnManageProfessionals" title="Agregar / editar profesionales de este lugar">Gestionar</button>
+                            </div>
                             <div class="field-group">
-                                <label>📞 Teléfono</label>
-                                <input type="text" id="pdfWorkplacePhone" placeholder="Teléfono del consultorio">
+                                <label>📍 Dirección</label>
+                                <input type="text" id="pdfWorkplaceAddress" placeholder="Dirección del lugar de trabajo">
+                            </div>
+                            <div class="field-row">
+                                <div class="field-group">
+                                    <label>📞 Teléfono</label>
+                                    <input type="text" id="pdfWorkplacePhone" placeholder="Teléfono del consultorio">
+                                </div>
+                                <div class="field-group">
+                                    <label>📧 Email</label>
+                                    <input type="email" id="pdfWorkplaceEmail" placeholder="Email profesional">
+                                </div>
                             </div>
                             <div class="field-group">
-                                <label>📧 Email</label>
-                                <input type="email" id="pdfWorkplaceEmail" placeholder="Email profesional">
+                                <label>🖼️ Logo (opcional)</label>
+                                <input type="file" id="pdfLogoUpload" accept="image/*">
+                                <div id="pdfLogoPreview" class="logo-preview"></div>
                             </div>
-                        </div>
-                        <div class="field-group">
-                            <label>🖼️ Logo (opcional)</label>
-                            <input type="file" id="pdfLogoUpload" accept="image/*">
-                            <div id="pdfLogoPreview" class="logo-preview"></div>
                         </div>
                     </div>
 
-                    <!-- Section 2: Patient Data — completada automáticamente al estructurar el informe -->
-                    <!-- Los datos del paciente se capturan desde el audio/texto. Si no se detectan,
-                         el sistema solicita completarlos mediante el modal dedicado (patientDataRequiredOverlay). -->
-
-                    <!-- Section 3: Study Data -->
-                    <div class="pdf-config-section">
-                        <h3>📝 Datos del Estudio</h3>
-                        <div class="field-group">
-                            <label>Tipo de estudio</label>
-                            <input type="text" id="pdfStudyType"
-                                placeholder="Auto desde plantilla en Pro / Manual en Normal">
-                        </div>
-                        <div class="field-row">
+                    <!-- TAB 2: Datos del Estudio -->
+                    <div class="config-tab-panel" id="cfgTabStudy">
+                        <div class="pdf-config-section">
                             <div class="field-group">
-                                <label>Fecha del estudio</label>
-                                <input type="date" id="pdfStudyDate">
+                                <label>Tipo de estudio</label>
+                                <input type="text" id="pdfStudyType" placeholder="Auto desde plantilla en Pro / Manual en Normal">
+                            </div>
+                            <div class="field-row">
+                                <div class="field-group">
+                                    <label>Fecha del estudio</label>
+                                    <input type="date" id="pdfStudyDate">
+                                </div>
+                                <div class="field-group">
+                                    <label>Hora del estudio</label>
+                                    <input type="time" id="pdfStudyTime">
+                                </div>
                             </div>
                             <div class="field-group">
-                                <label>Hora del estudio</label>
-                                <input type="time" id="pdfStudyTime">
+                                <label>Motivo / Indicación clínica</label>
+                                <input type="text" id="pdfStudyReason" placeholder="Ej: Dolor abdominal, control post-quirúrgico">
                             </div>
-                        </div>
-                        <div class="field-group">
-                            <label>Motivo / Indicación clínica</label>
-                            <input type="text" id="pdfStudyReason"
-                                placeholder="Ej: Dolor abdominal, control post-quirúrgico">
-                        </div>
-                        <div class="field-group">
-                            <label>Médico solicitante</label>
-                            <input type="text" id="pdfReferringDoctor" placeholder="Dr/a que solicitó el estudio">
-                        </div>
-                        <div class="field-group">
-                            <label>Equipo utilizado (opcional)</label>
-                            <input type="text" id="pdfEquipment"
-                                placeholder="Ej: Ecógrafo GE Logiq E10, transductor convex 3.5 MHz">
-                        </div>
-                        <div class="field-group">
-                            <label>Técnica (opcional)</label>
-                            <textarea id="pdfTechnique" rows="2"
-                                placeholder="Auto desde plantilla en Pro / Manual en Normal"></textarea>
-                        </div>
-                        <div class="field-group">
-                            <label>Informe Nº</label>
-                            <input type="text" id="pdfReportNumber" placeholder="Auto: 2026-0042" readonly>
-                            <small>Numeración correlativa automática (formato: YYYY-NNNN)</small>
+                            <div class="field-group">
+                                <label>Médico solicitante</label>
+                                <input type="text" id="pdfReferringDoctor" placeholder="Dr/a que solicitó el estudio">
+                            </div>
+                            <div class="field-group">
+                                <label>Equipo utilizado (opcional)</label>
+                                <input type="text" id="pdfEquipment" placeholder="Ej: Ecógrafo GE Logiq E10, transductor convex 3.5 MHz">
+                            </div>
+                            <div class="field-group">
+                                <label>Técnica (opcional)</label>
+                                <textarea id="pdfTechnique" rows="2" placeholder="Auto desde plantilla en Pro / Manual en Normal"></textarea>
+                            </div>
+                            <div class="field-group">
+                                <label>Informe Nº</label>
+                                <input type="text" id="pdfReportNumber" placeholder="Auto: 2026-0042" readonly>
+                                <small>Numeración correlativa automática (formato: YYYY-NNNN)</small>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Section 4: PDF Format -->
-                    <div class="pdf-config-section">
-                        <h3>🎨 Formato del PDF</h3>
-                        <div class="field-row">
-                            <div class="field-group">
-                                <label>Tamaño de papel</label>
-                                <select id="pdfPageSize">
-                                    <option value="a4" selected>A4</option>
-                                    <option value="letter">Carta</option>
-                                    <option value="legal">Oficio</option>
-                                </select>
+                    <!-- TAB 3: Formato del archivo -->
+                    <div class="config-tab-panel" id="cfgTabFormat">
+                        <div class="pdf-config-section">
+                            <div class="field-row">
+                                <div class="field-group">
+                                    <label>Tamaño de papel</label>
+                                    <select id="pdfPageSize">
+                                        <option value="a4" selected>A4</option>
+                                        <option value="letter">Carta</option>
+                                        <option value="legal">Oficio</option>
+                                    </select>
+                                </div>
+                                <div class="field-group">
+                                    <label>Orientación</label>
+                                    <select id="pdfOrientation">
+                                        <option value="portrait" selected>Vertical</option>
+                                        <option value="landscape">Horizontal</option>
+                                    </select>
+                                </div>
+                                <div class="field-group">
+                                    <label>Márgenes</label>
+                                    <select id="pdfMargins">
+                                        <option value="normal" selected>Normal</option>
+                                        <option value="narrow">Estrecho</option>
+                                        <option value="wide">Ancho</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="field-group">
-                                <label>Orientación</label>
-                                <select id="pdfOrientation">
-                                    <option value="portrait" selected>Vertical</option>
-                                    <option value="landscape">Horizontal</option>
-                                </select>
+                            <div class="field-row">
+                                <div class="field-group">
+                                    <label>Fuente</label>
+                                    <select id="pdfFont">
+                                        <option value="helvetica" selected>Helvetica</option>
+                                        <option value="times">Times New Roman</option>
+                                        <option value="courier">Courier</option>
+                                    </select>
+                                </div>
+                                <div class="field-group">
+                                    <label>Tamaño fuente</label>
+                                    <select id="pdfFontSize">
+                                        <option value="9">9 pt</option>
+                                        <option value="10">10 pt</option>
+                                        <option value="11" selected>11 pt</option>
+                                        <option value="12">12 pt</option>
+                                        <option value="14">14 pt</option>
+                                    </select>
+                                </div>
+                                <div class="field-group">
+                                    <label>Interlineado</label>
+                                    <select id="pdfLineSpacing">
+                                        <option value="1">Simple</option>
+                                        <option value="1.15">1.15</option>
+                                        <option value="1.5" selected>1.5</option>
+                                        <option value="2">Doble</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="field-group">
-                                <label>Márgenes</label>
-                                <select id="pdfMargins">
-                                    <option value="normal" selected>Normal</option>
-                                    <option value="narrow">Estrecho</option>
-                                    <option value="wide">Ancho</option>
-                                </select>
+                            <div class="checkbox-options">
+                                <label><input type="checkbox" id="pdfShowHeader" checked> Incluir encabezado en todas las páginas</label>
+                                <label><input type="checkbox" id="pdfShowFooter" checked> Incluir pie de página con firma</label>
+                                <label><input type="checkbox" id="pdfShowPageNum" checked> Incluir número de página</label>
+                                <label><input type="checkbox" id="pdfShowDate"> Incluir fecha de impresión</label>
+                                <label><input type="checkbox" id="pdfShowQR"> Incluir código QR de verificación</label>
                             </div>
-                        </div>
-                        <div class="field-row">
-                            <div class="field-group">
-                                <label>Fuente</label>
-                                <select id="pdfFont">
-                                    <option value="helvetica" selected>Helvetica</option>
-                                    <option value="times">Times New Roman</option>
-                                    <option value="courier">Courier</option>
-                                </select>
-                            </div>
-                            <div class="field-group">
-                                <label>Tamaño fuente</label>
-                                <select id="pdfFontSize">
-                                    <option value="9">9 pt</option>
-                                    <option value="10">10 pt</option>
-                                    <option value="11" selected>11 pt</option>
-                                    <option value="12">12 pt</option>
-                                    <option value="14">14 pt</option>
-                                </select>
-                            </div>
-                            <div class="field-group">
-                                <label>Interlineado</label>
-                                <select id="pdfLineSpacing">
-                                    <option value="1">Simple</option>
-                                    <option value="1.15">1.15</option>
-                                    <option value="1.5" selected>1.5</option>
-                                    <option value="2">Doble</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="checkbox-options">
-                            <label><input type="checkbox" id="pdfShowHeader" checked> Incluir encabezado en todas las
-                                páginas</label>
-                            <label><input type="checkbox" id="pdfShowFooter" checked> Incluir pie de página con
-                                firma</label>
-                            <label><input type="checkbox" id="pdfShowPageNum" checked> Incluir número de página</label>
-                            <label><input type="checkbox" id="pdfShowDate"> Incluir fecha de impresión</label>
-                            <label><input type="checkbox" id="pdfShowQR" disabled title="Próximamente"> Incluir código
-                                QR de verificación</label>
                         </div>
                     </div>
 
-                    <!-- Section 5: Footer / Signature -->
-                    <div class="pdf-config-section">
-                        <h3>✍️ Pie de Página y Firma</h3>
-                        <div class="field-group">
-                            <label>Texto personalizado del pie</label>
-                            <textarea id="pdfFooterText" rows="2"
-                                placeholder="Ej: Este informe es confidencial y de uso exclusivo del paciente"></textarea>
-                        </div>
-                        <div class="checkbox-options">
-                            <label><input type="checkbox" id="pdfShowSignLine" checked> Incluir línea de firma</label>
-                            <label><input type="checkbox" id="pdfShowSignName" checked> Incluir nombre debajo de
-                                firma</label>
-                            <label><input type="checkbox" id="pdfShowSignMatricula" checked> Incluir matrícula debajo de
-                                firma</label>
-                        </div>
-                        <div class="field-group" style="margin-top:0.75rem;">
-                            <label>Firma digital (imagen PNG transparente)</label>
-                            <input type="file" id="pdfSignatureUpload" accept="image/png">
-                            <div id="pdfSignaturePreview" class="signature-preview"></div>
-                            <small>Suba una imagen de su firma escaneada (fondo transparente recomendado)</small>
+                    <!-- TAB 4: Pie de Página y Firma -->
+                    <div class="config-tab-panel" id="cfgTabSignature">
+                        <div class="pdf-config-section">
+                            <div class="field-group">
+                                <label>Texto personalizado del pie</label>
+                                <textarea id="pdfFooterText" rows="2" placeholder="Ej: Este informe es confidencial y de uso exclusivo del paciente"></textarea>
+                            </div>
+                            <div class="checkbox-options">
+                                <label><input type="checkbox" id="pdfShowSignLine" checked> Incluir línea de firma</label>
+                                <label><input type="checkbox" id="pdfShowSignName" checked> Incluir nombre debajo de firma</label>
+                                <label><input type="checkbox" id="pdfShowSignMatricula" checked> Incluir matrícula debajo de firma</label>
+                            </div>
+                            <div class="field-group" style="margin-top:0.75rem;">
+                                <label>Firma digital (imagen PNG transparente)</label>
+                                <input type="file" id="pdfSignatureUpload" accept="image/png">
+                                <div id="pdfSignaturePreview" class="signature-preview"></div>
+                                <small>Suba una imagen de su firma escaneada (fondo transparente recomendado)</small>
+                            </div>
                         </div>
                     </div>
                 </div>

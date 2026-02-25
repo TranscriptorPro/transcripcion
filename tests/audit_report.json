@@ -1,47 +1,9 @@
 {
   "auditResults": [
     {
-      "test": "Bienvenida Personalizada",
+      "test": "Fallo General",
       "status": "FAIL",
-      "detail": "Audio → Texto con IA"
-    },
-    {
-      "test": "Activación Modo Pro",
-      "status": "FAIL"
-    },
-    {
-      "test": "Persistencia Modo Pro",
-      "status": "FAIL"
-    },
-    {
-      "test": "Lógica Word Count",
-      "status": "PASS",
-      "detail": "6 palabras"
-    },
-    {
-      "test": "DOM Element: Botón Grabar",
-      "status": "PASS"
-    },
-    {
-      "test": "DOM Element: Input Archivos",
-      "status": "PASS"
-    },
-    {
-      "test": "DOM Element: Acceso Admin",
-      "status": "PASS"
-    },
-    {
-      "test": "DOM Element: Lock Config PDF",
-      "status": "PASS"
-    },
-    {
-      "test": "DOM Element: Tool PDF Config",
-      "status": "PASS"
-    },
-    {
-      "test": "Salud de Consola",
-      "status": "PASS",
-      "detail": "Sin errores"
+      "detail": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8080/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8080/\", waiting until \"load\"\u001b[22m\n"
     }
   ],
   "errors": []
