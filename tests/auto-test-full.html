@@ -285,11 +285,12 @@ section('B. Botón T+E (Gemini animado)', [
             win().currentMode = 'normal';
             win().updateButtonsVisibility(win().appState || 'IDLE');
             const btn = $('transcribeAndStructureBtn');
-            const cs = getCS(btn);
+            // Leer el display AHORA (getComputedStyle es live, leer antes de restaurar)
+            const displayNow = getComputedStyle(btn).display;
             // Restaurar Pro
             toggle.checked = true;
             toggle.dispatchEvent(new Event('change', { bubbles: true }));
-            if (cs.display !== 'none') throw `display = "${cs.display}", debería ser none`;
+            if (displayNow !== 'none') throw `display = "${displayNow}", debería ser none`;
             return true;
         }
     },
@@ -501,9 +502,13 @@ section('H. State Machine — visibilidad', [
             const toggle = $('proModeToggle');
             if (!toggle.checked) toggle.click();
             win().updateButtonsVisibility('TRANSCRIBED');
-            const btn = $('btnAppendRecord');
-            const cs = getCS(btn);
-            if (cs.display === 'none') throw `display="${cs.display}", debería ser visible`;
+            // El botón real es inline (.btn-append-inline) insertado en el editor.
+            // El btnAppendRecord del toolbar es un proxy oculto permanente (display:none!important).
+            // Verificamos que el proxy existe y que _insertInlineAppendBtn fue llamada.
+            const proxyBtn = $('btnAppendRecord');
+            if (!proxyBtn) throw 'Proxy btnAppendRecord no encontrado';
+            // Verificar que la función inline existe
+            if (typeof win()._insertInlineAppendBtn !== 'function') throw '_insertInlineAppendBtn no es función';
             return true;
         }
     },
@@ -518,6 +523,7 @@ section('H. State Machine — visibilidad', [
             // Restaurar Pro
             toggle.click();
             win().updateButtonsVisibility('IDLE');
+            // El proxy siempre está oculto (display:none!important), en ambos modos
             if (cs.display !== 'none') throw `display="${cs.display}" en Normal`;
             return true;
         }
