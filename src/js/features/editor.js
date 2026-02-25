@@ -734,9 +734,7 @@ if (applyTemplateBtn && normalTemplateDropdown) {
         // Pestaña por defecto
         _switchTab('write');
 
-        // Ocultar tab Pro si no hay API key
-        const tabRec = document.getElementById('efTabRecord');
-        if (tabRec) tabRec.style.display = isPro() ? '' : 'none';
+        // Tab Grabar: siempre visible (en Normal se muestra locked por _switchTab)
 
         overlay.classList.add('active');
         setTimeout(() => document.getElementById('efTextInput').focus(), 80);
@@ -771,19 +769,41 @@ if (applyTemplateBtn && normalTemplateDropdown) {
         // Tab Escribir: estilo simple
         tabWrite.style.background  = isWrite ? 'var(--primary)' : 'var(--bg-card)';
         tabWrite.style.color       = isWrite ? '#fff' : 'var(--text-primary)';
-        // Tab Grabar (Pro): animación Gemini cuando NO activo, estilo activo cuando seleccionado
-        if (isWrite) {
+        // Tab Grabar: en modo Normal → siempre locked; en Pro → Gemini animado o activo
+        const isNormal = window.currentMode !== 'pro';
+        if (isNormal) {
+            // Modo Normal: deshabilitado con candado
+            tabRecord.classList.remove('btn-pro-animated');
+            tabRecord.style.background = 'var(--bg-card)';
+            tabRecord.style.color = 'var(--text-secondary)';
+            tabRecord.style.opacity = '0.55';
+            tabRecord.style.cursor = 'not-allowed';
+            tabRecord.disabled = true;
+        } else if (isWrite) {
+            // Pro + tab Escribir activo → Grabar muestra animación Gemini atractiva
+            tabRecord.disabled = false;
+            tabRecord.style.opacity = '1';
+            tabRecord.style.cursor = 'pointer';
             tabRecord.classList.add('btn-pro-animated');
         } else {
+            // Pro + tab Grabar activo → estilo activo sólido
+            tabRecord.disabled = false;
+            tabRecord.style.opacity = '1';
+            tabRecord.style.cursor = 'pointer';
             tabRecord.classList.remove('btn-pro-animated');
-            tabRecord.style.background = 'var(--primary)';
+            tabRecord.style.background = 'linear-gradient(135deg, var(--primary), var(--primary-dark))';
             tabRecord.style.color = '#fff';
         }
     }
 
     document.getElementById('efTabWrite')?.addEventListener('click', () => _switchTab('write'));
     document.getElementById('efTabRecord')?.addEventListener('click', () => {
-        if (!isPro()) { showToast('Función disponible en Modo Pro (API Key requerida)', 'warning'); return; }
+        // Modo Normal → siempre bloqueado
+        if (window.currentMode !== 'pro') {
+            showToast('🔒 Función disponible solo en Modo Pro', 'info');
+            return;
+        }
+        if (!isPro()) { showToast('🔑 API Key requerida para grabar y transcribir', 'info'); return; }
         _switchTab('record');
     });
 

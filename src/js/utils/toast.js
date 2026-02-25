@@ -1,11 +1,11 @@
-function showToast(msg, type = 'success') {
+function showToast(msg, type = 'success', duration = 3000) {
     const toast = document.getElementById('toast');
     const toastMessage = document.getElementById('toastMessage');
 
     if (toast && toastMessage) {
         toastMessage.textContent = msg;
         toast.className = `toast ${type} show`;
-        setTimeout(() => toast.classList.remove('show'), 3000);
+        setTimeout(() => toast.classList.remove('show'), duration);
     } else {
         console.warn('Toast elements not found in DOM', msg);
     }
