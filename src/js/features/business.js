@@ -429,6 +429,9 @@ function _initAdmin() {
     // Admin siempre ve el card de API Key
     window.GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
 
+    // Cargar datos de prueba ANTES de inicializar módulos (para que los dropdowns se pueblen)
+    _loadAdminTestData();
+
     _initCommonModules();
 
     try {
@@ -440,9 +443,6 @@ function _initAdmin() {
     }
 
     // Admin NO ve Session Assistant (es solo para clones/clientes)
-
-    // Cargar datos de prueba si no hay workplaces configurados
-    _loadAdminTestData();
 
     const btnAdminAccess = document.getElementById('btnAdminAccess');
     if (btnAdminAccess) {
