@@ -439,8 +439,10 @@ function _initAdmin() {
         console.error('Error inicializando datos admin:', e);
     }
 
-    // Session Assistant — se abre cada vez que carga la app
-    _launchSessionAssistant();
+    // Admin NO ve Session Assistant (es solo para clones/clientes)
+
+    // Cargar datos de prueba si no hay workplaces configurados
+    _loadAdminTestData();
 
     const btnAdminAccess = document.getElementById('btnAdminAccess');
     if (btnAdminAccess) {
@@ -456,6 +458,131 @@ function _initAdmin() {
 
     const onboardingOverlay = document.getElementById('onboardingOverlay');
     if (onboardingOverlay) onboardingOverlay.style.display = 'none';
+}
+
+// ─── Datos de prueba para admin ──────────────────────────────────────────────
+// Se cargan SOLO si no hay workplaces configurados. Permiten probar
+// la Vista Previa, PDF, Session Assistant (en clones), etc. sin configurar nada.
+function _loadAdminTestData() {
+    const existing = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+    if (existing.length > 0) return; // ya hay datos, no sobreescribir
+
+    const testProfiles = [
+        {
+            name: 'Centro Médico San Martín',
+            address: 'Av. Rivadavia 4500, Piso 3, CABA',
+            phone: '(011) 4902-3344',
+            email: 'turnos@centrosanmartin.com.ar',
+            footer: 'Centro Médico San Martín — Atención integral del paciente',
+            logo: null,
+            professionals: [
+                {
+                    nombre: 'Dr. Roberto Gutiérrez',
+                    matricula: 'MN 45.892',
+                    especialidades: 'Cardiología, Ecocardiografía',
+                    telefono: '(011) 5555-0101',
+                    email: 'r.gutierrez@centrosanmartin.com.ar',
+                    firma: null,
+                    logo: null
+                },
+                {
+                    nombre: 'Dra. Lucía Fernández',
+                    matricula: 'MN 52.310',
+                    especialidades: 'Gastroenterología, Endoscopía',
+                    telefono: '(011) 5555-0102',
+                    email: 'l.fernandez@centrosanmartin.com.ar',
+                    firma: null,
+                    logo: null
+                },
+                {
+                    nombre: 'Dr. Martín Álvarez',
+                    matricula: 'MN 38.675',
+                    especialidades: 'Neumonología, Espirometría',
+                    telefono: '(011) 5555-0103',
+                    email: 'm.alvarez@centrosanmartin.com.ar',
+                    firma: null,
+                    logo: null
+                }
+            ]
+        },
+        {
+            name: 'Consultorio Dra. Méndez',
+            address: 'Juncal 1280, 2ºB, CABA',
+            phone: '(011) 4815-7722',
+            email: 'consultorio@dramendez.com.ar',
+            footer: 'Dra. Valeria Méndez — Oftalmología y Estudios de la Visión',
+            logo: null,
+            professionals: [
+                {
+                    nombre: 'Dra. Valeria Méndez',
+                    matricula: 'MN 61.204',
+                    especialidades: 'Oftalmología, Campimetría, Topografía corneal',
+                    telefono: '(011) 4815-7722',
+                    email: 'valeria@dramendez.com.ar',
+                    firma: null,
+                    logo: null
+                }
+            ]
+        },
+        {
+            name: 'Clínica del Sur — Sede Lanús',
+            address: 'Hipólito Yrigoyen 3850, Lanús, Buenos Aires',
+            phone: '(011) 4241-5500',
+            email: 'info@clinicadelsur.com.ar',
+            footer: 'Clínica del Sur — Compromiso con tu salud desde 1998',
+            logo: null,
+            professionals: [
+                {
+                    nombre: 'Dr. Alejandro Ruiz',
+                    matricula: 'MP 22.510',
+                    especialidades: 'Cardiología, Hemodinamia',
+                    telefono: '(011) 4241-5501',
+                    email: 'a.ruiz@clinicadelsur.com.ar',
+                    firma: null,
+                    logo: null
+                },
+                {
+                    nombre: 'Dra. Carolina Paz',
+                    matricula: 'MP 34.821',
+                    especialidades: 'Neurología, Electroencefalografía',
+                    telefono: '(011) 4241-5502',
+                    email: 'c.paz@clinicadelsur.com.ar',
+                    firma: null,
+                    logo: null
+                },
+                {
+                    nombre: 'Dr. Fernando Suárez',
+                    matricula: 'MP 28.190',
+                    especialidades: 'Otorrinolaringología, Audiometría',
+                    telefono: '(011) 4241-5503',
+                    email: 'f.suarez@clinicadelsur.com.ar',
+                    firma: null,
+                    logo: null
+                },
+                {
+                    nombre: 'Dra. Mariana López',
+                    matricula: 'MP 41.005',
+                    especialidades: 'Gastroenterología, Colonoscopía',
+                    telefono: '(011) 4241-5504',
+                    email: 'm.lopez@clinicadelsur.com.ar',
+                    firma: null,
+                    logo: null
+                }
+            ]
+        }
+    ];
+
+    localStorage.setItem('workplace_profiles', JSON.stringify(testProfiles));
+
+    // También pre-cargar prof_data del admin con datos más realistas para pruebas
+    const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
+    if (profData.nombre === 'Administrador') {
+        profData.nombre       = 'Administrador (Dev)';
+        profData.especialidad = 'Todas las especialidades';
+        localStorage.setItem('prof_data', JSON.stringify(profData));
+    }
+
+    console.log('[Admin] Datos de prueba cargados: 3 lugares, 8 profesionales');
 }
 
 // ─── Reset app (solo admin) ───────────────────────────────────────────────────
