@@ -58,10 +58,19 @@ window.updateButtonsVisibility = function (state) {
         btnPreviewPdfMain.style.display = isTranscribed ? 'inline-flex' : 'none';
         btnPreviewPdfMain.disabled = !isTranscribed;
     }
-    // Selector rápido de perfil de salida: visible junto con los botones del editor
+    // Selector rápido de perfil de salida:
+    // Admin: siempre visible tras transcripción
+    // Clones: solo visible si omitió el Session Assistant (fallback)
     const quickProfileSelector = document.getElementById('quickProfileSelector');
     if (quickProfileSelector) {
-        quickProfileSelector.style.display = isTranscribed ? 'inline-block' : 'none';
+        const isAdmin = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'ADMIN');
+        const saCompleted = (typeof sessionStorage !== 'undefined') && sessionStorage.getItem('session_configured') === '1';
+        if (isAdmin) {
+            quickProfileSelector.style.display = isTranscribed ? 'inline-block' : 'none';
+        } else {
+            // Clones: ocultar si ya usó el SA; mostrar como fallback si lo omitió
+            quickProfileSelector.style.display = (isTranscribed && !saCompleted) ? 'inline-block' : 'none';
+        }
     }
 
     // Copy & Download: visible after transcription

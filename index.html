@@ -115,10 +115,15 @@
                         <label class="sa-label" for="saWorkplaceSelect">📍 Lugar de trabajo</label>
                         <select id="saWorkplaceSelect" class="sa-select"></select>
                     </div>
-                    <!-- Paso 2: Profesional (se muestra si hay profesionales) -->
+                    <!-- Paso 2: Profesional (se muestra si hay profesionales — solo clínica) -->
                     <div class="sa-field" id="saProfGroup" style="display:none;">
                         <label class="sa-label" for="saProfSelect">🩺 Profesional</label>
                         <select id="saProfSelect" class="sa-select"></select>
+                    </div>
+                    <!-- Paso 3: Plantilla/Estudio (solo modo Normal — no tiene autodetección IA) -->
+                    <div class="sa-field" id="saTemplateGroup" style="display:none;">
+                        <label class="sa-label" for="saTemplateSelect">📋 Tipo de estudio</label>
+                        <select id="saTemplateSelect" class="sa-select"></select>
                     </div>
                     <!-- Estado: resumen de selección -->
                     <div id="saStatus" style="text-align:center;min-height:1.5rem;margin-top:0.5rem;"></div>
