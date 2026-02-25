@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>🧪 Pruebas Manuales — Vista Previa + Config</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; padding: 1.5rem; }
+h1 { font-size: 1.3rem; margin-bottom: 0.5rem; }
+.subtitle { color: #94a3b8; font-size: 0.85rem; margin-bottom: 1.5rem; }
+.section { background: #1e293b; border-radius: 12px; padding: 1.2rem; margin-bottom: 1.2rem; border: 1px solid #334155; }
+.section h2 { font-size: 1rem; color: #38bdf8; margin-bottom: 0.7rem; }
+.test-item { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 0.8rem 1rem; margin-bottom: 0.5rem; display: flex; align-items: flex-start; gap: 0.8rem; }
+.test-item:hover { border-color: #475569; }
+.test-num { background: #334155; color: #94a3b8; font-size: 0.75rem; font-weight: 700; min-width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 6px; flex-shrink: 0; }
+.test-body { flex: 1; }
+.test-title { font-weight: 600; font-size: 0.9rem; margin-bottom: 3px; }
+.test-desc { color: #94a3b8; font-size: 0.8rem; line-height: 1.4; }
+.test-expect { color: #a78bfa; font-size: 0.78rem; margin-top: 4px; }
+.check-group { display: flex; gap: 0.4rem; margin-top: 0.5rem; }
+.btn-pass, .btn-fail, .btn-skip { border: none; padding: 4px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; }
+.btn-pass { background: #065f46; color: #6ee7b7; }
+.btn-fail { background: #7f1d1d; color: #fca5a5; }
+.btn-skip { background: #334155; color: #94a3b8; }
+.btn-pass:hover { background: #047857; }
+.btn-fail:hover { background: #991b1b; }
+.result-bar { position: sticky; top: 0; z-index: 10; background: #1e293b; border-bottom: 1px solid #334155; padding: 0.8rem 1.2rem; margin: -1.5rem -1.5rem 1.5rem; display: flex; gap: 1rem; align-items: center; }
+.counter { font-weight: 700; font-size: 1rem; }
+.cpass { color: #6ee7b7; } .cfail { color: #fca5a5; } .cskip { color: #94a3b8; } .ctotal { color: #e2e8f0; }
+.tag { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 600; text-transform: uppercase; }
+.tag-bug { background: #7f1d1d; color: #fca5a5; }
+.tag-ux { background: #1e3a5f; color: #93c5fd; }
+.tag-config { background: #365314; color: #bef264; }
+.tag-print { background: #4a1d96; color: #c4b5fd; }
+input[type="text"], input[type="file"] { background: #0f172a; border: 1px solid #475569; color: #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 0.85rem; width: 100%; margin-top: 4px; }
+.api-section { margin-top: 0.5rem; display: flex; gap: 0.5rem; align-items: center; }
+.api-section input { flex: 1; }
+.btn-api { background: #0d9488; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.8rem; }
+.btn-api:hover { background: #0f766e; }
+.api-status { font-size: 0.8rem; margin-top: 4px; }
+.status-ok { color: #6ee7b7; } .status-err { color: #fca5a5; }
+</style>
+</head><body>
+
+<div class="result-bar">
+    <span class="counter ctotal" id="cTotal">0 tests</span>
+    <span class="counter cpass">✅ <span id="cPass">0</span></span>
+    <span class="counter cfail">❌ <span id="cFail">0</span></span>
+    <span class="counter cskip">⏭️ <span id="cSkip">0</span></span>
+    <span style="margin-left: auto; font-size:0.75rem; color:#64748b;">Haz clic en ✅ ❌ o ⏭️ en cada test</span>
+</div>
+
+<h1>🧪 Pruebas Manuales — Vista Previa + Configuración</h1>
+<p class="subtitle">Abrí la app en otra pestaña, hacé cada prueba y marcá el resultado acá.</p>
+
+<!-- ═══════════════ SECCIÓN 0: SETUP ═══════════════ -->
+<div class="section">
+    <h2>⚙️ Setup — API Key (opcional, para probar transcripción real)</h2>
+    <p style="font-size:0.8rem; color:#94a3b8; margin-bottom: 8px;">
+        Si querés probar con la API de Groq, pegá tu clave. Si no, podés probar todo lo de Vista Previa y Config sin ella.
+    </p>
+    <div class="api-section">
+        <input type="text" id="apiKeyInput" placeholder="gsk_xxxxxxxxxxxx...">
+        <button class="btn-api" onclick="testApiKey()">Probar conexión</button>
+    </div>
+    <div class="api-status" id="apiStatus"></div>
+</div>
+
+<!-- ═══════════════ SECCIÓN 1: BUGS CORREGIDOS ═══════════════ -->
+<div class="section">
+    <h2>🐛 Bugs Corregidos — Verificar que no aparecen en Vista Previa</h2>
+
+    <div class="test-item" data-id="1">
+        <div class="test-num">1</div>
+        <div class="test-body">
+            <div class="test-title"><span class="tag tag-bug">BUG</span> Botón "Grabar y agregar +" NO aparece en Vista Previa</div>
+            <div class="test-desc">Escribí o transcribí texto → Abrí Vista Previa → Verificá que NO se ve el botón morado "🎙️ Grabar y agregar +"</div>
+            <div class="test-expect">✅ Esperado: Solo el contenido del informe, sin botones de UI</div>
+            <div class="check-group">
+                <button class="btn-pass" onclick="mark(1,'pass')">✅ Pasa</button>
+                <button class="btn-fail" onclick="mark(1,'fail')">❌ Falla</button>
+                <button class="btn-skip" onclick="mark(1,'skip')">⏭️ Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-item" data-id="2">
+        <div class="test-num">2</div>
+        <div class="test-body">
+            <div class="test-title"><span class="tag tag-bug">BUG</span> Banner "Completar datos del paciente" NO aparece</div>
+            <div class="test-desc">Con texto en el editor y SIN datos de paciente → Abrí Vista Previa</div>
+            <div class="test-expect">✅ Esperado: No se ve el banner azul "👤 Completar datos del paciente — Click aquí"</div>
+            <div class="check-group">
+                <button class="btn-pass" onclick="mark(2,'pass')">✅ Pasa</button>
+                <button class="btn-fail" onclick="mark(2,'fail')">❌ Falla</button>
+                <button class="btn-skip" onclick="mark(2,'skip')">⏭️ Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-item" data-id="3">
+        <div class="test-num">3</div>
+        <div class="test-body">
+            <div class="test-title"><span class="tag tag-bug">BUG</span> Header "Administrador / Mat. ADMIN" NO aparece</div>
+            <div class="test-desc">SIN profesional activo configurado → Abrí Vista Previa</div>
+            <div class="test-expect">✅ Esperado: El encabezado del profesional está OCULTO (no muestra "Administrador")</div>
+            <div class="check-group">
+                <button class="btn-pass" onclick="mark(3,'pass')">✅ Pasa</button>
+                <button class="btn-fail" onclick="mark(3,'fail')">❌ Falla</button>
+                <button class="btn-skip" onclick="mark(3,'skip')">⏭️ Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-item" data-id="4">
+        <div class="test-num">4</div>
+        <div class="test-body">
+            <div class="test-title"><span class="tag tag-bug">BUG</span> Firma "Administrador / Mat. ADMIN" NO aparece</div>
+            <div class="test-desc">SIN profesional activo → Vista Previa → Mirar zona de firma</div>
+            <div class="test-expect">✅ Esperado: La firma está OCULTA (no dice "Administrador")</div>
+            <div class="check-group">
+                <button class="btn-pass" onclick="mark(4,'pass')">✅ Pasa</button>
+                <button class="btn-fail" onclick="mark(4,'fail')">❌ Falla</button>
+                <button class="btn-skip" onclick="mark(4,'skip')">⏭️ Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-item" data-id="5">
+        <div class="test-num">5</div>
+        <div class="test-body">
+            <div class="test-title"><span class="tag tag-bug">BUG</span> Campos [No especificado] NO aparecen en Vista Previa</div>
+            <div class="test-desc">Estructurá un informe con campos vacíos → Vista Previa</div>
+            <div class="test-expect">✅ Esperado: Los campos con "[No especificado]" (ámbar) se eliminan, no se ven</div>
+            <div class="check-group">
+                <button class="btn-pass" onclick="mark(5,'pass')">✅ Pasa</button>
+                <button class="btn-fail" onclick="mark(5,'fail')">❌ Falla</button>
+                <button class="btn-skip" onclick="mark(5,'skip')">⏭️ Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-item" data-id="6">
+        <div class="test-num">6</div>
+        <div class="test-body">
+            <div class="test-title"><span class="tag tag-bug">BUG</span> Banner "Texto original (sin estructurar)" NO aparece</div>
+            <div class="test-desc">Con texto original visible → Vista Previa</div>
+            <div class="test-expect">✅ Esperado: El banner naranja "📋 Texto original" no se muestra</div>
+            <div class="check-group">
+                <button class="btn-pass" onclick="mark(6,'pass')">✅ Pasa</button>
+                <button class="btn-fail" onclick="mark(6,'fail')">❌ Falla</button>
+                <button class="btn-skip" onclick="mark(6,'skip')">⏭️ Skip</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════ SECCIÓN 2: VISTA PREVIA CONTENIDO ═══════════════ -->
+<div class="section">
+    <h2>📄 Vista Previa — Contenido y Layout</h2>
+
+    <div class="test-item" data-id="7">
+        <div class="test-num">7</div>
+        <div class="test-body">
+            <div class="test-title"><span class="tag tag-ux">UX</span> Sección paciente se oculta sin datos</div>
+            <div class="test-desc">SIN datos del paciente → Vista Previa → Verificá que NO hay sección de paciente (ni warning)</div>
+            <div class="test-expect">✅ Esperado: La zona de datos del paciente no aparece</div>
+            <div class="check-group">
+                <button class="btn-pass" onclick="mark(7,'pass')">✅ Pasa</button>
+                <button class="btn-fail" onclick="mark(7,'fail')">❌ Falla</button>
+                <button class="btn-skip" onclick="mark(7,'skip')">⏭️ Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-item" data-id="8">
+        <div class="test-num">8</div>
+        <div class="test-body">
+            <div class="test-title"><span class="tag tag-ux">UX</span> Sección paciente se muestra CON datos</div>
+            <div class="test-desc">Completá datos del paciente (nombre, DNI, edad) → Vista Previa</div>
+            <div class="test-expect">✅ Esperado: Se ve la grilla con Paciente, DNI, Edad en celdas</div>
+            <div class="check-group">
+                <button class="btn-pass" onclick="mark(8,'pass')">✅ Pasa</button>
+                <button class="btn-fail" onclick="mark(8,'fail')">❌ Falla</button>
+                <button class="btn-skip" onclick="mark(8,'skip')">⏭️ Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-item" data-id="9">
+        <div class="test-num">9</div>
+        <div class="test-body">
+            <div class="test-title"><span class="tag tag-ux">UX</span> Estudio en grilla de 2 columnas</div>
+            <div class="test-desc">Configurá tipo de estudio, fecha, Nº informe → Vista Previa</div>
+            <div class="test-expect">✅ Esperado: Los datos del estudio se muestran en grilla de 2 columnas (no en línea con |)</div>
+            <div class="check-group">
+                <button class="btn-pass" onclick="mark(9,'pass')">✅ Pasa</button>
+                <button class="btn-fail" onclick="mark(9,'fail')">❌ Falla</button>
+                <button class="btn-skip" onclick="mark(9,'skip')">⏭️ Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-item" data-id="10">
+        <div class="test-num">10</div>
+        <div class="test-body">
+            <div class="test-title"><span class="tag tag-ux">UX</span> Títulos H1/H2 con color de acento</div>
+            <div class="test-desc">Informe estructurado con títulos → Vista Previa</div>
+            <div class="test-expect">✅ Esperado: Los títulos de sección (HALLAZGOS, CONCLUSIÓN, etc.) tienen color azul/acento</div>
+            <div class="check-group">
+                <button class="btn-pass" onclick="mark(10,'pass')">✅ Pasa</button>
+                <button class="btn-fail" onclick="mark(10,'fail')">❌ Falla</button>
+                <button class="btn-skip" onclick="mark(10,'skip')">⏭️ Skip</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════ SECCIÓN 3: FIRMA ═══════════════ -->
+<div class="section">
+    <h2>✍️ Firma — Posición y Formato</h2>
+
+    <div class="test-item" data-id="11">
+        <div class="test-num">11</div>
+        <div class="test-body">
+            <div class="test-title"><span class="tag tag-print">FIRMA</span> Firma al final del contenido (no flotando)</div>
+            <div class="test-desc">Configurá un profesional activo → Vista Previa → Scrolleá al final</div>
+            <div class="test-expect">✅ Esperado: La firma aparece después del contenido, con espacio. No pegada al borde inferior</div>
+            <div class="check-group">
+                <button class="btn-pass" onclick="mark(11,'pass')">✅ Pasa</button>
+                <button class="btn-fail" onclick="mark(11,'fail')">❌ Falla</button>
+                <button class="btn-skip" onclick="mark(11,'skip')">⏭️ Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-item" data-id="12">
+        <div class="test-num">12</div>
+        <div class="test-body">
+            <div class="test-title"><span class="tag tag-print">FIRMA</span> Nombre y matrícula centrados bajo la línea</div>
+            <div class="test-desc">Vista Previa con profesional activo</div>
+            <div class="test-expect">✅ Esperado: Línea de firma → debajo: nombre centrado → matrícula centrada</div>
+            <div class="check-group">
+                <button class="btn-pass" onclick="mark(12,'pass')">✅ Pasa</button>
+                <button class="btn-fail" onclick="mark(12,'fail')">❌ Falla</button>
+                <button class="btn-skip" onclick="mark(12,'skip')">⏭️ Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-item" data-id="13">
+        <div class="test-num">13</div>
+        <div class="test-body">
+            <div class="test-title"><span class="tag tag-print">FIRMA</span> NO hay opción de subir firma en Config</div>
+            <div class="test-desc">Abrí ⚙️ Configurar Informe → Tab ✍️ Firma</div>
+            <div class="test-expect">✅ Esperado: Solo se ven checkboxes (línea, nombre, matrícula, insertar firma). NO hay input de archivo para subir firma. NO hay nota técnica de "clones".</div>
+            <div class="check-group">
+                <button class="btn-pass" onclick="mark(13,'pass')">✅ Pasa</button>
+                <button class="btn-fail" onclick="mark(13,'fail')">❌ Falla</button>
+                <button class="btn-skip" onclick="mark(13,'skip')">⏭️ Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-item" data-id="14">
+        <div class="test-num">14</div>
+        <div class="test-body">
+            <div class="test-title"><span class="tag tag-print">FIRMA</span> Checkbox "Insertar firma digital" funciona</div>
+            <div class="test-desc">Tab Firma → marcá "Insertar firma digital" → Guardar → Vista Previa</div>
+            <div class="test-expect">✅ Esperado: Si no hay imagen de firma cargada, la línea aparece sin imagen encima. El checkbox se guarda correctamente.</div>
+            <div class="check-group">
+                <button class="btn-pass" onclick="mark(14,'pass')">✅ Pasa</button>
+                <button class="btn-fail" onclick="mark(14,'fail')">❌ Falla</button>
+                <button class="btn-skip" onclick="mark(14,'skip')">⏭️ Skip</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════ SECCIÓN 4: QR ═══════════════ -->
+<div class="section">
+    <h2>📱 QR — Posición y Funcionalidad</h2>
+
+    <div class="test-item" data-id="15">
+        <div class="test-num">15</div>
+        <div class="test-body">
+            <div class="test-title"><span class="tag tag-print">QR</span> QR aparece debajo de la firma (no en esquina)</div>
+            <div class="test-desc">Activá QR en Config (tab Formato) → Vista Previa</div>
+            <div class="test-expect">✅ Esperado: El QR se muestra debajo de la firma, centrado. NO en la esquina inferior derecha absoluta.</div>
+            <div class="check-group">
+                <button class="btn-pass" onclick="mark(15,'pass')">✅ Pasa</button>
+                <button class="btn-fail" onclick="mark(15,'fail')">❌ Falla</button>
+                <button class="btn-skip" onclick="mark(15,'skip')">⏭️ Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-item" data-id="16">
+        <div class="test-num">16</div>
+        <div class="test-body">
+            <div class="test-title"><span class="tag tag-print">QR</span> QR desactivado no se muestra</div>
+            <div class="test-desc">Desactivá QR en Config → Vista Previa</div>
+            <div class="test-expect">✅ Esperado: No hay código QR visible</div>
+            <div class="check-group">
+                <button class="btn-pass" onclick="mark(16,'pass')">✅ Pasa</button>
+                <button class="btn-fail" onclick="mark(16,'fail')">❌ Falla</button>
+                <button class="btn-skip" onclick="mark(16,'skip')">⏭️ Skip</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════ SECCIÓN 5: BOTONES DEL MODAL ═══════════════ -->
+<div class="section">
+    <h2>🔘 Botones del Modal de Vista Previa</h2>
+
+    <div class="test-item" data-id="17">
+        <div class="test-num">17</div>
+        <div class="test-body">
+            <div class="test-title"><span class="tag tag-ux">UX</span> Botón 📥 Descargar PDF funciona</div>
+            <div class="test-desc">Vista Previa → Click en "📥 Descargar PDF"</div>
+            <div class="test-expect">✅ Esperado: Se descarga un archivo PDF con el contenido del informe</div>
+            <div class="check-group">
+                <button class="btn-pass" onclick="mark(17,'pass')">✅ Pasa</button>
+                <button class="btn-fail" onclick="mark(17,'fail')">❌ Falla</button>
+                <button class="btn-skip" onclick="mark(17,'skip')">⏭️ Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-item" data-id="18">
+        <div class="test-num">18</div>
+        <div class="test-body">
+            <div class="test-title"><span class="tag tag-ux">UX</span> Botón 🖨️ Imprimir abre diálogo de impresión</div>
+            <div class="test-desc">Vista Previa → Click en "🖨️ Imprimir"</div>
+            <div class="test-expect">✅ Esperado: Se abre el diálogo del navegador para imprimir con el contenido</div>
+            <div class="check-group">
+                <button class="btn-pass" onclick="mark(18,'pass')">✅ Pasa</button>
+                <button class="btn-fail" onclick="mark(18,'fail')">❌ Falla</button>
+                <button class="btn-skip" onclick="mark(18,'skip')">⏭️ Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-item" data-id="19">
+        <div class="test-num">19</div>
+        <div class="test-body">
+            <div class="test-title"><span class="tag tag-ux">UX</span> Botón 📧 Enviar abre email con contenido</div>
+            <div class="test-desc">Vista Previa → Click en "📧 Enviar"</div>
+            <div class="test-expect">✅ Esperado: Se abre el cliente de email (mailto:) con asunto del estudio y cuerpo en texto plano</div>
+            <div class="check-group">
+                <button class="btn-pass" onclick="mark(19,'pass')">✅ Pasa</button>
+                <button class="btn-fail" onclick="mark(19,'fail')">❌ Falla</button>
+                <button class="btn-skip" onclick="mark(19,'skip')">⏭️ Skip</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════ SECCIÓN 6: CONFIG MODAL ═══════════════ -->
+<div class="section">
+    <h2>⚙️ Modal Configurar Informe — Tabs y Contenido</h2>
+
+    <div class="test-item" data-id="20">
+        <div class="test-num">20</div>
+        <div class="test-body">
+            <div class="test-title"><span class="tag tag-config">CONFIG</span> 4 tabs funcionan correctamente</div>
+            <div class="test-desc">Abrí ⚙️ Configurar Informe → Hacé clic en cada tab: 📄 Encabezado │ 📝 Estudio │ 🎨 Formato │ ✍️ Firma</div>
+            <div class="test-expect">✅ Esperado: Cada tab muestra su panel correctamente. El tab activo se destaca visualmente (se ve como pestaña real).</div>
+            <div class="check-group">
+                <button class="btn-pass" onclick="mark(20,'pass')">✅ Pasa</button>
+                <button class="btn-fail" onclick="mark(20,'fail')">❌ Falla</button>
+                <button class="btn-skip" onclick="mark(20,'skip')">⏭️ Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-item" data-id="21">
+        <div class="test-num">21</div>
+        <div class="test-body">
+            <div class="test-title"><span class="tag tag-config">CONFIG</span> Estudio: dropdown con plantillas</div>
+            <div class="test-desc">Tab 📝 Estudio → Abrí el dropdown "Tipo de estudio"</div>
+            <div class="test-expect">✅ Esperado: Lista con ~37 plantillas médicas + opción "Otro (escribir manualmente)"</div>
+            <div class="check-group">
+                <button class="btn-pass" onclick="mark(21,'pass')">✅ Pasa</button>
+                <button class="btn-fail" onclick="mark(21,'fail')">❌ Falla</button>
+                <button class="btn-skip" onclick="mark(21,'skip')">⏭️ Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-item" data-id="22">
+        <div class="test-num">22</div>
+        <div class="test-body">
+            <div class="test-title"><span class="tag tag-config">CONFIG</span> Guardar y reabrir conserva datos</div>
+            <div class="test-desc">Completá datos → Guardar configuración → Cerrá → Reabrí el modal</div>
+            <div class="test-expect">✅ Esperado: Todos los campos se restauran con los datos guardados</div>
+            <div class="check-group">
+                <button class="btn-pass" onclick="mark(22,'pass')">✅ Pasa</button>
+                <button class="btn-fail" onclick="mark(22,'fail')">❌ Falla</button>
+                <button class="btn-skip" onclick="mark(22,'skip')">⏭️ Skip</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════ SECCIÓN 7: MOBILE ═══════════════ -->
+<div class="section">
+    <h2>📱 Responsive — Vista Previa en Móvil</h2>
+
+    <div class="test-item" data-id="23">
+        <div class="test-num">23</div>
+        <div class="test-body">
+            <div class="test-title"><span class="tag tag-ux">MOBILE</span> Vista Previa se adapta a pantalla chica</div>
+            <div class="test-desc">Abrí DevTools (F12) → Modo responsive (Ctrl+Shift+M) → Poner en 375px → Abrí Vista Previa</div>
+            <div class="test-expect">✅ Esperado: La página A4 se reduce al ancho, el texto es legible, no hay overflow horizontal</div>
+            <div class="check-group">
+                <button class="btn-pass" onclick="mark(23,'pass')">✅ Pasa</button>
+                <button class="btn-fail" onclick="mark(23,'fail')">❌ Falla</button>
+                <button class="btn-skip" onclick="mark(23,'skip')">⏭️ Skip</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════ SECCIÓN 8: PDF DESCARGADO ═══════════════ -->
+<div class="section">
+    <h2>📄 PDF Descargado — Contenido Limpio</h2>
+
+    <div class="test-item" data-id="24">
+        <div class="test-num">24</div>
+        <div class="test-body">
+            <div class="test-title"><span class="tag tag-print">PDF</span> PDF no contiene elementos de UI</div>
+            <div class="test-desc">Descargá el PDF → Abrilo → Verificá que NO contiene: botón Grabar, banner Completar datos, campos [No especificado]</div>
+            <div class="test-expect">✅ Esperado: PDF limpio con solo el informe médico</div>
+            <div class="check-group">
+                <button class="btn-pass" onclick="mark(24,'pass')">✅ Pasa</button>
+                <button class="btn-fail" onclick="mark(24,'fail')">❌ Falla</button>
+                <button class="btn-skip" onclick="mark(24,'skip')">⏭️ Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-item" data-id="25">
+        <div class="test-num">25</div>
+        <div class="test-body">
+            <div class="test-title"><span class="tag tag-print">PDF</span> PDF con profesional ADMIN no muestra "Administrador"</div>
+            <div class="test-desc">Sin profesional activo → Descargá PDF → Verificá encabezado y firma</div>
+            <div class="test-expect">✅ Esperado: No dice "Administrador" ni "Mat. ADMIN" en el PDF</div>
+            <div class="check-group">
+                <button class="btn-pass" onclick="mark(25,'pass')">✅ Pasa</button>
+                <button class="btn-fail" onclick="mark(25,'fail')">❌ Falla</button>
+                <button class="btn-skip" onclick="mark(25,'skip')">⏭️ Skip</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const results = {};
+let totalTests = 25;
+
+function mark(id, status) {
+    results[id] = status;
+    const item = document.querySelector(`[data-id="${id}"]`);
+    if (item) {
+        item.style.borderColor = status === 'pass' ? '#065f46' : status === 'fail' ? '#7f1d1d' : '#475569';
+        item.style.background = status === 'pass' ? '#022c22' : status === 'fail' ? '#450a0a' : '#1e293b';
+    }
+    updateCounters();
+}
+
+function updateCounters() {
+    const vals = Object.values(results);
+    document.getElementById('cPass').textContent = vals.filter(v => v === 'pass').length;
+    document.getElementById('cFail').textContent = vals.filter(v => v === 'fail').length;
+    document.getElementById('cSkip').textContent = vals.filter(v => v === 'skip').length;
+    document.getElementById('cTotal').textContent = `${vals.length}/${totalTests} tests`;
+}
+
+async function testApiKey() {
+    const key = document.getElementById('apiKeyInput').value.trim();
+    const statusEl = document.getElementById('apiStatus');
+    if (!key) { statusEl.innerHTML = '<span class="status-err">⚠️ Pegá una clave API</span>'; return; }
+    statusEl.innerHTML = '⏳ Probando conexión...';
+    try {
+        const res = await fetch('https://api.groq.com/openai/v1/models', {
+            headers: { 'Authorization': `Bearer ${key}` }
+        });
+        if (res.ok) {
+            const data = await res.json();
+            const models = data.data?.map(m => m.id).join(', ') || 'OK';
+            statusEl.innerHTML = `<span class="status-ok">✅ Conexión exitosa — Modelos: ${models.substring(0, 100)}...</span>`;
+        } else {
+            statusEl.innerHTML = `<span class="status-err">❌ Error ${res.status}: ${res.statusText}</span>`;
+        }
+    } catch (e) {
+        statusEl.innerHTML = `<span class="status-err">❌ Error de red: ${e.message}</span>`;
+    }
+}
+</script>
+</body></html>

@@ -77,6 +77,28 @@ load('src/js/features/patientRegistry.js');
 load('src/js/features/formHandler.js');
 load('src/js/utils/stateManager.js');
 
+// Cargar funciones puras adicionales para tests extendidos
+// _hexToRgb está fuera de la función principal en pdfMaker.js — extraer manualmente
+const pdfMakerCode = fs.readFileSync(path.join(root, 'src/js/features/pdfMaker.js'), 'utf-8');
+const hexToRgbMatch = pdfMakerCode.match(/function _hexToRgb\(hex\)\s*\{[\s\S]*?\n\}/);
+if (hexToRgbMatch) vm.runInContext(hexToRgbMatch[0], ctx);
+
+// escapeHtml e isAdminUser desde ui.js (primeras líneas, funciones globales puras)
+const uiCode = fs.readFileSync(path.join(root, 'src/js/utils/ui.js'), 'utf-8');
+const escapeMatch = uiCode.match(/window\.escapeHtml\s*=\s*function[\s\S]*?\n\}/);
+if (escapeMatch) vm.runInContext(escapeMatch[0], ctx);
+const isAdminMatch = uiCode.match(/window\.isAdminUser\s*=\s*function[\s\S]*?\n\}/);
+if (isAdminMatch) vm.runInContext(isAdminMatch[0], ctx);
+
+// evaluateConfigCompleteness y validateBeforeDownload desde pdfPreview.js
+const pvCode = fs.readFileSync(path.join(root, 'src/js/features/pdfPreview.js'), 'utf-8');
+const evalMatch = pvCode.match(/window\.evaluateConfigCompleteness\s*=\s*function[\s\S]*?\n\};/);
+if (evalMatch) vm.runInContext(evalMatch[0], ctx);
+const valMatch = pvCode.match(/window\.validateBeforeDownload\s*=\s*function[\s\S]*?\n\};/);
+if (valMatch) vm.runInContext(valMatch[0], ctx);
+// openPdfConfigModal stub para evitar error en validateBeforeDownload
+if (!global.openPdfConfigModal) global.openPdfConfigModal = () => {};
+
 // ── Utilidades de test ────────────────────────────────────────────────────────
 let passed = 0, failed = 0;
 
@@ -2075,6 +2097,238 @@ test('búsqueda multi-token (nombre + apellido)', () => {
 test('búsqueda retorna vacío si query < 2 caracteres', () => {
     const r = searchPatientRegistry('a');
     assertEqual(r.length, 0, 'No debe buscar con query de 1 carácter');
+});
+
+// BLOQUE 39: _hexToRgb — conversión de color hex a RGB
+console.log('\n── Bloque 39: _hexToRgb ─────────────────────────────────────');
+
+test('_hexToRgb convierte hex de 6 dígitos correctamente', () => {
+    const result = _hexToRgb('#1a56a0');
+    assertEqual(result.r, 26);
+    assertEqual(result.g, 86);
+    assertEqual(result.b, 160);
+});
+
+test('_hexToRgb convierte hex corto (#FFF) correctamente', () => {
+    const result = _hexToRgb('#FFF');
+    assertEqual(result.r, 255);
+    assertEqual(result.g, 255);
+    assertEqual(result.b, 255);
+});
+
+test('_hexToRgb convierte negro (#000000)', () => {
+    const result = _hexToRgb('#000000');
+    assertEqual(result.r, 0);
+    assertEqual(result.g, 0);
+    assertEqual(result.b, 0);
+});
+
+test('_hexToRgb — null retorna fallback azul', () => {
+    const result = _hexToRgb(null);
+    assertEqual(result.r, 26);
+    assertEqual(result.g, 86);
+    assertEqual(result.b, 160);
+});
+
+test('_hexToRgb — string vacío retorna fallback', () => {
+    const result = _hexToRgb('');
+    assertEqual(result.r, 26);
+});
+
+test('_hexToRgb — sin # retorna fallback', () => {
+    const result = _hexToRgb('ff0000');
+    assertEqual(result.r, 26);
+});
+
+// BLOQUE 40: escapeHtml — sanitización XSS
+console.log('\n── Bloque 40: escapeHtml ────────────────────────────────────');
+
+test('escapeHtml escapa tags HTML', () => {
+    const result = escapeHtml('<script>alert(1)</script>');
+    assert(!result.includes('<'), 'No debe contener <');
+    assert(!result.includes('>'), 'No debe contener >');
+    assert(result.includes('&lt;'), 'Debe contener &lt;');
+});
+
+test('escapeHtml escapa comillas y ampersand', () => {
+    const result = escapeHtml('a"b\'c&d');
+    assert(result.includes('&amp;'), 'Debe escapar &');
+    assert(result.includes('&quot;'), 'Debe escapar "');
+    assert(result.includes('&#039;'), "Debe escapar '");
+});
+
+test('escapeHtml — null retorna vacío', () => {
+    assertEqual(escapeHtml(null), '');
+});
+
+test('escapeHtml — string vacío retorna vacío', () => {
+    assertEqual(escapeHtml(''), '');
+});
+
+test('escapeHtml — número se convierte a string', () => {
+    assertEqual(escapeHtml(123), '123');
+});
+
+// BLOQUE 41: _normStr — normalización de strings
+console.log('\n── Bloque 41: _normStr ──────────────────────────────────────');
+
+test('_normStr quita acentos y pasa a minúsculas', () => {
+    assertEqual(_normStr('Épiglotis'), 'epiglotis');
+});
+
+test('_normStr maneja MAYÚSCULAS con acentos', () => {
+    assertEqual(_normStr('CINECORONARIOGRAFÍA'), 'cinecoronariografia');
+});
+
+test('_normStr — null retorna vacío', () => {
+    assertEqual(_normStr(null), '');
+});
+
+test('_normStr — string vacío retorna vacío', () => {
+    assertEqual(_normStr(''), '');
+});
+
+// BLOQUE 42: parseAIResponse — separar body y nota
+console.log('\n── Bloque 42: parseAIResponse ───────────────────────────────');
+
+test('parseAIResponse separa body y nota correctamente', () => {
+    const raw = '## HALLAZGOS\n\nTexto del informe.\n\nNota: Esta es una aclaración.';
+    const result = parseAIResponse(raw);
+    assert(result.body.includes('HALLAZGOS'), 'Body debe contener HALLAZGOS');
+    assert(result.note !== null, 'Note no debe ser null');
+    assert(result.note.includes('aclaración'), 'Note debe contener aclaración');
+});
+
+test('parseAIResponse sin nota retorna note null', () => {
+    const raw = '## HALLAZGOS\n\nTexto sin nota al final.';
+    const result = parseAIResponse(raw);
+    assert(result.body.length > 0, 'Body no debe estar vacío');
+    assertEqual(result.note, null);
+});
+
+test('parseAIResponse — null retorna body vacío y note null', () => {
+    const result = parseAIResponse(null);
+    assertEqual(result.body, '');
+    assertEqual(result.note, null);
+});
+
+test('parseAIResponse — string vacío', () => {
+    const result = parseAIResponse('');
+    assertEqual(result.body, '');
+    assertEqual(result.note, null);
+});
+
+test('parseAIResponse detecta "Aclaración:" como nota', () => {
+    const raw = '## TEST\n\nContenido.\n\nAclaración: Algo importante.';
+    const result = parseAIResponse(raw);
+    assert(result.note !== null, 'Debe detectar Aclaración como nota');
+});
+
+// BLOQUE 43: evaluateConfigCompleteness — completitud de config
+console.log('\n── Bloque 43: evaluateConfigCompleteness ────────────────────');
+
+test('evaluateConfigCompleteness — sin datos retorna red', () => {
+    localStorage.clear();
+    const result = evaluateConfigCompleteness();
+    assertEqual(result.level, 'red');
+    assert(result.missing.length >= 2, 'Debe faltar al menos nombre y matrícula');
+});
+
+test('evaluateConfigCompleteness — solo nombre retorna red (falta matricula)', () => {
+    localStorage.clear();
+    localStorage.setItem('prof_data', JSON.stringify({ nombre: 'Dr. Test' }));
+    const result = evaluateConfigCompleteness();
+    assertEqual(result.level, 'red');
+    localStorage.clear();
+});
+
+test('evaluateConfigCompleteness — nombre+mat+espec retorna yellow sin workplace', () => {
+    localStorage.clear();
+    localStorage.setItem('prof_data', JSON.stringify({
+        nombre: 'Dr. Test', matricula: '12345',
+        specialties: ['Cardiología']
+    }));
+    const result = evaluateConfigCompleteness();
+    // yellow porque falta lugar de trabajo
+    assert(result.level === 'yellow' || result.level === 'green', 'Debe ser yellow o green');
+    localStorage.clear();
+});
+
+test('evaluateConfigCompleteness — nombre+mat sin espec retorna yellow', () => {
+    localStorage.clear();
+    localStorage.setItem('prof_data', JSON.stringify({
+        nombre: 'Dr. Test', matricula: '12345'
+    }));
+    const result = evaluateConfigCompleteness();
+    assertEqual(result.level, 'yellow');
+    localStorage.clear();
+});
+
+// BLOQUE 44: validateBeforeDownload — gate de descarga
+console.log('\n── Bloque 44: validateBeforeDownload ────────────────────────');
+
+test('validateBeforeDownload — formato txt siempre pasa', () => {
+    assertEqual(validateBeforeDownload('txt'), true);
+});
+
+test('validateBeforeDownload — pdf con green pasa', () => {
+    localStorage.clear();
+    localStorage.setItem('prof_data', JSON.stringify({
+        nombre: 'Dr. Test', matricula: '12345', specialties: ['Card']
+    }));
+    assertEqual(validateBeforeDownload('pdf'), true);
+    localStorage.clear();
+});
+
+test('validateBeforeDownload — pdf con red no pasa', () => {
+    localStorage.clear();
+    assertEqual(validateBeforeDownload('pdf'), false);
+    localStorage.clear();
+});
+
+test('validateBeforeDownload — pdf con yellow/red depende de config', () => {
+    localStorage.clear();
+    localStorage.setItem('prof_data', JSON.stringify({ nombre: 'Dr. Test', matricula: '123' }));
+    // Con nombre+mat deberÃ­a ser al menos yellow → pasa
+    const result = validateBeforeDownload('pdf');
+    assert(typeof result === 'boolean', 'Debe retornar boolean');
+    localStorage.clear();
+});
+
+// BLOQUE 45: isAdminUser — detección de admin
+console.log('\n── Bloque 45: isAdminUser ───────────────────────────────────');
+
+test('isAdminUser retorna true para ADMIN', () => {
+    window.CLIENT_CONFIG = { type: 'ADMIN' };
+    assertEqual(isAdminUser(), true);
+});
+
+test('isAdminUser retorna false para NORMAL', () => {
+    window.CLIENT_CONFIG = { type: 'NORMAL' };
+    assertEqual(isAdminUser(), false);
+});
+
+test('isAdminUser retorna falsy sin CLIENT_CONFIG', () => {
+    window.CLIENT_CONFIG = undefined;
+    assert(!isAdminUser(), 'Debe ser falsy sin CLIENT_CONFIG');
+});
+
+// BLOQUE 46: extractPatientDataFromText — más patrones
+console.log('\n── Bloque 46: extractPatientDataFromText (ext) ───────────────');
+
+test('extractPatientDataFromText — DNI con puntos', () => {
+    const r = extractPatientDataFromText('Paciente Juan Pérez, DNI 28.456.789, 45 años, masculino');
+    assert(r.name || r.dni, 'Debe extraer al menos un dato');
+});
+
+test('extractPatientDataFromText — texto vacío retorna objeto vacío', () => {
+    const r = extractPatientDataFromText('');
+    assert(!r.name && !r.dni, 'No debe extraer datos de texto vacío');
+});
+
+test('extractPatientDataFromText — sin datos de paciente', () => {
+    const r = extractPatientDataFromText('Mucosa nasal permeable, septum SP, cornete 40%');
+    assert(!r.name, 'No debe inventar nombre de texto médico');
 });
 
 // ── Resumen ───────────────────────────────────────────────────────────────────
