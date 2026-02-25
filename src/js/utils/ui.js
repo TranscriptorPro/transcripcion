@@ -454,10 +454,8 @@ window.initModals = function () {
         const existing = editor.querySelector('.btn-append-inline');
         if (existing) existing.remove();
 
-        // Solo Pro mode con contenido en el editor
-        const isProMode = window.currentMode === 'pro' ||
-            (window.CLIENT_CONFIG && window.CLIENT_CONFIG.hasProMode);
-        if (!isProMode) return;
+        // Solo Pro mode estricto con contenido en el editor
+        if (window.currentMode !== 'pro') return;
         if (!editor.innerText.trim()) return;
 
         // Crear wrapper contenteditable=false
@@ -509,6 +507,17 @@ window.initModals = function () {
             const editorEl = document.getElementById('editor');
             if (!editorEl) return;
             if (btnRestoreOriginal._showingOriginal) {
+                // Capturar texto actual del editor (original posiblemente editado/ampliado)
+                const currentRawText = editorEl.innerText
+                    .replace(/^📝 Texto original.*$/m, '')
+                    .replace(/^Paciente:.*$/m, '')
+                    .replace(/^Completar datos.*$/m, '')
+                    .replace(/^🎙️ Grabar y agregar.*$/m, '')
+                    .replace(/^⏹ Grabando.*$/m, '')
+                    .trim();
+                const originalRaw = (window._lastRawTranscription || '').trim();
+                const hasChanges = currentRawText !== originalRaw;
+
                 // Volver al estructurado
                 if (window._lastStructuredHTML) editorEl.innerHTML = window._lastStructuredHTML;
                 btnRestoreOriginal.innerHTML = '↩ Original';
@@ -517,6 +526,19 @@ window.initModals = function () {
                 btnRestoreOriginal._showingOriginal = false;
                 // Re-insertar datos del paciente actualizados
                 _refreshPatientHeader();
+
+                // Si hubo cambios en el texto original → re-estructurar automáticamente
+                if (hasChanges && window.currentMode === 'pro') {
+                    window._lastRawTranscription = currentRawText;
+                    if (typeof showToast === 'function') {
+                        showToast('✏️ Se detectó texto nuevo. Re-estructurando...', 'info', 3000);
+                    }
+                    setTimeout(() => {
+                        if (typeof window.autoStructure === 'function') {
+                            window.autoStructure({ silent: true });
+                        }
+                    }, 500);
+                }
             } else {
                 // Mostrar original
                 if (window._lastRawTranscription) {
