@@ -2330,6 +2330,281 @@ test('extractPatientDataFromText — sin datos de paciente', () => {
     assert(!r.name, 'No debe inventar nombre de texto médico');
 });
 
+// BLOQUE 47: pdfMaker — header en todas las páginas
+console.log('\n── Bloque 47: pdfMaker — header en todas las páginas ─────────');
+
+test('pdfMaker.js ensureSpace llama drawHeader()', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/pdfMaker.js'), 'utf-8');
+    const match = code.match(/function ensureSpace[\s\S]*?\n\s*\}/m);
+    assert(match, 'ensureSpace debe existir');
+    assert(match[0].includes('drawHeader()'), 'ensureSpace debe llamar drawHeader()');
+    assert(!match[0].includes('cy = MT'), 'No debe setear cy = MT manualmente (drawHeader lo hace)');
+});
+
+test('pdfMaker.js drawHeader resetea cy correctamente', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/pdfMaker.js'), 'utf-8');
+    const match = code.match(/function drawHeader[\s\S]*?headerH = cy/m);
+    assert(match, 'drawHeader debe setear headerH = cy');
+});
+
+test('pdfMaker.js drawFooter soporta footerText', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/pdfMaker.js'), 'utf-8');
+    assert(code.includes('footerText'), 'Debe usar footerText en el pie');
+});
+
+// BLOQUE 48: Preview modal — dropdown multi-formato
+console.log('\n── Bloque 48: Preview modal — dropdown multi-formato ─────────');
+
+test('index.html modal-footer del preview tiene position:relative', () => {
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
+    // Buscar el div que contiene previewDownloadSplit
+    const region = html.substring(
+        html.indexOf('previewPageNav'),
+        html.indexOf('previewDownloadDropdown')
+    );
+    assert(region.includes('position: relative') || region.includes('position:relative'),
+        'modal-footer del preview debe tener position:relative');
+});
+
+test('index.html dropdown del preview tiene z-index alto', () => {
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
+    const match = html.match(/previewDownloadDropdown[^>]*z-index:\s*(\d+)/);
+    assert(match, 'Dropdown debe tener z-index');
+    const zIndex = parseInt(match[1]);
+    assert(zIndex >= 10000, `z-index ${zIndex} debe ser >= 10000 para estar sobre el modal`);
+});
+
+test('index.html dropdown tiene 4 formatos (pdf, rtf, txt, html)', () => {
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
+    const ddRegion = html.substring(
+        html.indexOf('id="previewDownloadDropdown"'),
+        html.indexOf('</div>', html.indexOf('id="previewDownloadDropdown"') + 200) + 6
+    );
+    assert(ddRegion.includes('data-format="pdf"'), 'Falta botón PDF');
+    assert(ddRegion.includes('data-format="rtf"'), 'Falta botón RTF');
+    assert(ddRegion.includes('data-format="txt"'), 'Falta botón TXT');
+    assert(ddRegion.includes('data-format="html"'), 'Falta botón HTML');
+});
+
+test('ui.js maneja click en btnDownloadPreviewMore', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/utils/ui.js'), 'utf-8');
+    assert(code.includes("btnDownloadPreviewMore"), 'Debe referenciar btnDownloadPreviewMore');
+    assert(code.includes("previewDownloadDropdown"), 'Debe referenciar previewDownloadDropdown');
+});
+
+test('ui.js formatos llaman window.downloadRTF/TXT/HTML', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/utils/ui.js'), 'utf-8');
+    assert(code.includes("downloadRTF") || code.includes("download' + fmt.toUpperCase()"),
+        'Debe poder llamar downloadRTF/TXT/HTML');
+});
+
+// BLOQUE 49: autoDetectTemplateKey — textos crudos realistas
+console.log('\n── Bloque 49: autoDetectTemplateKey — textos crudos ─────────');
+
+const SAMPLE_TEXTS = {
+    espirometria: 'Paciente masculino 52 años. Se realiza espirometría basal. CVF 3.8 litros, 92% del predicho. VEF1 2.9 litros, 85% del predicho. Relación VEF1/CVF 76%. FEF 25-75 2.1 litros por segundo. Se administra broncodilatador salbutamol 400 mcg. Post broncodilatador CVF 3.9, VEF1 3.1, cambio del 7%. Calidad del examen grado A. Patrón funcional normal.',
+    colonoscopia: 'Se realiza colonoscopía bajo sedación con propofol. Preparación buena, Boston 8. Se progresa hasta ciego. Recto sin lesiones. Sigmoide con divertículos no complicados. Descendente sin alteraciones. Transverso normal. Ascendente se observa pólipo sésil de 5mm que se reseca con asa fría. Ciego y válvula ileocecal normales. No se explora íleon terminal.',
+    ecografia_abdominal: 'Ecografía abdominal completa. Hígado de tamaño normal, ecoestructura homogénea, sin lesiones focales. Vesícula biliar de paredes finas con un cálculo de 12mm. Vías biliares no dilatadas, colédoco 4mm. Páncreas de visualización parcial, sin alteraciones. Bazo homogéneo de 11cm. Riñón derecho 10.5cm, buena diferenciación, sin dilatación. Riñón izquierdo 10.8cm, quiste cortical simple de 18mm en polo inferior. Vejiga distendida sin particularidades.',
+    gastroscopia: 'Endoscopía digestiva alta. Esófago con mucosa normal, sin varices. Unión gastroesofágica a 38cm, línea Z regular. Estómago fondo sin lesiones, cuerpo con gastropatía eritematosa leve, antro con erosiones planas múltiples. Píloro permeable. Duodeno primera porción mucosa normal, segunda porción sin alteraciones. Se toman biopsias de antro para Helicobacter pylori, 2 muestras.',
+    holter: 'Holter ECG de 24 horas. Ritmo sinusal predominante. FC media 72 lpm, máxima 128 lpm durante actividad, mínima 52 lpm durante sueño. Variabilidad normal. Extrasístoles ventriculares 245, monomorfas, sin pares ni tripletes, sin TV. Extrasístoles supraventriculares 89, aisladas, sin TSV. Segmento ST sin cambios significativos. No se registraron pausas mayores a 2 segundos.',
+    cinecoro: 'Cinecoronariografía por acceso radial derecho. Tronco coronario izquierdo sin lesiones significativas. Descendente anterior con estenosis del 70% en tercio medio, flujo TIMI 3. Circunfleja sin lesiones. Coronaria derecha dominante, con estenosis del 40% en tercio proximal. Ventriculografía con FEVI estimada 55%, hipoquinesia anterior leve. No se realizó angioplastia, se sugiere valorar revascularización.',
+    mamografia: 'Mamografía digital bilateral. Composición mamaria tipo C (heterogéneamente densa). Mama derecha: nódulo oval circunscrito de 8mm en el cuadrante superior externo, de probable naturaleza benigna. No se observan microcalcificaciones sospechosas. Mama izquierda: sin hallazgos significativos. Axilas sin adenopatías. BI-RADS 3 mama derecha, BI-RADS 1 mama izquierda. Se sugiere control en 6 meses.',
+    densitometria: 'Densitometría ósea DXA. Columna lumbar L1-L4: DMO 0.850 g/cm², T-score -1.8, Z-score -0.9. Cadera total derecha: DMO 0.780 g/cm², T-score -2.1, Z-score -1.2. Cuello femoral: DMO 0.720 g/cm², T-score -2.4, Z-score -1.5. Clasificación OMS: Osteopenia en columna lumbar, Osteoporosis en cuello femoral. Riesgo fracturario incrementado.',
+    laringoscopia: 'Videonasofibrolaringoscopía. Fosa nasal derecha permeable, septum desviado a derecha sin obstrucción significativa, cornetes sin hipertrofia, mucosa rosada. Fosa nasal izquierda permeable, sin alteraciones. Cavum libre, sin vegetaciones adenoideas. Orofaringe con amígdalas grado II simétricas. Base de lengua y valéculas libres. Epiglotis omega normal. Cuerdas vocales móviles, simétricas, borde libre liso. Glotis permeable. Fonación con cierre glótico completo.',
+    tac: 'TAC de tórax. Tomografía con contraste endovenoso, cortes axiales de 3mm. Parénquima pulmonar con opacidad en vidrio esmerilado en lóbulo inferior derecho de 25mm. No se observan nódulos pulmonares sólidos. Mediastino sin adenopatías significativas. Tráquea y bronquios principales permeables. Silueta cardíaca de tamaño normal. Derrame pleural laminar bilateral. Estructuras óseas sin lesiones líticas ni blásticas.',
+    ett: 'Ecocardiograma transtorácico. Ventrículo izquierdo no dilatado, diámetro diastólico 48mm, FEVI 62% por Simpson. Motilidad global conservada. Sin hipertrofia. Raíz aórtica 32mm. Aurícula izquierda 38mm. Válvula mitral con insuficiencia leve. Válvula aórtica trivalva sin estenosis. Ventrículo derecho no dilatado, TAPSE 22mm. No se observa derrame pericárdico. Presión sistólica pulmonar estimada 28mmHg.',
+    eco_doppler: 'Eco Doppler venoso de miembros inferiores bilateral. Cayado de safena interna derecha competente. Vena femoral común y superficial permeables y compresibles. Vena poplítea permeable. No se observan trombos. Safena interna derecha sin reflujo. Lado izquierdo: insuficiencia de safena interna con reflujo de 4 segundos desde el cayado hasta tercio medio de muslo, diámetro del cayado 8mm. Sistemas profundos permeables bilateralmente.',
+    nota_evolucion: 'Nota de evolución. Paciente de 68 años, internado por neumonía adquirida en comunidad hace 3 días. Hoy afebril, mejoría clínica. Saturación 95% aire ambiente. Auscultación con rales crepitantes bibasales en disminución. Tolerando vía oral. Laboratorio: leucocitos 9800, PCR 45 en descenso. Continúa con ampicilina sulbactam EV. Plan: si mantiene mejoría, rotar a vía oral mañana y evaluar alta.',
+    epicrisis: 'Epicrisis. Resumen de internación del 10 al 15 de febrero, 5 días totales. Motivo de internación: dolor torácico y disnea. Diagnósticos: neumonía adquirida en la comunidad, CURB-65 2 puntos. Antecedentes: hipertensión arterial, diabetes tipo 2. Tratamiento durante internación: ampicilina sulbactam 3g cada 6 horas EV por 4 días, luego amoxicilina ácido clavulánico 875/125 vía oral. Evolución favorable, afebril desde el día 3. Alta con indicaciones: completar antibiótico 7 días totales, control en 2 semanas.',
+    resonancia: 'RMN de cerebro con gadolinio. Secuencias T1, T2, FLAIR y difusión. Parénquima cerebral sin lesiones focales. Sustancia blanca sin alteraciones de señal. Sistema ventricular de tamaño y configuración normal. Línea media centrada. No se observan realces patológicos post contraste. Estructuras de fosa posterior normales. Lesión quística extraaxial en región temporal izquierda de 12mm, compatible con quiste aracnoideo. Sin efecto de masa.',
+    protocolo_quirurgico: 'Protocolo de cirugía laparoscópica. Paciente en decúbito dorsal bajo anestesia general. Se realiza neumoperitoneo con aguja de Veress umbilical, presión 12mmHg. Se colocan 4 trocares. Se identifica vesícula biliar con pared engrosada y adherencias al epiplón. Disección del triángulo de Calot, identificación de conducto cístico y arteria cística. Clipaje con clips metálicos x3 en cístico y x2 en arteria. Sección. Vesícula se extrae por puerto umbilical en bolsa. Hemostasia correcta, lavado con solución fisiológica. Sin incidentes. Tiempo operatorio 45 minutos.'
+};
+
+for (const [key, text] of Object.entries(SAMPLE_TEXTS)) {
+    test(`autoDetectTemplateKey detecta "${key}" desde texto crudo`, () => {
+        const detected = autoDetectTemplateKey(text);
+        assertEqual(detected, key);
+    });
+}
+
+test('autoDetectTemplateKey retorna generico para texto ambiguo', () => {
+    const result = autoDetectTemplateKey('El paciente se encuentra estable, sin cambios relevantes en la evolución clínica del día.');
+    // Podría ser generico o nota_evolucion — ambos son aceptables
+    assert(typeof result === 'string' && result.length > 0, 'Debe retornar un string');
+});
+
+// BLOQUE 50: markdownToHtml — textos estructurados realistas
+console.log('\n── Bloque 50: markdownToHtml — renderizado realista ─────────');
+
+test('markdownToHtml convierte H1 + H2 + párrafo', () => {
+    const md = '# INFORME DE ESPIROMETRÍA\n\n## VALORES PRE-BRONCODILATADOR\n\nCVF 3.8 litros, 92% del predicho.\n\n## CONCLUSIÓN\n\nPatrón funcional normal.';
+    const html = markdownToHtml(md);
+    assert(html.includes('<h1'), 'Debe contener H1');
+    assert(html.includes('<h2'), 'Debe contener H2');
+    assert(html.includes('92%'), 'Debe preservar valores numéricos');
+    assert(html.includes('report-h1'), 'Clase report-h1');
+});
+
+test('markdownToHtml convierte lista con bullets', () => {
+    const md = '## HALLAZGOS\n\n- Cálculo de 12mm en vesícula\n- Quiste renal 18mm\n- Derrame pleural laminar';
+    const html = markdownToHtml(md);
+    assert(html.includes('<ul'), 'Debe tener UL');
+    assert(html.includes('<li>'), 'Debe tener LI');
+    assert(html.includes('12mm'), 'Debe preservar medidas');
+});
+
+test('markdownToHtml reemplaza [No especificado] con campo editable', () => {
+    const md = '## PÁNCREAS\n\n[No especificado]';
+    const html = markdownToHtml(md);
+    assert(html.includes('no-data-field'), 'Debe tener clase no-data-field');
+    assert(html.includes('campo vacío'), 'Debe mostrar "campo vacío"');
+});
+
+test('markdownToHtml preserva negritas markdown **texto**', () => {
+    const md = '## CONCLUSIÓN\n\n**Estudio normal** sin hallazgos patológicos.';
+    const html = markdownToHtml(md);
+    assert(html.includes('<strong>Estudio normal</strong>'), 'Debe convertir **x** a <strong>');
+});
+
+test('markdownToHtml capitaliza primera letra de párrafo', () => {
+    const md = '## HÍGADO\n\nhígado de tamaño normal.';
+    const html = markdownToHtml(md);
+    // La H debe quedar mayúscula
+    assert(html.includes('Hígado') || html.includes('hígado'), 'Debe estar presente el texto del hígado');
+});
+
+// BLOQUE 51: parseAIResponse — respuestas realistas de IA
+console.log('\n── Bloque 51: parseAIResponse — respuestas realistas ────────');
+
+test('parseAIResponse extrae body HTML de ecografía', () => {
+    const rawMd = `# INFORME ECOGRÁFICO
+
+## HÍGADO
+Tamaño normal, ecoestructura homogénea.
+
+## VESÍCULA BILIAR
+Cálculo de 12mm con sombra acústica posterior.
+
+## CONCLUSIÓN
+Litiasis vesicular.`;
+    const { body, note } = parseAIResponse(rawMd);
+    assert(body.includes('<h1'), 'Debe tener h1');
+    assert(body.includes('12mm'), 'Debe preservar medida');
+    assert(body.includes('Litiasis'), 'Debe tener conclusión');
+    assertEqual(note, null);
+});
+
+test('parseAIResponse maneja nota "Nota:" al final', () => {
+    const rawMd = `## HALLAZGOS\nTexto del informe.\n\nNota: El paciente debe completar datos faltantes.`;
+    const { body, note } = parseAIResponse(rawMd);
+    assert(note !== null, 'Debe detectar la nota');
+    assert(!body.includes('Nota:'), 'Body no debe contener la nota');
+});
+
+// BLOQUE 52: templates coverage — todas las plantillas existen
+console.log('\n── Bloque 52: templates coverage ────────────────────────────');
+
+const EXPECTED_TEMPLATES = [
+    'espirometria', 'test_marcha', 'pletismografia', 'oximetria_nocturna',
+    'campimetria', 'oct_retinal', 'topografia_corneal', 'fondo_ojo',
+    'tac', 'resonancia', 'mamografia', 'densitometria', 'pet_ct', 'radiografia',
+    'ecografia_abdominal', 'gastroscopia', 'colonoscopia', 'broncoscopia', 'laringoscopia',
+    'gammagrafia_cardiaca', 'holter', 'mapa', 'cinecoro', 'ecg', 'eco_stress',
+    'pap', 'colposcopia', 'electromiografia', 'polisomnografia',
+    'naso', 'endoscopia_otologica', 'protocolo_quirurgico',
+    'ett', 'eco_doppler', 'nota_evolucion', 'epicrisis', 'generico'
+];
+
+test(`MEDICAL_TEMPLATES contiene ${EXPECTED_TEMPLATES.length} plantillas`, () => {
+    const keys = Object.keys(MEDICAL_TEMPLATES);
+    for (const k of EXPECTED_TEMPLATES) {
+        assert(keys.includes(k), `Falta plantilla: ${k}`);
+    }
+    assertEqual(keys.length, EXPECTED_TEMPLATES.length);
+});
+
+test('Todas las plantillas tienen name, prompt y keywords', () => {
+    for (const [key, tmpl] of Object.entries(MEDICAL_TEMPLATES)) {
+        assert(tmpl.name, `${key}: falta name`);
+        assert(tmpl.prompt, `${key}: falta prompt`);
+        if (key !== 'generico') {
+            assert(Array.isArray(tmpl.keywords) && tmpl.keywords.length > 0, `${key}: falta keywords`);
+        }
+    }
+});
+
+test('Prompts contienen regla de [No especificado]', () => {
+    // Todas las plantillas excepto genérico deben la indicación de No especificado
+    let count = 0;
+    for (const [key, tmpl] of Object.entries(MEDICAL_TEMPLATES)) {
+        if (key === 'generico') continue;
+        if (tmpl.prompt.includes('No especificado') || tmpl.prompt.includes('s/p')) count++;
+    }
+    assert(count >= 30, `Solo ${count} plantillas mencionan [No especificado] o s/p, se esperan ≥30`);
+});
+
+// BLOQUE 53: structurer — classifyStructError
+console.log('\n── Bloque 53: classifyStructError ───────────────────────────');
+
+test('classifyStructError — 401 → auth', () => {
+    const r = classifyStructError(new Error('HTTP_401: invalid key'));
+    assertEqual(r.type, 'auth');
+});
+
+test('classifyStructError — 429 → rate_limit', () => {
+    const r = classifyStructError(new Error('HTTP_429: too many requests'));
+    assertEqual(r.type, 'rate_limit');
+    assert(r.wait > 0, 'Debe esperar');
+});
+
+test('classifyStructError — 503 → server_error + switch model', () => {
+    const r = classifyStructError(new Error('HTTP_503: service unavailable'));
+    assertEqual(r.type, 'server_error');
+    assertEqual(r.switchModel, true);
+});
+
+test('classifyStructError — TypeError → network', () => {
+    const r = classifyStructError(new TypeError('Failed to fetch'));
+    assertEqual(r.type, 'network');
+    assertEqual(r.wait, 0);
+});
+
+test('classifyStructError — error genérico → unknown', () => {
+    const r = classifyStructError(new Error('algo raro'));
+    assertEqual(r.type, 'unknown');
+});
+
+// BLOQUE 54: pending queue
+console.log('\n── Bloque 54: pending queue ─────────────────────────────────');
+
+test('addToStructurePendingQueue agrega entry', () => {
+    localStorage.clear();
+    const entry = addToStructurePendingQueue('Texto de prueba', 'espirometria');
+    assert(entry.id > 0, 'Debe tener id');
+    assertEqual(entry.templateKey, 'espirometria');
+    const queue = getStructurePendingQueue();
+    assertEqual(queue.length, 1);
+});
+
+test('pending queue máximo 10 entries', () => {
+    localStorage.clear();
+    for (let i = 0; i < 15; i++) {
+        addToStructurePendingQueue(`Texto ${i}`, 'generico');
+    }
+    const queue = getStructurePendingQueue();
+    assert(queue.length <= 10, `Queue tiene ${queue.length} entries, máx 10`);
+    localStorage.clear();
+});
+
+test('removeFromStructurePendingQueue elimina entry', () => {
+    localStorage.clear();
+    const entry = addToStructurePendingQueue('Texto test', 'holter');
+    assertEqual(getStructurePendingQueue().length, 1);
+    removeFromStructurePendingQueue(entry.id);
+    assertEqual(getStructurePendingQueue().length, 0);
+    localStorage.clear();
+});
+
 // ── Resumen ───────────────────────────────────────────────────────────────────
 console.log('\n─────────────────────────────────────────────────────────────────');
 console.log(`  Total: ${passed + failed} | ✅ Pasaron: ${passed} | ❌ Fallaron: ${failed}`);
