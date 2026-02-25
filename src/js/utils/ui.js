@@ -507,16 +507,12 @@ window.initModals = function () {
             const editorEl = document.getElementById('editor');
             if (!editorEl) return;
             if (btnRestoreOriginal._showingOriginal) {
-                // Capturar texto actual del editor (original posiblemente editado/ampliado)
-                const currentRawText = editorEl.innerText
-                    .replace(/^📝 Texto original.*$/m, '')
-                    .replace(/^Paciente:.*$/m, '')
-                    .replace(/^Completar datos.*$/m, '')
-                    .replace(/^🎙️ Grabar y agregar.*$/m, '')
-                    .replace(/^⏹ Grabando.*$/m, '')
-                    .trim();
-                const originalRaw = (window._lastRawTranscription || '').trim();
-                const hasChanges = currentRawText !== originalRaw;
+                // Detectar si se agregó texto nuevo mientras se veía el original
+                const needsRestructure = !!window._rawAppendedWhileOriginal;
+                if (needsRestructure) {
+                    // El texto nuevo ya fue agregado a _lastRawTranscription en el momento de grabar
+                    window._rawAppendedWhileOriginal = false;
+                }
 
                 // Volver al estructurado
                 if (window._lastStructuredHTML) editorEl.innerHTML = window._lastStructuredHTML;
@@ -527,9 +523,8 @@ window.initModals = function () {
                 // Re-insertar datos del paciente actualizados
                 _refreshPatientHeader();
 
-                // Si hubo cambios en el texto original → re-estructurar automáticamente
-                if (hasChanges && window.currentMode === 'pro') {
-                    window._lastRawTranscription = currentRawText;
+                // Si hubo texto nuevo agregado → re-estructurar automáticamente
+                if (needsRestructure && window.currentMode === 'pro') {
                     if (typeof showToast === 'function') {
                         showToast('✏️ Se detectó texto nuevo. Re-estructurando...', 'info', 3000);
                     }
@@ -542,7 +537,10 @@ window.initModals = function () {
             } else {
                 // Mostrar original
                 if (window._lastRawTranscription) {
-                    window._lastStructuredHTML = editorEl.innerHTML;
+                    // Guardar HTML estructurado limpio (sin elementos UI inline)
+                    const clone = editorEl.cloneNode(true);
+                    clone.querySelectorAll('.btn-append-inline, .patient-data-header, .patient-placeholder-banner').forEach(el => el.remove());
+                    window._lastStructuredHTML = clone.innerHTML;
                     editorEl.innerHTML = '<div class="original-text-banner" contenteditable="false">📝 Texto original (sin estructurar)</div>' +
                         window._lastRawTranscription
                         .split('\n').filter(l => l.trim())
@@ -571,8 +569,12 @@ window.initModals = function () {
             if (typeof showToast === 'function') showToast('Se necesita texto original y estructurado para comparar', 'error');
             return;
         }
-        // Save current structured state if editor has been edited
-        window._lastStructuredHTML = editorForCompare ? editorForCompare.innerHTML : window._lastStructuredHTML;
+        // Save current structured state if editor has been edited (sin elementos UI)
+        if (editorForCompare) {
+            const clone = editorForCompare.cloneNode(true);
+            clone.querySelectorAll('.btn-append-inline, .patient-data-header, .patient-placeholder-banner, .original-text-banner').forEach(el => el.remove());
+            window._lastStructuredHTML = clone.innerHTML;
+        }
 
         // Populate panels
         const compOriginal = document.getElementById('comparisonOriginal');
@@ -784,8 +786,17 @@ window.initModals = function () {
                                 if (window._lastRawTranscription != null) {
                                     window._lastRawTranscription = window._lastRawTranscription.trimEnd() + '\n' + newText;
                                 }
-                                // Actualizar también el HTML estructurado guardado
-                                window._lastStructuredHTML = editor.innerHTML;
+                                // Marcar flag según la vista actual
+                                const btnR = document.getElementById('btnRestoreOriginal');
+                                if (btnR && btnR._showingOriginal) {
+                                    // Grabando en vista original → marcar para re-estructurar al volver
+                                    window._rawAppendedWhileOriginal = true;
+                                } else {
+                                    // Grabando en vista estructurada → actualizar HTML guardado (sin elementos UI)
+                                    const clone = editor.cloneNode(true);
+                                    clone.querySelectorAll('.btn-append-inline, .patient-data-header, .patient-placeholder-banner').forEach(el => el.remove());
+                                    window._lastStructuredHTML = clone.innerHTML;
+                                }
                             }
                         }
                     } catch (err) {
