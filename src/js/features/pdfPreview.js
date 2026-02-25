@@ -518,15 +518,7 @@ window.evaluateConfigCompleteness = function () {
  * Actualiza el indicador visual del semáforo en el botón de configuración.
  */
 window.updateConfigTrafficLight = function () {
-    const dot = document.getElementById('configTrafficLight');
-    if (!dot) return;
-
-    const { level } = window.evaluateConfigCompleteness();
-    dot.className = 'config-traffic-light tl-' + level;
-    dot.style.display = '';
-    dot.title = level === 'green' ? 'Configuración completa'
-              : level === 'yellow' ? 'Configuración parcial — faltan algunos datos'
-              : 'Configuración incompleta — configura tus datos profesionales';
+    // Semáforo deshabilitado — la función existe para evitar errores en llamadas externas
 };
 
 /**
