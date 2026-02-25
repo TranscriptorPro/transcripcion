@@ -933,6 +933,7 @@ window.initApiManagement = function () {
             const origText = saveApiKeyBtn.textContent;
             saveApiKeyBtn.disabled = true;
             saveApiKeyBtn.textContent = '⏳ Validando...';
+            saveApiKeyBtn.style.fontSize = '0.7rem';
 
             try {
                 const res = await fetch('https://api.groq.com/openai/v1/models', {
@@ -971,6 +972,7 @@ window.initApiManagement = function () {
             } finally {
                 saveApiKeyBtn.disabled = false;
                 saveApiKeyBtn.textContent = origText;
+                saveApiKeyBtn.style.fontSize = '';
             }
         });
     }
