@@ -92,7 +92,12 @@ const $ = id => document.getElementById(id);
     // Campos que se normalizan como NOMBRE (cada palabra capitalizada)
     const NAME_FIELDS = new Set([
         'reqPatientName', 'profName', 'profNombre', 'nombreProfesional',
-        'reqPatientInsurance', 'workplace', 'lugarTrabajo'
+        'workplace', 'lugarTrabajo'
+    ]);
+
+    // Campos que se fuerzan a MAYÚSCULAS completas
+    const UPPER_FIELDS = new Set([
+        'reqPatientInsurance'
     ]);
 
     // Campos que NO se normalizan
@@ -119,6 +124,11 @@ const $ = id => document.getElementById(id);
             if (!shouldNormalize(el)) return;
             const val = el.value.trim();
             if (!val) return;
+
+            if (UPPER_FIELDS.has(el.id)) {
+                if (val !== val.toUpperCase()) el.value = val.toUpperCase();
+                return;
+            }
 
             const mode = NAME_FIELDS.has(el.id) ? 'name' : 'sentence';
             const normalized = window.normalizeFieldText(val, mode);
