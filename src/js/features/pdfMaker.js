@@ -120,7 +120,8 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                 doc.addPage();
                 pageNum++;
                 if (cfgShowFooter || cfgShowPageNum) drawFooter(pageNum);
-                cy = MT;  // usar margen superior configurado en páginas 2+
+                drawHeader();  // encabezado en TODAS las páginas
+                // cy ya queda posicionado después del encabezado por drawHeader()
             }
         }
 

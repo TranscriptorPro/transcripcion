@@ -574,14 +574,14 @@
                 </div>
                 <div class="preview-page-nav" id="previewPageNav" style="display:none;"></div>
                 <div class="modal-footer"
-                    style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; gap: 0.5rem; justify-content: flex-end;">
+                    style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; gap: 0.5rem; justify-content: flex-end; position: relative;">
                     <div class="download-split" id="previewDownloadSplit">
                         <button class="btn btn-primary" id="btnDownloadFromPreview" style="border-radius:8px 0 0 8px;">📥 Descargar PDF</button>
                         <button class="btn btn-primary" id="btnDownloadPreviewMore" style="border-radius:0 8px 8px 0;padding:0 6px;border-left:1px solid rgba(255,255,255,0.25);" title="Más formatos">
                             <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M7 10l5 5 5-5H7z"/></svg>
                         </button>
                     </div>
-                    <div class="dropdown-content" id="previewDownloadDropdown" style="display:none;position:absolute;bottom:56px;left:16px;background:var(--bg-card,#1e293b);border:1px solid var(--border);border-radius:8px;z-index:100;min-width:200px;box-shadow:0 4px 16px rgba(0,0,0,0.3);">
+                    <div class="dropdown-content" id="previewDownloadDropdown" style="display:none;position:absolute;bottom:100%;right:0;margin-bottom:4px;background:var(--bg-card,#1e293b);border:1px solid var(--border);border-radius:8px;z-index:10010;min-width:200px;box-shadow:0 4px 16px rgba(0,0,0,0.3);">
                         <button data-format="pdf" style="display:block;width:100%;text-align:left;padding:8px 14px;background:none;border:none;color:var(--text-primary);cursor:pointer;">📄 PDF Profesional</button>
                         <button data-format="rtf" style="display:block;width:100%;text-align:left;padding:8px 14px;background:none;border:none;color:var(--text-primary);cursor:pointer;">📝 Word (RTF)</button>
                         <button data-format="txt" style="display:block;width:100%;text-align:left;padding:8px 14px;background:none;border:none;color:var(--text-primary);cursor:pointer;">🗒️ Texto Simple</button>

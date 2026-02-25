@@ -1964,12 +1964,11 @@ test('MEDIUM: transcriptor.js limpia blob URLs', () => {
     assert(code.includes('revokeObjectURL'), 'Debe revocar Object URLs de blobs');
 });
 
-test('MEDIUM: pdfMaker.js segundo página usa MT', () => {
+test('MEDIUM: pdfMaker.js segundo página dibuja encabezado', () => {
     const code = fs.readFileSync(path.join(root, 'src/js/features/pdfMaker.js'), 'utf-8');
-    assert(code.includes('cy = MT'), 'ensureSpace debe usar cy = MT');
-    // cy = 10 en drawHeader (página 1 setup) es legítimo; verificar que ensureSpace e inline overflow usen MT
+    // ensureSpace debe llamar a drawHeader() para repetir encabezado en todas las páginas
     const ensureSpaceMatch = code.match(/function ensureSpace[\s\S]*?\n\s*\}/m);
-    assert(ensureSpaceMatch && ensureSpaceMatch[0].includes('cy = MT'), 'ensureSpace debe usar cy = MT');
+    assert(ensureSpaceMatch && ensureSpaceMatch[0].includes('drawHeader()'), 'ensureSpace debe llamar drawHeader() en páginas 2+');
 });
 
 test('MEDIUM: pdfMaker.js _hexToRgb soporta hex corto', () => {
