@@ -753,66 +753,22 @@ async function ensureAppLoaded() {
         throw new Error('API key inválida');
     }
     
-    document.getElementById('statusText').textContent = '⏳ Limpiando caché...';
+    document.getElementById('statusText').textContent = '⏳ Cargando app...';
     
-    // ── Paso 1: Limpiar SW y caches del contexto padre ──
-    try {
-        const regs = await navigator.serviceWorker.getRegistrations();
-        for (const reg of regs) await reg.unregister();
-        const cacheNames = await caches.keys();
-        for (const name of cacheNames) await caches.delete(name);
-    } catch(e) { console.warn('SW cleanup:', e); }
-    
-    try {
-        localStorage.removeItem('editor_autosave');
-        localStorage.removeItem('editor_autosave_meta');
-    } catch(e) {}
-    
-    // ── Paso 2: Cargar la app en el iframe (onload ANTES de src) ──
-    document.getElementById('statusText').textContent = '⏳ Cargando app en iframe...';
-    
-    await new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-            console.warn('Iframe load timeout — continuing anyway');
-            resolve();
-        }, 15000);
-        appFrame.onload = () => {
-            clearTimeout(timeout);
-            setTimeout(resolve, 2000);
-        };
-        appFrame.src = '../index.html?_t=' + Date.now();
-    });
-    
-    // ── Paso 3: Desregistrar SW que la app registró y recargar limpia ──
-    document.getElementById('statusText').textContent = '⏳ Recargando sin Service Worker...';
-    
-    try {
-        const iframeRegs = await appFrame.contentWindow.navigator.serviceWorker.getRegistrations();
-        for (const reg of iframeRegs) await reg.unregister();
-        const iframeCaches = await appFrame.contentWindow.caches.keys();
-        for (const name of iframeCaches) await appFrame.contentWindow.caches.delete(name);
-    } catch(e) { console.warn('iframe SW cleanup:', e); }
-    
+    // Cargar app en iframe — simple y directo
     await new Promise((resolve) => {
-        const timeout = setTimeout(() => {
-            console.warn('Iframe reload timeout — continuing anyway');
-            resolve();
-        }, 15000);
-        appFrame.onload = () => {
-            clearTimeout(timeout);
-            setTimeout(resolve, 3500);
-        };
-        appFrame.contentWindow.location.reload(true);
+        appFrame.onload = () => setTimeout(resolve, 3000);
+        appFrame.src = '../index.html?nocache=' + Date.now();
     });
     
-    // ── Paso 4: Inyectar API key en el iframe ──
-    document.getElementById('statusText').textContent = '⏳ Configurando API key...';
+    // Inyectar API key
     try {
         win().GROQ_API_KEY = apiKey;
         win().localStorage.setItem('groq_api_key', apiKey);
-    } catch(e) { console.warn('API key injection:', e); }
+    } catch(e) {}
     
     appLoaded = true;
+    document.getElementById('statusText').textContent = '✅ App cargada';
 }
 
 async function runSection(sectionIndex, btnEl) {
