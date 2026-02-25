@@ -546,13 +546,13 @@ window.initModals = function () {
             if (hiddenBtn) hiddenBtn.click();
         });
 
-        // Insertar después del header de paciente/placeholder/banner original
+        // Insertar después del header de paciente/placeholder (NO después del banner de texto original)
         const anchor = editor.querySelector('.patient-data-header') ||
-                       editor.querySelector('.patient-placeholder-banner') ||
-                       editor.querySelector('.original-text-banner');
+                       editor.querySelector('.patient-placeholder-banner');
         if (anchor) {
             anchor.after(wrap);
         } else {
+            // Si no hay header de paciente, insertar al inicio del editor
             editor.insertBefore(wrap, editor.firstChild);
         }
     };
