@@ -278,13 +278,17 @@ section('B. Botón T+E (Gemini animado)', [
         name: 'Oculto en modo Normal',
         test: () => {
             const toggle = $('proModeToggle');
-            // Asegurar Normal
-            if (toggle.checked) toggle.click();
-            // El toggle dispara updateButtonsVisibility internamente
+            // Forzar Normal directamente (click() no siempre dispara change en iframe)
+            toggle.checked = false;
+            toggle.dispatchEvent(new Event('change', { bubbles: true }));
+            // Doble seguro: llamar updateButtonsVisibility explícitamente
+            win().currentMode = 'normal';
+            win().updateButtonsVisibility(win().appState || 'IDLE');
             const btn = $('transcribeAndStructureBtn');
             const cs = getCS(btn);
             // Restaurar Pro
-            toggle.click();
+            toggle.checked = true;
+            toggle.dispatchEvent(new Event('change', { bubbles: true }));
             if (cs.display !== 'none') throw `display = "${cs.display}", debería ser none`;
             return true;
         }
