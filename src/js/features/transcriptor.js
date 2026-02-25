@@ -171,6 +171,10 @@ if (transcribeBtn) {
             // Auto-detect template in Pro mode AND auto-structure pipeline
             // Solo auto-estructurar si se usó el botón "Transcribir y Estructurar"
             if (shouldAutoStructureNow && window.currentMode === 'pro' && editor && editor.innerText.trim().length > 50) {
+                // Ocultar el contenido del editor mientras se estructura
+                // El usuario NO debe ver el texto crudo — solo el resultado final
+                editor.classList.add('editor-pipeline-hidden');
+
                 if (typeof detectStudyType === 'function') {
                     const detection = detectStudyType(editor.innerText);
                     if (detection.confidence >= 2) {
@@ -182,20 +186,22 @@ if (transcribeBtn) {
                         // Check if MEDICAL_TEMPLATES is accessible globally
                         if (typeof MEDICAL_TEMPLATES !== 'undefined') {
                             const templateName = MEDICAL_TEMPLATES[detection.type]?.name || detection.type;
-                            setTimeout(() => {
-                                showToast(`🤖 Plantilla detectada: ${templateName} — Estructurando...`, 'success');
-                            }, 300);
+                            showToast(`🤖 Plantilla detectada: ${templateName} — Estructurando...`, 'success');
                         }
                     }
                 }
 
-                // ── Auto-pipeline: Transcripción → Estructuración automática ──
-                // Esperar un momento para que la UI se actualice, luego estructurar
-                setTimeout(() => {
-                    if (typeof window.autoStructure === 'function') {
-                        window.autoStructure({ silent: true });
-                    }
-                }, 1200);
+                // ── Auto-pipeline: Transcripción → Estructuración inmediata ──
+                // No usar timeout — estructurar inmediatamente para que el usuario
+                // nunca vea el texto sin formato
+                if (typeof window.autoStructure === 'function') {
+                    window.autoStructure({ silent: true }).finally(() => {
+                        // Revelar el editor solo cuando la estructuración termine
+                        editor.classList.remove('editor-pipeline-hidden');
+                    });
+                } else {
+                    editor.classList.remove('editor-pipeline-hidden');
+                }
             }
 
             if (progressFill) progressFill.style.width = '100%';

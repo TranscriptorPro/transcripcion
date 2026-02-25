@@ -590,6 +590,15 @@
             color: #dc2626;
         }
 
+        /* Editor: ocultar contenido durante pipeline T+E */
+        .editor-pipeline-hidden {
+            color: transparent !important;
+            caret-color: transparent !important;
+        }
+        .editor-pipeline-hidden * {
+            color: transparent !important;
+        }
+
         /* Editor Area */
         .editor-area {
             display: flex;
