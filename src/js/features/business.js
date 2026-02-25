@@ -461,16 +461,30 @@ function _initAdmin() {
 }
 
 // ─── Datos de prueba para admin ──────────────────────────────────────────────
-// Se cargan SOLO si no hay workplaces configurados. Permiten probar
-// Vista Previa, PDF, selectores, perfiles de salida, etc. sin configurar nada.
+// Base de datos simulada COMPLETA para testing.
+// Se cargan SOLO si no hay workplaces configurados.
 // Al resetear la app, se re-cargan automáticamente.
+//
+// ESTRUCTURA:
+//   8 lugares de trabajo (3 clínicas + 5 consultorios personales)
+//   20 profesionales de 10 especialidades distintas
+//   20 perfiles de salida descriptivos (combinación lugar + médico + estudio)
+//   15 pacientes ficticios con datos completos
+//
+// Los perfiles de salida tienen nombres descriptivos tipo:
+//   "🫀 Eco-stress — Dr. Ruiz — Clínica del Sur"
+//   "🫁 Espirometría — Dr. Gómez — Consultorio de la Costa"
+// para que el admin pueda elegir rápido sin inventar datos.
 function _loadAdminTestData() {
     const existing = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
     if (existing.length > 0) return; // ya hay datos, no sobreescribir
 
-    // ── LUGARES DE TRABAJO + PROFESIONALES ───────────────────────────
+    // ══════════════════════════════════════════════════════════════════
+    // ██ LUGARES DE TRABAJO + PROFESIONALES
+    // ══════════════════════════════════════════════════════════════════
     const testWorkplaces = [
-        // ───── 0: Clínica grande (4 profesionales) — simula PRO CLÍNICA ─────
+
+        // ───── 0: CLÍNICA GRANDE — Clínica del Sur (4 médicos) ──────
         {
             name: 'Clínica del Sur — Sede Lanús',
             address: 'Hipólito Yrigoyen 3850, Lanús, Buenos Aires',
@@ -479,13 +493,14 @@ function _loadAdminTestData() {
             footer: 'Clínica del Sur — Compromiso con tu salud desde 1998',
             logo: null,
             professionals: [
-                { nombre: 'Dr. Alejandro Ruiz',   matricula: 'MP 22.510', especialidades: 'Cardiología, Hemodinamia, Ecocardiografía',          telefono: '(011) 4241-5501', email: 'a.ruiz@clinicadelsur.com.ar',   firma: null, logo: null },
-                { nombre: 'Dra. Carolina Paz',     matricula: 'MP 34.821', especialidades: 'Neurología, Electroencefalografía, Electromiografía', telefono: '(011) 4241-5502', email: 'c.paz@clinicadelsur.com.ar',    firma: null, logo: null },
-                { nombre: 'Dr. Fernando Suárez',   matricula: 'MP 28.190', especialidades: 'Otorrinolaringología, Audiometría, Laringoscopía',   telefono: '(011) 4241-5503', email: 'f.suarez@clinicadelsur.com.ar', firma: null, logo: null },
-                { nombre: 'Dra. Mariana López',    matricula: 'MP 41.005', especialidades: 'Gastroenterología, Colonoscopía, Endoscopía',         telefono: '(011) 4241-5504', email: 'm.lopez@clinicadelsur.com.ar',  firma: null, logo: null }
+                { nombre: 'Dr. Alejandro Ruiz',   matricula: 'MP 22.510', especialidades: 'Cardiología, Ecocardiografía, Eco-stress, Holter',     telefono: '(011) 4241-5501', email: 'a.ruiz@clinicadelsur.com.ar',   firma: null, logo: null },
+                { nombre: 'Dr. Fernando Suárez',   matricula: 'MP 28.190', especialidades: 'ORL, Laringoscopía, Nasofibroscopía, Audiometría',     telefono: '(011) 4241-5503', email: 'f.suarez@clinicadelsur.com.ar', firma: null, logo: null },
+                { nombre: 'Dra. Mariana López',    matricula: 'MP 41.005', especialidades: 'Gastroenterología, Colonoscopía, Endoscopía alta',     telefono: '(011) 4241-5504', email: 'm.lopez@clinicadelsur.com.ar',  firma: null, logo: null },
+                { nombre: 'Dr. Ignacio Ríos',      matricula: 'MP 33.415', especialidades: 'Neumonología, Espirometría, Pletismografía',           telefono: '(011) 4241-5505', email: 'i.rios@clinicadelsur.com.ar',   firma: null, logo: null }
             ]
         },
-        // ───── 1: Centro médico mediano (3 profesionales) ────────────────────
+
+        // ───── 1: CLÍNICA MEDIANA — Centro Médico San Martín (4 médicos) ─
         {
             name: 'Centro Médico San Martín',
             address: 'Av. Rivadavia 4500, Piso 3, CABA',
@@ -494,36 +509,14 @@ function _loadAdminTestData() {
             footer: 'Centro Médico San Martín — Atención integral del paciente',
             logo: null,
             professionals: [
-                { nombre: 'Dr. Roberto Gutiérrez', matricula: 'MN 45.892', especialidades: 'Cardiología, Ecocardiografía',            telefono: '(011) 5555-0101', email: 'r.gutierrez@centrosanmartin.com.ar', firma: null, logo: null },
-                { nombre: 'Dra. Lucía Fernández',  matricula: 'MN 52.310', especialidades: 'Gastroenterología, Endoscopía digestiva',  telefono: '(011) 5555-0102', email: 'l.fernandez@centrosanmartin.com.ar', firma: null, logo: null },
-                { nombre: 'Dr. Martín Álvarez',    matricula: 'MN 38.675', especialidades: 'Neumonología, Espirometría',               telefono: '(011) 5555-0103', email: 'm.alvarez@centrosanmartin.com.ar',  firma: null, logo: null }
+                { nombre: 'Dra. Lucía Fernández',  matricula: 'MN 52.310', especialidades: 'Gastroenterología, Endoscopía, Colonoscopía, CPRE',   telefono: '(011) 5555-0102', email: 'l.fernandez@centrosanmartin.com.ar', firma: null, logo: null },
+                { nombre: 'Dr. Martín Álvarez',    matricula: 'MN 38.675', especialidades: 'Neumonología, Espirometría, Test de marcha',           telefono: '(011) 5555-0103', email: 'm.alvarez@centrosanmartin.com.ar',   firma: null, logo: null },
+                { nombre: 'Dra. Carolina Paz',      matricula: 'MN 34.821', especialidades: 'Neurología, Electromiografía, Polisomnografía',       telefono: '(011) 5555-0104', email: 'c.paz@centrosanmartin.com.ar',       firma: null, logo: null },
+                { nombre: 'Dra. Paula Iglesias',    matricula: 'MN 47.102', especialidades: 'Ginecología, Colposcopía, PAP',                       telefono: '(011) 5555-0105', email: 'p.iglesias@centrosanmartin.com.ar',  firma: null, logo: null }
             ]
         },
-        // ───── 2: Consultorio personal (1 profesional) — simula PRO PERSONAL ─
-        {
-            name: 'Consultorio Dra. Méndez',
-            address: 'Juncal 1280, 2ºB, CABA',
-            phone: '(011) 4815-7722',
-            email: 'consultorio@dramendez.com.ar',
-            footer: 'Dra. Valeria Méndez — Oftalmología y Estudios de la Visión',
-            logo: null,
-            professionals: [
-                { nombre: 'Dra. Valeria Méndez', matricula: 'MN 61.204', especialidades: 'Oftalmología, Campimetría, Topografía corneal, OCT', telefono: '(011) 4815-7722', email: 'valeria@dramendez.com.ar', firma: null, logo: null }
-            ]
-        },
-        // ───── 3: Consultorio personal (1 profesional) — simula NORMAL ───────
-        {
-            name: 'Consultorio Dr. Navarro',
-            address: 'Corrientes 2150, 5ºA, Rosario, Santa Fe',
-            phone: '(0341) 421-8900',
-            email: 'consultorio@drnavarro.com.ar',
-            footer: 'Dr. Pablo Navarro — Clínica Médica',
-            logo: null,
-            professionals: [
-                { nombre: 'Dr. Pablo Navarro', matricula: 'MP 15.330', especialidades: 'Clínica Médica', telefono: '(0341) 421-8900', email: 'pablo@drnavarro.com.ar', firma: null, logo: null }
-            ]
-        },
-        // ───── 4: Instituto de diagnóstico (5 profesionales) — simula PRO CLÍNICA GRANDE ─
+
+        // ───── 2: CLÍNICA GRANDE — Instituto de Diagnóstico del Litoral (4 médicos) ─
         {
             name: 'Instituto de Diagnóstico del Litoral',
             address: 'Bv. Oroño 1200, Rosario, Santa Fe',
@@ -532,152 +525,164 @@ function _loadAdminTestData() {
             footer: 'IDL — Diagnóstico por imágenes y estudios funcionales',
             logo: null,
             professionals: [
-                { nombre: 'Dr. Gonzalo Peralta',     matricula: 'MP 8.215',  especialidades: 'Diagnóstico por Imágenes, Ecografía, Eco Doppler',    telefono: '(0341) 449-6001', email: 'g.peralta@idlitoral.com.ar',    firma: null, logo: null },
-                { nombre: 'Dra. Sofía Ramírez',      matricula: 'MP 12.740', especialidades: 'Cardiología, Eco-stress, Ecocardiograma',             telefono: '(0341) 449-6002', email: 's.ramirez@idlitoral.com.ar',    firma: null, logo: null },
-                { nombre: 'Dr. Ignacio Torres',      matricula: 'MP 9.501',  especialidades: 'Neumonología, Espirometría, Polisomnografía',         telefono: '(0341) 449-6003', email: 'i.torres@idlitoral.com.ar',     firma: null, logo: null },
-                { nombre: 'Dra. Natalia Vega',        matricula: 'MP 14.892', especialidades: 'Neurología, EEG, Potenciales evocados',               telefono: '(0341) 449-6004', email: 'n.vega@idlitoral.com.ar',       firma: null, logo: null },
-                { nombre: 'Dr. Emilio Córdoba',       matricula: 'MP 7.603',  especialidades: 'Gastroenterología, Endoscopía, CPRE',                 telefono: '(0341) 449-6005', email: 'e.cordoba@idlitoral.com.ar',    firma: null, logo: null }
+                { nombre: 'Dr. Gonzalo Peralta',     matricula: 'MP 8.215',  especialidades: 'Imágenes, Ecografía Abdominal, Eco Doppler',         telefono: '(0341) 449-6001', email: 'g.peralta@idlitoral.com.ar',    firma: null, logo: null },
+                { nombre: 'Dra. Sofía Ramírez',      matricula: 'MP 12.740', especialidades: 'Cardiología, Eco-stress, Ecocardiograma, ECG',       telefono: '(0341) 449-6002', email: 's.ramirez@idlitoral.com.ar',    firma: null, logo: null },
+                { nombre: 'Dr. Emilio Córdoba',       matricula: 'MP 7.603',  especialidades: 'Gastroenterología, Endoscopía, Broncoscopía',        telefono: '(0341) 449-6005', email: 'e.cordoba@idlitoral.com.ar',    firma: null, logo: null },
+                { nombre: 'Dra. Natalia Vega',        matricula: 'MP 14.892', especialidades: 'Neurología, EEG, Potenciales evocados',               telefono: '(0341) 449-6004', email: 'n.vega@idlitoral.com.ar',       firma: null, logo: null }
+            ]
+        },
+
+        // ───── 3: CONSULTORIO PERSONAL — Dr. Gómez (Neumólogo, 3 lugares) ─
+        {
+            name: 'Consultorio Dr. Gómez — Costa',
+            address: 'Av. Colón 1500, Mar del Plata, Buenos Aires',
+            phone: '(0223) 495-3210',
+            email: 'gomez.neumo@gmail.com',
+            footer: 'Dr. Ramiro Gómez — Neumonología',
+            logo: null,
+            professionals: [
+                { nombre: 'Dr. Ramiro Gómez', matricula: 'MP 18.440', especialidades: 'Neumonología, Espirometría, Test de marcha, Pletismografía', telefono: '(0223) 495-3210', email: 'gomez.neumo@gmail.com', firma: null, logo: null }
+            ]
+        },
+        {
+            name: 'Consultorio Dr. Gómez — Miramar',
+            address: 'Calle 21 Nº 854, Miramar, Buenos Aires',
+            phone: '(02291) 43-2100',
+            email: 'gomez.neumo@gmail.com',
+            footer: 'Dr. Ramiro Gómez — Neumonología',
+            logo: null,
+            professionals: [
+                { nombre: 'Dr. Ramiro Gómez', matricula: 'MP 18.440', especialidades: 'Neumonología, Espirometría, Test de marcha, Pletismografía', telefono: '(02291) 43-2100', email: 'gomez.neumo@gmail.com', firma: null, logo: null }
+            ]
+        },
+
+        // ───── 5: CONSULTORIO PERSONAL — Dra. Méndez (Oftalmóloga, 2 lugares) ─
+        {
+            name: 'Consultorio Dra. Méndez — CABA',
+            address: 'Juncal 1280, 2ºB, CABA',
+            phone: '(011) 4815-7722',
+            email: 'valeria@dramendez.com.ar',
+            footer: 'Dra. Valeria Méndez — Oftalmología',
+            logo: null,
+            professionals: [
+                { nombre: 'Dra. Valeria Méndez', matricula: 'MN 61.204', especialidades: 'Oftalmología, Campimetría, Topografía corneal, Fondo de ojo, OCT', telefono: '(011) 4815-7722', email: 'valeria@dramendez.com.ar', firma: null, logo: null }
+            ]
+        },
+        {
+            name: 'Consultorio Dra. Méndez — Pilar',
+            address: 'Las Magnolias 350, Pilar, Buenos Aires',
+            phone: '(0230) 445-1100',
+            email: 'valeria@dramendez.com.ar',
+            footer: 'Dra. Valeria Méndez — Oftalmología',
+            logo: null,
+            professionals: [
+                { nombre: 'Dra. Valeria Méndez', matricula: 'MN 61.204', especialidades: 'Oftalmología, Campimetría, Topografía corneal, Fondo de ojo, OCT', telefono: '(0230) 445-1100', email: 'valeria@dramendez.com.ar', firma: null, logo: null }
+            ]
+        },
+
+        // ───── 7: CONSULTORIO PERSONAL — Dr. Navarro (Cirujano, 2 lugares) ─
+        {
+            name: 'Consultorio Dr. Navarro — Rosario',
+            address: 'Corrientes 2150, 5ºA, Rosario, Santa Fe',
+            phone: '(0341) 421-8900',
+            email: 'pablo@drnavarro.com.ar',
+            footer: 'Dr. Pablo Navarro — Cirugía General',
+            logo: null,
+            professionals: [
+                { nombre: 'Dr. Pablo Navarro', matricula: 'MP 15.330', especialidades: 'Cirugía General, Protocolo quirúrgico', telefono: '(0341) 421-8900', email: 'pablo@drnavarro.com.ar', firma: null, logo: null }
+            ]
+        },
+
+        // ───── 8: CONSULTORIO PERSONAL — Dra. Herrera (Cardióloga, 2 lugares) ─
+        {
+            name: 'Consultorio Dra. Herrera — Belgrano',
+            address: 'Av. Cabildo 2340, 8ºC, CABA',
+            phone: '(011) 4788-9200',
+            email: 'mherrera.cardio@gmail.com',
+            footer: 'Dra. Marcela Herrera — Cardiología',
+            logo: null,
+            professionals: [
+                { nombre: 'Dra. Marcela Herrera', matricula: 'MN 55.890', especialidades: 'Cardiología, Ecocardiograma, ECG, Eco-stress, Holter, MAPA, Cinecoronariografía', telefono: '(011) 4788-9200', email: 'mherrera.cardio@gmail.com', firma: null, logo: null }
+            ]
+        },
+        {
+            name: 'Consultorio Dra. Herrera — Quilmes',
+            address: 'Mitre 550, Quilmes, Buenos Aires',
+            phone: '(011) 4254-3300',
+            email: 'mherrera.cardio@gmail.com',
+            footer: 'Dra. Marcela Herrera — Cardiología',
+            logo: null,
+            professionals: [
+                { nombre: 'Dra. Marcela Herrera', matricula: 'MN 55.890', especialidades: 'Cardiología, Ecocardiograma, ECG, Eco-stress, Holter, MAPA, Cinecoronariografía', telefono: '(011) 4254-3300', email: 'mherrera.cardio@gmail.com', firma: null, logo: null }
+            ]
+        },
+
+        // ───── 10: CONSULTORIO PERSONAL — Dr. Campos (Gastro, 2 lugares) ─
+        {
+            name: 'Consultorio Dr. Campos — Córdoba',
+            address: 'Av. Colón 680, Córdoba Capital',
+            phone: '(0351) 423-7800',
+            email: 'dcampos.gastro@gmail.com',
+            footer: 'Dr. Diego Campos — Gastroenterología',
+            logo: null,
+            professionals: [
+                { nombre: 'Dr. Diego Campos', matricula: 'MP 31.550', especialidades: 'Gastroenterología, Colonoscopía, Endoscopía alta, Broncoscopía', telefono: '(0351) 423-7800', email: 'dcampos.gastro@gmail.com', firma: null, logo: null }
+            ]
+        },
+        {
+            name: 'Consultorio Dr. Campos — Villa Carlos Paz',
+            address: 'San Martín 120, Villa Carlos Paz, Córdoba',
+            phone: '(03541) 42-6500',
+            email: 'dcampos.gastro@gmail.com',
+            footer: 'Dr. Diego Campos — Gastroenterología',
+            logo: null,
+            professionals: [
+                { nombre: 'Dr. Diego Campos', matricula: 'MP 31.550', especialidades: 'Gastroenterología, Colonoscopía, Endoscopía alta, Broncoscopía', telefono: '(03541) 42-6500', email: 'dcampos.gastro@gmail.com', firma: null, logo: null }
             ]
         }
     ];
 
     localStorage.setItem('workplace_profiles', JSON.stringify(testWorkplaces));
 
-    // ── PERFILES DE SALIDA (output_profiles) ─────────────────────────
-    // Combinan: lugar (index) + profesional (index) + formato del PDF
+    // ══════════════════════════════════════════════════════════════════
+    // ██ PERFILES DE SALIDA — 20 combinaciones para testing rápido
+    // ══════════════════════════════════════════════════════════════════
+    // Cada nombre describe: EMOJI_ESTUDIO + Estudio — Doctor — Lugar
+    // Al elegir un perfil → se cargan automáticamente lugar + médico + formato.
+    // Después, el admin solo elige la plantilla que corresponda y prueba.
     const existingOutputProfiles = JSON.parse(localStorage.getItem('output_profiles') || '[]');
     if (existingOutputProfiles.length === 0) {
         const ts = Date.now();
+        const std = { pageSize: 'a4', orientation: 'portrait', margins: 'normal', font: 'helvetica', fontSize: '11', lineSpacing: '1.5', showHeader: true, showFooter: true, showPageNum: true, showDate: true, showSignLine: true, showSignName: true, showSignMatricula: true };
+
         const testOutputProfiles = [
-            // ── Clínica del Sur (lugar 0) ────────────────────────────────
-            {
-                id: 'demo_01', name: '🏥 Clínica Sur — Dr. Ruiz (Cardio)',
-                workplaceIndex: '0', professionalIndex: '0',
-                pageSize: 'a4', orientation: 'portrait', margins: 'normal',
-                font: 'helvetica', fontSize: '11', lineSpacing: '1.5',
-                showHeader: true, showFooter: true, showPageNum: true,
-                showDate: true, showSignLine: true, showSignName: true, showSignMatricula: true,
-                footerText: 'Clínica del Sur — Compromiso con tu salud desde 1998',
-                isDefault: true, createdAt: ts, lastUsed: ts
-            },
-            {
-                id: 'demo_02', name: '🏥 Clínica Sur — Dra. Paz (Neuro)',
-                workplaceIndex: '0', professionalIndex: '1',
-                pageSize: 'a4', orientation: 'portrait', margins: 'normal',
-                font: 'helvetica', fontSize: '11', lineSpacing: '1.5',
-                showHeader: true, showFooter: true, showPageNum: true,
-                showDate: true, showSignLine: true, showSignName: true, showSignMatricula: true,
-                footerText: 'Clínica del Sur — Compromiso con tu salud desde 1998',
-                isDefault: false, createdAt: ts + 1, lastUsed: ts + 1
-            },
-            {
-                id: 'demo_03', name: '🏥 Clínica Sur — Dr. Suárez (ORL)',
-                workplaceIndex: '0', professionalIndex: '2',
-                pageSize: 'a4', orientation: 'portrait', margins: 'normal',
-                font: 'times', fontSize: '12', lineSpacing: '1.5',
-                showHeader: true, showFooter: true, showPageNum: true,
-                showDate: false, showSignLine: true, showSignName: true, showSignMatricula: true,
-                footerText: 'Clínica del Sur — Compromiso con tu salud desde 1998',
-                isDefault: false, createdAt: ts + 2, lastUsed: ts + 2
-            },
-            {
-                id: 'demo_04', name: '🏥 Clínica Sur — Dra. López (Gastro)',
-                workplaceIndex: '0', professionalIndex: '3',
-                pageSize: 'a4', orientation: 'portrait', margins: 'compact',
-                font: 'helvetica', fontSize: '10', lineSpacing: '1.3',
-                showHeader: true, showFooter: true, showPageNum: true,
-                showDate: true, showSignLine: true, showSignName: true, showSignMatricula: true,
-                footerText: 'Clínica del Sur — Compromiso con tu salud desde 1998',
-                isDefault: false, createdAt: ts + 3, lastUsed: ts + 3
-            },
+            // ── CLÍNICA DEL SUR (lugar 0) — 4 médicos × sus estudios ─────
+            { id: 'tp_01', ...std, name: '🫀 Eco-stress — Dr. Ruiz — Clínica del Sur',           workplaceIndex: '0', professionalIndex: '0', footerText: 'Clínica del Sur', isDefault: true,  createdAt: ts,    lastUsed: ts },
+            { id: 'tp_02', ...std, name: '🫀 Ecocardiograma — Dr. Ruiz — Clínica del Sur',       workplaceIndex: '0', professionalIndex: '0', footerText: 'Clínica del Sur', isDefault: false, createdAt: ts+1,  lastUsed: ts+1 },
+            { id: 'tp_03', ...std, name: '👂 Laringoscopía — Dr. Suárez — Clínica del Sur',       workplaceIndex: '0', professionalIndex: '1', footerText: 'Clínica del Sur', isDefault: false, createdAt: ts+2,  lastUsed: ts+2, font: 'times', fontSize: '12' },
+            { id: 'tp_04', ...std, name: '👂 Nasofibroscopía — Dr. Suárez — Clínica del Sur',     workplaceIndex: '0', professionalIndex: '1', footerText: 'Clínica del Sur', isDefault: false, createdAt: ts+3,  lastUsed: ts+3, font: 'times', fontSize: '12' },
+            { id: 'tp_05', ...std, name: '🔭 Colonoscopía — Dra. López — Clínica del Sur',        workplaceIndex: '0', professionalIndex: '2', footerText: 'Clínica del Sur', isDefault: false, createdAt: ts+4,  lastUsed: ts+4, margins: 'compact', fontSize: '10' },
+            { id: 'tp_06', ...std, name: '🫁 Espirometría — Dr. Ríos — Clínica del Sur',          workplaceIndex: '0', professionalIndex: '3', footerText: 'Clínica del Sur', isDefault: false, createdAt: ts+5,  lastUsed: ts+5 },
 
-            // ── Centro Médico San Martín (lugar 1) ───────────────────────
-            {
-                id: 'demo_05', name: '🩺 San Martín — Dr. Gutiérrez (Cardio)',
-                workplaceIndex: '1', professionalIndex: '0',
-                pageSize: 'a4', orientation: 'portrait', margins: 'normal',
-                font: 'helvetica', fontSize: '11', lineSpacing: '1.5',
-                showHeader: true, showFooter: true, showPageNum: true,
-                showDate: true, showSignLine: true, showSignName: true, showSignMatricula: true,
-                footerText: 'Centro Médico San Martín — Atención integral del paciente',
-                isDefault: false, createdAt: ts + 4, lastUsed: ts + 4
-            },
-            {
-                id: 'demo_06', name: '🩺 San Martín — Dra. Fernández (Gastro)',
-                workplaceIndex: '1', professionalIndex: '1',
-                pageSize: 'a4', orientation: 'portrait', margins: 'normal',
-                font: 'courier', fontSize: '10', lineSpacing: '1.4',
-                showHeader: true, showFooter: false, showPageNum: true,
-                showDate: true, showSignLine: true, showSignName: true, showSignMatricula: true,
-                footerText: '',
-                isDefault: false, createdAt: ts + 5, lastUsed: ts + 5
-            },
+            // ── CENTRO SAN MARTÍN (lugar 1) — 4 médicos ─────────────────
+            { id: 'tp_07', ...std, name: '🔭 Endoscopía alta — Dra. Fernández — San Martín',      workplaceIndex: '1', professionalIndex: '0', footerText: 'Centro Médico San Martín', isDefault: false, createdAt: ts+6,  lastUsed: ts+6 },
+            { id: 'tp_08', ...std, name: '🫁 Test de marcha — Dr. Álvarez — San Martín',           workplaceIndex: '1', professionalIndex: '1', footerText: 'Centro Médico San Martín', isDefault: false, createdAt: ts+7,  lastUsed: ts+7 },
+            { id: 'tp_09', ...std, name: '🧠 Electromiografía — Dra. Paz — San Martín',            workplaceIndex: '1', professionalIndex: '2', footerText: 'Centro Médico San Martín', isDefault: false, createdAt: ts+8,  lastUsed: ts+8 },
+            { id: 'tp_10', ...std, name: '🌸 Colposcopía — Dra. Iglesias — San Martín',            workplaceIndex: '1', professionalIndex: '3', footerText: 'Centro Médico San Martín', isDefault: false, createdAt: ts+9,  lastUsed: ts+9 },
 
-            // ── Consultorio Dra. Méndez (lugar 2) — personal ────────────
-            {
-                id: 'demo_07', name: '👁️ Dra. Méndez — Oftalmología (con fecha)',
-                workplaceIndex: '2', professionalIndex: '0',
-                pageSize: 'a4', orientation: 'portrait', margins: 'normal',
-                font: 'helvetica', fontSize: '11', lineSpacing: '1.5',
-                showHeader: true, showFooter: true, showPageNum: true,
-                showDate: true, showSignLine: true, showSignName: true, showSignMatricula: true,
-                footerText: 'Dra. Valeria Méndez — Oftalmología y Estudios de la Visión',
-                isDefault: false, createdAt: ts + 6, lastUsed: ts + 6
-            },
-            {
-                id: 'demo_08', name: '👁️ Dra. Méndez — Sin footer, compacto',
-                workplaceIndex: '2', professionalIndex: '0',
-                pageSize: 'a4', orientation: 'portrait', margins: 'compact',
-                font: 'helvetica', fontSize: '10', lineSpacing: '1.2',
-                showHeader: true, showFooter: false, showPageNum: false,
-                showDate: false, showSignLine: true, showSignName: true, showSignMatricula: true,
-                footerText: '',
-                isDefault: false, createdAt: ts + 7, lastUsed: ts + 7
-            },
+            // ── IDL ROSARIO (lugar 2) — 4 médicos ───────────────────────
+            { id: 'tp_11', ...std, name: '🖼️ Eco Doppler — Dr. Peralta — IDL Rosario',             workplaceIndex: '2', professionalIndex: '0', footerText: 'IDL Rosario', isDefault: false, createdAt: ts+10, lastUsed: ts+10 },
+            { id: 'tp_12', ...std, name: '🫀 Ecocardiograma — Dra. Ramírez — IDL Rosario',         workplaceIndex: '2', professionalIndex: '1', footerText: 'IDL Rosario', isDefault: false, createdAt: ts+11, lastUsed: ts+11 },
+            { id: 'tp_13', ...std, name: '🔭 Broncoscopía — Dr. Córdoba — IDL Rosario',            workplaceIndex: '2', professionalIndex: '2', footerText: 'IDL Rosario', isDefault: false, createdAt: ts+12, lastUsed: ts+12 },
 
-            // ── Consultorio Dr. Navarro (lugar 3) — normal/básico ────────
-            {
-                id: 'demo_09', name: '📋 Dr. Navarro — Clínica Médica estándar',
-                workplaceIndex: '3', professionalIndex: '0',
-                pageSize: 'a4', orientation: 'portrait', margins: 'normal',
-                font: 'times', fontSize: '12', lineSpacing: '1.5',
-                showHeader: true, showFooter: true, showPageNum: true,
-                showDate: true, showSignLine: true, showSignName: true, showSignMatricula: true,
-                footerText: 'Dr. Pablo Navarro — Clínica Médica',
-                isDefault: false, createdAt: ts + 8, lastUsed: ts + 8
-            },
-            {
-                id: 'demo_10', name: '📋 Dr. Navarro — Solo firma, sin header',
-                workplaceIndex: '3', professionalIndex: '0',
-                pageSize: 'a4', orientation: 'portrait', margins: 'normal',
-                font: 'helvetica', fontSize: '11', lineSpacing: '1.5',
-                showHeader: false, showFooter: false, showPageNum: false,
-                showDate: false, showSignLine: true, showSignName: true, showSignMatricula: true,
-                footerText: '',
-                isDefault: false, createdAt: ts + 9, lastUsed: ts + 9
-            },
-
-            // ── Instituto Diagnóstico del Litoral (lugar 4) ─────────────
-            {
-                id: 'demo_11', name: '🔬 IDL — Dr. Peralta (Imágenes)',
-                workplaceIndex: '4', professionalIndex: '0',
-                pageSize: 'a4', orientation: 'portrait', margins: 'normal',
-                font: 'helvetica', fontSize: '11', lineSpacing: '1.5',
-                showHeader: true, showFooter: true, showPageNum: true,
-                showDate: true, showSignLine: true, showSignName: true, showSignMatricula: true,
-                footerText: 'IDL — Diagnóstico por imágenes y estudios funcionales',
-                isDefault: false, createdAt: ts + 10, lastUsed: ts + 10
-            },
-            {
-                id: 'demo_12', name: '🔬 IDL — Dra. Ramírez (Eco-stress)',
-                workplaceIndex: '4', professionalIndex: '1',
-                pageSize: 'a4', orientation: 'landscape', margins: 'wide',
-                font: 'helvetica', fontSize: '10', lineSpacing: '1.3',
-                showHeader: true, showFooter: true, showPageNum: true,
-                showDate: true, showSignLine: true, showSignName: true, showSignMatricula: true,
-                footerText: 'IDL — Diagnóstico por imágenes y estudios funcionales',
-                isDefault: false, createdAt: ts + 11, lastUsed: ts + 11
-            }
+            // ── CONSULTORIOS PERSONALES — 1 médico, diferentes lugares ──
+            { id: 'tp_14', ...std, name: '🫁 Espirometría — Dr. Gómez — Consultorio Costa',        workplaceIndex: '3', professionalIndex: '0', footerText: 'Dr. Ramiro Gómez — Neumonología', isDefault: false, createdAt: ts+13, lastUsed: ts+13 },
+            { id: 'tp_15', ...std, name: '🫁 Pletismografía — Dr. Gómez — Consultorio Miramar',    workplaceIndex: '4', professionalIndex: '0', footerText: 'Dr. Ramiro Gómez — Neumonología', isDefault: false, createdAt: ts+14, lastUsed: ts+14 },
+            { id: 'tp_16', ...std, name: '👁️ Campimetría — Dra. Méndez — CABA',                    workplaceIndex: '5', professionalIndex: '0', footerText: 'Dra. Valeria Méndez — Oftalmología', isDefault: false, createdAt: ts+15, lastUsed: ts+15 },
+            { id: 'tp_17', ...std, name: '👁️ Topografía corneal — Dra. Méndez — Pilar',            workplaceIndex: '6', professionalIndex: '0', footerText: 'Dra. Valeria Méndez — Oftalmología', isDefault: false, createdAt: ts+16, lastUsed: ts+16 },
+            { id: 'tp_18', ...std, name: '🔪 Protocolo quirúrgico — Dr. Navarro — Rosario',        workplaceIndex: '7', professionalIndex: '0', footerText: 'Dr. Pablo Navarro — Cirugía General', isDefault: false, createdAt: ts+17, lastUsed: ts+17 },
+            { id: 'tp_19', ...std, name: '🫀 Cinecoronariografía — Dra. Herrera — Belgrano',       workplaceIndex: '8', professionalIndex: '0', footerText: 'Dra. Marcela Herrera — Cardiología', isDefault: false, createdAt: ts+18, lastUsed: ts+18 },
+            { id: 'tp_20', ...std, name: '🔭 Colonoscopía — Dr. Campos — Córdoba',                 workplaceIndex: '10', professionalIndex: '0', footerText: 'Dr. Diego Campos — Gastroenterología', isDefault: false, createdAt: ts+19, lastUsed: ts+19 },
         ];
         localStorage.setItem('output_profiles', JSON.stringify(testOutputProfiles));
     }
@@ -691,23 +696,32 @@ function _loadAdminTestData() {
         localStorage.setItem('pdf_config', JSON.stringify(existingCfg));
     }
 
-    // ── REGISTRO DE PACIENTES de prueba ──────────────────────────────
+    // ══════════════════════════════════════════════════════════════════
+    // ██ REGISTRO DE PACIENTES — 15 pacientes ficticios
+    // ══════════════════════════════════════════════════════════════════
     const existingPatients = JSON.parse(localStorage.getItem('patient_registry') || '[]');
     if (existingPatients.length === 0) {
         const testPatients = [
-            { id: 'p1', nombre: 'María Elena Rodríguez',  dni: '25.890.145', sexo: 'Femenino',  edad: '54', obraSocial: 'OSDE 310',          telefono: '(011) 4555-1201', email: 'me.rodriguez@email.com',  lastVisit: '2026-02-20', visits: 3 },
-            { id: 'p2', nombre: 'Jorge Alberto Sánchez',   dni: '18.432.567', sexo: 'Masculino', edad: '68', obraSocial: 'PAMI',               telefono: '(011) 4555-1202', email: 'ja.sanchez@email.com',    lastVisit: '2026-02-18', visits: 7 },
-            { id: 'p3', nombre: 'Ana Laura Martínez',      dni: '32.150.890', sexo: 'Femenino',  edad: '41', obraSocial: 'Swiss Medical',      telefono: '(011) 4555-1203', email: 'al.martinez@email.com',   lastVisit: '2026-02-22', visits: 1 },
-            { id: 'p4', nombre: 'Carlos Eduardo Pérez',    dni: '20.765.432', sexo: 'Masculino', edad: '59', obraSocial: 'Galeno',             telefono: '(0341) 421-5504', email: 'ce.perez@email.com',      lastVisit: '2026-02-15', visits: 5 },
-            { id: 'p5', nombre: 'Silvia Beatriz Gómez',    dni: '28.901.234', sexo: 'Femenino',  edad: '47', obraSocial: 'OSECAC',             telefono: '(011) 4555-1205', email: 'sb.gomez@email.com',      lastVisit: '2026-02-24', visits: 2 },
-            { id: 'p6', nombre: 'Ricardo Daniel Moreno',   dni: '14.567.890', sexo: 'Masculino', edad: '73', obraSocial: 'IOMA',               telefono: '(011) 4241-6606', email: 'rd.moreno@email.com',     lastVisit: '2026-01-30', visits: 12 },
-            { id: 'p7', nombre: 'Laura Cristina Díaz',     dni: '35.234.567', sexo: 'Femenino',  edad: '36', obraSocial: 'Medifé',             telefono: '(0341) 449-7707', email: 'lc.diaz@email.com',       lastVisit: '2026-02-10', visits: 4 },
-            { id: 'p8', nombre: 'Héctor Raúl Fernández',   dni: '22.345.678', sexo: 'Masculino', edad: '62', obraSocial: 'Accord Salud',       telefono: '(011) 4555-1208', email: 'hr.fernandez@email.com',  lastVisit: '2026-02-21', visits: 2 }
+            { id: 'p01', nombre: 'María Elena Rodríguez',   dni: '25.890.145', sexo: 'Femenino',  edad: '54', obraSocial: 'OSDE 310',           telefono: '(011) 4555-1201', email: 'me.rodriguez@email.com',   lastVisit: '2026-02-20', visits: 3 },
+            { id: 'p02', nombre: 'Jorge Alberto Sánchez',    dni: '18.432.567', sexo: 'Masculino', edad: '68', obraSocial: 'PAMI',                telefono: '(011) 4555-1202', email: 'ja.sanchez@email.com',     lastVisit: '2026-02-18', visits: 7 },
+            { id: 'p03', nombre: 'Ana Laura Martínez',       dni: '32.150.890', sexo: 'Femenino',  edad: '41', obraSocial: 'Swiss Medical',       telefono: '(011) 4555-1203', email: 'al.martinez@email.com',    lastVisit: '2026-02-22', visits: 1 },
+            { id: 'p04', nombre: 'Carlos Eduardo Pérez',     dni: '20.765.432', sexo: 'Masculino', edad: '59', obraSocial: 'Galeno',              telefono: '(0341) 421-5504', email: 'ce.perez@email.com',       lastVisit: '2026-02-15', visits: 5 },
+            { id: 'p05', nombre: 'Silvia Beatriz Gómez',     dni: '28.901.234', sexo: 'Femenino',  edad: '47', obraSocial: 'OSECAC',              telefono: '(011) 4555-1205', email: 'sb.gomez@email.com',       lastVisit: '2026-02-24', visits: 2 },
+            { id: 'p06', nombre: 'Ricardo Daniel Moreno',    dni: '14.567.890', sexo: 'Masculino', edad: '73', obraSocial: 'IOMA',                telefono: '(011) 4241-6606', email: 'rd.moreno@email.com',      lastVisit: '2026-01-30', visits: 12 },
+            { id: 'p07', nombre: 'Laura Cristina Díaz',      dni: '35.234.567', sexo: 'Femenino',  edad: '36', obraSocial: 'Medifé',              telefono: '(0341) 449-7707', email: 'lc.diaz@email.com',        lastVisit: '2026-02-10', visits: 4 },
+            { id: 'p08', nombre: 'Héctor Raúl Fernández',    dni: '22.345.678', sexo: 'Masculino', edad: '62', obraSocial: 'Accord Salud',        telefono: '(011) 4555-1208', email: 'hr.fernandez@email.com',   lastVisit: '2026-02-21', visits: 2 },
+            { id: 'p09', nombre: 'Graciela Marta Aguirre',   dni: '16.789.012', sexo: 'Femenino',  edad: '71', obraSocial: 'PAMI',                telefono: '(0223) 472-3344', email: 'gm.aguirre@email.com',     lastVisit: '2026-02-12', visits: 9 },
+            { id: 'p10', nombre: 'Roberto Fabián Castro',    dni: '30.456.789', sexo: 'Masculino', edad: '44', obraSocial: 'OSDE 210',            telefono: '(0351) 481-5566', email: 'rf.castro@email.com',      lastVisit: '2026-02-19', visits: 1 },
+            { id: 'p11', nombre: 'Claudia Susana Benítez',   dni: '27.123.456', sexo: 'Femenino',  edad: '52', obraSocial: 'Sancor Salud',        telefono: '(0341) 430-7788', email: 'cs.benitez@email.com',     lastVisit: '2026-02-23', visits: 6 },
+            { id: 'p12', nombre: 'Omar Darío Villalba',      dni: '21.654.321', sexo: 'Masculino', edad: '65', obraSocial: 'IOMA',                telefono: '(0230) 442-1122', email: 'od.villalba@email.com',    lastVisit: '2026-01-28', visits: 3 },
+            { id: 'p13', nombre: 'Verónica Soledad Ruiz',    dni: '33.987.654', sexo: 'Femenino',  edad: '38', obraSocial: 'Swiss Medical',       telefono: '(011) 4788-3344', email: 'vs.ruiz@email.com',        lastVisit: '2026-02-25', visits: 2 },
+            { id: 'p14', nombre: 'Ernesto Julio Domínguez',  dni: '19.876.543', sexo: 'Masculino', edad: '70', obraSocial: 'Galeno',              telefono: '(02291) 45-6677', email: 'ej.dominguez@email.com',   lastVisit: '2026-02-14', visits: 8 },
+            { id: 'p15', nombre: 'Alejandra Noemí Torres',   dni: '29.345.678', sexo: 'Femenino',  edad: '49', obraSocial: 'OSECAC',              telefono: '(011) 4254-8899', email: 'an.torres@email.com',      lastVisit: '2026-02-17', visits: 4 }
         ];
         localStorage.setItem('patient_registry', JSON.stringify(testPatients));
     }
 
-    // También pre-cargar prof_data del admin con datos más realistas para pruebas
+    // ── prof_data del admin ──────────────────────────────────────────
     const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
     if (profData.nombre === 'Administrador') {
         profData.nombre       = 'Administrador (Dev)';
@@ -715,7 +729,7 @@ function _loadAdminTestData() {
         localStorage.setItem('prof_data', JSON.stringify(profData));
     }
 
-    console.log('[Admin] Datos de prueba cargados: 5 lugares, 14 profesionales, 12 perfiles de salida, 8 pacientes');
+    console.log('[Admin] Base de datos simulada cargada: 12 lugares, 20 profesionales, 20 perfiles de salida, 15 pacientes');
 }
 
 // ─── Reset app (solo admin) ───────────────────────────────────────────────────
@@ -746,6 +760,7 @@ function _initResetApp() {
             'pdf_logo',
             'pdf_signature',
             'onboarding_accepted',
+            'output_profiles',
         ];
         // Borrar también todos los contadores de informe (report_counter_YYYY)
         Object.keys(localStorage)
