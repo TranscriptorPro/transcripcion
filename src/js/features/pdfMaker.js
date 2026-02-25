@@ -279,10 +279,15 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
 
             // Saltar elementos de UI
             if (['script', 'style', 'button', 'input', 'select', 'textarea'].includes(tag)) return;
-            if (node.classList.contains('no-print')         ) return;
-            if (node.classList.contains('ai-note-panel')    ) return;
-            if (node.classList.contains('no-data-edit-btn') ) return;
-            if (node.id === 'aiNotePanel'                   ) return;
+            if (node.classList.contains('no-print')                  ) return;
+            if (node.classList.contains('ai-note-panel')             ) return;
+            if (node.classList.contains('no-data-edit-btn')          ) return;
+            if (node.classList.contains('patient-data-header')       ) return;
+            if (node.classList.contains('patient-placeholder-banner')) return;
+            if (node.classList.contains('btn-append-inline')         ) return;
+            if (node.classList.contains('original-text-banner')      ) return;
+            if (node.classList.contains('no-data-field')             ) return;
+            if (node.id === 'aiNotePanel'                            ) return;
 
             // ── H1: título de sección grande, centrado ───────────────
             if (tag === 'h1') {

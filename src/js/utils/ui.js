@@ -354,6 +354,14 @@ window.initModals = function () {
         });
     }
 
+    // Botón Enviar por email desde vista previa
+    const btnEmailFromPreview = document.getElementById('btnEmailFromPreview');
+    if (btnEmailFromPreview) {
+        btnEmailFromPreview.addEventListener('click', () => {
+            if (typeof emailFromPreview === 'function') emailFromPreview();
+        });
+    }
+
     if (printPreviewOverlay) {
         printPreviewOverlay.addEventListener('click', (e) => {
             if (e.target === printPreviewOverlay) closePrintPreviewModal();
