@@ -482,6 +482,36 @@ function doPost(e) {
     return createResponse({ success: true });
   }
 
+  // send_email — Enviar informe por email al paciente con PDF adjunto
+  if (action === 'send_email') {
+    try {
+      const to          = payload.to;         // email destinatario
+      const subject     = payload.subject;    // asunto
+      const htmlBody    = payload.htmlBody;    // cuerpo HTML
+      const pdfB64      = payload.pdfBase64;  // PDF en base64
+      const pdfFileName = payload.fileName || 'Informe_Medico.pdf';
+
+      if (!to || !pdfB64) return createResponse({ error: 'Faltan campos obligatorios (to, pdfBase64)' });
+
+      // Decodificar base64 a blob
+      const pdfBlob = Utilities.newBlob(
+        Utilities.base64Decode(pdfB64),
+        'application/pdf',
+        pdfFileName
+      );
+
+      GmailApp.sendEmail(to, subject || 'Informe Médico', '', {
+        htmlBody: htmlBody || '<p>Adjunto su informe médico.</p>',
+        attachments: [pdfBlob],
+        name: payload.senderName || 'Transcriptor Médico Pro'
+      });
+
+      return createResponse({ success: true, message: 'Email enviado correctamente a ' + to });
+    } catch(err) {
+      return createResponse({ error: 'Error enviando email: ' + err.message });
+    }
+  }
+
   // NEW: admin endpoint - update a user's fields (e.g. Estado, Plan)
   if (action === 'admin_update_user') {
     const adminKey = payload.adminKey;

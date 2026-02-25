@@ -243,15 +243,17 @@ window.openPrintPreview = function () {
     const patientAge      = esc(extracted.age)   || esc(config.patientAge)   || esc(formPatient.age)      || '';
     const rawSex          = extracted.sex || config.patientSex || formPatient.sex || '';
     const patientSex      = rawSex === 'M' ? 'Masculino' : rawSex === 'F' ? 'Femenino' : esc(rawSex);
-    const patientInsurance = esc(config.patientInsurance || formPatient.insurance || '');
+    // Normalizar cobertura a MAYÚSCULAS (ej: IaPos → IAPOS)
+    const rawInsurance = config.patientInsurance || formPatient.insurance || '';
+    const patientInsurance = esc(typeof normalizeFieldText === 'function' ? rawInsurance.toUpperCase() : rawInsurance);
     const affiliateNum = esc(config.patientAffiliateNum || reqVal('reqPatientAffiliateNum') || reqVal('pdfPatientAffiliateNum') || '');
 
     // Datos del estudio
     const studyType    = esc(config.studyType || '');
     const rawDate      = config.studyDate || '';
     const studyDate    = rawDate
-        ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', {day:'2-digit', month:'long', year:'numeric'})
-        : new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'long', year:'numeric'});
+        ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'})
+        : new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'});
     const studyReason  = esc(config.studyReason || '');
     const refDoctor    = esc(config.referringDoctor || '');
     const reportNum    = esc(document.getElementById('pdfReportNumber')?.value || config.reportNum || '');
@@ -332,16 +334,20 @@ window.openPrintPreview = function () {
         }
     }
 
-    // ── DATOS DEL ESTUDIO (grilla 2 columnas) ─────────────────────
+    // ── DATOS DEL ESTUDIO (3 columnas, 2 filas) ─────────────────────
     const studyEl = document.getElementById('previewStudy');
     if (studyEl) {
-        const items = [];
-        if (studyType)   items.push(`<div class="pvs-cell"><span class="pvs-lbl">Estudio</span><span class="pvs-val">${studyType}</span></div>`);
-        items.push(`<div class="pvs-cell"><span class="pvs-lbl">Fecha</span><span class="pvs-val">${studyDate}</span></div>`);
-        if (reportNum)   items.push(`<div class="pvs-cell"><span class="pvs-lbl">Informe Nº</span><span class="pvs-val">${reportNum}</span></div>`);
-        if (refDoctor)   items.push(`<div class="pvs-cell"><span class="pvs-lbl">Solicitante</span><span class="pvs-val">${refDoctor}</span></div>`);
-        if (studyReason) items.push(`<div class="pvs-cell"><span class="pvs-lbl">Motivo</span><span class="pvs-val">${studyReason}</span></div>`);
-        studyEl.innerHTML = `<div class="pvs-grid">${items.join('')}</div>`;
+        // Fila 1: Estudio | Informe Nº | Fecha (dd/mm/aaaa)
+        // Fila 2: Solicitante | Motivo
+        let row1 = '';
+        row1 += `<div class="pvs-cell"><span class="pvs-lbl">Estudio</span><span class="pvs-val">${studyType || '—'}</span></div>`;
+        row1 += `<div class="pvs-cell"><span class="pvs-lbl">Informe Nº</span><span class="pvs-val">${reportNum || '—'}</span></div>`;
+        row1 += `<div class="pvs-cell"><span class="pvs-lbl">Fecha</span><span class="pvs-val">${studyDate}</span></div>`;
+        let row2 = '';
+        if (refDoctor)   row2 += `<div class="pvs-cell"><span class="pvs-lbl">Solicitante</span><span class="pvs-val">${refDoctor}</span></div>`;
+        if (studyReason) row2 += `<div class="pvs-cell"><span class="pvs-lbl">Motivo</span><span class="pvs-val">${studyReason}</span></div>`;
+        studyEl.innerHTML = `<div class="pvs-grid pvs-3col">${row1}</div>`
+            + (row2 ? `<div class="pvs-grid pvs-2col">${row2}</div>` : '');
     }
 
     // ── CONTENIDO DEL INFORME ────────────────────────────────────
@@ -464,34 +470,253 @@ window.openPrintPreview = function () {
 
 // ============ ENVIAR POR EMAIL DESDE VISTA PREVIA ============
 window.emailFromPreview = function () {
-    const page = document.getElementById('previewPage');
-    if (!page) return;
-
-    const config = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+    const config   = JSON.parse(localStorage.getItem('pdf_config') || '{}');
     const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
     const activePro = config.activeProfessional || null;
-    const profName = activePro?.nombre || profData.nombre || 'Profesional';
+    const profName  = activePro?.nombre || profData.nombre || 'Profesional';
     const patientName = config.patientName || '';
-    const studyType = config.studyType || 'Informe médico';
-    const reportNum = config.reportNum || '';
+    const studyType   = config.studyType   || 'Informe médico';
+    const reportNum   = config.reportNum   || '';
+    const rawDate     = config.studyDate   || '';
+    const studyDate   = rawDate
+        ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'})
+        : new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'});
 
-    // Extraer texto plano del contenido del preview
-    const contentEl = document.getElementById('previewContent');
-    const bodyText = contentEl ? contentEl.innerText.trim() : '';
+    // Asunto automático
+    const subject = `Informe de ${studyType}${patientName ? ' — ' + patientName : ''} — Fecha: ${studyDate}`;
 
-    const subject = encodeURIComponent(
-        `${studyType}${patientName ? ' - ' + patientName : ''}${reportNum ? ' (Nº ' + reportNum + ')' : ''}`
-    );
-    const body = encodeURIComponent(
-        `${studyType}\n` +
-        `${patientName ? 'Paciente: ' + patientName + '\n' : ''}` +
-        `${reportNum ? 'Informe Nº: ' + reportNum + '\n' : ''}` +
-        `Fecha: ${new Date().toLocaleDateString('es-ES')}\n` +
-        `\n---\n\n${bodyText}\n\n---\n` +
-        `${profName}`
-    );
+    // Cuerpo HTML del email
+    const wpProfiles = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+    const wpIdx = config.activeWorkplaceIndex;
+    const activeWp = (wpIdx !== undefined && wpIdx !== null) ? wpProfiles[Number(wpIdx)] : wpProfiles[0];
+    const wpName = activeWp?.name || '';
+    const wpPhone = activeWp?.phone || config.workplacePhone || '';
 
-    window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+    const htmlBody = `
+<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+    <div style="background:#1a56a0;color:white;padding:14px 20px;border-radius:8px 8px 0 0;text-align:center;">
+        <h2 style="margin:0;font-size:18px;">${_escHtml(wpName || 'Consultorio Médico')}</h2>
+    </div>
+    <div style="background:#f8f9fb;padding:24px 20px;border:1px solid #e3e8ef;border-top:none;border-radius:0 0 8px 8px;">
+        <p style="font-size:15px;color:#333;line-height:1.6;margin:0 0 16px;">
+            Estimado/a${patientName ? ' <strong>' + _escHtml(patientName) + '</strong>' : ''},
+        </p>
+        <p style="font-size:14px;color:#444;line-height:1.6;margin:0 0 12px;">
+            Le informamos que se ha generado el resultado de su estudio de
+            <strong>${_escHtml(studyType)}</strong> realizado con fecha <strong>${studyDate}</strong>.
+        </p>
+        <p style="font-size:14px;color:#444;line-height:1.6;margin:0 0 12px;">
+            Encontrará adjunto el informe completo en formato PDF para su revisión y archivo personal.
+            ${reportNum ? 'Número de informe: <strong>' + _escHtml(reportNum) + '</strong>.' : ''}
+        </p>
+        <p style="font-size:14px;color:#444;line-height:1.6;margin:0 0 16px;">
+            Ante cualquier consulta sobre los resultados, no dude en comunicarse con nosotros${wpPhone ? ' al <strong>' + _escHtml(wpPhone) + '</strong>' : ''}.
+        </p>
+        <hr style="border:none;border-top:1px solid #ddd;margin:16px 0;">
+        <p style="font-size:13px;color:#666;margin:0;line-height:1.5;">
+            Atentamente,<br>
+            <strong>${_escHtml(profName)}</strong><br>
+            ${_escHtml(wpName)}
+        </p>
+    </div>
+    <p style="font-size:11px;color:#999;text-align:center;margin-top:12px;">
+        Este es un mensaje automático generado por Transcriptor Médico Pro.
+        La información adjunta es confidencial y de uso exclusivo del destinatario.
+    </p>
+</div>`;
+
+    // Poblar modal
+    const overlay = document.getElementById('emailSendOverlay');
+    const recipientEl = document.getElementById('emailRecipient');
+    const subjectEl   = document.getElementById('emailSubject');
+    const bodyPreview = document.getElementById('emailPreviewBody');
+    const statusEl    = document.getElementById('emailSendStatus');
+
+    if (!overlay) {
+        // Fallback: mailto
+        const mailSubject = encodeURIComponent(subject);
+        const mailBody = encodeURIComponent(`Se adjunta el informe de ${studyType} realizado con fecha ${studyDate}.\n\nAtte., ${profName}`);
+        window.open(`mailto:?subject=${mailSubject}&body=${mailBody}`, '_blank');
+        return;
+    }
+
+    if (recipientEl) recipientEl.value = '';
+    if (subjectEl)   subjectEl.value = subject;
+    if (bodyPreview) bodyPreview.innerHTML = htmlBody;
+    if (statusEl)    { statusEl.style.display = 'none'; statusEl.textContent = ''; }
+
+    overlay.classList.add('active');
+
+    // Guardar datos para el envío
+    window._emailPendingData = { subject, htmlBody, studyType, studyDate, profName, patientName };
+};
+
+function _escHtml(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ============ GENERACIÓN DE PDF EN BASE64 PARA EMAIL ============
+window.generatePDFBase64 = async function () {
+    if (typeof jspdf === 'undefined') {
+        await new Promise(r => setTimeout(r, 600));
+    }
+    try {
+        const { jsPDF } = window.jspdf;
+        const profData  = JSON.parse(localStorage.getItem('prof_data') || '{}');
+        const config    = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        const editorEl  = window.editor || document.getElementById('editor');
+        if (!editorEl || !editorEl.innerHTML.trim()) return null;
+
+        // Reutilizar downloadPDFWrapper internamente pero capturando el doc
+        // Método más simple: generar y capturar como base64
+        const pgSize = (config.pageSize || 'a4').toLowerCase();
+        const orient = (config.orientation || 'portrait').toLowerCase();
+
+        // Usar la misma función pero con output datauristring
+        // Para no duplicar código, simulamos la descarga y capturamos el blob
+        return new Promise((resolve) => {
+            // Temporalmente sobrescribir saveToDisk para capturar el blob
+            const origSave = window.saveToDisk;
+            window.saveToDisk = async (blob, name) => {
+                window.saveToDisk = origSave; // restaurar
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const base64 = reader.result.split(',')[1]; // quitar data:...;base64,
+                    resolve(base64);
+                };
+                reader.onerror = () => resolve(null);
+                reader.readAsDataURL(blob);
+            };
+            const fName = 'informe';
+            const fecha = new Date().toLocaleDateString('es-ES');
+            const fDate = new Date().toISOString().split('T')[0];
+            downloadPDFWrapper(editorEl.innerHTML, fName, fecha, fDate).catch(() => {
+                window.saveToDisk = origSave;
+                resolve(null);
+            });
+        });
+    } catch (e) {
+        console.error('Error generando PDF base64:', e);
+        return null;
+    }
+};
+
+// ============ INIT EMAIL SEND MODAL ============
+window.initEmailSendModal = function () {
+    const overlay     = document.getElementById('emailSendOverlay');
+    const closeBtn    = document.getElementById('closeEmailSendModal');
+    const cancelBtn   = document.getElementById('btnCancelEmailSend');
+    const sendBtn     = document.getElementById('btnSendEmailNow');
+    const statusEl    = document.getElementById('emailSendStatus');
+
+    const closeModal = () => { overlay?.classList.remove('active'); };
+
+    closeBtn?.addEventListener('click', closeModal);
+    cancelBtn?.addEventListener('click', closeModal);
+    overlay?.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+
+    sendBtn?.addEventListener('click', async () => {
+        const recipientEl = document.getElementById('emailRecipient');
+        const to = recipientEl?.value?.trim();
+        if (!to || !to.includes('@')) {
+            if (typeof showToast === 'function') showToast('Ingresá un email válido', 'error');
+            recipientEl?.focus();
+            return;
+        }
+
+        const data = window._emailPendingData;
+        if (!data) return;
+
+        // Obtener URL del backend
+        const backendUrl = localStorage.getItem('backend_url') || '';
+        if (!backendUrl) {
+            // Fallback: mailto
+            if (statusEl) {
+                statusEl.style.display = 'block';
+                statusEl.style.background = '#fef3c7';
+                statusEl.style.color = '#92400e';
+                statusEl.innerHTML = '⚠️ Backend no configurado. Abriendo cliente de correo...';
+            }
+            setTimeout(() => {
+                const mailSubject = encodeURIComponent(data.subject);
+                const mailBody = encodeURIComponent(`Se adjunta el informe de ${data.studyType} realizado con fecha ${data.studyDate}.\n\nDescargue el PDF desde la vista previa y adjúntelo manualmente.\n\nAtte., ${data.profName}`);
+                window.open(`mailto:${to}?subject=${mailSubject}&body=${mailBody}`, '_blank');
+                closeModal();
+            }, 1500);
+            return;
+        }
+
+        // Mostrar estado de envío
+        sendBtn.disabled = true;
+        sendBtn.textContent = '⏳ Generando PDF...';
+        if (statusEl) {
+            statusEl.style.display = 'block';
+            statusEl.style.background = '#dbeafe';
+            statusEl.style.color = '#1e40af';
+            statusEl.textContent = '⏳ Generando PDF para adjuntar...';
+        }
+
+        try {
+            // Generar PDF en base64
+            const pdfBase64 = await window.generatePDFBase64();
+            if (!pdfBase64) throw new Error('No se pudo generar el PDF');
+
+            sendBtn.textContent = '📨 Enviando...';
+            if (statusEl) statusEl.textContent = '📨 Enviando email...';
+
+            const config = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+            const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
+            const activePro = config.activeProfessional || null;
+            const senderName = activePro?.nombre || profData.nombre || 'Transcriptor Médico Pro';
+
+            const fileDate = new Date().toISOString().split('T')[0];
+            const fileName = `Informe_${(data.studyType || 'Medico').replace(/\s+/g, '_')}_${fileDate}.pdf`;
+
+            const response = await fetch(backendUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'send_email',
+                    to: to,
+                    subject: data.subject,
+                    htmlBody: data.htmlBody,
+                    pdfBase64: pdfBase64,
+                    fileName: fileName,
+                    senderName: senderName
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                if (statusEl) {
+                    statusEl.style.background = '#d1fae5';
+                    statusEl.style.color = '#065f46';
+                    statusEl.textContent = '✅ Email enviado correctamente a ' + to;
+                }
+                if (typeof showToast === 'function') showToast('✅ Email enviado correctamente', 'success');
+                setTimeout(closeModal, 2500);
+            } else {
+                throw new Error(result.error || 'Error desconocido del servidor');
+            }
+        } catch (err) {
+            console.error('Error enviando email:', err);
+            if (statusEl) {
+                statusEl.style.background = '#fef3c7';
+                statusEl.style.color = '#92400e';
+                statusEl.innerHTML = `⚠️ No se pudo enviar directamente. <a href="#" id="emailFallbackLink" style="color:#1e40af;text-decoration:underline;">Abrir cliente de correo</a><br><span style="font-size:0.75rem;">Error: ${err.message}</span>`;
+                document.getElementById('emailFallbackLink')?.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const mailSubject = encodeURIComponent(data.subject);
+                    const mailBody = encodeURIComponent(`Se adjunta el informe de ${data.studyType} realizado con fecha ${data.studyDate}.\n\nAtte., ${data.profName}`);
+                    window.open(`mailto:${to}?subject=${mailSubject}&body=${mailBody}`, '_blank');
+                });
+            }
+        } finally {
+            sendBtn.disabled = false;
+            sendBtn.textContent = '📨 Enviar ahora';
+        }
+    });
 };
 window.workplaceProfiles = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
 

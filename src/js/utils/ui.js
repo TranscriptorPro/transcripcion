@@ -348,6 +348,37 @@ window.initModals = function () {
         });
     }
 
+    // Dropdown multi-formato desde vista previa
+    const btnDownloadPreviewMore = document.getElementById('btnDownloadPreviewMore');
+    const previewDownloadDropdown = document.getElementById('previewDownloadDropdown');
+    if (btnDownloadPreviewMore && previewDownloadDropdown) {
+        btnDownloadPreviewMore.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = previewDownloadDropdown.style.display !== 'none';
+            previewDownloadDropdown.style.display = isOpen ? 'none' : 'block';
+        });
+        previewDownloadDropdown.querySelectorAll('button[data-format]').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                previewDownloadDropdown.style.display = 'none';
+                const fmt = btn.dataset.format;
+                if (fmt === 'pdf') {
+                    btnDownloadFromPreview?.click();
+                } else if (typeof window['download' + fmt.toUpperCase()] === 'function') {
+                    window['download' + fmt.toUpperCase()]();
+                }
+            });
+            // Hover effect
+            btn.addEventListener('mouseenter', () => { btn.style.background = 'rgba(255,255,255,0.1)'; });
+            btn.addEventListener('mouseleave', () => { btn.style.background = 'none'; });
+        });
+        // Cerrar dropdown al clickear fuera
+        document.addEventListener('click', (e) => {
+            if (!previewDownloadDropdown.contains(e.target) && e.target !== btnDownloadPreviewMore) {
+                previewDownloadDropdown.style.display = 'none';
+            }
+        });
+    }
+
     if (btnPrintFromPreview) {
         btnPrintFromPreview.addEventListener('click', () => {
             if (typeof printFromPreview === 'function') printFromPreview();
@@ -361,6 +392,9 @@ window.initModals = function () {
             if (typeof emailFromPreview === 'function') emailFromPreview();
         });
     }
+
+    // Inicializar modal de email
+    if (typeof initEmailSendModal === 'function') initEmailSendModal();
 
     if (printPreviewOverlay) {
         printPreviewOverlay.addEventListener('click', (e) => {

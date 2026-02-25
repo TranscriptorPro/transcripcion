@@ -459,6 +459,13 @@ window.initMedDictModal = function () {
         fromEl.value = '';
         toEl.value   = '';
         renderDictList();
+        // Re-escanear el editor para incluir la nueva entrada en la pestaña Revisión
+        const editor = document.getElementById('editor');
+        if (editor && editor.innerText.trim()) {
+            const rawMatches = findDictMatches(editor.innerText);
+            _dictModalMatches = rawMatches.map(m => ({ ...m, checked: true }));
+            renderReviewList();
+        }
         if (typeof showToast === 'function') showToast(`💾 "${from}" → "${to}" guardado`, 'success');
     };
     document.getElementById('btnMedDictAdd')?.addEventListener('click', addEntry);

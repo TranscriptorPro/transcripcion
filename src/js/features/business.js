@@ -47,6 +47,16 @@ window.initWorkplaceManagement = function () {
             localStorage.setItem('pdf_logo', profile.logo);
             if (logo) logo.innerHTML = `<img src="${profile.logo}" alt="Logo">`;
         }
+        // Indicador visual de logo cargado en el input file
+        const logoUploadGroup = document.getElementById('logoUploadGroup');
+        const logoLabel = logoUploadGroup?.querySelector('label');
+        if (logoLabel) {
+            if (profile.logo && profile.logo.startsWith('data:image/')) {
+                logoLabel.innerHTML = '🖼️ Logo <span style="color:var(--primary);font-weight:600;font-size:0.8rem;">✅ cargado</span>';
+            } else {
+                logoLabel.textContent = '🖼️ Logo (opcional)';
+            }
+        }
         // Mostrar / ocultar selector de profesionales
         populateProfessionalsDropdown(index);
     }

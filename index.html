@@ -540,10 +540,48 @@
                 <div class="preview-page-nav" id="previewPageNav" style="display:none;"></div>
                 <div class="modal-footer"
                     style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; gap: 0.5rem; justify-content: flex-end;">
-                    <button class="btn btn-primary" id="btnDownloadFromPreview">📥 Descargar PDF</button>
+                    <div class="download-split" id="previewDownloadSplit">
+                        <button class="btn btn-primary" id="btnDownloadFromPreview" style="border-radius:8px 0 0 8px;">📥 Descargar PDF</button>
+                        <button class="btn btn-primary" id="btnDownloadPreviewMore" style="border-radius:0 8px 8px 0;padding:0 6px;border-left:1px solid rgba(255,255,255,0.25);" title="Más formatos">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M7 10l5 5 5-5H7z"/></svg>
+                        </button>
+                    </div>
+                    <div class="dropdown-content" id="previewDownloadDropdown" style="display:none;position:absolute;bottom:56px;left:16px;background:var(--bg-card,#1e293b);border:1px solid var(--border);border-radius:8px;z-index:100;min-width:200px;box-shadow:0 4px 16px rgba(0,0,0,0.3);">
+                        <button data-format="pdf" style="display:block;width:100%;text-align:left;padding:8px 14px;background:none;border:none;color:var(--text-primary);cursor:pointer;">📄 PDF Profesional</button>
+                        <button data-format="rtf" style="display:block;width:100%;text-align:left;padding:8px 14px;background:none;border:none;color:var(--text-primary);cursor:pointer;">📝 Word (RTF)</button>
+                        <button data-format="txt" style="display:block;width:100%;text-align:left;padding:8px 14px;background:none;border:none;color:var(--text-primary);cursor:pointer;">🗒️ Texto Simple</button>
+                        <button data-format="html" style="display:block;width:100%;text-align:left;padding:8px 14px;background:none;border:none;color:var(--text-primary);cursor:pointer;">🌐 HTML</button>
+                    </div>
                     <button class="btn btn-outline" id="btnPrintFromPreview">🖨️ Imprimir</button>
                     <button class="btn btn-outline" id="btnEmailFromPreview">📧 Enviar</button>
                     <button class="btn btn-outline" id="btnClosePrintPreviewFooter">Cerrar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email Send Modal -->
+        <div class="modal-overlay" id="emailSendOverlay">
+            <div class="modal" style="max-width: 480px;">
+                <div class="modal-header">
+                    <h2>📧 Enviar informe por email</h2>
+                    <button class="modal-close" id="closeEmailSendModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="field-group" style="margin-bottom:1rem;">
+                        <label style="font-weight:600;font-size:0.85rem;">Email del destinatario *</label>
+                        <input type="email" id="emailRecipient" placeholder="paciente@email.com" style="width:100%;">
+                    </div>
+                    <div class="field-group" style="margin-bottom:1rem;">
+                        <label style="font-weight:600;font-size:0.85rem;">Asunto</label>
+                        <input type="text" id="emailSubject" readonly style="width:100%;background:var(--bg-secondary);color:var(--text-secondary);font-size:0.8rem;">
+                    </div>
+                    <div id="emailPreviewBody" style="font-size:0.8rem;color:var(--text-secondary);background:var(--bg-secondary);border-radius:6px;padding:10px;max-height:140px;overflow-y:auto;margin-bottom:1rem;line-height:1.5;"></div>
+                    <p style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:0.5rem;">📎 Se adjuntará el informe en formato PDF profesional.</p>
+                    <div id="emailSendStatus" style="display:none;font-size:0.85rem;padding:8px;border-radius:6px;margin-bottom:0.5rem;"></div>
+                </div>
+                <div class="modal-footer" style="padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:0.5rem;justify-content:flex-end;">
+                    <button class="btn btn-primary" id="btnSendEmailNow" style="min-width:140px;">📨 Enviar ahora</button>
+                    <button class="btn btn-outline" id="btnCancelEmailSend">Cancelar</button>
                 </div>
             </div>
         </div>
