@@ -109,6 +109,18 @@ window.updateButtonsVisibility = function (state) {
     if (btnAppendRecord) {
         btnAppendRecord.style.display = (isProMode && isTranscribed) ? 'inline-flex' : 'none';
     }
+
+    // Botón "Original" — visible tras estructurar para alternar vista
+    const btnRestoreOriginal = document.getElementById('btnRestoreOriginal');
+    if (btnRestoreOriginal) {
+        btnRestoreOriginal.style.display = isStructured ? '' : 'none';
+    }
+
+    // Botón diccionario médico: visible tras transcripción
+    const btnMedicalCheck = document.getElementById('btnMedicalCheck');
+    if (btnMedicalCheck) {
+        btnMedicalCheck.style.display = isTranscribed ? '' : 'none';
+    }
 };
 
 const proModeToggle = document.getElementById('proModeToggle');

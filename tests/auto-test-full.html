@@ -105,7 +105,7 @@ h1 { text-align: center; margin-bottom: 8px; font-size: 1.6rem; }
 <div class="summary" id="summary"></div>
 <div class="results" id="results"></div>
 
-<iframe id="appFrame" src="../index.html"></iframe>
+<iframe id="appFrame"></iframe>
 
 <script>
 // ═══════════════════════════════════════════════════
@@ -278,7 +278,9 @@ section('B. Botón T+E (Gemini animado)', [
         name: 'Oculto en modo Normal',
         test: () => {
             const toggle = $('proModeToggle');
+            // Asegurar Normal
             if (toggle.checked) toggle.click();
+            // El toggle dispara updateButtonsVisibility internamente
             const btn = $('transcribeAndStructureBtn');
             const cs = getCS(btn);
             // Restaurar Pro
@@ -309,6 +311,9 @@ section('C. Elementos de transcripción', [
     { name: 'Barra de progreso existe', test: () => { if (!$('processingStatus')) throw 'No encontrado'; return true; }},
     { name: 'Editor vacío al inicio', test: () => {
         const e = $('editor'); 
+        // Si hay autosave restaurado, el test lo limpia primero
+        const resetBtn = $('resetBtn');
+        if (resetBtn && e.innerText.trim().length > 10) resetBtn.click();
         const text = e.innerText.trim();
         if (text.length > 10) throw `Editor tiene texto: "${text.substring(0,50)}..."`;
         return true;
@@ -392,9 +397,13 @@ section('G. Datos del paciente', [
     { name: 'Botón guardar paciente', test: () => { if (!$('btnSavePatientData')) throw 'No encontrado'; return true; }},
     { name: 'Botón saltar paciente', test: () => { if (!$('btnSkipPatientData')) throw 'No encontrado'; return true; }},
     { name: 'Guardar paciente inserta datos en editor', test: () => {
+        // Poner contenido en el editor para simular un informe
+        const editor = $('editor');
+        if (editor) editor.innerHTML = '<p>Texto de prueba del informe</p>';
         // Abrir modal, poner un nombre, guardar
         if (typeof win().openPatientDataModal === 'function') win().openPatientDataModal();
         const nameInput = $('reqPatientName');
+        if (!nameInput) throw 'reqPatientName no encontrado';
         nameInput.value = 'Test Prueba';
         nameInput.style.borderColor = '';
         $('btnSavePatientData').click();
@@ -925,7 +934,7 @@ async function startTests() {
 
     const btnRun = document.getElementById('btnRun');
     btnRun.disabled = true;
-    btnRun.textContent = '⏳ Cargando app...';
+    btnRun.textContent = '⏳ Limpiando caché...';
 
     const progressBar = document.getElementById('progressBar');
     const progressFill = document.getElementById('progressFill');
@@ -937,14 +946,27 @@ async function startTests() {
     summaryDiv.style.display = 'none';
     resultsDiv.innerHTML = '';
 
+    // ── Paso 1: Desregistrar SW y limpiar caches para obtener archivos frescos ──
+    try {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        for (const reg of regs) await reg.unregister();
+        const cacheNames = await caches.keys();
+        for (const name of cacheNames) await caches.delete(name);
+    } catch(e) { console.warn('SW cleanup:', e); }
+
+    // Limpiar autosave para que el editor arranque vacío
+    try {
+        localStorage.removeItem('editor_autosave');
+        localStorage.removeItem('editor_autosave_meta');
+    } catch(e) {}
+
+    // ── Paso 2: Cargar la app fresca en el iframe (con cache-bust) ──
+    btnRun.textContent = '⏳ Cargando app fresca...';
+    appFrame.src = '../index.html?_t=' + Date.now();
+
     // Esperar a que el iframe cargue completamente
     await new Promise((resolve) => {
-        if (appFrame.contentDocument.readyState === 'complete') {
-            // Dar tiempo extra para que los JS se ejecuten
-            setTimeout(resolve, 3000);
-        } else {
-            appFrame.onload = () => setTimeout(resolve, 3000);
-        }
+        appFrame.onload = () => setTimeout(resolve, 3500);
     });
 
     // Capturar errores de consola del iframe
