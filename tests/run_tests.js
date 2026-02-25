@@ -70,6 +70,7 @@ const load = (rel) => {
     catch(e) { console.error(`Error al cargar ${rel}:`, e.message); }
 };
 
+load('src/js/utils/dom.js');
 load('src/js/config/templates.js');
 load('src/js/features/structurer.js');
 load('src/js/features/patientRegistry.js');
@@ -1983,6 +1984,102 @@ test('CLEANED: transcriptor.js sin testGroqConnection muerto', () => {
     const code = fs.readFileSync(path.join(root, 'src/js/features/transcriptor.js'), 'utf-8');
     assert(!code.includes('function testGroqConnection') && !code.includes('testGroqConnection ='), 
         'No debe contener código muerto testGroqConnection');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 37: normalizeFieldText — modo oración y nombres
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 37: normalizeFieldText ────────────────────────────');
+
+test('normalizeFieldText existe y es función', () => {
+    assert(typeof normalizeFieldText === 'function', 'normalizeFieldText debe ser función global');
+});
+
+test('normalizeFieldText modo sentence — texto genérico', () => {
+    const r = normalizeFieldText('PACIENTE PRESENTA DOLOR ABDOMINAL');
+    assertEqual(r, 'Paciente presenta dolor abdominal', 'Debe convertir a modo oración');
+});
+
+test('normalizeFieldText modo sentence — respeta siglas médicas', () => {
+    const r = normalizeFieldText('el paciente tiene hta y dbt');
+    assert(r.includes('HTA'), `Debe preservar HTA en mayúsculas, got: ${r}`);
+    assert(r.includes('DBT'), `Debe preservar DBT en mayúsculas, got: ${r}`);
+});
+
+test('normalizeFieldText modo sentence — primera letra mayúscula tras punto', () => {
+    const r = normalizeFieldText('sin particularidades. control en una semana');
+    assert(r.startsWith('Sin'), 'Primera palabra debe ser capitalizada');
+    assert(r.includes('Control') || r.includes('control'), 'Después de punto debe capitalizar');
+});
+
+test('normalizeFieldText modo name — nombre y apellido', () => {
+    const r = normalizeFieldText('JUAN CARLOS MARTINEZ', 'name');
+    assertEqual(r, 'Juan Carlos Martinez', 'Cada palabra debe capitalizarse');
+});
+
+test('normalizeFieldText modo name — respeta preposiciones', () => {
+    const r = normalizeFieldText('MARIA DE LOS ANGELES', 'name');
+    assert(r.includes('de los'), `Preposiciones en minúscula, got: ${r}`);
+    assert(r.startsWith('Maria'), 'Primer nombre capitalizado');
+});
+
+test('normalizeFieldText — sigla corta no se toca', () => {
+    assertEqual(normalizeFieldText('ECG'), 'ECG', 'Sigla corta no debe alterarse');
+    assertEqual(normalizeFieldText('VEF1'), 'VEF1', 'Sigla con número no debe alterarse');
+});
+
+test('normalizeFieldText — texto vacío/null retorna vacío', () => {
+    assertEqual(normalizeFieldText(''), '', 'Vacío retorna vacío');
+    assertEqual(normalizeFieldText(null), '', 'Null retorna vacío');
+    assertEqual(normalizeFieldText(undefined), '', 'Undefined retorna vacío');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 38: Búsqueda normalizada — sin acentos ni case
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 38: Búsqueda normalizada ─────────────────────────');
+
+test('búsqueda insensible a mayúsculas', () => {
+    localStorage.clear();
+    savePatientToRegistry({ name: 'González Martínez Juan', dni: '12345678' });
+    const r1 = searchPatientRegistry('gonzalez');
+    assert(r1.length > 0, 'Debe encontrar buscando en minúsculas');
+    const r2 = searchPatientRegistry('GONZALEZ');
+    assert(r2.length > 0, 'Debe encontrar buscando en mayúsculas');
+    localStorage.clear();
+});
+
+test('búsqueda insensible a acentos', () => {
+    localStorage.clear();
+    savePatientToRegistry({ name: 'José María López', dni: '87654321' });
+    const r1 = searchPatientRegistry('jose');
+    assert(r1.length > 0, 'Debe encontrar "jose" sin acento');
+    const r2 = searchPatientRegistry('lopez');
+    assert(r2.length > 0, 'Debe encontrar "lopez" sin acento');
+    const r3 = searchPatientRegistry('María');
+    assert(r3.length > 0, 'Debe encontrar "María" con acento');
+    localStorage.clear();
+});
+
+test('búsqueda por DNI parcial', () => {
+    localStorage.clear();
+    savePatientToRegistry({ name: 'Test DNI', dni: '30567890' });
+    const r = searchPatientRegistry('5678');
+    assert(r.length > 0, 'Debe encontrar por fragmento de DNI');
+    localStorage.clear();
+});
+
+test('búsqueda multi-token (nombre + apellido)', () => {
+    localStorage.clear();
+    savePatientToRegistry({ name: 'Rodríguez Carlos Alberto', dni: '11111111' });
+    const r = searchPatientRegistry('carlos rodriguez');
+    assert(r.length > 0, 'Debe encontrar con tokens en orden inverso');
+    localStorage.clear();
+});
+
+test('búsqueda retorna vacío si query < 2 caracteres', () => {
+    const r = searchPatientRegistry('a');
+    assertEqual(r.length, 0, 'No debe buscar con query de 1 carácter');
 });
 
 // ── Resumen ───────────────────────────────────────────────────────────────────

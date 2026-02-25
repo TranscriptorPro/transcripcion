@@ -52,17 +52,25 @@ window.savePatientToRegistry = function(patient) {
     setRegistry(reg);
 };
 
-// ---- Buscar pacientes (apellido parcial o DNI parcial) ----
+// ---- Buscar pacientes (nombre, apellido parcial o DNI parcial — insensible a acentos y case) ----
 window.searchPatientRegistry = function(query) {
     if (!query || query.length < 2) return [];
-    const q       = _normStr(query.replace(/\D/g, '') ? query : query);
-    const normQ   = _normStr(q);
-    const dniQ    = q.replace(/\D/g, '');
+    const normQ = _normStr(query);
+    const dniQ  = query.replace(/\D/g, '');
     return getRegistry()
-        .filter(p =>
-            (p.name && _normStr(p.name).includes(normQ)) ||
-            (p.dni  && dniQ && p.dni.replace(/\D/g, '').includes(dniQ))
-        )
+        .filter(p => {
+            // Búsqueda por nombre/apellido normalizado (sin acentos, case-insensitive)
+            if (p.name && _normStr(p.name).includes(normQ)) return true;
+            // Búsqueda por DNI parcial
+            if (dniQ && p.dni && p.dni.replace(/\D/g, '').includes(dniQ)) return true;
+            // Búsqueda inversa: si el query contiene múltiples tokens, buscar cada uno
+            const tokens = normQ.split(/\s+/).filter(t => t.length >= 2);
+            if (tokens.length > 1 && p.name) {
+                const pName = _normStr(p.name);
+                return tokens.every(t => pName.includes(t));
+            }
+            return false;
+        })
         .slice(0, 20);
 };
 
