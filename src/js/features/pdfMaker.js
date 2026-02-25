@@ -4,7 +4,9 @@
 // Helper fuera de la función principal para ser reutilizable
 function _hexToRgb(hex) {
     if (!hex || !hex.startsWith('#')) return { r: 26, g: 86, b: 160 };
-    const h = hex.replace('#', '');
+    let h = hex.replace('#', '');
+    // Soporte para hex corto (#FFF → FFFFFF)
+    if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
     return {
         r: parseInt(h.slice(0, 2), 16),
         g: parseInt(h.slice(2, 4), 16),
@@ -38,6 +40,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const marginMap = { narrow: 10, normal: 20, wide: 30 };
         const ML       = marginMap[config.margins] || 20;
         const MR       = marginMap[config.margins] || 20;
+        const MT       = marginMap[config.margins] || 20; // margen superior
         const CW       = PAGE_W - ML - MR;
         const FOOTER_Y = PAGE_H - 12;
 
@@ -117,7 +120,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                 doc.addPage();
                 pageNum++;
                 if (cfgShowFooter || cfgShowPageNum) drawFooter(pageNum);
-                cy = 10;  // margen superior limpio en páginas 2+
+                cy = MT;  // usar margen superior configurado en páginas 2+
             }
         }
 
@@ -447,7 +450,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                     if (cy + blockH > FOOTER_Y - 10) {
                         doc.addPage(); pageNum++;
                         if (cfgShowFooter || cfgShowPageNum) drawFooter(pageNum);
-                        cy = 10;
+                        cy = MT;
                     }
                     doc.text(lines, ML, cy);
                     cy += blockH + 2;
@@ -525,33 +528,38 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             cy += 10;
             ensureSpace(40);
 
+            // Posición dinámica: centrar firma en el tercio derecho de la página
+            const sigLineW = 60;
+            const sigStartX = PAGE_W - MR - sigLineW;
+            const sigCenterX = sigStartX + sigLineW / 2;
+
             if (sigB64) {
                 try {
                     const imgType = sigB64.includes('data:image/png') ? 'PNG' : 'JPEG';
                     const b64data = sigB64.includes(',') ? sigB64.split(',')[1] : sigB64;
-                    doc.addImage(b64data, imgType, 130, cy, 50, 20);
+                    doc.addImage(b64data, imgType, sigStartX, cy, 50, 20);
                     cy += 22;
                 } catch (e) { /* imagen inválida */ }
             }
             if (showSignLine) {
                 doc.setDrawColor(0);
                 doc.setLineWidth(0.4);
-                doc.line(130, cy, 190, cy);
+                doc.line(sigStartX, cy, sigStartX + sigLineW, cy);
                 cy += 4;
             }
             doc.setFontSize(9);
             doc.setFont(mainFont, 'normal');
             setBlack();
             if (showSignName && profName) {
-                doc.text(profName, 160, cy, { align: 'center' });
+                doc.text(profName, sigCenterX, cy, { align: 'center' });
                 cy += 4;
             }
             if (showSignMat && matricula) {
-                doc.text('Mat. ' + matricula, 160, cy, { align: 'center' });
+                doc.text('Mat. ' + matricula, sigCenterX, cy, { align: 'center' });
                 cy += 4;
             }
             if (especialidad) {
-                doc.text(especialidad, 160, cy, { align: 'center' });
+                doc.text(especialidad, sigCenterX, cy, { align: 'center' });
             }
         }
 

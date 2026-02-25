@@ -62,13 +62,22 @@ window.askJoinAudiosPromise = function(fileCount) {
         // Mostrar
         dialog.style.display = 'block';
 
+        let resolved = false;
         const finish = (value) => {
+            if (resolved) return;
+            resolved = true;
+            clearTimeout(safetyTimer);
             dialog.style.display = 'none';
             // Clonar para limpiar listeners anteriores
             btnYes.replaceWith(btnYes.cloneNode(true));
             btnNo.replaceWith(btnNo.cloneNode(true));
             resolve(value);
         };
+
+        // Safety timeout: si el diálogo es ocultado externamente, resolver en false
+        const safetyTimer = setTimeout(() => {
+            if (!resolved && dialog.style.display === 'none') finish(false);
+        }, 30000);
 
         document.getElementById('joinAudiosYes').addEventListener('click', () => finish(true),  { once: true });
         document.getElementById('joinAudiosNo') .addEventListener('click', () => finish(false), { once: true });

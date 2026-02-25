@@ -7,10 +7,8 @@ if (editor) {
     });
 }
 
-window.formatText = cmd => {
-    document.execCommand(cmd, false, null);
-    if (editor) editor.focus();
-};
+// formatText delegado a executeFormatAndFocus (mantener por retrocompatibilidad)
+window.formatText = cmd => executeFormatAndFocus(cmd);
 
 // ============ FORMATTING HANDLERS ============
 
@@ -94,7 +92,9 @@ function handleFontSizeChange(increase = true) {
         const range = selection.getRangeAt(0);
         const selectedContent = range.extractContents();
         const span = document.createElement('span');
-        const currentSize = parseInt(window.getComputedStyle(editor).fontSize);
+        // Leer fontSize del texto seleccionado (no del contenedor editor)
+        const anchorEl = selection.anchorNode?.parentElement || editor;
+        const currentSize = parseInt(window.getComputedStyle(anchorEl).fontSize) || parseInt(window.getComputedStyle(editor).fontSize);
         const newSize = increase ? currentSize + 2 : Math.max(10, currentSize - 2);
         span.style.fontSize = newSize + 'px';
         span.appendChild(selectedContent);
@@ -161,9 +161,20 @@ if (insertTableBtn && editor) {
 
 function saveUndoState() {
     if (!editor) return;
-    undoStack.push(editor.innerHTML);
+    const html = editor.innerHTML;
+    // No guardar si es idéntico al último estado
+    if (undoStack.length > 0 && undoStack[undoStack.length - 1] === html) return;
+    undoStack.push(html);
     if (undoStack.length > 50) undoStack.shift();
     redoStack = [];
+}
+
+// Guardar estado inicial al primer foco del editor
+if (editor) {
+    editor.addEventListener('focus', function _initUndo() {
+        if (undoStack.length === 0) saveUndoState();
+        editor.removeEventListener('focus', _initUndo);
+    }, { once: true });
 }
 
 const undoBtn = $('undoBtn');
@@ -193,8 +204,10 @@ if (redoBtn) {
 // Find & Replace
 function highlightText(text) {
     if (!editor) return;
-    const content = editor.innerHTML;
-    // Basic highlighted logic
+    // Limpiar marcas previas antes de resaltar
+    let content = editor.innerHTML;
+    content = content.replace(/<mark>(.*?)<\/mark>/gi, '$1');
+    if (!text) { editor.innerHTML = content; return; }
     const highlighted = content.replace(new RegExp(`(${escapeRegex(text)})`, 'gi'), '<mark>$1</mark>');
     editor.innerHTML = highlighted;
 }
@@ -444,14 +457,13 @@ async function downloadFile(format) {
             msgEl.textContent = 'El informe no tiene datos del paciente. ¿Desea descargarlo así?';
             overlay.classList.add('active');
             function cleanup() { overlay.classList.remove('active'); acceptBtn.removeEventListener('click', onYes); cancelBtn.removeEventListener('click', onNo); overlay.removeEventListener('click', onBg); }
-            function onYes() { cleanup(); _doDownload(format, text); }
-            function onNo() { cleanup(); if (typeof window.openPatientDataModal === 'function') window.openPatientDataModal(); }
-            function onBg(e) { if (e.target === overlay) { cleanup(); } }
+            function onYes() { cleanup(); _doDownload(format, text).then(() => resolve(true)); }
+            function onNo() { cleanup(); if (typeof window.openPatientDataModal === 'function') window.openPatientDataModal(); resolve(false); }
+            function onBg(e) { if (e.target === overlay) { cleanup(); resolve(false); } }
             acceptBtn.addEventListener('click', onYes);
             cancelBtn.addEventListener('click', onNo);
             overlay.addEventListener('click', onBg);
         });
-        return; // La descarga se dispara dentro de onYes → _doDownload
     }
 
     await _doDownload(format, text);
@@ -571,7 +583,7 @@ const normalTemplateDropdown = document.getElementById('normalTemplateDropdown')
 const normalTemplateList = document.getElementById('normalTemplateList');
 
 function buildStaticTemplate(templateName, rawText) {
-    const nd = '<span class="no-data" tabindex="0" title="Clic para editar">[No especificado]</span>';
+    const nd = '<span class="no-data-field" contenteditable="false" data-field-empty="1"><span class="no-data-text">[No especificado]</span><button class="no-data-edit-btn" tabindex="0" title="Completar campo" type="button">✏️</button></span>';
     return `<h1 class="report-h1">${templateName}</h1>
 <h2 class="report-h2">Datos del Paciente</h2>
 <p class="report-p"><strong>Nombre:</strong> ${nd} &nbsp; <strong>DNI:</strong> ${nd}</p>
@@ -583,6 +595,10 @@ ${rawText.split('\n').filter(l => l.trim()).map(line => `<p class="report-p">${l
 }
 
 async function applyNormalTemplate(templateKey) {
+    // Guard: evitar doble invocación concurrente
+    if (window._applyingTemplate) return;
+    window._applyingTemplate = true;
+
     normalTemplateDropdown.style.display = 'none';
     const editorEl = document.getElementById('editor');
     const rawText = editorEl ? editorEl.innerText : '';
@@ -625,6 +641,7 @@ async function applyNormalTemplate(templateKey) {
             if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURED');
             if (typeof showToast === 'function') showToast(`✅ Plantilla "${templateName}" aplicada`, 'success');
         } finally {
+            window._applyingTemplate = false;
             if (applyTemplateBtn) applyTemplateBtn.disabled = false;
             const aiBar2 = document.getElementById('aiProgressBar');
             if (aiBar2) aiBar2.style.display = 'none';
@@ -634,6 +651,7 @@ async function applyNormalTemplate(templateKey) {
         if (typeof window.updateWordCount === 'function') window.updateWordCount();
         if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURED');
         if (typeof showToast === 'function') showToast(`✅ Plantilla "${templateName}" aplicada`, 'success');
+        window._applyingTemplate = false;
     }
 }
 
@@ -800,8 +818,10 @@ if (applyTemplateBtn && normalTemplateDropdown) {
                 _efRecorder.ondataavailable = e => _efChunks.push(e.data);
                 _efRecorder.onstop = async () => {
                     stream.getTracks().forEach(t => t.stop());
-                    const blob = new Blob(_efChunks, { type: 'audio/wav' });
-                    const file = new File([blob], 'campo.wav', { type: 'audio/wav' });
+                    const realMime = _efRecorder.mimeType || 'audio/webm';
+                    const ext = realMime.includes('ogg') ? 'ogg' : 'webm';
+                    const blob = new Blob(_efChunks, { type: realMime });
+                    const file = new File([blob], `campo.${ext}`, { type: realMime });
                     const status = document.getElementById('efTranscribeStatus');
                     const result = document.getElementById('efRecordResult');
                     if (status) status.textContent = '⏳ Transcribiendo...';
@@ -816,6 +836,7 @@ if (applyTemplateBtn && normalTemplateDropdown) {
                             headers: { 'Authorization': `Bearer ${window.GROQ_API_KEY}` },
                             body: form
                         });
+                        if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
                         const txt = await res.text();
                         if (result) result.value = txt.trim();
                         if (status) status.textContent = '✅ Transcripción lista. Editá si es necesario y pulsá Aplicar.';

@@ -78,6 +78,12 @@ window.switchTab = function (index) {
 window.closeTab = function (index) {
     if (!window.transcriptions || index >= window.transcriptions.length) return;
 
+    // Guardar contenido actual del editor antes de cerrar
+    const editor = document.getElementById('editor');
+    if (editor && window.transcriptions[window.activeTabIndex]) {
+        window.transcriptions[window.activeTabIndex].text = editor.innerHTML;
+    }
+
     window.transcriptions.splice(index, 1);
 
     if (window.transcriptions.length === 0) {

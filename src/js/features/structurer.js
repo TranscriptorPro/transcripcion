@@ -114,14 +114,15 @@ function markdownToHtml(md) {
         if (!t) continue;
         const isHeading = /^#{1,3}\s/.test(t);
         const isList    = /^[-*]\s/.test(t.split('\n')[0].trim());
+        const isNumList = /^\d+[.)]\s/.test(t.split('\n')[0].trim());
         const endsComma = /[,;]\s*$/.test(t.replace(/\[No especificado\]/g, '').trimEnd());
-        if (!isHeading && !isList && endsComma) {
+        if (!isHeading && !isList && !isNumList && endsComma) {
             if (!enumAcc) enumAcc = [];
             // Añadir todas las líneas no vacías del bloque al acumulador
             t.split('\n').forEach(l => { if (l.trim()) enumAcc.push(l.trim()); });
         } else {
             if (enumAcc) { mergedBlocks.push({ type: 'enum', lines: enumAcc }); enumAcc = null; }
-            mergedBlocks.push({ type: isHeading ? 'heading' : isList ? 'list' : 'para', raw: t });
+            mergedBlocks.push({ type: isHeading ? 'heading' : (isList || isNumList) ? 'list' : 'para', raw: t, ordered: isNumList });
         }
     }
     if (enumAcc) mergedBlocks.push({ type: 'enum', lines: enumAcc });
@@ -144,17 +145,20 @@ function markdownToHtml(md) {
             });
 
         } else if (mb.type === 'list') {
-            html.push('<ul class="report-list">');
+            const tag = mb.ordered ? 'ol' : 'ul';
+            html.push(`<${tag} class="report-list">`);
             mb.raw.split('\n').forEach(l => {
                 const lt = l.trim();
                 if (!lt) return;
                 if (/^[-*]\s/.test(lt)) {
                     html.push(`<li>${capFirst(inlineFormat(lt.replace(/^[-*]\s*/, '')))}</li>`);
+                } else if (/^\d+[.)]\s/.test(lt)) {
+                    html.push(`<li>${capFirst(inlineFormat(lt.replace(/^\d+[.)]\s*/, '')))}</li>`);
                 } else if (/^\s{2,}[-*]\s/.test(l)) {
                     html.push(`<li class="report-list-nested">${capFirst(inlineFormat(lt.replace(/^[-*]\s*/, '')))}</li>`);
                 }
             });
-            html.push('</ul>');
+            html.push(`</${tag}>`);
 
         } else {
             // Párrafo normal: múltiples líneas → unir con <br>, capitalizar cada una
@@ -349,7 +353,9 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepción:
             throw new Error(`HTTP_${res.status}: ${errDetails}`);
         }
         const data = await res.json();
-        return data.choices[0].message.content.trim();
+        const content = data?.choices?.[0]?.message?.content;
+        if (!content) throw new Error('La respuesta de la IA no contiene texto válido');
+        return content.trim();
     } catch (error) {
         console.error('Structuring failed:', error);
         throw error; // Propagate to structureWithRetry
@@ -628,6 +634,13 @@ window.checkMedicalTerminology = function() {
 // ── Función reutilizable de auto-estructuración ──────────────────
 // Usada por btnStructureAI (click manual) y por el auto-pipeline (post-transcripción)
 window.autoStructure = async function (options = {}) {
+    // Mutex: evitar invocaciones concurrentes
+    if (window._structuring) {
+        if (typeof showToast === 'function') showToast('⏳ Ya hay un estructurado en curso', 'warning');
+        return false;
+    }
+    window._structuring = true;
+
     const editor = document.getElementById('editor');
     if (!editor || !editor.innerText.trim()) {
         if (typeof showToast === 'function') showToast('No hay texto para estructurar', 'error');
@@ -682,7 +695,7 @@ window.autoStructure = async function (options = {}) {
         triggerPatientDataCheck(rawText);
 
         // Notificación desktop si la ventana no está enfocada
-        if (document.hidden && Notification.permission === 'granted') {
+        if (document.hidden && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
             new Notification('Transcriptor Pro', {
                 body: '✅ Informe estructurado y listo',
                 icon: 'assets/icon-192.png'
@@ -699,6 +712,7 @@ window.autoStructure = async function (options = {}) {
         if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
         return false;
     } finally {
+        window._structuring = false;
         if (btnStructureAIEl) {
             btnStructureAIEl.disabled = false;
             btnStructureAIEl.innerHTML = oldHTML;

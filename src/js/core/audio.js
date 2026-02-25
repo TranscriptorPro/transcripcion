@@ -20,15 +20,31 @@ async function toggleRecording() {
             };
 
             window.mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(window.audioChunks, { type: 'audio/wav' });
+                // Detectar MIME real del MediaRecorder (webm/ogg, NO wav)
+                const realMime = window.mediaRecorder.mimeType || 'audio/webm';
+                const ext = realMime.includes('ogg') ? 'ogg' : 'webm';
+                const audioBlob = new Blob(window.audioChunks, { type: realMime });
                 const audioUrl = URL.createObjectURL(audioBlob);
-                const fileName = `Grabación ${new Date().toLocaleTimeString().replace(/:/g, '-')}.wav`;
-                const file = new File([audioBlob], fileName, { type: 'audio/wav' });
+                const fileName = `Grabación ${new Date().toLocaleTimeString().replace(/:/g, '-')}.${ext}`;
+                const file = new File([audioBlob], fileName, { type: realMime });
 
                 handleFiles([file]);
 
+                // Liberar URL del blob (handleFiles crea su propia URL)
+                URL.revokeObjectURL(audioUrl);
+
                 // Stop all tracks
                 stream.getTracks().forEach(track => track.stop());
+            };
+
+            window.mediaRecorder.onerror = (e) => {
+                console.error('MediaRecorder error:', e.error);
+                stream.getTracks().forEach(track => track.stop());
+                window.isRecording = false;
+                updateRecordingUI(false);
+                clearInterval(window.recordingInterval);
+                if (recordingTime) recordingTime.textContent = '00:00';
+                if (typeof showToast !== 'undefined') showToast('Error en la grabación. Intentá de nuevo.', 'error');
             };
 
             window.mediaRecorder.start();
@@ -50,11 +66,11 @@ async function toggleRecording() {
         }
     } else {
         // Stop Recording
-        window.mediaRecorder.stop();
+        try { window.mediaRecorder.stop(); } catch (_) { /* already stopped */ }
         window.isRecording = false;
         updateRecordingUI(false);
         clearInterval(window.recordingInterval);
-        recordingTime.textContent = '00:00';
+        if (recordingTime) recordingTime.textContent = '00:00';
     }
 }
 
@@ -122,7 +138,7 @@ window.updateFileList = function () {
     fileList.innerHTML = window.uploadedFiles.map((item, i) => `
     <div class="file-item">
         <div class="file-item-icon ${item.status}">
-            <svg viewBox="0 0 24 24"><path d="${item.status === 'done' ? 'M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z' : 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4-1.79 4-4V7h4V3h-6z'}"/></svg>
+            <svg viewBox="0 0 24 24"><path d="${item.status === 'done' ? 'M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z' : 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4s4-1.79 4-4V7h4V3h-6z'}"/></svg>
         </div>
         <div class="file-item-info">
             <div class="file-item-name">${item.file.name}</div>
@@ -216,8 +232,8 @@ window.removeFile = i => {
 
 function formatSize(bytes) {
     if (!bytes) return '0 B';
-    const k = 1024, sizes = ['B', 'KB', 'MB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    const k = 1024, sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1);
     return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
 }
 

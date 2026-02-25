@@ -261,7 +261,8 @@ No corrijas estilo, comas, signos de puntuación ni redacción. Solo errores de 
 
     if (!res.ok) return [];
     const data = await res.json();
-    const raw = data.choices[0].message.content.trim();
+    const raw = data?.choices?.[0]?.message?.content?.trim();
+    if (!raw) return [];
 
     // Extract JSON array from response (might have markdown code fences)
     try {

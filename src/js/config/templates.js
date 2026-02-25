@@ -1010,7 +1010,7 @@ window.detectStudyType = function (text) {
         if (!template.keywords || template.keywords.length === 0) continue;
         let score = 0;
         template.keywords.forEach(keyword => {
-            if (lowerText.includes(keyword)) {
+            if (lowerText.includes(keyword.toLowerCase())) {
                 score++;
             }
         });

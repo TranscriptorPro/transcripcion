@@ -9,9 +9,9 @@
         if (old.length && typeof savePatientToRegistry === 'function') {
             // Migrar cada paciente viejo al registro (no duplica si ya existe)
             old.forEach(p => { if (p && p.name) savePatientToRegistry(p); });
+            // Borrar la clave obsoleta solo si la migración fue posible
+            localStorage.removeItem('patient_history');
         }
-        // Borrar la clave obsoleta para no migrar de nuevo
-        localStorage.removeItem('patient_history');
     } catch (_) { /* ignorar errores de migración */ }
 })();
 
@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const results = typeof searchPatientRegistry === 'function' ? searchPatientRegistry(val) : [];
         const selected = results[0];
         if (selected) {
-            const set = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
+            const set = (id, v) => { const el = document.getElementById(id); if (el && v != null && v !== '') el.value = v; };
             set('pdfPatientName', selected.name);
             set('pdfPatientDni', selected.dni);
             set('pdfPatientAge', selected.age);
@@ -69,6 +69,7 @@ const AGE_REGEX = /(\d{1,3})\s*años/i;
 const SEX_REGEX = /(?:sexo|género)\s*(?::|,)?\s*(masculino|femenino|masc|fem)/i;
 
 window.extractPatientDataFromText = function (text) {
+    if (!text) return {};
     const data = {};
     const nameMatch = text.match(PATIENT_NAME_REGEX);
     if (nameMatch) data.name = nameMatch[1];

@@ -38,6 +38,7 @@ window.savePatientToRegistry = function(patient) {
         sex:          patient.sex  || '',
         insurance:    patient.insurance    || '',
         affiliateNum: patient.affiliateNum || '',
+        visits:       patient.visits || 1,
         lastSeen:     new Date().toISOString()
     };
 
@@ -195,20 +196,44 @@ window.initPatientRegistryPanel = function () {
             tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--text-secondary);">No hay pacientes registrados.</td></tr>';
             return;
         }
-        tbody.innerHTML = reg.map((p, i) => `
+        tbody.innerHTML = reg.map((p, i) => {
+            const safeName = (p.name || '—').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            const safeDni  = (p.dni  || '—').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            const safeAge  = p.age ? String(p.age).replace(/&/g,'&amp;').replace(/</g,'&lt;') + ' años' : '—';
+            return `
             <tr data-idx="${i}">
-                <td>${p.name || '—'}</td>
-                <td>${p.dni  || '—'}</td>
-                <td>${p.age  ? p.age + ' años' : '—'}</td>
+                <td>${safeName}</td>
+                <td>${safeDni}</td>
+                <td>${safeAge}</td>
                 <td>${fmtDate(p.lastSeen)}</td>
                 <td>${(p.visits || 1)}</td>
                 <td style="white-space:nowrap;">
-                    <button class="btn btn-secondary" style="padding:.25rem .5rem;font-size:.75rem;"
-                        onclick="registryEditRow(${i},${JSON.stringify(JSON.stringify(p))})">&#9998;</button>
-                    <button class="btn" style="padding:.25rem .5rem;font-size:.75rem;background:var(--error);"
-                        onclick="registryDeleteRow('${(p.dni||'').replace(/'/g,'')}','${p.name.replace(/'/g,'')}')">&#x1F5D1;</button>
+                    <button class="btn btn-secondary registry-edit-btn" style="padding:.25rem .5rem;font-size:.75rem;"
+                        data-idx="${i}">&#9998;</button>
+                    <button class="btn registry-delete-btn" style="padding:.25rem .5rem;font-size:.75rem;background:var(--error);"
+                        data-idx="${i}">&#x1F5D1;</button>
                 </td>
-            </tr>`).join('');
+            </tr>`;
+        }).join('');
+        // Event delegation para botones edit/delete (evita XSS por onclick inline)
+        // Se adjunta solo una vez
+        if (!tbody._delegated) {
+            tbody._delegated = true;
+            tbody.addEventListener('click', (e) => {
+                const editBtn = e.target.closest('.registry-edit-btn');
+                const delBtn  = e.target.closest('.registry-delete-btn');
+                if (editBtn) {
+                    const idx = parseInt(editBtn.dataset.idx);
+                    const currentReg = getRegistry();
+                    if (currentReg[idx]) registryEditRow(idx, JSON.stringify(currentReg[idx]));
+                }
+                if (delBtn) {
+                    const idx = parseInt(delBtn.dataset.idx);
+                    const currentReg = getRegistry();
+                    if (currentReg[idx]) registryDeleteRow(currentReg[idx].dni || '', currentReg[idx].name || '');
+                }
+            });
+        }
     }
 
     // ---- Abrir / cerrar ----
@@ -333,12 +358,18 @@ window.initPatientRegistryPanel = function () {
 // ============ G2: Incrementar contador de visitas al guardar en registry ============
 const _origSavePatient = window.savePatientToRegistry;
 window.savePatientToRegistry = function(patient) {
+    if (!patient) { if (_origSavePatient) _origSavePatient(patient); return; }
     // Incrementar contador de visitas si el paciente ya existe
     const reg    = getRegistry();
     const normDni = (patient?.dni || '').replace(/\D/g,'');
     const existing = normDni
         ? reg.find(p => p.dni && p.dni.replace(/\D/g,'') === normDni)
         : reg.find(p => _normStr(p.name) === _normStr(patient?.name || ''));
-    if (existing) existing.visits = (existing.visits || 1) + 1;
+    if (existing) {
+        // Pasar el conteo actualizado en el objeto patient para que _origSavePatient lo persista
+        patient.visits = (existing.visits || 1) + 1;
+    } else {
+        patient.visits = patient.visits || 1;
+    }
     if (_origSavePatient) _origSavePatient(patient);
 };

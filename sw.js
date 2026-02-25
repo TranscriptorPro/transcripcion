@@ -3,7 +3,7 @@
  * Cache-First para el app shell; Network-First para llamadas a la API de Groq.
  */
 
-const CACHE_NAME   = 'transcriptor-pro-v5';
+const CACHE_NAME   = 'transcriptor-pro-v6';
 const GROQ_ORIGIN  = 'api.groq.com';
 
 // Recursos del app shell que se cachean en la instalación
@@ -68,7 +68,12 @@ self.addEventListener('fetch', event => {
 
     // Network-First: llamadas a la API de Groq (nunca cachear)
     if (url.hostname.includes(GROQ_ORIGIN)) {
-        event.respondWith(fetch(event.request));
+        event.respondWith(
+            fetch(event.request).catch(() => new Response(
+                JSON.stringify({ error: { message: 'Sin conexión a internet' } }),
+                { status: 503, headers: { 'Content-Type': 'application/json' } }
+            ))
+        );
         return;
     }
 

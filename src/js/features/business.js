@@ -161,13 +161,17 @@ window.initWorkplaceManagement = function () {
             container.innerHTML = '<p style="color:var(--text-secondary);font-size:0.85rem;margin:0 0 0.5rem;">Aún no hay profesionales. Agrega el primero ↓</p>';
             return;
         }
-        container.innerHTML = profs.map((p, i) => `
+        container.innerHTML = profs.map((p, i) => {
+            const safeName = (p.nombre || '(sin nombre)').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            const safeMat  = p.matricula ? (' — ' + p.matricula.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')) : '';
+            return `
             <div class="field-row" style="align-items:center;gap:0.5rem;padding:0.35rem 0;border-bottom:1px solid var(--border);">
-                <span style="flex:1;font-size:0.9rem;"><strong>${p.nombre || '(sin nombre)'}</strong>${p.matricula ? ' — ' + p.matricula : ''}</span>
+                <span style="flex:1;font-size:0.9rem;"><strong>${safeName}</strong>${safeMat}</span>
                 <button class="btn-sm" data-edit="${i}">✏️ Editar</button>
                 <button class="btn-sm btn-danger-sm" data-del="${i}">🗑️</button>
             </div>
-        `).join('');
+        `;
+        }).join('');
     }
 
     function openProfessionalForm(wpIndex, editIndex) {
@@ -239,9 +243,10 @@ window.initWorkplaceManagement = function () {
         const logoFile  = document.getElementById('proLogoUpload')?.files?.[0];
 
         // Leer archivos si los hay
-        const readFile = (file) => new Promise(resolve => {
+        const readFile = (file) => new Promise((resolve, reject) => {
             const r = new FileReader();
             r.onload = e => resolve(e.target.result);
+            r.onerror = () => reject(new Error('Error al leer archivo'));
             r.readAsDataURL(file);
         });
 

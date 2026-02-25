@@ -33,11 +33,12 @@ window.disableButtons = function () {
 }
 
 window.showBlocker = function (msg, isContactRequired) {
+    const safeMsg = escapeHtml(msg);
     const body = document.body;
     body.innerHTML = `
         <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg-main); font-family: sans-serif; text-align: center; padding: 2rem;">
             <h1 style="color: var(--primary, #0f766e); margin-bottom: 1rem;">💼 Suscripción</h1>
-            <p style="font-size: 1.2rem; color: var(--text-secondary, #475569); max-width: 500px;">${msg}</p>
+            <p style="font-size: 1.2rem; color: var(--text-secondary, #475569); max-width: 500px;">${safeMsg}</p>
             ${isContactRequired ? '<button onclick="window.location.reload()" class="btn btn-primary" style="margin-top: 2rem; padding: 1rem 2rem;">Reintentar</button>' : ''}
             <p style="margin-top: 2rem; font-size: 0.85rem; color: var(--text-secondary, #94a3b8);">Contacta con el desarrollador para habilitar tu licencia.</p>
         </div>
@@ -532,6 +533,8 @@ window.initModals = function () {
         if (!window._lastRawTranscription) return;
         navigator.clipboard.writeText(window._lastRawTranscription).then(() => {
             if (typeof showToast === 'function') showToast('📋 Texto original copiado', 'success');
+        }).catch(() => {
+            if (typeof showToast === 'function') showToast('❌ No se pudo copiar al portapapeles', 'error');
         });
     });
     document.getElementById('btnCopyStructured')?.addEventListener('click', () => {
@@ -540,6 +543,8 @@ window.initModals = function () {
         if (!text.trim()) return;
         navigator.clipboard.writeText(text).then(() => {
             if (typeof showToast === 'function') showToast('📋 Texto estructurado copiado', 'success');
+        }).catch(() => {
+            if (typeof showToast === 'function') showToast('❌ No se pudo copiar al portapapeles', 'error');
         });
     });
 
@@ -584,6 +589,7 @@ window.initModals = function () {
     const btnAppendRecord = document.getElementById('btnAppendRecord');
     if (btnAppendRecord) {
         let _appendRecording = false;
+        let _appendStarting = false; // guard contra doble-click
         let _appendMediaRecorder = null;
         let _appendChunks = [];
         let _appendStream = null;
@@ -597,11 +603,16 @@ window.initModals = function () {
                     _appendMediaRecorder.stop();
                 }
                 _appendRecording = false;
+                _appendStarting = false;
                 btnAppendRecord.classList.remove('recording-pulse');
                 btnAppendRecord.title = 'Grabar y agregar texto al final del informe';
                 if (_appendTimer) clearInterval(_appendTimer);
                 return;
             }
+
+            // Guard contra doble-click al iniciar
+            if (_appendStarting) return;
+            _appendStarting = true;
 
             // Start recording
             try {
@@ -612,8 +623,10 @@ window.initModals = function () {
                 _appendMediaRecorder.ondataavailable = (e) => _appendChunks.push(e.data);
                 _appendMediaRecorder.onstop = async () => {
                     _appendStream.getTracks().forEach(t => t.stop());
-                    const blob = new Blob(_appendChunks, { type: 'audio/wav' });
-                    const file = new File([blob], 'append_audio.wav', { type: 'audio/wav' });
+                    const realMime = _appendMediaRecorder.mimeType || 'audio/webm';
+                    const ext = realMime.includes('ogg') ? 'ogg' : 'webm';
+                    const blob = new Blob(_appendChunks, { type: realMime });
+                    const file = new File([blob], `append_audio.${ext}`, { type: realMime });
 
                     // Transcribe with Groq
                     if (typeof showToast === 'function') showToast('⏳ Transcribiendo audio adicional...', 'info', 3000);
@@ -673,6 +686,7 @@ window.initModals = function () {
                 }, 1000);
 
             } catch (err) {
+                _appendStarting = false;
                 if (typeof showToast === 'function') showToast('❌ No se pudo acceder al micrófono', 'error');
             }
         });
@@ -782,7 +796,7 @@ window.initApiManagement = function () {
                     return;
                 }
                 // Error de red / sin conexión
-                const guardar = window.confirm('⚠️ No se pudo verificar la clave (sin conexión a internet).\n\n¿Gauardar de todas formas?');
+                const guardar = window.confirm('⚠️ No se pudo verificar la clave (sin conexión a internet).\n\n¿Guardar de todas formas?');
                 if (guardar) {
                     localStorage.setItem('groq_api_key', key);
                     window.GROQ_API_KEY = key;
@@ -918,7 +932,7 @@ document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.shiftKey && e.key === 'D') {
         e.preventDefault();
         const states = ['TRANSCRIBED', 'STRUCTURED', 'PREVIEWED'];
-        if (states.includes(window.appState) && typeof downloadFile !== 'undefined') {
+        if (states.includes(window.appState) && typeof window.downloadFile === 'function') {
             const fav = localStorage.getItem('preferred_download_format') || 'pdf';
             if (window.downloadPDF && fav === 'pdf') window.downloadPDF();
             else if (window.downloadRTF && fav === 'rtf') window.downloadRTF();
@@ -957,7 +971,9 @@ document.addEventListener('keydown', (e) => {
 
     function restoreAutoSave() {
         const saved = localStorage.getItem(AUTOSAVE_KEY);
-        const meta = JSON.parse(localStorage.getItem(AUTOSAVE_META_KEY) || '{}');
+        let meta;
+        try { meta = JSON.parse(localStorage.getItem(AUTOSAVE_META_KEY) || '{}'); }
+        catch (_) { meta = {}; }
         if (!saved || !meta.timestamp) return;
 
         // Solo restaurar si tiene menos de 2 horas

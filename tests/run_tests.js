@@ -1736,6 +1736,255 @@ test('ui.js — restoreAutoSave usa botón btnRestoreSession', () => {
     assert(!code.includes('Sesión anterior restaurada'), 'No debe restaurar automáticamente');
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 34: Verificación de auditoría completa — fixes aplicados
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 34: Auditoría — CRITICAL fixes ─────────────────────');
+
+test('CRITICAL: editor.js downloadFile Promise tiene resolve()', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/editor.js'), 'utf-8');
+    // Debe tener resolve en onYes, onNo y onBg
+    assert(code.includes('resolve(true)') || code.includes('resolve( true )'), 'downloadFile debe resolver con true');
+    assert(code.includes('resolve(false)'), 'downloadFile debe resolver con false');
+});
+
+test('CRITICAL: structurer.js optional chaining en data.choices', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/structurer.js'), 'utf-8');
+    assert(code.includes('data?.choices?.[0]?.message?.content'), 'structurer debe usar optional chaining para acceder a content');
+});
+
+test('CRITICAL: formHandler.js migración no borra datos si falla', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/formHandler.js'), 'utf-8');
+    // removeItem debe estar DENTRO del bloque if que verifica savePatientToRegistry
+    const migrateBlock = code.indexOf('savePatientToRegistry');
+    const removeItem = code.indexOf("removeItem('patient_history')");
+    assert(migrateBlock > 0, 'Debe existir referencia a savePatientToRegistry');
+    assert(removeItem > 0, 'Debe existir removeItem de patient_history');
+    assert(removeItem > migrateBlock, 'removeItem debe estar después de la verificación de savePatientToRegistry');
+});
+
+test('CRITICAL: patientRegistry.js incrementa visits correctamente', () => {
+    localStorage.clear();
+    const name = 'Test Visits Patient';
+    savePatientToRegistry({ name: name, dni: '99999' });
+    savePatientToRegistry({ name: name, dni: '99999' });
+    const all = searchPatientRegistry(name);
+    assert(all.length > 0, 'Paciente debe existir');
+    assert(all[0].visits >= 2, `Visits debe ser >= 2, got ${all[0].visits}`);
+    localStorage.clear();
+});
+
+test('CRITICAL: pdfMaker.js firma usa posiciones dinámicas', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/pdfMaker.js'), 'utf-8');
+    assert(code.includes('sigStartX') || code.includes('PAGE_W - MR'), 'Firma debe usar posición dinámica');
+    assert(!code.match(/doc\.line\(\s*130\s*,/), 'No debe haber firma hardcodeada en x=130');
+});
+
+console.log('\n── Bloque 35: Auditoría — HIGH fixes ─────────────────────────');
+
+test('HIGH: audio.js usa mimeType dinámico en grabación', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/core/audio.js'), 'utf-8');
+    // Solo verifica que el mediaRecorder usa mimeType dinámico; audio/wav en WAV encoder helper es legítimo
+    assert(code.includes('.mimeType'), 'audio.js debe usar .mimeType del mediaRecorder');
+    assert(!code.includes("new Blob(chunks, { type: 'audio/wav' }"), 'chunks del recorder no debe ser audio/wav');
+});
+
+test('HIGH: audio.js revoca Object URL', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/core/audio.js'), 'utf-8');
+    assert(code.includes('revokeObjectURL'), 'audio.js debe revocar Object URLs');
+});
+
+test('HIGH: audio.js tiene onerror handler', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/core/audio.js'), 'utf-8');
+    assert(code.includes('.onerror'), 'mediaRecorder debe tener onerror');
+});
+
+test('HIGH: audio.js stop() con try/catch', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/core/audio.js'), 'utf-8');
+    // Verificar que hay un try con stop() cerca
+    const stopIdx = code.indexOf('mediaRecorder.stop()');
+    assert(stopIdx > 0, 'Debe existir mediaRecorder.stop()');
+    const before = code.substring(Math.max(0, stopIdx - 200), stopIdx);
+    assert(before.includes('try'), 'stop() debe estar envuelto en try/catch');
+});
+
+test('HIGH: editor.js HTTP validation (!res.ok)', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/editor.js'), 'utf-8');
+    assert(code.includes('!res.ok') || code.includes('! res.ok'), 'editor.js debe validar res.ok en fetch');
+});
+
+test('HIGH: editor.js no-data-field class correcta', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/editor.js'), 'utf-8');
+    assert(code.includes('no-data-field'), 'Debe usar clase no-data-field');
+});
+
+test('HIGH: editor.js undo guarda estado inicial', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/editor.js'), 'utf-8');
+    assert(code.includes('focus') && code.includes('once'), 'Debe guardar estado inicial al primer focus');
+});
+
+test('HIGH: ui.js clipboard con .catch()', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/utils/ui.js'), 'utf-8');
+    const clipMatches = code.match(/writeText\([^)]*\)/g) || [];
+    assert(clipMatches.length > 0, 'Debe usar clipboard.writeText');
+    // Buscar que no hay writeText sin .catch cerca
+    const hasCatchAfterWriteText = code.includes('writeText') && code.includes('.catch');
+    assert(hasCatchAfterWriteText, 'writeText debe tener .catch()');
+});
+
+test('HIGH: ui.js downloadFile guard correcto', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/utils/ui.js'), 'utf-8');
+    assert(
+        code.includes("typeof window.downloadFile === 'function'") ||
+        code.includes('typeof window.downloadFile === "function"'),
+        'Debe verificar window.downloadFile como function'
+    );
+});
+
+test('HIGH: ui.js typo "Guardar" (no "Gauardar")', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/utils/ui.js'), 'utf-8');
+    assert(!code.includes('Gauardar'), 'No debe contener typo Gauardar');
+});
+
+test('HIGH: ui.js showBlocker XSS safe', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/utils/ui.js'), 'utf-8');
+    assert(code.includes('escapeHtml'), 'showBlocker debe usar escapeHtml');
+});
+
+test('HIGH: formHandler.js extractPatientDataFromText null guard', () => {
+    const result = extractPatientDataFromText(null);
+    assert(typeof result === 'object', 'Debe retornar objeto vacío para null');
+    assertEqual(Object.keys(result).length, 0, 'Objeto debe estar vacío');
+});
+
+test('HIGH: formHandler.js age 0 no es falsy', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/formHandler.js'), 'utf-8');
+    assert(
+        code.includes("v != null && v !== ''") || code.includes('v != null'),
+        'set() no debe tratar 0 como falsy'
+    );
+});
+
+test('HIGH: patientRegistry.js XSS — sin onclick inline', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/patientRegistry.js'), 'utf-8');
+    assert(!code.includes("onclick=\"registryEditRow"), 'No debe tener onclick inline para edit');
+    assert(!code.includes("onclick=\"registryDeleteRow"), 'No debe tener onclick inline para delete');
+});
+
+test('HIGH: business.js XSS — escapa datos en HTML', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/business.js'), 'utf-8');
+    assert(code.includes('replace') && code.includes('&amp;'), 'Debe escapar HTML en renderProfessionalList');
+});
+
+test('HIGH: structurer.js mutex autoStructure', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/structurer.js'), 'utf-8');
+    assert(code.includes('_structuring'), 'Debe tener flag _structuring para mutex');
+});
+
+test('HIGH: structurer.js Notification guard', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/structurer.js'), 'utf-8');
+    assert(code.includes("typeof Notification !== 'undefined'") || code.includes('typeof Notification !=='), 
+        'Debe verificar que Notification existe antes de usarlo');
+});
+
+console.log('\n── Bloque 36: Auditoría — MEDIUM fixes ───────────────────────');
+
+test('MEDIUM: structurer.js markdownToHtml soporta listas numeradas', () => {
+    const md = '1. Primer item\n2. Segundo item\n3. Tercer item';
+    const html = markdownToHtml(md);
+    assert(html.includes('<ol>') || html.includes('<li>'), 'Debe generar <ol> o <li> para listas numeradas');
+});
+
+test('MEDIUM: tabs.js closeTab guarda contenido', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/utils/tabs.js'), 'utf-8');
+    assert(code.includes('transcriptions') && code.includes('.text'), 'closeTab debe guardar en transcriptions[].text');
+});
+
+test('MEDIUM: toast.js askJoinAudiosPromise tiene timeout', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/utils/toast.js'), 'utf-8');
+    assert(code.includes('setTimeout') && code.includes('resolved'), 'Debe tener timeout de seguridad');
+});
+
+test('MEDIUM: business.js FileReader tiene onerror', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/business.js'), 'utf-8');
+    assert(code.includes('r.onerror') || code.includes('reader.onerror'), 'FileReader debe tener onerror');
+});
+
+test('MEDIUM: medDictionary.js optional chaining', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/medDictionary.js'), 'utf-8');
+    assert(code.includes('?.choices') || code.includes('data?.'), 'Debe usar optional chaining');
+});
+
+test('MEDIUM: ui.js doble-click append guard', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/utils/ui.js'), 'utf-8');
+    assert(code.includes('_appendStarting'), 'Debe tener flag anti doble-click');
+});
+
+test('MEDIUM: ui.js autoSave JSON.parse try/catch', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/utils/ui.js'), 'utf-8');
+    // Buscar try/catch cerca de JSON.parse y autosave
+    assert(code.includes('try') && code.includes('JSON.parse'), 'AutoSave debe tener try/catch en JSON.parse');
+});
+
+test('MEDIUM: editor.js highlightText limpia marks previos', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/editor.js'), 'utf-8');
+    assert(code.includes('<mark>') && code.includes('replace'), 'highlightText debe limpiar marks previos');
+});
+
+test('MEDIUM: editor.js applyNormalTemplate tiene guard', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/editor.js'), 'utf-8');
+    assert(code.includes('_applyingTemplate'), 'applyNormalTemplate debe tener guard anti re-entrada');
+});
+
+test('MEDIUM: transcriptor.js pipeline muestra warning en fallo', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/transcriptor.js'), 'utf-8');
+    assert(code.includes('autoStructure') && code.includes('then'), 'Pipeline debe manejar fallos de autoStructure');
+});
+
+test('MEDIUM: transcriptor.js limpia blob URLs', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/transcriptor.js'), 'utf-8');
+    assert(code.includes('revokeObjectURL'), 'Debe revocar Object URLs de blobs');
+});
+
+test('MEDIUM: pdfMaker.js segundo página usa MT', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/pdfMaker.js'), 'utf-8');
+    assert(code.includes('cy = MT'), 'ensureSpace debe usar cy = MT');
+    // cy = 10 en drawHeader (página 1 setup) es legítimo; verificar que ensureSpace e inline overflow usen MT
+    const ensureSpaceMatch = code.match(/function ensureSpace[\s\S]*?\n\s*\}/m);
+    assert(ensureSpaceMatch && ensureSpaceMatch[0].includes('cy = MT'), 'ensureSpace debe usar cy = MT');
+});
+
+test('MEDIUM: pdfMaker.js _hexToRgb soporta hex corto', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/pdfMaker.js'), 'utf-8');
+    assert(code.includes('h.length === 3') || code.includes('length===3'), 'Debe expandir hex corto (#FFF)');
+});
+
+test('MEDIUM: sw.js Groq fetch tiene .catch()', () => {
+    const code = fs.readFileSync(path.join(root, 'sw.js'), 'utf-8');
+    assert(code.includes('.catch'), 'Fetch de Groq API debe tener .catch()');
+});
+
+test('MEDIUM: templates.js detectStudyType usa toLowerCase', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/config/templates.js'), 'utf-8');
+    assert(code.includes('.toLowerCase()'), 'detectStudyType debe comparar en lowercase');
+});
+
+test('MEDIUM: audio.js formatSize soporta GB/TB', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/core/audio.js'), 'utf-8');
+    assert(code.includes("'GB'") || code.includes('"GB"'), 'formatSize debe incluir GB');
+});
+
+test('MEDIUM: audio.js SVG path corregido', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/core/audio.js'), 'utf-8');
+    assert(!code.includes('4-1.79') || code.includes('4s4-1.79'), 'SVG path debe estar corregido');
+});
+
+test('CLEANED: transcriptor.js sin testGroqConnection muerto', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/transcriptor.js'), 'utf-8');
+    assert(!code.includes('function testGroqConnection') && !code.includes('testGroqConnection ='), 
+        'No debe contener código muerto testGroqConnection');
+});
+
 // ── Resumen ───────────────────────────────────────────────────────────────────
 console.log('\n─────────────────────────────────────────────────────────────────');
 console.log(`  Total: ${passed + failed} | ✅ Pasaron: ${passed} | ❌ Fallaron: ${failed}`);

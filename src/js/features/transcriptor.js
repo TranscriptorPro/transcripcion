@@ -195,7 +195,11 @@ if (transcribeBtn) {
                 // No usar timeout — estructurar inmediatamente para que el usuario
                 // nunca vea el texto sin formato
                 if (typeof window.autoStructure === 'function') {
-                    window.autoStructure({ silent: true }).finally(() => {
+                    window.autoStructure({ silent: true }).then(success => {
+                        if (!success && typeof showToast === 'function') {
+                            showToast('⚠️ La estructuración automática falló. El texto fue transcripto pero no estructurado.', 'warning', 5000);
+                        }
+                    }).finally(() => {
                         // Revelar el editor solo cuando la estructuración termine
                         editor.classList.remove('editor-pipeline-hidden');
                     });
@@ -234,6 +238,18 @@ if (transcribeBtn) {
             transcribeBtn.disabled = window.uploadedFiles.every(f => f.status === 'done');
             const tAndSFinal = document.getElementById('transcribeAndStructureBtn');
             if (tAndSFinal) tAndSFinal.disabled = transcribeBtn.disabled;
+
+            // Liberar Object URLs de archivos procesados para evitar memory leaks
+            window.uploadedFiles.forEach(item => {
+                if (item.status === 'done' && item.audioUrl) {
+                    URL.revokeObjectURL(item.audioUrl);
+                    item.audioUrl = null;
+                }
+                if (item._audio) {
+                    item._audio.pause();
+                    item._audio = null;
+                }
+            });
 
             // ALWAYS hide processing status after completion
             setTimeout(() => {
@@ -488,58 +504,4 @@ function validateAudioFile(file) {
     return true;
 }
 
-// Test Groq API connection
-async function testGroqConnection() {
-    if (!window.GROQ_API_KEY) {
-        return false;
-    }
-
-    let audioContext = null;
-    try {
-        // Create a minimal valid audio test file
-        const sampleRate = 16000;
-        const duration = 0.1; // 100ms
-        const numSamples = Math.floor(sampleRate * duration);
-
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const audioBuffer = audioContext.createBuffer(1, numSamples, sampleRate);
-
-        // Generate a simple 440Hz tone (A note)
-        const channelData = audioBuffer.getChannelData(0);
-        for (let i = 0; i < numSamples; i++) {
-            channelData[i] = Math.sin(2 * Math.PI * 440 * i / sampleRate) * 0.1;
-        }
-
-        // Convert to valid WAV - Requires external audioBufferToWav function implementation if used globally
-        if (typeof audioBufferToWav !== 'function') {
-            console.warn('audioBufferToWav not globally available. Skipping connection test generator.');
-            return false;
-        }
-
-        const wavBlob = audioBufferToWav(audioBuffer);
-        const testFile = new File([wavBlob], 'test.wav', { type: 'audio/wav' });
-
-        // Test with Groq
-        const form = new FormData();
-        form.append('file', testFile);
-        form.append('model', 'whisper-large-v3');
-        form.append('language', 'es');
-        form.append('response_format', 'text');
-
-        const res = await fetch(GROQ_API_URL, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${window.GROQ_API_KEY}` },
-            body: form
-        });
-
-        return res.ok;
-    } catch (error) {
-        console.error('Test connection failed:', error);
-        return false;
-    } finally {
-        // Close AudioContext to prevent resource leaks
-        if (audioContext) {
-            audioContext.close();
-        }
-    }
-}
+// testGroqConnection — removida (dead code, nunca se invocaba)
