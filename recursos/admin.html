@@ -1645,6 +1645,89 @@
         .form-group select.is-invalid ~ .invalid-feedback {
             display: block;
         }
+
+        /* ── Registros Pendientes ── */
+        .reg-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 1rem;
+        }
+        .reg-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.2rem;
+            transition: box-shadow .2s;
+            position: relative;
+        }
+        .reg-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.1); }
+        .reg-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: .8rem;
+        }
+        .reg-card-header h3 { font-size: 1rem; margin: 0; }
+        .reg-card-header .reg-date { font-size: .75rem; color: var(--text-muted); }
+        .reg-card-info { display: grid; grid-template-columns: 1fr 1fr; gap: .3rem .8rem; font-size: .85rem; margin-bottom: .8rem; }
+        .reg-card-info dt { color: var(--text-muted); font-weight: 500; }
+        .reg-card-info dd { margin: 0; }
+        .reg-card-specs { display: flex; flex-wrap: wrap; gap: .3rem; margin-bottom: .8rem; }
+        .reg-card-actions {
+            display: flex;
+            gap: .5rem;
+            justify-content: flex-end;
+            border-top: 1px solid var(--border);
+            padding-top: .8rem;
+        }
+        .reg-badge-pendiente { background: #fef3c7; color: #92400e; }
+        .reg-badge-aprobado  { background: #dcfce7; color: #166534; }
+        .reg-badge-rechazado { background: #fee2e2; color: #991b1b; }
+        .btn-approve {
+            background: #10b981; color: white; border: none;
+            padding: .4rem .8rem; border-radius: 8px; font-size: .82rem;
+            font-weight: 600; cursor: pointer; transition: all .2s;
+        }
+        .btn-approve:hover { background: #059669; }
+        .btn-reject {
+            background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;
+            padding: .4rem .8rem; border-radius: 8px; font-size: .82rem;
+            cursor: pointer; transition: all .2s;
+        }
+        .btn-reject:hover { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+        .btn-view-details {
+            background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe;
+            padding: .4rem .8rem; border-radius: 8px; font-size: .82rem;
+            cursor: pointer; transition: all .2s;
+        }
+        .btn-view-details:hover { background: #dbeafe; }
+        #regBadge {
+            background: #ef4444; color: white; font-size: .65rem;
+            padding: 1px 6px; border-radius: 10px; margin-left: 4px;
+            vertical-align: super;
+        }
+
+        /* ── Modal Aprobar Registro ── */
+        .approve-modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,.5);
+            z-index: 10000; display: none; align-items: center; justify-content: center;
+        }
+        .approve-modal-overlay.show { display: flex; }
+        .approve-modal {
+            background: white; border-radius: 16px; padding: 2rem;
+            max-width: 520px; width: 90%; max-height: 85vh; overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,.25);
+        }
+        .approve-modal h3 { font-size: 1.15rem; margin-bottom: 1rem; }
+        .approve-modal .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; margin-bottom: .8rem; }
+        .approve-modal .form-group { display: flex; flex-direction: column; gap: 4px; }
+        .approve-modal .form-group label { font-size: .8rem; font-weight: 600; color: #64748b; }
+        .approve-modal .form-group input,
+        .approve-modal .form-group select {
+            padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 8px;
+            font-size: .88rem; font-family: inherit;
+        }
+        .approve-modal .btn-row { display: flex; gap: .5rem; justify-content: flex-end; margin-top: 1.2rem; }
     </style>
 </head>
 <body>
@@ -1690,6 +1773,7 @@
     <nav class="tabs-nav" role="navigation" aria-label="Secciones del panel">
         <div class="container">
             <button class="tab-btn active" data-tab="usuarios">👥 Usuarios</button>
+            <button class="tab-btn" data-tab="registros">📋 Registros <span id="regBadge" class="badge" style="display:none;">0</span></button>
             <button class="tab-btn" data-tab="metricas">📊 Métricas</button>
             <button class="tab-btn" data-tab="logs">🚨 Logs</button>
         </div>
@@ -1791,6 +1875,37 @@
     </section>
 
     </div><!-- /#tab-usuarios -->
+
+    <!-- ── Tab: Registros Pendientes ── -->
+    <div id="tab-registros" class="tab-content">
+    <section class="registros-section">
+        <div class="container">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                <h2 style="font-size:1.2rem;">📋 Registros de Profesionales</h2>
+                <div style="display:flex;gap:.5rem;">
+                    <select id="regFilterEstado" class="filter-select" onchange="loadRegistrations()">
+                        <option value="pendiente">⏳ Pendientes</option>
+                        <option value="aprobado">✅ Aprobados</option>
+                        <option value="rechazado">❌ Rechazados</option>
+                        <option value="">Todos</option>
+                    </select>
+                    <button class="btn-primary" onclick="loadRegistrations()">🔄 Actualizar</button>
+                </div>
+            </div>
+
+            <div id="registrosEmpty" style="text-align:center;padding:3rem;display:none;">
+                <div style="font-size:3rem;margin-bottom:.5rem;">📭</div>
+                <p style="color:#64748b;">No hay registros pendientes</p>
+                <p style="color:#94a3b8;font-size:.85rem;margin-top:.3rem;">
+                    Compartí el link <code id="regLinkDisplay"></code> para que los profesionales se registren
+                </p>
+                <button class="btn-outline" style="margin-top:.8rem;" onclick="copyRegLink()">📋 Copiar link de registro</button>
+            </div>
+
+            <div id="registrosCards" class="reg-cards-grid"></div>
+        </div>
+    </section>
+    </div><!-- /#tab-registros -->
 
     <!-- ── Tab: Métricas ── -->
     <div id="tab-metricas" class="tab-content">
@@ -2213,6 +2328,8 @@
         let notificationTimer = null;
         let metricsLoaded = false;
         let logsLoaded = false;
+        let registrosLoaded = false;
+        let allRegistrations = [];
 
         /* ── API ─────────────────────────────────────────────────────────────── */
         async function fetchUsers() {
@@ -2339,7 +2456,10 @@
             if (activeBtn) activeBtn.classList.add('active');
 
             // Load data lazily
-            if (tabName === 'metricas' && !metricsLoaded) {
+            if (tabName === 'registros' && !registrosLoaded) {
+                loadRegistrations();
+                registrosLoaded = true;
+            } else if (tabName === 'metricas' && !metricsLoaded) {
                 loadGlobalStats();
                 metricsLoaded = true;
             } else if (tabName === 'logs' && !logsLoaded) {
@@ -3024,6 +3144,9 @@
             await loadDashboard();
             startAutoRefresh(5);
 
+            // Load registration badge count (non-blocking)
+            loadRegBadgeCount();
+
             // Setup new user modal close buttons (modal HTML is after the script block)
             document.getElementById('btnCloseNewUser')?.addEventListener('click', () => closeNewUserModal());
             document.getElementById('btnCancelNewUser')?.addEventListener('click', () => closeNewUserModal());
@@ -3258,7 +3381,7 @@
             try {
                 // Si hay API Key, guardarla en el Sheet
                 if (apiKey) {
-                    const updateUrl = `${BACKEND_URL}?action=admin_update_user&sessionToken=${encodeURIComponent(sessionToken)}&userId=${encodeURIComponent(userId)}&updates=${encodeURIComponent(JSON.stringify({ API_Key: apiKey }))}`;
+                    const updateUrl = `${CONFIG.scriptUrl}?action=admin_update_user&sessionToken=${encodeURIComponent(sessionToken)}&userId=${encodeURIComponent(userId)}&updates=${encodeURIComponent(JSON.stringify({ API_Key: apiKey }))}`;
                     await fetch(updateUrl);
                 }
 
@@ -3273,7 +3396,7 @@
                 document.getElementById('cfApiKeyNotice').style.display = apiKey ? 'none' : 'block';
 
                 // Log
-                const logUrl = `${BACKEND_URL}?action=admin_log_action&sessionToken=${encodeURIComponent(sessionToken)}&adminUser=${encodeURIComponent('admin')}&logAction=generate_link&userId=${encodeURIComponent(userId)}&details=${encodeURIComponent('Link generado' + (apiKey ? ' con API Key' : ' sin API Key'))}`;
+                const logUrl = `${CONFIG.scriptUrl}?action=admin_log_action&sessionToken=${encodeURIComponent(sessionToken)}&adminUser=${encodeURIComponent('admin')}&logAction=generate_link&userId=${encodeURIComponent(userId)}&details=${encodeURIComponent('Link generado' + (apiKey ? ' con API Key' : ' sin API Key'))}`;
                 fetch(logUrl).catch(() => {});
 
             } catch (err) {
@@ -3748,6 +3871,287 @@
             localStorage.setItem('theme', newTheme);
             updateDarkModeIcon();
         });
+
+        // ======== REGISTROS PENDIENTES ========
+
+        async function loadRegistrations() {
+            const container = document.getElementById('registrosCards');
+            const emptyState = document.getElementById('registrosEmpty');
+            const filterEstado = document.getElementById('regFilterEstado')?.value || 'pendiente';
+
+            container.innerHTML = '<p style="text-align:center;padding:2rem;color:#64748b;">⏳ Cargando registros...</p>';
+            emptyState.style.display = 'none';
+
+            // Set registration link
+            const regLink = window.location.origin + window.location.pathname.replace('admin.html', 'registro.html');
+            const regLinkEl = document.getElementById('regLinkDisplay');
+            if (regLinkEl) regLinkEl.textContent = regLink;
+
+            try {
+                const res = await fetch(`${CONFIG.scriptUrl}?action=admin_list_registrations&${_getSessionAuthParams()}`);
+                const data = await res.json();
+
+                if (data.error) throw new Error(data.error);
+
+                allRegistrations = data.registrations || [];
+
+                // Filter by estado
+                let filtered = allRegistrations;
+                if (filterEstado) {
+                    filtered = allRegistrations.filter(r => String(r.Estado || '').toLowerCase() === filterEstado.toLowerCase());
+                }
+
+                // Update badge
+                const pendientes = allRegistrations.filter(r => String(r.Estado || '').toLowerCase() === 'pendiente');
+                const badge = document.getElementById('regBadge');
+                if (badge) {
+                    if (pendientes.length > 0) {
+                        badge.textContent = pendientes.length;
+                        badge.style.display = 'inline';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+
+                if (filtered.length === 0) {
+                    container.innerHTML = '';
+                    emptyState.style.display = 'block';
+                    return;
+                }
+
+                container.innerHTML = filtered.map(reg => renderRegCard(reg)).join('');
+            } catch (err) {
+                container.innerHTML = `<p style="text-align:center;padding:2rem;color:#ef4444;">❌ ${escapeHtml(err.message)}</p>`;
+            }
+        }
+
+        function renderRegCard(reg) {
+            const estado = String(reg.Estado || 'pendiente').toLowerCase();
+            const badgeClass = estado === 'aprobado' ? 'reg-badge-aprobado' : estado === 'rechazado' ? 'reg-badge-rechazado' : 'reg-badge-pendiente';
+            const estadoLabel = estado === 'aprobado' ? '✅ Aprobado' : estado === 'rechazado' ? '❌ Rechazado' : '⏳ Pendiente';
+
+            const fecha = reg.Fecha_Registro ? new Date(reg.Fecha_Registro).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+
+            let especialidades = '';
+            try {
+                const esps = String(reg.Especialidades || '').split(',').map(s => s.trim()).filter(Boolean);
+                especialidades = esps.map(e => `<span class="badge badge-specialty">${escapeHtml(e)}</span>`).join(' ');
+            } catch(_) {}
+
+            let workplace = '—';
+            try {
+                const wp = JSON.parse(reg.Workplace_Data || '{}');
+                workplace = wp.name || '—';
+            } catch(_) { workplace = '—'; }
+
+            const isPendiente = estado === 'pendiente';
+            const actionsHtml = isPendiente ? `
+                <button class="btn-view-details" onclick="viewRegDetail('${reg.ID_Registro}')">📋 Detalle</button>
+                <button class="btn-reject" onclick="rejectRegistration('${reg.ID_Registro}')">❌ Rechazar</button>
+                <button class="btn-approve" onclick="openApproveModal('${reg.ID_Registro}')">✅ Aprobar</button>
+            ` : `
+                <button class="btn-view-details" onclick="viewRegDetail('${reg.ID_Registro}')">📋 Detalle</button>
+                ${estado === 'aprobado' && reg.ID_Medico_Asignado ? `<span style="font-size:.8rem;color:#64748b;">ID: ${escapeHtml(reg.ID_Medico_Asignado)}</span>` : ''}
+            `;
+
+            return `
+                <div class="reg-card">
+                    <div class="reg-card-header">
+                        <div>
+                            <h3>${escapeHtml(reg.Nombre || 'Sin nombre')}</h3>
+                            <span class="reg-date">${fecha}</span>
+                        </div>
+                        <span class="badge ${badgeClass}">${estadoLabel}</span>
+                    </div>
+                    <dl class="reg-card-info">
+                        <dt>📧 Email</dt><dd>${escapeHtml(reg.Email || '—')}</dd>
+                        <dt>🪪 Matrícula</dt><dd>${escapeHtml(reg.Matricula || '—')}</dd>
+                        <dt>📞 Teléfono</dt><dd>${escapeHtml(reg.Telefono || '—')}</dd>
+                        <dt>🏥 Lugar</dt><dd>${escapeHtml(workplace)}</dd>
+                    </dl>
+                    <div class="reg-card-specs">${especialidades || '<span style="color:#94a3b8;font-size:.82rem;">Sin especialidades</span>'}</div>
+                    <div class="reg-card-actions">${actionsHtml}</div>
+                </div>
+            `;
+        }
+
+        function viewRegDetail(regId) {
+            const reg = allRegistrations.find(r => r.ID_Registro === regId);
+            if (!reg) return;
+
+            let wpHtml = '';
+            try {
+                const wp = JSON.parse(reg.Workplace_Data || '{}');
+                wpHtml = `
+                    <dt>Nombre</dt><dd>${escapeHtml(wp.name || '—')}</dd>
+                    <dt>Dirección</dt><dd>${escapeHtml(wp.address || '—')}</dd>
+                    <dt>Teléfono</dt><dd>${escapeHtml(wp.phone || '—')}</dd>
+                    <dt>Email</dt><dd>${escapeHtml(wp.email || '—')}</dd>
+                    <dt>Logo</dt><dd>${wp.logo ? '✅ Sí' : '❌ No'}</dd>
+                `;
+            } catch(_) {}
+
+            let estudios = '';
+            try {
+                const est = JSON.parse(reg.Estudios || '[]');
+                estudios = est.map(e => `<span class="badge badge-specialty">${escapeHtml(typeof e === 'string' ? e : e.nombre || '')}</span>`).join(' ');
+            } catch(_) {}
+
+            const content = `
+                <dl class="reg-card-info" style="margin:1rem 0;">
+                    <dt>👤 Nombre</dt><dd>${escapeHtml(reg.Nombre || '—')}</dd>
+                    <dt>📧 Email</dt><dd>${escapeHtml(reg.Email || '—')}</dd>
+                    <dt>🪪 Matrícula</dt><dd>${escapeHtml(reg.Matricula || '—')}</dd>
+                    <dt>📞 Teléfono</dt><dd>${escapeHtml(reg.Telefono || '—')}</dd>
+                    <dt>🎨 Color header</dt><dd><span style="display:inline-block;width:20px;height:14px;border-radius:3px;background:${escapeHtml(reg.Header_Color || '#1a56a0')};vertical-align:middle;"></span> ${escapeHtml(reg.Header_Color || '#1a56a0')}</dd>
+                    <dt>📝 Pie de página</dt><dd>${escapeHtml(reg.Footer_Text || '—')}</dd>
+                    <dt>✍️ Firma</dt><dd>${reg.Firma === 'yes' ? '✅ Sí' : '❌ No'}</dd>
+                    <dt>🩺 Logo profesional</dt><dd>${reg.Pro_Logo === 'yes' ? '✅ Sí' : '❌ No'}</dd>
+                </dl>
+                <h4 style="font-size:.9rem;margin-top:1rem;">🏥 Lugar de trabajo</h4>
+                <dl class="reg-card-info" style="margin:.5rem 0;">${wpHtml}</dl>
+                ${reg.Extra_Workplaces ? `<p style="font-size:.85rem;"><b>Lugares adicionales:</b> ${escapeHtml(reg.Extra_Workplaces)}</p>` : ''}
+                <h4 style="font-size:.9rem;margin-top:1rem;">🩺 Especialidades</h4>
+                <p style="font-size:.85rem;">${escapeHtml(reg.Especialidades || '—')}</p>
+                <h4 style="font-size:.9rem;margin-top:1rem;">📋 Estudios seleccionados</h4>
+                <div style="margin:.5rem 0;">${estudios || '<span style="color:#94a3b8;">Ninguno seleccionado</span>'}</div>
+                ${reg.Notas ? `<h4 style="font-size:.9rem;margin-top:1rem;">💬 Notas</h4><p style="font-size:.85rem;background:#f8fafc;padding:.6rem;border-radius:8px;">${escapeHtml(reg.Notas)}</p>` : ''}
+                <p style="font-size:.78rem;color:#94a3b8;margin-top:1rem;">ID: ${escapeHtml(reg.ID_Registro)} — Origen: ${escapeHtml(reg.Origen || '—')}</p>
+            `;
+
+            document.getElementById('detailModalContent').innerHTML = content;
+            document.getElementById('detailModalOverlay').classList.add('show');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModalOverlay').classList.remove('show');
+        }
+
+        function openApproveModal(regId) {
+            const reg = allRegistrations.find(r => r.ID_Registro === regId);
+            if (!reg) return;
+
+            document.getElementById('approveRegId').value = regId;
+            document.getElementById('approveModalInfo').textContent =
+                `Aprobar a ${reg.Nombre || 'Sin nombre'} (${reg.Email || '—'}) — Matrícula: ${reg.Matricula || '—'}`;
+            document.getElementById('approvePlan').value = 'NORMAL';
+            document.getElementById('approveMaxDevices').value = '2';
+            document.getElementById('approveApiKey').value = '';
+            document.getElementById('approveTemplates').value = '';
+            document.getElementById('approveModalOverlay').classList.add('show');
+        }
+
+        function closeApproveModal() {
+            document.getElementById('approveModalOverlay').classList.remove('show');
+        }
+
+        async function confirmApproval() {
+            const regId = document.getElementById('approveRegId').value;
+            const plan = document.getElementById('approvePlan').value;
+            const apiKey = document.getElementById('approveApiKey').value.trim();
+            const maxDevices = document.getElementById('approveMaxDevices').value;
+            const templates = document.getElementById('approveTemplates').value.trim();
+
+            if (!apiKey) {
+                alert('Debés ingresar una API Key para este profesional');
+                document.getElementById('approveApiKey').focus();
+                return;
+            }
+
+            const btn = document.getElementById('btnConfirmApprove');
+            btn.disabled = true;
+            btn.textContent = '⏳ Procesando...';
+
+            try {
+                const authStr = _getSessionAuthParams();
+                const url = `${CONFIG.scriptUrl}?action=admin_approve_registration&regId=${encodeURIComponent(regId)}&plan=${encodeURIComponent(plan)}&apiKey=${encodeURIComponent(apiKey)}&maxDevices=${encodeURIComponent(maxDevices)}&allowedTemplates=${encodeURIComponent(templates)}&${authStr}`;
+
+                const res = await fetch(url);
+                const data = await res.json();
+
+                if (data.error) throw new Error(data.error);
+
+                closeApproveModal();
+                showNotification(`✅ ${data.nombre} aprobado — ID: ${data.medicoId}`, 'success');
+
+                // Ofrecer generar link
+                const reg = allRegistrations.find(r => r.ID_Registro === regId);
+                if (data.medicoId) {
+                    const generateLink = confirm(
+                        `Usuario creado: ${data.medicoId}\n\n` +
+                        `¿Querés abrir la Fábrica de Clones para generar el link de instalación?`
+                    );
+                    if (generateLink) {
+                        // Recargar usuarios y abrir factory para el nuevo ID
+                        await loadDashboard(true);
+                        openCloneFactory(data.medicoId);
+                    }
+                }
+
+                // Reload registrations
+                registrosLoaded = false;
+                loadRegistrations();
+            } catch (err) {
+                alert('Error al aprobar: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '✅ Aprobar y Crear Usuario';
+            }
+        }
+
+        async function rejectRegistration(regId) {
+            const motivo = prompt('Motivo del rechazo (opcional):') || 'Rechazado por el administrador';
+
+            try {
+                const authStr = _getSessionAuthParams();
+                const url = `${CONFIG.scriptUrl}?action=admin_reject_registration&regId=${encodeURIComponent(regId)}&motivo=${encodeURIComponent(motivo)}&${authStr}`;
+
+                const res = await fetch(url);
+                const data = await res.json();
+
+                if (data.error) throw new Error(data.error);
+
+                showNotification('❌ Registro rechazado', 'info');
+                registrosLoaded = false;
+                loadRegistrations();
+            } catch (err) {
+                alert('Error al rechazar: ' + err.message);
+            }
+        }
+
+        function copyRegLink() {
+            const link = window.location.origin + window.location.pathname.replace('admin.html', 'registro.html');
+            navigator.clipboard.writeText(link).then(() => {
+                showNotification('📋 Link de registro copiado', 'success');
+            }).catch(() => {
+                prompt('Copiá este link:', link);
+            });
+        }
+
+        // Load registration count on init (for badge)
+        async function loadRegBadgeCount() {
+            try {
+                const res = await fetch(`${CONFIG.scriptUrl}?action=admin_list_registrations&${_getSessionAuthParams()}`);
+                const data = await res.json();
+                if (data.registrations) {
+                    allRegistrations = data.registrations;
+                    const pendientes = data.registrations.filter(r => String(r.Estado || '').toLowerCase() === 'pendiente');
+                    const badge = document.getElementById('regBadge');
+                    if (badge && pendientes.length > 0) {
+                        badge.textContent = pendientes.length;
+                        badge.style.display = 'inline';
+                    }
+                }
+            } catch(_) {}
+        }
+
+        // Escape key handler for new modals
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeApproveModal();
+                closeDetailModal();
+            }
+        });
     </script>
 
     <!-- Modal Editar Usuario -->
@@ -4070,6 +4474,60 @@
                 <button type="submit" form="newUserForm" class="btn-primary" id="btnSaveNewUser">
                     💾 Crear Usuario
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Modal: Aprobar Registro ── -->
+    <div class="approve-modal-overlay" id="approveModalOverlay" onclick="if(event.target===this)closeApproveModal()">
+        <div class="approve-modal">
+            <h3>✅ Aprobar Registro</h3>
+            <p style="font-size:.85rem;color:#64748b;margin-bottom:1rem;" id="approveModalInfo"></p>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Plan a asignar</label>
+                    <select id="approvePlan">
+                        <option value="NORMAL">NORMAL</option>
+                        <option value="PRO">PRO</option>
+                        <option value="CLINIC">CLINIC</option>
+                        <option value="TRIAL">TRIAL</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Máx. Dispositivos</label>
+                    <input type="number" id="approveMaxDevices" value="2" min="1" max="10">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:.8rem;">
+                <label>API Key de Groq</label>
+                <input type="text" id="approveApiKey" placeholder="gsk_xxxxxxxxxxxxxxxx">
+                <small style="color:#94a3b8;font-size:.73rem;">Pegá la API Key asignada a este profesional</small>
+            </div>
+
+            <div class="form-group" style="margin-bottom:.8rem;">
+                <label>Plantillas permitidas (dejar vacío = todas)</label>
+                <input type="text" id="approveTemplates" placeholder='["eco_abdominal","eco_renal"] o vacío'>
+                <small style="color:#94a3b8;font-size:.73rem;">JSON array de keys, o vacío para ALL</small>
+            </div>
+
+            <input type="hidden" id="approveRegId">
+
+            <div class="btn-row">
+                <button class="btn-secondary" onclick="closeApproveModal()">Cancelar</button>
+                <button class="btn-approve" onclick="confirmApproval()" id="btnConfirmApprove">✅ Aprobar y Crear Usuario</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Modal: Detalle Registro ── -->
+    <div class="approve-modal-overlay" id="detailModalOverlay" onclick="if(event.target===this)closeDetailModal()">
+        <div class="approve-modal" style="max-width:600px;">
+            <h3>📋 Detalle del Registro</h3>
+            <div id="detailModalContent"></div>
+            <div class="btn-row" style="margin-top:1rem;">
+                <button class="btn-secondary" onclick="closeDetailModal()">Cerrar</button>
             </div>
         </div>
     </div>
