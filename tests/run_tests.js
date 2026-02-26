@@ -1965,11 +1965,11 @@ test('MEDIUM: transcriptor.js limpia blob URLs', () => {
     assert(code.includes('revokeObjectURL'), 'Debe revocar Object URLs de blobs');
 });
 
-test('MEDIUM: pdfMaker.js segundo página dibuja encabezado', () => {
+test('MEDIUM: pdfMaker.js segundo página dibuja banner del lugar', () => {
     const code = fs.readFileSync(path.join(root, 'src/js/features/pdfMaker.js'), 'utf-8');
-    // ensureSpace debe llamar a drawHeader() para repetir encabezado en todas las páginas
+    // ensureSpace debe llamar a drawWorkplaceBanner() para repetir el banner en todas las páginas
     const ensureSpaceMatch = code.match(/function ensureSpace[\s\S]*?\n\s*\}/m);
-    assert(ensureSpaceMatch && ensureSpaceMatch[0].includes('drawHeader()'), 'ensureSpace debe llamar drawHeader() en páginas 2+');
+    assert(ensureSpaceMatch && ensureSpaceMatch[0].includes('drawWorkplaceBanner()'), 'ensureSpace debe llamar drawWorkplaceBanner() en páginas 2+');
 });
 
 test('MEDIUM: pdfMaker.js _hexToRgb soporta hex corto', () => {
@@ -2334,12 +2334,12 @@ test('extractPatientDataFromText — sin datos de paciente', () => {
 // BLOQUE 47: pdfMaker — header en todas las páginas
 console.log('\n── Bloque 47: pdfMaker — header en todas las páginas ─────────');
 
-test('pdfMaker.js ensureSpace llama drawHeader()', () => {
+test('pdfMaker.js ensureSpace llama drawWorkplaceBanner()', () => {
     const code = fs.readFileSync(path.join(root, 'src/js/features/pdfMaker.js'), 'utf-8');
     const match = code.match(/function ensureSpace[\s\S]*?\n\s*\}/m);
     assert(match, 'ensureSpace debe existir');
-    assert(match[0].includes('drawHeader()'), 'ensureSpace debe llamar drawHeader()');
-    assert(!match[0].includes('cy = MT'), 'No debe setear cy = MT manualmente (drawHeader lo hace)');
+    assert(match[0].includes('drawWorkplaceBanner()'), 'ensureSpace debe llamar drawWorkplaceBanner()');
+    assert(!match[0].includes('cy = MT'), 'No debe setear cy = MT manualmente (drawWorkplaceBanner lo hace)');
 });
 
 test('pdfMaker.js drawHeader resetea cy correctamente', () => {

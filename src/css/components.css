@@ -2900,7 +2900,7 @@
             pointer-events: none;
         }
 
-        /* ── Lugar de trabajo (arriba de todo) ── */
+        /* ── Lugar de trabajo (arriba de todo — se repite al imprimir) ── */
         .preview-workplace {
             background: var(--pa, #1a56a0);
             color: white;
@@ -2908,7 +2908,22 @@
             padding: 8px 18mm 7px;
             font-family: Helvetica, Arial, sans-serif;
         }
-        .pvw-block { text-align: center; }
+        .pvw-block {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+        }
+        .pvw-logo {
+            max-height: 48px;
+            max-width: 80px;
+            object-fit: contain;
+            flex-shrink: 0;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.15);
+            padding: 3px;
+        }
+        .pvw-text { text-align: center; }
         .pvw-name {
             font-size: 11pt;
             font-weight: 700;
@@ -2986,10 +3001,6 @@
             margin-top: 0;
         }
         .pv-pb-repeated-header .preview-workplace { pointer-events: none; }
-        .pv-pb-repeated-header .preview-header {
-            pointer-events: none;
-            padding-top: 10px;
-        }
 
         /* ── Bloque paciente en grilla ── */
         .preview-patient { margin-bottom: 10px; }
@@ -3020,7 +3031,12 @@
             font-weight: 600;
             opacity: 0.75;
         }
-        .pvp-val   { font-size: 10pt; color: #111; }
+        .pvp-val   {
+            font-size: 10pt;
+            color: #111;
+            font-weight: 700;
+            font-family: Helvetica, Arial, sans-serif;
+        }
         .pvp-bold  { font-weight: 700; }
 
         /* ── Datos del estudio en grilla ── */
@@ -3053,7 +3069,12 @@
             font-weight: 600;
             opacity: 0.75;
         }
-        .pvs-val { font-size: 9pt; color: #222; font-weight: 500; }
+        .pvs-val {
+            font-size: 9pt;
+            color: #222;
+            font-weight: 700;
+            font-family: Helvetica, Arial, sans-serif;
+        }
 
         /* ── Contenido del informe ── */
         .preview-content { margin: 8px 0 24px; }

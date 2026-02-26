@@ -253,8 +253,10 @@ window.openPrintPreview = function () {
     const patientInsurance = escUpper(config.patientInsurance || formPatient.insurance || '');
     const affiliateNum = esc(config.patientAffiliateNum || reqVal('reqPatientAffiliateNum') || reqVal('pdfPatientAffiliateNum') || '');
 
-    // Datos del estudio
-    const studyType    = escSentence(config.studyType || '');
+    // Datos del estudio (fallback: plantilla detectada → nombre de plantilla seleccionada)
+    const tplKey = window.selectedTemplate || config.selectedTemplate || '';
+    const tplName = (tplKey && window.MEDICAL_TEMPLATES?.[tplKey]?.name) || '';
+    const studyType    = escSentence(config.studyType || tplName || '');
     const rawDate      = config.studyDate || '';
     const studyDate    = rawDate
         ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'})
@@ -297,17 +299,20 @@ window.openPrintPreview = function () {
         page.style.paddingBottom = cfgMargin;
     }
 
-    // ── LUGAR DE TRABAJO (arriba de todo) ────────────────────────
+    // ── LUGAR DE TRABAJO (arriba de todo — se repite en cada hoja impresa) ──
     const wpHeaderEl = document.getElementById('previewWorkplace');
     if (wpHeaderEl) {
         const hasWpData = wpName || wkAddr || wkPhone || wpEmail;
         if (hasWpData) {
             wpHeaderEl.style.display = '';
             let wpHtml = '<div class="pvw-block">';
+            // Logo de la institución (a la izquierda del nombre)
+            if (hasLogo) wpHtml += `<img class="pvw-logo" src="${logoSrc}" alt="Logo">`;
+            wpHtml += '<div class="pvw-text">';
             if (wpName)  wpHtml += `<div class="pvw-name">${wpName}</div>`;
             const wpDetails = [wkAddr, wkPhone ? 'Tel: ' + wkPhone : '', wpEmail].filter(Boolean);
             if (wpDetails.length) wpHtml += `<div class="pvw-details">${wpDetails.join(' &nbsp;•&nbsp; ')}</div>`;
-            wpHtml += '</div>';
+            wpHtml += '</div></div>';
             wpHeaderEl.innerHTML = wpHtml;
         } else {
             wpHeaderEl.innerHTML = '';
@@ -315,7 +320,7 @@ window.openPrintPreview = function () {
         }
     }
 
-    // ── ENCABEZADO PROFESIONAL ───────────────────────────────────
+    // ── ENCABEZADO PROFESIONAL (no se repite — solo página 1) ─────
     const headerEl = document.getElementById('previewHeader');
     if (headerEl) {
         // Ocultar encabezado si es ADMIN sin profesional activo configurado
@@ -328,13 +333,10 @@ window.openPrintPreview = function () {
             headerEl.style.display = '';
             headerEl.innerHTML = `
                 <div class="pvh-body">
-                    ${hasLogo ? `<img class="pvh-logo" src="${logoSrc}" alt="Logo">` : ''}
                     <div class="pvh-info">
                         <div class="pvh-name">${profName}</div>
                         ${especialidad   ? `<div class="pvh-spec">${especialidad}</div>`   : ''}
                         ${institutionName ? `<div class="pvh-inst">${institutionName}</div>` : ''}
-                        ${wkAddr         ? `<div class="pvh-addr">${wkAddr}</div>` : ''}
-                        ${wkPhone        ? `<div class="pvh-addr">Tel: ${wkPhone}</div>` : ''}
                         ${matricula      ? `<div class="pvh-mat">Mat. ${matricula}</div>` : ''}
                     </div>
                 </div>`;
@@ -462,15 +464,13 @@ window.openPrintPreview = function () {
 
         // ── Indicadores visuales de salto de página ──────────────
         // Muestran dónde caería cada salto de página con un separador
-        // y una mini-repetición del encabezado (como hace el PDF real)
+        // y una mini-repetición del banner del lugar de trabajo (como hace el PDF real)
         if (pageEl && totalPages > 1) {
             // Limpiar marcadores previos
             pageEl.querySelectorAll('.pv-pagebreak-marker').forEach(m => m.remove());
 
-            // Obtener HTML del header para repetir en cada página
-            const headerEl = document.getElementById('previewHeader');
+            // Solo repetir el workplace banner (no el header profesional)
             const wpHeaderEl = document.getElementById('previewWorkplace');
-            const headerCloneHtml = headerEl ? headerEl.outerHTML : '';
             const wpCloneHtml = wpHeaderEl && wpHeaderEl.style.display !== 'none' ? wpHeaderEl.outerHTML : '';
 
             // Insertar marcadores en el contenido en las posiciones de salto
@@ -483,8 +483,8 @@ window.openPrintPreview = function () {
                 const footerZoneH = (footerEl?.offsetHeight || 0) + (sigEl?.offsetHeight || 0) + 40;
 
                 const firstPageContentH = onePagePx - headerZoneH - footerZoneH;
-                // Páginas siguientes: el header se repite (~120px aprox) + footer
-                const repeatedHeaderH = (wpHeaderEl?.offsetHeight || 0) + (headerEl?.offsetHeight || 0) + 20;
+                // Páginas siguientes: solo workplace banner se repite (~50px aprox) + footer
+                const repeatedHeaderH = (wpHeaderEl?.offsetHeight || 0) + 20;
                 const nextPageContentH = onePagePx - repeatedHeaderH - footerZoneH;
 
                 let accumulatedH = 0;
@@ -518,7 +518,6 @@ window.openPrintPreview = function () {
                         </div>
                         <div class="pv-pb-repeated-header">
                             ${wpCloneHtml}
-                            ${headerCloneHtml}
                         </div>`;
                     contentEl.insertBefore(marker, beforeChild);
                 });
@@ -932,14 +931,14 @@ window.printFromPreview = function () {
         <table class="print-table">
             <thead><tr><td class="print-thead-cell">
                 ${wpHtml}
-                ${headerHtml}
             </td></tr></thead>
             <tfoot><tr><td class="print-tfoot-cell">
                 ${footerHtml}
             </td></tr></tfoot>
             <tbody><tr><td>
-                ${patientHtml}
+                ${headerHtml}
                 ${studyHtml}
+                ${patientHtml}
                 ${contentHtml}
                 ${sigHtml}
                 ${qrHtml}

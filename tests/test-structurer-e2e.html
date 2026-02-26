@@ -545,14 +545,14 @@ section('6. PDF Maker — drawHeader en todas las páginas', [
         }
     },
     {
-        name: 'Source code de pdfMaker: ensureSpace llama drawHeader()',
+        name: 'Source code de pdfMaker: ensureSpace llama drawWorkplaceBanner()',
         test: async () => {
             const resp = await fetch('../src/js/features/pdfMaker.js?_t=' + Date.now());
             const code = await resp.text();
             const match = code.match(/function ensureSpace[\s\S]*?\n\s*\}/m);
             if (!match) throw 'ensureSpace no encontrada';
-            if (!match[0].includes('drawHeader()')) throw 'ensureSpace NO llama drawHeader()';
-            if (match[0].includes('cy = MT')) throw 'ensureSpace todavía usa cy=MT (debería usar drawHeader)';
+            if (!match[0].includes('drawWorkplaceBanner()')) throw 'ensureSpace NO llama drawWorkplaceBanner()';
+            if (match[0].includes('cy = MT')) throw 'ensureSpace todav\u00eda usa cy=MT';
             return true;
         }
     },

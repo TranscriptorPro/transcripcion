@@ -78,6 +78,8 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const activeWp = (wpIdx !== undefined && wpIdx !== null) ? wpProfiles[Number(wpIdx)] : wpProfiles[0];
         const wpAddress = config.workplaceAddress || activeWp?.address || '';
         const wpPhone   = config.workplacePhone   || activeWp?.phone   || '';
+        const wpName    = activeWp?.name || '';
+        const wpEmail   = activeWp?.email || config.workplaceEmail || '';
 
         const pName      = config.patientName      || '';
         const pDni       = config.patientDni       || '';
@@ -90,7 +92,9 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES')
             : fecha;
         const studyTime   = config.studyTime         || '';
-        const studyType   = config.studyType         || '';
+        const tplKey      = config.selectedTemplate || '';
+        const tplNameFb   = (tplKey && typeof MEDICAL_TEMPLATES !== 'undefined' && MEDICAL_TEMPLATES[tplKey]?.name) || '';
+        const studyType   = config.studyType || tplNameFb || '';
         const reportNum   = config.reportNum         || '';
         const refDoctor   = config.referringDoctor   || '';
         const studyReason = config.studyReason       || '';
@@ -126,8 +130,8 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                 doc.addPage();
                 pageNum++;
                 if (cfgShowFooter || cfgShowPageNum) drawFooter(pageNum);
-                drawHeader();  // encabezado en TODAS las páginas
-                // cy ya queda posicionado después del encabezado por drawHeader()
+                drawWorkplaceBanner();  // solo banner del lugar se repite
+                // cy ya queda posicionado después del banner
             }
         }
 
@@ -478,7 +482,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                     if (cy + blockH > FOOTER_Y - 10) {
                         doc.addPage(); pageNum++;
                         if (cfgShowFooter || cfgShowPageNum) drawFooter(pageNum);
-                        cy = MT;
+                        drawWorkplaceBanner();
                     }
                     doc.text(lines, ML, cy);
                     cy += blockH + 2;
@@ -540,7 +544,8 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                         if (lineY > FOOTER_Y - 10) {
                             doc.addPage(); pageNum++;
                             if (cfgShowFooter || cfgShowPageNum) drawFooter(pageNum);
-                            lineY = 10;
+                            drawWorkplaceBanner();
+                            lineY = cy;
                         }
                         lineX = ML;
                         usedW = 0;
@@ -593,6 +598,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         }
 
         // ── ¡Ejecutar todo! ───────────────────────────────────────────
+        drawWorkplaceBanner();
         drawHeader();
         if (cfgShowFooter || cfgShowPageNum) drawFooter(1);
         drawStudyInfo();

@@ -122,6 +122,7 @@ window.savePdfConfiguration = function () {
 
     const config = {
         studyType: val('pdfStudyType'),
+        selectedTemplate: window.selectedTemplate || '',
         studyDate: val('pdfStudyDate'),
         studyTime: val('pdfStudyTime'),
         studyReason: val('pdfStudyReason'),
