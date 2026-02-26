@@ -282,16 +282,17 @@ window.initModals = function () {
         studyTypeSelect.addEventListener('change', () => {
             const hint = document.getElementById('pdfStudyTypeHint');
             if (studyTypeSelect.value === '__other__') {
-                const custom = prompt('Ingrese el tipo de estudio:');
-                if (custom && custom.trim()) {
-                    // Agregar opción temporal
-                    const opt = document.createElement('option');
-                    opt.value = custom.trim();
-                    opt.textContent = custom.trim();
-                    studyTypeSelect.insertBefore(opt, studyTypeSelect.querySelector('[value="__other__"]'));
-                    studyTypeSelect.value = custom.trim();
-                }
-                if (hint) hint.style.display = 'none';
+                (async () => {
+                    const custom = await window.showCustomPrompt('Ingrese el tipo de estudio:', 'Ej: Eco Doppler vascular');
+                    if (custom && custom.trim()) {
+                        const opt = document.createElement('option');
+                        opt.value = custom.trim();
+                        opt.textContent = custom.trim();
+                        studyTypeSelect.insertBefore(opt, studyTypeSelect.querySelector('[value="__other__"]'));
+                        studyTypeSelect.value = custom.trim();
+                    }
+                    if (hint) hint.style.display = 'none';
+                })();
             }
         });
     }
@@ -1115,7 +1116,7 @@ window.initApiManagement = function () {
                     return;
                 }
                 // Error de red / sin conexión
-                const guardar = window.confirm('⚠️ No se pudo verificar la clave (sin conexión a internet).\n\n¿Guardar de todas formas?');
+                const guardar = await window.showCustomConfirm('⚠️ Sin conexión', 'No se pudo verificar la clave (sin conexión a internet).\n\n¿Guardar de todas formas?');
                 if (guardar) {
                     localStorage.setItem('groq_api_key', key);
                     window.GROQ_API_KEY = key;

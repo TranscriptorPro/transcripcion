@@ -263,8 +263,9 @@ window.viewReport = function (reportId) {
 
     // Botón eliminar
     const btnDelete = document.getElementById('btnDeleteReport');
-    btnDelete.onclick = () => {
-        if (!confirm('¿Eliminar este informe del historial? Esta acción no se puede deshacer.')) return;
+    btnDelete.onclick = async () => {
+        const ok = await window.showCustomConfirm('🗑️ Eliminar informe', '¿Eliminar este informe del historial? Esta acción no se puede deshacer.');
+        if (!ok) return;
         deleteReport(report.id);
         overlay.classList.remove('active');
         if (typeof showToast === 'function') showToast('Informe eliminado', 'info');
@@ -343,7 +344,7 @@ window.initReportHistoryPanel = function () {
         // Event delegation
         if (!tbody._delegated) {
             tbody._delegated = true;
-            tbody.addEventListener('click', e => {
+            tbody.addEventListener('click', async (e) => {
                 const viewBtn = e.target.closest('.rh-view-btn');
                 const delBtn  = e.target.closest('.rh-delete-btn');
                 if (viewBtn) {
@@ -351,9 +352,12 @@ window.initReportHistoryPanel = function () {
                 }
                 if (delBtn) {
                     const report = getReportById(delBtn.dataset.id);
-                    if (report && confirm(`¿Eliminar informe de "${report.patientName}" (${fmtDate(report.date)})?`)) {
-                        deleteReport(delBtn.dataset.id);
-                        renderTable(document.getElementById('reportHistorySearch')?.value);
+                    if (report) {
+                        const ok = await window.showCustomConfirm('🗑️ Eliminar informe', `¿Eliminar informe de "${report.patientName}" (${fmtDate(report.date)})?`);
+                        if (ok) {
+                            deleteReport(delBtn.dataset.id);
+                            renderTable(document.getElementById('reportHistorySearch')?.value);
+                        }
                     }
                 }
             });
@@ -395,13 +399,14 @@ window.initReportHistoryPanel = function () {
     });
 
     // ---- Limpiar todo ----
-    document.getElementById('btnClearReportHistory')?.addEventListener('click', () => {
+    document.getElementById('btnClearReportHistory')?.addEventListener('click', async () => {
         const stats = getReportHistoryStats();
         if (stats.total === 0) {
             if (typeof showToast === 'function') showToast('El historial ya está vacío', 'info');
             return;
         }
-        if (!confirm(`¿Eliminar TODOS los informes del historial? (${stats.total} informes)\n\nEsta acción no se puede deshacer. Recomendamos exportar antes.`)) return;
+        const ok = await window.showCustomConfirm('🗑️ Limpiar historial', `¿Eliminar TODOS los informes del historial? (${stats.total} informes)\n\nEsta acción no se puede deshacer. Recomendamos exportar antes.`);
+        if (!ok) return;
         _setReportHistory([]);
         renderTable();
         if (typeof showToast === 'function') showToast('Historial limpiado', 'info');

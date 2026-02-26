@@ -312,8 +312,9 @@ window.initPatientRegistryPanel = function () {
     });
 
     // ---- Eliminar ----
-    window.registryDeleteRow = function(dni, name) {
-        if (!confirm(`¿Eliminar al paciente "${name}"? Esta acción no se puede deshacer.`)) return;
+    window.registryDeleteRow = async function(dni, name) {
+        const ok = await window.showCustomConfirm('🗑️ Eliminar paciente', `¿Eliminar al paciente "${name}"? Esta acción no se puede deshacer.`);
+        if (!ok) return;
         const reg = getRegistry().filter(p =>
             !(p.name === name && ((!dni && !p.dni) || (dni && p.dni === dni)))
         );

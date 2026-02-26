@@ -266,10 +266,11 @@ window.initWorkplaceManagement = function () {
         ]).then(([firmaB64, logoB64]) => buildAndSave(firmaB64, logoB64));
     }
 
-    function deleteProfessional(wpIndex, profIndex) {
+    async function deleteProfessional(wpIndex, profIndex) {
         const p = workplaceProfiles[wpIndex]?.professionals?.[profIndex];
         if (!p) return;
-        if (!confirm(`¿Eliminar a ${p.nombre || 'este profesional'}?`)) return;
+        const ok = await window.showCustomConfirm('🗑️ Eliminar profesional', `¿Eliminar a ${p.nombre || 'este profesional'}?`);
+        if (!ok) return;
         workplaceProfiles[wpIndex].professionals.splice(profIndex, 1);
         // si era el activo, limpiar
         const cfg = getProfConfig();

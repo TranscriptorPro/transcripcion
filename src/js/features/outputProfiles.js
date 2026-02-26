@@ -234,8 +234,8 @@
         }
 
         // Botón guardar como perfil
-        document.getElementById('btnSaveAsProfile')?.addEventListener('click', () => {
-            const name = prompt('Nombre para este perfil de salida:');
+        document.getElementById('btnSaveAsProfile')?.addEventListener('click', async () => {
+            const name = await window.showCustomPrompt('Nombre para este perfil de salida:', 'Ej: Eco-stress — Dr. Ruiz');
             if (!name) return;
             const profile = saveCurrentAsProfile(name);
             if (profile) {
@@ -245,24 +245,24 @@
         });
 
         // Botón actualizar perfil
-        document.getElementById('btnUpdateProfile')?.addEventListener('click', () => {
+        document.getElementById('btnUpdateProfile')?.addEventListener('click', async () => {
             const id = document.getElementById('profileSelector')?.value;
             if (!id) return;
             const profiles = getProfiles();
             const profile = profiles.find(p => p.id === id);
-            if (profile && confirm(`¿Actualizar el perfil "${profile.name}" con la configuración actual?`)) {
+            if (profile && await window.showCustomConfirm('Actualizar perfil', `¿Actualizar el perfil "${profile.name}" con la configuración actual?`)) {
                 updateProfile(id);
                 if (typeof showToast === 'function') showToast(`✅ Perfil actualizado`, 'success');
             }
         });
 
         // Botón eliminar perfil
-        document.getElementById('btnDeleteProfile')?.addEventListener('click', () => {
+        document.getElementById('btnDeleteProfile')?.addEventListener('click', async () => {
             const id = document.getElementById('profileSelector')?.value;
             if (!id) return;
             const profiles = getProfiles();
             const profile = profiles.find(p => p.id === id);
-            if (profile && confirm(`¿Eliminar el perfil "${profile.name}"?`)) {
+            if (profile && await window.showCustomConfirm('🗑️ Eliminar perfil', `¿Eliminar el perfil "${profile.name}"?`)) {
                 deleteProfile(id);
                 populateProfileDropdowns(null);
                 if (typeof showToast === 'function') showToast(`🗑️ Perfil eliminado`, 'info');

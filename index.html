@@ -695,11 +695,27 @@
                     <h2 id="customConfirmTitle" style="font-size:1rem;">⚠️ Confirmar</h2>
                 </div>
                 <div class="modal-body" style="padding:0.5rem 1.5rem 1rem;">
-                    <p id="customConfirmMessage" style="font-size:0.9rem;color:var(--text-primary);line-height:1.5;"></p>
+                    <p id="customConfirmMessage" style="font-size:0.9rem;color:var(--text-primary);line-height:1.5;white-space:pre-line;"></p>
                 </div>
                 <div class="modal-footer" style="padding:0.75rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:0.5rem;justify-content:flex-end;">
                     <button class="btn btn-outline" id="customConfirmCancel">Cancelar</button>
                     <button class="btn btn-primary" id="customConfirmAccept" style="background:linear-gradient(135deg,#ef4444,#dc2626);">Aceptar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Prompt con input (reemplazo del prompt() nativo) -->
+        <div class="modal-overlay" id="customPromptModal" style="z-index:10050 !important;">
+            <div class="modal" style="max-width:400px;">
+                <div class="modal-header" style="padding:1rem 1.5rem 0.5rem;">
+                    <h2 id="customPromptTitle" style="font-size:1rem;">✏️ Ingrese un valor</h2>
+                </div>
+                <div class="modal-body" style="padding:0.5rem 1.5rem 1rem;">
+                    <input type="text" id="customPromptInput" style="width:100%;padding:0.6rem 0.75rem;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;background:var(--bg-card);color:var(--text-primary);outline:none;" />
+                </div>
+                <div class="modal-footer" style="padding:0.75rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:0.5rem;justify-content:flex-end;">
+                    <button class="btn btn-outline" id="customPromptCancel">Cancelar</button>
+                    <button class="btn btn-primary" id="customPromptAccept">Aceptar</button>
                 </div>
             </div>
         </div>

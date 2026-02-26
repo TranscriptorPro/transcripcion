@@ -563,8 +563,9 @@ window.processPendingItem = async function(id) {
     }
 };
 
-window.deletePendingItem = function(id) {
-    if (!confirm('¿Eliminar este texto pendiente?')) return;
+window.deletePendingItem = async function(id) {
+    const ok = await window.showCustomConfirm('🗑️ Eliminar pendiente', '¿Eliminar este texto pendiente?');
+    if (!ok) return;
     removeFromStructurePendingQueue(id);
     renderPendingQueueModal();
 };
