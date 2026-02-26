@@ -318,7 +318,7 @@ async function structureTranscription(text, templateKey, temperature = 0.1, mode
     }
 
     try {
-        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        const res = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${GROQ_API_KEY}`,
@@ -340,7 +340,8 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepción:
 8. FORMATO DE PÁRRAFOS (CRÍTICO): dentro de cada sección, escribe los hallazgos como un párrafo continuo y fluido. NO separes cada hallazgo con líneas en blanco. Los ítems de una misma sección van juntos, sin saltos de línea dobles entre ellos. Solo usa línea en blanco para separar SECCIONES distintas (##). La primera palabra de cada párrafo debe comenzar con mayúscula.
 9. NÚMEROS Y UNIDADES: Escribe siempre los valores numéricos con dígitos, nunca con letras. Ejemplos: "75%" no "setenta y cinco por ciento"; "40%" no "cuarenta por ciento"; "12 mm" no "doce milímetros"; "65%" no "sesenta y cinco por ciento"; "18 mm" no "dieciocho milímetros". Esta regla aplica a porcentajes, medidas, edades, frecuencias, presiones y cualquier valor cuantificable.
 10. ESTUDIOS MULTI-ÓRGANO / MULTI-SEGMENTO: En estudios que evalúan múltiples órganos, segmentos anatómicos o vasos (ecografía, colonoscopía, gastroscopía, cinecoronariografía, Doppler vascular, laringoscopía, nasofibroscopía, etc.) dedica una sección ## separada a CADA estructura evaluada. Si una estructura fue evaluada con resultado normal, descríbela en prosa. Si NO fue evaluada ni mencionada en la transcripción, escribe EXACTAMENTE el marcador [No especificado] como único contenido del párrafo de esa sección — NUNCA "No se evaluó", "s/p", "Sin datos" ni ninguna variante libre.
-11. CONCLUSIÓN (REGLA UNIVERSAL): En TODAS las plantillas, la CONCLUSIÓN debe: (a) incluir TODOS los hallazgos patológicos o positivos — ninguno puede omitirse, aunque sea leve; (b) NO incluir estructuras con resultado normal; (c) si absolutamente todo es normal, escribir "Estudio dentro de parámetros normales."; (d) NUNCA dejar la conclusión vacía, en blanco, ni como "[No especificado]"; (e) PROHIBIDO: inventar valores, porcentajes o datos no presentes en la transcripción; (f) PROHIBIDO: indicar tratamientos, medicación o derivaciones si el médico no los mencionó.` },
+11. CONCLUSIÓN (REGLA UNIVERSAL): En TODAS las plantillas, la CONCLUSIÓN debe: (a) incluir TODOS los hallazgos patológicos o positivos — ninguno puede omitirse, aunque sea leve; (b) NO incluir estructuras con resultado normal; (c) si absolutamente todo es normal, escribir "Estudio dentro de parámetros normales."; (d) NUNCA dejar la conclusión vacía, en blanco, ni como "[No especificado]"; (e) PROHIBIDO: inventar valores, porcentajes o datos no presentes en la transcripción; (f) PROHIBIDO: indicar tratamientos, medicación o derivaciones si el médico no los mencionó.
+12. NUNCA conviertas entre unidades de medida. Si el médico dice "10 mm", escribe "10 mm", NO "1 cm". Si dice "500 ml", escribe "500 ml", NO "0.5 L". Preserva la unidad exacta que usó el profesional.` },
                     { role: "user", content: `Transcripción a estructurar:\n\n${text}` }
                 ],
                 temperature: temperature
@@ -357,6 +358,9 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepción:
         if (!content) throw new Error('La respuesta de la IA no contiene texto válido');
         return content.trim();
     } catch (error) {
+        if (error.name === 'AbortError') {
+            throw new Error('HTTP_TIMEOUT: El servidor no respondió en 2 minutos');
+        }
         console.error('Structuring failed:', error);
         throw error; // Propagate to structureWithRetry
     }
@@ -481,7 +485,12 @@ function addToStructurePendingQueue(text, templateKey) {
 }
 
 function getStructurePendingQueue() {
-    try { return JSON.parse(localStorage.getItem(STRUCT_QUEUE_KEY) || '[]'); }
+    try {
+        const queue = JSON.parse(localStorage.getItem(STRUCT_QUEUE_KEY) || '[]');
+        // Auto-expirar items > 7 días
+        const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+        return queue.filter(e => Date.now() - e.id < SEVEN_DAYS);
+    }
     catch (_) { return []; }
 }
 

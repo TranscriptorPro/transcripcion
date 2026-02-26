@@ -1298,6 +1298,25 @@
             font-size: 0.9rem;
             line-height: 1.4;
         }
+
+        /* RM-2: Contención de tablas para evitar desborde horizontal */
+        #editor table {
+            max-width: 100%;
+            display: block;
+            overflow-x: auto;
+            border-collapse: collapse;
+            margin: 0.5rem 0;
+        }
+        #editor td, #editor th {
+            padding: 4px 8px;
+            border: 1px solid var(--border);
+            min-width: 60px;
+            font-size: 0.85rem;
+        }
+        #editor th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+        }
         /* Espacio antes de cada sección (h2) para respirar, pero no entre párrafos */
         #editor .report-h2 { margin-top: 0.65rem; margin-bottom: 0.15rem; }
         #editor .report-h3 { margin-top: 0.45rem; margin-bottom: 0.1rem; }

@@ -640,12 +640,13 @@ test('addToStructurePendingQueue no supera 10 entradas', () => {
 });
 
 test('removeFromStructurePendingQueue elimina por id', () => {
-    // Usar ids manuales para evitar colisión de Date.now() en la misma ms
+    // Usar ids basados en Date.now() para evitar expiración por el filtro de 7 días
+    const now = Date.now();
     localStorage.setItem('struct_pending_queue', JSON.stringify([
-        { id: 2001, text: 'a conservar', templateKey: 'generico', savedAt: '1/1/2026', preview: 'a conservar' },
-        { id: 2000, text: 'a eliminar',  templateKey: 'generico', savedAt: '1/1/2026', preview: 'a eliminar'  }
+        { id: now - 1000, text: 'a conservar', templateKey: 'generico', savedAt: '1/1/2026', preview: 'a conservar' },
+        { id: now - 2000, text: 'a eliminar',  templateKey: 'generico', savedAt: '1/1/2026', preview: 'a eliminar'  }
     ]));
-    global.removeFromStructurePendingQueue(2000);
+    global.removeFromStructurePendingQueue(now - 2000);
     const q = global.getStructurePendingQueue();
     assertEqual(q.length, 1, `Esperaba 1 entrada, hay ${q.length}`);
     assertEqual(q[0].text, 'a conservar');

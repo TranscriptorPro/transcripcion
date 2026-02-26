@@ -75,6 +75,16 @@ if (transcribeBtn) {
                     // 1. Validate file format/size/integrity before sending
                     validateAudioFile(item.file);
 
+                    // RM-6: Verificar si el audio es silencioso antes de consumir cuota API
+                    if (typeof isAudioSilent === 'function') {
+                        try {
+                            const silent = await isAudioSilent(item.file);
+                            if (silent) {
+                                showToast(`⚠️ "${item.file.name}" parece ser silencio. Se enviará igualmente.`, 'warning', 4000);
+                            }
+                        } catch (_) { /* no bloquear si falla el análisis */ }
+                    }
+
                     // 2. Transcribe with 4-attempt retry strategy
                     if (processingText) processingText.textContent = `Transcribiendo: ${item.file.name}...`;
                     let text = await transcribeWithRetry(item.file, (msg) => {
@@ -275,11 +285,11 @@ async function transcribeWithGroqParams(file, { language = 'es', model = 'whispe
     form.append('response_format', 'text');
 
     try {
-        const res = await fetch(GROQ_API_URL, {
+        const res = await fetchWithTimeout(GROQ_API_URL, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${window.GROQ_API_KEY}` },
             body: form
-        });
+        }, 120000);
 
         if (!res.ok) {
             const errorData = await res.json().catch(() => null);
@@ -301,16 +311,51 @@ async function transcribeWithGroqParams(file, { language = 'es', model = 'whispe
 
         return await res.text();
     } catch (error) {
+        if (error.name === 'AbortError') {
+            throw new Error('⏱️ Timeout: el servidor no respondió en 2 minutos');
+        }
         console.error('❌ Groq API Error:', error);
         throw error;
     }
 }
+
+// ── Frases de alucinación conocidas de Whisper (audio vacío/silencioso) ────
+const HALLUCINATION_PHRASES = [
+    /^\s*gracias por ver(?: el video)?[.!]?\s*$/i,
+    /^\s*thanks for watching[.!]?\s*$/i,
+    /^\s*suscr[íi]bete[.!]?\s*$/i,
+    /^\s*subscribe[.!]?\s*$/i,
+    /^\s*like and subscribe[.!]?\s*$/i,
+    /^\s*no olvides suscribirte[.!]?\s*$/i,
+    /^\s*dale like[.!]?\s*$/i,
+    /^\s*hasta la pr[oó]xima[.!]?\s*$/i,
+    /^\s*nos vemos[.!]?\s*$/i,
+    /^\s*subtítulos realizados por[.\s]*$/i,
+    /^\s*subt[ií]tulos por la comunidad[.\s]*$/i,
+    /^\s*[.…·\-_\s]{3,}$/,
+    /^\s*music[.\s]*$/i,
+    /^\s*m[úu]sica[.\s]*$/i,
+    /^\s*aplausos[.\s]*$/i,
+];
 
 function cleanTranscriptionText(text) {
     if (!text) return "";
     let cleaned = text.trim();
     // Remove leading ellipsis and spaces
     cleaned = cleaned.replace(/^[\s\.]+/u, "").trim();
+
+    // Filtro de alucinaciones de Whisper (audio silencioso/vacío)
+    if (HALLUCINATION_PHRASES.some(rx => rx.test(cleaned))) {
+        console.warn('⚠️ Hallucination filter: descartado →', cleaned);
+        return '';
+    }
+
+    // Si el texto limpio es muy corto (< 10 chars) y solo tiene palabras genéricas → sospechoso
+    if (cleaned.length > 0 && cleaned.length < 10 && !/[a-záéíóúñ]{4,}/i.test(cleaned)) {
+        console.warn('⚠️ Hallucination filter: texto sospechosamente corto →', cleaned);
+        return '';
+    }
+
     // Capitalize first letter
     if (cleaned.length > 0) {
         cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
@@ -502,6 +547,42 @@ function validateAudioFile(file) {
     }
 
     return true;
+}
+
+// ── RA-2: Reintentar archivos fallidos ─────────────────────────────────────
+// Cambia status 'error' → 'pending' para que el próximo click de Transcribir los procese
+window.retryFailedFiles = function() {
+    const failedCount = window.uploadedFiles.filter(f => f.status === 'error').length;
+    if (failedCount === 0) {
+        if (typeof showToast === 'function') showToast('No hay archivos fallidos para reintentar', 'info');
+        return;
+    }
+    window.uploadedFiles.forEach(f => {
+        if (f.status === 'error') f.status = 'pending';
+    });
+    if (typeof updateFileList === 'function') updateFileList();
+    const transcribeBtn = document.getElementById('transcribeBtn');
+    if (transcribeBtn) transcribeBtn.disabled = false;
+    const tAndS = document.getElementById('transcribeAndStructureBtn');
+    if (tAndS) tAndS.disabled = false;
+    if (typeof showToast === 'function') showToast(`🔄 ${failedCount} archivo(s) listo(s) para reintentar`, 'success');
+};
+
+// ── RM-6: Detección de audio silencioso pre-envío ──────────────────────────
+// Analiza el RMS del audio; si es < threshold → probablemente silencio.
+async function isAudioSilent(file, threshold = 0.01) {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const buf = await ctx.decodeAudioData(await file.arrayBuffer());
+        const data = buf.getChannelData(0);
+        let rms = 0;
+        for (let i = 0; i < data.length; i++) rms += data[i] * data[i];
+        rms = Math.sqrt(rms / data.length);
+        ctx.close();
+        return rms < threshold;
+    } catch (_) {
+        return false; // si no se puede analizar, no bloquear
+    }
 }
 
 // testGroqConnection — removida (dead code, nunca se invocaba)

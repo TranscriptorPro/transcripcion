@@ -24,8 +24,8 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const { jsPDF } = window.jspdf;
 
         // ── Datos de configuración (leer ANTES de crear el doc) ──────
-        const profData  = JSON.parse(localStorage.getItem('prof_data') || '{}');
-        const config    = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        const profData  = (typeof safeJSONParse === 'function') ? safeJSONParse('prof_data', {}) : JSON.parse(localStorage.getItem('prof_data') || '{}');
+        const config    = (typeof safeJSONParse === 'function') ? safeJSONParse('pdf_config', {}) : JSON.parse(localStorage.getItem('pdf_config') || '{}');
         const activePro = config.activeProfessional || null;
 
         // ── Crear documento con formato/orientación del usuario ──────

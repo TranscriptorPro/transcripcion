@@ -51,7 +51,7 @@ async function toggleRecording() {
             window.isRecording = true;
             updateRecordingUI(true);
 
-            // Timer
+            // Timer visual
             window.recordingStartTime = Date.now();
             window.recordingInterval = setInterval(() => {
                 const diff = Date.now() - window.recordingStartTime;
@@ -59,6 +59,19 @@ async function toggleRecording() {
                 const minutes = Math.floor((diff / (1000 * 60)) % 60);
                 recordingTime.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             }, 1000);
+
+            // RA-1: Warning a los 30 min
+            window._recordingWarningTimer = setTimeout(() => {
+                if (typeof showToast !== 'undefined') showToast('⏱️ 30 min de grabación. Se detendrá automáticamente a los 45 min.', 'warning', 5000);
+            }, 30 * 60 * 1000);
+
+            // RA-1: Auto-stop a los 45 min
+            window._recordingAutoStopTimer = setTimeout(() => {
+                if (window.isRecording) {
+                    if (typeof showToast !== 'undefined') showToast('⏱️ Grabación detenida: límite de 45 minutos alcanzado', 'warning', 5000);
+                    toggleRecording(); // detener
+                }
+            }, 45 * 60 * 1000);
 
         } catch (err) {
             console.error('Error accessing microphone:', err);
@@ -70,6 +83,9 @@ async function toggleRecording() {
         window.isRecording = false;
         updateRecordingUI(false);
         clearInterval(window.recordingInterval);
+        // RA-1: Limpiar timers de warning y auto-stop
+        if (window._recordingWarningTimer) { clearTimeout(window._recordingWarningTimer); window._recordingWarningTimer = null; }
+        if (window._recordingAutoStopTimer) { clearTimeout(window._recordingAutoStopTimer); window._recordingAutoStopTimer = null; }
         if (recordingTime) recordingTime.textContent = '00:00';
     }
 }
@@ -150,6 +166,13 @@ window.updateFileList = function () {
         </div>
     </div>
 `).join('');
+
+    // RA-2: Mostrar/ocultar botón de reintentar fallidos
+    const btnRetry = document.getElementById('btnRetryFailed');
+    if (btnRetry) {
+        const hasFailed = window.uploadedFiles.some(f => f.status === 'error');
+        btnRetry.style.display = hasFailed ? '' : 'none';
+    }
 }
 
 window._currentAudio = null;

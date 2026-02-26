@@ -215,6 +215,19 @@ function updateUIByMode() {
 // Global UI Reset
 if (resetBtn) {
     resetBtn.addEventListener('click', () => {
+        // RC-3: Bloquear reset mientras se procesa
+        if (window.isProcessing || window._structuring) {
+            if (typeof showToast !== 'undefined') showToast('⏳ Esperá a que termine el proceso actual', 'warning');
+            return;
+        }
+
+        // RA-4: Guardar snapshot del editor para undo temporal
+        const editor = document.getElementById('editor');
+        const editorContent = editor ? editor.innerHTML : '';
+        const hadContent = editor && editor.innerText.trim().length > 50;
+        const savedAutosave = hadContent ? localStorage.getItem('editor_autosave') : null;
+        const savedAutosaveMeta = hadContent ? localStorage.getItem('editor_autosave_meta') : null;
+
         // Revoke audio URLs and stop playback
         window.uploadedFiles.forEach(item => {
             if (item._audio) item._audio.pause();
@@ -236,7 +249,6 @@ if (resetBtn) {
         }
 
         // Reset editor
-        const editor = document.getElementById('editor');
         if (editor) editor.innerHTML = '';
 
         // Reset inputs
@@ -271,7 +283,20 @@ if (resetBtn) {
         // Re-asegurar que la API key siga visible en la UI tras el reset
         if (typeof updateApiStatus === 'function') updateApiStatus();
 
-        if (typeof showToast !== 'undefined') showToast('Limpiado ✓', 'success');
+        // RA-4: Toast con opción de deshacer (7 segundos)
+        if (hadContent && typeof showToastWithAction === 'function') {
+            showToastWithAction('🗑️ Sesión limpiada', 'success', '↩ Deshacer', () => {
+                if (editor) editor.innerHTML = editorContent;
+                // Restaurar autosave si existía
+                if (savedAutosave) localStorage.setItem('editor_autosave', savedAutosave);
+                if (savedAutosaveMeta) localStorage.setItem('editor_autosave_meta', savedAutosaveMeta);
+                if (typeof updateWordCount === 'function') updateWordCount();
+                if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
+                if (typeof showToast !== 'undefined') showToast('↩ Sesión restaurada', 'success');
+            }, 7000);
+        } else {
+            if (typeof showToast !== 'undefined') showToast('Limpiado ✓', 'success');
+        }
     });
 }
 

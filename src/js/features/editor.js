@@ -24,6 +24,7 @@ if (editor) {
                 .replace(/<o:p[^>]*>[\s\S]*?<\/o:p>/gi, '')               // tags de Office
                 .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')            // bloques de estilo
                 .replace(/<meta[^>]*>/gi, '')                              // metas
+                .replace(/<img[^>]*>/gi, '')                               // RM-3: eliminar imágenes pegadas
                 .replace(/class="[^"]*"/gi, '')                            // clases Word
                 .replace(/style="[^"]*"/gi, '')                            // estilos inline
                 .replace(/<span\s*>([\s\S]*?)<\/span>/gi, '$1')            // spans vacíos

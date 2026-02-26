@@ -1,5 +1,20 @@
 const $ = id => document.getElementById(id);
 
+// RA-5: Helper seguro para leer JSON de localStorage (evita crash por datos corruptos)
+window.safeJSONParse = function(key, fallback) {
+    try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); }
+    catch (_) { return fallback; }
+};
+
+// RC-1: Helper: fetch con AbortController + timeout de seguridad
+// Evita que la UI quede "zombificada" si Groq no responde.
+window.fetchWithTimeout = function(url, options, timeoutMs = 120000) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    return fetch(url, { ...options, signal: controller.signal })
+        .finally(() => clearTimeout(timer));
+};
+
 // ============ NORMALIZACIÓN DE TEXTO — MODO ORACIÓN ============
 // Convierte texto a modo oración respetando:
 //  - Nombres propios (en campos de nombre cada palabra capitalizada)
