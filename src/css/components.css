@@ -1568,6 +1568,64 @@
             .btn-append-inline {
                 display: none !important;
             }
+
+            /* ── Imprimir desde vista previa: ocultar toda la UI del modal ── */
+            body > *:not(#printPreviewOverlay) { display: none !important; }
+            #printPreviewOverlay {
+                display: block !important;
+                position: static !important;
+                background: none !important;
+                padding: 0 !important;
+                overflow: visible !important;
+            }
+            #printPreviewOverlay .modal {
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                height: auto !important;
+                max-width: none !important;
+                background: none !important;
+            }
+            #printPreviewOverlay .modal-header,
+            #printPreviewOverlay .modal-footer,
+            #printPreviewOverlay .preview-page-nav {
+                display: none !important;
+            }
+            .print-preview-container {
+                padding: 0 !important;
+                background: none !important;
+                overflow: visible !important;
+                max-height: none !important;
+            }
+            .a4-page {
+                box-shadow: none !important;
+                width: 100% !important;
+                min-height: auto !important;
+                padding: 0 10mm 10mm !important;
+                border-top: none !important;
+                margin: 0 !important;
+            }
+            /* Marcadores: ocultar separador visual, forzar page-break real */
+            .pv-pb-separator { display: none !important; }
+            .pv-pagebreak-marker {
+                margin: 0 !important;
+                break-before: page;
+                page-break-before: always;
+            }
+            .pv-pb-repeated-header { border-top: none !important; }
+            .preview-workplace,
+            .pv-pb-repeated-header .preview-workplace {
+                margin: 0 -10mm !important;
+                padding-left: 10mm !important;
+                padding-right: 10mm !important;
+            }
+            /* Forzar colores de fondo en impresión */
+            .preview-workplace,
+            thead th,
+            .pvp-grid,
+            .pvs-grid {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
         }
 
         /* Toast */
@@ -2970,37 +3028,41 @@
 
         /* ── Marcador visual de salto de página ── */
         .pv-pagebreak-marker {
-            margin: 18px -18mm 10px;
+            margin: 24px -18mm 0;
             position: relative;
+            background: white;
         }
         .pv-pb-separator {
-            border-top: 2px dashed #b8c4d0;
-            padding: 6px 0 0;
+            border-top: 3px dashed #c5cdd8;
+            padding: 10px 18mm;
             text-align: center;
             background: repeating-linear-gradient(
                 -45deg,
-                transparent,
-                transparent 5px,
-                rgba(184,196,208,0.1) 5px,
-                rgba(184,196,208,0.1) 10px
+                #f0f3f7,
+                #f0f3f7 5px,
+                #e4e9ee 5px,
+                #e4e9ee 10px
             );
-            padding-bottom: 8px;
         }
         .pv-pb-label {
             display: inline-block;
-            background: #edf2f7;
-            color: #718096;
+            background: #dce3ec;
+            color: #5a6577;
             font-size: 8pt;
-            padding: 2px 12px;
+            padding: 3px 16px;
             border-radius: 10px;
-            font-weight: 600;
-            letter-spacing: 0.03em;
+            font-weight: 700;
+            letter-spacing: 0.04em;
         }
         .pv-pb-repeated-header {
             border-top: 5px solid var(--pa, #1a56a0);
             margin-top: 0;
         }
-        .pv-pb-repeated-header .preview-workplace { pointer-events: none; }
+        .pv-pb-repeated-header .preview-workplace {
+            pointer-events: none;
+            margin: 0;
+            padding: 8px 18mm 7px;
+        }
 
         /* ── Bloque paciente en grilla ── */
         .preview-patient { margin-bottom: 10px; }
