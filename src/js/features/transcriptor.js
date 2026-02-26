@@ -264,6 +264,9 @@ if (transcribeBtn) {
                     });
                     text = cleanTranscriptionText(text);
 
+                    // Auto-aplicar correcciones del diccionario médico (capa 3 de mejora ASR)
+                    text = autoApplyDictCorrections(text);
+
                     // Enforce transcription length limit
                     const MAX_TRANSCRIPTION_LENGTH = 20000;
                     if (text.length > MAX_TRANSCRIPTION_LENGTH) {
@@ -307,6 +310,7 @@ if (transcribeBtn) {
                             try {
                                 let repairedText = await transcribeWithGroqParams(repairedFile, { language: 'es' });
                                 repairedText = cleanTranscriptionText(repairedText);
+                                repairedText = autoApplyDictCorrections(repairedText);
                                 if (shouldJoin) {
                                     joinedText += (joinedText ? '\n\n' : '') + repairedText;
                                 } else {
@@ -455,6 +459,7 @@ async function transcribeWithGroqParams(file, { language = 'es', model = 'whispe
     form.append('model', model);
     if (language) form.append('language', language);
     form.append('response_format', 'text');
+    form.append('temperature', '0'); // Determinístico: reduce invenciones fonéticas
 
     // Inyectar prompt contextual para mejorar reconocimiento de terminología médica
     try {
@@ -523,6 +528,21 @@ const HALLUCINATION_PHRASES = [
     /^\s*aplausos[.\s]*$/i,
 ];
 
+// ── Regex: re-unir prefijos médicos que Whisper parte ──────────────────────
+// Captura "dis fagia", "o dinofagia", "taqui pnea", etc.
+const MEDICAL_REJOIN_RULES = [
+    // prefijo + sufijo separated by space
+    { rx: /\b(dis)\s+(fagia|fonía|fonia|nea|pnea|función|funcion|pepsia|uria|plasia|trofia|cinesia|tonia|tonía|kinesia|lipidemia|lipemia|ritmia|taxia|menorrea|psia|praxia|fasia|lexia|grafía|grafia)/gi, to: '$1$2' },
+    { rx: /\b(taqui|bradi)\s+(cardia|pnea|arritmia|sistolia)/gi, to: '$1$2' },
+    { rx: /\b(hiper|hipo)\s+(tensión|tension|trofia|plasia|emia|glucemia|tiroidismo|calcemia|natremia|kalemia|potasemia|osmolar)/gi, to: '$1$2' },
+    { rx: /\b(endo|bronco|colono|laringo|gastro|naso|rino|faringo|cisto|hister)\s+(scopía|scopia|scopio)/gi, to: '$1$2' },
+    { rx: /\b(eco|electro)\s+(cardiograma|cardio|encefalograma|miografía|miografia)/gi, to: '$1$2' },
+    { rx: /\bo\s+(dinofagia)/gi, to: 'o$1' },
+    { rx: /\b(histo|inmuno)\s+(patología|patologia|química|quimica|histoquímica|histoquimica)/gi, to: '$1$2' },
+    { rx: /\b(naso|oro|hipo|supra|sub)\s+(faríngea|faringea|glótica|glotica|glotis)/gi, to: '$1$2' },
+    { rx: /\b(peri|mio|endo)\s+(cardio|carditis|metrio|metritis)/gi, to: '$1$2' },
+];
+
 function cleanTranscriptionText(text) {
     if (!text) return "";
     let cleaned = text.trim();
@@ -541,11 +561,51 @@ function cleanTranscriptionText(text) {
         return '';
     }
 
+    // Re-unir prefijos médicos que Whisper partió (ej: "dis fagia" → "disfagia")
+    for (const rule of MEDICAL_REJOIN_RULES) {
+        cleaned = cleaned.replace(rule.rx, rule.to);
+    }
+
     // Capitalize first letter
     if (cleaned.length > 0) {
         cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
     }
     return cleaned;
+}
+
+// ── Auto-aplicar correcciones del diccionario médico sobre texto plano ─────
+// Capa 3 de la cascada ASR: aplica MEDICAL_DICT_BASE + custom dict sin intervención del usuario.
+// Opera sobre string puro (no DOM), por lo que es seguro usarlo pre-editor.
+function autoApplyDictCorrections(text) {
+    if (!text || text.length < 5) return text;
+    try {
+        // Obtener diccionario base + custom del usuario
+        const baseDict = (typeof MEDICAL_DICT_BASE !== 'undefined') ? MEDICAL_DICT_BASE : {};
+        const customDict = (typeof getMedCustomDict === 'function') ? getMedCustomDict() : {};
+        const fullDict = { ...baseDict, ...customDict };
+
+        let corrected = text;
+        let totalFixes = 0;
+        const _esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+        for (const [from, to] of Object.entries(fullDict)) {
+            if (from === to) continue; // skip no-ops
+            try {
+                const rx = new RegExp('\\b' + _esc(from) + '\\b', 'gi');
+                const before = corrected;
+                corrected = corrected.replace(rx, to);
+                if (corrected !== before) totalFixes++;
+            } catch { /* skip invalid regex keys */ }
+        }
+
+        if (totalFixes > 0) {
+            console.log(`[AutoDict] ${totalFixes} corrección(es) aplicadas automáticamente`);
+        }
+        return corrected;
+    } catch (e) {
+        console.warn('[AutoDict] Error, se devuelve texto original:', e);
+        return text;
+    }
 }
 
 // ── Classify error for user-friendly messages ──────────────────────────────
