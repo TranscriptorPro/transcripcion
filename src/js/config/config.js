@@ -27,6 +27,34 @@ window.CLIENT_CONFIG = {
     allowedTemplates: [] // [] = todas; ['key1','key2'] = solo esas
 };
 
+// ═══════════════════════════════════════════════════════════════════════════
+// CONFIG DINÁMICA — carga desde localStorage o URL ?id= (fábrica de clones)
+// ═══════════════════════════════════════════════════════════════════════════
+(function _loadDynamicConfig() {
+    // 1) Si ya existe configuración de cliente guardada → usarla
+    const stored = localStorage.getItem('client_config_stored');
+    if (stored) {
+        try {
+            const parsed = JSON.parse(stored);
+            if (parsed && parsed.type && parsed.type !== 'ADMIN') {
+                Object.assign(window.CLIENT_CONFIG, parsed);
+                return;
+            }
+        } catch (_) { /* fallback a ADMIN */ }
+    }
+
+    // 2) Detectar link de la fábrica: ?id=MED001
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const setupId = params.get('id');
+        if (setupId) {
+            window._PENDING_SETUP_ID = setupId;
+            // Limpiar URL inmediatamente (sin recargar)
+            history.replaceState({}, document.title, window.location.pathname);
+        }
+    } catch (_) { /* navegadores antiguos sin URLSearchParams */ }
+})();
+
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
 
 // ============ RB-6: CONTEO LOCAL DE USO DE API ============

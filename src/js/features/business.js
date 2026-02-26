@@ -401,6 +401,12 @@ window.initWorkplaceManagement = function () {
 
 // ---- Original initBusinessSuite updated ----
 window.initBusinessSuite = function () {
+    // ── Interceptar link de la fábrica (?id=MED001) ──────────────────────────
+    if (window._PENDING_SETUP_ID) {
+        _handleFactorySetup(window._PENDING_SETUP_ID);
+        return; // la inicialización se completa dentro del handler async
+    }
+
     const isAdmin = (typeof CLIENT_CONFIG === 'undefined' || CLIENT_CONFIG.type === 'ADMIN');
 
     if (isAdmin) {
@@ -409,6 +415,184 @@ window.initBusinessSuite = function () {
         _initClient();
     }
 };
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FÁBRICA DE CLONES — Setup desde link ?id=MED001
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Flujo de primer uso desde link de la fábrica:
+ * 1. Muestra pantalla de carga
+ * 2. Genera device_id
+ * 3. Llama al backend (validate) con el ID del médico
+ * 4. Mapea el plan al CLIENT_CONFIG
+ * 5. Guarda config + prof_data + API key en localStorage
+ * 6. Pasa al flujo de cliente normal (onboarding + T&C)
+ */
+async function _handleFactorySetup(medicoId) {
+    console.info('[Factory] Configurando app para médico:', medicoId);
+
+    // Mostrar overlay de carga
+    _showSetupLoadingOverlay();
+
+    try {
+        // Generar device_id si no existe
+        let deviceId = localStorage.getItem('device_id');
+        if (!deviceId) {
+            deviceId = 'dev_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
+            localStorage.setItem('device_id', deviceId);
+        }
+
+        // Llamar al backend
+        const backendUrl = 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec';
+        const url = `${backendUrl}?action=validate&id=${encodeURIComponent(medicoId)}&deviceId=${encodeURIComponent(deviceId)}`;
+
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const doctor = await resp.json();
+
+        if (doctor.error) {
+            _showSetupError(doctor.error, doctor.code);
+            return;
+        }
+
+        // ── Mapear plan → CLIENT_CONFIG ──────────────────────────────────────
+        const plan = String(doctor.Plan || 'trial').toLowerCase();
+        const planMap = {
+            trial:      { type: 'TRIAL',  hasProMode: false, hasDashboard: false, canGenerateApps: false },
+            normal:     { type: 'NORMAL', hasProMode: false, hasDashboard: false, canGenerateApps: false },
+            pro:        { type: 'PRO',    hasProMode: true,  hasDashboard: true,  canGenerateApps: false },
+            enterprise: { type: 'PRO',    hasProMode: true,  hasDashboard: true,  canGenerateApps: false }
+        };
+        const pc = planMap[plan] || planMap.trial;
+
+        // Parsear specialties
+        let specialties = ['ALL'];
+        try {
+            const spec = String(doctor.Especialidad || 'ALL');
+            specialties = spec === 'ALL' ? ['ALL'] : spec.split(',').map(s => s.trim());
+        } catch (_) {}
+
+        // Parsear allowedTemplates
+        let allowedTemplates = [];
+        try {
+            const tpl = String(doctor.Allowed_Templates || '');
+            if (tpl && tpl !== 'ALL' && tpl !== '') {
+                allowedTemplates = JSON.parse(tpl);
+            }
+        } catch (_) {}
+
+        const clientConfig = {
+            medicoId:         medicoId,
+            type:             pc.type,
+            status:           String(doctor.Estado || 'active'),
+            specialties:      specialties,
+            maxDevices:       Number(doctor.Devices_Max) || 2,
+            trialDays:        plan === 'trial' ? 7 : 0,
+            hasProMode:       pc.hasProMode,
+            hasDashboard:     pc.hasDashboard,
+            canGenerateApps:  pc.canGenerateApps,
+            allowedTemplates: allowedTemplates,
+            backendUrl:       backendUrl
+        };
+
+        // ── Guardar en localStorage ──────────────────────────────────────────
+        localStorage.setItem('client_config_stored', JSON.stringify(clientConfig));
+        Object.assign(window.CLIENT_CONFIG, clientConfig);
+
+        // prof_data (nombre, matrícula, especialidad)
+        const profData = {
+            nombre:       doctor.Nombre      || 'Profesional',
+            matricula:    doctor.Matricula    || '',
+            workplace:    '',
+            specialties:  specialties,
+            estudios:     [],
+            especialidad: doctor.Especialidad || '',
+        };
+        localStorage.setItem('prof_data', JSON.stringify(profData));
+
+        // API Key (si el admin la configuró en el Sheet)
+        if (doctor.API_Key) {
+            localStorage.setItem('groq_api_key', doctor.API_Key);
+        }
+
+        // Guardar ID del médico
+        localStorage.setItem('medico_id', medicoId);
+
+        // Limpiar la marca de setup pendiente
+        delete window._PENDING_SETUP_ID;
+
+        console.info('[Factory] Setup completado para', doctor.Nombre || medicoId, '— Plan:', plan);
+
+        // ── Continuar con flujo de cliente (onboarding) ──────────────────────
+        _hideSetupLoadingOverlay();
+        _initClient(); // mostrará el onboarding con T&C
+
+    } catch (err) {
+        console.error('[Factory] Error en setup:', err);
+        _showSetupError('No se pudo conectar con el servidor. Verificá tu conexión a internet e intentá de nuevo.', 'NETWORK');
+    }
+}
+
+/** Overlay de carga durante el setup */
+function _showSetupLoadingOverlay() {
+    let overlay = document.getElementById('factorySetupOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'factorySetupOverlay';
+        overlay.innerHTML = `
+            <div style="background:white;border-radius:16px;padding:40px 32px;text-align:center;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+                <div style="font-size:48px;margin-bottom:16px;">⚙️</div>
+                <h2 style="margin:0 0 8px;color:#1a56a0;font-size:1.3rem;">Configurando tu app...</h2>
+                <p style="color:#666;font-size:.9rem;margin:0 0 20px;">Conectando con el servidor y preparando tu espacio de trabajo</p>
+                <div style="width:48px;height:48px;border:4px solid #e5e7eb;border-top-color:#1a56a0;border-radius:50%;animation:factorySpinner 1s linear infinite;margin:0 auto;"></div>
+            </div>
+        `;
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);';
+        // Agregar animación CSS
+        const style = document.createElement('style');
+        style.textContent = '@keyframes factorySpinner{to{transform:rotate(360deg)}}';
+        document.head.appendChild(style);
+        document.body.appendChild(overlay);
+    }
+    overlay.style.display = 'flex';
+}
+
+function _hideSetupLoadingOverlay() {
+    const overlay = document.getElementById('factorySetupOverlay');
+    if (overlay) overlay.remove();
+}
+
+/** Pantalla de error en el setup */
+function _showSetupError(message, code) {
+    _hideSetupLoadingOverlay();
+    let overlay = document.getElementById('factoryErrorOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'factoryErrorOverlay';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);';
+        document.body.appendChild(overlay);
+    }
+
+    const codeLabels = {
+        NOT_FOUND: 'El enlace no corresponde a ningún usuario registrado.',
+        BANNED: 'Esta cuenta ha sido suspendida. Contactá al administrador.',
+        INACTIVE: 'Esta cuenta está desactivada. Contactá al administrador.',
+        EXPIRED: 'La licencia ha expirado. Contactá al administrador para renovar.',
+        DEVICE_LIMIT: 'Se alcanzó el límite de dispositivos. Contactá al administrador.',
+        NETWORK: message
+    };
+
+    overlay.innerHTML = `
+        <div style="background:white;border-radius:16px;padding:40px 32px;text-align:center;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+            <div style="font-size:48px;margin-bottom:16px;">❌</div>
+            <h2 style="margin:0 0 8px;color:#dc2626;font-size:1.2rem;">No se pudo configurar la app</h2>
+            <p style="color:#666;font-size:.9rem;margin:0 0 20px;">${codeLabels[code] || message}</p>
+            <button onclick="location.reload()" style="background:#1a56a0;color:white;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:.9rem;">Reintentar</button>
+        </div>
+    `;
+    overlay.style.display = 'flex';
+}
 
 // ─── Flujo ADMIN ─────────────────────────────────────────────────────────────
 function _initAdmin() {

@@ -3218,9 +3218,15 @@
         // ========== FIN EDITAR USUARIO ==========
 
         // ========== FÁBRICA DE CLONES ==========
+        const CF_APP_BASE_URL = 'https://aldowagner78-cmd.github.io/transcripcion/';
+
+        let _cfCurrentUser = null;
+
         function openCloneFactory(userId) {
             const user = allUsers.find(u => String(u.ID_Medico) === String(userId));
             if (!user) return;
+            _cfCurrentUser = user;
+
             // Rellenar datos en el modal
             document.getElementById('cfUserId').textContent      = user.ID_Medico  || '—';
             document.getElementById('cfUserName').textContent    = user.Nombre     || '—';
@@ -3228,11 +3234,89 @@
             document.getElementById('cfEspecialidad').textContent= user.Especialidad|| '—';
             document.getElementById('cfPlan').textContent        = (user.Plan || 'trial').toUpperCase();
             document.getElementById('cfEmail').textContent       = user.Email      || '—';
+
+            // Reset estado
+            document.getElementById('cfApiKey').value = user.API_Key || '';
+            document.getElementById('cfLinkResult').style.display = 'none';
+
             document.getElementById('cloneFactoryModal').style.display = 'flex';
         }
+
         function closeCloneFactory() {
             document.getElementById('cloneFactoryModal').style.display = 'none';
+            _cfCurrentUser = null;
         }
+
+        // Botón Generar Link
+        document.getElementById('cfBtnGenerate')?.addEventListener('click', async () => {
+            if (!_cfCurrentUser) return;
+            const userId = _cfCurrentUser.ID_Medico;
+            const apiKey = document.getElementById('cfApiKey').value.trim();
+            const btn = document.getElementById('cfBtnGenerate');
+            btn.disabled = true;
+            btn.textContent = '⏳ Generando...';
+
+            try {
+                // Si hay API Key, guardarla en el Sheet
+                if (apiKey) {
+                    const updateUrl = `${BACKEND_URL}?action=admin_update_user&sessionToken=${encodeURIComponent(sessionToken)}&userId=${encodeURIComponent(userId)}&updates=${encodeURIComponent(JSON.stringify({ API_Key: apiKey }))}`;
+                    await fetch(updateUrl);
+                }
+
+                // Generar el link
+                const link = `${CF_APP_BASE_URL}?id=${encodeURIComponent(userId)}`;
+
+                // Mostrar resultado
+                document.getElementById('cfLinkUrl').value = link;
+                document.getElementById('cfLinkResult').style.display = 'block';
+
+                // Aviso si no hay API Key
+                document.getElementById('cfApiKeyNotice').style.display = apiKey ? 'none' : 'block';
+
+                // Log
+                const logUrl = `${BACKEND_URL}?action=admin_log_action&sessionToken=${encodeURIComponent(sessionToken)}&adminUser=${encodeURIComponent('admin')}&logAction=generate_link&userId=${encodeURIComponent(userId)}&details=${encodeURIComponent('Link generado' + (apiKey ? ' con API Key' : ' sin API Key'))}`;
+                fetch(logUrl).catch(() => {});
+
+            } catch (err) {
+                alert('Error al generar link: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔗 Generar Link';
+            }
+        });
+
+        // Botón Copiar Link
+        document.getElementById('cfBtnCopyLink')?.addEventListener('click', () => {
+            const url = document.getElementById('cfLinkUrl').value;
+            navigator.clipboard.writeText(url).then(() => {
+                const btn = document.getElementById('cfBtnCopyLink');
+                btn.textContent = '✅';
+                setTimeout(() => btn.textContent = '📋', 2000);
+            }).catch(() => {
+                // Fallback
+                document.getElementById('cfLinkUrl').select();
+                document.execCommand('copy');
+            });
+        });
+
+        // Botón WhatsApp
+        document.getElementById('cfBtnWhatsApp')?.addEventListener('click', () => {
+            const url = document.getElementById('cfLinkUrl').value;
+            const name = _cfCurrentUser?.Nombre || 'Doctor';
+            const text = `Hola ${name}, tu app Transcriptor Médico Pro está lista.\n\nAbrí este link en tu celular o computadora para configurarla:\n${url}\n\nTe va a pedir instalar la app — aceptá para tenerla siempre a mano.`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+        });
+
+        // Botón Email
+        document.getElementById('cfBtnEmail')?.addEventListener('click', () => {
+            const url = document.getElementById('cfLinkUrl').value;
+            const name = _cfCurrentUser?.Nombre || 'Doctor';
+            const email = _cfCurrentUser?.Email || '';
+            const subject = 'Tu app Transcriptor Médico Pro está lista';
+            const body = `Hola ${name},\n\nTu app de transcripción médica está lista para usar.\n\nHacé clic en el siguiente link para configurarla:\n${url}\n\nEl navegador te va a ofrecer instalarla como aplicación — aceptá para tenerla siempre accesible.\n\nSi tenés alguna duda, respondé este correo.\n\nSaludos`;
+            window.open(`mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+        });
+
         // ========== FIN FÁBRICA DE CLONES ==========
 
         // Abrir modal
@@ -3657,12 +3741,13 @@
     <!-- Modal Nuevo Usuario -->
     <!-- ── Fábrica de Clones Modal ── -->
     <div class="modal-overlay" id="cloneFactoryModal" style="display:none;">
-        <div class="modal" style="max-width:620px;">
+        <div class="modal" style="max-width:640px;">
             <div class="modal-header">
-                <h2>📦 Crear App para Usuario</h2>
+                <h2>📦 Generar App para Usuario</h2>
                 <button class="modal-close" id="btnCloseCloneFactory">&times;</button>
             </div>
             <div class="modal-body">
+                <!-- Datos del médico -->
                 <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:1rem 1.2rem;margin-bottom:1.2rem;">
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem 1.5rem;font-size:.88rem;">
                         <div><span style="color:#64748b;">ID Médico:</span> <strong id="cfUserId">—</strong></div>
@@ -3673,27 +3758,36 @@
                         <div><span style="color:#64748b;">Email:</span> <strong id="cfEmail">—</strong></div>
                     </div>
                 </div>
-                <div style="background:#fef9c3;border:1px solid #fde68a;border-radius:10px;padding:1rem 1.2rem;margin-bottom:1rem;">
-                    <p style="font-size:.85rem;color:#78350f;margin:0;">⚙️ <strong>Fábrica de Clones — próximamente</strong><br>
-                    Aquí se generará automáticamente una versión personalizada de la app con los datos de este médico
-                    (nombre, matrícula, ID, especialidades, plantillas permitidas, firma, colores) lista para distribuir.</p>
+
+                <!-- Configuración del link -->
+                <div style="display:flex;flex-direction:column;gap:.8rem;margin-bottom:1rem;">
+                    <div>
+                        <label style="font-size:.83rem;color:#64748b;font-weight:600;">🔑 API Key de Groq (para este usuario)</label>
+                        <input type="text" id="cfApiKey" placeholder="gsk_..." style="width:100%;margin-top:4px;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.85rem;font-family:monospace;">
+                        <small style="color:#9ca3af;font-size:.75rem;">Si lo dejás vacío, el usuario deberá ingresar su propia API Key</small>
+                    </div>
                 </div>
-                <div style="display:flex;flex-direction:column;gap:.6rem;">
-                    <label style="font-size:.83rem;color:#64748b;">Seleccionar plantillas permitidas (próximamente)</label>
-                    <select disabled style="opacity:.5;cursor:not-allowed;">
-                        <option>Todas las plantillas</option>
-                    </select>
-                    <label style="font-size:.83rem;color:#64748b;">Canal de distribución (próximamente)</label>
-                    <select disabled style="opacity:.5;cursor:not-allowed;">
-                        <option>Generar ZIP para GitHub Pages</option>
-                        <option>Deploy automático en subdominio</option>
-                        <option>Exportar config JSON</option>
-                    </select>
+
+                <!-- Resultado: link generado -->
+                <div id="cfLinkResult" style="display:none;background:#eff6ff;border:1px solid #93c5fd;border-radius:10px;padding:1rem 1.2rem;margin-bottom:.5rem;">
+                    <label style="font-size:.83rem;color:#1e40af;font-weight:600;display:block;margin-bottom:6px;">🔗 Link de instalación:</label>
+                    <div style="display:flex;gap:6px;align-items:center;">
+                        <input type="text" id="cfLinkUrl" readonly style="flex:1;padding:8px 10px;border:1px solid #93c5fd;border-radius:8px;font-size:.82rem;background:#fff;color:#1e3a5f;font-family:monospace;">
+                        <button type="button" id="cfBtnCopyLink" style="padding:8px 12px;border:1px solid #93c5fd;border-radius:8px;background:#fff;cursor:pointer;font-size:1rem;" title="Copiar link">📋</button>
+                    </div>
+                    <div style="display:flex;gap:8px;margin-top:10px;">
+                        <button type="button" id="cfBtnWhatsApp" style="flex:1;padding:8px;background:#25d366;color:white;border:none;border-radius:8px;cursor:pointer;font-size:.82rem;font-weight:600;">💬 WhatsApp</button>
+                        <button type="button" id="cfBtnEmail" style="flex:1;padding:8px;background:#1a56a0;color:white;border:none;border-radius:8px;cursor:pointer;font-size:.82rem;font-weight:600;">📧 Email</button>
+                    </div>
+                    <!-- Aviso de API Key -->
+                    <div id="cfApiKeyNotice" style="display:none;background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:8px 10px;margin-top:10px;">
+                        <p style="font-size:.78rem;color:#78350f;margin:0;">⚠️ <strong>Importante:</strong> Antes de enviar el link, asegurate de haber guardado la API Key del usuario en el Sheet (columna API_Key). Si no la configuraste acá, el usuario deberá ingresarla manualmente.</p>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn-secondary" onclick="closeCloneFactory()">Cerrar</button>
-                <button class="btn-primary" disabled style="opacity:.5;cursor:not-allowed;" title="Disponible en próxima versión">🚀 Generar App (próximamente)</button>
+                <button class="btn-primary" id="cfBtnGenerate">🔗 Generar Link</button>
             </div>
         </div>
     </div>

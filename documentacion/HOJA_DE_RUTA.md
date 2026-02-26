@@ -104,6 +104,17 @@ Usuarios · Metricas_Uso · Dispositivos · Admin_Logs · Diagnosticos · Admin_
 | outputProfiles.js | CRUD de perfiles de salida (lugar + profesional + formato PDF) |
 | pdfPreview.js | Vista previa tipo A4 multipágina con QR, imprimir, email |
 
+### Fábrica de Clones — Completado ✅
+
+| Componente | Descripción |
+|------------|-------------|
+| config.js | Carga dinámica: localStorage `client_config_stored` → URL `?id=MED001` → ADMIN default |
+| business.js | `_handleFactorySetup()`: fetch al backend, mapea plan, guarda config, inicia flujo cliente |
+| admin.html (modal) | Campo API Key, botón "Generar Link", copiar, compartir por WhatsApp/Email |
+| Google Sheet | Nueva columna `API_Key` para asignar clave Groq por usuario |
+
+**Flujo:** Admin crea usuario → 📦 Generar Link → comparte por WhatsApp/Email → Doctor abre link → app se configura automáticamente → onboarding → instalar PWA
+
 ---
 
 ## 🗺️ LO QUE FALTA — ETAPAS PENDIENTES

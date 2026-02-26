@@ -25,6 +25,7 @@
 | `Devices_Logged` | JSON Array (Texto) | IDs de dispositivos conectados | `["dev123", "dev456"]` |
 | `Usage_Count` | Número | Total de transcripciones realizadas | `0`, `15`, `342` |
 | `Allowed_Templates` | JSON Array (Texto) | Templates permitidos (vacío = todos) | `["eco_cardio","rx_torax"]` |
+| `API_Key` | Texto | API Key de Groq asignada al usuario | `gsk_abc123...` |
 | `Diagnostico_Pendiente` | Texto | Flag de diagnóstico remoto | `true`, `false` |
 | `Notas_Admin` | Texto | Notas del administrador | Campo opcional |
 
