@@ -3,7 +3,7 @@
  * Cache-First para el app shell; Network-First para llamadas a la API de Groq.
  */
 
-const CACHE_NAME   = 'transcriptor-pro-v10';
+const CACHE_NAME   = 'transcriptor-pro-v11';
 const GROQ_ORIGIN  = 'api.groq.com';
 
 // Recursos del app shell que se cachean en la instalación
@@ -35,6 +35,7 @@ const APP_SHELL = [
     './src/js/features/medDictionary.js',
     './src/js/features/patientRegistry.js',
     './src/js/features/pdfMaker.js',
+    './src/js/features/reportHistory.js',
     './src/js/features/pdfPreview.js',
     './src/js/features/sessionAssistant.js',
     './src/js/features/structurer.js',

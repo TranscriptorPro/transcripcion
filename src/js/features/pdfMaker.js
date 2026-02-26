@@ -598,6 +598,18 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         await saveBlob(blob, `${fileName}_${fileDate}.pdf`);
         showToast('PDF descargado ✓', 'success');
 
+        // ── Guardar informe en historial (solo si no es re-exportación) ──
+        if (typeof saveReportToHistory === 'function' && !window._skipReportSave) {
+            try {
+                saveReportToHistory({
+                    htmlContent: htmlContent,
+                    fileName:    fileName,
+                    patientName: pName,
+                    patientDni:  pDni
+                });
+            } catch (_) { /* no bloquear la descarga si falla el guardado */ }
+        }
+
     } catch (e) {
         console.error('pdfMaker error:', e);
         showToast('Error al crear PDF: ' + e.message, 'error');

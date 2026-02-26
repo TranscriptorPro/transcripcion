@@ -208,6 +208,9 @@ window.initPatientRegistryPanel = function () {
             const safeName = (p.name || '—').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
             const safeDni  = (p.dni  || '—').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
             const safeAge  = p.age ? String(p.age).replace(/&/g,'&amp;').replace(/</g,'&lt;') + ' años' : '—';
+            // Contar informes del paciente en el historial
+            const reportCount = (typeof getPatientReports === 'function')
+                ? getPatientReports(p.dni || p.name).length : 0;
             return `
             <tr data-idx="${i}">
                 <td>${safeName}</td>
@@ -216,6 +219,8 @@ window.initPatientRegistryPanel = function () {
                 <td>${fmtDate(p.lastSeen)}</td>
                 <td>${(p.visits || 1)}</td>
                 <td style="white-space:nowrap;">
+                    <button class="btn btn-primary registry-reports-btn" style="padding:.25rem .5rem;font-size:.75rem;${reportCount === 0 ? 'opacity:.45;' : ''}"
+                        data-idx="${i}" title="${reportCount} informe(s)">&#x1F4C4; ${reportCount}</button>
                     <button class="btn btn-secondary registry-edit-btn" style="padding:.25rem .5rem;font-size:.75rem;"
                         data-idx="${i}">&#9998;</button>
                     <button class="btn registry-delete-btn" style="padding:.25rem .5rem;font-size:.75rem;background:var(--error);"
@@ -228,8 +233,9 @@ window.initPatientRegistryPanel = function () {
         if (!tbody._delegated) {
             tbody._delegated = true;
             tbody.addEventListener('click', (e) => {
-                const editBtn = e.target.closest('.registry-edit-btn');
-                const delBtn  = e.target.closest('.registry-delete-btn');
+                const editBtn    = e.target.closest('.registry-edit-btn');
+                const delBtn     = e.target.closest('.registry-delete-btn');
+                const reportsBtn = e.target.closest('.registry-reports-btn');
                 if (editBtn) {
                     const idx = parseInt(editBtn.dataset.idx);
                     const currentReg = getRegistry();
@@ -239,6 +245,13 @@ window.initPatientRegistryPanel = function () {
                     const idx = parseInt(delBtn.dataset.idx);
                     const currentReg = getRegistry();
                     if (currentReg[idx]) registryDeleteRow(currentReg[idx].dni || '', currentReg[idx].name || '');
+                }
+                if (reportsBtn && typeof viewPatientReportHistory === 'function') {
+                    const idx = parseInt(reportsBtn.dataset.idx);
+                    const currentReg = getRegistry();
+                    if (currentReg[idx]) {
+                        viewPatientReportHistory(currentReg[idx].name, currentReg[idx].dni);
+                    }
                 }
             });
         }
