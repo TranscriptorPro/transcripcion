@@ -1,51 +1,56 @@
 # Apps Script Deployment Information
 
 ## Current Deployment
-- **Deployment ID:** `AKfycby2VEaj2Qy4TGrjL7ZG_YjfEO4ttI6fynnWLgAMafU8VMWoYoWgqJX48D5okxKOrgQiaw`
-- **Web App URL:** `https://script.google.com/macros/s/AKfycby2VEaj2Qy4TGrjL7ZG_YjfEO4ttI6fynnWLgAMafU8VMWoYoWgqJX48D5okxKOrgQiaw/exec`
-- **Last Updated:** 2026-02-23
-- **Library URL:** `https://script.google.com/macros/library/d/1Oj1P1a443VcU7uuHkVYASOi26_zMUmcCz_PZfJq9_i-NthvAlcD07JOS/6`
-- **Version:** 4 (SHEET_NAME corregido a 'Usuarios'; Metricas_Uso, Dispositivos y Admin_Logs conectados)
+- **Deployment ID:** `AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ`
+- **Web App URL:** `https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec`
+- **Last Updated:** 2026-02-26
+- **Version:** 5 (Backend Phase: auth, license validation, metrics, config generation)
 
 ## Configuration
-- **Sheet Name:** `Usuarios_Transcriptor`
-- **Admin Key:** Hardcodeado en `admin.html` / `login.html` como `ADMIN_SECRET_2026`. Cambiar en Script Properties en producción.
+- **Sheet Name:** `Usuarios`
+- **Admin Key:** Stored in Script Properties (`ADMIN_KEY`). Entered once in browser on first login. Never hardcoded.
+- **Admin Login:** `admin` / `admin2026` (change after first login)
 - **Access Level:** Anyone, even anonymous (required for web app)
 
 ## CORS Configuration
-✅ Incluye `Access-Control-Allow-Origin: *`
-✅ Soporta `OPTIONS` preflight via `doOptions()`
-✅ Compatible con GitHub Pages
+✅ Google Apps Script handles CORS automatically for anonymous web apps
+✅ Supports `OPTIONS` preflight via `doOptions()`
+✅ Compatible with GitHub Pages
 
-## Endpoints (activos)
-1. **GET** `?action=validate&id=USER_ID&deviceId=DEVICE_ID` — Valida usuario (app principal)
-2. **GET** `?action=admin_list_users&adminKey=XXX` — Lista todos los usuarios
-3. **GET** `?action=admin_update_user&userId=ID&updates=JSON&adminKey=XXX` — Edita campos de un usuario
-4. **GET** `?action=admin_create_user&updates=JSON&adminKey=XXX` — Crea nuevo usuario en el Sheet
-5. **POST** `action=update_usage` — Incrementa contador de uso
-6. **POST** `action=admin_update_user` — Edita usuario (método POST alternativo)
-
-## Notas
-- La URL cambia con cada nuevo despliegue. Actualizar en `admin.html`, `admin_config.json` y este archivo.
-- Después de cambiar el script: crear nueva versión en "Gestionar implementaciones" y copiar la nueva URL.
-
-## Configuration
-- **Sheet Name:** `Usuarios_Transcriptor`
-- **Admin Key:** Set via `adminKey` in `admin_config.json` (⚠️ Change to a secure random string in production; ideally use Apps Script Properties Service)
-- **Access Level:** Anyone, even anonymous (required for web app)
-
-## CORS Configuration
-✅ Includes `Access-Control-Allow-Origin: *` headers
-✅ Supports `OPTIONS` preflight requests via `doOptions()` function
-✅ Compatible with GitHub Pages deployment
+## Sheets (6)
+1. `Usuarios` — Registro de médicos/usuarios
+2. `Metricas_Uso` — Historial de uso
+3. `Dispositivos` — Registro de dispositivos
+4. `Admin_Logs` — Log de acciones administrativas
+5. `Diagnosticos` — Diagnósticos remotos
+6. `Admin_Users` — Usuarios del panel admin (se auto-crea en primer login)
 
 ## Endpoints
-1. **GET** `?action=admin_list_users&adminKey=XXX` - List all users
-2. **POST** `action=admin_update_user` - Update user fields
-3. **GET** `?id=USER_ID&deviceId=DEVICE_ID` - Validate user (for main app)
-4. **POST** `action=update_usage` - Increment usage counter
+
+### Públicos (sin auth)
+| Endpoint | Método | Descripción |
+|----------|--------|-------------|
+| `?action=validate&id=X&deviceId=Y` | GET | Validar licencia (trial/device/status) |
+| `action=save_diagnostic` | POST | Guardar diagnóstico remoto |
+| `action=update_usage` | POST | Registrar uso (transcripciones) |
+| `action=send_email` | POST | Enviar informe por email con PDF |
+
+### Admin (requiere sessionToken o adminKey)
+| Endpoint | Método | Descripción |
+|----------|--------|-------------|
+| `?action=admin_login` | GET | Autenticación con token firmado |
+| `?action=admin_list_users` | GET | Listar todos los usuarios |
+| `?action=admin_update_user` | GET/POST | Actualizar usuario |
+| `?action=admin_create_user` | GET | Crear nuevo usuario |
+| `?action=admin_get_logs` | GET | Obtener logs de admin |
+| `?action=admin_log_action` | GET | Registrar acción de admin |
+| `?action=admin_get_metrics` | GET | Métricas de un usuario |
+| `?action=admin_get_global_stats` | GET | Estadísticas globales |
+| `?action=admin_request_diagnostic` | GET | Solicitar diagnóstico remoto |
+| `?action=admin_get_diagnostic` | GET | Ver último diagnóstico |
+| `?action=admin_generate_config` | GET | Generar config.js para clon |
 
 ## Notes
 - URL changes with each new deployment version
 - After updating the script, create a new version in "Gestionar implementaciones"
-- Copy the new URL and update `admin.html` and `admin_config.json`
+- Copy the new URL and update: `login.html`, `admin.html`, `diagnostic.js`, `licenseManager.js`, `admin_config.json`, this file

@@ -20,7 +20,7 @@ const _LM_SCRIPT_URL = (function () {
         return CLIENT_CONFIG.backendUrl;
     }
     // Fallback: misma URL que usa diagnostic.js
-    return 'https://script.google.com/macros/s/AKfycby2VEaj2Qy4TGrjL7ZG_YjfEO4ttI6fynnWLgAMafU8VMWoYoWgqJX48D5okxKOrgQiaw/exec';
+    return 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec';
 })();
 
 const _LM_CACHE_KEY      = 'license_cache';

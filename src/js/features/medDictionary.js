@@ -131,6 +131,103 @@ const MEDICAL_DICT_BASE = {
     "anticoagulacion":          "anticoagulación",
     "glicemia":                 "glucemia",
     "glucosa en sangre":        "glucemia",
+
+    // ── Whisper ASR corrections — Neumología ──────────────
+    "espiro metría":            "espirometría",
+    "vef uno":                  "VEF1",
+    "fe b uno":                 "FEV1",
+    "test de marchar":          "test de marcha",
+    "pletismo grafía":          "pletismografía",
+    "cabina pletismo gráfica":  "cabina pletismográfica",
+    "oxi metría":               "oximetría",
+
+    // ── Whisper ASR corrections — Oftalmología ────────────
+    "campi metría":             "campimetría",
+    "janfri":                   "Humphrey",
+    "humfrei":                  "Humphrey",
+    "o ce te":                  "OCT",
+    "macula":                   "mácula",
+    "retineal":                 "retinal",
+    "topo grafía":              "topografía",
+    "querato cono":             "queratocono",
+    "lasic":                    "LASIK",
+    "fondo de hoyo":            "fondo de ojo",
+    "micro aneurismas":         "microaneurismas",
+    "retino grafía":            "retinografía",
+
+    // ── Whisper ASR corrections — Imágenes ────────────────
+    "tacar":                    "TACAR",
+    "multislais":               "multislice",
+    "mamo grafía":              "mamografía",
+    "birads":                   "BI-RADS",
+    "bi rads":                  "BI-RADS",
+    "densiometría":             "densitometría",
+    "te escore":                "T-score",
+    "zeta escore":              "Z-score",
+    "pet ce te":                "PET-CT",
+    "suv max":                  "SUVmax",
+    "fluorodesoxiglucosa":      "18-FDG",
+    "tele radiografía":         "telerradiografía",
+    "placa de torax":           "placa de tórax",
+    "liti asis":                "litiasis",
+
+    // ── Whisper ASR corrections — Endoscopía ──────────────
+    "gastro copía":             "gastroscopía",
+    "colono copía":             "colonoscopía",
+    "fibro broncoscopia":       "fibrobroncoscopía",
+    "broncoscopia":             "broncoscopía",
+    "laringo copía":            "laringoscopía",
+    "disfonia":                 "disfonía",
+    "colpo copía":              "colposcopía",
+    "yugol":                    "lugol",
+    "histero copía":            "histeroscopía",
+    "cisto copía":              "cistoscopía",
+    "artro copía":              "artroscopía",
+    "dermato copía":            "dermatoscopía",
+
+    // ── Whisper ASR corrections — Cardiología ─────────────
+    "jolter":                   "Holter",
+    "presuro metría":           "presurometría",
+    "cine coronario grafía":    "cinecoronariografía",
+    "sintax":                   "SYNTAX",
+    "cu erre ese":              "QRS",
+    "dobuta mina":              "dobutamina",
+    "tapse":                    "TAPSE",
+    "pesap":                    "PSAP",
+    "ergo metría":              "ergometría",
+
+    // ── Whisper ASR corrections — Ginecología / Obstetricia ─
+    "papa nicolau":             "Papanicolaou",
+    "betesda":                  "Bethesda",
+    "eco te ve":                "eco TV",
+    "trans vaginal":            "transvaginal",
+    "trans esofágico":          "transesofágico",
+    "liquido amniotico":        "líquido amniótico",
+    "cardio toco grafía":       "cardiotocografía",
+
+    // ── Whisper ASR corrections — Neurología ──────────────
+    "electro mio grafía":       "electromiografía",
+    "poli somnografía":         "polisomnografía",
+    "electro encefalograma":    "electroencefalograma",
+    "potenciales hevocados":    "potenciales evocados",
+
+    // ── Whisper ASR corrections — Vascular / ORL / Urología
+    "supra aórticos":           "supraaórticos",
+    "video naso laringoscopia": "videonasolaringoscopía",
+    "colestea toma":            "colesteatoma",
+    "uro flujo metría":         "uroflujometría",
+    "eco musculo esquelética":  "ecografía musculoesquelética",
+    "gamma grafía":             "gammagrafía",
+    "espect":                   "SPECT",
+
+    // ── Whisper ASR corrections — Anatomía Patológica ─────
+    "ponch":                    "punch",
+    "te ene eme":               "TNM",
+    "cito logía":               "citología",
+    "paf":                      "PAAF",
+    "epi crisis":               "epicrisis",
+    "informe medico":           "informe médico",
+    "subjetivo objetivo":       "SOAP",
 };
 
 // ─── 2. Diccionario PERSONALIZADO (localStorage) ────────────

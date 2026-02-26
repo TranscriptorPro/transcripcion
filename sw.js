@@ -3,7 +3,7 @@
  * Cache-First para el app shell; Network-First para llamadas a la API de Groq.
  */
 
-const CACHE_NAME   = 'transcriptor-pro-v9';
+const CACHE_NAME   = 'transcriptor-pro-v10';
 const GROQ_ORIGIN  = 'api.groq.com';
 
 // Recursos del app shell que se cachean en la instalación
@@ -20,6 +20,7 @@ const APP_SHELL = [
     './src/css/animations.css',
     './src/js/config/config.js',
     './src/js/config/templates.js',
+    './src/js/config/studyTerminology.js',
     './src/js/core/audio.js',
     './src/js/core/state.js',
     './src/js/utils/dom.js',

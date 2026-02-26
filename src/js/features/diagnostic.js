@@ -10,7 +10,7 @@
  *   window.initDiagnostic()         → muestra/oculta el botón según CLIENT_CONFIG
  */
 
-const _DIAG_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby2VEaj2Qy4TGrjL7ZG_YjfEO4ttI6fynnWLgAMafU8VMWoYoWgqJX48D5okxKOrgQiaw/exec';
+const _DIAG_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec';
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
 function _diagDeviceId() {

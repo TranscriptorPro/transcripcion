@@ -1,6 +1,6 @@
 {
   "sheetName": "Usuarios_Transcriptor",
-  "scriptUrl": "https://script.google.com/macros/s/AKfycby2VEaj2Qy4TGrjL7ZG_YjfEO4ttI6fynnWLgAMafU8VMWoYoWgqJX48D5okxKOrgQiaw/exec",
+  "scriptUrl": "https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec",
   "adminKey": "SET_IN_SCRIPT_PROPERTIES_NOT_HERE",
   "endpoints": {
     "login": "?action=admin_login&username=USER&password=PASS&adminKey=KEY",

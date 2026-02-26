@@ -48,13 +48,10 @@
 
 ### `backend/google_apps_script.js` — Script desplegado en producción
 
-**URL en `backend/admin_config.json` / `DEPLOYMENT_INFO.md`:**
-`AKfycbw9xT0IdmPbpIsncavlktd3a9vJgao1wR-kwaEZA2PUUVXEo2GIIfV-FgJpBHE_-u9ofg`
+**URL unificada (deploy v5 — 2026-02-26):**
+`AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ`
 
-**URL en `recursos/admin.html` y `recursos/login.html`:**
-`AKfycby2VEaj2Qy4TGrjL7ZG_YjfEO4ttI6fynnWLgAMafU8VMWoYoWgqJX48D5okxKOrgQiaw`
-
-⚠️ **Son dos URLs distintas.** Una de ellas está desactualizada.
+✅ **URL única** en todos los archivos (login.html, admin.html, diagnostic.js, licenseManager.js, admin_config.json).
 
 #### Endpoints que SÍ existen en el script:
 
