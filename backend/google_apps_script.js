@@ -15,6 +15,7 @@ const SHEET_DEVICES      = 'Dispositivos';
 const SHEET_LOGS         = 'Admin_Logs';
 const SHEET_DIAGNOSTICOS = 'Diagnosticos';
 const SHEET_ADMIN_USERS  = 'Admin_Users';
+const SHEET_REGISTROS    = 'Registros_Pendientes';
 
 // SECURITY: Read from Apps Script Script Properties (not hardcoded).
 // In Apps Script editor: File > Project Properties > Script Properties > Add: ADMIN_KEY = <your-secret>
@@ -655,6 +656,169 @@ function doGet(e) {
     return createResponse({ error: 'Usuario no encontrado: ' + userId });
   }
 
+  // ── admin_list_registrations — lista registros pendientes de aprobación ──
+  if (action === 'admin_list_registrations') {
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
+
+    try {
+      const regSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_REGISTROS);
+      if (!regSheet) return createResponse({ registrations: [], total: 0, message: 'Hoja ' + SHEET_REGISTROS + ' no existe aún' });
+
+      const data = regSheet.getDataRange().getValues();
+      if (data.length <= 1) return createResponse({ registrations: [], total: 0 });
+
+      const headers = data[0];
+      const registrations = [];
+      for (let i = 1; i < data.length; i++) {
+        if (!data[i][0]) continue;
+        const reg = {};
+        headers.forEach((h, idx) => { reg[h] = data[i][idx]; });
+        registrations.push(reg);
+      }
+
+      return createResponse({ registrations: registrations, total: registrations.length });
+    } catch(err) {
+      return createResponse({ error: 'Error leyendo registros: ' + err.message });
+    }
+  }
+
+  // ── admin_approve_registration — aprueba un registro y crea el usuario ──
+  if (action === 'admin_approve_registration') {
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
+
+    const regId = e.parameter.regId;
+    const plan = e.parameter.plan || 'NORMAL';
+    const apiKey = decodeURIComponent(e.parameter.apiKey || '');
+    const maxDevices = Number(e.parameter.maxDevices) || 2;
+    const allowedTemplates = decodeURIComponent(e.parameter.allowedTemplates || '');
+
+    if (!regId) return createResponse({ error: 'Falta regId' });
+
+    try {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const regSheet = ss.getSheetByName(SHEET_REGISTROS);
+      if (!regSheet) return createResponse({ error: 'Hoja de registros no encontrada' });
+
+      const data = regSheet.getDataRange().getValues();
+      const headers = data[0];
+      const idCol = headers.indexOf('ID_Registro');
+      const estadoCol = headers.indexOf('Estado');
+
+      let regData = null;
+      let regRow = -1;
+      for (let i = 1; i < data.length; i++) {
+        if (String(data[i][idCol]) === String(regId)) {
+          regData = {};
+          headers.forEach((h, idx) => { regData[h] = data[i][idx]; });
+          regRow = i + 1;
+          break;
+        }
+      }
+      if (!regData) return createResponse({ error: 'Registro no encontrado: ' + regId });
+      if (String(regData.Estado).toLowerCase() === 'aprobado') {
+        return createResponse({ error: 'Este registro ya fue aprobado' });
+      }
+
+      // Generar ID_Medico (MED + timestamp corto)
+      const medicoId = 'MED' + Date.now().toString(36).toUpperCase();
+
+      // Crear usuario en hoja Usuarios
+      const userSheet = ss.getSheetByName(SHEET_NAME);
+      const userHeaders = userSheet.getDataRange().getValues()[0];
+
+      const now = new Date().toISOString();
+      const userData = {
+        ID_Medico: medicoId,
+        Nombre: regData.Nombre || '',
+        Email: regData.Email || '',
+        Telefono: regData.Telefono || '',
+        Matricula: regData.Matricula || '',
+        Especialidad: regData.Especialidades || 'ALL',
+        Plan: plan,
+        Estado: 'active',
+        Fecha_Registro: now,
+        API_Key: apiKey,
+        Devices_Max: maxDevices,
+        Allowed_Templates: allowedTemplates || '',
+        Usage_Count: 0,
+        Devices_Logged: '[]',
+        Diagnostico_Pendiente: 'false',
+        Registro_Datos: JSON.stringify({
+          workplace: regData.Workplace_Data || '',
+          headerColor: regData.Header_Color || '#1a56a0',
+          footerText: regData.Footer_Text || '',
+          extraWorkplaces: regData.Extra_Workplaces || '',
+          proLogo: regData.Pro_Logo ? 'yes' : '',
+          firma: regData.Firma ? 'yes' : '',
+          logo: regData.Workplace_Logo ? 'yes' : '',
+          notas: regData.Notas || '',
+          estudios: regData.Estudios || ''
+        })
+      };
+
+      const userRow = userHeaders.map(h => (userData[h] !== undefined ? userData[h] : ''));
+      userSheet.appendRow(userRow);
+
+      // Marcar registro como aprobado
+      if (estadoCol !== -1) {
+        regSheet.getRange(regRow, estadoCol + 1).setValue('aprobado');
+      }
+      // Guardar el medicoId asignado
+      const medicoIdCol = headers.indexOf('ID_Medico_Asignado');
+      if (medicoIdCol !== -1) {
+        regSheet.getRange(regRow, medicoIdCol + 1).setValue(medicoId);
+      }
+
+      appendAdminLog(auth.username, 'approve_registration', medicoId, 'Reg: ' + regId + ' Plan: ' + plan);
+
+      return createResponse({
+        success: true,
+        medicoId: medicoId,
+        nombre: regData.Nombre,
+        email: regData.Email,
+        plan: plan,
+        message: 'Registro aprobado y usuario creado'
+      });
+    } catch(err) {
+      return createResponse({ error: 'Error aprobando registro: ' + err.message });
+    }
+  }
+
+  // ── admin_reject_registration — rechaza un registro pendiente ──
+  if (action === 'admin_reject_registration') {
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
+
+    const regId = e.parameter.regId;
+    const motivo = decodeURIComponent(e.parameter.motivo || 'Rechazado por el administrador');
+    if (!regId) return createResponse({ error: 'Falta regId' });
+
+    try {
+      const regSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_REGISTROS);
+      if (!regSheet) return createResponse({ error: 'Hoja de registros no encontrada' });
+
+      const data = regSheet.getDataRange().getValues();
+      const headers = data[0];
+      const idCol = headers.indexOf('ID_Registro');
+      const estadoCol = headers.indexOf('Estado');
+
+      for (let i = 1; i < data.length; i++) {
+        if (String(data[i][idCol]) === String(regId)) {
+          if (estadoCol !== -1) regSheet.getRange(i + 1, estadoCol + 1).setValue('rechazado');
+          const motivoCol = headers.indexOf('Motivo_Rechazo');
+          if (motivoCol !== -1) regSheet.getRange(i + 1, motivoCol + 1).setValue(motivo);
+          appendAdminLog(auth.username, 'reject_registration', regId, motivo);
+          return createResponse({ success: true, message: 'Registro rechazado' });
+        }
+      }
+      return createResponse({ error: 'Registro no encontrado: ' + regId });
+    } catch(err) {
+      return createResponse({ error: 'Error rechazando registro: ' + err.message });
+    }
+  }
+
   return createResponse({ error: 'Acción no válida' });
 }
 
@@ -695,6 +859,101 @@ function doPost(e) {
       return createResponse({ success: true });
     } catch(err) {
       return createResponse({ error: 'Error guardando diagnóstico: ' + err.message });
+    }
+  }
+
+  // ── register_doctor — registro público de un nuevo profesional ──────────
+  if (action === 'register_doctor') {
+    try {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      let regSheet = ss.getSheetByName(SHEET_REGISTROS);
+
+      // Auto-crear la hoja si no existe
+      if (!regSheet) {
+        regSheet = ss.insertSheet(SHEET_REGISTROS);
+        regSheet.appendRow([
+          'ID_Registro', 'Nombre', 'Matricula', 'Email', 'Telefono',
+          'Especialidades', 'Estudios', 'Workplace_Data', 'Workplace_Logo',
+          'Extra_Workplaces', 'Header_Color', 'Footer_Text', 'Firma', 'Pro_Logo',
+          'Notas', 'Fecha_Registro', 'Estado', 'Origen', 'ID_Medico_Asignado', 'Motivo_Rechazo'
+        ]);
+        regSheet.setFrozenRows(1);
+      }
+
+      // Verificar email duplicado
+      const email = String(payload.email || '').trim().toLowerCase();
+      if (!email || !email.includes('@')) {
+        return createResponse({ error: 'Email inválido' });
+      }
+
+      const existingData = regSheet.getDataRange().getValues();
+      const existingHeaders = existingData[0];
+      const emailCol = existingHeaders.indexOf('Email');
+      const estadoCol = existingHeaders.indexOf('Estado');
+      for (let i = 1; i < existingData.length; i++) {
+        if (String(existingData[i][emailCol]).toLowerCase() === email) {
+          const estado = String(existingData[i][estadoCol]).toLowerCase();
+          if (estado === 'pendiente') {
+            return createResponse({ error: 'Ya existe un registro pendiente con este email. Te contactaremos pronto.' });
+          }
+        }
+      }
+
+      const regId = 'REG_' + Date.now();
+      const workplaceData = JSON.stringify(payload.workplace || {});
+      const especialidades = Array.isArray(payload.especialidades) ? payload.especialidades.join(', ') : '';
+      const estudios = JSON.stringify(payload.estudios || []);
+
+      // Imágenes: guardar indicador (el base64 completo es muy largo para Sheets)
+      // Para logo/firma se guarda truncado o un flag "yes"
+      const wpLogo = payload.workplace && payload.workplace.logo ? 'yes' : '';
+      const firma = payload.firma ? 'yes' : '';
+      const proLogo = payload.proLogo ? 'yes' : '';
+
+      const row = [
+        regId,
+        payload.nombre || '',
+        payload.matricula || '',
+        email,
+        payload.telefono || '',
+        especialidades,
+        estudios,
+        workplaceData,
+        wpLogo,
+        payload.extraWorkplaces || '',
+        payload.headerColor || '#1a56a0',
+        payload.footerText || '',
+        firma,
+        proLogo,
+        payload.notas || '',
+        payload.fechaRegistro || new Date().toISOString(),
+        'pendiente',
+        payload.origen || 'formulario_web',
+        '',  // ID_Medico_Asignado (se llena al aprobar)
+        ''   // Motivo_Rechazo
+      ];
+
+      regSheet.appendRow(row);
+
+      // Notificar al admin por email (opcional, no bloquea)
+      try {
+        const adminEmail = Session.getEffectiveUser().getEmail();
+        if (adminEmail) {
+          GmailApp.sendEmail(adminEmail,
+            '📋 Nuevo registro: ' + (payload.nombre || 'Sin nombre'),
+            'Nuevo profesional registrado:\n' +
+            'Nombre: ' + (payload.nombre || '') + '\n' +
+            'Email: ' + email + '\n' +
+            'Matrícula: ' + (payload.matricula || '') + '\n' +
+            'Especialidades: ' + especialidades + '\n\n' +
+            'Revisá el panel de administración para aprobar o rechazar.'
+          );
+        }
+      } catch(emailErr) { /* no bloquear si falla el email */ }
+
+      return createResponse({ success: true, regId: regId, message: 'Registro recibido correctamente' });
+    } catch(err) {
+      return createResponse({ error: 'Error guardando registro: ' + err.message });
     }
   }
 

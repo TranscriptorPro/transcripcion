@@ -511,6 +511,67 @@ async function _handleFactorySetup(medicoId) {
         };
         localStorage.setItem('prof_data', JSON.stringify(profData));
 
+        // ── Cargar datos enriquecidos del registro (si existen) ──────────────
+        let regDatos = {};
+        try { regDatos = JSON.parse(doctor.Registro_Datos || '{}'); } catch(_) {}
+
+        // Workplace profiles (si el registro incluía datos de lugar de trabajo)
+        if (regDatos.workplace) {
+            try {
+                const wp = typeof regDatos.workplace === 'string' ? JSON.parse(regDatos.workplace) : regDatos.workplace;
+                if (wp && wp.name) {
+                    const workplaceProfiles = [{
+                        name:    wp.name    || '',
+                        address: wp.address || '',
+                        phone:   wp.phone   || '',
+                        email:   wp.email   || '',
+                        footer:  regDatos.footerText || '',
+                        logo:    '',  // logo/images se configuran desde la app
+                        professionals: [{
+                            nombre:          doctor.Nombre    || '',
+                            matricula:       doctor.Matricula || '',
+                            especialidades:  doctor.Especialidad || '',
+                            telefono:        doctor.Telefono  || '',
+                            email:           doctor.Email     || '',
+                            firma:           '',
+                            logo:            ''
+                        }]
+                    }];
+                    localStorage.setItem('workplace_profiles', JSON.stringify(workplaceProfiles));
+
+                    // Actualizar prof_data con workplace
+                    profData.workplace = wp.name || '';
+                    localStorage.setItem('prof_data', JSON.stringify(profData));
+                }
+            } catch(_) {}
+        }
+
+        // Header Color del PDF
+        if (regDatos.headerColor) {
+            profData.headerColor = regDatos.headerColor;
+            localStorage.setItem('prof_data', JSON.stringify(profData));
+        }
+
+        // Estudios seleccionados
+        if (regDatos.estudios) {
+            try {
+                const estudios = typeof regDatos.estudios === 'string' ? JSON.parse(regDatos.estudios) : regDatos.estudios;
+                if (Array.isArray(estudios) && estudios.length > 0) {
+                    profData.estudios = estudios;
+                    localStorage.setItem('prof_data', JSON.stringify(profData));
+                }
+            } catch(_) {}
+        }
+
+        // Footer text del PDF
+        if (regDatos.footerText) {
+            try {
+                const existingConfig = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+                existingConfig.footerText = regDatos.footerText;
+                localStorage.setItem('pdf_config', JSON.stringify(existingConfig));
+            } catch(_) {}
+        }
+
         // API Key (si el admin la configuró en el Sheet)
         if (doctor.API_Key) {
             localStorage.setItem('groq_api_key', doctor.API_Key);

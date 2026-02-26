@@ -27,6 +27,8 @@
 | `Allowed_Templates` | JSON Array (Texto) | Templates permitidos (vacío = todos) | `["eco_cardio","rx_torax"]` |
 | `API_Key` | Texto | API Key de Groq asignada al usuario | `gsk_abc123...` |
 | `Diagnostico_Pendiente` | Texto | Flag de diagnóstico remoto | `true`, `false` |
+| `Telefono` | Texto | Teléfono del profesional | `+54 9 11 1234-5678` |
+| `Registro_Datos` | JSON (Texto) | Datos completos del registro (workplace, firma, etc.) | `{"workplace":...}` |
 | `Notas_Admin` | Texto | Notas del administrador | Campo opcional |
 
 ### 2. `Metricas_Uso` — Historial de uso
@@ -89,6 +91,33 @@
 
 > **NOTA:** La hoja `Admin_Users` se crea automáticamente en el primer login si no existe, con un usuario admin por defecto (username: `admin`, password: `admin2026`). **Cambiar la contraseña inmediatamente después del primer deploy.**
 
+### 7. `Registros_Pendientes` — Registros de auto-inscripción de profesionales (NUEVA)
+
+| Columna | Tipo | Descripción | Ejemplo |
+|---------|------|-------------|---------|
+| `ID_Registro` | Texto | ID único | `REG_1234567890` |
+| `Nombre` | Texto | Nombre del profesional | `Dr. Juan Pérez` |
+| `Matricula` | Texto | Matrícula | `MN 12345` |
+| `Email` | Texto | Email del profesional | `juan@ejemplo.com` |
+| `Telefono` | Texto | Teléfono | `+54 9 11 1234-5678` |
+| `Especialidades` | Texto | Lista separada por comas | `Cardiología, Ecografía General` |
+| `Estudios` | JSON Array | Estudios seleccionados | `[{"nombre":"ETT","especialidad":"Cardiología"}]` |
+| `Workplace_Data` | JSON | Datos del lugar de trabajo | `{"name":"Clínica","address":"Av. X"}` |
+| `Workplace_Logo` | Texto | Indicador de logo | `yes` o vacío |
+| `Extra_Workplaces` | Texto | Lugares adicionales | `Hospital Central` |
+| `Header_Color` | Texto | Color hex encabezado PDF | `#1a56a0` |
+| `Footer_Text` | Texto | Pie de página del PDF | `Consultorio médico — Tel: ...` |
+| `Firma` | Texto | Indicador de firma | `yes` o vacío |
+| `Pro_Logo` | Texto | Indicador de logo profesional | `yes` o vacío |
+| `Notas` | Texto | Notas del profesional | Texto libre |
+| `Fecha_Registro` | Texto | ISO timestamp | `2026-02-24T15:30:00Z` |
+| `Estado` | Texto | Estado del registro | `pendiente`, `aprobado`, `rechazado` |
+| `Origen` | Texto | Origen del registro | `formulario_web` |
+| `ID_Medico_Asignado` | Texto | ID asignado al aprobar | `MED_ABC123` |
+| `Motivo_Rechazo` | Texto | Motivo si fue rechazado | Texto libre |
+
+> **NOTA:** La hoja `Registros_Pendientes` se crea automáticamente cuando el primer profesional se registra desde el formulario público (`registro.html`).
+
 ## Configuración de Apps Script
 
 1. En la hoja de cálculo, ir a **Extensiones → Apps Script**.
@@ -126,6 +155,7 @@
 | `action=save_diagnostic` | POST | Guardar diagnóstico remoto |
 | `action=update_usage` | POST | Registrar uso (transcripciones) |
 | `action=send_email` | POST | Enviar informe por email |
+| `action=register_doctor` | POST | Auto-registro de profesional |
 
 ### Admin (requiere sessionToken o adminKey)
 | Endpoint | Método | Descripción |
@@ -141,6 +171,9 @@
 | `?action=admin_request_diagnostic` | GET | Solicitar diagnóstico remoto |
 | `?action=admin_get_diagnostic` | GET | Ver último diagnóstico |
 | `?action=admin_generate_config` | GET | Generar config.js para clon |
+| `?action=admin_list_registrations` | GET | Listar registros pendientes |
+| `?action=admin_approve_registration` | GET | Aprobar registro y crear usuario |
+| `?action=admin_reject_registration` | GET | Rechazar un registro |
 
 ## Datos de Ejemplo
 

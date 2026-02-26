@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro — Transcriptor Médico Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0f766e;
+            --primary-light: #14b8a6;
+            --primary-dark: #0d5c56;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #0f172a;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --accent: #f59e0b;
+            --danger: #ef4444;
+            --success: #10b981;
+            --radius: 14px;
+            --shadow: 0 4px 24px rgba(0,0,0,0.07);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ── Header ── */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 2rem 1rem;
+            text-align: center;
+        }
+        .header h1 { font-size: 1.6rem; margin-bottom: .3rem; }
+        .header p { font-size: .9rem; opacity: .85; }
+
+        /* ── Container ── */
+        .container {
+            max-width: 780px;
+            margin: -2rem auto 2rem;
+            padding: 0 1rem;
+        }
+
+        /* ── Steps indicator ── */
+        .steps {
+            display: flex;
+            justify-content: center;
+            gap: .5rem;
+            margin-bottom: 1.5rem;
+            padding-top: 1rem;
+        }
+        .step {
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+            font-size: .78rem;
+            color: var(--text-light);
+            background: var(--card);
+            padding: .4rem .8rem;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            transition: all .3s;
+        }
+        .step.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            font-weight: 600;
+        }
+        .step.done {
+            background: #f0fdf4;
+            color: var(--success);
+            border-color: #bbf7d0;
+        }
+        .step-num {
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: .72rem; font-weight: 700;
+            background: var(--border);
+            color: var(--text-light);
+        }
+        .step.active .step-num { background: rgba(255,255,255,.25); color: white; }
+        .step.done .step-num { background: var(--success); color: white; }
+
+        /* ── Card / Section ── */
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 1.8rem;
+            margin-bottom: 1.2rem;
+            border: 1px solid var(--border);
+        }
+        .section-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+        .section-subtitle {
+            font-size: .82rem;
+            color: var(--text-light);
+            margin-bottom: 1.2rem;
+            line-height: 1.4;
+        }
+
+        /* ── Form grid ── */
+        .field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: .8rem 1.2rem;
+            margin-bottom: .8rem;
+        }
+        .field-row.triple {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+        .field-full {
+            grid-column: 1/-1;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .field-group label {
+            font-size: .8rem;
+            font-weight: 600;
+            color: var(--text-light);
+        }
+        .field-group label .req {
+            color: var(--danger);
+        }
+        .field-group input,
+        .field-group select,
+        .field-group textarea {
+            padding: 9px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: .88rem;
+            font-family: inherit;
+            background: #f8fafc;
+            transition: border-color .2s, box-shadow .2s;
+        }
+        .field-group input:focus,
+        .field-group select:focus,
+        .field-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(20,184,166,.12);
+            background: #fff;
+        }
+        .field-group textarea { resize: vertical; }
+        .field-group small {
+            font-size: .73rem;
+            color: #94a3b8;
+        }
+
+        /* ── Checkbox grid ── */
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 6px;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: .84rem;
+            padding: 6px 8px;
+            border-radius: 6px;
+            transition: background .15s;
+            cursor: pointer;
+        }
+        .checkbox-item:hover { background: #f0fdf4; }
+        .checkbox-item input[type="checkbox"] {
+            accent-color: var(--primary);
+            width: 16px; height: 16px;
+        }
+
+        /* ── Image upload ── */
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: 10px;
+            padding: 1.2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all .2s;
+            background: #fafbfc;
+            position: relative;
+        }
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: var(--primary-light);
+            background: #f0fdfa;
+        }
+        .upload-zone .upload-icon { font-size: 1.8rem; margin-bottom: .3rem; }
+        .upload-zone .upload-text { font-size: .82rem; color: var(--text-light); }
+        .upload-zone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .upload-preview {
+            margin-top: 8px;
+            text-align: center;
+        }
+        .upload-preview img {
+            max-height: 80px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        /* ── Color picker ── */
+        .color-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .color-row input[type="color"] {
+            width: 40px; height: 36px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            padding: 2px;
+        }
+        .color-preview {
+            height: 8px;
+            border-radius: 4px;
+            flex: 1;
+        }
+
+        /* ── Buttons ── */
+        .btn-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: .9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s;
+            font-family: inherit;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(15,118,110,.25);
+        }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15,118,110,.35); }
+        .btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+        .btn-secondary {
+            background: var(--card);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover { background: #f1f5f9; }
+
+        /* ── Paso oculto ── */
+        .form-step { display: none; }
+        .form-step.active { display: block; }
+
+        /* ── Success state ── */
+        .success-card {
+            text-align: center;
+            padding: 3rem 2rem;
+        }
+        .success-card .check-icon {
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            background: #f0fdf4;
+            display: flex;
+            align-items: center; justify-content: center;
+            margin: 0 auto 1.2rem;
+            font-size: 2.5rem;
+        }
+        .success-card h2 { font-size: 1.3rem; margin-bottom: .5rem; }
+        .success-card p { color: var(--text-light); font-size: .9rem; line-height: 1.5; }
+
+        /* ── Footer ── */
+        .footer {
+            text-align: center;
+            padding: 1.5rem;
+            color: var(--text-light);
+            font-size: .78rem;
+        }
+
+        /* ── Mobile ── */
+        @media (max-width: 600px) {
+            .field-row, .field-row.triple { grid-template-columns: 1fr; }
+            .steps { flex-wrap: wrap; }
+            .card { padding: 1.2rem; }
+            .btn-row { flex-direction: column; }
+            .btn { width: 100%; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ════ HEADER ════ -->
+    <div class="header">
+        <h1>📋 Registro de Profesional</h1>
+        <p>Transcriptor Médico Pro — Completá tus datos para configurar tu app</p>
+    </div>
+
+    <!-- ════ CONTAINER ════ -->
+    <div class="container">
+
+        <!-- Steps -->
+        <div class="steps">
+            <div class="step active" data-step="1"><span class="step-num">1</span> Datos personales</div>
+            <div class="step" data-step="2"><span class="step-num">2</span> Especialidades</div>
+            <div class="step" data-step="3"><span class="step-num">3</span> Lugar de trabajo</div>
+            <div class="step" data-step="4"><span class="step-num">4</span> PDF y firma</div>
+        </div>
+
+        <form id="registroForm" autocomplete="off">
+
+            <!-- ═══ PASO 1: DATOS PERSONALES ═══ -->
+            <div class="form-step active" id="step1">
+                <div class="card">
+                    <div class="section-title">👤 Datos del Profesional</div>
+                    <p class="section-subtitle">
+                        Estos datos aparecerán en todos los informes que generés.
+                        Los campos con <span style="color:var(--danger);">*</span> son obligatorios.
+                    </p>
+
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label>Nombre y Apellido <span class="req">*</span></label>
+                            <input type="text" id="regNombre" required placeholder="Dr. Juan Pérez">
+                        </div>
+                        <div class="field-group">
+                            <label>Matrícula <span class="req">*</span></label>
+                            <input type="text" id="regMatricula" required placeholder="MN 12345">
+                        </div>
+                    </div>
+
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label>Email <span class="req">*</span></label>
+                            <input type="email" id="regEmail" required placeholder="doctor@ejemplo.com">
+                        </div>
+                        <div class="field-group">
+                            <label>Teléfono</label>
+                            <input type="tel" id="regTelefono" placeholder="+54 9 11 1234-5678">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <div></div>
+                    <button type="button" class="btn btn-primary" onclick="goStep(2)">Siguiente →</button>
+                </div>
+            </div>
+
+            <!-- ═══ PASO 2: ESPECIALIDADES Y ESTUDIOS ═══ -->
+            <div class="form-step" id="step2">
+                <div class="card">
+                    <div class="section-title">🩺 Especialidades</div>
+                    <p class="section-subtitle">Seleccioná las especialidades que ejercés. Esto determina qué plantillas de estudio tendrás disponibles.</p>
+
+                    <div class="checkbox-grid" id="especialidadesGrid">
+                        <!-- Generado por JS -->
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="section-title">📋 Estudios que Realizás</div>
+                    <p class="section-subtitle">Basado en tus especialidades, seleccioná los estudios que realizás habitualmente.</p>
+
+                    <div id="estudiosGrid" style="color:var(--text-light);font-style:italic;font-size:.85rem;">
+                        Seleccioná al menos una especialidad arriba ☝️
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button type="button" class="btn btn-secondary" onclick="goStep(1)">← Anterior</button>
+                    <button type="button" class="btn btn-primary" onclick="goStep(3)">Siguiente →</button>
+                </div>
+            </div>
+
+            <!-- ═══ PASO 3: LUGAR DE TRABAJO ═══ -->
+            <div class="form-step" id="step3">
+                <div class="card">
+                    <div class="section-title">🏥 Lugar de Trabajo Principal</div>
+                    <p class="section-subtitle">Datos de tu consultorio o institución. Aparecen en el encabezado de los informes como banner.</p>
+
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label>Nombre del lugar <span class="req">*</span></label>
+                            <input type="text" id="regWpName" required placeholder="Clínica San Martín">
+                        </div>
+                        <div class="field-group">
+                            <label>Dirección</label>
+                            <input type="text" id="regWpAddress" placeholder="Av. Corrientes 1234, CABA">
+                        </div>
+                    </div>
+
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label>Teléfono del lugar</label>
+                            <input type="tel" id="regWpPhone" placeholder="(011) 4567-8901">
+                        </div>
+                        <div class="field-group">
+                            <label>Email institucional</label>
+                            <input type="email" id="regWpEmail" placeholder="info@clinica.com">
+                        </div>
+                    </div>
+
+                    <!-- Logo del lugar -->
+                    <div class="field-group" style="margin-top:.8rem;">
+                        <label>Logo del Lugar / Institución</label>
+                        <div class="upload-zone" id="logoDropZone">
+                            <div class="upload-icon">🖼️</div>
+                            <div class="upload-text">Clic o arrastrá para subir<br><small>PNG o JPG, máx 2 MB</small></div>
+                            <input type="file" id="regLogo" accept="image/png,image/jpeg,image/webp" onchange="previewImage(this, 'logoPreview')">
+                        </div>
+                        <div class="upload-preview" id="logoPreview"></div>
+                    </div>
+                </div>
+
+                <!-- Lugares adicionales (opcional) -->
+                <div class="card">
+                    <div class="section-title">➕ ¿Más lugares de trabajo?</div>
+                    <p class="section-subtitle">Si trabajás en más de un lugar, listalos acá (uno por línea). Podrás configurar sus datos en detalle desde la app.</p>
+                    <div class="field-group">
+                        <textarea id="regExtraWorkplaces" rows="3" placeholder="Hospital Central&#10;Consultorio Privado - Av. Rivadavia 5678"></textarea>
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button type="button" class="btn btn-secondary" onclick="goStep(2)">← Anterior</button>
+                    <button type="button" class="btn btn-primary" onclick="goStep(4)">Siguiente →</button>
+                </div>
+            </div>
+
+            <!-- ═══ PASO 4: PDF, FIRMA, COLOR ═══ -->
+            <div class="form-step" id="step4">
+                <div class="card">
+                    <div class="section-title">🎨 Apariencia del Informe</div>
+                    <p class="section-subtitle">Estos ajustes definen cómo se ven tus informes en PDF e impresión.</p>
+
+                    <!-- Color del encabezado -->
+                    <div class="field-group" style="margin-bottom: 1rem;">
+                        <label>Color del encabezado</label>
+                        <div class="color-row">
+                            <input type="color" id="regHeaderColor" value="#1a56a0">
+                            <div class="color-preview" id="colorPreviewBar" style="background:#1a56a0;"></div>
+                        </div>
+                        <small>Se aplica al banner superior de cada página del informe</small>
+                    </div>
+
+                    <!-- Pie de página -->
+                    <div class="field-group" style="margin-bottom: 1rem;">
+                        <label>Texto del pie de página</label>
+                        <input type="text" id="regFooterText" placeholder="Consultorio médico — Tel: (011) 4567-8901">
+                        <small>Aparece en todas las páginas, abajo</small>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="section-title">✍️ Firma</div>
+                    <p class="section-subtitle">Subí una imagen de tu firma escaneada. Aparece al pie de cada informe.</p>
+
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label>Imagen de Firma</label>
+                            <div class="upload-zone" id="firmaDropZone">
+                                <div class="upload-icon">✍️</div>
+                                <div class="upload-text">Clic o arrastrá para subir<br><small>PNG con fondo transparente ideal</small></div>
+                                <input type="file" id="regFirma" accept="image/png,image/jpeg,image/webp" onchange="previewImage(this, 'firmaPreview')">
+                            </div>
+                            <div class="upload-preview" id="firmaPreview"></div>
+                        </div>
+
+                        <div class="field-group">
+                            <label>Logo Profesional</label>
+                            <div class="upload-zone" id="proLogoDropZone">
+                                <div class="upload-icon">🩺</div>
+                                <div class="upload-text">Logo personal (opcional)<br><small>Si diferente del lugar</small></div>
+                                <input type="file" id="regProLogo" accept="image/png,image/jpeg,image/webp" onchange="previewImage(this, 'proLogoPreview')">
+                            </div>
+                            <div class="upload-preview" id="proLogoPreview"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="section-title">📝 Notas adicionales</div>
+                    <div class="field-group">
+                        <textarea id="regNotas" rows="3" placeholder="Algún dato extra que quieras comunicar al administrador..."></textarea>
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button type="button" class="btn btn-secondary" onclick="goStep(3)">← Anterior</button>
+                    <button type="button" class="btn btn-primary" id="btnSubmit" onclick="submitRegistro()">
+                        📨 Enviar Registro
+                    </button>
+                </div>
+            </div>
+
+            <!-- ═══ PASO 5: ÉXITO ═══ -->
+            <div class="form-step" id="step5">
+                <div class="card success-card">
+                    <div class="check-icon">✅</div>
+                    <h2>¡Registro enviado!</h2>
+                    <p>
+                        Tus datos fueron recibidos correctamente.<br>
+                        El administrador los revisará y te enviará el link de instalación<br>
+                        de tu app personalizada por email o WhatsApp.
+                    </p>
+                    <p style="margin-top:1rem;font-weight:600;color:var(--primary);">
+                        Revisá tu casilla en las próximas horas 📬
+                    </p>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+    <div class="footer">
+        © 2026 Transcriptor Médico Pro — Todos los derechos reservados
+    </div>
+
+    <!-- ════ JAVASCRIPT ════ -->
+    <script>
+        // ── Config ──────────────────────────────────────────────────────────────
+        const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec';
+
+        // ── Especialidades y estudios (mismos de la app) ────────────────────────
+        const ESPECIALIDADES = {
+            'Cardiología': [
+                'Ecocardiograma transtorácico (ETT)',
+                'Ecocardiograma Doppler color',
+                'Eco-Doppler cardíaco con strain',
+                'Ecocardiograma transesofágico (ETE)',
+                'Ecocardiograma de estrés (con ejercicio o fármaco)',
+                'Holter ECG (24-48h)',
+                'Monitoreo Ambulatorio de Presión Arterial (MAPA)',
+                'Ergometría / Prueba de esfuerzo',
+                'Electrocardiograma (ECG)',
+                'Consulta cardiológica'
+            ],
+            'Ecografía General': [
+                'Ecografía abdominal completa',
+                'Ecografía renal y de vías urinarias',
+                'Ecografía hepática / hepatobiliopancreática',
+                'Ecografía pelviana / ginecológica',
+                'Ecografía testicular',
+                'Ecografía de partes blandas',
+                'Ecografía tiroidea',
+                'Ecografía mamaria',
+                'Ecografía prostática (transabdominal)',
+                'Ecografía articular / musculoesquelética'
+            ],
+            'Eco-Doppler Vascular': [
+                'Eco-Doppler venoso de miembros inferiores',
+                'Eco-Doppler arterial de miembros inferiores',
+                'Eco-Doppler venoso de miembros superiores',
+                'Eco-Doppler arterial de miembros superiores',
+                'Eco-Doppler de vasos de cuello (carótidas y vertebrales)',
+                'Eco-Doppler de aorta abdominal',
+                'Eco-Doppler renal',
+                'Eco-Doppler de injertos vasculares',
+                'Eco-Doppler de fístula arteriovenosa'
+            ],
+            'Obstetricia': [
+                'Ecografía obstétrica de primer trimestre',
+                'Ecografía obstétrica de segundo trimestre (morfológica)',
+                'Ecografía obstétrica de tercer trimestre',
+                'Perfil biofísico fetal',
+                'Doppler obstétrico (arteria umbilical, uterina)',
+                'Ecografía transvaginal obstétrica',
+                'Control obstétrico / Nota de evolución'
+            ],
+            'Medicina General / Interna': [
+                'Historia clínica',
+                'Consulta médica general',
+                'Nota de evolución',
+                'Epicrisis / Resumen de internación',
+                'Control de salud / Check-up',
+                'Certificado médico'
+            ],
+            'Neumonología / Neumología': [
+                'Espirometría',
+                'Informe de polisomnografía',
+                'Consulta neumonológica'
+            ],
+            'Traumatología / Ortopedia': [
+                'Informe de radiografía ósea',
+                'Consulta traumatológica',
+                'Nota de evolución traumatológica'
+            ],
+            'Oftalmología': [
+                'Fondo de ojo',
+                'Campimetría',
+                'Consulta oftalmológica'
+            ],
+            'Dermatología': [
+                'Consulta dermatológica',
+                'Informe de biopsia de piel'
+            ],
+            'Neurología': [
+                'Electroencefalograma (EEG)',
+                'Consulta neurológica'
+            ],
+            'Endocrinología': [
+                'Consulta endocrinológica',
+                'Ecografía tiroidea con informe endocrinológico'
+            ]
+        };
+
+        let selectedEspecialidades = [];
+        let selectedEstudios = [];
+        let imageData = { logo: null, firma: null, proLogo: null };
+
+        // ── Init ────────────────────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            renderEspecialidades();
+
+            // Color preview
+            document.getElementById('regHeaderColor').addEventListener('input', (e) => {
+                document.getElementById('colorPreviewBar').style.background = e.target.value;
+            });
+
+            // Drag & drop para upload zones
+            document.querySelectorAll('.upload-zone').forEach(zone => {
+                zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
+                zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+                zone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    zone.classList.remove('dragover');
+                    const input = zone.querySelector('input[type="file"]');
+                    if (e.dataTransfer.files.length) {
+                        input.files = e.dataTransfer.files;
+                        input.dispatchEvent(new Event('change'));
+                    }
+                });
+            });
+        });
+
+        // ── Especialidades ──────────────────────────────────────────────────────
+        function renderEspecialidades() {
+            const grid = document.getElementById('especialidadesGrid');
+            grid.innerHTML = '';
+            Object.keys(ESPECIALIDADES).forEach(esp => {
+                const label = document.createElement('label');
+                label.className = 'checkbox-item';
+                label.innerHTML = `<input type="checkbox" value="${esp}" onchange="toggleEspecialidad('${esp}', this.checked)"> ${esp}`;
+                grid.appendChild(label);
+            });
+        }
+
+        function toggleEspecialidad(esp, checked) {
+            if (checked && !selectedEspecialidades.includes(esp)) {
+                selectedEspecialidades.push(esp);
+            } else if (!checked) {
+                selectedEspecialidades = selectedEspecialidades.filter(e => e !== esp);
+            }
+            renderEstudios();
+        }
+
+        function renderEstudios() {
+            const grid = document.getElementById('estudiosGrid');
+            if (selectedEspecialidades.length === 0) {
+                grid.innerHTML = '<p style="color:var(--text-light);font-style:italic;font-size:.85rem;">Seleccioná al menos una especialidad arriba ☝️</p>';
+                return;
+            }
+
+            grid.innerHTML = '';
+            const checkboxGrid = document.createElement('div');
+            checkboxGrid.className = 'checkbox-grid';
+
+            selectedEspecialidades.forEach(esp => {
+                const estudios = ESPECIALIDADES[esp] || [];
+                const groupTitle = document.createElement('div');
+                groupTitle.style.cssText = 'grid-column:1/-1;font-weight:600;font-size:.85rem;color:var(--primary);margin-top:.5rem;border-bottom:1px solid var(--border);padding-bottom:4px;';
+                groupTitle.textContent = esp;
+                checkboxGrid.appendChild(groupTitle);
+
+                estudios.forEach(est => {
+                    const label = document.createElement('label');
+                    label.className = 'checkbox-item';
+                    const isChecked = selectedEstudios.some(s => s.nombre === est);
+                    label.innerHTML = `<input type="checkbox" value="${est}" data-esp="${esp}" ${isChecked ? 'checked' : ''} onchange="toggleEstudio('${est.replace(/'/g,"\\'")}', '${esp}', this.checked)"> ${est}`;
+                    checkboxGrid.appendChild(label);
+                });
+            });
+
+            grid.appendChild(checkboxGrid);
+
+            // Botón "Seleccionar todos"
+            const btnAll = document.createElement('button');
+            btnAll.type = 'button';
+            btnAll.className = 'btn btn-secondary';
+            btnAll.style.cssText = 'margin-top:.8rem;font-size:.8rem;padding:6px 14px;';
+            btnAll.textContent = '☑️ Seleccionar todos';
+            btnAll.onclick = () => {
+                selectedEspecialidades.forEach(esp => {
+                    (ESPECIALIDADES[esp] || []).forEach(est => {
+                        if (!selectedEstudios.some(s => s.nombre === est)) {
+                            selectedEstudios.push({ nombre: est, especialidad: esp });
+                        }
+                    });
+                });
+                renderEstudios();
+            };
+            grid.appendChild(btnAll);
+        }
+
+        function toggleEstudio(nombre, esp, checked) {
+            if (checked) {
+                if (!selectedEstudios.some(s => s.nombre === nombre)) {
+                    selectedEstudios.push({ nombre, especialidad: esp });
+                }
+            } else {
+                selectedEstudios = selectedEstudios.filter(s => s.nombre !== nombre);
+            }
+        }
+
+        // ── Steps navigation ────────────────────────────────────────────────────
+        let currentStep = 1;
+
+        function goStep(n) {
+            // Validación antes de avanzar
+            if (n > currentStep) {
+                if (currentStep === 1 && !validateStep1()) return;
+                if (currentStep === 2 && !validateStep2()) return;
+                if (currentStep === 3 && !validateStep3()) return;
+            }
+
+            // Ocultar paso actual, mostrar nuevo
+            document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+            document.getElementById('step' + n)?.classList.add('active');
+
+            // Actualizar indicadores
+            document.querySelectorAll('.step').forEach(s => {
+                const sn = parseInt(s.dataset.step);
+                s.classList.remove('active', 'done');
+                if (sn === n) s.classList.add('active');
+                else if (sn < n) s.classList.add('done');
+            });
+
+            currentStep = n;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function validateStep1() {
+            const nombre = document.getElementById('regNombre').value.trim();
+            const matricula = document.getElementById('regMatricula').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            if (!nombre) { alert('Ingresá tu nombre y apellido'); document.getElementById('regNombre').focus(); return false; }
+            if (!matricula) { alert('Ingresá tu matrícula'); document.getElementById('regMatricula').focus(); return false; }
+            if (!email || !email.includes('@')) { alert('Ingresá un email válido'); document.getElementById('regEmail').focus(); return false; }
+            return true;
+        }
+
+        function validateStep2() {
+            if (selectedEspecialidades.length === 0) { alert('Seleccioná al menos una especialidad'); return false; }
+            return true;
+        }
+
+        function validateStep3() {
+            const wpName = document.getElementById('regWpName').value.trim();
+            if (!wpName) { alert('Ingresá el nombre de tu lugar de trabajo principal'); document.getElementById('regWpName').focus(); return false; }
+            return true;
+        }
+
+        // ── Image preview ───────────────────────────────────────────────────────
+        function previewImage(input, previewId) {
+            const file = input.files[0];
+            if (!file) return;
+
+            if (file.size > 2 * 1024 * 1024) {
+                alert('La imagen no puede superar 2 MB');
+                input.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const container = document.getElementById(previewId);
+                container.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+
+                // Guardar en data
+                if (input.id === 'regLogo') imageData.logo = e.target.result;
+                else if (input.id === 'regFirma') imageData.firma = e.target.result;
+                else if (input.id === 'regProLogo') imageData.proLogo = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ── Submit ──────────────────────────────────────────────────────────────
+        async function submitRegistro() {
+            const btn = document.getElementById('btnSubmit');
+            btn.disabled = true;
+            btn.textContent = '⏳ Enviando...';
+
+            const data = {
+                action: 'register_doctor',
+                // Personales
+                nombre: document.getElementById('regNombre').value.trim(),
+                matricula: document.getElementById('regMatricula').value.trim(),
+                email: document.getElementById('regEmail').value.trim(),
+                telefono: document.getElementById('regTelefono').value.trim(),
+                // Especialidades y estudios
+                especialidades: selectedEspecialidades,
+                estudios: selectedEstudios,
+                // Lugar de trabajo
+                workplace: {
+                    name: document.getElementById('regWpName').value.trim(),
+                    address: document.getElementById('regWpAddress').value.trim(),
+                    phone: document.getElementById('regWpPhone').value.trim(),
+                    email: document.getElementById('regWpEmail').value.trim(),
+                    logo: imageData.logo || null
+                },
+                extraWorkplaces: document.getElementById('regExtraWorkplaces').value.trim(),
+                // PDF config
+                headerColor: document.getElementById('regHeaderColor').value,
+                footerText: document.getElementById('regFooterText').value.trim(),
+                firma: imageData.firma || null,
+                proLogo: imageData.proLogo || null,
+                // Notas
+                notas: document.getElementById('regNotas').value.trim(),
+                // Meta
+                fechaRegistro: new Date().toISOString(),
+                origen: 'formulario_web'
+            };
+
+            try {
+                const response = await fetch(BACKEND_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    goStep(5);
+                } else {
+                    throw new Error(result.error || 'Error al enviar');
+                }
+            } catch (err) {
+                alert('Error al enviar el registro: ' + err.message + '\n\nProbá de nuevo en unos minutos.');
+                btn.disabled = false;
+                btn.textContent = '📨 Enviar Registro';
+            }
+        }
+    </script>
+</body>
+</html>
