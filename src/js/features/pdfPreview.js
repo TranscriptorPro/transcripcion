@@ -584,7 +584,7 @@ window.emailFromPreview = function () {
     const htmlBody = `
 <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
     <div style="background:#1a56a0;color:white;padding:14px 20px;border-radius:8px 8px 0 0;text-align:center;">
-        <h2 style="margin:0;font-size:18px;">${_escHtml(wpName || 'Consultorio Médico')}</h2>
+        <h2 style="margin:0;font-size:18px;text-transform:uppercase;">${_escHtml(wpName || 'Consultorio Médico')}</h2>
     </div>
     <div style="background:#f8f9fb;padding:24px 20px;border:1px solid #e3e8ef;border-top:none;border-radius:0 0 8px 8px;">
         <p style="font-size:15px;color:#333;line-height:1.6;margin:0 0 16px;">
@@ -602,10 +602,10 @@ window.emailFromPreview = function () {
             Ante cualquier consulta sobre los resultados, no dude en comunicarse con nosotros${wpPhone ? ' al <strong>' + _escHtml(wpPhone) + '</strong>' : ''}.
         </p>
         <hr style="border:none;border-top:1px solid #ddd;margin:16px 0;">
-        <p style="font-size:13px;color:#666;margin:0;line-height:1.5;">
+        <p style="font-size:13px;color:#666;margin:0;line-height:1.5;text-transform:uppercase;">
             Atentamente,<br>
-            <strong>${_escHtml(profName)}</strong><br>
-            ${_escHtml(wpName)}
+            <strong>${_escHtml(profName).toUpperCase()}</strong><br>
+            ${_escHtml(wpName).toUpperCase()}
         </p>
     </div>
     <p style="font-size:11px;color:#999;text-align:center;margin-top:12px;">
@@ -624,7 +624,7 @@ window.emailFromPreview = function () {
     if (!overlay) {
         // Fallback: mailto
         const mailSubject = encodeURIComponent(subject);
-        const mailBody = encodeURIComponent(`Se adjunta el informe de ${studyType} realizado con fecha ${studyDate}.\n\nAtte., ${profName}`);
+        const mailBody = encodeURIComponent(`Se adjunta el informe de ${studyType} realizado con fecha ${studyDate}.\n\nAtte., ${profName.toUpperCase()}`);
         window.open(`mailto:?subject=${mailSubject}&body=${mailBody}`, '_blank');
         return;
     }
@@ -728,7 +728,7 @@ window.initEmailSendModal = function () {
             }
             setTimeout(() => {
                 const mailSubject = encodeURIComponent(data.subject);
-                const mailBody = encodeURIComponent(`Se adjunta el informe de ${data.studyType} realizado con fecha ${data.studyDate}.\n\nDescargue el PDF desde la vista previa y adjúntelo manualmente.\n\nAtte., ${data.profName}`);
+                const mailBody = encodeURIComponent(`Se adjunta el informe de ${data.studyType} realizado con fecha ${data.studyDate}.\n\nDescargue el PDF desde la vista previa y adjúntelo manualmente.\n\nAtte., ${data.profName.toUpperCase()}`);
                 window.open(`mailto:${to}?subject=${mailSubject}&body=${mailBody}`, '_blank');
                 closeModal();
             }, 1500);
@@ -797,7 +797,7 @@ window.initEmailSendModal = function () {
                 document.getElementById('emailFallbackLink')?.addEventListener('click', (e) => {
                     e.preventDefault();
                     const mailSubject = encodeURIComponent(data.subject);
-                    const mailBody = encodeURIComponent(`Se adjunta el informe de ${data.studyType} realizado con fecha ${data.studyDate}.\n\nAtte., ${data.profName}`);
+                    const mailBody = encodeURIComponent(`Se adjunta el informe de ${data.studyType} realizado con fecha ${data.studyDate}.\n\nAtte., ${data.profName.toUpperCase()}`);
                     window.open(`mailto:${to}?subject=${mailSubject}&body=${mailBody}`, '_blank');
                 });
             }
