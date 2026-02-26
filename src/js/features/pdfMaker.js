@@ -441,6 +441,13 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                 const txt = node.textContent.trim();
                 if (!txt) { cy += 2; return; }
 
+                // ── Etapa 6: s/p en gris discreto ─────────────────────
+                const isSP = /^\s*s\/p\.?\s*$/i.test(txt)
+                    || /^\s*sin particularidades\.?\s*$/i.test(txt)
+                    || /^\s*sin hallazgos\b/i.test(txt)
+                    || /^\s*dentro de (lo|par[aá]metros?) normal/i.test(txt)
+                    || /^\s*normal\.?\s*$/i.test(txt);
+
                 // Verificar si hay formatos mixtos
                 const hasBold   = node.querySelector('strong, b') !== null;
                 const hasItalic = node.querySelector('em, i') !== null;
@@ -448,11 +455,18 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                 if (!hasBold && !hasItalic) {
                     // Texto plano → splitTextToSize para wrapping correcto
                     ensureSpace(8);
-                    doc.setFontSize(mainFontSize);
-                    doc.setFont(mainFont, 'normal');
-                    setBlack();
+                    if (isSP) {
+                        doc.setFontSize(mainFontSize - 1);
+                        doc.setFont(mainFont, 'italic');
+                        setGray(150);   // gris claro
+                    } else {
+                        doc.setFontSize(mainFontSize);
+                        doc.setFont(mainFont, 'normal');
+                        setBlack();
+                    }
                     const lines = doc.splitTextToSize(txt, CW);
-                    const blockH = lines.length * mainLineH;
+                    const lh = isSP ? (mainFontSize - 1) * 0.5 : mainLineH;
+                    const blockH = lines.length * lh;
                     if (cy + blockH > FOOTER_Y - 10) {
                         doc.addPage(); pageNum++;
                         if (cfgShowFooter || cfgShowPageNum) drawFooter(pageNum);
@@ -460,6 +474,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                     }
                     doc.text(lines, ML, cy);
                     cy += blockH + 2;
+                    if (isSP) { setBlack(); doc.setFontSize(mainFontSize); doc.setFont(mainFont, 'normal'); }
                 } else {
                     // Texto con bold/italic inline → segmentos
                     renderInlineParagraph(node);
@@ -583,6 +598,28 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         }
 
         drawSignature();
+
+        // ── Etapa 6: QR de autenticidad en el PDF ────────────────────
+        if (typeof generateQRCode === 'function') {
+            try {
+                const qrText = `Transcriptor Pro | ${profName} | Mat.${matricula} | ${fileDate}`;
+                const qrDataUrl = generateQRCode(qrText);
+                if (qrDataUrl) {
+                    const qrSize = 18;
+                    const qrX = ML;
+                    const qrY = FOOTER_Y - qrSize - 2;
+                    // Solo agregar si hay espacio (no solapar con el contenido)
+                    if (cy < qrY - 2) {
+                        doc.addImage(qrDataUrl, 'GIF', qrX, qrY, qrSize, qrSize);
+                        doc.setFontSize(6);
+                        setGray(140);
+                        doc.text('Generado con Transcriptor Pro', qrX + qrSize + 2, qrY + qrSize - 2);
+                        setBlack();
+                        doc.setFontSize(mainFontSize);
+                    }
+                }
+            } catch (_) { /* QR no disponible */ }
+        }
 
         // ── Descarga (File System Access API o fallback) ─────────────
         const blob = doc.output('blob');
