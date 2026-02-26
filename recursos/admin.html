@@ -1728,6 +1728,18 @@
             font-size: .88rem; font-family: inherit;
         }
         .approve-modal .btn-row { display: flex; gap: .5rem; justify-content: flex-end; margin-top: 1.2rem; }
+
+        /* ── Template selector en modal aprobación ── */
+        .tpl-pack-item { transition: all .2s; }
+        .tpl-pack-item:hover { border-color: #0ea5e9 !important; }
+        .tpl-pack-item.tpl-relevant { border-color: #0ea5e9; background: #f0f9ff; }
+        .tpl-cb-item { transition: all .15s; }
+        .tpl-cb-item:hover { border-color: #0ea5e9 !important; background: #f0f9ff !important; }
+        .tpl-cb-item input[type="checkbox"] { accent-color: #0ea5e9; }
+        .approve-pack-cb { accent-color: #0ea5e9; }
+        .approve-tpl-cb { accent-color: #0ea5e9; }
+        .approve-extra-cb { accent-color: #0ea5e9; }
+        #approveTemplateSection { max-height: 300px; overflow-y: auto; padding: .5rem; background: #fafbfc; border: 1px solid #e2e8f0; border-radius: 8px; }
     </style>
 </head>
 <body>
@@ -3247,6 +3259,91 @@
             'Quirúrgico': ['Protocolo Operatorio', 'Parte de Cirugía']
         };
 
+        // ── Mapeo de template keys agrupados por categoría (sincronizado con templates.js) ──
+        const TEMPLATE_MAP = {
+            'Neumología': [
+                { key: 'espirometria', name: 'Espirometría' },
+                { key: 'test_marcha', name: 'Test Marcha 6 min' },
+                { key: 'pletismografia', name: 'Pletismografía' },
+                { key: 'oximetria_nocturna', name: 'Oximetría Nocturna' }
+            ],
+            'Oftalmología': [
+                { key: 'campimetria', name: 'Campimetría' },
+                { key: 'oct_retinal', name: 'OCT Retinal' },
+                { key: 'topografia_corneal', name: 'Topografía Corneal' },
+                { key: 'fondo_ojo', name: 'Fondo de Ojo' }
+            ],
+            'Imágenes': [
+                { key: 'tac', name: 'TAC' },
+                { key: 'resonancia', name: 'Resonancia' },
+                { key: 'mamografia', name: 'Mamografía' },
+                { key: 'densitometria', name: 'Densitometría' },
+                { key: 'pet_ct', name: 'PET-CT' },
+                { key: 'radiografia', name: 'Radiografía' },
+                { key: 'ecografia_abdominal', name: 'Ecografía Abdominal' },
+                { key: 'eco_doppler', name: 'Eco-Doppler' }
+            ],
+            'Endoscopía': [
+                { key: 'gastroscopia', name: 'Gastroscopía' },
+                { key: 'colonoscopia', name: 'Colonoscopía' },
+                { key: 'broncoscopia', name: 'Broncoscopía' },
+                { key: 'laringoscopia', name: 'Laringoscopía' }
+            ],
+            'Cardiología': [
+                { key: 'gammagrafia_cardiaca', name: 'Gammagrafía Cardíaca' },
+                { key: 'holter', name: 'Holter' },
+                { key: 'mapa', name: 'MAPA' },
+                { key: 'cinecoro', name: 'Cinecoronariografía' },
+                { key: 'ecg', name: 'ECG' },
+                { key: 'eco_stress', name: 'Eco-Stress' },
+                { key: 'ett', name: 'Ecocardiograma TT' }
+            ],
+            'Ginecología': [
+                { key: 'pap', name: 'PAP' },
+                { key: 'colposcopia', name: 'Colposcopía' }
+            ],
+            'Neurología': [
+                { key: 'electromiografia', name: 'Electromiografía' },
+                { key: 'polisomnografia', name: 'Polisomnografía' }
+            ],
+            'ORL': [
+                { key: 'naso', name: 'Nasofibroscopía' },
+                { key: 'endoscopia_otologica', name: 'Endoscopía Otológica' }
+            ],
+            'Quirúrgico': [
+                { key: 'protocolo_quirurgico', name: 'Protocolo Quirúrgico' }
+            ],
+            'General': [
+                { key: 'nota_evolucion', name: 'Nota de Evolución' },
+                { key: 'epicrisis', name: 'Epicrisis' },
+                { key: 'generico', name: 'Informe Genérico' }
+            ]
+        };
+
+        // ── Mapeo: especialidad del formulario de registro → categoría(s) de plantillas ──
+        const FORM_ESP_TO_TEMPLATE_CAT = {
+            'Cardiología': ['Cardiología'],
+            'Ecografía General': ['Imágenes'],
+            'Eco-Doppler Vascular': ['Imágenes'],
+            'Diagnóstico por Imágenes': ['Imágenes'],
+            'Gastroenterología / Endoscopía': ['Endoscopía'],
+            'ORL (Otorrinolaringología)': ['ORL'],
+            'Ginecología': ['Ginecología'],
+            'Obstetricia': [],
+            'Neumonología / Neumología': ['Neumología'],
+            'Neurología': ['Neurología'],
+            'Oftalmología': ['Oftalmología'],
+            'Cirugía / Quirúrgico': ['Quirúrgico'],
+            'Medicina General / Interna': ['General'],
+            'Traumatología / Ortopedia': [],
+            'Dermatología': [],
+            'Endocrinología': [],
+            'Urología': []
+        };
+
+        // ── Dispositivos por plan ──
+        const DEVICES_POR_PLAN = { NORMAL: 2, PRO: 5, CLINIC: 999, TRIAL: 2 };
+
         // ========== EDITAR USUARIO ==========
 
         async function openEditUserModal(userId) {
@@ -4151,25 +4248,205 @@
             if (!reg) return;
 
             document.getElementById('approveRegId').value = regId;
+            // Guardar especialidades del registro
+            const espStr = reg.Especialidades || '';
+            document.getElementById('approveRegEspecialidades').value = espStr;
+
             document.getElementById('approveModalInfo').textContent =
                 `Aprobar a ${reg.Nombre || 'Sin nombre'} (${reg.Email || '—'}) — Matrícula: ${reg.Matricula || '—'}`;
             document.getElementById('approvePlan').value = 'NORMAL';
-            document.getElementById('approveMaxDevices').value = '2';
             document.getElementById('approveApiKey').value = '';
-            document.getElementById('approveTemplates').value = '';
             document.getElementById('approveModalOverlay').classList.add('show');
+            updateApproveTemplateUI();
         }
 
         function closeApproveModal() {
             document.getElementById('approveModalOverlay').classList.remove('show');
         }
 
+        /** Obtiene las categorías de plantillas relevantes para las especialidades del doctor */
+        function _getDoctorTemplateCategories() {
+            const espStr = document.getElementById('approveRegEspecialidades').value || '';
+            const esps = espStr.split(',').map(s => s.trim()).filter(Boolean);
+            const cats = new Set();
+            esps.forEach(esp => {
+                const mapped = FORM_ESP_TO_TEMPLATE_CAT[esp];
+                if (mapped) mapped.forEach(c => cats.add(c));
+            });
+            // Siempre incluir General como opción
+            cats.add('General');
+            return cats;
+        }
+
+        /** Renderiza la sección de plantillas según el plan seleccionado */
+        function updateApproveTemplateUI() {
+            const plan = document.getElementById('approvePlan').value;
+            const section = document.getElementById('approveTemplateSection');
+            const devicesInfo = document.getElementById('approveDevicesInfo');
+            const devices = DEVICES_POR_PLAN[plan] || 2;
+            devicesInfo.textContent = devices >= 999 ? '∞ (ilimitados)' : devices;
+
+            const doctorCats = _getDoctorTemplateCategories();
+            const allCats = Object.keys(TEMPLATE_MAP);
+
+            if (plan === 'CLINIC') {
+                // CLINIC: seleccionar packs (categorías completas), máx 3
+                let html = `
+                    <label style="font-weight:600;font-size:.85rem;">📦 Packs de especialidad <span style="color:#94a3b8;font-weight:400;">(máx. 3)</span></label>
+                    <div id="approvePackCounter" style="font-size:.78rem;color:#64748b;margin:.3rem 0;">0/3 packs seleccionados</div>
+                    <div class="tpl-pack-grid" style="display:grid;gap:.4rem;margin-top:.4rem;">
+                `;
+                allCats.forEach(cat => {
+                    const templates = TEMPLATE_MAP[cat];
+                    const isRelevant = doctorCats.has(cat);
+                    html += `
+                        <label class="tpl-pack-item ${isRelevant ? 'tpl-relevant' : ''}" style="display:flex;align-items:flex-start;gap:.5rem;padding:.5rem .7rem;background:#f8fafc;border:1px solid ${isRelevant ? '#0ea5e9' : '#e2e8f0'};border-radius:8px;cursor:pointer;transition:all .2s;">
+                            <input type="checkbox" class="approve-pack-cb" value="${cat}" ${isRelevant ? 'checked' : ''} onchange="onPackChange()">
+                            <div style="flex:1;">
+                                <div style="font-weight:600;font-size:.83rem;">${cat}</div>
+                                <div style="font-size:.73rem;color:#94a3b8;">${templates.map(t => t.name).join(', ')}</div>
+                            </div>
+                            <span style="font-size:.7rem;color:#64748b;white-space:nowrap;">${templates.length} plantillas</span>
+                        </label>
+                    `;
+                });
+                html += '</div>';
+                section.innerHTML = html;
+                onPackChange();
+            } else if (plan === 'PRO') {
+                // PRO: todas las plantillas de sus especialidades (auto), + extras opcionales
+                const autoKeys = [];
+                const autoNames = [];
+                doctorCats.forEach(cat => {
+                    (TEMPLATE_MAP[cat] || []).forEach(t => {
+                        autoKeys.push(t.key);
+                        autoNames.push(t.name);
+                    });
+                });
+
+                let html = `
+                    <label style="font-weight:600;font-size:.85rem;">📋 Plantillas incluidas por especialidad</label>
+                    <div style="font-size:.78rem;color:#0f766e;margin:.3rem 0;">✅ ${autoKeys.length} plantillas de sus especialidades (incluidas automáticamente)</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:4px;margin:.4rem 0 .8rem;">
+                        ${autoNames.map(n => `<span class="badge badge-specialty">${escapeHtml(n)}</span>`).join('')}
+                    </div>
+                `;
+
+                // Plantillas extra (de otras categorías)
+                const otherCats = allCats.filter(c => !doctorCats.has(c));
+                if (otherCats.length > 0) {
+                    html += `
+                        <label style="font-weight:600;font-size:.85rem;">➕ Plantillas extra <span style="color:#94a3b8;font-weight:400;">(opcional, de otras especialidades)</span></label>
+                        <div class="tpl-extras-grid" style="margin-top:.4rem;">
+                    `;
+                    otherCats.forEach(cat => {
+                        html += `<div style="margin-bottom:.5rem;"><div style="font-weight:600;font-size:.78rem;color:#64748b;margin-bottom:.2rem;">${cat}</div><div style="display:flex;flex-wrap:wrap;gap:4px;">`;
+                        (TEMPLATE_MAP[cat] || []).forEach(t => {
+                            html += `
+                                <label class="tpl-cb-item" style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:.78rem;cursor:pointer;">
+                                    <input type="checkbox" class="approve-extra-cb" value="${t.key}"> ${escapeHtml(t.name)}
+                                </label>
+                            `;
+                        });
+                        html += '</div></div>';
+                    });
+                    html += '</div>';
+                }
+                section.innerHTML = html;
+            } else {
+                // NORMAL / TRIAL: elegir hasta 3 plantillas individuales de sus especialidades
+                const maxTpl = 3;
+                let html = `
+                    <label style="font-weight:600;font-size:.85rem;">📋 Plantillas permitidas <span style="color:#94a3b8;font-weight:400;">(máx. ${maxTpl})</span></label>
+                    <div id="approveTplCounter" style="font-size:.78rem;color:#64748b;margin:.3rem 0;">0/${maxTpl} seleccionadas</div>
+                    <div class="tpl-individual-grid" style="margin-top:.4rem;">
+                `;
+
+                // Primero las categorías del doctor
+                const orderedCats = [...doctorCats, ...allCats.filter(c => !doctorCats.has(c))];
+                const seen = new Set();
+                orderedCats.forEach(cat => {
+                    if (seen.has(cat)) return;
+                    seen.add(cat);
+                    const isRelevant = doctorCats.has(cat);
+                    html += `<div style="margin-bottom:.5rem;${!isRelevant ? 'opacity:.5;' : ''}">
+                        <div style="font-weight:600;font-size:.78rem;color:${isRelevant ? '#0f766e' : '#94a3b8'};margin-bottom:.2rem;">${cat} ${isRelevant ? '★' : ''}</div>
+                        <div style="display:flex;flex-wrap:wrap;gap:4px;">`;
+                    (TEMPLATE_MAP[cat] || []).forEach(t => {
+                        html += `
+                            <label class="tpl-cb-item" style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:${isRelevant ? '#f0fdf4' : '#f8fafc'};border:1px solid ${isRelevant ? '#86efac' : '#e2e8f0'};border-radius:6px;font-size:.78rem;cursor:pointer;">
+                                <input type="checkbox" class="approve-tpl-cb" value="${t.key}" ${!isRelevant ? 'disabled' : ''} onchange="onTplChange(${maxTpl})"> ${escapeHtml(t.name)}
+                            </label>
+                        `;
+                    });
+                    html += '</div></div>';
+                });
+                html += '</div>';
+                section.innerHTML = html;
+                onTplChange(maxTpl);
+            }
+        }
+
+        /** Maneja cambio en checkboxes de templates individuales (NORMAL/TRIAL) */
+        function onTplChange(max) {
+            const cbs = document.querySelectorAll('.approve-tpl-cb');
+            const checked = Array.from(cbs).filter(cb => cb.checked);
+            const counter = document.getElementById('approveTplCounter');
+            if (counter) counter.textContent = `${checked.length}/${max} seleccionadas`;
+
+            // Deshabilitar unchecked si se alcanzó el máximo
+            cbs.forEach(cb => {
+                if (!cb.checked && !cb.disabled) {
+                    cb.disabled = checked.length >= max;
+                    cb.closest('label').style.opacity = checked.length >= max ? '.4' : '1';
+                }
+                if (cb.checked) {
+                    cb.disabled = false;
+                    cb.closest('label').style.opacity = '1';
+                }
+            });
+
+            // Actualizar color del contador
+            if (counter) {
+                counter.style.color = checked.length >= max ? '#dc2626' : '#64748b';
+            }
+        }
+
+        /** Maneja cambio en checkboxes de packs (CLINIC) */
+        function onPackChange() {
+            const max = 3;
+            const cbs = document.querySelectorAll('.approve-pack-cb');
+            const checked = Array.from(cbs).filter(cb => cb.checked);
+            const counter = document.getElementById('approvePackCounter');
+            if (counter) counter.textContent = `${checked.length}/${max} packs seleccionados`;
+
+            cbs.forEach(cb => {
+                if (!cb.checked) {
+                    cb.disabled = checked.length >= max;
+                    cb.closest('label').style.opacity = checked.length >= max ? '.4' : '1';
+                }
+                if (cb.checked) {
+                    cb.disabled = false;
+                    cb.closest('label').style.opacity = '1';
+                    cb.closest('label').style.borderColor = '#0ea5e9';
+                    cb.closest('label').style.background = '#f0f9ff';
+                }
+                if (!cb.checked) {
+                    cb.closest('label').style.borderColor = '#e2e8f0';
+                    cb.closest('label').style.background = '#f8fafc';
+                }
+            });
+
+            if (counter) {
+                counter.style.color = checked.length >= max ? '#dc2626' : '#64748b';
+            }
+        }
+
         async function confirmApproval() {
             const regId = document.getElementById('approveRegId').value;
             const plan = document.getElementById('approvePlan').value;
             const apiKey = document.getElementById('approveApiKey').value.trim();
-            const maxDevices = document.getElementById('approveMaxDevices').value;
-            const templates = document.getElementById('approveTemplates').value.trim();
+            const maxDevices = DEVICES_POR_PLAN[plan] || 2;
 
             if (!apiKey) {
                 await dashAlert('Debés ingresar una API Key para este profesional', '🔑');
@@ -4177,13 +4454,47 @@
                 return;
             }
 
+            // Recopilar plantillas según plan
+            let selectedTemplates = [];
+
+            if (plan === 'CLINIC') {
+                const packs = Array.from(document.querySelectorAll('.approve-pack-cb:checked')).map(cb => cb.value);
+                if (packs.length === 0) {
+                    await dashAlert('Seleccioná al menos 1 pack de especialidad', '📦');
+                    return;
+                }
+                packs.forEach(cat => {
+                    (TEMPLATE_MAP[cat] || []).forEach(t => selectedTemplates.push(t.key));
+                });
+            } else if (plan === 'PRO') {
+                // Auto: todas las de sus especialidades
+                const doctorCats = _getDoctorTemplateCategories();
+                doctorCats.forEach(cat => {
+                    (TEMPLATE_MAP[cat] || []).forEach(t => selectedTemplates.push(t.key));
+                });
+                // + extras
+                const extras = Array.from(document.querySelectorAll('.approve-extra-cb:checked')).map(cb => cb.value);
+                selectedTemplates.push(...extras);
+            } else {
+                // NORMAL / TRIAL
+                selectedTemplates = Array.from(document.querySelectorAll('.approve-tpl-cb:checked')).map(cb => cb.value);
+                if (selectedTemplates.length === 0) {
+                    await dashAlert('Seleccioná al menos 1 plantilla', '📋');
+                    return;
+                }
+            }
+
+            // Deduplicate
+            selectedTemplates = [...new Set(selectedTemplates)];
+            const templatesStr = JSON.stringify(selectedTemplates);
+
             const btn = document.getElementById('btnConfirmApprove');
             btn.disabled = true;
             btn.textContent = '⏳ Procesando...';
 
             try {
                 const authStr = _getSessionAuthParams();
-                const url = `${CONFIG.scriptUrl}?action=admin_approve_registration&regId=${encodeURIComponent(regId)}&plan=${encodeURIComponent(plan)}&apiKey=${encodeURIComponent(apiKey)}&maxDevices=${encodeURIComponent(maxDevices)}&allowedTemplates=${encodeURIComponent(templates)}&${authStr}`;
+                const url = `${CONFIG.scriptUrl}?action=admin_approve_registration&regId=${encodeURIComponent(regId)}&plan=${encodeURIComponent(plan)}&apiKey=${encodeURIComponent(apiKey)}&maxDevices=${encodeURIComponent(maxDevices)}&allowedTemplates=${encodeURIComponent(templatesStr)}&${authStr}`;
 
                 const res = await fetch(url);
                 const data = await res.json();
@@ -4196,7 +4507,7 @@
                 // Ofrecer generar link
                 if (data.medicoId) {
                     const generateLink = await dashConfirm(
-                        `<b>Usuario creado:</b> ${data.medicoId}<br><br>¿Querés abrir la Fábrica de Clones para generar el link de instalación?`,
+                        `<b>Usuario creado:</b> ${data.medicoId}<br><b>Plan:</b> ${plan}<br><b>Plantillas:</b> ${selectedTemplates.length}<br><b>Dispositivos:</b> ${maxDevices >= 999 ? '∞' : maxDevices}<br><br>¿Querés abrir la Fábrica de Clones para generar el link de instalación?`,
                         '🏭'
                     );
                     if (generateLink) {
@@ -4604,14 +4915,14 @@
 
     <!-- ── Modal: Aprobar Registro ── -->
     <div class="approve-modal-overlay" id="approveModalOverlay" onclick="if(event.target===this)closeApproveModal()">
-        <div class="approve-modal">
+        <div class="approve-modal" style="max-width:640px;max-height:85vh;overflow-y:auto;">
             <h3>✅ Aprobar Registro</h3>
             <p style="font-size:.85rem;color:#64748b;margin-bottom:1rem;" id="approveModalInfo"></p>
 
             <div class="form-row">
                 <div class="form-group">
                     <label>Plan a asignar</label>
-                    <select id="approvePlan">
+                    <select id="approvePlan" onchange="updateApproveTemplateUI()">
                         <option value="NORMAL">NORMAL</option>
                         <option value="PRO">PRO</option>
                         <option value="CLINIC">CLINIC</option>
@@ -4619,8 +4930,9 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Máx. Dispositivos</label>
-                    <input type="number" id="approveMaxDevices" value="2" min="1" max="10">
+                    <label>Dispositivos</label>
+                    <div id="approveDevicesInfo" style="padding:.55rem .7rem;background:#f1f5f9;border-radius:8px;font-weight:600;font-size:.9rem;color:#334155;text-align:center;">2</div>
+                    <small style="color:#94a3b8;font-size:.73rem;">Auto-calculado según plan</small>
                 </div>
             </div>
 
@@ -4630,13 +4942,13 @@
                 <small style="color:#94a3b8;font-size:.73rem;">Pegá la API Key asignada a este profesional</small>
             </div>
 
-            <div class="form-group" style="margin-bottom:.8rem;">
-                <label>Plantillas permitidas (dejar vacío = todas)</label>
-                <input type="text" id="approveTemplates" placeholder='["eco_abdominal","eco_renal"] o vacío'>
-                <small style="color:#94a3b8;font-size:.73rem;">JSON array de keys, o vacío para ALL</small>
+            <!-- Sección dinámica de plantillas según plan -->
+            <div id="approveTemplateSection" style="margin-bottom:.8rem;">
+                <!-- Populated by updateApproveTemplateUI() -->
             </div>
 
             <input type="hidden" id="approveRegId">
+            <input type="hidden" id="approveRegEspecialidades">
 
             <div class="btn-row">
                 <button class="btn-secondary" onclick="closeApproveModal()">Cancelar</button>
