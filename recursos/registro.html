@@ -301,6 +301,195 @@
             font-size: .78rem;
         }
 
+        /* ── Workplace Accordion ── */
+        .wp-accordion {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            margin-bottom: .8rem;
+            overflow: hidden;
+            transition: all .3s ease;
+        }
+        .wp-accordion.collapsed .wp-body { display: none; }
+        .wp-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.4rem;
+            cursor: pointer;
+            background: #f8fafc;
+            border-bottom: 1px solid var(--border);
+            transition: background .2s;
+            user-select: none;
+        }
+        .wp-header:hover { background: #f0fdf4; }
+        .wp-accordion.collapsed .wp-header { border-bottom: none; }
+        .wp-header-info {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            font-weight: 600;
+            font-size: .92rem;
+        }
+        .wp-badge {
+            background: var(--primary);
+            color: white;
+            font-size: .68rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        .wp-badge.extra { background: var(--accent); }
+        .wp-header-actions {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+        }
+        .wp-chevron {
+            font-size: .8rem;
+            color: var(--text-light);
+            transition: transform .3s;
+        }
+        .wp-accordion.collapsed .wp-chevron { transform: rotate(-90deg); }
+        .wp-remove {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: .85rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            opacity: .7;
+            transition: opacity .2s;
+        }
+        .wp-remove:hover { opacity: 1; }
+        .wp-body {
+            padding: 1.4rem;
+            animation: wpSlideDown .3s ease;
+        }
+        @keyframes wpSlideDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .btn-add-wp {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: .5rem;
+            width: 100%;
+            padding: 12px;
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            background: transparent;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: .88rem;
+            cursor: pointer;
+            transition: all .2s;
+            font-family: inherit;
+            margin-bottom: 1rem;
+        }
+        .btn-add-wp:hover {
+            border-color: var(--primary-light);
+            background: #f0fdfa;
+        }
+
+        /* ── Color Palette ── */
+        .color-palette {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: .5rem;
+        }
+        .color-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .color-swatch {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all .2s;
+            position: relative;
+            box-shadow: 0 2px 6px rgba(0,0,0,.15);
+        }
+        .color-swatch:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,.25);
+        }
+        .color-swatch.selected {
+            border-color: var(--text);
+            transform: scale(1.1);
+        }
+        .color-swatch.selected::after {
+            content: '\2713';
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-shadow: 0 1px 3px rgba(0,0,0,.5);
+        }
+        .color-swatch-label {
+            font-size: .7rem;
+            color: var(--text-light);
+        }
+        .color-preview-bar {
+            height: 8px;
+            border-radius: 4px;
+            width: 100%;
+            margin-top: .6rem;
+            transition: background .3s;
+        }
+
+        /* ── Custom Modal ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.45);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            animation: modalFadeIn .2s ease;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,.2);
+            animation: modalBoxIn .25s ease;
+        }
+        @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes modalBoxIn {
+            from { opacity: 0; transform: scale(.92) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .modal-box .modal-icon { font-size: 2.5rem; margin-bottom: .8rem; }
+        .modal-box .modal-msg {
+            font-size: .92rem;
+            color: var(--text);
+            line-height: 1.5;
+            margin-bottom: 1.4rem;
+        }
+        .modal-box .modal-actions {
+            display: flex;
+            gap: .6rem;
+            justify-content: center;
+        }
+
         /* ── Mobile ── */
         @media (max-width: 600px) {
             .field-row, .field-row.triple { grid-template-columns: 1fr; }
@@ -308,6 +497,7 @@
             .card { padding: 1.2rem; }
             .btn-row { flex-direction: column; }
             .btn { width: 100%; text-align: center; }
+            .color-palette { justify-content: center; }
         }
     </style>
 </head>
@@ -398,52 +588,18 @@
 
             <!-- ═══ PASO 3: LUGAR DE TRABAJO ═══ -->
             <div class="form-step" id="step3">
-                <div class="card">
-                    <div class="section-title">🏥 Lugar de Trabajo Principal</div>
-                    <p class="section-subtitle">Datos de tu consultorio o institución. Aparecen en el encabezado de los informes como banner.</p>
-
-                    <div class="field-row">
-                        <div class="field-group">
-                            <label>Nombre del lugar <span class="req">*</span></label>
-                            <input type="text" id="regWpName" required placeholder="Clínica San Martín">
-                        </div>
-                        <div class="field-group">
-                            <label>Dirección</label>
-                            <input type="text" id="regWpAddress" placeholder="Av. Corrientes 1234, CABA">
-                        </div>
-                    </div>
-
-                    <div class="field-row">
-                        <div class="field-group">
-                            <label>Teléfono del lugar</label>
-                            <input type="tel" id="regWpPhone" placeholder="(011) 4567-8901">
-                        </div>
-                        <div class="field-group">
-                            <label>Email institucional</label>
-                            <input type="email" id="regWpEmail" placeholder="info@clinica.com">
-                        </div>
-                    </div>
-
-                    <!-- Logo del lugar -->
-                    <div class="field-group" style="margin-top:.8rem;">
-                        <label>Logo del Lugar / Institución</label>
-                        <div class="upload-zone" id="logoDropZone">
-                            <div class="upload-icon">🖼️</div>
-                            <div class="upload-text">Clic o arrastrá para subir<br><small>PNG o JPG, máx 2 MB</small></div>
-                            <input type="file" id="regLogo" accept="image/png,image/jpeg,image/webp" onchange="previewImage(this, 'logoPreview')">
-                        </div>
-                        <div class="upload-preview" id="logoPreview"></div>
-                    </div>
+                <div style="margin-bottom:.6rem;">
+                    <div class="section-title">🏥 Lugares de Trabajo</div>
+                    <p class="section-subtitle">Configurá tu/s lugar/es de trabajo. Estos datos aparecen en el encabezado de los informes.</p>
                 </div>
 
-                <!-- Lugares adicionales (opcional) -->
-                <div class="card">
-                    <div class="section-title">➕ ¿Más lugares de trabajo?</div>
-                    <p class="section-subtitle">Si trabajás en más de un lugar, listalos acá (uno por línea). Podrás configurar sus datos en detalle desde la app.</p>
-                    <div class="field-group">
-                        <textarea id="regExtraWorkplaces" rows="3" placeholder="Hospital Central&#10;Consultorio Privado - Av. Rivadavia 5678"></textarea>
-                    </div>
+                <div id="workplacesContainer">
+                    <!-- Rendered by JS (renderWorkplace) -->
                 </div>
+
+                <button type="button" class="btn-add-wp" onclick="addWorkplace()">
+                    ➕ Agregar otro lugar de trabajo
+                </button>
 
                 <div class="btn-row">
                     <button type="button" class="btn btn-secondary" onclick="goStep(2)">← Anterior</button>
@@ -459,11 +615,34 @@
 
                     <!-- Color del encabezado -->
                     <div class="field-group" style="margin-bottom: 1rem;">
-                        <label>Color del encabezado</label>
-                        <div class="color-row">
-                            <input type="color" id="regHeaderColor" value="#1a56a0">
-                            <div class="color-preview" id="colorPreviewBar" style="background:#1a56a0;"></div>
+                        <label>Color del encabezado del informe</label>
+                        <div class="color-palette" id="colorPalette">
+                            <div class="color-option">
+                                <div class="color-swatch selected" data-color="#1a56a0" style="background:#1a56a0;" onclick="selectHeaderColor('#1a56a0', this)" title="Azul"></div>
+                                <span class="color-swatch-label">Azul</span>
+                            </div>
+                            <div class="color-option">
+                                <div class="color-swatch" data-color="#0f766e" style="background:#0f766e;" onclick="selectHeaderColor('#0f766e', this)" title="Verde"></div>
+                                <span class="color-swatch-label">Verde</span>
+                            </div>
+                            <div class="color-option">
+                                <div class="color-swatch" data-color="#db2777" style="background:#db2777;" onclick="selectHeaderColor('#db2777', this)" title="Rosa"></div>
+                                <span class="color-swatch-label">Rosa</span>
+                            </div>
+                            <div class="color-option">
+                                <div class="color-swatch" data-color="#1e293b" style="background:#1e293b;" onclick="selectHeaderColor('#1e293b', this)" title="Negro"></div>
+                                <span class="color-swatch-label">Negro</span>
+                            </div>
+                            <div class="color-option">
+                                <div class="color-swatch" data-color="#b8860b" style="background:#b8860b;" onclick="selectHeaderColor('#b8860b', this)" title="Dorado"></div>
+                                <span class="color-swatch-label">Dorado</span>
+                            </div>
+                            <div class="color-option">
+                                <div class="color-swatch" data-color="#708090" style="background:#708090;" onclick="selectHeaderColor('#708090', this)" title="Plateado"></div>
+                                <span class="color-swatch-label">Plateado</span>
+                            </div>
                         </div>
+                        <div class="color-preview-bar" id="colorPreviewBar" style="background:#1a56a0;"></div>
                         <small>Se aplica al banner superior de cada página del informe</small>
                     </div>
 
@@ -538,6 +717,17 @@
 
     <div class="footer">
         © 2026 Transcriptor Médico Pro — Todos los derechos reservados
+    </div>
+
+    <!-- ════ CUSTOM MODAL ════ -->
+    <div class="modal-overlay" id="customModalOverlay">
+        <div class="modal-box">
+            <div class="modal-icon" id="customModalIcon">⚠️</div>
+            <div class="modal-msg" id="customModalMsg"></div>
+            <div class="modal-actions" id="customModalActions">
+                <button class="btn btn-primary" onclick="closeModal(true)">Aceptar</button>
+            </div>
+        </div>
     </div>
 
     <!-- ════ JAVASCRIPT ════ -->
@@ -678,22 +868,181 @@
 
         let selectedEspecialidades = [];
         let selectedEstudios = [];
-        let imageData = { logo: null, firma: null, proLogo: null };
+        let imageData = { firma: null, proLogo: null };
+        let wpLogoData = {};
+        let wpCounter = 0;
+        let selectedHeaderColor = '#1a56a0';
+        let _modalResolve = null;
+
+        // ── Custom Modal ────────────────────────────────────────────────────────
+        function showAlert(msg, icon = '⚠️') {
+            return new Promise(resolve => {
+                _modalResolve = resolve;
+                document.getElementById('customModalIcon').textContent = icon;
+                document.getElementById('customModalMsg').innerHTML = msg;
+                const actions = document.getElementById('customModalActions');
+                actions.innerHTML = '<button class="btn btn-primary" onclick="closeModal(true)">Aceptar</button>';
+                document.getElementById('customModalOverlay').classList.add('show');
+            });
+        }
+
+        function showConfirm(msg, icon = '❓') {
+            return new Promise(resolve => {
+                _modalResolve = resolve;
+                document.getElementById('customModalIcon').textContent = icon;
+                document.getElementById('customModalMsg').innerHTML = msg;
+                const actions = document.getElementById('customModalActions');
+                actions.innerHTML = `
+                    <button class="btn btn-secondary" onclick="closeModal(false)">Cancelar</button>
+                    <button class="btn btn-primary" onclick="closeModal(true)">Aceptar</button>
+                `;
+                document.getElementById('customModalOverlay').classList.add('show');
+            });
+        }
+
+        function closeModal(result) {
+            document.getElementById('customModalOverlay').classList.remove('show');
+            if (_modalResolve) { _modalResolve(result); _modalResolve = null; }
+        }
+
+        // ── Workplace Accordion ──────────────────────────────────────────────────
+        function renderWorkplace(index, collapsed) {
+            const container = document.getElementById('workplacesContainer');
+            const isMain = index === 0;
+            const div = document.createElement('div');
+            div.className = 'wp-accordion' + (collapsed ? ' collapsed' : '');
+            div.id = 'wp-' + index;
+            div.dataset.wpIndex = index;
+
+            div.innerHTML = `
+                <div class="wp-header" onclick="toggleWorkplace(${index})">
+                    <div class="wp-header-info">
+                        <span class="wp-badge ${isMain ? '' : 'extra'}">${isMain ? 'Principal' : 'Adicional'}</span>
+                        <span id="wpNameDisplay${index}">${isMain ? '🏥 Lugar de Trabajo Principal' : '🏢 Lugar adicional'}</span>
+                    </div>
+                    <div class="wp-header-actions">
+                        ${!isMain ? '<button type="button" class="wp-remove" onclick="event.stopPropagation();removeWorkplace(' + index + ')" title="Eliminar">✕</button>' : ''}
+                        <span class="wp-chevron">▾</span>
+                    </div>
+                </div>
+                <div class="wp-body">
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label>Nombre del lugar ${isMain ? '<span class="req">*</span>' : ''}</label>
+                            <input type="text" id="regWpName${index}" placeholder="Clínica San Martín" oninput="updateWpName(${index})">
+                        </div>
+                        <div class="field-group">
+                            <label>Dirección</label>
+                            <input type="text" id="regWpAddress${index}" placeholder="Av. Corrientes 1234, CABA">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label>Teléfono del lugar</label>
+                            <input type="tel" id="regWpPhone${index}" placeholder="(011) 4567-8901">
+                        </div>
+                        <div class="field-group">
+                            <label>Email institucional</label>
+                            <input type="email" id="regWpEmail${index}" placeholder="info@clinica.com">
+                        </div>
+                    </div>
+                    <div class="field-group" style="margin-top:.8rem;">
+                        <label>Logo del Lugar / Institución</label>
+                        <div class="upload-zone">
+                            <div class="upload-icon">🖼️</div>
+                            <div class="upload-text">Clic o arrastrá para subir<br><small>PNG o JPG, máx 2 MB</small></div>
+                            <input type="file" accept="image/png,image/jpeg,image/webp" onchange="previewWpLogo(this, ${index})">
+                        </div>
+                        <div class="upload-preview" id="wpLogoPreview${index}"></div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function toggleWorkplace(index) {
+            const acc = document.getElementById('wp-' + index);
+            if (!acc) return;
+            const wasCollapsed = acc.classList.contains('collapsed');
+            if (wasCollapsed) {
+                document.querySelectorAll('.wp-accordion').forEach(a => a.classList.add('collapsed'));
+                acc.classList.remove('collapsed');
+            } else {
+                acc.classList.add('collapsed');
+            }
+        }
+
+        function addWorkplace() {
+            document.querySelectorAll('.wp-accordion').forEach(a => a.classList.add('collapsed'));
+            wpCounter++;
+            renderWorkplace(wpCounter, false);
+            const el = document.getElementById('wp-' + wpCounter);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        async function removeWorkplace(index) {
+            const ok = await showConfirm('¿Eliminar este lugar de trabajo?', '🗑️');
+            if (!ok) return;
+            const el = document.getElementById('wp-' + index);
+            if (el) {
+                el.style.opacity = '0';
+                el.style.transform = 'scale(.95)';
+                el.style.transition = 'all .2s ease';
+                setTimeout(() => el.remove(), 200);
+            }
+            delete wpLogoData[index];
+        }
+
+        function updateWpName(index) {
+            const input = document.getElementById('regWpName' + index);
+            const display = document.getElementById('wpNameDisplay' + index);
+            if (input && display) {
+                const icon = index === 0 ? '🏥' : '🏢';
+                display.textContent = input.value.trim() || (icon + ' ' + (index === 0 ? 'Lugar de Trabajo Principal' : 'Lugar adicional'));
+            }
+        }
+
+        function previewWpLogo(input, index) {
+            const file = input.files[0];
+            if (!file) return;
+            if (file.size > 2 * 1024 * 1024) {
+                showAlert('La imagen no puede superar 2 MB', '📷');
+                input.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('wpLogoPreview' + index).innerHTML = '<img src="' + e.target.result + '" alt="Logo">';
+                wpLogoData[index] = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ── Color selection ──────────────────────────────────────────────────────
+        function selectHeaderColor(color, el) {
+            selectedHeaderColor = color;
+            document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+            el.classList.add('selected');
+            document.getElementById('colorPreviewBar').style.background = color;
+        }
 
         // ── Init ────────────────────────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', () => {
             renderEspecialidades();
+            renderWorkplace(0, false);
 
-            // Color preview
-            document.getElementById('regHeaderColor').addEventListener('input', (e) => {
-                document.getElementById('colorPreviewBar').style.background = e.target.value;
+            // Delegated drag & drop for all upload zones (present and future)
+            document.addEventListener('dragover', (e) => {
+                const zone = e.target.closest('.upload-zone');
+                if (zone) { e.preventDefault(); zone.classList.add('dragover'); }
             });
-
-            // Drag & drop para upload zones
-            document.querySelectorAll('.upload-zone').forEach(zone => {
-                zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
-                zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
-                zone.addEventListener('drop', (e) => {
+            document.addEventListener('dragleave', (e) => {
+                const zone = e.target.closest('.upload-zone');
+                if (zone) zone.classList.remove('dragover');
+            });
+            document.addEventListener('drop', (e) => {
+                const zone = e.target.closest('.upload-zone');
+                if (zone) {
                     e.preventDefault();
                     zone.classList.remove('dragover');
                     const input = zone.querySelector('input[type="file"]');
@@ -701,7 +1050,12 @@
                         input.files = e.dataTransfer.files;
                         input.dispatchEvent(new Event('change'));
                     }
-                });
+                }
+            });
+
+            // Close modal on overlay click
+            document.getElementById('customModalOverlay').addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) closeModal(false);
             });
         });
 
@@ -815,20 +1169,20 @@
             const nombre = document.getElementById('regNombre').value.trim();
             const matricula = document.getElementById('regMatricula').value.trim();
             const email = document.getElementById('regEmail').value.trim();
-            if (!nombre) { alert('Ingresá tu nombre y apellido'); document.getElementById('regNombre').focus(); return false; }
-            if (!matricula) { alert('Ingresá tu matrícula'); document.getElementById('regMatricula').focus(); return false; }
-            if (!email || !email.includes('@')) { alert('Ingresá un email válido'); document.getElementById('regEmail').focus(); return false; }
+            if (!nombre) { showAlert('Ingresá tu nombre y apellido', '👤'); document.getElementById('regNombre').focus(); return false; }
+            if (!matricula) { showAlert('Ingresá tu matrícula', '🪪'); document.getElementById('regMatricula').focus(); return false; }
+            if (!email || !email.includes('@')) { showAlert('Ingresá un email válido', '📧'); document.getElementById('regEmail').focus(); return false; }
             return true;
         }
 
         function validateStep2() {
-            if (selectedEspecialidades.length === 0) { alert('Seleccioná al menos una especialidad'); return false; }
+            if (selectedEspecialidades.length === 0) { showAlert('Seleccioná al menos una especialidad', '🩺'); return false; }
             return true;
         }
 
         function validateStep3() {
-            const wpName = document.getElementById('regWpName').value.trim();
-            if (!wpName) { alert('Ingresá el nombre de tu lugar de trabajo principal'); document.getElementById('regWpName').focus(); return false; }
+            const wpName = (document.getElementById('regWpName0') || {}).value || '';
+            if (!wpName.trim()) { showAlert('Ingresá el nombre de tu lugar de trabajo principal', '🏥'); const el = document.getElementById('regWpName0'); if (el) el.focus(); return false; }
             return true;
         }
 
@@ -838,7 +1192,7 @@
             if (!file) return;
 
             if (file.size > 2 * 1024 * 1024) {
-                alert('La imagen no puede superar 2 MB');
+                showAlert('La imagen no puede superar 2 MB', '📷');
                 input.value = '';
                 return;
             }
@@ -847,10 +1201,7 @@
             reader.onload = (e) => {
                 const container = document.getElementById(previewId);
                 container.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
-
-                // Guardar en data
-                if (input.id === 'regLogo') imageData.logo = e.target.result;
-                else if (input.id === 'regFirma') imageData.firma = e.target.result;
+                if (input.id === 'regFirma') imageData.firma = e.target.result;
                 else if (input.id === 'regProLogo') imageData.proLogo = e.target.result;
             };
             reader.readAsDataURL(file);
@@ -862,33 +1213,34 @@
             btn.disabled = true;
             btn.textContent = '⏳ Enviando...';
 
+            // Collect all workplaces from accordion
+            const allWorkplaces = [];
+            document.querySelectorAll('.wp-accordion').forEach(acc => {
+                const idx = acc.dataset.wpIndex;
+                allWorkplaces.push({
+                    name:    (document.getElementById('regWpName' + idx) || {}).value || '',
+                    address: (document.getElementById('regWpAddress' + idx) || {}).value || '',
+                    phone:   (document.getElementById('regWpPhone' + idx) || {}).value || '',
+                    email:   (document.getElementById('regWpEmail' + idx) || {}).value || '',
+                    logo:    wpLogoData[idx] || null
+                });
+            });
+
             const data = {
                 action: 'register_doctor',
-                // Personales
                 nombre: document.getElementById('regNombre').value.trim(),
                 matricula: document.getElementById('regMatricula').value.trim(),
                 email: document.getElementById('regEmail').value.trim(),
                 telefono: document.getElementById('regTelefono').value.trim(),
-                // Especialidades y estudios
                 especialidades: selectedEspecialidades,
                 estudios: selectedEstudios,
-                // Lugar de trabajo
-                workplace: {
-                    name: document.getElementById('regWpName').value.trim(),
-                    address: document.getElementById('regWpAddress').value.trim(),
-                    phone: document.getElementById('regWpPhone').value.trim(),
-                    email: document.getElementById('regWpEmail').value.trim(),
-                    logo: imageData.logo || null
-                },
-                extraWorkplaces: document.getElementById('regExtraWorkplaces').value.trim(),
-                // PDF config
-                headerColor: document.getElementById('regHeaderColor').value,
+                workplace: allWorkplaces[0] || {},
+                extraWorkplaces: JSON.stringify(allWorkplaces.slice(1)),
+                headerColor: selectedHeaderColor,
                 footerText: document.getElementById('regFooterText').value.trim(),
                 firma: imageData.firma || null,
                 proLogo: imageData.proLogo || null,
-                // Notas
                 notas: document.getElementById('regNotas').value.trim(),
-                // Meta
                 fechaRegistro: new Date().toISOString(),
                 origen: 'formulario_web'
             };
@@ -896,7 +1248,6 @@
             try {
                 const response = await fetch(BACKEND_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
 
@@ -908,7 +1259,7 @@
                     throw new Error(result.error || 'Error al enviar');
                 }
             } catch (err) {
-                alert('Error al enviar el registro: ' + err.message + '\n\nProbá de nuevo en unos minutos.');
+                await showAlert('Error al enviar el registro:<br><br>' + err.message + '<br><br>Probá de nuevo en unos minutos.', '❌');
                 btn.disabled = false;
                 btn.textContent = '📨 Enviar Registro';
             }
