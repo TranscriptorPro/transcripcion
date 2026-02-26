@@ -309,7 +309,10 @@ async function transcribeWithGroqParams(file, { language = 'es', model = 'whispe
             }
         }
 
-        return await res.text();
+        // RB-6: Trackear uso de API de transcripción
+        const text = await res.text();
+        if (window.apiUsageTracker) window.apiUsageTracker.trackTranscription();
+        return text;
     } catch (error) {
         if (error.name === 'AbortError') {
             throw new Error('⏱️ Timeout: el servidor no respondió en 2 minutos');

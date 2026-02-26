@@ -356,6 +356,8 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepción:
         const data = await res.json();
         const content = data?.choices?.[0]?.message?.content;
         if (!content) throw new Error('La respuesta de la IA no contiene texto válido');
+        // RB-6: Trackear uso de API de estructuración
+        if (window.apiUsageTracker) window.apiUsageTracker.trackStructuring();
         return content.trim();
     } catch (error) {
         if (error.name === 'AbortError') {
@@ -426,6 +428,10 @@ async function structureWithRetry(text, templateKey) {
             const result = await structureTranscription(text, templateKey, temperature, model);
             if (result.length < 80 && text.length > 300) {
                 throw new Error('Respuesta del LLM muy corta o incompleta');
+            }
+            // RB-5: Advertir si se usó el modelo rápido 8b como fallback
+            if (model === GROQ_MODELS[2] && idx > 0 && typeof showToast === 'function') {
+                showToast('⚠️ Se usó el modelo rápido (8b). Verificá el resultado — puede ser menos preciso.', 'warning', 6000);
             }
             return result;
         } catch (err) {

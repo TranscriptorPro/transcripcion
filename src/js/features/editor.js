@@ -25,6 +25,11 @@ if (editor) {
                 .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')            // bloques de estilo
                 .replace(/<meta[^>]*>/gi, '')                              // metas
                 .replace(/<img[^>]*>/gi, '')                               // RM-3: eliminar imágenes pegadas
+                // RB-4: Limpiar comentarios de Google Docs
+                .replace(/<sup><a[^>]*href="#cmnt[^"]*"[^>]*>[\s\S]*?<\/a><\/sup>/gi, '')  // marcadores de comentario en texto
+                .replace(/<div[^>]*><p[^>]*><a[^>]*href="#cmnt[^"]*"[^>]*>[\s\S]*?<\/a>[\s\S]*?<\/p><\/div>/gi, '') // bloques de comentario al pie
+                .replace(/<a[^>]*id="cmnt_ref[^"]*"[^>]*>[\s\S]*?<\/a>/gi, '')  // refs de comentario
+                .replace(/<a[^>]*id="cmnt\d+"[^>]*>[\s\S]*?<\/a>/gi, '')        // anclas de comentario
                 .replace(/class="[^"]*"/gi, '')                            // clases Word
                 .replace(/style="[^"]*"/gi, '')                            // estilos inline
                 .replace(/<span\s*>([\s\S]*?)<\/span>/gi, '$1')            // spans vacíos

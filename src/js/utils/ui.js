@@ -1,5 +1,63 @@
 // ============ UI UTILS & HELPERS ============
 
+// ── RB-1: Focus trap genérico para modales ──────────────────────────────
+window.trapFocusInModal = function (modal) {
+    if (!modal) return;
+    const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    modal._trapHandler = function (e) {
+        if (e.key !== 'Tab') return;
+        const focusable = Array.from(modal.querySelectorAll(FOCUSABLE)).filter(el => el.offsetParent !== null);
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last  = focusable[focusable.length - 1];
+        if (e.shiftKey) {
+            if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+        } else {
+            if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+    };
+    modal.addEventListener('keydown', modal._trapHandler);
+    // Enfocar primer elemento focusable al abrir
+    requestAnimationFrame(() => {
+        const first = modal.querySelector(FOCUSABLE);
+        if (first) first.focus();
+    });
+};
+
+window.releaseFocusTrap = function (modal) {
+    if (!modal || !modal._trapHandler) return;
+    modal.removeEventListener('keydown', modal._trapHandler);
+    delete modal._trapHandler;
+};
+
+// ── RB-1: Observer automático para modales con clase .modal-overlay ─────
+(function initModalFocusTrapObserver() {
+    window.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            // Observer para modales que usan classList.add('active')
+            const observer = new MutationObserver(() => {
+                if (modal.classList.contains('active')) {
+                    window.trapFocusInModal(modal);
+                } else {
+                    window.releaseFocusTrap(modal);
+                }
+            });
+            observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
+
+            // Observer para modales que usan style.display
+            const styleObs = new MutationObserver(() => {
+                const d = modal.style.display;
+                if (d === 'flex' || d === 'block') {
+                    window.trapFocusInModal(modal);
+                } else if (d === 'none' || d === '') {
+                    window.releaseFocusTrap(modal);
+                }
+            });
+            styleObs.observe(modal, { attributes: true, attributeFilter: ['style'] });
+        });
+    });
+})();
+
 window.escapeHtml = function (text) {
     if (!text) return '';
     return text.toString()
@@ -950,15 +1008,17 @@ window.initModals = function () {
         }
     }
 
-    // Escape key — close any open modal
+    // Escape key — close any open modal (RB-1: cierra TODOS los modales)
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            if (helpModal) helpModal.classList.remove('active');
-            const wpModal = document.getElementById('workplaceModalOverlay');
-            if (wpModal) wpModal.classList.remove('active');
-            if (patientOverlay) patientOverlay.classList.remove('active');
-            closePdfConfigModal();
-            closePrintPreviewModal();
+            // Cerrar modales con clase 'active'
+            document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+            // Cerrar modales mostrados via style.display
+            document.querySelectorAll('.modal-overlay').forEach(m => {
+                if (m.style.display === 'flex' || m.style.display === 'block') {
+                    m.style.display = 'none';
+                }
+            });
         }
     });
 }
@@ -1188,6 +1248,15 @@ document.addEventListener('keydown', (e) => {
         return;
     }
 
+    // RB-7: Ctrl+Enter — Estructurar con IA
+    if (e.ctrlKey && e.key === 'Enter') {
+        e.preventDefault();
+        if (window.appState === 'TRANSCRIBED' && typeof autoStructure === 'function') {
+            autoStructure({ silent: false });
+        }
+        return;
+    }
+
     // Ctrl+Shift+D: Descargar formato favorito
     if (e.ctrlKey && e.shiftKey && e.key === 'D') {
         e.preventDefault();
@@ -1295,4 +1364,27 @@ document.addEventListener('keydown', (e) => {
             if (restoreBtn) restoreBtn.style.display = 'none';
         });
     }
+})();
+
+// ============ RB-2: DETECCIÓN MULTI-PESTAÑA (BroadcastChannel) ============
+(function initMultiTabDetection() {
+    if (typeof BroadcastChannel === 'undefined') return; // navegador no soporta
+    const channel = new BroadcastChannel('transcriptor-pro');
+    let otherTabDetected = false;
+
+    channel.postMessage({ type: 'ping', ts: Date.now() });
+
+    channel.addEventListener('message', (e) => {
+        if (e.data?.type === 'ping') {
+            channel.postMessage({ type: 'pong', ts: Date.now() });
+        }
+        if ((e.data?.type === 'ping' || e.data?.type === 'pong') && !otherTabDetected) {
+            otherTabDetected = true;
+            if (typeof showToast === 'function') {
+                showToast('⚠️ Otra pestaña de Transcriptor está abierta. Esto puede causar conflictos con el guardado.', 'warning', 6000);
+            }
+        }
+    });
+
+    window.addEventListener('beforeunload', () => { channel.close(); });
 })();

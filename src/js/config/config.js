@@ -1,4 +1,20 @@
 /* {{CONFIG_IDENTITY}} */
+
+/**
+ * RB-3: NOTA SOBRE LICENCIA POR NAVEGADOR
+ * ────────────────────────────────────────
+ * El campo `device_id` (generado en diagnostic.js) identifica una instalación
+ * de navegador, NO un dispositivo físico. Esto significa que:
+ *  - Chrome y Firefox en el mismo PC generan device_ids distintos.
+ *  - El mismo Chrome en dos perfiles de usuario genera device_ids distintos.
+ *  - Borrar localStorage regenera un nuevo device_id.
+ *  - Sesiones privadas/incógnito NO persisten device_id.
+ *
+ * Para validar el máximo de dispositivos (maxDevices), se comparan device_ids
+ * almacenados en el backend (Google Sheets). El admin puede revocar IDs
+ * desde el panel de administración.
+ */
+
 window.CLIENT_CONFIG = {
     type: 'ADMIN',        // ADMIN, TRIAL, NORMAL, PRO
     status: 'active',
@@ -12,3 +28,32 @@ window.CLIENT_CONFIG = {
 };
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
+
+// ============ RB-6: CONTEO LOCAL DE USO DE API ============
+window.apiUsageTracker = {
+    _KEY: 'api_usage_stats',
+    _get() {
+        try { return JSON.parse(localStorage.getItem(this._KEY)) || this._default(); }
+        catch (_) { return this._default(); }
+    },
+    _default() {
+        return { transcriptions: 0, structurings: 0, lastReset: new Date().toISOString(), history: [] };
+    },
+    _save(data) { localStorage.setItem(this._KEY, JSON.stringify(data)); },
+    trackTranscription() {
+        const d = this._get();
+        d.transcriptions++;
+        d.history.push({ type: 'transcription', ts: new Date().toISOString() });
+        if (d.history.length > 200) d.history = d.history.slice(-200);
+        this._save(d);
+    },
+    trackStructuring() {
+        const d = this._get();
+        d.structurings++;
+        d.history.push({ type: 'structuring', ts: new Date().toISOString() });
+        if (d.history.length > 200) d.history = d.history.slice(-200);
+        this._save(d);
+    },
+    getStats() { return this._get(); },
+    reset() { this._save(this._default()); }
+};
