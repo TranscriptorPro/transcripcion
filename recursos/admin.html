@@ -510,6 +510,9 @@
         .badge-trial      { background: #fef3c7; color: #92400e; }
         .badge-pro        { background: #dcfce7; color: #166534; }
         .badge-enterprise { background: #ede9fe; color: #5b21b6; }
+        .badge-normal     { background: #f1f5f9; color: #475569; }
+        .badge-gift       { background: linear-gradient(135deg,#fef3c7,#fde68a); color: #92400e; border: 1px solid #f59e0b; }
+        .badge-clinic     { background: #dbeafe; color: #1e40af; }
 
         .status-badge {
             display: inline-block;
@@ -1766,6 +1769,9 @@
                     <button class="btn-primary" id="btnNewUser">
                         ➕ Nuevo Usuario
                     </button>
+                    <button class="btn-primary" id="btnGiftUser" style="background:linear-gradient(135deg,#f59e0b,#d97706);border:none;" title="Crear usuario regalo">
+                        🎁 Regalo
+                    </button>
                     <button class="btn-refresh-icon" id="btnRefresh" title="Actualizar tabla">
                         🔄
                     </button>
@@ -1850,7 +1856,10 @@
                     <select id="filterPlan" class="filter-select">
                         <option value="">Todos los planes</option>
                         <option value="trial">Trial</option>
-                        <option value="pro">Pro</option>
+                        <option value="NORMAL">Normal</option>
+                        <option value="PRO">Pro</option>
+                        <option value="CLINIC">Clínica</option>
+                        <option value="GIFT">🎁 Regalo</option>
                         <option value="enterprise">Enterprise</option>
                     </select>
                 </div>
@@ -2039,7 +2048,10 @@
                         <label for="editPlan">Plan</label>
                         <select id="editPlan">
                             <option value="trial">Trial</option>
+                            <option value="NORMAL">Normal</option>
                             <option value="pro">Pro</option>
+                            <option value="GIFT">🎁 Gift</option>
+                            <option value="CLINIC">Clínica</option>
                             <option value="enterprise">Enterprise</option>
                         </select>
                     </div>
@@ -3233,6 +3245,9 @@
             document.getElementById('cloneFactoryModal')?.addEventListener('click', function(e) {
                 if (e.target === this) closeCloneFactory();
             });
+
+            // Botón Regalo en header
+            document.getElementById('btnGiftUser')?.addEventListener('click', () => openGiftFactory());
         });
 
         // ========== NUEVO USUARIO ==========
@@ -3342,7 +3357,7 @@
         };
 
         // ── Dispositivos por plan ──
-        const DEVICES_POR_PLAN = { NORMAL: 2, PRO: 5, CLINIC: 999, TRIAL: 2 };
+        const DEVICES_POR_PLAN = { NORMAL: 2, PRO: 5, CLINIC: 999, TRIAL: 2, GIFT: 10 };
 
         // ========== EDITAR USUARIO ==========
 
@@ -3494,23 +3509,81 @@
         const CF_APP_BASE_URL = 'https://aldowagner78-cmd.github.io/transcripcion/';
 
         let _cfCurrentUser = null;
+        let _cfMode = 'normal'; // 'normal' | 'gift'
 
+        /**
+         * Abre la Fábrica de Clones en modo NORMAL (usuario existente)
+         */
         function openCloneFactory(userId) {
             const user = allUsers.find(u => String(u.ID_Medico) === String(userId));
             if (!user) return;
             _cfCurrentUser = user;
+            _cfMode = 'normal';
+
+            // Título
+            document.getElementById('cfModalTitle').textContent = '📦 Generar App para Usuario';
+
+            // Mostrar modo normal, ocultar gift
+            document.getElementById('cfModeNormal').style.display = 'block';
+            document.getElementById('cfModeGift').style.display = 'none';
+            document.getElementById('cfApiKeyLabel').textContent = '(para este usuario)';
 
             // Rellenar datos en el modal
-            document.getElementById('cfUserId').textContent      = user.ID_Medico  || '—';
-            document.getElementById('cfUserName').textContent    = user.Nombre     || '—';
-            document.getElementById('cfMatricula').textContent   = user.Matricula  || '—';
-            document.getElementById('cfEspecialidad').textContent= user.Especialidad|| '—';
-            document.getElementById('cfPlan').textContent        = (user.Plan || 'trial').toUpperCase();
-            document.getElementById('cfEmail').textContent       = user.Email      || '—';
+            document.getElementById('cfUserId').textContent      = user.ID_Medico   || '—';
+            document.getElementById('cfUserName').textContent     = user.Nombre      || '—';
+            document.getElementById('cfMatricula').textContent    = user.Matricula   || '—';
+            document.getElementById('cfEspecialidad').textContent = user.Especialidad || '—';
+            document.getElementById('cfPlan').textContent         = (user.Plan || 'trial').toUpperCase();
+            document.getElementById('cfEmail').textContent        = user.Email       || '—';
 
             // Reset estado
             document.getElementById('cfApiKey').value = user.API_Key || '';
             document.getElementById('cfLinkResult').style.display = 'none';
+
+            // Botón
+            const btn = document.getElementById('cfBtnGenerate');
+            btn.textContent = '🔗 Generar Link';
+            btn.style.background = '';
+
+            document.getElementById('cloneFactoryModal').style.display = 'flex';
+        }
+
+        /**
+         * Abre la Fábrica de Clones en modo GIFT (crear usuario regalo)
+         */
+        function openGiftFactory() {
+            _cfCurrentUser = null;
+            _cfMode = 'gift';
+
+            // Título
+            document.getElementById('cfModalTitle').textContent = '🎁 Crear Usuario Regalo';
+
+            // Mostrar modo gift, ocultar normal
+            document.getElementById('cfModeNormal').style.display = 'none';
+            document.getElementById('cfModeGift').style.display = 'block';
+            document.getElementById('cfApiKeyLabel').textContent = '(para el usuario regalo)';
+
+            // Reset campos gift
+            document.getElementById('giftNombre').value = '';
+            document.getElementById('giftEmail').value = '';
+            document.getElementById('giftMatricula').value = '';
+            document.getElementById('giftEspecialidad').value = '';
+
+            // Poblar especialidades en el select
+            const sel = document.getElementById('giftEspecialidad');
+            sel.innerHTML = '<option value="">— Seleccioná —</option>';
+            ESPECIALIDADES.forEach(esp => {
+                sel.innerHTML += `<option value="${esp}">${esp}</option>`;
+            });
+
+            // Reset estado
+            document.getElementById('cfApiKey').value = '';
+            document.getElementById('cfLinkResult').style.display = 'none';
+
+            // Botón con estilo gift
+            const btn = document.getElementById('cfBtnGenerate');
+            btn.textContent = '🎁 Crear y Generar Link';
+            btn.style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
 
             document.getElementById('cloneFactoryModal').style.display = 'flex';
         }
@@ -3518,25 +3591,117 @@
         function closeCloneFactory() {
             document.getElementById('cloneFactoryModal').style.display = 'none';
             _cfCurrentUser = null;
+            _cfMode = 'normal';
         }
 
-        // Botón Generar Link
+        /**
+         * Genera todas las template keys de TEMPLATE_MAP
+         */
+        function _getAllTemplateKeys() {
+            const keys = [];
+            Object.values(TEMPLATE_MAP).forEach(cat => {
+                cat.forEach(t => keys.push(t.key));
+            });
+            return keys;
+        }
+
+        // Botón Generar Link (Normal + Gift)
         document.getElementById('cfBtnGenerate')?.addEventListener('click', async () => {
-            if (!_cfCurrentUser) return;
-            const userId = _cfCurrentUser.ID_Medico;
             const apiKey = document.getElementById('cfApiKey').value.trim();
             const btn = document.getElementById('cfBtnGenerate');
             btn.disabled = true;
-            btn.textContent = '⏳ Generando...';
+            const originalText = btn.textContent;
+            btn.textContent = '⏳ Procesando...';
 
             try {
-                // Si hay API Key, guardarla en el Sheet
-                if (apiKey) {
-                    const updateUrl = `${CONFIG.scriptUrl}?action=admin_update_user&sessionToken=${encodeURIComponent(sessionToken)}&userId=${encodeURIComponent(userId)}&updates=${encodeURIComponent(JSON.stringify({ API_Key: apiKey }))}`;
-                    await fetch(updateUrl);
+                let userId;
+                let userName;
+                let userEmail;
+
+                if (_cfMode === 'gift') {
+                    // ── GIFT MODE: Crear usuario nuevo ──
+                    const nombre = document.getElementById('giftNombre').value.trim();
+                    const email = document.getElementById('giftEmail').value.trim();
+                    const matricula = document.getElementById('giftMatricula').value.trim();
+                    const especialidad = document.getElementById('giftEspecialidad').value;
+
+                    if (!nombre) {
+                        dashAlert('Ingresá el nombre del usuario', '⚠️');
+                        return;
+                    }
+                    if (!email) {
+                        dashAlert('Ingresá el email del usuario', '⚠️');
+                        return;
+                    }
+
+                    // Generar ID
+                    const newId = 'GIFT' + Date.now().toString(36).toUpperCase();
+                    const allTemplates = JSON.stringify(_getAllTemplateKeys());
+                    const now = new Date().toISOString();
+
+                    // Calcular fecha vencimiento (1 año desde hoy)
+                    const venc = new Date();
+                    venc.setFullYear(venc.getFullYear() + 1);
+                    const fechaVenc = venc.toISOString().split('T')[0];
+
+                    const userData = {
+                        ID_Medico: newId,
+                        Nombre: nombre,
+                        Email: email,
+                        Matricula: matricula,
+                        Especialidad: especialidad || 'ALL',
+                        Plan: 'GIFT',
+                        Estado: 'active',
+                        Fecha_Registro: now,
+                        Fecha_Vencimiento: fechaVenc,
+                        API_Key: apiKey,
+                        Devices_Max: 10,
+                        Allowed_Templates: allTemplates,
+                        Usage_Count: 0,
+                        Devices_Logged: '[]',
+                        Diagnostico_Pendiente: 'false',
+                        Notas_Admin: '🎁 Usuario regalo — creado desde Fábrica de Clones'
+                    };
+
+                    // Crear usuario en el backend
+                    const createUrl = `${CONFIG.scriptUrl}?action=admin_create_user&sessionToken=${encodeURIComponent(sessionToken)}&updates=${encodeURIComponent(JSON.stringify(userData))}`;
+                    const resp = await fetch(createUrl);
+                    const result = await resp.json();
+
+                    if (result.error) throw new Error(result.error);
+
+                    userId = newId;
+                    userName = nombre;
+                    userEmail = email;
+
+                    // Agregar a la lista local
+                    allUsers.push(userData);
+                    updateStats(allUsers);
+                    applyFilters();
+
+                    // Log
+                    const logUrl = `${CONFIG.scriptUrl}?action=admin_log_action&sessionToken=${encodeURIComponent(sessionToken)}&adminUser=${encodeURIComponent('admin')}&logAction=create_gift_user&userId=${encodeURIComponent(newId)}&details=${encodeURIComponent('GIFT: ' + nombre + ' - ' + email)}`;
+                    fetch(logUrl).catch(() => {});
+
+                } else {
+                    // ── NORMAL MODE: usuario existente ──
+                    if (!_cfCurrentUser) return;
+                    userId = _cfCurrentUser.ID_Medico;
+                    userName = _cfCurrentUser.Nombre || 'Doctor';
+                    userEmail = _cfCurrentUser.Email || '';
+
+                    // Si hay API Key, guardarla en el Sheet
+                    if (apiKey) {
+                        const updateUrl = `${CONFIG.scriptUrl}?action=admin_update_user&sessionToken=${encodeURIComponent(sessionToken)}&userId=${encodeURIComponent(userId)}&updates=${encodeURIComponent(JSON.stringify({ API_Key: apiKey }))}`;
+                        await fetch(updateUrl);
+                    }
+
+                    // Log
+                    const logUrl = `${CONFIG.scriptUrl}?action=admin_log_action&sessionToken=${encodeURIComponent(sessionToken)}&adminUser=${encodeURIComponent('admin')}&logAction=generate_link&userId=${encodeURIComponent(userId)}&details=${encodeURIComponent('Link generado' + (apiKey ? ' con API Key' : ' sin API Key'))}`;
+                    fetch(logUrl).catch(() => {});
                 }
 
-                // Generar el link
+                // ── Generar el link (común a ambos modos) ──
                 const link = `${CF_APP_BASE_URL}?id=${encodeURIComponent(userId)}`;
 
                 // Mostrar resultado
@@ -3546,15 +3711,18 @@
                 // Aviso si no hay API Key
                 document.getElementById('cfApiKeyNotice').style.display = apiKey ? 'none' : 'block';
 
-                // Log
-                const logUrl = `${CONFIG.scriptUrl}?action=admin_log_action&sessionToken=${encodeURIComponent(sessionToken)}&adminUser=${encodeURIComponent('admin')}&logAction=generate_link&userId=${encodeURIComponent(userId)}&details=${encodeURIComponent('Link generado' + (apiKey ? ' con API Key' : ' sin API Key'))}`;
-                fetch(logUrl).catch(() => {});
+                // Guardar datos para WhatsApp/Email
+                _cfCurrentUser = { ID_Medico: userId, Nombre: userName, Email: userEmail };
+
+                if (_cfMode === 'gift') {
+                    dashAlert(`✅ Usuario regalo <strong>${userName}</strong> creado exitosamente\n\nID: ${userId}\nPlan: GIFT · Todas las plantillas · 10 dispositivos`, '🎁');
+                }
 
             } catch (err) {
-                dashAlert('Error al generar link: ' + err.message, '❌');
+                dashAlert('Error: ' + err.message, '❌');
             } finally {
                 btn.disabled = false;
-                btn.textContent = '🔗 Generar Link';
+                btn.textContent = originalText;
             }
         });
 
@@ -4289,7 +4457,23 @@
             const doctorCats = _getDoctorTemplateCategories();
             const allCats = Object.keys(TEMPLATE_MAP);
 
-            if (plan === 'CLINIC') {
+            if (plan === 'GIFT') {
+                // GIFT: todas las plantillas, sin selección
+                const allTemplates = [];
+                allCats.forEach(cat => {
+                    (TEMPLATE_MAP[cat] || []).forEach(t => allTemplates.push(t.name));
+                });
+                section.innerHTML = `
+                    <div style="background:linear-gradient(135deg,#fef3c7,#fde68a);border:2px solid #f59e0b;border-radius:10px;padding:.8rem 1rem;text-align:center;">
+                        <span style="font-size:1.5rem;">🎁</span>
+                        <p style="font-weight:600;font-size:.88rem;color:#92400e;margin:.3rem 0 .2rem;">Plan REGALO — TODAS las plantillas incluidas</p>
+                        <p style="font-size:.75rem;color:#a16207;margin:0;">${allTemplates.length} plantillas · 10 dispositivos · Funcionalidades PRO</p>
+                        <div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:.5rem;justify-content:center;">
+                            ${allTemplates.map(n => `<span style="padding:2px 6px;background:#fff7ed;border:1px solid #fed7aa;border-radius:4px;font-size:.7rem;color:#9a3412;">${escapeHtml(n)}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+            } else if (plan === 'CLINIC') {
                 // CLINIC: seleccionar packs (categorías completas), máx 3
                 let html = `
                     <label style="font-weight:600;font-size:.85rem;">📦 Packs de especialidad <span style="color:#94a3b8;font-weight:400;">(máx. 3)</span></label>
@@ -4457,7 +4641,12 @@
             // Recopilar plantillas según plan
             let selectedTemplates = [];
 
-            if (plan === 'CLINIC') {
+            if (plan === 'GIFT') {
+                // GIFT: todas las plantillas
+                Object.values(TEMPLATE_MAP).forEach(cat => {
+                    cat.forEach(t => selectedTemplates.push(t.key));
+                });
+            } else if (plan === 'CLINIC') {
                 const packs = Array.from(document.querySelectorAll('.approve-pack-cb:checked')).map(cb => cb.value);
                 if (packs.length === 0) {
                     await dashAlert('Seleccioná al menos 1 pack de especialidad', '📦');
@@ -4648,7 +4837,10 @@
                                 <label>Plan *</label>
                                 <select id="editPlanEdit" required>
                                     <option value="trial">Trial</option>
+                                    <option value="NORMAL">Normal</option>
                                     <option value="pro">Pro</option>
+                                    <option value="GIFT">🎁 Gift</option>
+                                    <option value="CLINIC">Clínica</option>
                                     <option value="enterprise">Enterprise</option>
                                 </select>
                             </div>
@@ -4733,32 +4925,78 @@
     <div class="modal-overlay" id="cloneFactoryModal" style="display:none;">
         <div class="modal" style="max-width:640px;">
             <div class="modal-header">
-                <h2>📦 Generar App para Usuario</h2>
+                <h2 id="cfModalTitle">📦 Generar App para Usuario</h2>
                 <button class="modal-close" id="btnCloseCloneFactory">&times;</button>
             </div>
             <div class="modal-body">
-                <!-- Datos del médico -->
-                <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:1rem 1.2rem;margin-bottom:1.2rem;">
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem 1.5rem;font-size:.88rem;">
-                        <div><span style="color:#64748b;">ID Médico:</span> <strong id="cfUserId">—</strong></div>
-                        <div><span style="color:#64748b;">Nombre:</span> <strong id="cfUserName">—</strong></div>
-                        <div><span style="color:#64748b;">Matrícula:</span> <strong id="cfMatricula">—</strong></div>
-                        <div><span style="color:#64748b;">Plan:</span> <strong id="cfPlan">—</strong></div>
-                        <div><span style="color:#64748b;">Especialidad:</span> <strong id="cfEspecialidad">—</strong></div>
-                        <div><span style="color:#64748b;">Email:</span> <strong id="cfEmail">—</strong></div>
+
+                <!-- ═══ MODO NORMAL: Datos del médico existente ═══ -->
+                <div id="cfModeNormal">
+                    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:1rem 1.2rem;margin-bottom:1.2rem;">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem 1.5rem;font-size:.88rem;">
+                            <div><span style="color:#64748b;">ID Médico:</span> <strong id="cfUserId">—</strong></div>
+                            <div><span style="color:#64748b;">Nombre:</span> <strong id="cfUserName">—</strong></div>
+                            <div><span style="color:#64748b;">Matrícula:</span> <strong id="cfMatricula">—</strong></div>
+                            <div><span style="color:#64748b;">Plan:</span> <strong id="cfPlan">—</strong></div>
+                            <div><span style="color:#64748b;">Especialidad:</span> <strong id="cfEspecialidad">—</strong></div>
+                            <div><span style="color:#64748b;">Email:</span> <strong id="cfEmail">—</strong></div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Configuración del link -->
+                <!-- ═══ MODO GIFT: Crear usuario regalo ═══ -->
+                <div id="cfModeGift" style="display:none;">
+                    <!-- Badge regalo -->
+                    <div style="background:linear-gradient(135deg,#fef3c7,#fde68a);border:2px solid #f59e0b;border-radius:12px;padding:.8rem 1.2rem;margin-bottom:1.2rem;text-align:center;">
+                        <span style="font-size:1.8rem;">🎁</span>
+                        <h3 style="margin:.3rem 0 .2rem;color:#92400e;font-size:1rem;">Crear Usuario Regalo</h3>
+                        <p style="margin:0;font-size:.78rem;color:#a16207;">Acceso completo a TODAS las plantillas · 10 dispositivos · Plan GIFT</p>
+                    </div>
+
+                    <!-- Mini formulario -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:1rem;">
+                        <div>
+                            <label style="font-size:.8rem;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">👤 Nombre y Apellido *</label>
+                            <input type="text" id="giftNombre" placeholder="Dr. Juan Pérez" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.85rem;" required>
+                        </div>
+                        <div>
+                            <label style="font-size:.8rem;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">📧 Email *</label>
+                            <input type="email" id="giftEmail" placeholder="doctor@example.com" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.85rem;" required>
+                        </div>
+                        <div>
+                            <label style="font-size:.8rem;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">🪪 Matrícula</label>
+                            <input type="text" id="giftMatricula" placeholder="MN 12345" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.85rem;">
+                        </div>
+                        <div>
+                            <label style="font-size:.8rem;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">🩺 Especialidad</label>
+                            <select id="giftEspecialidad" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.85rem;background:#fff;">
+                                <option value="">— Seleccioná —</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Auto-configuración visual -->
+                    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.7rem 1rem;margin-bottom:1rem;">
+                        <p style="font-size:.8rem;color:#15803d;font-weight:600;margin:0 0 .3rem;">⚡ Configuración automática:</p>
+                        <div style="display:flex;gap:1rem;font-size:.78rem;color:#166534;flex-wrap:wrap;">
+                            <span>🏷️ Plan: <strong>GIFT</strong></span>
+                            <span>📄 Plantillas: <strong>TODAS (37)</strong></span>
+                            <span>📱 Dispositivos: <strong>10</strong></span>
+                            <span>📅 Estado: <strong>Activo</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══ SECCIÓN COMÚN: API Key ═══ -->
                 <div style="display:flex;flex-direction:column;gap:.8rem;margin-bottom:1rem;">
                     <div>
-                        <label style="font-size:.83rem;color:#64748b;font-weight:600;">🔑 API Key de Groq (para este usuario)</label>
+                        <label style="font-size:.83rem;color:#64748b;font-weight:600;">🔑 API Key de Groq <span id="cfApiKeyLabel">(para este usuario)</span></label>
                         <input type="text" id="cfApiKey" placeholder="gsk_..." style="width:100%;margin-top:4px;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.85rem;font-family:monospace;">
                         <small style="color:#9ca3af;font-size:.75rem;">Si lo dejás vacío, el usuario deberá ingresar su propia API Key</small>
                     </div>
                 </div>
 
-                <!-- Resultado: link generado -->
+                <!-- ═══ SECCIÓN COMÚN: Resultado link generado ═══ -->
                 <div id="cfLinkResult" style="display:none;background:#eff6ff;border:1px solid #93c5fd;border-radius:10px;padding:1rem 1.2rem;margin-bottom:.5rem;">
                     <label style="font-size:.83rem;color:#1e40af;font-weight:600;display:block;margin-bottom:6px;">🔗 Link de instalación:</label>
                     <div style="display:flex;gap:6px;align-items:center;">
@@ -4847,8 +5085,11 @@
                                 <label>Plan *</label>
                                 <select id="newPlan" required>
                                     <option value="trial">Trial (7 días gratis)</option>
-                                    <option value="pro">Pro (Pago mensual)</option>
-                                    <option value="enterprise">Enterprise (Anual)</option>
+                                    <option value="NORMAL">Normal</option>
+                                    <option value="pro">Pro</option>
+                                    <option value="GIFT">🎁 Gift (regalo)</option>
+                                    <option value="CLINIC">Clínica</option>
+                                    <option value="enterprise">Enterprise</option>
                                 </select>
                             </div>
                             <div class="field-group">
@@ -4926,6 +5167,7 @@
                         <option value="NORMAL">NORMAL</option>
                         <option value="PRO">PRO</option>
                         <option value="CLINIC">CLINIC</option>
+                        <option value="GIFT">🎁 GIFT</option>
                         <option value="TRIAL">TRIAL</option>
                     </select>
                 </div>

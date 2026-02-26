@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Test: Pricing + Carrito + Resumen Inversión</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; padding: 2rem; }
+        h1 { font-size: 1.3rem; margin-bottom: 1rem; }
+        .test-group { background: #1e293b; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
+        .test-group h2 { font-size: .95rem; color: #94a3b8; margin-bottom: .6rem; }
+        .test { display: flex; align-items: center; gap: .5rem; padding: 4px 0; font-size: .85rem; }
+        .test .icon { font-size: 1rem; }
+        .pass { color: #4ade80; }
+        .fail { color: #f87171; }
+        .warn { color: #fbbf24; }
+        .summary { margin-top: 1.5rem; padding: 1rem; border-radius: 12px; font-size: 1rem; font-weight: 700; }
+        .summary.ok { background: #065f46; color: #a7f3d0; }
+        .summary.nok { background: #7f1d1d; color: #fca5a5; }
+        #log { margin-top: 1rem; font-size: .75rem; color: #64748b; max-height: 200px; overflow-y: auto; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test: Pricing Cards + Carrito + Resumen Inversión</h1>
+    <div id="results"></div>
+    <div id="summary"></div>
+    <div id="log"></div>
+
+    <script>
+        const results = [];
+        const logEl = document.getElementById('log');
+        function log(msg) { logEl.textContent += msg + '\n'; }
+
+        function assert(name, condition, detail = '') {
+            results.push({ name, pass: !!condition, detail });
+            log(`${condition ? '✅' : '❌'} ${name}${detail ? ' — ' + detail : ''}`);
+        }
+
+        async function loadRegistroHTML() {
+            try {
+                const res = await fetch('../recursos/registro.html');
+                const html = await res.text();
+                return html;
+            } catch (e) {
+                log('Error loading registro.html: ' + e.message);
+                return null;
+            }
+        }
+
+        async function runTests() {
+            const html = await loadRegistroHTML();
+            if (!html) {
+                assert('Cargar registro.html', false, 'No se pudo cargar el archivo');
+                renderResults();
+                return;
+            }
+
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            // ═══ GRUPO 1: Estructura de pasos ═══
+            log('\n── GRUPO 1: Estructura de pasos ──');
+
+            const steps = doc.querySelectorAll('.step[data-step]');
+            assert('Stepper tiene 7 pasos', steps.length === 7, `Found: ${steps.length}`);
+
+            const stepLabels = Array.from(steps).map(s => s.textContent.trim());
+            assert('Paso 1 = Plan', stepLabels[0].includes('Plan'));
+            assert('Paso 2 = Datos', stepLabels[1].includes('Datos'));
+            assert('Paso 3 = Especialidades', stepLabels[2].includes('Especialidades'));
+            assert('Paso 4 = Trabajo', stepLabels[3].includes('Trabajo'));
+            assert('Paso 5 = PDF', stepLabels[4].includes('PDF'));
+            assert('Paso 6 = Carrito', stepLabels[5].includes('Carrito'));
+            assert('Paso 7 = Resumen', stepLabels[6].includes('Resumen'));
+
+            const formSteps = doc.querySelectorAll('.form-step');
+            assert('8 form-steps (0-7)', formSteps.length === 8, `Found: ${formSteps.length}`);
+
+            assert('Step 0 es active al inicio', doc.getElementById('step0')?.classList.contains('active'));
+
+            // ═══ GRUPO 2: Pricing Cards ═══
+            log('\n── GRUPO 2: Pricing Cards ──');
+
+            const pricingCards = doc.querySelectorAll('.pricing-card');
+            assert('3 pricing cards', pricingCards.length === 3);
+
+            const normalCard = doc.querySelector('.pricing-card[data-plan="NORMAL"]');
+            const proCard = doc.querySelector('.pricing-card[data-plan="PRO"]');
+            const clinicCard = doc.querySelector('.pricing-card[data-plan="CLINIC"]');
+
+            assert('Card NORMAL existe', !!normalCard);
+            assert('Card PRO existe', !!proCard);
+            assert('Card CLINIC existe', !!clinicCard);
+
+            assert('PRO tiene clase popular', proCard?.classList.contains('popular'));
+            assert('PRO tiene badge "Más popular"', proCard?.querySelector('.pricing-badge')?.textContent?.includes('popular'));
+
+            // Precios
+            const normalPrice = normalCard?.querySelector('.pricing-price')?.textContent;
+            const proPrice = proCard?.querySelector('.pricing-price')?.textContent;
+            const clinicPrice = clinicCard?.querySelector('.pricing-price')?.textContent;
+
+            assert('Normal = $102.99', normalPrice?.includes('102') && normalPrice?.includes('99'), normalPrice);
+            assert('Pro = $152.99', proPrice?.includes('152') && proPrice?.includes('99'), proPrice);
+            assert('Clínica = $352.99', clinicPrice?.includes('352') && clinicPrice?.includes('99'), clinicPrice);
+
+            // Subscription prices
+            const normalSub = normalCard?.querySelector('.pricing-sub')?.textContent;
+            const proSub = proCard?.querySelector('.pricing-sub')?.textContent;
+            const clinicSub = clinicCard?.querySelector('.pricing-sub')?.textContent;
+
+            assert('Normal sub $10/mes', normalSub?.includes('$10'), normalSub);
+            assert('Pro sub $15/mes', proSub?.includes('$15'), proSub);
+            assert('Clínica sub $30/mes', clinicSub?.includes('$30'), clinicSub);
+
+            // Features
+            const normalFeats = normalCard?.querySelectorAll('.pricing-features li');
+            const proFeats = proCard?.querySelectorAll('.pricing-features li');
+            const clinicFeats = clinicCard?.querySelectorAll('.pricing-features li');
+
+            assert('Normal tiene ≥8 features', normalFeats?.length >= 8, `${normalFeats?.length}`);
+            assert('Pro tiene ≥8 features', proFeats?.length >= 8, `${proFeats?.length}`);
+            assert('Clínica tiene ≥8 features', clinicFeats?.length >= 8, `${clinicFeats?.length}`);
+
+            // Key differentiators in text
+            const normalText = normalCard?.textContent || '';
+            const proText = proCard?.textContent || '';
+
+            assert('Normal: estructuración manual', normalText.includes('manual'));
+            assert('Pro: IA automática', proText.includes('automática') || proText.includes('IA'));
+            assert('Normal: NO grabar sobre editado', normalText.includes('Grabar sobre'));
+            assert('Pro: SÍ grabar sobre editado', proText.includes('Grabar sobre'));
+
+            // Select button
+            assert('Normal tiene botón seleccionar', !!normalCard?.querySelector('.pricing-select-btn'));
+            assert('Pro tiene botón seleccionar', !!proCard?.querySelector('.pricing-select-btn'));
+            assert('Clínica tiene botón seleccionar', !!clinicCard?.querySelector('.pricing-select-btn'));
+
+            // Botón next disabled inicialmente
+            const btnNext = doc.getElementById('btnStep0Next');
+            assert('Botón siguiente disabled al inicio', btnNext?.disabled === true);
+
+            // ═══ GRUPO 3: Paso 5 - Carrito ═══
+            log('\n── GRUPO 3: Paso 5 - Carrito ──');
+
+            const step5 = doc.getElementById('step5');
+            assert('Step 5 existe (carrito)', !!step5);
+            assert('Carrito tiene sección plantillas', !!step5?.querySelector('#cartTemplatesSection'));
+            assert('Carrito tiene sección dispositivos', !!step5?.querySelector('#cartDevicesSection'));
+            assert('Carrito tiene resumen items', !!step5?.querySelector('#cartSummaryItems'));
+            assert('Carrito tiene total addons', !!step5?.querySelector('#cartTotalAddons'));
+            assert('Carrito tiene plan name placeholder', !!step5?.querySelector('#cartPlanName'));
+            assert('Carrito tiene plan includes', !!step5?.querySelector('#cartPlanIncludes'));
+
+            const step5Text = step5?.textContent || '';
+            assert('Carrito menciona pago único', step5Text.includes('único') || step5Text.includes('siempre'));
+            assert('Dispositivo extra $8.99', step5Text.includes('8.99'));
+
+            // ═══ GRUPO 4: Paso 6 - Resumen Inversión ═══
+            log('\n── GRUPO 4: Paso 6 - Resumen de Inversión ──');
+
+            const step6 = doc.getElementById('step6');
+            assert('Step 6 existe (inversión)', !!step6);
+            assert('Tiene bloque pago único', !!step6?.querySelector('#investOneTimeItems'));
+            assert('Tiene total pago único', !!step6?.querySelector('#investOneTimeTotal'));
+            assert('Tiene toggle mensual/anual', step6?.querySelectorAll('.invest-toggle-btn')?.length === 2);
+            assert('Tiene items suscripción', !!step6?.querySelector('#investSubItems'));
+            assert('Tiene total suscripción', !!step6?.querySelector('#investSubTotal'));
+            assert('Tiene total hoy', !!step6?.querySelector('#investTodayTotal'));
+            assert('Tiene nota renovación', !!step6?.querySelector('#investRenewalNote'));
+
+            const toggleBtns = step6?.querySelectorAll('.invest-toggle-btn');
+            const monthlyBtn = Array.from(toggleBtns || []).find(b => b.dataset.billing === 'monthly');
+            const annualBtn = Array.from(toggleBtns || []).find(b => b.dataset.billing === 'annual');
+            assert('Botón mensual existe', !!monthlyBtn);
+            assert('Botón anual existe', !!annualBtn);
+            assert('Botón mensual active por defecto', monthlyBtn?.classList.contains('active'));
+            assert('Anual tiene save badge', !!annualBtn?.querySelector('.save-badge'));
+
+            // ═══ GRUPO 5: Paso 7 - Éxito ═══
+            log('\n── GRUPO 5: Paso 7 - Éxito ──');
+
+            const step7 = doc.getElementById('step7');
+            assert('Step 7 existe (éxito)', !!step7);
+            assert('Éxito tiene resumen plan', !!step7?.querySelector('#successPlanSummary'));
+
+            // ═══ GRUPO 6: JavaScript en el HTML ═══
+            log('\n── GRUPO 6: JavaScript ──');
+
+            const scripts = doc.querySelectorAll('script');
+            const mainScript = Array.from(scripts).find(s => s.textContent.includes('PRICING'));
+            assert('Script con PRICING existe', !!mainScript);
+
+            const jsText = mainScript?.textContent || '';
+
+            // Pricing constants
+            assert('PRICING.NORMAL definido', jsText.includes('NORMAL'));
+            assert('PRICING.PRO definido', jsText.includes('PRO'));
+            assert('PRICING.CLINIC definido', jsText.includes('CLINIC'));
+
+            // Prices
+            assert('License Normal 102.99', jsText.includes('102.99'));
+            assert('License Pro 152.99', jsText.includes('152.99'));
+            assert('License Clinic 352.99', jsText.includes('352.99'));
+            assert('Monthly Normal 10', /monthly:\s*10[^0-9]/.test(jsText));
+            assert('Monthly Pro 15', /monthly:\s*15[^0-9]/.test(jsText));
+            assert('Monthly Clinic 30', /monthly:\s*30[^0-9]/.test(jsText));
+            assert('Annual Normal 100', /annual:\s*100[^0-9]/.test(jsText));
+            assert('Annual Pro 150', /annual:\s*150[^0-9]/.test(jsText));
+            assert('Annual Clinic 300', /annual:\s*300[^0-9]/.test(jsText));
+
+            // Addon prices
+            assert('Template individual $3', jsText.includes('template_individual: 3'));
+            assert('Pack small $7', jsText.includes('pack_small: 7'));
+            assert('Pack large $12', jsText.includes('pack_large: 12'));
+            assert('Device extra $8.99', jsText.includes('device_extra: 8.99'));
+
+            // Functions
+            assert('fn selectPlan', jsText.includes('function selectPlan'));
+            assert('fn validateStep0', jsText.includes('function validateStep0'));
+            assert('fn renderCartStep', jsText.includes('function renderCartStep'));
+            assert('fn renderCartTemplates', jsText.includes('function renderCartTemplates'));
+            assert('fn addCartTemplate', jsText.includes('function addCartTemplate'));
+            assert('fn removeCartTemplate', jsText.includes('function removeCartTemplate'));
+            assert('fn addCartPack', jsText.includes('function addCartPack'));
+            assert('fn removeCartPack', jsText.includes('function removeCartPack'));
+            assert('fn changeExtraDevices', jsText.includes('function changeExtraDevices'));
+            assert('fn getCartAddonTotal', jsText.includes('function getCartAddonTotal'));
+            assert('fn updateCartSummary', jsText.includes('function updateCartSummary'));
+            assert('fn setBilling', jsText.includes('function setBilling'));
+            assert('fn renderInvestmentSummary', jsText.includes('function renderInvestmentSummary'));
+
+            // TEMPLATE_MAP
+            assert('TEMPLATE_MAP definido', jsText.includes('TEMPLATE_MAP'));
+            assert('FORM_ESP_TO_CAT definido', jsText.includes('FORM_ESP_TO_CAT'));
+
+            // Cart state
+            assert('cartAddons state', jsText.includes('cartAddons'));
+            assert('billingCycle state', jsText.includes('billingCycle'));
+            assert('selectedPlan state', jsText.includes('selectedPlan'));
+
+            // Submit includes plan data
+            assert('Submit envía planSeleccionado', jsText.includes('planSeleccionado'));
+            assert('Submit envía billingCycle', jsText.includes('billingCycle'));
+            assert('Submit envía addons JSON', jsText.includes("JSON.stringify"));
+            assert('Submit envía licenseAmount', jsText.includes('licenseAmount'));
+            assert('Submit envía subscriptionAmount', jsText.includes('subscriptionAmount'));
+            assert('Submit envía totalHoy', jsText.includes('totalHoy'));
+
+            // goStep includes step 0 validation
+            assert('goStep valida step0', jsText.includes('validateStep0'));
+            assert('goStep renders cart on step5', jsText.includes('renderCartStep'));
+            assert('goStep renders investment on step6', jsText.includes('renderInvestmentSummary'));
+            assert('Success goes to step 7', jsText.includes('goStep(7)'));
+
+            // ═══ GRUPO 7: Navegación ═══
+            log('\n── GRUPO 7: Navegación entre pasos ──');
+
+            // Check each step has proper prev/next buttons
+            const step1 = doc.getElementById('step1');
+            const step1Btns = step1?.querySelectorAll('.btn');
+            assert('Step 1 tiene botón anterior (→step0)', step1?.innerHTML.includes('goStep(0)'));
+            assert('Step 1 tiene botón siguiente (→step2)', step1?.innerHTML.includes('goStep(2)'));
+
+            const step2 = doc.getElementById('step2');
+            assert('Step 2: anterior →step1', step2?.innerHTML.includes('goStep(1)'));
+            assert('Step 2: siguiente →step3', step2?.innerHTML.includes('goStep(3)'));
+
+            const step3 = doc.getElementById('step3');
+            assert('Step 3: anterior →step2', step3?.innerHTML.includes('goStep(2)'));
+            assert('Step 3: siguiente →step4', step3?.innerHTML.includes('goStep(4)'));
+
+            const step4 = doc.getElementById('step4');
+            assert('Step 4: anterior →step3', step4?.innerHTML.includes('goStep(3)'));
+            assert('Step 4: siguiente →step5', step4?.innerHTML.includes('goStep(5)'));
+
+            assert('Step 5: anterior →step4', step5?.innerHTML.includes('goStep(4)'));
+            assert('Step 5: siguiente →step6', step5?.innerHTML.includes('goStep(6)'));
+
+            assert('Step 6: anterior →step5', step6?.innerHTML.includes('goStep(5)'));
+            assert('Step 6: tiene botón submit', !!step6?.querySelector('#btnSubmit'));
+
+            // ═══ GRUPO 8: CSS ═══
+            log('\n── GRUPO 8: CSS ──');
+
+            const styles = doc.querySelectorAll('style');
+            const cssText = Array.from(styles).map(s => s.textContent).join('\n');
+
+            assert('CSS: .pricing-grid', cssText.includes('.pricing-grid'));
+            assert('CSS: .pricing-card', cssText.includes('.pricing-card'));
+            assert('CSS: .pricing-badge', cssText.includes('.pricing-badge'));
+            assert('CSS: .pricing-select-btn', cssText.includes('.pricing-select-btn'));
+            assert('CSS: .cart-item', cssText.includes('.cart-item'));
+            assert('CSS: .cart-add-btn', cssText.includes('.cart-add-btn'));
+            assert('CSS: .invest-block', cssText.includes('.invest-block'));
+            assert('CSS: .invest-toggle-btn', cssText.includes('.invest-toggle-btn'));
+            assert('CSS: .save-badge', cssText.includes('.save-badge'));
+            assert('CSS: responsive pricing', cssText.includes('.pricing-grid') && cssText.includes('1fr'));
+
+            // ═══ RESULTADOS ═══
+            renderResults();
+        }
+
+        function renderResults() {
+            const container = document.getElementById('results');
+            const groups = {};
+
+            // Group by prefix
+            results.forEach(r => {
+                const groupMatch = r.name.match(/^(CSS|Step|Paso|Normal|Pro|Cl|Card|Bot|Cart|Tiene|fn |Submit|goStep|Script|PRICING|License|Monthly|Annual|Template|Pack|Device|TEMPLATE|FORM|cart|billing|selected|Success)/);
+                const group = groupMatch ? groupMatch[0] : 'General';
+                if (!groups[group]) groups[group] = [];
+                groups[group].push(r);
+            });
+
+            let html = '';
+            results.forEach(r => {
+                html += `<div class="test">
+                    <span class="icon ${r.pass ? 'pass' : 'fail'}">${r.pass ? '✅' : '❌'}</span>
+                    <span>${r.name}</span>
+                    ${r.detail ? `<span style="color:#64748b;font-size:.75rem;">(${r.detail})</span>` : ''}
+                </div>`;
+            });
+
+            container.innerHTML = html;
+
+            const passed = results.filter(r => r.pass).length;
+            const total = results.length;
+            const allPassed = passed === total;
+
+            document.getElementById('summary').innerHTML = `
+                <div class="summary ${allPassed ? 'ok' : 'nok'}">
+                    ${allPassed ? '✅' : '⚠️'} ${passed}/${total} tests passed
+                    ${!allPassed ? ` — ${total - passed} failed` : ' — ALL PASS'}
+                </div>
+            `;
+        }
+
+        runTests();
+    </script>
+</body>
+</html>

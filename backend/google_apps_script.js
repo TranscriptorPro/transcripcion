@@ -563,7 +563,9 @@ function doGet(e) {
           'trial':      { type: 'TRIAL',  hasProMode: false, hasDashboard: false, canGenerateApps: false },
           'normal':     { type: 'NORMAL', hasProMode: false, hasDashboard: false, canGenerateApps: false },
           'pro':        { type: 'PRO',    hasProMode: true,  hasDashboard: true,  canGenerateApps: false },
-          'enterprise': { type: 'PRO',    hasProMode: true,  hasDashboard: true,  canGenerateApps: false }
+          'enterprise': { type: 'PRO',    hasProMode: true,  hasDashboard: true,  canGenerateApps: false },
+          'gift':       { type: 'PRO',    hasProMode: true,  hasDashboard: true,  canGenerateApps: false },
+          'clinic':     { type: 'PRO',    hasProMode: true,  hasDashboard: true,  canGenerateApps: true  }
         };
         const planConfig = planMap[plan] || planMap['trial'];
 
