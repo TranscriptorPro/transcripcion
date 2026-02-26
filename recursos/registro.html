@@ -545,18 +545,20 @@
         // ── Config ──────────────────────────────────────────────────────────────
         const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec';
 
-        // ── Especialidades y estudios (mismos de la app) ────────────────────────
+        // ── Especialidades y estudios (sincronizado con MEDICAL_TEMPLATES) ─────
         const ESPECIALIDADES = {
             'Cardiología': [
                 'Ecocardiograma transtorácico (ETT)',
                 'Ecocardiograma Doppler color',
                 'Eco-Doppler cardíaco con strain',
                 'Ecocardiograma transesofágico (ETE)',
-                'Ecocardiograma de estrés (con ejercicio o fármaco)',
+                'Eco-Stress (ecocardiograma de estrés)',
                 'Holter ECG (24-48h)',
                 'Monitoreo Ambulatorio de Presión Arterial (MAPA)',
                 'Ergometría / Prueba de esfuerzo',
                 'Electrocardiograma (ECG)',
+                'Cinecoronariografía',
+                'Gammagrafía Cardíaca (SPECT)',
                 'Consulta cardiológica'
             ],
             'Ecografía General': [
@@ -582,6 +584,33 @@
                 'Eco-Doppler de injertos vasculares',
                 'Eco-Doppler de fístula arteriovenosa'
             ],
+            'Diagnóstico por Imágenes': [
+                'TAC / Tomografía Computada',
+                'Resonancia Magnética (RMN)',
+                'Mamografía Digital',
+                'Densitometría Ósea (DXA)',
+                'PET-CT',
+                'Radiografía Convencional'
+            ],
+            'Gastroenterología / Endoscopía': [
+                'Gastroscopía / Endoscopía Digestiva Alta (EDA)',
+                'Colonoscopía',
+                'Broncoscopía',
+                'Video-Cápsula Endoscópica',
+                'Consulta gastroenterológica'
+            ],
+            'ORL (Otorrinolaringología)': [
+                'Videonaso / Laringoscopía',
+                'Endoscopía Otológica',
+                'Audiometría',
+                'Consulta ORL'
+            ],
+            'Ginecología': [
+                'Papanicolaou (PAP)',
+                'Colposcopía',
+                'Ecografía ginecológica transvaginal',
+                'Consulta ginecológica'
+            ],
             'Obstetricia': [
                 'Ecografía obstétrica de primer trimestre',
                 'Ecografía obstétrica de segundo trimestre (morfológica)',
@@ -591,40 +620,59 @@
                 'Ecografía transvaginal obstétrica',
                 'Control obstétrico / Nota de evolución'
             ],
+            'Neumonología / Neumología': [
+                'Espirometría',
+                'Test de Marcha 6 minutos (TM6M)',
+                'Pletismografía corporal',
+                'Oximetría Nocturna',
+                'Informe de polisomnografía',
+                'Consulta neumonológica'
+            ],
+            'Neurología': [
+                'Electromiografía (EMG)',
+                'Polisomnografía (PSG)',
+                'Electroencefalograma (EEG)',
+                'Consulta neurológica'
+            ],
+            'Oftalmología': [
+                'Campimetría Humphrey',
+                'OCT Retinal',
+                'Topografía Corneal',
+                'Fondo de Ojo',
+                'Consulta oftalmológica'
+            ],
+            'Cirugía / Quirúrgico': [
+                'Protocolo Quirúrgico / Operatorio',
+                'Parte de Cirugía',
+                'Nota pre-quirúrgica',
+                'Nota post-quirúrgica'
+            ],
             'Medicina General / Interna': [
                 'Historia clínica',
                 'Consulta médica general',
                 'Nota de evolución',
                 'Epicrisis / Resumen de internación',
+                'Informe Médico General',
                 'Control de salud / Check-up',
                 'Certificado médico'
-            ],
-            'Neumonología / Neumología': [
-                'Espirometría',
-                'Informe de polisomnografía',
-                'Consulta neumonológica'
             ],
             'Traumatología / Ortopedia': [
                 'Informe de radiografía ósea',
                 'Consulta traumatológica',
                 'Nota de evolución traumatológica'
             ],
-            'Oftalmología': [
-                'Fondo de ojo',
-                'Campimetría',
-                'Consulta oftalmológica'
-            ],
             'Dermatología': [
                 'Consulta dermatológica',
                 'Informe de biopsia de piel'
             ],
-            'Neurología': [
-                'Electroencefalograma (EEG)',
-                'Consulta neurológica'
-            ],
             'Endocrinología': [
                 'Consulta endocrinológica',
                 'Ecografía tiroidea con informe endocrinológico'
+            ],
+            'Urología': [
+                'Consulta urológica',
+                'Ecografía vesico-prostática',
+                'Uroflujometría'
             ]
         };
 
