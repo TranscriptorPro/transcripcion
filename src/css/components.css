@@ -2953,6 +2953,44 @@
         .pvh-inst { font-size: 9.5pt; color: #333; font-style: italic; margin-top: 2px; }
         .pvh-addr { font-size: 8.5pt; color: #777; margin-top: 3px; }
 
+        /* ── Marcador visual de salto de página ── */
+        .pv-pagebreak-marker {
+            margin: 18px -18mm 10px;
+            position: relative;
+        }
+        .pv-pb-separator {
+            border-top: 2px dashed #b8c4d0;
+            padding: 6px 0 0;
+            text-align: center;
+            background: repeating-linear-gradient(
+                -45deg,
+                transparent,
+                transparent 5px,
+                rgba(184,196,208,0.1) 5px,
+                rgba(184,196,208,0.1) 10px
+            );
+            padding-bottom: 8px;
+        }
+        .pv-pb-label {
+            display: inline-block;
+            background: #edf2f7;
+            color: #718096;
+            font-size: 8pt;
+            padding: 2px 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+        }
+        .pv-pb-repeated-header {
+            border-top: 5px solid var(--pa, #1a56a0);
+            margin-top: 0;
+        }
+        .pv-pb-repeated-header .preview-workplace { pointer-events: none; }
+        .pv-pb-repeated-header .preview-header {
+            pointer-events: none;
+            padding-top: 10px;
+        }
+
         /* ── Bloque paciente en grilla ── */
         .preview-patient { margin-bottom: 10px; }
         .pvp-grid {

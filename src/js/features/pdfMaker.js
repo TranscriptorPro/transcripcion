@@ -72,20 +72,26 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const institutionName = activePro?.institutionName || profData.institutionName || '';
         const accent       = _hexToRgb(activePro?.headerColor || profData.headerColor || '#1a56a0');
 
-        // Datos del lugar de trabajo
-        const wpAddress = config.workplaceAddress || '';
-        const wpPhone   = config.workplacePhone   || '';
+        // Datos del lugar de trabajo (con fallback al workplace activo)
+        const wpProfiles = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+        const wpIdx = config.activeWorkplaceIndex;
+        const activeWp = (wpIdx !== undefined && wpIdx !== null) ? wpProfiles[Number(wpIdx)] : wpProfiles[0];
+        const wpAddress = config.workplaceAddress || activeWp?.address || '';
+        const wpPhone   = config.workplacePhone   || activeWp?.phone   || '';
 
         const pName      = config.patientName      || '';
         const pDni       = config.patientDni       || '';
         const pAge       = config.patientAge       ? `${config.patientAge} años` : '';
         const pSex       = config.patientSex       || '';
         const pInsurance = config.patientInsurance || '';
+        const pAffiliateNum = config.patientAffiliateNum || '';
         const rawDate    = config.studyDate        || '';
         const pDate      = rawDate
             ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES')
             : fecha;
+        const studyTime   = config.studyTime         || '';
         const studyType   = config.studyType         || '';
+        const reportNum   = config.reportNum         || '';
         const refDoctor   = config.referringDoctor   || '';
         const studyReason = config.studyReason       || '';
         const footerText  = config.footerText        || '';
@@ -212,7 +218,8 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         function drawStudyInfo() {
             const items = [];
             if (studyType)   items.push(`Estudio: ${studyType}`);
-            items.push(`Fecha: ${pDate}`);
+            if (reportNum)   items.push(`Informe Nº: ${reportNum}`);
+            items.push(`Fecha: ${pDate}${studyTime ? ' ' + studyTime : ''}`);
             if (refDoctor)   items.push(`Solicitante: ${refDoctor}`);
             if (studyReason) items.push(`Motivo: ${studyReason}`);
             if (!items.length) return;
@@ -234,6 +241,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             if (pAge)      cells.push(['Edad', pAge]);
             if (pSex)      cells.push(['Sexo', pSex]);
             if (pInsurance)cells.push(['OS/Prepaga', pInsurance]);
+            if (pAffiliateNum) cells.push(['Nº Afiliado', pAffiliateNum]);
             if (!cells.length) return;
 
             // Usamos rectángulo de fondo suave si caben datos

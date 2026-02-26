@@ -218,8 +218,8 @@ window.openPrintPreview = function () {
             ? profData.specialties.filter(s => s && s !== 'Todas').join(' / ')
             : (profData.especialidad || ''));
     const especialidad    = escSentence(especialidadRaw);
-    const institutionName = escName(profData.institutionName || '');
-    const accentColor     = profData.headerColor || '#1a56a0';
+    const institutionName = escName(activePro?.institutionName || profData.institutionName || '');
+    const accentColor     = activePro?.headerColor || profData.headerColor || '#1a56a0';
 
     // Datos del lugar de trabajo (desde workplace_profiles)
     const wpProfiles = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
@@ -263,8 +263,9 @@ window.openPrintPreview = function () {
     const refDoctor    = escName(config.referringDoctor || '');
     const reportNum    = esc(document.getElementById('pdfReportNumber')?.value || config.reportNum || '');
     const footerText   = esc(config.footerText || 'Este informe es válido únicamente con la firma del profesional a cargo.');
-    const wkAddr       = esc(config.workplaceAddress || '');
-    const wkPhone      = esc(config.workplacePhone   || '');
+    const wkAddr       = esc(config.workplaceAddress || activeWp?.address || '');
+    const wkPhone      = esc(config.workplacePhone   || activeWp?.phone || '');
+    const studyTime    = esc(document.getElementById('pdfStudyTime')?.value || config.studyTime || '');
     const showSignLine = config.showSignLine ?? true;
     const showSignName = config.showSignName ?? true;
     const showSignMat  = config.showSignMatricula ?? true;
@@ -276,7 +277,25 @@ window.openPrintPreview = function () {
 
     // Aplicar color de acento a la página
     const page = document.getElementById('previewPage');
-    if (page) page.style.setProperty('--pa', accentColor);
+    if (page) {
+        page.style.setProperty('--pa', accentColor);
+
+        // Aplicar fuente configurada (sincronizar con PDF)
+        const fontMap = { helvetica: 'Helvetica, Arial, sans-serif', times: "'Times New Roman', Times, serif", courier: "'Courier New', Courier, monospace" };
+        const cfgFont = (config.font || 'helvetica').toLowerCase();
+        page.style.fontFamily = fontMap[cfgFont] || fontMap.helvetica;
+
+        // Aplicar tamaño de fuente configurado
+        const cfgFontSize = parseInt(config.fontSize) || 10;
+        page.style.fontSize = cfgFontSize + 'pt';
+
+        // Aplicar márgenes configurados
+        const marginMap = { narrow: '10mm', normal: '18mm', wide: '28mm' };
+        const cfgMargin = marginMap[config.margins] || '18mm';
+        page.style.paddingLeft = cfgMargin;
+        page.style.paddingRight = cfgMargin;
+        page.style.paddingBottom = cfgMargin;
+    }
 
     // ── LUGAR DE TRABAJO (arriba de todo) ────────────────────────
     const wpHeaderEl = document.getElementById('previewWorkplace');
@@ -313,6 +332,9 @@ window.openPrintPreview = function () {
                     <div class="pvh-info">
                         <div class="pvh-name">${profName}</div>
                         ${especialidad   ? `<div class="pvh-spec">${especialidad}</div>`   : ''}
+                        ${institutionName ? `<div class="pvh-inst">${institutionName}</div>` : ''}
+                        ${wkAddr         ? `<div class="pvh-addr">${wkAddr}</div>` : ''}
+                        ${wkPhone        ? `<div class="pvh-addr">Tel: ${wkPhone}</div>` : ''}
                         ${matricula      ? `<div class="pvh-mat">Mat. ${matricula}</div>` : ''}
                     </div>
                 </div>`;
@@ -347,7 +369,7 @@ window.openPrintPreview = function () {
         let row1 = '';
         row1 += `<div class="pvs-cell"><span class="pvs-lbl">Estudio</span><span class="pvs-val">${studyType || '—'}</span></div>`;
         row1 += `<div class="pvs-cell"><span class="pvs-lbl">Informe Nº</span><span class="pvs-val">${reportNum || '—'}</span></div>`;
-        row1 += `<div class="pvs-cell"><span class="pvs-lbl">Fecha</span><span class="pvs-val">${studyDate}</span></div>`;
+        row1 += `<div class="pvs-cell"><span class="pvs-lbl">Fecha</span><span class="pvs-val">${studyDate}${studyTime ? ' ' + studyTime : ''}</span></div>`;
         let row2 = '';
         if (refDoctor)   row2 += `<div class="pvs-cell"><span class="pvs-lbl">Solicitante</span><span class="pvs-val">${refDoctor}</span></div>`;
         if (studyReason) row2 += `<div class="pvs-cell"><span class="pvs-lbl">Motivo</span><span class="pvs-val">${studyReason}</span></div>`;
@@ -436,6 +458,71 @@ window.openPrintPreview = function () {
 
         if (pageNumEl) {
             pageNumEl.textContent = totalPages > 1 ? `Página 1 de ${totalPages}` : 'Página 1 de 1';
+        }
+
+        // ── Indicadores visuales de salto de página ──────────────
+        // Muestran dónde caería cada salto de página con un separador
+        // y una mini-repetición del encabezado (como hace el PDF real)
+        if (pageEl && totalPages > 1) {
+            // Limpiar marcadores previos
+            pageEl.querySelectorAll('.pv-pagebreak-marker').forEach(m => m.remove());
+
+            // Obtener HTML del header para repetir en cada página
+            const headerEl = document.getElementById('previewHeader');
+            const wpHeaderEl = document.getElementById('previewWorkplace');
+            const headerCloneHtml = headerEl ? headerEl.outerHTML : '';
+            const wpCloneHtml = wpHeaderEl && wpHeaderEl.style.display !== 'none' ? wpHeaderEl.outerHTML : '';
+
+            // Insertar marcadores en el contenido en las posiciones de salto
+            const contentEl = document.getElementById('previewContent');
+            if (contentEl) {
+                // Calcular la altura disponible para contenido en la primera página
+                const headerZoneH = contentEl.offsetTop; // todo lo que hay antes del contenido
+                const footerEl = document.getElementById('previewFooter');
+                const sigEl = document.getElementById('previewSignature');
+                const footerZoneH = (footerEl?.offsetHeight || 0) + (sigEl?.offsetHeight || 0) + 40;
+
+                const firstPageContentH = onePagePx - headerZoneH - footerZoneH;
+                // Páginas siguientes: el header se repite (~120px aprox) + footer
+                const repeatedHeaderH = (wpHeaderEl?.offsetHeight || 0) + (headerEl?.offsetHeight || 0) + 20;
+                const nextPageContentH = onePagePx - repeatedHeaderH - footerZoneH;
+
+                let accumulatedH = 0;
+                let currentPageBreakAt = firstPageContentH;
+                let pageIdx = 1;
+                const children = Array.from(contentEl.children);
+                const insertions = []; // {beforeChild, pageNum}
+
+                for (let i = 0; i < children.length; i++) {
+                    const child = children[i];
+                    const childH = child.offsetHeight + parseInt(getComputedStyle(child).marginTop || 0) +
+                                   parseInt(getComputedStyle(child).marginBottom || 0);
+
+                    if (accumulatedH + childH > currentPageBreakAt && accumulatedH > 0) {
+                        pageIdx++;
+                        insertions.push({ beforeChild: child, pageNum: pageIdx });
+                        accumulatedH = childH;
+                        currentPageBreakAt = nextPageContentH;
+                    } else {
+                        accumulatedH += childH;
+                    }
+                }
+
+                // Insertar los marcadores (en orden inverso para no desplazar índices)
+                insertions.reverse().forEach(({ beforeChild, pageNum }) => {
+                    const marker = document.createElement('div');
+                    marker.className = 'pv-pagebreak-marker';
+                    marker.innerHTML = `
+                        <div class="pv-pb-separator">
+                            <span class="pv-pb-label">— Fin pág. ${pageNum - 1} / Inicio pág. ${pageNum} —</span>
+                        </div>
+                        <div class="pv-pb-repeated-header">
+                            ${wpCloneHtml}
+                            ${headerCloneHtml}
+                        </div>`;
+                    contentEl.insertBefore(marker, beforeChild);
+                });
+            }
         }
 
         // Navegación multi-página
@@ -742,8 +829,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============ IMPRIMIR DESDE VISTA PREVIA ============
-// Inyecta el contenido A4 en un iframe oculto y llama print() sobre él.
-// Esto imprime SOLO el informe, sin ningún elemento de la UI.
+// Inyecta el contenido A4 en un iframe oculto con estructura table para
+// que el navegador repita encabezado y pie en cada página impresa.
 window.printFromPreview = function () {
     const page = document.getElementById('previewPage');
     if (!page) { window.print(); return; }
@@ -760,6 +847,25 @@ window.printFromPreview = function () {
 
     // Leer el color de acento aplicado en la página
     const accentColor = page.style.getPropertyValue('--pa') || '#1a56a0';
+    const fontFamily = page.style.fontFamily || "'Times New Roman', Times, serif";
+    const fontSize = page.style.fontSize || '10pt';
+
+    // Extraer secciones del preview para armar estructura con thead/tfoot
+    const wpHtml      = document.getElementById('previewWorkplace')?.outerHTML || '';
+    const headerHtml  = document.getElementById('previewHeader')?.outerHTML || '';
+    const patientHtml = document.getElementById('previewPatient')?.outerHTML || '';
+    const studyHtml   = document.getElementById('previewStudy')?.outerHTML || '';
+    // Contenido sin los marcadores de salto de página
+    const contentEl   = document.getElementById('previewContent');
+    let contentHtml   = '';
+    if (contentEl) {
+        const clone = contentEl.cloneNode(true);
+        clone.querySelectorAll('.pv-pagebreak-marker').forEach(m => m.remove());
+        contentHtml = clone.outerHTML;
+    }
+    const sigHtml     = document.getElementById('previewSignature')?.outerHTML || '';
+    const qrHtml      = document.getElementById('previewQR')?.outerHTML || '';
+    const footerHtml  = document.getElementById('previewFooter')?.outerHTML || '';
 
     const iframe = document.createElement('iframe');
     iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:21cm;height:29.7cm;opacity:0;border:none;';
@@ -773,54 +879,73 @@ window.printFromPreview = function () {
         <style>${allStyles}</style>
         <style>
             :root { --pa: ${accentColor}; }
-            html, body { margin: 0; padding: 0; background: white; }
+            html, body { margin: 0; padding: 0; background: white; font-family: ${fontFamily}; font-size: ${fontSize}; }
+
+            /* Tabla de layout para repetir encabezado/pie */
+            .print-table { width: 100%; border-collapse: collapse; }
+            .print-table td { padding: 0; vertical-align: top; }
+            .print-thead-cell { border-bottom: none; }
+            .print-tfoot-cell { border-top: none; }
+
+            /* Anular estilos de .a4-page ya que usamos la tabla */
             .a4-page {
                 box-shadow: none !important;
                 margin: 0 !important;
                 border-radius: 0 !important;
-                width: 21cm !important;
+                width: 100% !important;
                 min-height: auto !important;
+                padding: 0 !important;
+                border-top: none !important;
             }
-            .no-print, .ai-note-panel { display: none !important; }
+
+            .no-print, .ai-note-panel, .pv-pagebreak-marker { display: none !important; }
+
             @media print {
                 html, body { margin: 0; padding: 0; }
-                /* Intenta que todo quepa en una hoja: márgenes mínimos y fuente ligeramente más chica */
-                @page { margin: 12mm; }
-                .a4-page {
-                    width: 100% !important;
-                    padding: 0 !important;
-                    border-top: 5px solid var(--pa, #1a56a0) !important;
+                @page { margin: 12mm 15mm; }
+
+                /* Borde superior de acento en cada página */
+                .print-thead-cell {
+                    border-top: 5px solid var(--pa, #1a56a0);
+                    padding-top: 2mm;
                 }
-                /* Nunca cortar una página justo después de un título */
-                .a4-page .report-h1,
-                .a4-page .report-h2,
-                .a4-page .report-h3,
-                .a4-page .preview-content h1,
-                .a4-page .preview-content h2,
-                .a4-page .preview-content h3 {
+
+                /* Nunca cortar justo después de un título */
+                h1, h2, h3,
+                .report-h1, .report-h2, .report-h3 {
                     break-after: avoid;
                     page-break-after: avoid;
                     break-inside: avoid;
                     page-break-inside: avoid;
                 }
                 /* Nunca dejar la firma sola en una página */
-                .preview-signature,
-                .pvsig-block {
+                .preview-signature, .pvsig-block {
                     break-inside: avoid;
                     page-break-inside: avoid;
-                    break-before: auto;
                 }
                 /* Evitar viudas/huérfanas */
-                .a4-page .report-p,
-                .a4-page .preview-content p {
-                    orphans: 3;
-                    widows: 3;
-                }
-                /* Ocultar UI */
-                .no-print, .ai-note-panel { display: none !important; }
+                p { orphans: 3; widows: 3; }
+                .no-print, .ai-note-panel, .pv-pagebreak-marker { display: none !important; }
             }
         </style>
-    </head><body>${page.outerHTML}</body></html>`);
+    </head><body>
+        <table class="print-table">
+            <thead><tr><td class="print-thead-cell">
+                ${wpHtml}
+                ${headerHtml}
+            </td></tr></thead>
+            <tfoot><tr><td class="print-tfoot-cell">
+                ${footerHtml}
+            </td></tr></tfoot>
+            <tbody><tr><td>
+                ${patientHtml}
+                ${studyHtml}
+                ${contentHtml}
+                ${sigHtml}
+                ${qrHtml}
+            </td></tr></tbody>
+        </table>
+    </body></html>`);
     iDoc.close();
 
     iframe.onload = function () {
