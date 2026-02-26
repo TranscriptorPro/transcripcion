@@ -5,6 +5,41 @@ if (editor) {
         if (typeof window.updateWordCount === 'function') window.updateWordCount();
         saveUndoState();
     });
+
+    // ── Detectar texto pegado → activar botón Estructurar ──
+    editor.addEventListener('paste', () => {
+        // Esperar un tick para que el contenido ya esté en el DOM
+        setTimeout(() => {
+            const text = editor.innerText.trim();
+            if (text.length < 30) return; // muy corto, ignorar
+
+            // Solo activar si estamos en estado IDLE o sin transcripción previa
+            if (window.appState === 'IDLE' || window.appState === 'FILES_LOADED') {
+                // Guardar como si fuera una transcripción
+                const entry = { fileName: 'Texto pegado', text: editor.innerHTML };
+                if (!window.transcriptions) window.transcriptions = [];
+                if (window.transcriptions.length === 0) {
+                    window.transcriptions.push(entry);
+                    window.activeTabIndex = 0;
+                } else {
+                    window.transcriptions[window.activeTabIndex] = entry;
+                }
+
+                if (typeof createTabs === 'function') createTabs();
+                if (typeof updateWordCount === 'function') updateWordCount();
+                if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
+
+                // Normal mode: popular plantillas limitadas
+                if (window.currentMode === 'normal' && typeof populateLimitedTemplates === 'function') {
+                    populateLimitedTemplates();
+                }
+
+                if (typeof showToast === 'function') {
+                    showToast('📋 Texto pegado detectado — podés estructurarlo con IA', 'info');
+                }
+            }
+        }, 50);
+    });
 }
 
 // formatText delegado a executeFormatAndFocus (mantener por retrocompatibilidad)
