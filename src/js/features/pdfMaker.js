@@ -599,24 +599,28 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
 
         drawSignature();
 
-        // ── Etapa 6: QR de autenticidad en el PDF ────────────────────
-        if (typeof generateQRCode === 'function') {
+        // ── Etapa 6: QR de verificación debajo de la firma ───────────
+        const cfgShowQR = config.showQR ?? false;
+        if (cfgShowQR && typeof generateQRCode === 'function') {
             try {
-                const qrText = `Transcriptor Pro | ${profName} | Mat.${matricula} | ${fileDate}`;
+                const qrText = `TPRO-${Date.now()}`;
                 const qrDataUrl = generateQRCode(qrText);
                 if (qrDataUrl) {
+                    cy += 6;
+                    ensureSpace(28);
                     const qrSize = 18;
-                    const qrX = ML;
-                    const qrY = FOOTER_Y - qrSize - 2;
-                    // Solo agregar si hay espacio (no solapar con el contenido)
-                    if (cy < qrY - 2) {
-                        doc.addImage(qrDataUrl, 'GIF', qrX, qrY, qrSize, qrSize);
-                        doc.setFontSize(6);
-                        setGray(140);
-                        doc.text('Generado con Transcriptor Pro', qrX + qrSize + 2, qrY + qrSize - 2);
-                        setBlack();
-                        doc.setFontSize(mainFontSize);
-                    }
+                    // Centrar debajo de la firma (misma posición que en preview)
+                    const sigLineW = 60;
+                    const sigStartX = PAGE_W - MR - sigLineW;
+                    const sigCenterX = sigStartX + sigLineW / 2;
+                    const qrX = sigCenterX - qrSize / 2;
+                    doc.addImage(qrDataUrl, 'GIF', qrX, cy, qrSize, qrSize);
+                    cy += qrSize + 2;
+                    doc.setFontSize(6);
+                    setGray(140);
+                    doc.text('Código de verificación', sigCenterX, cy, { align: 'center' });
+                    setBlack();
+                    doc.setFontSize(mainFontSize);
                 }
             } catch (_) { /* QR no disponible */ }
         }
