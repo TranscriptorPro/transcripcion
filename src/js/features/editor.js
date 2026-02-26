@@ -6,16 +6,44 @@ if (editor) {
         saveUndoState();
     });
 
-    // ── Detectar texto pegado → activar botón Estructurar ──
-    editor.addEventListener('paste', () => {
-        // Esperar un tick para que el contenido ya esté en el DOM
+    // ── Detectar texto pegado → limpiar formato Word + activar Estructurar ──
+    editor.addEventListener('paste', (e) => {
+        // Interceptar el paste para limpiar basura de Word/Google Docs
+        const clipboardData = e.clipboardData || window.clipboardData;
+        if (!clipboardData) return;
+
+        const html = clipboardData.getData('text/html');
+        const plain = clipboardData.getData('text/plain');
+
+        // Si viene de Word/Docs (tiene HTML con estilos), limpiar
+        if (html && (html.includes('mso-') || html.includes('MsoNormal') || html.includes('docs-internal') || html.includes('<o:p>'))) {
+            e.preventDefault();
+
+            // Limpiar: conservar solo estructura básica, eliminar estilos inline
+            let clean = html
+                .replace(/<o:p[^>]*>[\s\S]*?<\/o:p>/gi, '')               // tags de Office
+                .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')            // bloques de estilo
+                .replace(/<meta[^>]*>/gi, '')                              // metas
+                .replace(/class="[^"]*"/gi, '')                            // clases Word
+                .replace(/style="[^"]*"/gi, '')                            // estilos inline
+                .replace(/<span\s*>([\s\S]*?)<\/span>/gi, '$1')            // spans vacíos
+                .replace(/<font[^>]*>([\s\S]*?)<\/font>/gi, '$1')          // font tags
+                .replace(/(<p[^>]*>)\s*(<\/p>)/gi, '')                     // párrafos vacíos
+                .replace(/<p[^>]*>/gi, '<p>')                              // limpiar attrs de <p>
+                .replace(/\n\s*\n/g, '\n')                                 // líneas vacías excesivas
+                .replace(/<br\s*\/?>\s*<br\s*\/?>/gi, '<br>')              // doble BR
+                .trim();
+
+            // Insertar el HTML limpio
+            document.execCommand('insertHTML', false, clean);
+        }
+
+        // Activar botón Estructurar después de que el contenido esté en el DOM
         setTimeout(() => {
             const text = editor.innerText.trim();
-            if (text.length < 30) return; // muy corto, ignorar
+            if (text.length < 30) return;
 
-            // Solo activar si estamos en estado IDLE o sin transcripción previa
             if (window.appState === 'IDLE' || window.appState === 'FILES_LOADED') {
-                // Guardar como si fuera una transcripción
                 const entry = { fileName: 'Texto pegado', text: editor.innerHTML };
                 if (!window.transcriptions) window.transcriptions = [];
                 if (window.transcriptions.length === 0) {
@@ -29,7 +57,6 @@ if (editor) {
                 if (typeof updateWordCount === 'function') updateWordCount();
                 if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
 
-                // Normal mode: popular plantillas limitadas
                 if (window.currentMode === 'normal' && typeof populateLimitedTemplates === 'function') {
                     populateLimitedTemplates();
                 }
