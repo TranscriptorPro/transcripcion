@@ -490,6 +490,211 @@
             justify-content: center;
         }
 
+        /* ── Pricing Cards ── */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .pricing-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            border: 2px solid var(--border);
+            padding: 1.5rem 1.2rem;
+            text-align: center;
+            transition: all .3s;
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        .pricing-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,.12); }
+        .pricing-card.selected { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(15,118,110,.15); }
+        .pricing-card.popular { border-color: #b8860b; }
+        .pricing-card.popular .pricing-badge { display: block; }
+        .pricing-badge {
+            display: none;
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #b8860b, #daa520);
+            color: white;
+            font-size: .7rem;
+            font-weight: 700;
+            padding: 3px 14px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+        .pricing-plan-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: .3rem;
+        }
+        .pricing-plan-icon { font-size: 2rem; margin-bottom: .5rem; }
+        .pricing-price {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary-dark);
+            margin: .3rem 0;
+        }
+        .pricing-price small { font-size: .65rem; font-weight: 500; color: var(--text-light); }
+        .pricing-sub {
+            font-size: .82rem;
+            color: var(--text-light);
+            margin-bottom: .8rem;
+            padding-bottom: .8rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .pricing-features {
+            list-style: none;
+            text-align: left;
+            font-size: .78rem;
+            flex: 1;
+        }
+        .pricing-features li {
+            padding: 4px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+        }
+        .pricing-features li .feat-icon { flex-shrink: 0; width: 18px; text-align: center; }
+        .pricing-select-btn {
+            margin-top: 1rem;
+            padding: 10px 16px;
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            background: transparent;
+            color: var(--primary);
+            font-weight: 700;
+            font-size: .88rem;
+            cursor: pointer;
+            transition: all .2s;
+            font-family: inherit;
+        }
+        .pricing-select-btn:hover, .pricing-card.selected .pricing-select-btn {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* ── Cart ── */
+        .cart-section { margin-bottom: 1rem; }
+        .cart-section-title {
+            font-size: .88rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: .6rem;
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+        }
+        .cart-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: .5rem .8rem;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: .4rem;
+            font-size: .82rem;
+            transition: all .2s;
+        }
+        .cart-item:hover { border-color: var(--primary-light); }
+        .cart-item .cart-item-name { flex: 1; }
+        .cart-item .cart-item-price {
+            font-weight: 700;
+            color: var(--primary-dark);
+            white-space: nowrap;
+            margin: 0 .8rem;
+        }
+        .cart-add-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 4px 12px;
+            font-size: .75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .15s;
+            font-family: inherit;
+        }
+        .cart-add-btn:hover { background: var(--primary-dark); }
+        .cart-add-btn.added { background: #94a3b8; }
+        .cart-remove-btn {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: .85rem;
+            padding: 2px 6px;
+        }
+
+        /* ── Investment Summary ── */
+        .invest-block {
+            background: var(--card);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+        }
+        .invest-block-title {
+            font-size: .85rem;
+            font-weight: 700;
+            color: var(--text-light);
+            margin-bottom: .6rem;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+        .invest-line {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: .85rem;
+        }
+        .invest-line.total {
+            font-weight: 700;
+            font-size: 1rem;
+            border-top: 2px solid var(--primary);
+            padding-top: .6rem;
+            margin-top: .4rem;
+            color: var(--primary-dark);
+        }
+        .invest-toggle {
+            display: flex;
+            gap: .5rem;
+            margin: .6rem 0;
+        }
+        .invest-toggle-btn {
+            flex: 1;
+            padding: 8px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: var(--card);
+            cursor: pointer;
+            text-align: center;
+            font-size: .82rem;
+            font-family: inherit;
+            transition: all .2s;
+        }
+        .invest-toggle-btn.active {
+            border-color: var(--primary);
+            background: #f0fdfa;
+            font-weight: 600;
+        }
+        .invest-toggle-btn .save-badge {
+            display: inline-block;
+            background: var(--success);
+            color: white;
+            font-size: .65rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 4px;
+            font-weight: 700;
+        }
+
         /* ── Mobile ── */
         @media (max-width: 600px) {
             .field-row, .field-row.triple { grid-template-columns: 1fr; }
@@ -498,6 +703,8 @@
             .btn-row { flex-direction: column; }
             .btn { width: 100%; text-align: center; }
             .color-palette { justify-content: center; }
+            .pricing-grid { grid-template-columns: 1fr; }
+            .pricing-card.popular { order: -1; }
         }
     </style>
 </head>
@@ -513,17 +720,108 @@
     <div class="container">
 
         <!-- Steps -->
-        <div class="steps">
-            <div class="step active" data-step="1"><span class="step-num">1</span> Datos personales</div>
-            <div class="step" data-step="2"><span class="step-num">2</span> Especialidades</div>
-            <div class="step" data-step="3"><span class="step-num">3</span> Lugar de trabajo</div>
-            <div class="step" data-step="4"><span class="step-num">4</span> PDF y firma</div>
+        <div class="steps" id="stepsBar">
+            <div class="step active" data-step="0"><span class="step-num">1</span> Plan</div>
+            <div class="step" data-step="1"><span class="step-num">2</span> Datos</div>
+            <div class="step" data-step="2"><span class="step-num">3</span> Especialidades</div>
+            <div class="step" data-step="3"><span class="step-num">4</span> Trabajo</div>
+            <div class="step" data-step="4"><span class="step-num">5</span> PDF</div>
+            <div class="step" data-step="5"><span class="step-num">6</span> Carrito</div>
+            <div class="step" data-step="6"><span class="step-num">7</span> Resumen</div>
         </div>
 
         <form id="registroForm" autocomplete="off">
 
+            <!-- ═══ PASO 0: BIENVENIDA + SELECCIÓN DE PLAN ═══ -->
+            <div class="form-step active" id="step0">
+                <div class="card" style="text-align:center;padding:2rem 1.5rem 1rem;">
+                    <div style="font-size:2.5rem;margin-bottom:.5rem;">🩺</div>
+                    <h2 style="font-size:1.3rem;margin-bottom:.4rem;">¡Bienvenido/a a Transcriptor Médico Pro!</h2>
+                    <p style="color:var(--text-light);font-size:.88rem;line-height:1.5;max-width:560px;margin:0 auto;">
+                        La herramienta que transforma tu voz en informes médicos profesionales.<br>
+                        Elegí el plan que mejor se adapte a tu práctica. <b>Pago único + suscripción mensual.</b>
+                    </p>
+                </div>
+
+                <div class="pricing-grid">
+                    <!-- NORMAL -->
+                    <div class="pricing-card" data-plan="NORMAL" onclick="selectPlan('NORMAL')">
+                        <div class="pricing-badge"></div>
+                        <div class="pricing-plan-icon">📋</div>
+                        <div class="pricing-plan-name">Normal</div>
+                        <div class="pricing-price">$102<small>.99</small></div>
+                        <div class="pricing-sub">pago único + $10/mes</div>
+                        <ul class="pricing-features">
+                            <li><span class="feat-icon">✅</span> Transcripción de audio a texto</li>
+                            <li><span class="feat-icon">✋</span> Estructuración manual (campo por campo)</li>
+                            <li><span class="feat-icon">❌</span> <span style="opacity:.6;">Grabar sobre texto editado</span></li>
+                            <li><span class="feat-icon">📄</span> 3 plantillas a elección</li>
+                            <li><span class="feat-icon">✍️</span> PDF con firma</li>
+                            <li><span class="feat-icon">📂</span> Historial: últimos 20 informes</li>
+                            <li><span class="feat-icon">❌</span> <span style="opacity:.6;">Asistente de sesión IA</span></li>
+                            <li><span class="feat-icon">📖</span> Diccionario médico (lectura)</li>
+                            <li><span class="feat-icon">💻</span> 2 dispositivos</li>
+                            <li><span class="feat-icon">1️⃣</span> 1 perfil de salida</li>
+                        </ul>
+                        <button type="button" class="pricing-select-btn" onclick="selectPlan('NORMAL')">Elegir Normal</button>
+                    </div>
+
+                    <!-- PRO -->
+                    <div class="pricing-card popular" data-plan="PRO" onclick="selectPlan('PRO')">
+                        <div class="pricing-badge">⭐ Más popular</div>
+                        <div class="pricing-plan-icon">⭐</div>
+                        <div class="pricing-plan-name">Pro</div>
+                        <div class="pricing-price">$152<small>.99</small></div>
+                        <div class="pricing-sub">pago único + $15/mes</div>
+                        <ul class="pricing-features">
+                            <li><span class="feat-icon">✅</span> Transcripción de audio a texto</li>
+                            <li><span class="feat-icon">🤖</span> <b>Estructuración automática con IA</b></li>
+                            <li><span class="feat-icon">✅</span> <b>Grabar sobre texto editado</b></li>
+                            <li><span class="feat-icon">📄</span> <b>Todas las plantillas de tu especialidad</b></li>
+                            <li><span class="feat-icon">🎨</span> PDF con logo + firma + color</li>
+                            <li><span class="feat-icon">♾️</span> <b>Historial ilimitado</b></li>
+                            <li><span class="feat-icon">🧠</span> <b>Asistente de sesión IA</b></li>
+                            <li><span class="feat-icon">📖</span> Diccionario personalizable</li>
+                            <li><span class="feat-icon">💻</span> 5 dispositivos</li>
+                            <li><span class="feat-icon">🔀</span> Múltiples perfiles de salida</li>
+                        </ul>
+                        <button type="button" class="pricing-select-btn" onclick="selectPlan('PRO')">Elegir Pro</button>
+                    </div>
+
+                    <!-- CLÍNICA -->
+                    <div class="pricing-card" data-plan="CLINIC" onclick="selectPlan('CLINIC')">
+                        <div class="pricing-badge"></div>
+                        <div class="pricing-plan-icon">🏥</div>
+                        <div class="pricing-plan-name">Clínica</div>
+                        <div class="pricing-price">$352<small>.99</small></div>
+                        <div class="pricing-sub">pago único + $30/mes</div>
+                        <ul class="pricing-features">
+                            <li><span class="feat-icon">✅</span> Todo lo de Pro, más:</li>
+                            <li><span class="feat-icon">📦</span> <b>3 packs completos de especialidad</b></li>
+                            <li><span class="feat-icon">♾️</span> <b>Dispositivos ilimitados</b></li>
+                            <li><span class="feat-icon">👥</span> <b>Multi-profesional</b></li>
+                            <li><span class="feat-icon">🏢</span> Múltiples sedes</li>
+                            <li><span class="feat-icon">🤖</span> Estructuración automática con IA</li>
+                            <li><span class="feat-icon">✅</span> Grabar sobre texto editado</li>
+                            <li><span class="feat-icon">🧠</span> Asistente de sesión IA</li>
+                            <li><span class="feat-icon">📖</span> Diccionario personalizable</li>
+                            <li><span class="feat-icon">🔀</span> Múltiples perfiles de salida</li>
+                        </ul>
+                        <button type="button" class="pricing-select-btn" onclick="selectPlan('CLINIC')">Elegir Clínica</button>
+                    </div>
+                </div>
+
+                <div style="text-align:center;margin-top:1rem;">
+                    <small style="color:var(--text-light);">💡 Todos los planes incluyen actualizaciones gratuitas de por vida. La suscripción cubre: acceso a IA, soporte técnico y almacenamiento.</small>
+                </div>
+
+                <div class="btn-row" style="justify-content:center;">
+                    <button type="button" class="btn btn-primary" id="btnStep0Next" onclick="goStep(1)" disabled>Seleccioná un plan para continuar</button>
+                </div>
+            </div>
+
             <!-- ═══ PASO 1: DATOS PERSONALES ═══ -->
-            <div class="form-step active" id="step1">
+            <div class="form-step" id="step1">
                 <div class="card">
                     <div class="section-title">👤 Datos del Profesional</div>
                     <p class="section-subtitle">
@@ -555,7 +853,7 @@
                 </div>
 
                 <div class="btn-row">
-                    <div></div>
+                    <button type="button" class="btn btn-secondary" onclick="goStep(0)">← Anterior</button>
                     <button type="button" class="btn btn-primary" onclick="goStep(2)">Siguiente →</button>
                 </div>
             </div>
@@ -690,14 +988,122 @@
 
                 <div class="btn-row">
                     <button type="button" class="btn btn-secondary" onclick="goStep(3)">← Anterior</button>
+                    <button type="button" class="btn btn-primary" onclick="goStep(5)">Siguiente →</button>
+                </div>
+            </div>
+
+            <!-- ═══ PASO 5: CARRITO DE COMPRAS ═══ -->
+            <div class="form-step" id="step5">
+                <div class="card">
+                    <div class="section-title">🛒 Potenciá tu experiencia</div>
+                    <p class="section-subtitle">
+                        Tu plan <b id="cartPlanName">—</b> ya incluye mucho. Acá podés agregar extras opcionales. <b>Pago único, para siempre.</b>
+                    </p>
+
+                    <!-- Plan summary -->
+                    <div style="background:#f0fdfa;border:1px solid #bbf7d0;border-radius:10px;padding:.8rem 1rem;margin-bottom:1.2rem;">
+                        <div style="font-weight:700;font-size:.85rem;margin-bottom:.3rem;">✅ Tu plan incluye:</div>
+                        <div id="cartPlanIncludes" style="font-size:.8rem;color:var(--text-light);"></div>
+                    </div>
+
+                    <!-- Add-ons: Plantillas extra -->
+                    <div class="cart-section" id="cartTemplatesSection">
+                        <div class="cart-section-title">📄 Plantillas adicionales</div>
+                        <div id="cartTemplatesList">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Add-ons: Dispositivos extra -->
+                    <div class="cart-section" id="cartDevicesSection">
+                        <div class="cart-section-title">💻 Dispositivos extra</div>
+                        <div class="cart-item">
+                            <span class="cart-item-name">+1 dispositivo adicional</span>
+                            <span class="cart-item-price">$8.99</span>
+                            <div style="display:flex;align-items:center;gap:6px;">
+                                <button type="button" class="cart-add-btn" onclick="changeExtraDevices(-1)" style="padding:4px 8px;">−</button>
+                                <span id="extraDevicesCount" style="font-weight:700;min-width:20px;text-align:center;">0</span>
+                                <button type="button" class="cart-add-btn" onclick="changeExtraDevices(1)" style="padding:4px 8px;">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mini cart summary -->
+                    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:.8rem 1rem;margin-top:1rem;">
+                        <div style="font-weight:700;font-size:.85rem;margin-bottom:.4rem;">🛒 Tu carrito</div>
+                        <div id="cartSummaryItems" style="font-size:.82rem;"></div>
+                        <div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid #fde68a;padding-top:.4rem;margin-top:.4rem;">
+                            <span>Total add-ons (único):</span>
+                            <span id="cartTotalAddons">$0</span>
+                        </div>
+                    </div>
+
+                    <p style="font-size:.75rem;color:var(--text-light);margin-top:.8rem;text-align:center;">💡 Podés saltar este paso sin agregar nada. Los extras se pueden comprar después también.</p>
+                </div>
+
+                <div class="btn-row">
+                    <button type="button" class="btn btn-secondary" onclick="goStep(4)">← Anterior</button>
+                    <button type="button" class="btn btn-primary" onclick="goStep(6)">Ver resumen →</button>
+                </div>
+            </div>
+
+            <!-- ═══ PASO 6: RESUMEN DE INVERSIÓN ═══ -->
+            <div class="form-step" id="step6">
+                <div class="card">
+                    <div class="section-title">💰 Resumen de tu inversión</div>
+                    <p class="section-subtitle">Revisá el detalle de tu plan y los costos antes de enviar tu registro.</p>
+
+                    <!-- Pago único -->
+                    <div class="invest-block" style="border-left:4px solid var(--primary);">
+                        <div class="invest-block-title">💳 Pago único (licencia de por vida)</div>
+                        <div id="investOneTimeItems"></div>
+                        <div class="invest-line total">
+                            <span>Subtotal único</span>
+                            <span id="investOneTimeTotal">$0</span>
+                        </div>
+                    </div>
+
+                    <!-- Suscripción -->
+                    <div class="invest-block" style="border-left:4px solid var(--accent);">
+                        <div class="invest-block-title">📅 Suscripción recurrente</div>
+                        <div class="invest-toggle">
+                            <button type="button" class="invest-toggle-btn active" data-billing="monthly" onclick="setBilling('monthly')">Mensual</button>
+                            <button type="button" class="invest-toggle-btn" data-billing="annual" onclick="setBilling('annual')">
+                                Anual <span class="save-badge">Ahorrás 2 meses</span>
+                            </button>
+                        </div>
+                        <div id="investSubItems"></div>
+                        <div class="invest-line total">
+                            <span id="investSubLabel">Total mensual</span>
+                            <span id="investSubTotal">$0/mes</span>
+                        </div>
+                    </div>
+
+                    <!-- Resumen final -->
+                    <div class="invest-block" style="background:linear-gradient(135deg,#f0fdfa,#ecfdf5);border:2px solid var(--primary);">
+                        <div style="font-size:1rem;font-weight:800;color:var(--primary-dark);margin-bottom:.6rem;">📋 Hoy pagás:</div>
+                        <div class="invest-line" style="font-size:1.1rem;">
+                            <span>Licencia + primer período</span>
+                            <span id="investTodayTotal" style="font-weight:800;font-size:1.2rem;color:var(--primary-dark);">$0</span>
+                        </div>
+                        <div style="font-size:.78rem;color:var(--text-light);margin-top:.5rem;" id="investRenewalNote"></div>
+                    </div>
+
+                    <div style="text-align:center;font-size:.75rem;color:var(--text-light);margin-top:.6rem;">
+                        ℹ️ Pago único = tuyo para siempre. La suscripción cubre: acceso a IA, soporte técnico, actualizaciones y almacenamiento.
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button type="button" class="btn btn-secondary" onclick="goStep(5)">← Volver al carrito</button>
                     <button type="button" class="btn btn-primary" id="btnSubmit" onclick="submitRegistro()">
-                        📨 Enviar Registro
+                        📨 Confirmar y Enviar Registro
                     </button>
                 </div>
             </div>
 
-            <!-- ═══ PASO 5: ÉXITO ═══ -->
-            <div class="form-step" id="step5">
+            <!-- ═══ PASO 7: ÉXITO ═══ -->
+            <div class="form-step" id="step7">
                 <div class="card success-card">
                     <div class="check-icon">✅</div>
                     <h2>¡Registro enviado!</h2>
@@ -707,6 +1113,7 @@
                         de tu app personalizada por email o WhatsApp.<br>
                         <span style="font-size:.82rem;color:var(--text-light);">(Este proceso puede tardar entre 24 y 48 hs)</span>
                     </p>
+                    <div id="successPlanSummary" style="margin-top:1.2rem;padding:1rem;background:#f0fdfa;border-radius:10px;border:1px solid #bbf7d0;text-align:left;font-size:.82rem;"></div>
                 </div>
             </div>
 
@@ -732,6 +1139,102 @@
     <script>
         // ── Config ──────────────────────────────────────────────────────────────
         const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec';
+
+        // ── Pricing ────────────────────────────────────────────────────────────
+        const PRICING = {
+            NORMAL: { license: 102.99, monthly: 10, annual: 100, devices: 2, templates: 3, label: 'Normal' },
+            PRO:    { license: 152.99, monthly: 15, annual: 150, devices: 5, templates: 'all_specialty', label: 'Pro' },
+            CLINIC: { license: 352.99, monthly: 30, annual: 300, devices: 999, templates: '3_packs', label: 'Clínica' }
+        };
+
+        const ADDON_PRICES = {
+            template_individual: 3,
+            pack_small: 7,    // 3-5 plantillas
+            pack_large: 12,   // 6+ plantillas
+            device_extra: 8.99
+        };
+
+        // ── Template map (same as admin.html) ──
+        const TEMPLATE_MAP = {
+            'Neumología': [
+                { key: 'espirometria', name: 'Espirometría' },
+                { key: 'test_marcha', name: 'Test Marcha 6 min' },
+                { key: 'pletismografia', name: 'Pletismografía' },
+                { key: 'oximetria_nocturna', name: 'Oximetría Nocturna' }
+            ],
+            'Oftalmología': [
+                { key: 'campimetria', name: 'Campimetría' },
+                { key: 'oct_retinal', name: 'OCT Retinal' },
+                { key: 'topografia_corneal', name: 'Topografía Corneal' },
+                { key: 'fondo_ojo', name: 'Fondo de Ojo' }
+            ],
+            'Imágenes': [
+                { key: 'tac', name: 'TAC' },
+                { key: 'resonancia', name: 'Resonancia' },
+                { key: 'mamografia', name: 'Mamografía' },
+                { key: 'densitometria', name: 'Densitometría' },
+                { key: 'pet_ct', name: 'PET-CT' },
+                { key: 'radiografia', name: 'Radiografía' },
+                { key: 'ecografia_abdominal', name: 'Ecografía Abdominal' },
+                { key: 'eco_doppler', name: 'Eco-Doppler' }
+            ],
+            'Endoscopía': [
+                { key: 'gastroscopia', name: 'Gastroscopía' },
+                { key: 'colonoscopia', name: 'Colonoscopía' },
+                { key: 'broncoscopia', name: 'Broncoscopía' },
+                { key: 'laringoscopia', name: 'Laringoscopía' }
+            ],
+            'Cardiología': [
+                { key: 'gammagrafia_cardiaca', name: 'Gammagrafía Cardíaca' },
+                { key: 'holter', name: 'Holter' },
+                { key: 'mapa', name: 'MAPA' },
+                { key: 'cinecoro', name: 'Cinecoronariografía' },
+                { key: 'ecg', name: 'ECG' },
+                { key: 'eco_stress', name: 'Eco-Stress' },
+                { key: 'ett', name: 'Ecocardiograma TT' }
+            ],
+            'Ginecología': [
+                { key: 'pap', name: 'PAP' },
+                { key: 'colposcopia', name: 'Colposcopía' }
+            ],
+            'Neurología': [
+                { key: 'electromiografia', name: 'Electromiografía' },
+                { key: 'polisomnografia', name: 'Polisomnografía' }
+            ],
+            'ORL': [
+                { key: 'naso', name: 'Nasofibroscopía' },
+                { key: 'endoscopia_otologica', name: 'Endoscopía Otológica' }
+            ],
+            'Quirúrgico': [
+                { key: 'protocolo_quirurgico', name: 'Protocolo Quirúrgico' }
+            ],
+            'General': [
+                { key: 'nota_evolucion', name: 'Nota de Evolución' },
+                { key: 'epicrisis', name: 'Epicrisis' },
+                { key: 'generico', name: 'Informe Genérico' }
+            ]
+        };
+
+        // Form specialty → template category mapping
+        const FORM_ESP_TO_CAT = {
+            'Cardiología': ['Cardiología'],
+            'Ecografía General': ['Imágenes'],
+            'Eco-Doppler Vascular': ['Imágenes'],
+            'Diagnóstico por Imágenes': ['Imágenes'],
+            'Gastroenterología / Endoscopía': ['Endoscopía'],
+            'ORL (Otorrinolaringología)': ['ORL'],
+            'Ginecología': ['Ginecología'],
+            'Obstetricia': [],
+            'Neumonología / Neumología': ['Neumología'],
+            'Neurología': ['Neurología'],
+            'Oftalmología': ['Oftalmología'],
+            'Cirugía / Quirúrgico': ['Quirúrgico'],
+            'Medicina General / Interna': ['General'],
+            'Traumatología / Ortopedia': [],
+            'Dermatología': [],
+            'Endocrinología': [],
+            'Urología': []
+        };
 
         // ── Especialidades y estudios (sincronizado con MEDICAL_TEMPLATES) ─────
         const ESPECIALIDADES = {
@@ -871,6 +1374,295 @@
         let wpCounter = 0;
         let selectedHeaderColor = '#1a56a0';
         let _modalResolve = null;
+
+        // ── Plan & Cart State ──
+        let selectedPlan = null;
+        let billingCycle = 'monthly'; // 'monthly' or 'annual'
+        let cartAddons = {
+            templates: [],   // { key, name, category, price }
+            packs: [],       // { category, templates: [...], price }
+            extraDevices: 0
+        };
+
+        // ── Plan Selection ──────────────────────────────────────────────────────
+        function selectPlan(plan) {
+            selectedPlan = plan;
+            document.querySelectorAll('.pricing-card').forEach(c => {
+                c.classList.toggle('selected', c.dataset.plan === plan);
+            });
+            const btn = document.getElementById('btnStep0Next');
+            btn.disabled = false;
+            btn.textContent = `Continuar con plan ${PRICING[plan].label} →`;
+        }
+
+        function validateStep0() {
+            if (!selectedPlan) {
+                showAlert('Seleccioná un plan para continuar', '📋');
+                return false;
+            }
+            return true;
+        }
+
+        // ── Cart Functions ──────────────────────────────────────────────────────
+        function getDoctorTemplateCats() {
+            const cats = new Set();
+            selectedEspecialidades.forEach(esp => {
+                const mapped = FORM_ESP_TO_CAT[esp];
+                if (mapped) mapped.forEach(c => cats.add(c));
+            });
+            cats.add('General');
+            return cats;
+        }
+
+        function getPackPrice(category) {
+            const count = (TEMPLATE_MAP[category] || []).length;
+            if (count >= 6) return ADDON_PRICES.pack_large;
+            if (count >= 3) return ADDON_PRICES.pack_small;
+            return ADDON_PRICES.template_individual * count;
+        }
+
+        function renderCartStep() {
+            if (!selectedPlan) return;
+            const plan = PRICING[selectedPlan];
+
+            // Plan name
+            document.getElementById('cartPlanName').textContent = plan.label;
+
+            // Plan includes
+            const includes = [];
+            if (selectedPlan === 'NORMAL') {
+                includes.push('✅ Transcripción de audio', '✋ Estructuración manual', '📄 3 plantillas a elección', '💻 2 dispositivos');
+            } else if (selectedPlan === 'PRO') {
+                includes.push('✅ Transcripción + IA', '🤖 Estructuración automática', '📄 Todas las plantillas de tu especialidad', '💻 5 dispositivos', '🧠 Asistente IA');
+            } else {
+                includes.push('✅ Todo lo de Pro', '📦 3 packs de especialidad', '♾️ Dispositivos ilimitados', '👥 Multi-profesional');
+            }
+            document.getElementById('cartPlanIncludes').innerHTML = includes.join(' · ');
+
+            // Template add-ons
+            renderCartTemplates();
+
+            // Devices section (hide for CLINIC)
+            document.getElementById('cartDevicesSection').style.display = selectedPlan === 'CLINIC' ? 'none' : 'block';
+
+            updateCartSummary();
+        }
+
+        function renderCartTemplates() {
+            const container = document.getElementById('cartTemplatesList');
+            const doctorCats = getDoctorTemplateCats();
+            const allCats = Object.keys(TEMPLATE_MAP);
+            let html = '';
+
+            if (selectedPlan === 'NORMAL') {
+                // Show templates NOT in their included 3 (from other categories)
+                allCats.forEach(cat => {
+                    if (doctorCats.has(cat)) return; // Their specialty templates are selectable in approval
+                    const templates = TEMPLATE_MAP[cat];
+                    const packPrice = getPackPrice(cat);
+                    const isPack = cartAddons.packs.some(p => p.category === cat);
+
+                    // Pack option
+                    html += `<div class="cart-item" style="border-left:3px solid var(--accent);">
+                        <span class="cart-item-name">📦 Pack ${cat} (${templates.length} plantillas)</span>
+                        <span class="cart-item-price">$${packPrice}</span>
+                        ${isPack
+                            ? `<button type="button" class="cart-remove-btn" onclick="removeCartPack('${cat}')">✕</button>`
+                            : `<button type="button" class="cart-add-btn" onclick="addCartPack('${cat}')">+ Agregar</button>`
+                        }
+                    </div>`;
+
+                    // Individual templates
+                    templates.forEach(t => {
+                        if (isPack) return; // Already in pack
+                        const isAdded = cartAddons.templates.some(a => a.key === t.key);
+                        html += `<div class="cart-item" style="padding-left:1.5rem;">
+                            <span class="cart-item-name">${t.name}</span>
+                            <span class="cart-item-price">$${ADDON_PRICES.template_individual}</span>
+                            ${isAdded
+                                ? `<button type="button" class="cart-remove-btn" onclick="removeCartTemplate('${t.key}')">✕</button>`
+                                : `<button type="button" class="cart-add-btn" onclick="addCartTemplate('${t.key}','${t.name}','${cat}')">+ Agregar</button>`
+                            }
+                        </div>`;
+                    });
+                });
+            } else if (selectedPlan === 'PRO') {
+                // Show templates from OTHER specialties (not theirs)
+                allCats.forEach(cat => {
+                    if (doctorCats.has(cat)) return;
+                    const templates = TEMPLATE_MAP[cat];
+                    const isPack = cartAddons.packs.some(p => p.category === cat);
+
+                    templates.forEach(t => {
+                        if (isPack) return;
+                        const isAdded = cartAddons.templates.some(a => a.key === t.key);
+                        html += `<div class="cart-item">
+                            <span class="cart-item-name">${t.name} <small style="color:var(--text-light);">(${cat})</small></span>
+                            <span class="cart-item-price">$${ADDON_PRICES.template_individual}</span>
+                            ${isAdded
+                                ? `<button type="button" class="cart-remove-btn" onclick="removeCartTemplate('${t.key}')">✕</button>`
+                                : `<button type="button" class="cart-add-btn" onclick="addCartTemplate('${t.key}','${t.name}','${cat}')">+ Agregar</button>`
+                            }
+                        </div>`;
+                    });
+                });
+            } else {
+                // CLINIC: extra packs (beyond their included 3)
+                allCats.forEach(cat => {
+                    if (doctorCats.has(cat)) return;
+                    const templates = TEMPLATE_MAP[cat];
+                    const packPrice = getPackPrice(cat);
+                    const isPack = cartAddons.packs.some(p => p.category === cat);
+
+                    html += `<div class="cart-item" style="border-left:3px solid var(--accent);">
+                        <span class="cart-item-name">📦 Pack ${cat} (${templates.length} plantillas)</span>
+                        <span class="cart-item-price">$${packPrice}</span>
+                        ${isPack
+                            ? `<button type="button" class="cart-remove-btn" onclick="removeCartPack('${cat}')">✕</button>`
+                            : `<button type="button" class="cart-add-btn" onclick="addCartPack('${cat}')">+ Agregar</button>`
+                        }
+                    </div>`;
+                });
+            }
+
+            if (!html) {
+                html = '<div style="text-align:center;color:var(--text-light);font-size:.82rem;padding:1rem;">🎉 Tu plan ya cubre todas las plantillas disponibles para tus especialidades.</div>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        function addCartTemplate(key, name, category) {
+            if (!cartAddons.templates.some(t => t.key === key)) {
+                cartAddons.templates.push({ key, name, category, price: ADDON_PRICES.template_individual });
+            }
+            renderCartTemplates();
+            updateCartSummary();
+        }
+
+        function removeCartTemplate(key) {
+            cartAddons.templates = cartAddons.templates.filter(t => t.key !== key);
+            renderCartTemplates();
+            updateCartSummary();
+        }
+
+        function addCartPack(category) {
+            const templates = TEMPLATE_MAP[category] || [];
+            const price = getPackPrice(category);
+            // Remove any individual templates from this category
+            cartAddons.templates = cartAddons.templates.filter(t => t.category !== category);
+            cartAddons.packs.push({ category, templates: templates.map(t => t.key), price });
+            renderCartTemplates();
+            updateCartSummary();
+        }
+
+        function removeCartPack(category) {
+            cartAddons.packs = cartAddons.packs.filter(p => p.category !== category);
+            renderCartTemplates();
+            updateCartSummary();
+        }
+
+        function changeExtraDevices(delta) {
+            cartAddons.extraDevices = Math.max(0, Math.min(10, cartAddons.extraDevices + delta));
+            document.getElementById('extraDevicesCount').textContent = cartAddons.extraDevices;
+            updateCartSummary();
+        }
+
+        function getCartAddonTotal() {
+            let total = 0;
+            cartAddons.templates.forEach(t => total += t.price);
+            cartAddons.packs.forEach(p => total += p.price);
+            total += cartAddons.extraDevices * ADDON_PRICES.device_extra;
+            return total;
+        }
+
+        function updateCartSummary() {
+            const items = [];
+            cartAddons.templates.forEach(t => items.push(`${t.name} — $${t.price}`));
+            cartAddons.packs.forEach(p => items.push(`📦 Pack ${p.category} — $${p.price}`));
+            if (cartAddons.extraDevices > 0) {
+                items.push(`+${cartAddons.extraDevices} dispositivo(s) — $${(cartAddons.extraDevices * ADDON_PRICES.device_extra).toFixed(2)}`);
+            }
+
+            const summaryEl = document.getElementById('cartSummaryItems');
+            if (items.length === 0) {
+                summaryEl.innerHTML = '<div style="color:var(--text-light);font-style:italic;">Sin extras por ahora</div>';
+            } else {
+                summaryEl.innerHTML = items.map(i => `<div style="padding:2px 0;">• ${i}</div>`).join('');
+            }
+            document.getElementById('cartTotalAddons').textContent = '$' + getCartAddonTotal().toFixed(2);
+        }
+
+        // ── Investment Summary ──────────────────────────────────────────────────
+        function setBilling(cycle) {
+            billingCycle = cycle;
+            document.querySelectorAll('.invest-toggle-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.billing === cycle);
+            });
+            renderInvestmentSummary();
+        }
+
+        function renderInvestmentSummary() {
+            if (!selectedPlan) return;
+            const plan = PRICING[selectedPlan];
+
+            // One-time items
+            const oneTimeEl = document.getElementById('investOneTimeItems');
+            let oneTimeHtml = `<div class="invest-line"><span>Licencia Plan ${plan.label}</span><span>$${plan.license}</span></div>`;
+
+            cartAddons.templates.forEach(t => {
+                oneTimeHtml += `<div class="invest-line"><span>📄 ${t.name}</span><span>$${t.price}</span></div>`;
+            });
+            cartAddons.packs.forEach(p => {
+                oneTimeHtml += `<div class="invest-line"><span>📦 Pack ${p.category}</span><span>$${p.price}</span></div>`;
+            });
+            if (cartAddons.extraDevices > 0) {
+                const devCost = (cartAddons.extraDevices * ADDON_PRICES.device_extra).toFixed(2);
+                oneTimeHtml += `<div class="invest-line"><span>💻 +${cartAddons.extraDevices} dispositivo(s)</span><span>$${devCost}</span></div>`;
+            }
+            oneTimeEl.innerHTML = oneTimeHtml;
+
+            const totalOneTime = plan.license + getCartAddonTotal();
+            document.getElementById('investOneTimeTotal').textContent = '$' + totalOneTime.toFixed(2);
+
+            // Subscription
+            const subEl = document.getElementById('investSubItems');
+            if (billingCycle === 'monthly') {
+                subEl.innerHTML = `<div class="invest-line"><span>Plan ${plan.label} (mensual)</span><span>$${plan.monthly}/mes</span></div>`;
+                document.getElementById('investSubLabel').textContent = 'Total mensual';
+                document.getElementById('investSubTotal').textContent = '$' + plan.monthly + '/mes';
+            } else {
+                const saved = (plan.monthly * 12) - plan.annual;
+                subEl.innerHTML = `<div class="invest-line"><span>Plan ${plan.label} (anual)</span><span>$${plan.annual}/año</span></div>
+                    <div class="invest-line" style="color:var(--success);font-size:.8rem;"><span>Ahorro vs mensual</span><span>-$${saved}</span></div>`;
+                document.getElementById('investSubLabel').textContent = 'Total anual';
+                document.getElementById('investSubTotal').textContent = '$' + plan.annual + '/año';
+            }
+
+            // Today total
+            const firstPeriod = billingCycle === 'monthly' ? plan.monthly : plan.annual;
+            const todayTotal = totalOneTime + firstPeriod;
+            document.getElementById('investTodayTotal').textContent = '$' + todayTotal.toFixed(2);
+
+            const renewalText = billingCycle === 'monthly'
+                ? `📅 Luego: $${plan.monthly}/mes (renovación automática)`
+                : `📅 Luego: $${plan.annual}/año (renovación anual)`;
+            document.getElementById('investRenewalNote').textContent = renewalText;
+
+            // Success step summary
+            const successSummary = document.getElementById('successPlanSummary');
+            if (successSummary) {
+                let sHtml = `<div style="font-weight:700;margin-bottom:.4rem;">📋 Detalle de tu registro:</div>`;
+                sHtml += `<div>• Plan: <b>${plan.label}</b></div>`;
+                sHtml += `<div>• Licencia: <b>$${plan.license}</b></div>`;
+                if (cartAddons.templates.length || cartAddons.packs.length || cartAddons.extraDevices) {
+                    sHtml += `<div>• Extras: <b>$${getCartAddonTotal().toFixed(2)}</b></div>`;
+                }
+                sHtml += `<div>• Suscripción: <b>${billingCycle === 'monthly' ? '$' + plan.monthly + '/mes' : '$' + plan.annual + '/año'}</b></div>`;
+                sHtml += `<div style="margin-top:.5rem;font-weight:700;color:var(--primary-dark);">💳 Total hoy: $${todayTotal.toFixed(2)}</div>`;
+                successSummary.innerHTML = sHtml;
+            }
+        }
 
         // ── Custom Modal ────────────────────────────────────────────────────────
         function showAlert(msg, icon = '⚠️') {
@@ -1137,19 +1929,25 @@
         }
 
         // ── Steps navigation ────────────────────────────────────────────────────
-        let currentStep = 1;
+        let currentStep = 0;
 
         function goStep(n) {
             // Validación antes de avanzar
             if (n > currentStep) {
+                if (currentStep === 0 && !validateStep0()) return;
                 if (currentStep === 1 && !validateStep1()) return;
                 if (currentStep === 2 && !validateStep2()) return;
                 if (currentStep === 3 && !validateStep3()) return;
             }
 
+            // Render dynamic steps when entering them
+            if (n === 5) renderCartStep();
+            if (n === 6) renderInvestmentSummary();
+
             // Ocultar paso actual, mostrar nuevo
             document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
-            document.getElementById('step' + n)?.classList.add('active');
+            const target = document.getElementById('step' + n);
+            if (target) target.classList.add('active');
 
             // Actualizar indicadores
             document.querySelectorAll('.step').forEach(s => {
@@ -1224,6 +2022,12 @@
                 });
             });
 
+            // Build cart/addon summary
+            const plan = PRICING[selectedPlan];
+            const addonTotal = getCartAddonTotal();
+            const subAmount = billingCycle === 'monthly' ? plan.monthly : plan.annual;
+            const todayTotal = plan.license + addonTotal + subAmount;
+
             const data = {
                 action: 'register_doctor',
                 nombre: document.getElementById('regNombre').value.trim(),
@@ -1239,6 +2043,19 @@
                 firma: imageData.firma || null,
                 proLogo: imageData.proLogo || null,
                 notas: document.getElementById('regNotas').value.trim(),
+                // Plan & pricing data
+                planSeleccionado: selectedPlan,
+                billingCycle: billingCycle,
+                addons: JSON.stringify({
+                    templates: cartAddons.templates.map(t => ({ key: t.key, name: t.name, price: t.price })),
+                    packs: cartAddons.packs.map(p => ({ category: p.category, price: p.price })),
+                    extraDevices: cartAddons.extraDevices,
+                    addonTotal: addonTotal
+                }),
+                licenseAmount: plan.license,
+                subscriptionAmount: subAmount,
+                subscriptionCycle: billingCycle,
+                totalHoy: todayTotal,
                 fechaRegistro: new Date().toISOString(),
                 origen: 'formulario_web'
             };
@@ -1252,14 +2069,14 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    goStep(5);
+                    goStep(7);
                 } else {
                     throw new Error(result.error || 'Error al enviar');
                 }
             } catch (err) {
                 await showAlert('Error al enviar el registro:<br><br>' + err.message + '<br><br>Probá de nuevo en unos minutos.', '❌');
                 btn.disabled = false;
-                btn.textContent = '📨 Enviar Registro';
+                btn.textContent = '📨 Confirmar y Enviar Registro';
             }
         }
     </script>
