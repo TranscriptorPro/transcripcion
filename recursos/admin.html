@@ -2433,6 +2433,58 @@
             }, 4000);
         }
 
+        // ── Custom Modal (reemplaza alert/confirm/prompt del navegador) ──
+        let _dashModalResolve = null;
+
+        function dashAlert(msg, icon = '⚠️') {
+            return new Promise(resolve => {
+                _dashModalResolve = resolve;
+                document.getElementById('dashModalIcon').textContent = icon;
+                document.getElementById('dashModalMsg').innerHTML = msg;
+                document.getElementById('dashModalInput').style.display = 'none';
+                document.getElementById('dashModalActions').innerHTML = '<button class="btn-primary" onclick="closeDashModal(true)" style="min-width:100px;">Aceptar</button>';
+                document.getElementById('dashModalOverlay').classList.add('show');
+            });
+        }
+
+        function dashConfirm(msg, icon = '❓') {
+            return new Promise(resolve => {
+                _dashModalResolve = resolve;
+                document.getElementById('dashModalIcon').textContent = icon;
+                document.getElementById('dashModalMsg').innerHTML = msg;
+                document.getElementById('dashModalInput').style.display = 'none';
+                document.getElementById('dashModalActions').innerHTML = `
+                    <button class="btn-secondary" onclick="closeDashModal(false)" style="min-width:90px;">Cancelar</button>
+                    <button class="btn-primary" onclick="closeDashModal(true)" style="min-width:90px;">Aceptar</button>
+                `;
+                document.getElementById('dashModalOverlay').classList.add('show');
+            });
+        }
+
+        function dashPrompt(msg, defaultVal = '', icon = '✏️') {
+            return new Promise(resolve => {
+                _dashModalResolve = resolve;
+                document.getElementById('dashModalIcon').textContent = icon;
+                document.getElementById('dashModalMsg').innerHTML = msg;
+                const inputDiv = document.getElementById('dashModalInput');
+                const inputField = document.getElementById('dashModalInputField');
+                inputDiv.style.display = 'block';
+                inputField.value = defaultVal;
+                inputField.placeholder = 'Escribí acá...';
+                document.getElementById('dashModalActions').innerHTML = `
+                    <button class="btn-secondary" onclick="closeDashModal(null)" style="min-width:90px;">Cancelar</button>
+                    <button class="btn-primary" onclick="closeDashModal(document.getElementById('dashModalInputField').value)" style="min-width:90px;">Aceptar</button>
+                `;
+                document.getElementById('dashModalOverlay').classList.add('show');
+                setTimeout(() => inputField.focus(), 100);
+            });
+        }
+
+        function closeDashModal(result) {
+            document.getElementById('dashModalOverlay').classList.remove('show');
+            if (_dashModalResolve) { _dashModalResolve(result); _dashModalResolve = null; }
+        }
+
         /* ── Tab Navigation ─────────────────────────────────────────────────── */
         function showTab(tabName) {
             // Hide all tabs
@@ -2965,7 +3017,8 @@
             const newStatus = user.Estado === 'banned' ? 'active' : 'banned';
             const action    = newStatus === 'banned' ? 'bloquear' : 'desbloquear';
 
-            if (!confirm(`¿Confirmar ${action} a ${user.Nombre}?`)) return;
+            const ok = await dashConfirm(`¿Confirmar ${action} a <b>${escapeHtml(user.Nombre)}</b>?`, newStatus === 'banned' ? '🚫' : '✅');
+            if (!ok) return;
 
             try {
                 if (CONFIG.scriptUrl === 'PASTE_APPS_SCRIPT_URL_HERE') {
@@ -2989,7 +3042,8 @@
             const user = allUsers.find(u => String(u.ID_Medico) === String(userId));
             if (!user) return;
 
-            if (!confirm(`¿Activar suscripción PRO para ${user.Nombre}?`)) return;
+            const ok = await dashConfirm(`¿Activar suscripción PRO para <b>${escapeHtml(user.Nombre)}</b>?`, '⭐');
+            if (!ok) return;
 
             const expirationDate = new Date();
             expirationDate.setFullYear(expirationDate.getFullYear() + 1);
@@ -3400,7 +3454,7 @@
                 fetch(logUrl).catch(() => {});
 
             } catch (err) {
-                alert('Error al generar link: ' + err.message);
+                dashAlert('Error al generar link: ' + err.message, '❌');
             } finally {
                 btn.disabled = false;
                 btn.textContent = '🔗 Generar Link';
@@ -3979,6 +4033,7 @@
             const reg = allRegistrations.find(r => r.ID_Registro === regId);
             if (!reg) return;
 
+            // ── Lugar principal ──
             let wpHtml = '';
             try {
                 const wp = JSON.parse(reg.Workplace_Data || '{}');
@@ -3987,15 +4042,74 @@
                     <dt>Dirección</dt><dd>${escapeHtml(wp.address || '—')}</dd>
                     <dt>Teléfono</dt><dd>${escapeHtml(wp.phone || '—')}</dd>
                     <dt>Email</dt><dd>${escapeHtml(wp.email || '—')}</dd>
-                    <dt>Logo</dt><dd>${wp.logo ? '✅ Sí' : '❌ No'}</dd>
+                    <dt>Logo</dt><dd>${(wp.logo && wp.logo !== 'null') ? '✅ Sí' : '❌ No'}</dd>
                 `;
             } catch(_) {}
 
-            let estudios = '';
+            // ── Lugares adicionales (parsear JSON, no mostrar raw) ──
+            let extraWpHtml = '';
+            try {
+                let extras = [];
+                if (reg.Extra_Workplaces) {
+                    extras = JSON.parse(reg.Extra_Workplaces);
+                    if (!Array.isArray(extras)) extras = [];
+                }
+                if (extras.length > 0) {
+                    extraWpHtml = extras.map((wp, i) => `
+                        <div style="background:#f8fafc;border-radius:8px;padding:.6rem .8rem;margin-bottom:.4rem;border:1px solid #e2e8f0;">
+                            <div style="font-weight:600;font-size:.85rem;margin-bottom:.3rem;">🏢 ${escapeHtml(wp.name || 'Lugar ' + (i + 2))}</div>
+                            <dl class="reg-card-info" style="margin:0;">
+                                ${wp.address ? `<dt>Dirección</dt><dd>${escapeHtml(wp.address)}</dd>` : ''}
+                                ${wp.phone ? `<dt>Teléfono</dt><dd>${escapeHtml(wp.phone)}</dd>` : ''}
+                                ${wp.email ? `<dt>Email</dt><dd>${escapeHtml(wp.email)}</dd>` : ''}
+                                <dt>Logo</dt><dd>${(wp.logo && wp.logo !== 'null' && !wp.logo.startsWith('data:')) ? '✅ Sí' : (wp.logo && wp.logo.startsWith('data:')) ? '✅ Sí' : '❌ No'}</dd>
+                            </dl>
+                        </div>
+                    `).join('');
+                }
+            } catch(_) {}
+
+            // ── Estudios agrupados por especialidad ──
+            let estudiosHtml = '';
             try {
                 const est = JSON.parse(reg.Estudios || '[]');
-                estudios = est.map(e => `<span class="badge badge-specialty">${escapeHtml(typeof e === 'string' ? e : e.nombre || '')}</span>`).join(' ');
+                if (est.length > 0) {
+                    const grouped = {};
+                    est.forEach(e => {
+                        const esp = typeof e === 'string' ? 'General' : (e.especialidad || 'General');
+                        const nombre = typeof e === 'string' ? e : (e.nombre || '');
+                        if (!grouped[esp]) grouped[esp] = [];
+                        if (nombre) grouped[esp].push(nombre);
+                    });
+                    estudiosHtml = Object.entries(grouped).map(([esp, estudios]) => `
+                        <div style="margin-bottom:.6rem;">
+                            <div style="font-weight:600;font-size:.8rem;color:#0f766e;border-bottom:1px solid #e2e8f0;padding-bottom:3px;margin-bottom:4px;">${escapeHtml(esp)}</div>
+                            <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                                ${estudios.map(n => `<span class="badge badge-specialty">${escapeHtml(n)}</span>`).join('')}
+                            </div>
+                        </div>
+                    `).join('');
+                }
             } catch(_) {}
+
+            // ── Especialidades como badges ──
+            let especialidadesHtml = '';
+            try {
+                const esps = String(reg.Especialidades || '').split(',').map(s => s.trim()).filter(Boolean);
+                especialidadesHtml = esps.map(e => `<span class="badge badge-specialty">${escapeHtml(e)}</span>`).join(' ');
+            } catch(_) {}
+
+            // ── Color: nombre legible ──
+            const colorNames = {
+                '#1a56a0': 'Azul', '#0f766e': 'Verde', '#db2777': 'Rosa',
+                '#1e293b': 'Negro', '#b8860b': 'Dorado', '#708090': 'Plateado'
+            };
+            const hdrColor = reg.Header_Color || '#1a56a0';
+            const colorName = colorNames[hdrColor] || hdrColor;
+
+            // ── Firma / Logo check ──
+            const hasFirma = reg.Firma && reg.Firma !== 'no' && reg.Firma !== 'null' && reg.Firma !== '';
+            const hasProLogo = reg.Pro_Logo && reg.Pro_Logo !== 'no' && reg.Pro_Logo !== 'null' && reg.Pro_Logo !== '';
 
             const content = `
                 <dl class="reg-card-info" style="margin:1rem 0;">
@@ -4003,20 +4117,25 @@
                     <dt>📧 Email</dt><dd>${escapeHtml(reg.Email || '—')}</dd>
                     <dt>🪪 Matrícula</dt><dd>${escapeHtml(reg.Matricula || '—')}</dd>
                     <dt>📞 Teléfono</dt><dd>${escapeHtml(reg.Telefono || '—')}</dd>
-                    <dt>🎨 Color header</dt><dd><span style="display:inline-block;width:20px;height:14px;border-radius:3px;background:${escapeHtml(reg.Header_Color || '#1a56a0')};vertical-align:middle;"></span> ${escapeHtml(reg.Header_Color || '#1a56a0')}</dd>
+                    <dt>🎨 Color header</dt><dd><span style="display:inline-block;width:20px;height:14px;border-radius:3px;background:${escapeHtml(hdrColor)};vertical-align:middle;border:1px solid rgba(0,0,0,.15);"></span> ${escapeHtml(colorName)}</dd>
                     <dt>📝 Pie de página</dt><dd>${escapeHtml(reg.Footer_Text || '—')}</dd>
-                    <dt>✍️ Firma</dt><dd>${reg.Firma === 'yes' ? '✅ Sí' : '❌ No'}</dd>
-                    <dt>🩺 Logo profesional</dt><dd>${reg.Pro_Logo === 'yes' ? '✅ Sí' : '❌ No'}</dd>
+                    <dt>✍️ Firma</dt><dd>${hasFirma ? '✅ Sí' : '❌ No'}</dd>
+                    <dt>🩺 Logo profesional</dt><dd>${hasProLogo ? '✅ Sí' : '❌ No'}</dd>
                 </dl>
-                <h4 style="font-size:.9rem;margin-top:1rem;">🏥 Lugar de trabajo</h4>
+
+                <h4 style="font-size:.9rem;margin-top:1rem;">🏥 Lugar de trabajo principal</h4>
                 <dl class="reg-card-info" style="margin:.5rem 0;">${wpHtml}</dl>
-                ${reg.Extra_Workplaces ? `<p style="font-size:.85rem;"><b>Lugares adicionales:</b> ${escapeHtml(reg.Extra_Workplaces)}</p>` : ''}
+
+                ${extraWpHtml ? `<h4 style="font-size:.9rem;margin-top:1rem;">🏢 Lugares adicionales</h4>${extraWpHtml}` : ''}
+
                 <h4 style="font-size:.9rem;margin-top:1rem;">🩺 Especialidades</h4>
-                <p style="font-size:.85rem;">${escapeHtml(reg.Especialidades || '—')}</p>
+                <div style="margin:.5rem 0;display:flex;flex-wrap:wrap;gap:4px;">${especialidadesHtml || '<span style="color:#94a3b8;">—</span>'}</div>
+
                 <h4 style="font-size:.9rem;margin-top:1rem;">📋 Estudios seleccionados</h4>
-                <div style="margin:.5rem 0;">${estudios || '<span style="color:#94a3b8;">Ninguno seleccionado</span>'}</div>
-                ${reg.Notas ? `<h4 style="font-size:.9rem;margin-top:1rem;">💬 Notas</h4><p style="font-size:.85rem;background:#f8fafc;padding:.6rem;border-radius:8px;">${escapeHtml(reg.Notas)}</p>` : ''}
-                <p style="font-size:.78rem;color:#94a3b8;margin-top:1rem;">ID: ${escapeHtml(reg.ID_Registro)} — Origen: ${escapeHtml(reg.Origen || '—')}</p>
+                <div style="margin:.5rem 0;">${estudiosHtml || '<span style="color:#94a3b8;">Ninguno seleccionado</span>'}</div>
+
+                ${reg.Notas ? `<h4 style="font-size:.9rem;margin-top:1rem;">💬 Notas</h4><p style="font-size:.85rem;background:#fff7ed;padding:.6rem;border-radius:8px;border:1px solid #fed7aa;">${escapeHtml(reg.Notas)}</p>` : ''}
+                <p style="font-size:.73rem;color:#94a3b8;margin-top:1.2rem;border-top:1px solid #e2e8f0;padding-top:.5rem;">🆔 ${escapeHtml(reg.ID_Registro)} — Origen: ${escapeHtml(reg.Origen || '—')}</p>
             `;
 
             document.getElementById('detailModalContent').innerHTML = content;
@@ -4053,7 +4172,7 @@
             const templates = document.getElementById('approveTemplates').value.trim();
 
             if (!apiKey) {
-                alert('Debés ingresar una API Key para este profesional');
+                await dashAlert('Debés ingresar una API Key para este profesional', '🔑');
                 document.getElementById('approveApiKey').focus();
                 return;
             }
@@ -4075,24 +4194,21 @@
                 showNotification(`✅ ${data.nombre} aprobado — ID: ${data.medicoId}`, 'success');
 
                 // Ofrecer generar link
-                const reg = allRegistrations.find(r => r.ID_Registro === regId);
                 if (data.medicoId) {
-                    const generateLink = confirm(
-                        `Usuario creado: ${data.medicoId}\n\n` +
-                        `¿Querés abrir la Fábrica de Clones para generar el link de instalación?`
+                    const generateLink = await dashConfirm(
+                        `<b>Usuario creado:</b> ${data.medicoId}<br><br>¿Querés abrir la Fábrica de Clones para generar el link de instalación?`,
+                        '🏭'
                     );
                     if (generateLink) {
-                        // Recargar usuarios y abrir factory para el nuevo ID
                         await loadDashboard(true);
                         openCloneFactory(data.medicoId);
                     }
                 }
 
-                // Reload registrations
                 registrosLoaded = false;
                 loadRegistrations();
             } catch (err) {
-                alert('Error al aprobar: ' + err.message);
+                await dashAlert('Error al aprobar: ' + err.message, '❌');
             } finally {
                 btn.disabled = false;
                 btn.textContent = '✅ Aprobar y Crear Usuario';
@@ -4100,11 +4216,19 @@
         }
 
         async function rejectRegistration(regId) {
-            const motivo = prompt('Motivo del rechazo (opcional):') || 'Rechazado por el administrador';
+            const reg = allRegistrations.find(r => r.ID_Registro === regId);
+            const nombre = reg ? reg.Nombre : regId;
+
+            const ok = await dashConfirm(`¿Estás seguro de rechazar el registro de <b>${escapeHtml(nombre)}</b>?`, '❌');
+            if (!ok) return;
+
+            const motivo = await dashPrompt('Motivo del rechazo (opcional):', '', '📝');
+            if (motivo === null) return; // Canceló
 
             try {
                 const authStr = _getSessionAuthParams();
-                const url = `${CONFIG.scriptUrl}?action=admin_reject_registration&regId=${encodeURIComponent(regId)}&motivo=${encodeURIComponent(motivo)}&${authStr}`;
+                const reason = motivo || 'Rechazado por el administrador';
+                const url = `${CONFIG.scriptUrl}?action=admin_reject_registration&regId=${encodeURIComponent(regId)}&motivo=${encodeURIComponent(reason)}&${authStr}`;
 
                 const res = await fetch(url);
                 const data = await res.json();
@@ -4115,7 +4239,7 @@
                 registrosLoaded = false;
                 loadRegistrations();
             } catch (err) {
-                alert('Error al rechazar: ' + err.message);
+                await dashAlert('Error al rechazar: ' + err.message, '❌');
             }
         }
 
@@ -4124,7 +4248,7 @@
             navigator.clipboard.writeText(link).then(() => {
                 showNotification('📋 Link de registro copiado', 'success');
             }).catch(() => {
-                prompt('Copiá este link:', link);
+                dashAlert(`Copiá este link:<br><br><input type="text" value="${link}" readonly style="width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:6px;font-size:.85rem;" onclick="this.select()">`, '🔗');
             });
         }
 
@@ -4523,12 +4647,24 @@
 
     <!-- ── Modal: Detalle Registro ── -->
     <div class="approve-modal-overlay" id="detailModalOverlay" onclick="if(event.target===this)closeDetailModal()">
-        <div class="approve-modal" style="max-width:600px;">
+        <div class="approve-modal" style="max-width:600px;max-height:85vh;overflow-y:auto;">
             <h3>📋 Detalle del Registro</h3>
             <div id="detailModalContent"></div>
             <div class="btn-row" style="margin-top:1rem;">
                 <button class="btn-secondary" onclick="closeDetailModal()">Cerrar</button>
             </div>
+        </div>
+    </div>
+
+    <!-- ── Modal: Custom Alert/Confirm/Prompt ── -->
+    <div class="approve-modal-overlay" id="dashModalOverlay" onclick="if(event.target===this)closeDashModal(false)" style="z-index:10001;">
+        <div class="approve-modal" style="max-width:420px;text-align:center;">
+            <div id="dashModalIcon" style="font-size:2.5rem;margin-bottom:.6rem;"></div>
+            <div id="dashModalMsg" style="font-size:.92rem;line-height:1.5;margin-bottom:1rem;"></div>
+            <div id="dashModalInput" style="display:none;margin-bottom:1rem;">
+                <input type="text" id="dashModalInputField" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:.88rem;font-family:inherit;">
+            </div>
+            <div class="btn-row" id="dashModalActions" style="justify-content:center;"></div>
         </div>
     </div>
 </body>
