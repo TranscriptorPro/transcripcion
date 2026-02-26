@@ -9,11 +9,12 @@
  */
 
 // Nombres exactos de las pestañas del Sheet
-const SHEET_NAME      = 'Usuarios';
-const SHEET_METRICAS  = 'Metricas_Uso';
-const SHEET_DEVICES   = 'Dispositivos';
+const SHEET_NAME         = 'Usuarios';
+const SHEET_METRICAS     = 'Metricas_Uso';
+const SHEET_DEVICES      = 'Dispositivos';
 const SHEET_LOGS         = 'Admin_Logs';
 const SHEET_DIAGNOSTICOS = 'Diagnosticos';
+const SHEET_ADMIN_USERS  = 'Admin_Users';
 
 // SECURITY: Read from Apps Script Script Properties (not hardcoded).
 // In Apps Script editor: File > Project Properties > Script Properties > Add: ADMIN_KEY = <your-secret>
@@ -28,7 +29,7 @@ const ADMIN_KEY = (function() {
 function doGet(e) {
   const action = e.parameter.action;
 
-  // EXISTING: user validation (keep as-is)
+  // EXISTING: user validation — enhanced with trial/device enforcement
   if (!action || action === 'validate') {
     const id = e.parameter.id;
     const deviceId = e.parameter.deviceId;
@@ -38,17 +39,74 @@ function doGet(e) {
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
     const data = sheet.getDataRange().getValues();
     const headers = data[0];
-    const idCol = headers.indexOf('ID_Medico'); // buscar el índice real, no asumir columna 0
+    const idCol = headers.indexOf('ID_Medico');
 
     for (let i = 1; i < data.length; i++) {
       if (String(data[i][idCol]) === String(id)) {
         const doctor = {};
         headers.forEach((h, index) => doctor[h] = data[i][index]);
 
-        // Actualizar Devices_Logged en hoja Usuarios
+        // ── Verificar Estado de la cuenta ──────────────────────────────────
+        const estado = String(doctor.Estado || '').toLowerCase();
+        if (estado === 'banned') {
+          return createResponse({ error: 'Cuenta suspendida', code: 'BANNED' });
+        }
+        if (estado === 'inactive') {
+          return createResponse({ error: 'Cuenta desactivada', code: 'INACTIVE' });
+        }
+
+        // ── Verificar expiración del trial / plan ──────────────────────────
+        const now = new Date();
+        const fechaVenc = doctor.Fecha_Vencimiento ? new Date(doctor.Fecha_Vencimiento) : null;
+        let trialExpired = false;
+        let daysRemaining = null;
+
+        if (fechaVenc) {
+          const diffMs = fechaVenc.getTime() - now.getTime();
+          daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+          if (diffMs < 0) {
+            trialExpired = true;
+            // Auto-marcar como expired si aún no lo está
+            if (estado !== 'expired') {
+              const estadoCol = headers.indexOf('Estado');
+              if (estadoCol !== -1) {
+                sheet.getRange(i + 1, estadoCol + 1).setValue('expired');
+              }
+            }
+          }
+        }
+
+        doctor.trial_expired = trialExpired;
+        doctor.days_remaining = daysRemaining;
+
+        if (trialExpired && estado !== 'active') {
+          // Solo bloquear si el plan no es permanente (pro con Fecha_Vencimiento pasada se bloquea)
+          return createResponse({
+            error: 'Licencia expirada',
+            code: 'EXPIRED',
+            trial_expired: true,
+            days_remaining: daysRemaining,
+            plan: doctor.Plan
+          });
+        }
+
+        // ── Verificar límite de dispositivos ───────────────────────────────
         let devices = [];
         try { devices = JSON.parse(doctor.Devices_Logged || '[]'); } catch(e) {}
-        const isNewDevice = !devices.includes(deviceId);
+        const maxDevices = Number(doctor.Devices_Max) || 999;
+        const isNewDevice = deviceId && !devices.includes(deviceId);
+
+        if (isNewDevice && devices.length >= maxDevices) {
+          return createResponse({
+            error: 'Límite de dispositivos alcanzado',
+            code: 'DEVICE_LIMIT',
+            devices_logged: devices.length,
+            devices_max: maxDevices
+          });
+        }
+
+        // Registrar dispositivo si es nuevo
         if (isNewDevice && deviceId) {
           devices.push(deviceId);
           sheet.getRange(i + 1, headers.indexOf('Devices_Logged') + 1).setValue(JSON.stringify(devices));
@@ -60,24 +118,22 @@ function doGet(e) {
             const devSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_DEVICES);
             if (devSheet) {
               const devData = devSheet.getDataRange().getValues();
-              const devHeaders = devData[0]; // ID_Device, ID_Medico, Device_Name, Device_Type, OS_Version, Fecha_Registro, Ultima_Conexion, Estado
-              const now = new Date().toISOString();
+              const devHeaders = devData[0];
+              const nowStr = now.toISOString();
               let found = false;
               for (let d = 1; d < devData.length; d++) {
                 if (String(devData[d][0]) === String(deviceId)) {
-                  // Actualizar Ultima_Conexion
-                  devSheet.getRange(d + 1, devHeaders.indexOf('Ultima_Conexion') + 1).setValue(now);
+                  devSheet.getRange(d + 1, devHeaders.indexOf('Ultima_Conexion') + 1).setValue(nowStr);
                   found = true;
                   break;
                 }
               }
               if (!found) {
-                // Nuevo dispositivo: crear fila
                 const devRow = devHeaders.map(h => {
                   if (h === 'ID_Device') return deviceId;
                   if (h === 'ID_Medico') return id;
-                  if (h === 'Fecha_Registro') return now;
-                  if (h === 'Ultima_Conexion') return now;
+                  if (h === 'Fecha_Registro') return nowStr;
+                  if (h === 'Ultima_Conexion') return nowStr;
                   if (h === 'Estado') return 'active';
                   return '';
                 });
@@ -97,19 +153,22 @@ function doGet(e) {
           }
         }
 
+        // Agregar metadata de validación
+        doctor.validated = true;
+        doctor.devices_count = devices.length;
+        doctor.devices_max = maxDevices;
+
         return createResponse(doctor);
       }
     }
 
-    return createResponse({ error: 'Médico no encontrado' });
+    return createResponse({ error: 'Médico no encontrado', code: 'NOT_FOUND' });
   }
 
   // NEW: admin endpoint - list all users
   if (action === 'admin_list_users') {
-    const adminKey = e.parameter.adminKey;
-    if (adminKey !== ADMIN_KEY) {
-      return createResponse({ error: 'Unauthorized' });
-    }
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
 
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
     const data = sheet.getDataRange().getValues();
@@ -129,8 +188,8 @@ function doGet(e) {
 
   // FIX B3: admin_update_user como GET (admin.html usa fetch GET con query params)
   if (action === 'admin_update_user') {
-    const adminKey = e.parameter.adminKey;
-    if (adminKey !== ADMIN_KEY) return createResponse({ error: 'Unauthorized' });
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
 
     const userId = e.parameter.userId;
     let updates = {};
@@ -156,8 +215,8 @@ function doGet(e) {
 
   // FIX B2: admin_create_user (nuevo endpoint — no existía)
   if (action === 'admin_create_user') {
-    const adminKey = e.parameter.adminKey;
-    if (adminKey !== ADMIN_KEY) return createResponse({ error: 'Unauthorized' });
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
 
     let userData = {};
     try { userData = JSON.parse(decodeURIComponent(e.parameter.updates || '{}')); } catch(ex) {}
@@ -184,8 +243,8 @@ function doGet(e) {
 
   // admin_get_logs — lee la hoja Admin_Logs con filtros opcionales
   if (action === 'admin_get_logs') {
-    const adminKey = e.parameter.adminKey;
-    if (adminKey !== ADMIN_KEY) return createResponse({ error: 'Unauthorized' });
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
 
     try {
       const logSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_LOGS);
@@ -228,8 +287,8 @@ function doGet(e) {
 
   // admin_log_action — escribe una acción de admin en Admin_Logs
   if (action === 'admin_log_action') {
-    const adminKey = e.parameter.adminKey;
-    if (adminKey !== ADMIN_KEY) return createResponse({ error: 'Unauthorized' });
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
 
     const adminUser      = decodeURIComponent(e.parameter.adminUser  || 'unknown');
     const logAction      = decodeURIComponent(e.parameter.logAction  || 'view');
@@ -242,8 +301,8 @@ function doGet(e) {
 
   // admin_get_metrics — métricas de un usuario específico desde Metricas_Uso
   if (action === 'admin_get_metrics') {
-    const adminKey = e.parameter.adminKey;
-    if (adminKey !== ADMIN_KEY) return createResponse({ error: 'Unauthorized' });
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
 
     const userId = e.parameter.userId || '';
 
@@ -281,8 +340,8 @@ function doGet(e) {
 
   // admin_get_global_stats — estadísticas globales de todos los usuarios
   if (action === 'admin_get_global_stats') {
-    const adminKey = e.parameter.adminKey;
-    if (adminKey !== ADMIN_KEY) return createResponse({ error: 'Unauthorized' });
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
 
     try {
       const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
@@ -337,8 +396,8 @@ function doGet(e) {
 
   // admin_request_diagnostic — marca Diagnostico_Pendiente=true para un usuario
   if (action === 'admin_request_diagnostic') {
-    const adminKey = e.parameter.adminKey;
-    if (adminKey !== ADMIN_KEY) return createResponse({ error: 'Unauthorized' });
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
 
     const userId = e.parameter.userId || '';
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
@@ -364,10 +423,93 @@ function doGet(e) {
     return createResponse({ error: 'Usuario no encontrado: ' + userId });
   }
 
-  // admin_get_diagnostic — retorna el último diagnóstico guardado de un usuario
-  if (action === 'admin_get_diagnostic') {
+  // ── admin_login — autenticación del panel de administración ───────────────
+  if (action === 'admin_login') {
     const adminKey = e.parameter.adminKey;
     if (adminKey !== ADMIN_KEY) return createResponse({ error: 'Unauthorized' });
+
+    const username = (e.parameter.username || '').trim();
+    const password = (e.parameter.password || '').trim();
+
+    if (!username || !password) {
+      return createResponse({ error: 'Faltan credenciales' });
+    }
+
+    try {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      let adminSheet = ss.getSheetByName(SHEET_ADMIN_USERS);
+
+      // Auto-crear la hoja Admin_Users si no existe, con un admin por defecto
+      if (!adminSheet) {
+        adminSheet = ss.insertSheet(SHEET_ADMIN_USERS);
+        adminSheet.appendRow(['Username', 'Password_Hash', 'Nombre', 'Nivel', 'Estado', 'Ultimo_Login']);
+        adminSheet.setFrozenRows(1);
+        // Admin por defecto — CAMBIAR la contraseña después del primer deploy
+        const defaultHash = _simpleHash('admin2026');
+        adminSheet.appendRow(['admin', defaultHash, 'Administrador', 'superadmin', 'active', '']);
+      }
+
+      const data = adminSheet.getDataRange().getValues();
+      const headers = data[0];
+      const userCol   = headers.indexOf('Username');
+      const passCol   = headers.indexOf('Password_Hash');
+      const nombreCol = headers.indexOf('Nombre');
+      const nivelCol  = headers.indexOf('Nivel');
+      const estadoCol = headers.indexOf('Estado');
+      const loginCol  = headers.indexOf('Ultimo_Login');
+
+      const inputHash = _simpleHash(password);
+
+      for (let i = 1; i < data.length; i++) {
+        if (String(data[i][userCol]).toLowerCase() === username.toLowerCase()) {
+          // Verificar estado
+          if (String(data[i][estadoCol]).toLowerCase() !== 'active') {
+            appendAdminLog(username, 'login_blocked', username, 'Cuenta inactiva');
+            return createResponse({ error: 'Cuenta deshabilitada. Contacte al administrador.' });
+          }
+
+          // Verificar contraseña
+          if (String(data[i][passCol]) !== inputHash) {
+            appendAdminLog(username, 'login_failed', username, 'Contraseña incorrecta');
+            return createResponse({ error: 'Usuario o contraseña incorrectos' });
+          }
+
+          // Login exitoso — actualizar Ultimo_Login
+          if (loginCol !== -1) {
+            adminSheet.getRange(i + 1, loginCol + 1).setValue(new Date().toISOString());
+          }
+
+          // Generar token de sesión firmado (válido 8 horas)
+          const nivel = String(data[i][nivelCol]);
+          const expiry = Date.now() + (8 * 60 * 60 * 1000); // 8 horas
+          const sessionToken = _signSessionToken(username, nivel, expiry);
+
+          appendAdminLog(username, 'login_success', username, '');
+
+          return createResponse({
+            success: true,
+            user: {
+              Username: data[i][userCol],
+              Nombre:   data[i][nombreCol],
+              Nivel:    nivel
+            },
+            sessionToken: sessionToken,
+            tokenExpiry: expiry
+          });
+        }
+      }
+
+      appendAdminLog(username, 'login_failed', username, 'Usuario no existe');
+      return createResponse({ error: 'Usuario o contraseña incorrectos' });
+    } catch(err) {
+      return createResponse({ error: 'Error en login: ' + err.message });
+    }
+  }
+
+  // admin_get_diagnostic — retorna el último diagnóstico guardado de un usuario
+  if (action === 'admin_get_diagnostic') {
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
 
     const userId = e.parameter.userId || '';
     try {
@@ -394,6 +536,123 @@ function doGet(e) {
     } catch(err) {
       return createResponse({ error: 'Error leyendo diagnósticos: ' + err.message });
     }
+  }
+
+  // ── admin_generate_config — genera config.js personalizado para un clon ──
+  if (action === 'admin_generate_config') {
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
+
+    const userId = e.parameter.userId || '';
+    if (!userId) return createResponse({ error: 'Falta userId' });
+
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const idCol = headers.indexOf('ID_Medico');
+
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][idCol]) === String(userId)) {
+        const user = {};
+        headers.forEach((h, idx) => { user[h] = data[i][idx]; });
+
+        // Mapear Plan → tipo de config
+        const plan = String(user.Plan || 'trial').toLowerCase();
+        const planMap = {
+          'trial':      { type: 'TRIAL',  hasProMode: false, hasDashboard: false, canGenerateApps: false },
+          'normal':     { type: 'NORMAL', hasProMode: false, hasDashboard: false, canGenerateApps: false },
+          'pro':        { type: 'PRO',    hasProMode: true,  hasDashboard: true,  canGenerateApps: false },
+          'enterprise': { type: 'PRO',    hasProMode: true,  hasDashboard: true,  canGenerateApps: false }
+        };
+        const planConfig = planMap[plan] || planMap['trial'];
+
+        // Parsear specialties y allowedTemplates
+        let specialties = ['ALL'];
+        try {
+          const spec = String(user.Especialidad || 'ALL');
+          specialties = spec === 'ALL' ? ['ALL'] : spec.split(',').map(s => s.trim());
+        } catch(e) {}
+
+        let allowedTemplates = [];
+        try {
+          const tpl = String(user.Allowed_Templates || '');
+          if (tpl && tpl !== 'ALL' && tpl !== '') {
+            allowedTemplates = JSON.parse(tpl);
+          }
+        } catch(e) {}
+
+        const trialDays = plan === 'trial' ? (Number(user.Devices_Max) > 0 ? 7 : 0) : 0;
+
+        const config = {
+          medicoId: userId,
+          type: planConfig.type,
+          status: String(user.Estado || 'active'),
+          specialties: specialties,
+          maxDevices: Number(user.Devices_Max) || 2,
+          trialDays: trialDays,
+          hasProMode: planConfig.hasProMode,
+          hasDashboard: planConfig.hasDashboard,
+          canGenerateApps: planConfig.canGenerateApps,
+          allowedTemplates: allowedTemplates,
+          doctorName: user.Nombre || '',
+          matricula: user.Matricula || '',
+          email: user.Email || '',
+          backendUrl: ScriptApp.getService().getUrl()
+        };
+
+        // Generar el código JavaScript
+        const configJS = [
+          '/* {{CONFIG_IDENTITY}} */',
+          '/* Generado automáticamente — NO EDITAR */',
+          '/* Usuario: ' + userId + ' — ' + (user.Nombre || '') + ' */',
+          '/* Fecha: ' + new Date().toISOString() + ' */',
+          '',
+          'window.CLIENT_CONFIG = ' + JSON.stringify(config, null, 4) + ';',
+          '',
+          "const GROQ_API_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';",
+          '',
+          '// ============ RB-6: CONTEO LOCAL DE USO DE API ============',
+          'window.apiUsageTracker = {',
+          "    _KEY: 'api_usage_stats',",
+          '    _get() {',
+          '        try { return JSON.parse(localStorage.getItem(this._KEY)) || this._default(); }',
+          '        catch (_) { return this._default(); }',
+          '    },',
+          '    _default() {',
+          "        return { transcriptions: 0, structurings: 0, lastReset: new Date().toISOString(), history: [] };",
+          '    },',
+          '    _save(data) { localStorage.setItem(this._KEY, JSON.stringify(data)); },',
+          '    trackTranscription() {',
+          '        const d = this._get();',
+          '        d.transcriptions++;',
+          "        d.history.push({ type: 'transcription', ts: new Date().toISOString() });",
+          '        if (d.history.length > 200) d.history = d.history.slice(-200);',
+          '        this._save(d);',
+          '    },',
+          '    trackStructuring() {',
+          '        const d = this._get();',
+          '        d.structurings++;',
+          "        d.history.push({ type: 'structuring', ts: new Date().toISOString() });",
+          '        if (d.history.length > 200) d.history = d.history.slice(-200);',
+          '        this._save(d);',
+          '    },',
+          '    getStats() { return this._get(); },',
+          '    reset() { this._save(this._default()); }',
+          '};'
+        ].join('\n');
+
+        appendAdminLog(auth.username, 'generate_config', userId, 'Plan: ' + plan);
+
+        return createResponse({
+          success: true,
+          config: config,
+          configJS: configJS,
+          userId: userId,
+          plan: plan
+        });
+      }
+    }
+    return createResponse({ error: 'Usuario no encontrado: ' + userId });
   }
 
   return createResponse({ error: 'Acción no válida' });
@@ -514,9 +773,9 @@ function doPost(e) {
 
   // NEW: admin endpoint - update a user's fields (e.g. Estado, Plan)
   if (action === 'admin_update_user') {
-    const adminKey = payload.adminKey;
-    if (adminKey !== ADMIN_KEY) {
-      return createResponse({ error: 'Unauthorized' });
+    const auth = _verifyAdminAuth(payload);
+    if (!auth.authorized) {
+      return createResponse({ error: auth.error });
     }
 
     const userId = payload.userId;
@@ -539,6 +798,65 @@ function doPost(e) {
   }
 
   return createResponse({ error: 'Acción no válida' });
+}
+
+/**
+ * Genera un token de sesión firmado (HMAC-like usando SHA-256).
+ * El token es verificable sin lookup a la base de datos.
+ */
+function _signSessionToken(username, nivel, expiry) {
+  const payload = username.toLowerCase() + '|' + nivel + '|' + String(expiry) + '|' + ADMIN_KEY;
+  return _simpleHash(payload);
+}
+
+/**
+ * Verifica la autorización de un request admin.
+ * Acepta DOS métodos (backward compatible):
+ *   1. adminKey directo (legacy) — ?adminKey=XXX
+ *   2. Token de sesión firmado — ?sessionToken=XXX&sessionUser=YYY&sessionNivel=ZZZ&sessionExpiry=NNN
+ * @returns {{ authorized: boolean, error: string|null, username: string }}
+ */
+function _verifyAdminAuth(params) {
+  // Método 1: adminKey directo (legacy — para scripts y tests)
+  const adminKey = params.adminKey;
+  if (adminKey && adminKey === ADMIN_KEY) {
+    return { authorized: true, error: null, username: params.sessionUser || 'admin-key' };
+  }
+
+  // Método 2: token de sesión firmado
+  const token   = params.sessionToken;
+  const user    = (params.sessionUser   || '').toLowerCase();
+  const nivel   = params.sessionNivel   || '';
+  const expiry  = Number(params.sessionExpiry || 0);
+
+  if (!token || !user || !expiry) {
+    return { authorized: false, error: 'Unauthorized — no credentials', username: '' };
+  }
+
+  // Verificar expiración
+  if (Date.now() > expiry) {
+    return { authorized: false, error: 'Session expired', username: user };
+  }
+
+  // Verificar firma
+  const expected = _signSessionToken(user, nivel, expiry);
+  if (token !== expected) {
+    return { authorized: false, error: 'Invalid session token', username: user };
+  }
+
+  return { authorized: true, error: null, username: user };
+}
+
+/**
+ * Hash simple para contraseñas de admin (SHA-256 via Apps Script Utilities).
+ * NO usar para contraseñas de usuarios finales en producción — usar bcrypt.
+ * Para el panel admin con pocos usuarios es suficiente.
+ */
+function _simpleHash(input) {
+  const raw = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, input);
+  return raw.map(function(b) {
+    return ('0' + ((b < 0 ? b + 256 : b)).toString(16)).slice(-2);
+  }).join('');
 }
 
 function createResponse(data) {

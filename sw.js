@@ -3,7 +3,7 @@
  * Cache-First para el app shell; Network-First para llamadas a la API de Groq.
  */
 
-const CACHE_NAME   = 'transcriptor-pro-v8';
+const CACHE_NAME   = 'transcriptor-pro-v9';
 const GROQ_ORIGIN  = 'api.groq.com';
 
 // Recursos del app shell que se cachean en la instalación
@@ -40,6 +40,7 @@ const APP_SHELL = [
     './src/js/features/transcriptor.js',
     './src/js/features/outputProfiles.js',
     './src/js/features/diagnostic.js',
+    './src/js/features/licenseManager.js',
     './src/js/features/userGuide.js',
     'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js'
 ];

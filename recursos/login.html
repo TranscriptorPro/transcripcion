@@ -194,8 +194,7 @@
 
     <script>
         const CONFIG = {
-            scriptUrl: 'https://script.google.com/macros/s/AKfycby2VEaj2Qy4TGrjL7ZG_YjfEO4ttI6fynnWLgAMafU8VMWoYoWgqJX48D5okxKOrgQiaw/exec',
-            adminKey: 'ADMIN_SECRET_2026'
+            scriptUrl: 'https://script.google.com/macros/s/AKfycby2VEaj2Qy4TGrjL7ZG_YjfEO4ttI6fynnWLgAMafU8VMWoYoWgqJX48D5okxKOrgQiaw/exec'
         };
 
         const loginForm = document.getElementById('loginForm');
@@ -207,13 +206,20 @@
             
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
+            // adminKey se obtiene de localStorage (configurado por el admin en el primer deployment)
+            const adminKey = localStorage.getItem('_admin_key') || '';
+
+            if (!adminKey) {
+                showError('Falta la clave de administrador. Configure la Admin Key primero.');
+                return;
+            }
 
             errorMessage.classList.remove('show');
             btnLogin.disabled = true;
             btnLogin.innerHTML = 'Verificando...<span class="loading"></span>';
 
             try {
-                const url = `${CONFIG.scriptUrl}?action=admin_login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&adminKey=${encodeURIComponent(CONFIG.adminKey)}`;
+                const url = `${CONFIG.scriptUrl}?action=admin_login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&adminKey=${encodeURIComponent(adminKey)}`;
                 
                 const response = await fetch(url);
                 const data = await response.json();
@@ -223,6 +229,8 @@
                         username: data.user.Username,
                         nombre: data.user.Nombre,
                         nivel: data.user.Nivel,
+                        sessionToken: data.sessionToken,
+                        tokenExpiry: data.tokenExpiry,
                         timestamp: Date.now()
                     }));
 
@@ -243,13 +251,30 @@
             errorMessage.classList.add('show');
         }
 
+        // ── Configuración de Admin Key (primer deployment) ──────────────────
+        (function initAdminKey() {
+            const stored = localStorage.getItem('_admin_key');
+            if (!stored) {
+                // Mostrar prompt para ingresar la Admin Key
+                const key = prompt(
+                    'Primer inicio: ingrese la ADMIN_KEY configurada en las Script Properties de Google Apps Script.\n\n' +
+                    'Esta clave se guardará en este navegador y no aparecerá en el código fuente.',
+                    ''
+                );
+                if (key && key.trim()) {
+                    localStorage.setItem('_admin_key', key.trim());
+                }
+            }
+        })();
+
+        // ── Auto-redirect si ya hay sesión válida ───────────────────────────
         const session = sessionStorage.getItem('adminSession');
         if (session) {
             try {
                 const data = JSON.parse(session);
                 const hoursSinceLogin = (Date.now() - data.timestamp) / (1000 * 60 * 60);
                 
-                if (hoursSinceLogin < 8) {
+                if (hoursSinceLogin < 8 && data.sessionToken) {
                     window.location.href = 'admin.html';
                 } else {
                     sessionStorage.removeItem('adminSession');

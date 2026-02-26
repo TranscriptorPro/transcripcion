@@ -2021,21 +2021,46 @@
         /* ── Configuration ──────────────────────────────────────────────────── */
         const CONFIG = {
             scriptUrl: 'https://script.google.com/macros/s/AKfycby2VEaj2Qy4TGrjL7ZG_YjfEO4ttI6fynnWLgAMafU8VMWoYoWgqJX48D5okxKOrgQiaw/exec',
-            adminKey: 'ADMIN_SECRET_2026',
             sessionTimeout: 8 * 60 * 60 * 1000 // 8 hours in ms
         };
 
+        /* Helper: obtener credenciales de la sesión para API calls */
+        function _getSessionAuthParams() {
+            try {
+                const s = JSON.parse(sessionStorage.getItem('adminSession') || '{}');
+                if (s.sessionToken) {
+                    return `sessionToken=${encodeURIComponent(s.sessionToken)}&sessionUser=${encodeURIComponent(s.username)}&sessionNivel=${encodeURIComponent(s.nivel || '')}&sessionExpiry=${encodeURIComponent(s.tokenExpiry || '')}`;
+                }
+            } catch(e) {}
+            // Fallback: adminKey en localStorage (legacy)
+            const key = localStorage.getItem('_admin_key');
+            return key ? `adminKey=${encodeURIComponent(key)}` : '';
+        }
+
         /* ── Authentication ─────────────────────────────────────────────────── */
         (function checkAuth() {
-            // Sin login requerido. El admin es único y accede directamente.
-            // Se crea sesión automáticamente siempre.
-            if (!sessionStorage.getItem('adminSession')) {
-                sessionStorage.setItem('adminSession', JSON.stringify({
-                    username: 'admin',
-                    nombre: 'Administrador',
-                    timestamp: Date.now(),
-                    autoLogin: true
-                }));
+            const raw = sessionStorage.getItem('adminSession');
+            if (!raw) {
+                // Sin sesión → redirigir a login.html
+                window.location.href = 'login.html';
+                return;
+            }
+            try {
+                const session = JSON.parse(raw);
+                const hoursSinceLogin = (Date.now() - session.timestamp) / (1000 * 60 * 60);
+                if (hoursSinceLogin >= 8) {
+                    // Sesión expirada → limpiar y redirigir
+                    sessionStorage.removeItem('adminSession');
+                    window.location.href = 'login.html';
+                    return;
+                }
+                // Sesión válida — renovar timestamp
+                session.timestamp = Date.now();
+                sessionStorage.setItem('adminSession', JSON.stringify(session));
+            } catch (e) {
+                sessionStorage.removeItem('adminSession');
+                window.location.href = 'login.html';
+                return;
             }
             // Limpiar param ?fromApp de la URL si existe
             const urlParams = new URLSearchParams(window.location.search);
@@ -2112,7 +2137,9 @@
         /* ── Enhanced API ────────────────────────────────────────────────────── */
         const API = {
             async call(endpoint) {
-                const url = `${CONFIG.scriptUrl}${endpoint}&adminKey=${encodeURIComponent(CONFIG.adminKey)}`;
+                const authParams = _getSessionAuthParams();
+                const separator = endpoint.includes('?') ? '&' : '?';
+                const url = `${CONFIG.scriptUrl}${endpoint}${separator}${authParams}`;
 
                 try {
                     const response = await fetch(url, {
@@ -2194,7 +2221,7 @@
                 return SAMPLE_USERS;
             }
             try {
-                const url = `${CONFIG.scriptUrl}?action=admin_list_users&adminKey=${encodeURIComponent(CONFIG.adminKey)}`;
+                const url = `${CONFIG.scriptUrl}?action=admin_list_users&${_getSessionAuthParams()}`;
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const data = await response.json();
@@ -2213,7 +2240,7 @@
             }
             try {
                 const updatesJson = encodeURIComponent(JSON.stringify(updates));
-                const url = `${CONFIG.scriptUrl}?action=admin_update_user&userId=${encodeURIComponent(userId)}&updates=${updatesJson}&adminKey=${encodeURIComponent(CONFIG.adminKey)}`;
+                const url = `${CONFIG.scriptUrl}?action=admin_update_user&userId=${encodeURIComponent(userId)}&updates=${updatesJson}&${_getSessionAuthParams()}`;
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 return await response.json();
@@ -2909,9 +2936,8 @@
 
         /* ── Event Listeners ─────────────────────────────────────────────────── */
         document.getElementById('btnLogout').addEventListener('click', () => {
-            // Sin login: simplemente recarga el panel
-            sessionStorage.clear();
-            window.location.reload();
+            sessionStorage.removeItem('adminSession');
+            window.location.href = 'login.html';
         });
 
         document.getElementById('btnRefresh').addEventListener('click', () => loadDashboard());
