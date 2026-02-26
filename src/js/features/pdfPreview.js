@@ -835,11 +835,17 @@ window.printFromPreview = function () {
     if (!page) { window.print(); return; }
 
     // Recopilar todas las reglas CSS del documento principal
+    // FILTRAR reglas @media print que ocultan el body (son para el documento principal, no para el iframe)
     let allStyles = '';
     try {
         Array.from(document.styleSheets).forEach(ss => {
             try {
-                allStyles += Array.from(ss.cssRules).map(r => r.cssText).join('\n');
+                Array.from(ss.cssRules).forEach(r => {
+                    // Saltar reglas @media print que contengan #printPreviewOverlay (son del doc principal)
+                    if (r.cssText && r.cssText.includes('#printPreviewOverlay')) return;
+                    if (r.cssText && r.cssText.includes('body > *:not(')) return;
+                    allStyles += r.cssText + '\n';
+                });
             } catch (_) { /* cross-origin stylesheet, skip */ }
         });
     } catch (_) {}

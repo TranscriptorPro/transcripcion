@@ -3509,7 +3509,7 @@
             display: inline-flex;
             align-items: stretch;
             border-radius: 8px;
-            overflow: hidden;
+            overflow: visible;
         }
         .download-split .btn-download-main {
             border-radius: 8px 0 0 8px;
