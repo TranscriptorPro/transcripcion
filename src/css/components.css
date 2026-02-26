@@ -2946,6 +2946,7 @@
             color: #111;
             box-sizing: border-box;
             border-top: 5px solid var(--pa, #1a56a0);
+            overflow-x: hidden;
         }
 
         /* ── Separación visual entre páginas (efecto multi-hoja) ── */
