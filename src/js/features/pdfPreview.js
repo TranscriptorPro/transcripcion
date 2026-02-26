@@ -51,9 +51,18 @@ window.openPdfConfigModal = function () {
         });
     }
 
-    // ── Color del encabezado (ahora en pestaña Formato, visible para todos) ──
+    // ── Color del encabezado (palette de 6 opciones) ──
     const headerColorEl = document.getElementById('pdfHeaderColor');
-    if (headerColorEl) headerColorEl.value = profData.headerColor || '#1a56a0';
+    if (headerColorEl) {
+        const savedColor = profData.headerColor || '#1a56a0';
+        headerColorEl.dataset.selectedColor = savedColor;
+        headerColorEl.querySelectorAll('.hdr-swatch').forEach(s => {
+            s.classList.toggle('selected', s.dataset.color === savedColor);
+            s.style.borderColor = s.dataset.color === savedColor ? 'var(--text-primary, #0f172a)' : 'transparent';
+        });
+        const previewBar = document.getElementById('hdrColorPreviewBar');
+        if (previewBar) previewBar.style.background = savedColor;
+    }
 
     // ── Lugar de trabajo: botón Agregar solo para Pro ──
     const btnAdd = document.getElementById('btnAddWorkplace');

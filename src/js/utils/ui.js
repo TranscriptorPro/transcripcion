@@ -257,6 +257,25 @@ window.initModals = function () {
     if (closePdfConfig) closePdfConfig.addEventListener('click', closePdfConfigModal);
     if (btnClosePdfConfig) btnClosePdfConfig.addEventListener('click', closePdfConfigModal);
 
+    // ── Header color palette (6 swatches) ──
+    const colorPaletteEl = document.getElementById('pdfHeaderColor');
+    if (colorPaletteEl) {
+        colorPaletteEl.addEventListener('click', (e) => {
+            const swatch = e.target.closest('.hdr-swatch');
+            if (!swatch) return;
+            const color = swatch.dataset.color;
+            colorPaletteEl.dataset.selectedColor = color;
+            colorPaletteEl.querySelectorAll('.hdr-swatch').forEach(s => {
+                s.classList.remove('selected');
+                s.style.borderColor = 'transparent';
+            });
+            swatch.classList.add('selected');
+            swatch.style.borderColor = 'var(--text-primary, #0f172a)';
+            const bar = document.getElementById('hdrColorPreviewBar');
+            if (bar) bar.style.background = color;
+        });
+    }
+
     // Mostrar/ocultar detalles del lugar al seleccionar del dropdown
     const wpSelect = document.getElementById('pdfWorkplace');
     const wpDetailsPanel = document.getElementById('workplaceDetailsPanel');
@@ -312,7 +331,8 @@ window.initModals = function () {
                 const nom = gv('pdfProfName');
                 const mat = gv('pdfProfMatricula');
                 const esp = gv('pdfProfEspecialidad');
-                const col  = document.getElementById('pdfHeaderColor')?.value;
+                const colEl = document.getElementById('pdfHeaderColor');
+                const col = colEl?.dataset?.selectedColor || colEl?.value || null;
                 if (nom)  profD.nombre          = nom;
                 if (mat)  profD.matricula        = mat;
                 if (esp)  profD.especialidad     = esp;
@@ -322,7 +342,8 @@ window.initModals = function () {
             // Color del encabezado: guardarlo siempre en prof_data (visible para todos en pestaña Formato)
             if (!(typeof isAdminUser === 'function' && isAdminUser())) {
                 const profD = JSON.parse(localStorage.getItem('prof_data') || '{}');
-                const col = document.getElementById('pdfHeaderColor')?.value;
+                const colEl2 = document.getElementById('pdfHeaderColor');
+                const col = colEl2?.dataset?.selectedColor || colEl2?.value || null;
                 if (col) { profD.headerColor = col; localStorage.setItem('prof_data', JSON.stringify(profD)); }
             }
             // M-2: cerrar el modal después de guardar
