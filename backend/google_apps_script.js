@@ -741,29 +741,33 @@ function doPost(e) {
     return createResponse({ success: true });
   }
 
-  // send_email — Enviar informe por email al paciente con PDF adjunto
+  // send_email — Enviar email (con o sin PDF adjunto)
   if (action === 'send_email') {
     try {
       const to          = payload.to;         // email destinatario
       const subject     = payload.subject;    // asunto
       const htmlBody    = payload.htmlBody;    // cuerpo HTML
-      const pdfB64      = payload.pdfBase64;  // PDF en base64
+      const pdfB64      = payload.pdfBase64;  // PDF en base64 (opcional)
       const pdfFileName = payload.fileName || 'Informe_Medico.pdf';
 
-      if (!to || !pdfB64) return createResponse({ error: 'Faltan campos obligatorios (to, pdfBase64)' });
+      if (!to) return createResponse({ error: 'Falta campo obligatorio: to' });
 
-      // Decodificar base64 a blob
-      const pdfBlob = Utilities.newBlob(
-        Utilities.base64Decode(pdfB64),
-        'application/pdf',
-        pdfFileName
-      );
-
-      GmailApp.sendEmail(to, subject || 'Informe Médico', '', {
-        htmlBody: htmlBody || '<p>Adjunto su informe médico.</p>',
-        attachments: [pdfBlob],
+      const emailOptions = {
+        htmlBody: htmlBody || '<p>Mensaje de Transcriptor Médico Pro.</p>',
         name: payload.senderName || 'Transcriptor Médico Pro'
-      });
+      };
+
+      // Solo adjuntar PDF si se proporcionó
+      if (pdfB64) {
+        const pdfBlob = Utilities.newBlob(
+          Utilities.base64Decode(pdfB64),
+          'application/pdf',
+          pdfFileName
+        );
+        emailOptions.attachments = [pdfBlob];
+      }
+
+      GmailApp.sendEmail(to, subject || 'Transcriptor Médico Pro', '', emailOptions);
 
       return createResponse({ success: true, message: 'Email enviado correctamente a ' + to });
     } catch(err) {

@@ -2680,7 +2680,7 @@
                         <button class="btn-action" data-action="edit" data-user-id="${id}" title="Editar">✏️</button>
                         <button class="btn-action" data-action="metrics" data-user-id="${id}" title="Ver Métricas">📊</button>
                         <button class="btn-action" data-action="clone" data-user-id="${id}" title="Crear App para este usuario">📦</button>
-                        <button class="btn-action" data-action="mail" data-user-id="${id}" title="Ver email: ${escapeHtml(user.Email)}">📧</button>
+                        <button class="btn-action" data-action="mail" data-user-id="${id}" title="Enviar email a ${escapeHtml(user.Nombre || user.Email)}">📧</button>
                         ${isTrial || isExpired ? `<button class="btn-action" data-action="activate" data-user-id="${id}" title="Activar PRO">✅</button>` : ''}
                         <button class="btn-action" data-action="diag" data-user-id="${id}" title="Ver último diagnóstico">🔍</button>
                         <button class="btn-action" data-action="reqdiag" data-user-id="${id}" title="Solicitar diagnóstico remoto">📡</button>
@@ -2959,8 +2959,7 @@
             else if (btn.dataset.action === 'diag') openDiagModal(userId);
             else if (btn.dataset.action === 'reqdiag') requestDiagFromAdmin(userId);
             else if (btn.dataset.action === 'mail') {
-                const user = allUsers.find(u => String(u.ID_Medico) === String(userId));
-                if (user?.Email) window.open('mailto:' + user.Email, '_blank');
+                openDirectEmail(userId);
             }
         });
 
@@ -3318,6 +3317,119 @@
         });
 
         // ========== FIN FÁBRICA DE CLONES ==========
+
+        // ========== EMAIL DIRECTO DESDE DASHBOARD ==========
+        let _deCurrentUser = null;
+
+        function openDirectEmail(userId) {
+            const user = allUsers.find(u => String(u.ID_Medico) === String(userId));
+            if (!user) return;
+            if (!user.Email) {
+                showToast('Este usuario no tiene email configurado', 'error');
+                return;
+            }
+            _deCurrentUser = user;
+
+            document.getElementById('deUserName').textContent = user.Nombre || '—';
+            document.getElementById('deUserEmail').textContent = user.Email;
+            document.getElementById('deSubject').value = 'Mensaje de Transcriptor Médico Pro';
+            document.getElementById('deBody').value = `Hola ${user.Nombre || ''},\n\n`;
+            document.getElementById('deResult').style.display = 'none';
+            document.getElementById('deBtnSend').disabled = false;
+            document.getElementById('deBtnSend').textContent = '📨 Enviar';
+
+            document.getElementById('directEmailModal').style.display = 'flex';
+            // Focus en el textarea
+            setTimeout(() => document.getElementById('deBody').focus(), 200);
+        }
+
+        function closeDirectEmail() {
+            document.getElementById('directEmailModal').style.display = 'none';
+            _deCurrentUser = null;
+        }
+
+        document.getElementById('btnCloseDirectEmail')?.addEventListener('click', closeDirectEmail);
+
+        document.getElementById('deBtnSend')?.addEventListener('click', async () => {
+            if (!_deCurrentUser) return;
+
+            const to = _deCurrentUser.Email;
+            const subject = document.getElementById('deSubject').value.trim();
+            const bodyText = document.getElementById('deBody').value.trim();
+            const resultDiv = document.getElementById('deResult');
+            const btn = document.getElementById('deBtnSend');
+
+            if (!bodyText) {
+                resultDiv.style.display = 'block';
+                resultDiv.style.background = '#fef9c3';
+                resultDiv.style.border = '1px solid #fde68a';
+                resultDiv.style.color = '#78350f';
+                resultDiv.textContent = '⚠️ Escribí un mensaje antes de enviar.';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Enviando...';
+            resultDiv.style.display = 'none';
+
+            // Convertir saltos de línea a HTML
+            const htmlBody = `
+                <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+                    <div style="background:#0f766e;color:white;padding:16px 20px;border-radius:10px 10px 0 0;">
+                        <h2 style="margin:0;font-size:1.1rem;">Transcriptor Médico Pro</h2>
+                    </div>
+                    <div style="padding:20px;background:#ffffff;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;">
+                        ${bodyText.split('\n').map(l => l.trim() === '' ? '<br>' : `<p style="margin:0 0 8px;line-height:1.5;color:#1e293b;">${l}</p>`).join('')}
+                    </div>
+                    <p style="font-size:.75rem;color:#94a3b8;text-align:center;margin-top:12px;">
+                        Enviado desde el Admin Dashboard — Transcriptor Médico Pro
+                    </p>
+                </div>`;
+
+            try {
+                const response = await fetch(CONFIG.scriptUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'send_email',
+                        to: to,
+                        subject: subject || 'Transcriptor Médico Pro',
+                        htmlBody: htmlBody,
+                        senderName: 'Transcriptor Médico Pro — Admin'
+                    })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    resultDiv.style.display = 'block';
+                    resultDiv.style.background = '#f0fdf4';
+                    resultDiv.style.border = '1px solid #bbf7d0';
+                    resultDiv.style.color = '#166534';
+                    resultDiv.textContent = `✅ Email enviado correctamente a ${to}`;
+                    btn.textContent = '✅ Enviado';
+
+                    // Log de la acción
+                    try {
+                        const logUrl = `${CONFIG.scriptUrl}?action=admin_log_action&sessionToken=${encodeURIComponent(sessionToken)}&adminUser=${encodeURIComponent('admin')}&logAction=send_email&userId=${encodeURIComponent(_deCurrentUser.ID_Medico)}&details=${encodeURIComponent('Email directo: ' + subject)}`;
+                        fetch(logUrl).catch(() => {});
+                    } catch(e) {}
+
+                    showToast('📧 Email enviado a ' + _deCurrentUser.Nombre, 'success');
+                } else {
+                    throw new Error(data.error || 'Error desconocido');
+                }
+            } catch (err) {
+                resultDiv.style.display = 'block';
+                resultDiv.style.background = '#fef2f2';
+                resultDiv.style.border = '1px solid #fecaca';
+                resultDiv.style.color = '#991b1b';
+                resultDiv.textContent = '❌ Error: ' + err.message;
+                btn.disabled = false;
+                btn.textContent = '📨 Reintentar';
+            }
+        });
+
+        // ========== FIN EMAIL DIRECTO ==========
 
         // Abrir modal
         document.getElementById('btnNewUser')?.addEventListener('click', () => {
@@ -3734,6 +3846,45 @@
                 <button type="submit" form="editUserForm" class="btn-primary" id="btnSaveEditUser">
                     💾 Guardar Cambios
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Modal Email Directo ── -->
+    <div class="modal-overlay" id="directEmailModal" style="display:none;">
+        <div class="modal" style="max-width:600px;">
+            <div class="modal-header">
+                <h2>📧 Enviar Email</h2>
+                <button class="modal-close" id="btnCloseDirectEmail">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Destinatario -->
+                <div style="background:#eff6ff;border:1px solid #93c5fd;border-radius:10px;padding:.8rem 1rem;margin-bottom:1rem;display:flex;align-items:center;gap:.8rem;">
+                    <span style="font-size:1.3rem;">👤</span>
+                    <div>
+                        <div style="font-weight:600;color:#1e3a5f;" id="deUserName">—</div>
+                        <div style="font-size:.82rem;color:#64748b;" id="deUserEmail">—</div>
+                    </div>
+                </div>
+
+                <!-- Asunto -->
+                <div style="margin-bottom:.8rem;">
+                    <label style="font-size:.83rem;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Asunto</label>
+                    <input type="text" id="deSubject" value="Mensaje de Transcriptor Médico Pro" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.88rem;">
+                </div>
+
+                <!-- Cuerpo del mensaje -->
+                <div style="margin-bottom:.8rem;">
+                    <label style="font-size:.83rem;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Mensaje</label>
+                    <textarea id="deBody" rows="8" placeholder="Escribí tu mensaje aquí..." style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:.88rem;resize:vertical;font-family:inherit;line-height:1.5;"></textarea>
+                </div>
+
+                <!-- Resultado -->
+                <div id="deResult" style="display:none;padding:10px;border-radius:8px;font-size:.85rem;margin-top:.5rem;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeDirectEmail()">Cancelar</button>
+                <button class="btn-primary" id="deBtnSend">📨 Enviar</button>
             </div>
         </div>
     </div>
