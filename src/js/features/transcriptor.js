@@ -1,5 +1,177 @@
 // ============ TRANSCRIPTION & GROQ API ============
 
+// ── Whisper Prompt Builder ─────────────────────────────────────────────────
+// Construye un prompt contextual para Whisper basado en la información disponible.
+// Cadena de prioridad:
+//   1. Plantilla seleccionada → términos de studyTerminology.js
+//   2. Perfil de salida activo → extraer estudio del nombre → studyTerminology.js
+//   3. Especialidad del profesional activo → todos los términos de esa categoría
+//   4. Prompt médico universal (términos frecuentes en español)
+function buildWhisperPrompt() {
+    const MAX_PROMPT_CHARS = 800; // Whisper acepta hasta ~224 tokens de prompt
+    const studies = (typeof window.STUDY_TERMINOLOGY !== 'undefined') ? window.STUDY_TERMINOLOGY : [];
+
+    // ── Helper: armar string de términos desde un estudio ──────────
+    function termsFromStudy(study) {
+        if (!study) return '';
+        const parts = [];
+        if (study.keywords) parts.push(...study.keywords);
+        if (study.abreviaturas) {
+            for (const [abbr, full] of Object.entries(study.abreviaturas)) {
+                parts.push(abbr, full);
+            }
+        }
+        if (study.clasificaciones) parts.push(...study.clasificaciones);
+        return parts.join(', ');
+    }
+
+    // ── Helper: armar string de términos desde una categoría ──────
+    function termsFromCategory(category) {
+        const matches = studies.filter(s =>
+            s.category && s.category.toLowerCase() === category.toLowerCase()
+        );
+        if (matches.length === 0) return '';
+        const allTerms = new Set();
+        matches.forEach(s => {
+            (s.keywords || []).forEach(k => allTerms.add(k));
+            Object.keys(s.abreviaturas || {}).forEach(a => allTerms.add(a));
+            Object.values(s.abreviaturas || {}).forEach(v => allTerms.add(v));
+        });
+        return [...allTerms].join(', ');
+    }
+
+    // ── Helper: mapear especialidad del profesional a categoría ────
+    function specialtyToCategory(especialidades) {
+        if (!especialidades) return null;
+        const spec = especialidades.toLowerCase();
+        const map = {
+            'cardiolog':     'Cardiología',
+            'neumolog':      'Neumología',
+            'neumonolog':    'Neumología',
+            'oftalmolog':    'Oftalmología',
+            'gastroenterolog': 'Endoscopía',
+            'orl':           'ORL',
+            'otorrinolaring':'ORL',
+            'ginecolog':     'Ginecología',
+            'obstetr':       'Obstetricia',
+            'neurolog':      'Neurología',
+            'urolog':        'Urología',
+            'dermatolog':    'Dermatología',
+            'cirug':         'Quirúrgico',
+            'imágen':        'Imágenes',
+            'imagen':        'Imágenes',
+            'ecograf':       'Imágenes',
+        };
+        for (const [key, cat] of Object.entries(map)) {
+            if (spec.includes(key)) return cat;
+        }
+        return null;
+    }
+
+    let promptTerms = '';
+    let source = 'universal';
+
+    // ── PRIORIDAD 1: Plantilla seleccionada ──────────────────────
+    const selectedTpl = (typeof window.selectedTemplate !== 'undefined') ? window.selectedTemplate : null;
+    if (selectedTpl && selectedTpl !== 'generico') {
+        const study = studies.find(s => s.templateKey === selectedTpl);
+        if (study) {
+            promptTerms = termsFromStudy(study);
+            source = 'plantilla: ' + study.estudio;
+        }
+    }
+
+    // ── PRIORIDAD 2: Perfil de salida activo (extraer estudio del nombre) ─
+    if (!promptTerms) {
+        try {
+            const profiles = JSON.parse(localStorage.getItem('output_profiles') || '[]');
+            const pdfCfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+            // Buscar perfil default o el activo según workplace+professional index
+            let activeProfile = profiles.find(p => p.isDefault);
+            if (!activeProfile && pdfCfg.activeWorkplaceIndex !== undefined) {
+                activeProfile = profiles.find(p =>
+                    p.workplaceIndex === String(pdfCfg.activeWorkplaceIndex) &&
+                    p.professionalIndex === String(pdfCfg.activeProfessionalIndex || '0')
+                );
+            }
+            if (activeProfile && activeProfile.name) {
+                // El nombre tiene formato: "🫀 Eco-stress — Dr. Ruiz — Clínica del Sur"
+                // Extraer la parte del estudio (antes del primer —)
+                const studyPart = activeProfile.name.replace(/^[^\w]*/, '').split('—')[0].trim();
+                if (studyPart) {
+                    // Buscar match en studyTerminology por nombre de estudio
+                    const normStudy = studyPart.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    const match = studies.find(s => {
+                        const normEst = s.estudio.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                        return normEst.includes(normStudy) || normStudy.includes(normEst) ||
+                               normStudy.includes(s.templateKey.replace(/_/g, ' '));
+                    });
+                    if (match) {
+                        promptTerms = termsFromStudy(match);
+                        source = 'perfil: ' + match.estudio;
+                    }
+                }
+            }
+        } catch (e) { /* ignore parse errors */ }
+    }
+
+    // ── PRIORIDAD 3: Especialidad del profesional activo ─────────
+    if (!promptTerms) {
+        try {
+            const pdfCfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+            const prof = pdfCfg.activeProfessional;
+            if (prof && prof.especialidades) {
+                // Puede tener múltiples especialidades separadas por coma
+                const specs = prof.especialidades.split(',').map(s => s.trim());
+                const categories = new Set();
+                specs.forEach(sp => {
+                    const cat = specialtyToCategory(sp);
+                    if (cat) categories.add(cat);
+                });
+                if (categories.size > 0) {
+                    const allTerms = [...categories].map(c => termsFromCategory(c)).filter(Boolean);
+                    promptTerms = allTerms.join(', ');
+                    source = 'especialidad: ' + specs.join(', ');
+                }
+            }
+        } catch (e) { /* ignore */ }
+    }
+
+    // ── PRIORIDAD 4: Prompt universal ────────────────────────────
+    if (!promptTerms) {
+        promptTerms = [
+            'paciente', 'antecedentes', 'diagnóstico', 'tratamiento', 'evolución',
+            'hipertensión arterial', 'diabetes mellitus', 'dislipemia', 'tabaquismo',
+            'disnea', 'odinofagia', 'disfagia', 'disfonía', 'tos', 'fiebre',
+            'ecocardiograma', 'espirometría', 'electrocardiograma', 'ecografía',
+            'colonoscopía', 'endoscopía', 'laringoscopía', 'broncoscopía',
+            'resonancia magnética', 'tomografía', 'mamografía', 'densitometría',
+            'fracción de eyección', 'ventrículo izquierdo', 'aurícula izquierda',
+            'cuerdas vocales', 'mucosa', 'pólipo', 'nódulo', 'estenosis',
+            'insuficiencia', 'hipertrofia', 'derrame', 'edema', 'inflamación',
+            'biopsia', 'anatomía patológica', 'citología', 'histología',
+            'sin particularidades', 'dentro de límites normales', 'se observa',
+            'milímetros', 'centímetros', 'frecuencia cardíaca', 'presión arterial',
+            'saturación de oxígeno', 'bilateral', 'unilateral', 'proximal', 'distal'
+        ].join(', ');
+        source = 'universal';
+    }
+
+    // Truncar al máximo permitido
+    const prefix = 'Transcripción médica en español: ';
+    const maxTerms = MAX_PROMPT_CHARS - prefix.length;
+    if (promptTerms.length > maxTerms) {
+        promptTerms = promptTerms.substring(0, maxTerms).replace(/,\s*[^,]*$/, '');
+    }
+
+    const finalPrompt = prefix + promptTerms;
+    console.log(`[Whisper Prompt] Fuente: ${source} (${finalPrompt.length} chars)`);
+    return finalPrompt;
+}
+
+// Exponer globalmente para tests
+window.buildWhisperPrompt = buildWhisperPrompt;
+
 // Flag para controlar si se auto-estructura después de transcribir
 window._shouldAutoStructure = false;
 
@@ -283,6 +455,16 @@ async function transcribeWithGroqParams(file, { language = 'es', model = 'whispe
     form.append('model', model);
     if (language) form.append('language', language);
     form.append('response_format', 'text');
+
+    // Inyectar prompt contextual para mejorar reconocimiento de terminología médica
+    try {
+        const whisperPrompt = buildWhisperPrompt();
+        if (whisperPrompt) {
+            form.append('prompt', whisperPrompt);
+        }
+    } catch (e) {
+        console.warn('[Whisper Prompt] Error al construir prompt, se continúa sin él:', e);
+    }
 
     try {
         const res = await fetchWithTimeout(GROQ_API_URL, {

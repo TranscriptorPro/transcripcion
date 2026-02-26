@@ -228,6 +228,97 @@ const MEDICAL_DICT_BASE = {
     "epi crisis":               "epicrisis",
     "informe medico":           "informe médico",
     "subjetivo objetivo":       "SOAP",
+
+    // ── Whisper ASR — Errores frecuentes de split/join ─────────
+    "o dinofagia":              "odinofagia",
+    "odin ofagia":              "odinofagia",
+    "dis fagia":                "disfagia",
+    "dis fonia":                "disfonía",
+    "dis fonía":                "disfonía",
+    "dis nea":                  "disnea",
+    "taqui cardia":             "taquicardia",
+    "bradi cardia":             "bradicardia",
+    "endo scopía":              "endoscopía",
+    "endo scopia":              "endoscopía",
+    "colono scopia":            "colonoscopía",
+    "bronco scopía":            "broncoscopía",
+    "bronco scopia":            "broncoscopía",
+    "laringo scopía":           "laringoscopía",
+    "laringo scopia":           "laringoscopía",
+    "histo patología":          "histopatología",
+    "histo patologia":          "histopatología",
+    "inmuno histoquímica":      "inmunohistoquímica",
+    "eco cardio grama":         "ecocardiograma",
+    "eco cardiograma":          "ecocardiograma",
+
+    // ── Whisper ASR — Anglicismos / idioma cruzado ────────────
+    "laryngoscopy":             "laringoscopía",
+    "laryngoscopía":            "laringoscopía",
+    "laryngo":                  "laringo",
+    "pharynx":                  "faringe",
+    "pharyngeal":               "faríngea",
+    "esophagus":                "esófago",
+    "esophageal":               "esofágica",
+    "trachea":                  "tráquea",
+    "thyroid":                  "tiroides",
+    "bronchoscopy":             "broncoscopía",
+    "colonoscopy":              "colonoscopía",
+    "endoscopy":                "endoscopía",
+    "echocardiogram":           "ecocardiograma",
+    "spirometry":               "espirometría",
+    "plethysmography":          "pletismografía",
+
+    // ── Whisper ASR — Fonemas confundidos (b/v, s/z/c, j/g) ──
+    "bujales":                  "bucales",
+    "bujal":                    "bucal",
+    "vocales afectados":        "vocales afectadas",
+    "cuerdos vocales":          "cuerdos vocales",  // no corregir, posible intención
+    "cuerdos bucales":          "cuerdas bucales",
+    "cavidad vucal":            "cavidad bucal",
+    "mucoza bucal":             "mucosa bucal",
+    "faringea":                 "faríngea",
+    "laringea":                 "laríngea",
+    "nasofaringea":             "nasofaríngea",
+    "orofaringea":              "orofaríngea",
+    "hipofaringea":             "hipofaríngea",
+    "traqueal":                 "traqueal",
+    "subglotica":               "subglótica",
+    "supraglotica":             "supraglótica",
+    "epiglótica":               "epiglótica",
+    "aritenoidea":              "aritenoidea",
+    "comisura anterior":        "comisura anterior",
+    "comisura posterior":       "comisura posterior",
+    "bandas ventriculares":     "bandas ventriculares",
+
+    // ── Whisper ASR — Concordancia género/número ──────────────
+    "afectados" :               "afectadas",   // cuerdas vocales afectadas
+    "engrosados":               "engrosadas",  // cuerdas engrosadas
+    "congestivos":              "congestivas", // mucosas congestivas
+    "edematosos":               "edematosas",  // cuerdas edematosas
+    "eritematosos":             "eritematosas",
+
+    // ── Whisper ASR — Términos anatómicos frecuentes ──────────
+    "ventriculo":               "ventrículo",
+    "auricula":                 "aurícula",
+    "esofago":                  "esófago",
+    "estómago":                 "estómago",
+    "duodeno":                  "duodeno",
+    "piloro":                   "píloro",
+    "ciego":                    "ciego",
+    "sigmoide":                 "sigmoide",
+    "recto":                    "recto",
+    "apendice":                 "apéndice",
+    "pancreas":                 "páncreas",
+    "higado":                   "hígado",
+    "besicula":                 "vesícula",
+    "vesicula":                 "vesícula",
+    "traquea":                  "tráquea",
+    "tiroides":                 "tiroides",
+    "prostata":                 "próstata",
+    "utero":                    "útero",
+    "pelvis":                   "pelvis",
+    "mediastino":               "mediastino",
+    "retroperitoneo":           "retroperitoneo",
 };
 
 // ─── 2. Diccionario PERSONALIZADO (localStorage) ────────────
