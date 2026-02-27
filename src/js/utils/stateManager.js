@@ -310,23 +310,13 @@ if (resetBtn) {
 
 // Buttons helpers mappings
 window.enableButtons = function () {
-    const copyBtn = document.getElementById('copyBtn');
-    const printBtn = document.getElementById('printBtn');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const downloadBtnMain = document.getElementById('downloadBtnMain');
-    if (copyBtn) copyBtn.disabled = false;
-    if (printBtn) printBtn.disabled = false;
-    if (downloadBtn) downloadBtn.disabled = false;
-    if (downloadBtnMain) downloadBtnMain.disabled = false;
+    const ids = ['copyBtn', 'printBtn', 'downloadBtn', 'downloadBtnMain',
+                 'structureBtn', 'downloadPdfBtn', 'btnConfigPdfMain', 'btnPreviewPdfMain'];
+    ids.forEach(id => { const b = document.getElementById(id); if (b) b.disabled = false; });
 }
 
 window.disableButtons = function () {
-    const copyBtn = document.getElementById('copyBtn');
-    const printBtn = document.getElementById('printBtn');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const downloadBtnMain = document.getElementById('downloadBtnMain');
-    if (copyBtn) copyBtn.disabled = true;
-    if (printBtn) printBtn.disabled = true;
-    if (downloadBtn) downloadBtn.disabled = true;
-    if (downloadBtnMain) downloadBtnMain.disabled = true;
+    const ids = ['copyBtn', 'printBtn', 'downloadBtn', 'downloadBtnMain',
+                 'structureBtn', 'downloadPdfBtn', 'btnConfigPdfMain', 'btnPreviewPdfMain'];
+    ids.forEach(id => { const b = document.getElementById(id); if (b) b.disabled = true; });
 }

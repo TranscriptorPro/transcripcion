@@ -82,13 +82,7 @@ window.updateWordCount = function () {
     wordCount.textContent = `${count} palabras`;
 }
 
-window.disableButtons = function () {
-    const buttons = ['structureBtn', 'downloadPdfBtn', 'btnConfigPdfMain', 'btnPreviewPdfMain'];
-    buttons.forEach(id => {
-        const btn = document.getElementById(id);
-        if (btn) btn.disabled = true;
-    });
-}
+// disableButtons definida en stateManager.js (versión unificada)
 
 window.showBlocker = function (msg, isContactRequired) {
     const safeMsg = escapeHtml(msg);

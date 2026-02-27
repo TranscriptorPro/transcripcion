@@ -5,6 +5,47 @@
  * Solo visible para usuarios no-ADMIN.
  */
 
+/* ── Reenviar contactos pendientes ───────────────────────────────────────── */
+window._retryPendingContacts = async function () {
+    const raw = localStorage.getItem('pending_contacts');
+    if (!raw) return;
+    let pending;
+    try { pending = JSON.parse(raw); } catch (_) { return; }
+    if (!pending.length) return;
+
+    const backendUrl = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.backendUrl)
+        || localStorage.getItem('backend_url');
+    if (!backendUrl) return; // sin backend no podemos reintentar
+
+    const still = [];
+    for (const msg of pending) {
+        try {
+            const res = await fetch(backendUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'send_email',
+                    to: 'soporte@transcriptorpro.com',
+                    subject: `[Contacto pendiente] ${msg.motivo}`,
+                    htmlBody: `<p><b>Motivo:</b> ${msg.motivo}</p><p>${msg.detalle}</p><p><small>${msg.nombre} — Mat. ${msg.mat} — ${msg.date}</small></p>`,
+                    senderName: `TranscriptorPro — ${msg.nombre}`
+                })
+            });
+            const data = await res.json();
+            if (!data.success) still.push(msg);
+        } catch (_) {
+            still.push(msg);
+        }
+    }
+
+    if (still.length === 0) {
+        localStorage.removeItem('pending_contacts');
+        if (typeof showToast === 'function') showToast('✅ Mensajes pendientes enviados', 'success');
+    } else {
+        localStorage.setItem('pending_contacts', JSON.stringify(still));
+    }
+};
+
 window.initContact = function () {
     // No mostrar para ADMIN
     const isAdmin = (typeof CLIENT_CONFIG === 'undefined' || CLIENT_CONFIG.type === 'ADMIN');
@@ -12,6 +53,9 @@ window.initContact = function () {
     if (!btn) return;
     if (isAdmin) { btn.style.display = 'none'; return; }
     btn.style.display = '';
+
+    // Intentar reenviar contactos pendientes de sesiones anteriores
+    setTimeout(() => { if (typeof _retryPendingContacts === 'function') _retryPendingContacts(); }, 10000);
 
     // El overlay es el contenedor completo (tiene clase .modal-overlay)
     const overlay  = document.getElementById('contactModalOverlay');

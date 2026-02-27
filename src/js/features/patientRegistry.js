@@ -340,7 +340,8 @@ window.initPatientRegistryPanel = function () {
         const rows = [cols.join(','),
             ...reg.map(p => cols.map(c => `"${(p[c]||'').toString().replace(/"/g,'""')}"`).join(','))
         ];
-        const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8' });
+        const bom  = '\uFEFF';
+        const blob = new Blob([bom + rows.join('\n')], { type: 'text/csv;charset=utf-8' });
         const url  = URL.createObjectURL(blob);
         const a    = document.createElement('a');
         a.href = url; a.download = `registro_pacientes_${Date.now()}.csv`; a.click();
