@@ -5236,12 +5236,12 @@
     <!-- Modal Nuevo Usuario -->
     <!-- ── Fábrica de Clones Modal ── -->
     <div class="modal-overlay" id="cloneFactoryModal" style="display:none;">
-        <div class="modal" style="max-width:640px;">
-            <div class="modal-header">
+        <div class="modal" style="max-width:640px;max-height:90vh;display:flex;flex-direction:column;">
+            <div class="modal-header" style="flex-shrink:0;">
                 <h2 id="cfModalTitle">📦 Generar App para Usuario</h2>
                 <button class="modal-close" id="btnCloseCloneFactory">&times;</button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="overflow-y:auto;flex:1;min-height:0;">
 
                 <!-- ═══ MODO NORMAL: Datos del médico existente ═══ -->
                 <div id="cfModeNormal">
