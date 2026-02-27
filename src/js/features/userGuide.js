@@ -283,11 +283,31 @@
         });
     }
 
-    // ── Botón Manual Profesional (header) — abre en nueva pestaña ──
+    // ── Botón Manual Profesional (header) — abre modal propio ──
     const btnManual = document.getElementById('btnManual');
     if (btnManual) {
         btnManual.addEventListener('click', () => {
-            window.open('https://github.com/TranscriptorPro/transcripcion/blob/main/anexos/documentacion/MANUAL_PROFESIONAL.md', '_blank');
+            const manualModal = document.getElementById('manualModal');
+            if (manualModal) manualModal.classList.add('active');
+        });
+    }
+
+    // ── Manual Modal: tabs + close ──
+    const manualModal = document.getElementById('manualModal');
+    if (manualModal) {
+        const closeManual = document.getElementById('closeManual');
+        if (closeManual) closeManual.addEventListener('click', () => manualModal.classList.remove('active'));
+        manualModal.addEventListener('click', (e) => { if (e.target === manualModal) manualModal.classList.remove('active'); });
+
+        document.querySelectorAll('[data-manual-tab]').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const target = tab.dataset.manualTab;
+                document.querySelectorAll('[data-manual-tab]').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.manual-tab-content').forEach(p => p.style.display = 'none');
+                tab.classList.add('active');
+                const panel = document.querySelector('[data-manual-panel="' + target + '"]');
+                if (panel) panel.style.display = '';
+            });
         });
     }
 
