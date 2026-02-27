@@ -217,12 +217,13 @@
         try {
             const backendUrl = cfg.backendUrl || localStorage.getItem('backend_url');
             if (backendUrl) {
-                await fetch(backendUrl, {
+                const response = await fetch(backendUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload),
-                    mode: 'no-cors'
+                    body: JSON.stringify(payload)
                 });
+                const data = await response.json();
+                if (!data.ok) console.warn('Upgrade request server response:', data);
             }
 
             // Guardar solicitud localmente
