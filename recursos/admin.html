@@ -3270,6 +3270,12 @@
 
             // Botón Regalo en header
             document.getElementById('btnGiftUser')?.addEventListener('click', () => openGiftFactory());
+
+            // Fábrica de clones — botones del modal (HTML está después del script)
+            document.getElementById('cfBtnGenerate')?.addEventListener('click', handleCfGenerate);
+            document.getElementById('cfBtnCopyLink')?.addEventListener('click', handleCfCopyLink);
+            document.getElementById('cfBtnWhatsApp')?.addEventListener('click', handleCfWhatsApp);
+            document.getElementById('cfBtnEmail')?.addEventListener('click', handleCfEmail);
         });
 
         // ========== NUEVO USUARIO ==========
@@ -3628,7 +3634,7 @@
         }
 
         // Botón Generar Link (Normal + Gift)
-        document.getElementById('cfBtnGenerate')?.addEventListener('click', async () => {
+        async function handleCfGenerate() {
             const apiKey = document.getElementById('cfApiKey').value.trim();
             const btn = document.getElementById('cfBtnGenerate');
             btn.disabled = true;
@@ -3746,10 +3752,10 @@
                 btn.disabled = false;
                 btn.textContent = originalText;
             }
-        });
+        }
 
         // Botón Copiar Link
-        document.getElementById('cfBtnCopyLink')?.addEventListener('click', () => {
+        function handleCfCopyLink() {
             const url = document.getElementById('cfLinkUrl').value;
             navigator.clipboard.writeText(url).then(() => {
                 const btn = document.getElementById('cfBtnCopyLink');
@@ -3760,25 +3766,25 @@
                 document.getElementById('cfLinkUrl').select();
                 document.execCommand('copy');
             });
-        });
+        }
 
         // Botón WhatsApp
-        document.getElementById('cfBtnWhatsApp')?.addEventListener('click', () => {
+        function handleCfWhatsApp() {
             const url = document.getElementById('cfLinkUrl').value;
             const name = _cfCurrentUser?.Nombre || 'Doctor';
             const text = `Hola ${name}, tu app Transcriptor Médico Pro está lista.\n\nAbrí este link en tu celular o computadora para configurarla:\n${url}\n\nTe va a pedir instalar la app — aceptá para tenerla siempre a mano.`;
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-        });
+        }
 
         // Botón Email
-        document.getElementById('cfBtnEmail')?.addEventListener('click', () => {
+        function handleCfEmail() {
             const url = document.getElementById('cfLinkUrl').value;
             const name = _cfCurrentUser?.Nombre || 'Doctor';
             const email = _cfCurrentUser?.Email || '';
             const subject = 'Tu app Transcriptor Médico Pro está lista';
             const body = `Hola ${name},\n\nTu app de transcripción médica está lista para usar.\n\nHacé clic en el siguiente link para configurarla:\n${url}\n\nEl navegador te va a ofrecer instalarla como aplicación — aceptá para tenerla siempre accesible.\n\nSi tenés alguna duda, respondé este correo.\n\nSaludos`;
             window.open(`mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
-        });
+        }
 
         // ========== FIN FÁBRICA DE CLONES ==========
 
