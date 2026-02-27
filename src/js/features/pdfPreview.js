@@ -981,8 +981,8 @@ window.printFromPreview = function () {
  * @returns {{ level: 'red'|'yellow'|'green', missing: string[] }}
  */
 window.evaluateConfigCompleteness = function () {
-    const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
-    const pdfConfig = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+    const profData = window._profDataCache || JSON.parse(localStorage.getItem('prof_data') || '{}');
+    const pdfConfig = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
     const missing = [];
 
     // Campos críticos (sin ellos el PDF sale muy incompleto)
@@ -993,8 +993,7 @@ window.evaluateConfigCompleteness = function () {
     const specs = Array.isArray(profData.specialties) ? profData.specialties.join('') : (profData.especialidad || '');
     if (!specs) missing.push('Especialidad');
 
-    // Workplace — TODO Fase 6: migrar a appDB. Bug fix: clave correcta es workplace_profiles
-    const workplaces = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+    const workplaces = window._wpProfilesCache || JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
     if (workplaces.length === 0 && !pdfConfig.selectedWorkplace) {
         missing.push('Lugar de trabajo');
     }
