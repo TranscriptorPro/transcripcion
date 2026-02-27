@@ -1,8 +1,8 @@
 # Transcriptor Médico Pro — Informe técnico y de producto completo
 
 > Versión del documento: 22/02/2026  
-> Basado en el estado actual del repositorio `aldowagner78-cmd/transcripcion` rama `main`  
-> Última versión deployada: https://aldowagner78-cmd.github.io/transcripcion/
+> Basado en el estado actual del repositorio `TranscriptorPro/transcripcion` rama `main`  
+> Última versión deployada: https://transcriptorpro.github.io/transcripcion/
 
 ---
 

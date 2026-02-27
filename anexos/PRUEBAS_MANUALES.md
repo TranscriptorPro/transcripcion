@@ -3,7 +3,7 @@
 > **Instrucciones:** Probá cada punto en orden. Marcá el checkbox si funciona.  
 > Si algo falla, escribí el motivo debajo del punto.  
 > Al terminar, compartí este archivo y trabajo en los puntos negativos.  
-> **URL:** https://aldowagner78-cmd.github.io/transcripcion/  
+> **URL:** https://transcriptorpro.github.io/transcripcion/  
 > **Antes de empezar:** Ctrl+Shift+R (hard refresh) para limpiar caché.
 
 ---

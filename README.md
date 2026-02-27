@@ -45,18 +45,18 @@ Convierte dictados médicos en informes profesionales estructurados usando IA (W
 ### Opción 1: Usar directamente (GitHub Pages)
 Abrir en el navegador:
 ```
-https://aldowagner78-cmd.github.io/transcripcion/
+https://transcriptorpro.github.io/transcripcion/
 ```
 
 ### Opción 2: Descargar ZIP para uso local
-1. Ir a: https://github.com/aldowagner78-cmd/transcripcion
+1. Ir a: https://github.com/TranscriptorPro/transcripcion
 2. Click en **Code** → **Download ZIP**
 3. Descomprimir en cualquier carpeta
 4. Abrir `index.html` en el navegador
 
 ### Opción 3: Clonar con Git
 ```bash
-git clone https://github.com/aldowagner78-cmd/transcripcion.git
+git clone https://github.com/TranscriptorPro/transcripcion.git
 cd transcripcion
 # Abrir index.html en el navegador
 ```

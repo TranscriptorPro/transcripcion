@@ -213,7 +213,7 @@ const TESTS = [
         label: 'PWA4 &mdash; \u00cdconos PNG 192\u00d7192 y 512\u00d7512 accesibles',
         desc: 'assets/icon-192.png y assets/icon-512.png devuelven 200 (requiere HTTP).',
         async run() {
-            if (!isHttp) return ['info', 'Requiere HTTP \u2014 verifica en https://aldowagner78-cmd.github.io/transcripcion/'];
+            if (!isHttp) return ['info', 'Requiere HTTP \u2014 verifica en https://transcriptorpro.github.io/transcripcion/'];
             try {
                 const base = location.href.replace(/tests\/[^/]+$/, '');
                 const [r192, r512] = await Promise.all([
