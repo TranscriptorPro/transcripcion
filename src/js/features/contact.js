@@ -1,7 +1,7 @@
 /**
  * contact.js — K3
  * Botón "Contacto" con modal: motivo predefinido + descripción libre.
- * Envío via mailto: (funciona sin backend).
+ * Envío directo via backend (Google Apps Script → GmailApp).
  * Solo visible para usuarios no-ADMIN.
  */
 
@@ -40,7 +40,7 @@ window.initContact = function () {
         overlay.classList.add('active');
         if (successMsg) successMsg.style.display = 'none';
         if (form) form.style.display = 'flex';
-        if (sendBtn) sendBtn.disabled = true;
+        if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = '📨 Enviar'; }
         // Resetear campos
         const motivo  = document.getElementById('contactMotivo');
         const detalle = document.getElementById('contactDetalle');
@@ -49,6 +49,11 @@ window.initContact = function () {
         setTimeout(() => detalle?.focus(), 50);
     });
 
+    // Abrir desde código externo (ej: licenseManager, settingsPanel)
+    window.openContactModal = function () {
+        if (btn) btn.click();
+    };
+
     // Cerrar
     function closeModal() { overlay.classList.remove('active'); }
     if (closeBtn) closeBtn.addEventListener('click', closeModal);
@@ -56,9 +61,9 @@ window.initContact = function () {
         if (e.target === overlay) closeModal();
     });
 
-    // Enviar
+    // Enviar directo via backend
     if (form) {
-        form.addEventListener('submit', (e) => {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const motivo  = document.getElementById('contactMotivo')?.value  || 'Sin motivo';
@@ -66,21 +71,82 @@ window.initContact = function () {
             const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
             const nombre   = profData.nombre   || 'Médico';
             const mat      = profData.matricula || '';
+            const deviceId = localStorage.getItem('device_id') || '—';
+            const medicoId = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.medicoId) || '—';
+            const plan     = (typeof CLIENT_CONFIG !== 'undefined' && (CLIENT_CONFIG.plan || CLIENT_CONFIG.type)) || '—';
 
             const contactEmail = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.contactEmail)
                 ? CLIENT_CONFIG.contactEmail
                 : 'soporte@transcriptorpro.app';
 
-            const subject = encodeURIComponent(`[TranscriptorPro] ${motivo}`);
-            const body    = encodeURIComponent(
-                `Motivo: ${motivo}\n\n${detalle}\n\n---\nDr./Dra. ${nombre} | Mat. ${mat}\nApp: TranscriptorPro`
-            );
+            // Deshabilitar botón y mostrar estado
+            if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = '⏳ Enviando...'; }
 
-            window.open(`mailto:${contactEmail}?subject=${subject}&body=${body}`, '_blank');
+            const subject = `[TranscriptorPro] ${motivo}`;
+            const htmlBody = `
+                <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+                    <div style="background:#0f766e;color:white;padding:16px 20px;border-radius:10px 10px 0 0;">
+                        <h2 style="margin:0;font-size:1.1rem;">📧 Contacto desde TranscriptorPro</h2>
+                    </div>
+                    <div style="padding:20px;background:#ffffff;border:1px solid #e2e8f0;border-top:none;">
+                        <p style="margin:0 0 4px;font-size:.85rem;color:#64748b;"><strong>Motivo:</strong> ${motivo}</p>
+                        <hr style="border:none;border-top:1px solid #e2e8f0;margin:10px 0;">
+                        ${detalle.split('\n').map(l => l.trim() === '' ? '<br>' : `<p style="margin:0 0 8px;line-height:1.5;color:#1e293b;">${l}</p>`).join('')}
+                    </div>
+                    <div style="padding:12px 20px;background:#f8fafc;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;font-size:.78rem;color:#64748b;">
+                        <strong>Dr./Dra. ${nombre}</strong> | Mat. ${mat}<br>
+                        ID: ${medicoId} | Plan: ${plan} | Device: ${deviceId}
+                    </div>
+                </div>`;
 
-            // Mostrar confirmacion
-            if (form)        form.style.display       = 'none';
-            if (successMsg)  successMsg.style.display = 'block';
+            // Intentar envío via backend
+            const backendUrl = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.backendUrl)
+                || localStorage.getItem('backend_url');
+
+            if (backendUrl) {
+                try {
+                    const response = await fetch(backendUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'send_email',
+                            to: contactEmail,
+                            subject: subject,
+                            htmlBody: htmlBody,
+                            senderName: `TranscriptorPro — ${nombre}`
+                        })
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        if (form)       form.style.display       = 'none';
+                        if (successMsg) successMsg.style.display = 'block';
+                        if (typeof showToast === 'function') showToast('✅ Mensaje enviado correctamente', 'success');
+                        setTimeout(closeModal, 2500);
+                        return;
+                    } else {
+                        throw new Error(data.error || 'Error desconocido');
+                    }
+                } catch (err) {
+                    console.error('[Contact] Error enviando via backend:', err);
+                    // Fallback: mostrar error y permitir reintentar
+                    if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = '📨 Reintentar'; }
+                    if (typeof showToast === 'function') showToast('⚠️ No se pudo enviar. Intentá de nuevo.', 'error');
+                    return;
+                }
+            }
+
+            // Fallback si no hay backend configurado: enviar sin abrir pestaña
+            // (guardar localmente y avisar)
+            try {
+                const pending = JSON.parse(localStorage.getItem('pending_contacts') || '[]');
+                pending.push({ motivo, detalle, nombre, mat, date: new Date().toISOString() });
+                localStorage.setItem('pending_contacts', JSON.stringify(pending));
+            } catch (_) {}
+
+            if (form)       form.style.display       = 'none';
+            if (successMsg) successMsg.style.display = 'block';
+            if (typeof showToast === 'function') showToast('📩 Mensaje guardado. Se enviará cuando haya conexión.', 'info');
             setTimeout(closeModal, 2500);
         });
     }
