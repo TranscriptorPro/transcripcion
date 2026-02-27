@@ -120,7 +120,7 @@ window.initTheme = function () {
         const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
         const newTheme = isDark ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
+        if (typeof appDB !== 'undefined') appDB.set('theme', newTheme); localStorage.setItem('theme', newTheme);
         updateThemeIcon();
         window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: newTheme } }));
         // Sync to manual iframe if open
@@ -140,7 +140,7 @@ window.initTheme = function () {
         if (e.data && e.data.type === 'manual-theme-changed') {
             const newTheme = e.data.theme;
             document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
+            if (typeof appDB !== 'undefined') appDB.set('theme', newTheme); localStorage.setItem('theme', newTheme);
             updateThemeIcon();
         }
     });
@@ -335,7 +335,7 @@ window.initModals = function () {
             if (typeof savePdfConfiguration === 'function') savePdfConfiguration();
             // Admin: persistir personalización del encabezado en prof_data
             if (typeof isAdminUser === 'function' && isAdminUser()) {
-                const profD = JSON.parse(localStorage.getItem('prof_data') || '{}');
+                const profD = window._profDataCache || JSON.parse(localStorage.getItem('prof_data') || '{}');
                 const gv = (id) => document.getElementById(id)?.value || '';
                 const nom = gv('pdfProfName');
                 const mat = gv('pdfProfMatricula');
@@ -346,14 +346,16 @@ window.initModals = function () {
                 if (mat)  profD.matricula        = mat;
                 if (esp)  profD.especialidad     = esp;
                 if (col  != null) profD.headerColor     = col;
+                window._profDataCache = profD;
+                if (typeof appDB !== 'undefined') appDB.set('prof_data', profD);
                 localStorage.setItem('prof_data', JSON.stringify(profD));
             }
             // Color del encabezado: guardarlo siempre en prof_data (visible para todos en pestaña Formato)
             if (!(typeof isAdminUser === 'function' && isAdminUser())) {
-                const profD = JSON.parse(localStorage.getItem('prof_data') || '{}');
+                const profD = window._profDataCache || JSON.parse(localStorage.getItem('prof_data') || '{}');
                 const colEl2 = document.getElementById('pdfHeaderColor');
                 const col = colEl2?.dataset?.selectedColor || colEl2?.value || null;
-                if (col) { profD.headerColor = col; localStorage.setItem('prof_data', JSON.stringify(profD)); }
+                if (col) { profD.headerColor = col; window._profDataCache = profD; if (typeof appDB !== 'undefined') appDB.set('prof_data', profD); localStorage.setItem('prof_data', JSON.stringify(profD)); }
             }
             // M-2: cerrar el modal después de guardar
             closePdfConfigModal();
@@ -367,7 +369,7 @@ window.initModals = function () {
         btnPreviewFromConfig.addEventListener('click', () => {
             // Save config silently before opening preview — preservando datos del profesional activo
             if (typeof savePdfConfiguration === 'function') {
-                const existing = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+                const existing = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
                 const val = (id) => document.getElementById(id)?.value || '';
                 const chk = (id, def) => document.getElementById(id)?.checked ?? def;
                 const config = {
@@ -395,6 +397,8 @@ window.initModals = function () {
                 if (existing.activeProfessional)                       config.activeProfessional      = existing.activeProfessional;
                 if (existing.activeProfessionalIndex !== undefined)     config.activeProfessionalIndex = existing.activeProfessionalIndex;
                 if (existing.activeWorkplaceIndex    !== undefined)     config.activeWorkplaceIndex    = existing.activeWorkplaceIndex;
+                window._pdfConfigCache = config;
+                if (typeof appDB !== 'undefined') appDB.set('pdf_config', config);
                 localStorage.setItem('pdf_config', JSON.stringify(config));
             }
             if (typeof openPrintPreview === 'function') openPrintPreview();
@@ -515,7 +519,7 @@ window.initModals = function () {
     // Función global para abrir el modal de datos del paciente
     window.openPatientDataModal = function() {
         // Pre-rellenar con datos existentes (si se re-edita)
-        const cfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        const cfg = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
         const prefill = {
             reqPatientName: cfg.patientName || '',
             reqPatientDni: cfg.patientDni || '',
@@ -553,7 +557,7 @@ window.initModals = function () {
                 if (nameEl) { nameEl.style.borderColor = '#ef4444'; nameEl.focus(); }
                 return;
             }
-            const config = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+            const config = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
             config.patientName = name;
             const dni          = document.getElementById('reqPatientDni')?.value?.trim();
             const age          = document.getElementById('reqPatientAge')?.value?.trim();
@@ -565,6 +569,8 @@ window.initModals = function () {
             if (sex)          config.patientSex         = sex;
             if (insurance)    config.patientInsurance   = insurance;
             if (affiliateNum) config.patientAffiliateNum = affiliateNum;
+            window._pdfConfigCache = config;
+            if (typeof appDB !== 'undefined') appDB.set('pdf_config', config);
             localStorage.setItem('pdf_config', JSON.stringify(config));
             patientOverlay?.classList.remove('active');
             if (typeof showToast === 'function') showToast('✅ Datos del paciente guardados', 'success');
@@ -627,7 +633,7 @@ window.initModals = function () {
 
     // ── Refrescar encabezado de paciente desde localStorage ──
     function _refreshPatientHeader() {
-        const cfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        const cfg = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
         if (cfg.patientName) {
             _insertPatientDataInEditor({
                 name: cfg.patientName,
@@ -1079,7 +1085,7 @@ window.initApiManagement = function () {
     const apiTestResult = document.getElementById('apiTestResult');
 
     // Restaurar API key guardada al cargar la página
-    const savedKey = localStorage.getItem('groq_api_key') || window.GROQ_API_KEY || '';
+    const savedKey = window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '';
     if (savedKey) {
         window.GROQ_API_KEY = savedKey;
         if (apiKeyInput) {
@@ -1137,6 +1143,7 @@ window.initApiManagement = function () {
                 }
 
                 if (res.ok) {
+                    if (typeof appDB !== 'undefined') appDB.set('groq_api_key', key);
                     localStorage.setItem('groq_api_key', key);
                     window.GROQ_API_KEY = key;
                     if (typeof updateApiStatus === 'function') updateApiStatus(key);
@@ -1155,6 +1162,7 @@ window.initApiManagement = function () {
                 // Error de red / sin conexión
                 const guardar = await window.showCustomConfirm('⚠️ Sin conexión', 'No se pudo verificar la clave (sin conexión a internet).\n\n¿Guardar de todas formas?');
                 if (guardar) {
+                    if (typeof appDB !== 'undefined') appDB.set('groq_api_key', key);
                     localStorage.setItem('groq_api_key', key);
                     window.GROQ_API_KEY = key;
                     if (typeof updateApiStatus === 'function') updateApiStatus(key);
@@ -1239,9 +1247,9 @@ window.applyProfessionalData = function (data) {
         const headerLogo = document.getElementById('headerLogoImg');
         if (headerLogo) {
             // Prioridad: 1) logo profesional (proLogo) 2) logo del workplace activo 3) default
-            const pdfCfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+            const pdfCfg = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
             const proLogo = pdfCfg.professionalLogo || '';
-            const wpProfiles = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+            const wpProfiles = window._wpProfilesCache || JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
             const activeIdx = pdfCfg.activeWorkplaceIndex ?? 0;
             const wpLogo = wpProfiles[activeIdx]?.logo || wpProfiles[0]?.logo || '';
             const bestLogo = proLogo || wpLogo;
@@ -1320,7 +1328,7 @@ document.addEventListener('keydown', (e) => {
         e.preventDefault();
         const states = ['TRANSCRIBED', 'STRUCTURED', 'PREVIEWED'];
         if (states.includes(window.appState) && typeof window.downloadFile === 'function') {
-            const fav = localStorage.getItem('preferred_download_format') || 'pdf';
+            const fav = window._prefFmtCache || localStorage.getItem('preferred_download_format') || 'pdf';
             if (window.downloadPDF && fav === 'pdf') window.downloadPDF();
             else if (window.downloadRTF && fav === 'rtf') window.downloadRTF();
             else if (window.downloadTXT && fav === 'txt') window.downloadTXT();
@@ -1342,13 +1350,11 @@ document.addEventListener('keydown', (e) => {
         if (!editor) return;
         const content = editor.innerHTML;
         if (!content || content.trim() === '' || content === '<br>') return;
+        if (typeof appDB !== 'undefined') appDB.set(AUTOSAVE_KEY, content);
         localStorage.setItem(AUTOSAVE_KEY, content);
-        localStorage.setItem(AUTOSAVE_META_KEY, JSON.stringify({
-            timestamp: Date.now(),
-            mode: window.currentMode || 'normal',
-            template: window.selectedTemplate || '',
-            tabIndex: window.activeTabIndex || 0
-        }));
+        const _meta = { timestamp: Date.now(), mode: window.currentMode || 'normal', template: window.selectedTemplate || '', tabIndex: window.activeTabIndex || 0 };
+        if (typeof appDB !== 'undefined') appDB.set(AUTOSAVE_META_KEY, _meta);
+        localStorage.setItem(AUTOSAVE_META_KEY, JSON.stringify(_meta));
     }
 
     function startAutoSave() {
@@ -1366,6 +1372,7 @@ document.addEventListener('keydown', (e) => {
         // Solo restaurar si tiene menos de 2 horas
         const ageMs = Date.now() - meta.timestamp;
         if (ageMs > 2 * 60 * 60 * 1000) {
+            if (typeof appDB !== 'undefined') { appDB.remove(AUTOSAVE_KEY); appDB.remove(AUTOSAVE_META_KEY); }
             localStorage.removeItem(AUTOSAVE_KEY);
             localStorage.removeItem(AUTOSAVE_META_KEY);
             return;
@@ -1415,6 +1422,7 @@ document.addEventListener('keydown', (e) => {
     const resetBtnEl = document.getElementById('resetBtn');
     if (resetBtnEl) {
         resetBtnEl.addEventListener('click', () => {
+            if (typeof appDB !== 'undefined') { appDB.remove(AUTOSAVE_KEY); appDB.remove(AUTOSAVE_META_KEY); }
             localStorage.removeItem(AUTOSAVE_KEY);
             localStorage.removeItem(AUTOSAVE_META_KEY);
             // Ocultar botón restaurar si estaba visible

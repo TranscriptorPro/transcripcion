@@ -1,18 +1,22 @@
 
 // ============ WORKPLACE PROFILES + PROFESIONALES ============
 window.initWorkplaceManagement = function () {
-    let workplaceProfiles = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+    let workplaceProfiles = (window._wpProfilesCache !== undefined ? window._wpProfilesCache : null) || JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
 
     // ── helpers de persistencia ──────────────────────────────────────────────
     function saveProfiles() {
+        window._wpProfilesCache = workplaceProfiles;
+        if (typeof appDB !== 'undefined') appDB.set('workplace_profiles', workplaceProfiles);
         localStorage.setItem('workplace_profiles', JSON.stringify(workplaceProfiles));
     }
 
     function getProfConfig() {
-        return JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        return window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
     }
 
     function setProfConfig(cfg) {
+        window._pdfConfigCache = cfg;
+        if (typeof appDB !== 'undefined') appDB.set('pdf_config', cfg);
         localStorage.setItem('pdf_config', JSON.stringify(cfg));
     }
 
@@ -44,6 +48,7 @@ window.initWorkplaceManagement = function () {
         if (email)  email.value  = profile.email   || '';
         if (footer) footer.value = profile.footer   || '';
         if (profile.logo && profile.logo.startsWith('data:image/')) {
+            if (typeof appDB !== 'undefined') appDB.set('pdf_logo', profile.logo);
             localStorage.setItem('pdf_logo', profile.logo);
             if (logo) logo.innerHTML = `<img src="${profile.logo}" alt="Logo">`;
         }
@@ -104,8 +109,8 @@ window.initWorkplaceManagement = function () {
         // Sincronizar logo/firma del profesional a localStorage como fallback
         // para que pdfMaker siempre los encuentre aunque pdf_config se reconstruya
         try {
-            if (prof.logo  && prof.logo.startsWith('data:'))  localStorage.setItem('pdf_logo', prof.logo);
-            if (prof.firma && prof.firma.startsWith('data:')) localStorage.setItem('pdf_signature', prof.firma);
+            if (prof.logo  && prof.logo.startsWith('data:'))  { if (typeof appDB !== 'undefined') appDB.set('pdf_logo', prof.logo); localStorage.setItem('pdf_logo', prof.logo); }
+            if (prof.firma && prof.firma.startsWith('data:')) { if (typeof appDB !== 'undefined') appDB.set('pdf_signature', prof.firma); localStorage.setItem('pdf_signature', prof.firma); }
         } catch (_) { /* quota */ }
 
         // Actualizar previews si están visibles
@@ -457,6 +462,7 @@ async function _handleFactorySetup(medicoId) {
         let deviceId = localStorage.getItem('device_id');
         if (!deviceId) {
             deviceId = 'dev_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
+            if (typeof appDB !== 'undefined') appDB.set('device_id', deviceId);
             localStorage.setItem('device_id', deviceId);
         }
 
@@ -516,6 +522,7 @@ async function _handleFactorySetup(medicoId) {
         };
 
         // ── Guardar en localStorage ──────────────────────────────────────────
+        if (typeof appDB !== 'undefined') appDB.set('client_config_stored', clientConfig);
         localStorage.setItem('client_config_stored', JSON.stringify(clientConfig));
         Object.assign(window.CLIENT_CONFIG, clientConfig);
 
@@ -528,6 +535,8 @@ async function _handleFactorySetup(medicoId) {
             estudios:     [],
             especialidad: doctor.Especialidad || '',
         };
+        window._profDataCache = profData;
+        if (typeof appDB !== 'undefined') appDB.set('prof_data', profData);
         localStorage.setItem('prof_data', JSON.stringify(profData));
 
         // ── Cargar datos enriquecidos del registro (si existen) ──────────────
@@ -581,10 +590,14 @@ async function _handleFactorySetup(medicoId) {
                         });
                     }
 
+                    window._wpProfilesCache = workplaceProfiles;
+                    if (typeof appDB !== 'undefined') appDB.set('workplace_profiles', workplaceProfiles);
                     localStorage.setItem('workplace_profiles', JSON.stringify(workplaceProfiles));
 
                     // Actualizar prof_data con workplace
                     profData.workplace = wp.name || '';
+                    window._profDataCache = profData;
+                    if (typeof appDB !== 'undefined') appDB.set('prof_data', profData);
                     localStorage.setItem('prof_data', JSON.stringify(profData));
                 }
             } catch(_) {}
@@ -593,24 +606,26 @@ async function _handleFactorySetup(medicoId) {
         // Firma del profesional (base64)
         if (regDatos.firma) {
             try {
-                const existingConfig = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+                const existingConfig = getProfConfig();
                 existingConfig.signature = regDatos.firma;
-                localStorage.setItem('pdf_config', JSON.stringify(existingConfig));
+                setProfConfig(existingConfig);
             } catch(_) {}
         }
 
         // Logo profesional (base64)
         if (regDatos.proLogo) {
             try {
-                const existingConfig = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+                const existingConfig = getProfConfig();
                 existingConfig.professionalLogo = regDatos.proLogo;
-                localStorage.setItem('pdf_config', JSON.stringify(existingConfig));
+                setProfConfig(existingConfig);
             } catch(_) {}
         }
 
         // Header Color del PDF
         if (regDatos.headerColor) {
             profData.headerColor = regDatos.headerColor;
+            window._profDataCache = profData;
+            if (typeof appDB !== 'undefined') appDB.set('prof_data', profData);
             localStorage.setItem('prof_data', JSON.stringify(profData));
         }
 
@@ -620,6 +635,8 @@ async function _handleFactorySetup(medicoId) {
                 const estudios = typeof regDatos.estudios === 'string' ? JSON.parse(regDatos.estudios) : regDatos.estudios;
                 if (Array.isArray(estudios) && estudios.length > 0) {
                     profData.estudios = estudios;
+                    window._profDataCache = profData;
+                    if (typeof appDB !== 'undefined') appDB.set('prof_data', profData);
                     localStorage.setItem('prof_data', JSON.stringify(profData));
                 }
             } catch(_) {}
@@ -628,19 +645,21 @@ async function _handleFactorySetup(medicoId) {
         // Footer text del PDF
         if (regDatos.footerText) {
             try {
-                const existingConfig = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+                const existingConfig = getProfConfig();
                 existingConfig.footerText = regDatos.footerText;
-                localStorage.setItem('pdf_config', JSON.stringify(existingConfig));
+                setProfConfig(existingConfig);
             } catch(_) {}
         }
 
         // API Key (si el admin la configuró en el Sheet o viene en Registro_Datos)
         const apiKey = doctor.API_Key || regDatos.apiKey || '';
         if (apiKey) {
+            if (typeof appDB !== 'undefined') appDB.set('groq_api_key', apiKey);
             localStorage.setItem('groq_api_key', apiKey);
         }
 
         // Guardar ID del médico
+        if (typeof appDB !== 'undefined') appDB.set('medico_id', medicoId);
         localStorage.setItem('medico_id', medicoId);
 
         // Limpiar la marca de setup pendiente
@@ -721,7 +740,7 @@ function _showSetupError(message, code) {
 // ─── Flujo ADMIN ─────────────────────────────────────────────────────────────
 function _initAdmin() {
     // Preservar personalizaciones del admin (nombre, institución, color) ya guardadas
-    const existing = JSON.parse(localStorage.getItem('prof_data') || '{}');
+    const existing = window._profDataCache || JSON.parse(localStorage.getItem('prof_data') || '{}');
     const adminProfData = {
         nombre:          existing.nombre          || 'Administrador',
         matricula:       existing.matricula       || 'ADMIN',
@@ -732,7 +751,10 @@ function _initAdmin() {
         institutionName: existing.institutionName || '',
         headerColor:     existing.headerColor     || '#1a56a0',
     };
+    window._profDataCache = adminProfData;
+    if (typeof appDB !== 'undefined') appDB.set('prof_data', adminProfData);
     localStorage.setItem('prof_data', JSON.stringify(adminProfData));
+    if (typeof appDB !== 'undefined') appDB.set('onboarding_date', new Date().toISOString());
     localStorage.setItem('onboarding_date', new Date().toISOString());
 
     // Admin siempre ve el card de API Key
@@ -813,9 +835,18 @@ function _initResetApp() {
             'output_profiles',
         ];
         // Borrar también todos los contadores de informe (report_counter_YYYY)
-        Object.keys(localStorage)
-            .filter(k => /^report_counter_/.test(k))
-            .forEach(k => localStorage.removeItem(k));
+        if (typeof appDB !== 'undefined') {
+            Object.keys(localStorage)
+                .filter(k => /^report_counter_/.test(k))
+                .forEach(k => { appDB.remove(k); localStorage.removeItem(k); });
+            keysToRemove.forEach(k => appDB.remove(k));
+            // Limpiar caches de ventana
+            window._pdfConfigCache = null; window._profDataCache = null; window._wpProfilesCache = null;
+        } else {
+            Object.keys(localStorage)
+                .filter(k => /^report_counter_/.test(k))
+                .forEach(k => localStorage.removeItem(k));
+        }
 
         keysToRemove.forEach(k => localStorage.removeItem(k));
 
@@ -842,8 +873,8 @@ function _initClient() {
     }
 
     // Ya aceptó T&C: inicializar con los datos precargados por el admin
-    const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
-    window.GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
+    const profData = window._profDataCache || JSON.parse(localStorage.getItem('prof_data') || '{}');
+    window.GROQ_API_KEY = window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '';
     _initCommonModules();
 
     try {
@@ -892,7 +923,7 @@ function _showClientOnboarding() {
     const overlay = document.getElementById('onboardingOverlay');
     if (!overlay) return;
 
-    const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
+    const profData = window._profDataCache || JSON.parse(localStorage.getItem('prof_data') || '{}');
     let currentStep = 1;
 
     // Rellenar datos precargados
@@ -951,6 +982,7 @@ function _showClientOnboarding() {
             }
             // Guardar inmediatamente si fue ingresada
             if (keyVal) {
+                if (typeof appDB !== 'undefined') appDB.set('groq_api_key', keyVal);
                 localStorage.setItem('groq_api_key', keyVal);
                 window.GROQ_API_KEY = keyVal;
             }
@@ -974,6 +1006,7 @@ function _showClientOnboarding() {
         submitBtn.addEventListener('click', () => {
             if (!acceptTerms?.checked) return;
 
+            if (typeof appDB !== 'undefined') appDB.set('onboarding_accepted', 'true');
             localStorage.setItem('onboarding_accepted', 'true');
 
             // Confetti burst 🎉
@@ -985,11 +1018,12 @@ function _showClientOnboarding() {
                 // K1: guardar API Key ingresada en onboarding (si la hay)
                 const onbKey = document.getElementById('onboardingApiKey');
                 if (onbKey && onbKey.value.trim() && onbKey.value.trim().startsWith('gsk_')) {
+                    if (typeof appDB !== 'undefined') appDB.set('groq_api_key', onbKey.value.trim());
                     localStorage.setItem('groq_api_key', onbKey.value.trim());
                 }
 
                 // Cargar API Key desde localStorage
-                window.GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
+                window.GROQ_API_KEY = window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '';
                 console.info('[Onboarding] API Key loaded:', window.GROQ_API_KEY ? 'gsk_...' + window.GROQ_API_KEY.slice(-4) : 'NONE');
                 _initCommonModules();
 

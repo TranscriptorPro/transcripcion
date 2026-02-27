@@ -9,6 +9,15 @@
     const SETTINGS_PREFS_KEY = 'settings_prefs';
     const QUICK_PROFILES_KEY = 'quick_profiles';
 
+    // ─── In-memory write-through caches ─────────────────────────────────
+    let _settingsPrefsCache = null;
+    let _quickProfilesCache = null;
+    // Init caches from appDB at module load
+    if (typeof appDB !== 'undefined') {
+        appDB.get(SETTINGS_PREFS_KEY).then(v => { if (v !== undefined) _settingsPrefsCache = v; });
+        appDB.get(QUICK_PROFILES_KEY).then(v => { if (v !== undefined) _quickProfilesCache = v; });
+    }
+
     // ─── Default preferences ─────────────────────────────────────────
     const DEFAULTS = {
         editorFontSize: 'medium',   // small | medium | large
@@ -17,10 +26,14 @@
     };
 
     function _getPrefs() {
-        try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(SETTINGS_PREFS_KEY) || '{}') }; }
-        catch (_) { return { ...DEFAULTS }; }
+        try {
+            if (_settingsPrefsCache !== null) return { ...DEFAULTS, ..._settingsPrefsCache };
+            return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(SETTINGS_PREFS_KEY) || '{}') };
+        } catch (_) { return { ...DEFAULTS }; }
     }
     function _savePrefs(prefs) {
+        _settingsPrefsCache = prefs;
+        if (typeof appDB !== 'undefined') appDB.set(SETTINGS_PREFS_KEY, prefs);
         localStorage.setItem(SETTINGS_PREFS_KEY, JSON.stringify(prefs));
     }
 
@@ -106,7 +119,7 @@
 
     // ─── 1. Account data (read-only) ─────────────────────────────────
     function _populateAccountData() {
-        const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
+        const profData = window._profDataCache || JSON.parse(localStorage.getItem('prof_data') || '{}');
         const el = (id) => document.getElementById(id);
 
         if (el('settingsProfName')) el('settingsProfName').textContent = profData.nombre || '—';
@@ -134,6 +147,7 @@
                     return;
                 }
                 localStorage.setItem('groq_api_key', key);
+                if (typeof appDB !== 'undefined') appDB.set('groq_api_key', key);
                 window.GROQ_API_KEY = key;
                 if (typeof updateApiStatus === 'function') updateApiStatus(key);
                 _setApiDot(true);
@@ -144,7 +158,7 @@
 
         if (testBtn && input) {
             testBtn.addEventListener('click', async () => {
-                const key = input.value.trim() || localStorage.getItem('groq_api_key');
+                const key = input.value.trim() || window.GROQ_API_KEY || localStorage.getItem('groq_api_key');
                 if (!key) {
                     if (typeof showToast === 'function') showToast('Ingresá una API key primero', 'error');
                     return;
@@ -175,7 +189,7 @@
     }
 
     function _populateApiKeyStatus() {
-        const key = localStorage.getItem('groq_api_key') || '';
+        const key = window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '';
         const input = document.getElementById('settingsApiKeyInput');
         if (input && key) input.value = key;
 
@@ -220,10 +234,13 @@
 
     // ─── 4. Quick Profiles ───────────────────────────────────────────
     function _getQuickProfiles() {
+        if (_quickProfilesCache !== null) return _quickProfilesCache;
         try { return JSON.parse(localStorage.getItem(QUICK_PROFILES_KEY) || '[]'); }
         catch (_) { return []; }
     }
     function _saveQuickProfiles(arr) {
+        _quickProfilesCache = arr;
+        if (typeof appDB !== 'undefined') appDB.set(QUICK_PROFILES_KEY, arr);
         localStorage.setItem(QUICK_PROFILES_KEY, JSON.stringify(arr));
     }
 
@@ -297,6 +314,8 @@
     function _loadQuickProfile(profile) {
         if (profile.mode && typeof setMode === 'function') {
             setMode(profile.mode, true);
+            window._lastProfileTypeCache = profile.mode;
+            if (typeof appDB !== 'undefined') appDB.set('last_profile_type', profile.mode);
             localStorage.setItem('last_profile_type', profile.mode);
         }
         if (profile.template) {
@@ -387,8 +406,11 @@
         _autosaveTimer = setInterval(() => {
             const editor = document.getElementById('mainEditor') || document.getElementById('editor');
             if (editor && editor.innerHTML && editor.innerHTML.length > 10) {
+                if (typeof appDB !== 'undefined') appDB.set('autosave_draft', editor.innerHTML);
                 localStorage.setItem('autosave_draft', editor.innerHTML);
-                localStorage.setItem('autosave_ts', Date.now().toString());
+                const _ts = Date.now().toString();
+                if (typeof appDB !== 'undefined') appDB.set('autosave_ts', _ts);
+                localStorage.setItem('autosave_ts', _ts);
             }
         }, 30000); // every 30s
     }
@@ -574,6 +596,7 @@
         root.style.removeProperty('--primary-light');
         root.style.removeProperty('--primary-dark');
         root.style.removeProperty('--accent');
+        if (typeof appDB !== 'undefined') appDB.remove('customPrimaryColor');
         localStorage.removeItem('customPrimaryColor');
         const picker = document.getElementById('settingsColorPicker');
         const hexLabel = document.getElementById('settingsColorHex');
@@ -594,6 +617,7 @@
         if (lightBtn) {
             lightBtn.addEventListener('click', () => {
                 document.documentElement.setAttribute('data-theme', 'light');
+                if (typeof appDB !== 'undefined') appDB.set('theme', 'light');
                 localStorage.setItem('theme', 'light');
                 _populateThemeButtons();
             });
@@ -601,6 +625,7 @@
         if (darkBtn) {
             darkBtn.addEventListener('click', () => {
                 document.documentElement.setAttribute('data-theme', 'dark');
+                if (typeof appDB !== 'undefined') appDB.set('theme', 'dark');
                 localStorage.setItem('theme', 'dark');
                 _populateThemeButtons();
             });
@@ -614,6 +639,7 @@
                 _applyCustomColor(hex);
             });
             colorPicker.addEventListener('change', (e) => {
+                if (typeof appDB !== 'undefined') appDB.set('customPrimaryColor', e.target.value);
                 localStorage.setItem('customPrimaryColor', e.target.value);
             });
         }
@@ -656,7 +682,7 @@
 
         // Reports
         try {
-            const reports = JSON.parse(localStorage.getItem('report_history') || '[]');
+            const reports = (window._reportHistCache !== undefined ? window._reportHistCache : null) || JSON.parse(localStorage.getItem('report_history') || '[]');
             if (el('statTotalReports')) el('statTotalReports').textContent = reports.length;
         } catch (_) {
             if (el('statTotalReports')) el('statTotalReports').textContent = '0';
@@ -668,7 +694,7 @@
 
         // Patients
         try {
-            const patients = JSON.parse(localStorage.getItem('patient_registry') || '[]');
+            const patients = (window._registryCache !== undefined ? window._registryCache : null) || JSON.parse(localStorage.getItem('patient_registry') || '[]');
             if (el('statTotalPatients')) el('statTotalPatients').textContent = patients.length;
         } catch (_) {
             if (el('statTotalPatients')) el('statTotalPatients').textContent = '0';
@@ -676,7 +702,7 @@
 
         // Dictionary entries
         try {
-            const dict = JSON.parse(localStorage.getItem('med_dictionary') || '[]');
+            const dict = (window._customDictCache !== undefined ? window._customDictCache : null) || JSON.parse(localStorage.getItem('custom_med_dict') || '[]');
             if (el('statDictEntries')) el('statDictEntries').textContent = dict.length;
         } catch (_) {
             if (el('statDictEntries')) el('statDictEntries').textContent = '0';
@@ -832,7 +858,7 @@
         if (el('settingsAppVersion')) el('settingsAppVersion').textContent = '2.0';
         if (el('settingsAboutVersion')) el('settingsAboutVersion').textContent = '2.0';
 
-        const deviceId = localStorage.getItem('device_id') || '—';
+        const deviceId = (typeof window._lmDeviceCache !== 'undefined' && window._lmDeviceCache) || localStorage.getItem('device_id') || '—';
         if (el('settingsDeviceId')) el('settingsDeviceId').textContent = deviceId.length > 16 ? deviceId.substring(0, 16) + '…' : deviceId;
 
         if (el('settingsAccountType') && typeof CLIENT_CONFIG !== 'undefined') {
@@ -860,7 +886,9 @@
     // ─── Transcription counter (increment on each transcription) ────
     window.incrementTranscriptionCount = function () {
         const current = parseInt(localStorage.getItem('transcription_count') || '0');
-        localStorage.setItem('transcription_count', (current + 1).toString());
+        const next = (current + 1).toString();
+        if (typeof appDB !== 'undefined') appDB.set('transcription_count', next);
+        localStorage.setItem('transcription_count', next);
     };
 
 })();
