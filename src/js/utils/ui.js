@@ -129,11 +129,26 @@ window.initTheme = function () {
         localStorage.setItem('theme', newTheme);
         updateThemeIcon();
         window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: newTheme } }));
+        // Sync to manual iframe if open
+        try {
+            const mf = document.getElementById('manualFrame');
+            if (mf && mf.contentWindow) mf.contentWindow.postMessage({ type: 'app-theme-changed', theme: newTheme }, '*');
+        } catch(_) {}
     });
 
     window.addEventListener('themeChanged', (e) => {
         document.documentElement.setAttribute('data-theme', e.detail.theme);
         updateThemeIcon();
+    });
+
+    // Listen for theme changes from manual iframe
+    window.addEventListener('message', (e) => {
+        if (e.data && e.data.type === 'manual-theme-changed') {
+            const newTheme = e.data.theme;
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon();
+        }
     });
 }
 
