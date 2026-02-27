@@ -218,4 +218,4 @@ window.loadPdfConfiguration = function () {
         const sp = document.getElementById('pdfSignaturePreview');
         if (sp) sp.innerHTML = `<img src="${savedSig}" alt="Firma" style="max-height:80px;">`;
     }
-}
+};

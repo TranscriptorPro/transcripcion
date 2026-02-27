@@ -265,6 +265,32 @@
         btnStartTour.addEventListener('click', startTour);
     }
 
+    // ── Botón Guía Rápida (header) — abre helpModal en tab Guía ──
+    const btnGuiaRapida = document.getElementById('btnGuiaRapida');
+    if (btnGuiaRapida) {
+        btnGuiaRapida.addEventListener('click', () => {
+            const helpModal = document.getElementById('helpModal');
+            if (helpModal) {
+                // Activar tab de guía rápida
+                document.querySelectorAll('.help-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.help-tab-content').forEach(p => p.classList.remove('active'));
+                const guideTab = document.querySelector('.help-tab[data-help-tab="guide"]');
+                const guidePanel = document.querySelector('[data-help-panel="guide"]');
+                if (guideTab) guideTab.classList.add('active');
+                if (guidePanel) guidePanel.classList.add('active');
+                helpModal.classList.add('active');
+            }
+        });
+    }
+
+    // ── Botón Manual Profesional (header) — abre en nueva pestaña ──
+    const btnManual = document.getElementById('btnManual');
+    if (btnManual) {
+        btnManual.addEventListener('click', () => {
+            window.open('https://github.com/TranscriptorPro/transcripcion/blob/main/anexos/documentacion/MANUAL_PROFESIONAL.md', '_blank');
+        });
+    }
+
     // ── Auto-show tour on first visit ──
     function maybeAutoTour() {
         const tourDone = localStorage.getItem('tour_completed');

@@ -68,7 +68,7 @@ async function build() {
     let combined = '';
     for (const f of JS_FILES) {
         const code = fs.readFileSync(path.join(__dirname, f), 'utf8');
-        combined += `\n// ═══ ${f} ═══\n${code}\n`;
+        combined += `\n;\n// ═══ ${f} ═══\n${code}\n`;
     }
 
     // 3. Minificar + ofuscar
