@@ -4022,6 +4022,59 @@
             border-color: var(--primary);
         }
 
+        /* Color picker row */
+        .stg-color-picker-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .stg-color-input {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 32px;
+            height: 32px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 2px;
+            cursor: pointer;
+            background: var(--bg-card);
+        }
+        .stg-color-input::-webkit-color-swatch-wrapper { padding: 0; }
+        .stg-color-input::-webkit-color-swatch {
+            border: none;
+            border-radius: 5px;
+        }
+        .stg-color-hex {
+            font-family: monospace;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            min-width: 60px;
+        }
+        .stg-color-reset {
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 2px 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+        .stg-color-reset:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+        .stg-color-swatches {
+            display: flex;
+            gap: 6px;
+        }
+        .stg-swatch {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
         /* Stats grid */
         .stg-stats-grid {
             display: grid;
@@ -4100,4 +4153,305 @@
             background: var(--bg-hover);
             border-radius: 8px;
             padding: 0.5rem 0.75rem;
+        }
+
+        /* Info grid (mejorado) */
+        .stg-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 0.75rem;
+        }
+        .stg-info-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0.5rem 0.6rem;
+            background: var(--bg-hover);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        .stg-info-icon {
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .stg-info-key {
+            display: block;
+            font-size: 0.68rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .stg-info-val {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .stg-info-mono {
+            font-family: monospace;
+            font-size: 0.72rem;
+            font-weight: 400;
+        }
+        .stg-support-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        /* Acerca de card */
+        .stg-about-card {
+            text-align: center;
+            padding: 1rem 0.5rem;
+        }
+        .stg-about-logo {
+            font-size: 2.5rem;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+        .stg-about-name {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin: 0;
+        }
+        .stg-about-tagline {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin: 0.2rem 0 0.5rem;
+        }
+        .stg-about-version {
+            display: inline-block;
+            background: var(--primary);
+            color: #fff;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 2px 10px;
+            border-radius: 12px;
+        }
+        .stg-about-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 0.75rem 0;
+        }
+        .stg-about-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin: 0 0 0.75rem;
+        }
+        .stg-about-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            margin-bottom: 0.75rem;
+        }
+        .stg-about-badge {
+            font-size: 0.72rem;
+            padding: 3px 10px;
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text-primary);
+            white-space: nowrap;
+        }
+        .stg-about-copy {
+            font-size: 0.68rem;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        /* ═══ Pricing Cart ═══════════════════════════════════════════ */
+        .pricing-plans-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 1.5rem;
+        }
+        .pricing-card {
+            position: relative;
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 1.2rem 0.8rem;
+            text-align: center;
+            transition: all 0.25s;
+        }
+        .pricing-card-current {
+            border-color: var(--primary);
+            background: rgba(15,118,110,0.04);
+        }
+        .pricing-card-selected {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(15,118,110,0.15);
+        }
+        .pricing-card-recommended {
+            border-color: var(--accent);
+        }
+        .pricing-badge {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: #fff;
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 2px 12px;
+            border-radius: 10px;
+            white-space: nowrap;
+        }
+        .pricing-icon {
+            font-size: 1.8rem;
+            margin-bottom: 0.3rem;
+        }
+        .pricing-plan-name {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin: 0 0 0.3rem;
+        }
+        .pricing-price {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        .pricing-period {
+            font-size: 0.72rem;
+            font-weight: 400;
+            color: var(--text-secondary);
+        }
+        .pricing-features {
+            list-style: none;
+            padding: 0;
+            margin: 0.8rem 0;
+            text-align: left;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+        .pricing-features li { padding-left: 0.2rem; }
+        .pricing-btn {
+            width: 100%;
+            padding: 6px 0;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 2px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+        .pricing-btn-current {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            cursor: default;
+        }
+        .pricing-btn-upgrade:hover {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+        .pricing-btn-selected {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+        .pricing-btn-lower {
+            opacity: 0.4;
+            cursor: default;
+        }
+
+        /* Addons section */
+        .pricing-addons-section {
+            border-top: 1px solid var(--border);
+            padding-top: 1rem;
+            margin-bottom: 1rem;
+        }
+        .pricing-addons-title {
+            font-size: 1rem;
+            font-weight: 800;
+            margin: 0 0 0.2rem;
+            color: var(--text-primary);
+        }
+        .pricing-addons-subtitle {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin: 0 0 0.75rem;
+        }
+        .pricing-addons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        .pricing-addon-category {
+            background: var(--bg-hover);
+            border-radius: 8px;
+            padding: 0.6rem;
+        }
+        .pricing-addon-cat-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0 0 0.4rem;
+            padding-bottom: 0.3rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .pricing-addon-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 0;
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: background 0.15s;
+            border-radius: 4px;
+        }
+        .pricing-addon-item:hover { background: rgba(0,0,0,0.03); }
+        .pricing-addon-checked { font-weight: 600; }
+        .pricing-addon-name { flex: 1; color: var(--text-primary); }
+        .pricing-addon-price {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 0.72rem;
+        }
+
+        /* Cart summary */
+        .pricing-summary {
+            background: var(--bg-hover);
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+        .pricing-summary-title {
+            font-size: 0.95rem;
+            font-weight: 800;
+            margin: 0 0 0.5rem;
+            color: var(--text-primary);
+        }
+        .pricing-summary-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 0.75rem;
+        }
+        .pricing-summary-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 0.82rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .pricing-summary-list li:last-child { border-bottom: none; }
+        .pricing-submit {
+            font-size: 0.9rem;
+            padding: 10px 0;
+        }
+        .pricing-summary-note {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            text-align: center;
+            margin: 0.5rem 0 0;
         }

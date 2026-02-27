@@ -295,6 +295,9 @@
                                 <div class="stg-row"><span class="stg-label">Especialidad:</span><strong id="settingsProfEspecialidad">—</strong></div>
                                 <div class="stg-row"><span class="stg-label">Plan:</span><span class="stg-badge" id="settingsProfPlan">—</span></div>
                             </div>
+                            <button class="btn btn-primary btn-full stg-action-btn" id="settingsUpgradePlan" style="margin-top: 0.5rem;">
+                                🚀 Ver planes y mejoras
+                            </button>
                         </div>
                     </div>
 
@@ -444,6 +447,23 @@
                                     <button class="stg-theme-btn" id="settingsThemeDark" title="Tema oscuro">🌙 Oscuro</button>
                                 </div>
                             </div>
+                            <div class="stg-opt-row">
+                                <span class="stg-opt-label">Color principal</span>
+                                <div class="stg-color-picker-wrap">
+                                    <input type="color" id="settingsColorPicker" class="stg-color-input" value="#0f766e" title="Elegir color">
+                                    <span class="stg-color-hex" id="settingsColorHex">#0f766e</span>
+                                    <button class="stg-color-reset" id="settingsColorReset" title="Restaurar color original">↺</button>
+                                </div>
+                            </div>
+                            <div class="stg-opt-row" id="settingsColorPreview" style="display:none;">
+                                <span class="stg-opt-label">Vista previa</span>
+                                <div class="stg-color-swatches">
+                                    <span class="stg-swatch" id="swatchDark" title="Oscuro"></span>
+                                    <span class="stg-swatch" id="swatchPrimary" title="Principal"></span>
+                                    <span class="stg-swatch" id="swatchLight" title="Claro"></span>
+                                    <span class="stg-swatch" id="swatchAccent" title="Acento"></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -505,17 +525,90 @@
                             <span class="stg-chevron">▾</span>
                         </button>
                         <div class="stg-accordion-content">
-                            <div class="stg-card" style="font-size: 0.82rem;">
-                                <div class="stg-row"><span class="stg-label">Versión:</span><strong id="settingsAppVersion">2.0</strong></div>
-                                <div class="stg-row"><span class="stg-label">Device ID:</span><code id="settingsDeviceId" style="font-size:0.72rem;">—</code></div>
-                                <div class="stg-row"><span class="stg-label">Tipo:</span><span id="settingsAccountType">—</span></div>
+                            <div class="stg-info-grid">
+                                <div class="stg-info-item">
+                                    <span class="stg-info-icon">📋</span>
+                                    <div>
+                                        <span class="stg-info-key">Versión</span>
+                                        <span class="stg-info-val" id="settingsAppVersion">2.0</span>
+                                    </div>
+                                </div>
+                                <div class="stg-info-item">
+                                    <span class="stg-info-icon">🔑</span>
+                                    <div>
+                                        <span class="stg-info-key">Device ID</span>
+                                        <code class="stg-info-val stg-info-mono" id="settingsDeviceId">—</code>
+                                    </div>
+                                </div>
+                                <div class="stg-info-item">
+                                    <span class="stg-info-icon">📦</span>
+                                    <div>
+                                        <span class="stg-info-key">Plan</span>
+                                        <span class="stg-info-val" id="settingsAccountType">—</span>
+                                    </div>
+                                </div>
+                                <div class="stg-info-item">
+                                    <span class="stg-info-icon">💾</span>
+                                    <div>
+                                        <span class="stg-info-key">Datos locales</span>
+                                        <span class="stg-info-val" id="settingsStorageUsed">—</span>
+                                    </div>
+                                </div>
                             </div>
-                            <button class="btn btn-outline btn-full stg-action-btn" id="settingsContactSupport" style="margin-top: 0.5rem;">
-                                📧 Contactar soporte
-                            </button>
+                            <div class="stg-support-actions">
+                                <button class="btn btn-outline btn-full stg-action-btn" id="settingsContactSupport">
+                                    📧 Contactar soporte
+                                </button>
+                                <button class="btn btn-outline btn-full stg-action-btn" id="settingsOpenHelp">
+                                    📖 Centro de ayuda
+                                </button>
+                            </div>
                         </div>
                     </div>
 
+                    <!-- 12. Acerca de -->
+                    <div class="stg-accordion" data-stg="about">
+                        <button class="stg-accordion-btn" type="button">
+                            <span>ℹ️ Acerca de</span>
+                            <span class="stg-chevron">▾</span>
+                        </button>
+                        <div class="stg-accordion-content">
+                            <div class="stg-about-card">
+                                <div class="stg-about-logo" id="settingsAboutLogo">🩺</div>
+                                <h3 class="stg-about-name">Transcriptor Pro</h3>
+                                <p class="stg-about-tagline">Transcripción médica inteligente con IA</p>
+                                <div class="stg-about-version">v<span id="settingsAboutVersion">2.0</span></div>
+                                <hr class="stg-about-divider">
+                                <p class="stg-about-desc">
+                                    Aplicación diseñada para profesionales de la salud. 
+                                    Transcribe audio médico, estructura informes con plantillas inteligentes 
+                                    y genera PDFs profesionales listos para firmar.
+                                </p>
+                                <div class="stg-about-features">
+                                    <span class="stg-about-badge">🎙️ Whisper AI</span>
+                                    <span class="stg-about-badge">📝 Plantillas médicas</span>
+                                    <span class="stg-about-badge">📄 PDF profesional</span>
+                                    <span class="stg-about-badge">🔒 Datos locales</span>
+                                    <span class="stg-about-badge">📱 PWA offline</span>
+                                </div>
+                                <p class="stg-about-copy">&copy; 2025 Transcriptor Pro. Todos los derechos reservados.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Pricing Cart Modal -->
+        <div class="modal-overlay" id="pricingModalOverlay">
+            <div class="modal" style="max-width: 780px; display:flex; flex-direction:column; max-height:92vh;">
+                <div class="modal-header">
+                    <h2>🚀 Planes y mejoras</h2>
+                    <button class="modal-close" id="closePricingModal">&times;</button>
+                </div>
+                <div class="modal-body" id="pricingModalBody" style="overflow-y:auto; flex:1; padding:1rem;">
+                    <!-- Renderizado dinámico por pricingCart.js -->
                 </div>
             </div>
         </div>
@@ -1863,6 +1956,7 @@
         <script src="src/js/features/patientRegistry.js"></script>
         <script src="src/js/features/formHandler.js"></script>
         <script src="src/js/features/settingsPanel.js"></script>
+        <script src="src/js/features/pricingCart.js"></script>
         <script src="src/js/features/business.js"></script>
         <script src="src/js/features/sessionAssistant.js"></script>
         <script src="src/js/features/outputProfiles.js"></script>

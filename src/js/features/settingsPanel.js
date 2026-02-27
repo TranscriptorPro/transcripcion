@@ -37,7 +37,11 @@
         // Stats section has no interactive init — only populate
         _initBackupSection();
         _initInfoSection();
+        _initUpgradeButton();
         _initModalControls();
+
+        // Init pricing cart if available
+        if (typeof window.initPricingCart === 'function') window.initPricingCart();
 
         // Apply saved preferences on init
         _applyEditorPrefs(_getPrefs());
@@ -74,6 +78,8 @@
 
         const openModal = () => {
             if (overlay) {
+                // A1: Colapsar todos los acordeones al reabrir
+                document.querySelectorAll('.stg-accordion').forEach(a => a.classList.remove('open'));
                 populateSettingsModal();
                 overlay.classList.add('active');
             }
@@ -414,44 +420,176 @@
     };
 
     // ─── 7. Tools links ──────────────────────────────────────────────
+    // A2: Helper — observa cuándo un modal pierde .active y ejecuta callback
+    function _watchForClose(element, callback) {
+        const obs = new MutationObserver((mutations) => {
+            for (const m of mutations) {
+                if (m.attributeName === 'class' && !element.classList.contains('active')) {
+                    obs.disconnect();
+                    callback();
+                    break;
+                }
+            }
+        });
+        obs.observe(element, { attributes: true, attributeFilter: ['class'] });
+    }
+
     function _initToolsLinks() {
         const historyBtn = document.getElementById('settingsOpenHistory');
         const dictBtn = document.getElementById('settingsOpenDictionary');
         const shortcutsBtn = document.getElementById('settingsOpenShortcuts');
         const overlay = document.getElementById('settingsModalOverlay');
 
+        // A2: Función para reabrir settings al cerrar sub-modal
+        const reopenSettings = () => {
+            if (overlay) {
+                populateSettingsModal();
+                overlay.classList.add('active');
+            }
+        };
+
         if (historyBtn) {
             historyBtn.addEventListener('click', () => {
                 if (overlay) overlay.classList.remove('active');
                 const histOverlay = document.getElementById('reportHistoryOverlay');
-                if (histOverlay) histOverlay.classList.add('active');
+                if (histOverlay) {
+                    histOverlay.classList.add('active');
+                    _watchForClose(histOverlay, reopenSettings);
+                }
             });
         }
         if (dictBtn) {
             dictBtn.addEventListener('click', () => {
                 if (overlay) overlay.classList.remove('active');
+                // A3: Abrir diccionario sin validar editor, directo a tab "dictionary"
                 if (typeof window.openMedDictModal === 'function') {
-                    window.openMedDictModal();
+                    window.openMedDictModal({ skipEditorCheck: true, defaultTab: 'dictionary' });
                 } else {
                     const dictModal = document.getElementById('medDictModal');
                     if (dictModal) dictModal.classList.add('active');
                 }
+                const dictModal = document.getElementById('medDictModal');
+                if (dictModal) _watchForClose(dictModal, reopenSettings);
             });
         }
         if (shortcutsBtn) {
             shortcutsBtn.addEventListener('click', () => {
                 if (overlay) overlay.classList.remove('active');
-                // Open help modal which includes shortcuts
-                const helpEl = document.getElementById('helpBtn');
-                if (helpEl) helpEl.click();
+                // A4: Abrir help modal directamente en tab "Atajos"
+                const helpModal = document.getElementById('helpModal');
+                if (helpModal) {
+                    document.querySelectorAll('.help-tab').forEach(t => {
+                        t.classList.toggle('active', t.dataset.helpTab === 'shortcuts');
+                    });
+                    document.querySelectorAll('.help-tab-content').forEach(p => p.classList.remove('active'));
+                    const panel = document.querySelector('[data-help-panel="shortcuts"]');
+                    if (panel) panel.classList.add('active');
+                    helpModal.classList.add('active');
+                    _watchForClose(helpModal, reopenSettings);
+                }
             });
         }
     }
 
     // ─── 8. Theme ────────────────────────────────────────────────────
+    const DEFAULT_PRIMARY = '#0f766e';
+
+    // Convierte hex a HSL { h, s, l } (h en grados, s y l en 0-1)
+    function _hexToHSL(hex) {
+        let r = parseInt(hex.slice(1, 3), 16) / 255;
+        let g = parseInt(hex.slice(3, 5), 16) / 255;
+        let b = parseInt(hex.slice(5, 7), 16) / 255;
+        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+        let h = 0, s = 0, l = (max + min) / 2;
+        if (max !== min) {
+            const d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                case g: h = ((b - r) / d + 2) / 6; break;
+                case b: h = ((r - g) / d + 4) / 6; break;
+            }
+        }
+        return { h: Math.round(h * 360), s, l };
+    }
+
+    function _hslToHex(h, s, l) {
+        const hue2rgb = (p, q, t) => {
+            if (t < 0) t += 1; if (t > 1) t -= 1;
+            if (t < 1/6) return p + (q - p) * 6 * t;
+            if (t < 1/2) return q;
+            if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+            return p;
+        };
+        let r, g, b2;
+        if (s === 0) { r = g = b2 = l; }
+        else {
+            const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            const p = 2 * l - q;
+            r = hue2rgb(p, q, h / 360 + 1/3);
+            g = hue2rgb(p, q, h / 360);
+            b2 = hue2rgb(p, q, h / 360 - 1/3);
+        }
+        const toHex = x => Math.round(x * 255).toString(16).padStart(2, '0');
+        return `#${toHex(r)}${toHex(g)}${toHex(b2)}`;
+    }
+
+    // Genera paleta a partir de un hex: primary, primary-light, primary-dark, accent
+    function _generatePalette(hex) {
+        const { h, s, l } = _hexToHSL(hex);
+        return {
+            primary:      hex,
+            primaryLight: _hslToHex(h, Math.min(s * 1.2, 1), Math.min(l + 0.15, 0.85)),
+            primaryDark:  _hslToHex(h, s, Math.max(l - 0.08, 0.1)),
+            accent:       _hslToHex((h + 45) % 360, 0.85, 0.55)
+        };
+    }
+
+    function _applyCustomColor(hex) {
+        const p = _generatePalette(hex);
+        const root = document.documentElement;
+        root.style.setProperty('--primary', p.primary);
+        root.style.setProperty('--primary-light', p.primaryLight);
+        root.style.setProperty('--primary-dark', p.primaryDark);
+        root.style.setProperty('--accent', p.accent);
+
+        // Actualizar swatches de preview
+        const preview = document.getElementById('settingsColorPreview');
+        if (preview) {
+            preview.style.display = '';
+            const sd = document.getElementById('swatchDark');
+            const sp = document.getElementById('swatchPrimary');
+            const sl = document.getElementById('swatchLight');
+            const sa = document.getElementById('swatchAccent');
+            if (sd) sd.style.background = p.primaryDark;
+            if (sp) sp.style.background = p.primary;
+            if (sl) sl.style.background = p.primaryLight;
+            if (sa) sa.style.background = p.accent;
+        }
+    }
+
+    function _resetCustomColor() {
+        const root = document.documentElement;
+        root.style.removeProperty('--primary');
+        root.style.removeProperty('--primary-light');
+        root.style.removeProperty('--primary-dark');
+        root.style.removeProperty('--accent');
+        localStorage.removeItem('customPrimaryColor');
+        const picker = document.getElementById('settingsColorPicker');
+        const hexLabel = document.getElementById('settingsColorHex');
+        const preview = document.getElementById('settingsColorPreview');
+        if (picker) picker.value = DEFAULT_PRIMARY;
+        if (hexLabel) hexLabel.textContent = DEFAULT_PRIMARY;
+        if (preview) preview.style.display = 'none';
+        if (typeof showToast === 'function') showToast('Color restaurado', 'success');
+    }
+
     function _initThemeSection() {
         const lightBtn = document.getElementById('settingsThemeLight');
         const darkBtn = document.getElementById('settingsThemeDark');
+        const colorPicker = document.getElementById('settingsColorPicker');
+        const colorReset = document.getElementById('settingsColorReset');
+        const hexLabel = document.getElementById('settingsColorHex');
 
         if (lightBtn) {
             lightBtn.addEventListener('click', () => {
@@ -467,6 +605,29 @@
                 _populateThemeButtons();
             });
         }
+
+        // Color picker
+        if (colorPicker) {
+            colorPicker.addEventListener('input', (e) => {
+                const hex = e.target.value;
+                if (hexLabel) hexLabel.textContent = hex;
+                _applyCustomColor(hex);
+            });
+            colorPicker.addEventListener('change', (e) => {
+                localStorage.setItem('customPrimaryColor', e.target.value);
+            });
+        }
+        if (colorReset) {
+            colorReset.addEventListener('click', _resetCustomColor);
+        }
+
+        // Aplicar color guardado al iniciar
+        const saved = localStorage.getItem('customPrimaryColor');
+        if (saved) {
+            _applyCustomColor(saved);
+            if (colorPicker) colorPicker.value = saved;
+            if (hexLabel) hexLabel.textContent = saved;
+        }
     }
 
     function _populateThemeButtons() {
@@ -475,6 +636,18 @@
         const darkBtn = document.getElementById('settingsThemeDark');
         if (lightBtn) lightBtn.classList.toggle('active', current === 'light');
         if (darkBtn) darkBtn.classList.toggle('active', current === 'dark');
+
+        // Sincronizar color picker con valor guardado
+        const saved = localStorage.getItem('customPrimaryColor');
+        const picker = document.getElementById('settingsColorPicker');
+        const hexLabel = document.getElementById('settingsColorHex');
+        if (saved) {
+            if (picker) picker.value = saved;
+            if (hexLabel) hexLabel.textContent = saved;
+        } else {
+            if (picker) picker.value = DEFAULT_PRIMARY;
+            if (hexLabel) hexLabel.textContent = DEFAULT_PRIMARY;
+        }
     }
 
     // ─── 9. Stats ────────────────────────────────────────────────────
@@ -599,6 +772,26 @@
         reader.readAsText(file);
     }
 
+    // ─── 10.5. Upgrade button ──────────────────────────────────────
+    function _initUpgradeButton() {
+        const btn = document.getElementById('settingsUpgradePlan');
+        if (btn) {
+            btn.addEventListener('click', () => {
+                const overlay = document.getElementById('settingsModalOverlay');
+                if (overlay) overlay.classList.remove('active');
+                if (typeof window.openPricingCart === 'function') {
+                    window.openPricingCart();
+                    const pricingOverlay = document.getElementById('pricingModalOverlay');
+                    if (pricingOverlay) {
+                        _watchForClose(pricingOverlay, () => {
+                            if (overlay) { populateSettingsModal(); overlay.classList.add('active'); }
+                        });
+                    }
+                }
+            });
+        }
+    }
+
     // ─── 11. Info & Support ──────────────────────────────────────────
     function _initInfoSection() {
         const contactBtn = document.getElementById('settingsContactSupport');
@@ -606,9 +799,30 @@
             contactBtn.addEventListener('click', () => {
                 const overlay = document.getElementById('settingsModalOverlay');
                 if (overlay) overlay.classList.remove('active');
-                // Use existing contact button
                 const btnContacto = document.getElementById('btnContacto');
                 if (btnContacto) btnContacto.click();
+            });
+        }
+        // Botón abrir centro de ayuda desde Info
+        const helpBtn = document.getElementById('settingsOpenHelp');
+        if (helpBtn) {
+            helpBtn.addEventListener('click', () => {
+                const overlay = document.getElementById('settingsModalOverlay');
+                if (overlay) overlay.classList.remove('active');
+                const helpModal = document.getElementById('helpModal');
+                if (helpModal) {
+                    // Reset a tab guía rápida
+                    document.querySelectorAll('.help-tab').forEach(t => {
+                        t.classList.toggle('active', t.dataset.helpTab === 'guide');
+                    });
+                    document.querySelectorAll('.help-tab-content').forEach(p => p.classList.remove('active'));
+                    const panel = document.querySelector('[data-help-panel="guide"]');
+                    if (panel) panel.classList.add('active');
+                    helpModal.classList.add('active');
+                    _watchForClose(helpModal, () => {
+                        if (overlay) { populateSettingsModal(); overlay.classList.add('active'); }
+                    });
+                }
             });
         }
     }
@@ -616,12 +830,30 @@
     function _populateInfo() {
         const el = (id) => document.getElementById(id);
         if (el('settingsAppVersion')) el('settingsAppVersion').textContent = '2.0';
+        if (el('settingsAboutVersion')) el('settingsAboutVersion').textContent = '2.0';
 
         const deviceId = localStorage.getItem('device_id') || '—';
         if (el('settingsDeviceId')) el('settingsDeviceId').textContent = deviceId.length > 16 ? deviceId.substring(0, 16) + '…' : deviceId;
 
         if (el('settingsAccountType') && typeof CLIENT_CONFIG !== 'undefined') {
             el('settingsAccountType').textContent = CLIENT_CONFIG.plan || CLIENT_CONFIG.type || '—';
+        }
+
+        // Calcular uso de localStorage
+        if (el('settingsStorageUsed')) {
+            try {
+                let total = 0;
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    total += (key.length + (localStorage.getItem(key) || '').length) * 2;
+                }
+                const kb = (total / 1024).toFixed(1);
+                el('settingsStorageUsed').textContent = total > 1024 * 1024
+                    ? (total / (1024 * 1024)).toFixed(1) + ' MB'
+                    : kb + ' KB';
+            } catch (_) {
+                el('settingsStorageUsed').textContent = '—';
+            }
         }
     }
 

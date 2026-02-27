@@ -566,21 +566,29 @@ function renderDictList() {
 }
 
 // ─── 9. Abrir modal ─────────────────────────────────────────
-window.openMedDictModal = function () {
+// options: { skipEditorCheck: bool, defaultTab: 'review'|'dictionary' }
+window.openMedDictModal = function (options = {}) {
     const editor = document.getElementById('editor');
-    if (!editor || !editor.innerText.trim()) {
+    const hasContent = editor && editor.innerText.trim();
+
+    // A3: Si no se pide skip, validar que el editor tenga contenido
+    if (!options.skipEditorCheck && !hasContent) {
         if (typeof showToast === 'function') showToast('El editor está vacío', 'error');
         return;
     }
 
-    const plainText = editor.innerText;
-    const rawMatches = findDictMatches(plainText);
-
-    _dictModalMatches = rawMatches.map(m => ({ ...m, checked: true }));
+    if (hasContent) {
+        const plainText = editor.innerText;
+        const rawMatches = findDictMatches(plainText);
+        _dictModalMatches = rawMatches.map(m => ({ ...m, checked: true }));
+    } else {
+        _dictModalMatches = [];
+    }
     _dictModalAILoaded = false;
 
-    // Reset tabs → review
-    _switchDictTab('review');
+    // Tab por defecto: si viene de settings sin contenido → dictionary, sino review
+    const tab = options.defaultTab || (hasContent ? 'review' : 'dictionary');
+    _switchDictTab(tab);
 
     renderReviewList();
     renderDictList();
