@@ -3599,11 +3599,31 @@
             document.getElementById('cfModeGift').style.display = 'block';
             document.getElementById('cfApiKeyLabel').textContent = '(para el usuario regalo)';
 
-            // Reset campos gift
+            // Reset campos gift — Paso 1
             document.getElementById('giftNombre').value = '';
             document.getElementById('giftEmail').value = '';
             document.getElementById('giftMatricula').value = '';
+            document.getElementById('giftTelefono').value = '';
             document.getElementById('giftEspecialidad').value = '';
+
+            // Reset campos gift — Paso 2 (Lugar de trabajo)
+            document.getElementById('giftWpName').value = '';
+            document.getElementById('giftWpAddress').value = '';
+            document.getElementById('giftWpPhone').value = '';
+            document.getElementById('giftWpEmail').value = '';
+
+            // Reset campos gift — Paso 3 (Apariencia)
+            _giftSelectedColor = '#1a56a0';
+            document.getElementById('giftFooterText').value = '';
+            document.getElementById('giftColorPreview').style.background = '#1a56a0';
+            document.querySelectorAll('#giftColorPalette .gift-color-swatch').forEach(s => {
+                s.style.border = '3px solid transparent';
+            });
+            const firstSwatch = document.querySelector('#giftColorPalette .gift-color-swatch');
+            if (firstSwatch) { firstSwatch.style.border = '3px solid #1a56a0'; firstSwatch.style.boxShadow = '0 0 0 2px white inset'; }
+
+            // Wizard: empezar en paso 1
+            giftGoStep(1);
 
             // Poblar especialidades en el select
             const sel = document.getElementById('giftEspecialidad');
@@ -3628,6 +3648,33 @@
             document.getElementById('cloneFactoryModal').style.display = 'none';
             _cfCurrentUser = null;
             _cfMode = 'normal';
+            // Reset gift wizard to step 1
+            giftGoStep(1);
+        }
+
+        // ── Gift Wizard: navegación de pasos ─────────────────────────────────
+        let _giftSelectedColor = '#1a56a0';
+
+        function giftGoStep(step) {
+            for (let i = 1; i <= 3; i++) {
+                const el = document.getElementById('giftStep' + i);
+                if (el) el.style.display = (i === step) ? 'block' : 'none';
+            }
+            // Stepper dots
+            document.querySelectorAll('#giftStepper .gift-step-dot').forEach(dot => {
+                const s = parseInt(dot.dataset.step);
+                dot.style.background = s <= step ? '#f59e0b' : '#e5e7eb';
+            });
+        }
+
+        function selectGiftColor(color, el) {
+            _giftSelectedColor = color;
+            document.querySelectorAll('#giftColorPalette .gift-color-swatch').forEach(s => {
+                s.style.border = '3px solid transparent';
+            });
+            el.style.border = `3px solid ${color}`;
+            el.style.boxShadow = '0 0 0 2px white inset';
+            document.getElementById('giftColorPreview').style.background = color;
         }
 
         /**
@@ -3655,22 +3702,35 @@
                 let userEmail;
 
                 if (_cfMode === 'gift') {
-                    // ── GIFT MODE: Crear usuario nuevo ──
+                    // ── GIFT MODE: Crear usuario nuevo (wizard completo) ──
                     const nombre = document.getElementById('giftNombre').value.trim();
                     const email = document.getElementById('giftEmail').value.trim();
                     const matricula = document.getElementById('giftMatricula').value.trim();
+                    const telefono = document.getElementById('giftTelefono').value.trim();
                     const especialidad = document.getElementById('giftEspecialidad').value;
+
+                    // Lugar de trabajo
+                    const wpName = document.getElementById('giftWpName').value.trim();
+                    const wpAddress = document.getElementById('giftWpAddress').value.trim();
+                    const wpPhone = document.getElementById('giftWpPhone').value.trim();
+                    const wpEmail = document.getElementById('giftWpEmail').value.trim();
+
+                    // Apariencia PDF
+                    const headerColor = _giftSelectedColor || '#1a56a0';
+                    const footerText = document.getElementById('giftFooterText').value.trim();
 
                     if (!nombre) {
                         dashAlert('Ingresá el nombre del usuario', '⚠️');
                         btn.disabled = false;
                         btn.textContent = originalText;
+                        giftGoStep(1);
                         return;
                     }
                     if (!email) {
                         dashAlert('Ingresá el email del usuario', '⚠️');
                         btn.disabled = false;
                         btn.textContent = originalText;
+                        giftGoStep(1);
                         return;
                     }
 
@@ -3684,11 +3744,19 @@
                     venc.setFullYear(venc.getFullYear() + 1);
                     const fechaVenc = venc.toISOString().split('T')[0];
 
+                    // Datos enriquecidos (workplace + apariencia) → se precargan en la app
+                    const registroDatos = {
+                        workplace: { name: wpName, address: wpAddress, phone: wpPhone, email: wpEmail },
+                        headerColor: headerColor,
+                        footerText: footerText
+                    };
+
                     const userData = {
                         ID_Medico: newId,
                         Nombre: nombre,
                         Email: email,
                         Matricula: matricula,
+                        Telefono: telefono,
                         Especialidad: especialidad || 'ALL',
                         Plan: 'GIFT',
                         Estado: 'active',
@@ -3700,6 +3768,7 @@
                         Usage_Count: 0,
                         Devices_Logged: '[]',
                         Diagnostico_Pendiente: 'false',
+                        Registro_Datos: JSON.stringify(registroDatos),
                         Notas_Admin: '🎁 Usuario regalo — creado desde Fábrica de Clones'
                     };
 
@@ -4984,45 +5053,114 @@
                     </div>
                 </div>
 
-                <!-- ═══ MODO GIFT: Crear usuario regalo ═══ -->
+                <!-- ═══ MODO GIFT: Wizard completo ═══ -->
                 <div id="cfModeGift" style="display:none;">
                     <!-- Badge regalo -->
-                    <div style="background:linear-gradient(135deg,#fef3c7,#fde68a);border:2px solid #f59e0b;border-radius:12px;padding:.8rem 1.2rem;margin-bottom:1.2rem;text-align:center;">
-                        <span style="font-size:1.8rem;">🎁</span>
-                        <h3 style="margin:.3rem 0 .2rem;color:#92400e;font-size:1rem;">Crear Usuario Regalo</h3>
-                        <p style="margin:0;font-size:.78rem;color:#a16207;">Acceso completo a TODAS las plantillas · 10 dispositivos · Plan GIFT</p>
+                    <div style="background:linear-gradient(135deg,#fef3c7,#fde68a);border:2px solid #f59e0b;border-radius:12px;padding:.6rem 1rem;margin-bottom:.8rem;text-align:center;">
+                        <span style="font-size:1.5rem;">🎁</span>
+                        <h3 style="margin:.2rem 0 .1rem;color:#92400e;font-size:.95rem;">Crear Usuario Regalo</h3>
+                        <p style="margin:0;font-size:.72rem;color:#a16207;">TODAS las plantillas · 10 dispositivos · Plan GIFT · 1 año</p>
                     </div>
 
-                    <!-- Mini formulario -->
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:1rem;">
-                        <div>
-                            <label style="font-size:.8rem;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">👤 Nombre y Apellido *</label>
-                            <input type="text" id="giftNombre" placeholder="Dr. Juan Pérez" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.85rem;" required>
+                    <!-- Stepper visual -->
+                    <div id="giftStepper" style="display:flex;justify-content:center;gap:.3rem;margin-bottom:.8rem;">
+                        <div class="gift-step-dot active" data-step="1" style="width:28px;height:4px;border-radius:3px;background:#f59e0b;transition:all .3s;cursor:pointer;" onclick="giftGoStep(1)"></div>
+                        <div class="gift-step-dot" data-step="2" style="width:28px;height:4px;border-radius:3px;background:#e5e7eb;transition:all .3s;cursor:pointer;" onclick="giftGoStep(2)"></div>
+                        <div class="gift-step-dot" data-step="3" style="width:28px;height:4px;border-radius:3px;background:#e5e7eb;transition:all .3s;cursor:pointer;" onclick="giftGoStep(3)"></div>
+                    </div>
+
+                    <!-- ── PASO 1: Datos del Profesional ── -->
+                    <div id="giftStep1">
+                        <p style="font-size:.82rem;font-weight:600;color:#334155;margin:0 0 .5rem;">👤 Paso 1 — Datos del Profesional</p>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.6rem;">
+                            <div>
+                                <label style="font-size:.78rem;color:#64748b;font-weight:600;display:block;margin-bottom:2px;">Nombre y Apellido *</label>
+                                <input type="text" id="giftNombre" placeholder="Dr. Juan Pérez" style="width:100%;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.84rem;">
+                            </div>
+                            <div>
+                                <label style="font-size:.78rem;color:#64748b;font-weight:600;display:block;margin-bottom:2px;">Email *</label>
+                                <input type="email" id="giftEmail" placeholder="doctor@example.com" style="width:100%;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.84rem;">
+                            </div>
+                            <div>
+                                <label style="font-size:.78rem;color:#64748b;font-weight:600;display:block;margin-bottom:2px;">Matrícula</label>
+                                <input type="text" id="giftMatricula" placeholder="MN 12345" style="width:100%;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.84rem;">
+                            </div>
+                            <div>
+                                <label style="font-size:.78rem;color:#64748b;font-weight:600;display:block;margin-bottom:2px;">Teléfono</label>
+                                <input type="tel" id="giftTelefono" placeholder="+54 9 11 1234-5678" style="width:100%;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.84rem;">
+                            </div>
                         </div>
-                        <div>
-                            <label style="font-size:.8rem;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">📧 Email *</label>
-                            <input type="email" id="giftEmail" placeholder="doctor@example.com" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.85rem;" required>
-                        </div>
-                        <div>
-                            <label style="font-size:.8rem;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">🪪 Matrícula</label>
-                            <input type="text" id="giftMatricula" placeholder="MN 12345" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.85rem;">
-                        </div>
-                        <div>
-                            <label style="font-size:.8rem;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">🩺 Especialidad</label>
-                            <select id="giftEspecialidad" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.85rem;background:#fff;">
+                        <div style="margin-bottom:.6rem;">
+                            <label style="font-size:.78rem;color:#64748b;font-weight:600;display:block;margin-bottom:2px;">🩺 Especialidad</label>
+                            <select id="giftEspecialidad" style="width:100%;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.84rem;background:#fff;">
                                 <option value="">— Seleccioná —</option>
                             </select>
                         </div>
+                        <div style="text-align:right;">
+                            <button type="button" class="btn-primary" onclick="giftGoStep(2)" style="padding:7px 20px;font-size:.84rem;">Siguiente →</button>
+                        </div>
                     </div>
 
-                    <!-- Auto-configuración visual -->
-                    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.7rem 1rem;margin-bottom:1rem;">
-                        <p style="font-size:.8rem;color:#15803d;font-weight:600;margin:0 0 .3rem;">⚡ Configuración automática:</p>
-                        <div style="display:flex;gap:1rem;font-size:.78rem;color:#166534;flex-wrap:wrap;">
-                            <span>🏷️ Plan: <strong>GIFT</strong></span>
-                            <span>📄 Plantillas: <strong>TODAS (37)</strong></span>
-                            <span>📱 Dispositivos: <strong>10</strong></span>
-                            <span>📅 Estado: <strong>Activo</strong></span>
+                    <!-- ── PASO 2: Lugar de Trabajo ── -->
+                    <div id="giftStep2" style="display:none;">
+                        <p style="font-size:.82rem;font-weight:600;color:#334155;margin:0 0 .5rem;">🏥 Paso 2 — Lugar de Trabajo</p>
+                        <p style="font-size:.75rem;color:#94a3b8;margin:0 0 .5rem;">Estos datos aparecen en el encabezado de los informes del usuario.</p>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.6rem;">
+                            <div>
+                                <label style="font-size:.78rem;color:#64748b;font-weight:600;display:block;margin-bottom:2px;">Nombre del lugar *</label>
+                                <input type="text" id="giftWpName" placeholder="Clínica San Martín" style="width:100%;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.84rem;">
+                            </div>
+                            <div>
+                                <label style="font-size:.78rem;color:#64748b;font-weight:600;display:block;margin-bottom:2px;">Dirección</label>
+                                <input type="text" id="giftWpAddress" placeholder="Av. Corrientes 1234, CABA" style="width:100%;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.84rem;">
+                            </div>
+                            <div>
+                                <label style="font-size:.78rem;color:#64748b;font-weight:600;display:block;margin-bottom:2px;">Teléfono del lugar</label>
+                                <input type="tel" id="giftWpPhone" placeholder="(011) 4567-8901" style="width:100%;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.84rem;">
+                            </div>
+                            <div>
+                                <label style="font-size:.78rem;color:#64748b;font-weight:600;display:block;margin-bottom:2px;">Email institucional</label>
+                                <input type="email" id="giftWpEmail" placeholder="info@clinica.com" style="width:100%;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.84rem;">
+                            </div>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;">
+                            <button type="button" class="btn-secondary" onclick="giftGoStep(1)" style="padding:7px 16px;font-size:.84rem;">← Anterior</button>
+                            <button type="button" class="btn-primary" onclick="giftGoStep(3)" style="padding:7px 20px;font-size:.84rem;">Siguiente →</button>
+                        </div>
+                    </div>
+
+                    <!-- ── PASO 3: Apariencia PDF + API Key ── -->
+                    <div id="giftStep3" style="display:none;">
+                        <p style="font-size:.82rem;font-weight:600;color:#334155;margin:0 0 .5rem;">🎨 Paso 3 — Apariencia del Informe</p>
+                        <!-- Color palette -->
+                        <div style="margin-bottom:.6rem;">
+                            <label style="font-size:.78rem;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Color del encabezado</label>
+                            <div id="giftColorPalette" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+                                <div onclick="selectGiftColor('#1a56a0',this)" style="width:32px;height:32px;border-radius:8px;background:#1a56a0;cursor:pointer;border:3px solid #1a56a0;box-shadow:0 0 0 2px white inset;" title="Azul" class="gift-color-swatch selected"></div>
+                                <div onclick="selectGiftColor('#0f766e',this)" style="width:32px;height:32px;border-radius:8px;background:#0f766e;cursor:pointer;border:3px solid transparent;" title="Verde" class="gift-color-swatch"></div>
+                                <div onclick="selectGiftColor('#db2777',this)" style="width:32px;height:32px;border-radius:8px;background:#db2777;cursor:pointer;border:3px solid transparent;" title="Rosa" class="gift-color-swatch"></div>
+                                <div onclick="selectGiftColor('#1e293b',this)" style="width:32px;height:32px;border-radius:8px;background:#1e293b;cursor:pointer;border:3px solid transparent;" title="Negro" class="gift-color-swatch"></div>
+                                <div onclick="selectGiftColor('#b8860b',this)" style="width:32px;height:32px;border-radius:8px;background:#b8860b;cursor:pointer;border:3px solid transparent;" title="Dorado" class="gift-color-swatch"></div>
+                                <div onclick="selectGiftColor('#708090',this)" style="width:32px;height:32px;border-radius:8px;background:#708090;cursor:pointer;border:3px solid transparent;" title="Plateado" class="gift-color-swatch"></div>
+                            </div>
+                            <div id="giftColorPreview" style="height:6px;border-radius:3px;background:#1a56a0;transition:background .3s;"></div>
+                        </div>
+                        <!-- Footer text -->
+                        <div style="margin-bottom:.6rem;">
+                            <label style="font-size:.78rem;color:#64748b;font-weight:600;display:block;margin-bottom:2px;">Texto del pie de página</label>
+                            <input type="text" id="giftFooterText" placeholder="Consultorio médico — Tel: (011) 4567-8901" style="width:100%;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.84rem;">
+                        </div>
+                        <!-- Auto-config reminder -->
+                        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.5rem .8rem;margin-bottom:.6rem;">
+                            <div style="display:flex;gap:.8rem;font-size:.73rem;color:#166534;flex-wrap:wrap;">
+                                <span>🏷️ Plan: <strong>GIFT</strong></span>
+                                <span>📄 <strong>TODAS</strong> las plantillas</span>
+                                <span>📱 <strong>10</strong> dispositivos</span>
+                                <span>📅 <strong>1 año</strong></span>
+                            </div>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;">
+                            <button type="button" class="btn-secondary" onclick="giftGoStep(2)" style="padding:7px 16px;font-size:.84rem;">← Anterior</button>
                         </div>
                     </div>
                 </div>

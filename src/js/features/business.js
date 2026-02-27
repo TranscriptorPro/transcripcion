@@ -462,6 +462,8 @@ async function _handleFactorySetup(medicoId) {
             trial:      { type: 'TRIAL',  hasProMode: false, hasDashboard: false, canGenerateApps: false },
             normal:     { type: 'NORMAL', hasProMode: false, hasDashboard: false, canGenerateApps: false },
             pro:        { type: 'PRO',    hasProMode: true,  hasDashboard: true,  canGenerateApps: false },
+            gift:       { type: 'PRO',    hasProMode: true,  hasDashboard: true,  canGenerateApps: false },
+            clinic:     { type: 'PRO',    hasProMode: true,  hasDashboard: true,  canGenerateApps: true  },
             enterprise: { type: 'PRO',    hasProMode: true,  hasDashboard: true,  canGenerateApps: false }
         };
         const pc = planMap[plan] || planMap.trial;
