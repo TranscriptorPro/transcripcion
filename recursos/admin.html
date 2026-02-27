@@ -2186,16 +2186,21 @@
             }
             try {
                 const session = JSON.parse(raw);
-                const hoursSinceLogin = (Date.now() - session.timestamp) / (1000 * 60 * 60);
-                if (hoursSinceLogin >= 8) {
-                    // Sesión expirada → limpiar y redirigir
+                // Verificar tokenExpiry del backend (fuente de verdad)
+                if (session.tokenExpiry && Date.now() > session.tokenExpiry) {
                     sessionStorage.removeItem('adminSession');
+                    alert('⏰ Tu sesión expiró (8 horas). Volvé a iniciar sesión.');
                     window.location.href = 'login.html';
                     return;
                 }
-                // Sesión válida — renovar timestamp
-                session.timestamp = Date.now();
-                sessionStorage.setItem('adminSession', JSON.stringify(session));
+                // Fallback: verificar por timestamp si no hay tokenExpiry
+                const hoursSinceLogin = (Date.now() - session.timestamp) / (1000 * 60 * 60);
+                if (hoursSinceLogin >= 8) {
+                    sessionStorage.removeItem('adminSession');
+                    alert('⏰ Tu sesión expiró (8 horas). Volvé a iniciar sesión.');
+                    window.location.href = 'login.html';
+                    return;
+                }
             } catch (e) {
                 sessionStorage.removeItem('adminSession');
                 window.location.href = 'login.html';
@@ -2366,6 +2371,20 @@
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const data = await response.json();
+
+                // Detectar error de autenticación del backend
+                if (data.error) {
+                    const errLower = (data.error || '').toLowerCase();
+                    if (errLower.includes('unauthorized') || errLower.includes('expired') || errLower.includes('invalid session')) {
+                        console.warn('Session expired on backend:', data.error);
+                        sessionStorage.removeItem('adminSession');
+                        alert('⏰ Tu sesión expiró. Volvé a iniciar sesión.');
+                        window.location.href = 'login.html';
+                        return [];
+                    }
+                    throw new Error(data.error);
+                }
+
                 return data.users || [];
             } catch (error) {
                 console.error('Error fetching users:', error);
