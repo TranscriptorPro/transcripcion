@@ -31,25 +31,45 @@ window.CLIENT_CONFIG = {
 // CONFIG DINÁMICA — carga desde localStorage o URL ?id= (fábrica de clones)
 // ═══════════════════════════════════════════════════════════════════════════
 (function _loadDynamicConfig() {
-    // 1) Si ya existe configuración de cliente guardada → usarla
-    const stored = localStorage.getItem('client_config_stored');
-    if (stored) {
-        try {
-            const parsed = JSON.parse(stored);
-            if (parsed && parsed.type && parsed.type !== 'ADMIN') {
-                Object.assign(window.CLIENT_CONFIG, parsed);
-                return;
-            }
-        } catch (_) { /* fallback a ADMIN */ }
-    }
-
-    // 2) Detectar link de la fábrica: ?id=MED001
     try {
         const params = new URLSearchParams(window.location.search);
+
+        // 0) Escape hatch: ?admin → forzar modo ADMIN (borrar config de cliente)
+        if (params.has('admin')) {
+            localStorage.removeItem('client_config_stored');
+            sessionStorage.removeItem('pending_setup_id');
+            history.replaceState({}, document.title, window.location.pathname);
+            // CLIENT_CONFIG ya es ADMIN por defecto — no hacer nada más
+            return;
+        }
+
+        // 1) Si ya existe configuración de cliente guardada → usarla
+        const stored = localStorage.getItem('client_config_stored');
+        if (stored) {
+            try {
+                const parsed = JSON.parse(stored);
+                if (parsed && parsed.type && parsed.type !== 'ADMIN') {
+                    Object.assign(window.CLIENT_CONFIG, parsed);
+                    return;
+                }
+            } catch (_) { /* fallback a ADMIN */ }
+        }
+
+        // 2) Detectar link de la fábrica: ?id=MED001
         const setupId = params.get('id');
         if (setupId) {
-            window._PENDING_SETUP_ID = setupId;
-            // Guardar también en sessionStorage por si la página se recarga
+            // ── Protección: si ya era ADMIN, no sobreescribir por accidente ──
+            const wasAdmin = !stored || (function() {
+                try { return JSON.parse(stored).type === 'ADMIN' || !JSON.parse(stored).type; } catch(_) { return true; }
+            })();
+            if (wasAdmin) {
+                // Marcar como pendiente pero NO activar automáticamente
+                // El onboarding de business.js decidirá si procede
+                window._PENDING_SETUP_ID = setupId;
+                window._ADMIN_WAS_ACTIVE = true; // flag para que business.js pregunte
+            } else {
+                window._PENDING_SETUP_ID = setupId;
+            }
             try { sessionStorage.setItem('pending_setup_id', setupId); } catch(_) {}
             // Limpiar URL inmediatamente (sin recargar)
             history.replaceState({}, document.title, window.location.pathname);

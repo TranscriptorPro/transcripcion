@@ -403,6 +403,23 @@ window.initWorkplaceManagement = function () {
 window.initBusinessSuite = function () {
     // ── Interceptar link de la fábrica (?id=MED001) ──────────────────────────
     if (window._PENDING_SETUP_ID) {
+        // ── Protección: si ya era ADMIN, confirmar antes de sobreescribir ──
+        if (window._ADMIN_WAS_ACTIVE) {
+            const confirmar = confirm(
+                '⚠️ ATENCIÓN: Estás abriendo un link de usuario en tu sesión de ADMINISTRADOR.\n\n' +
+                'Si continúas, tu sesión admin se convertirá en la del usuario "' + window._PENDING_SETUP_ID + '".\n\n' +
+                '¿Querés continuar? (Cancelar = seguir como admin)'
+            );
+            if (!confirmar) {
+                // Limpiar y seguir como admin
+                delete window._PENDING_SETUP_ID;
+                delete window._ADMIN_WAS_ACTIVE;
+                sessionStorage.removeItem('pending_setup_id');
+                _initAdmin();
+                return;
+            }
+            delete window._ADMIN_WAS_ACTIVE;
+        }
         _handleFactorySetup(window._PENDING_SETUP_ID);
         return; // la inicialización se completa dentro del handler async
     }
