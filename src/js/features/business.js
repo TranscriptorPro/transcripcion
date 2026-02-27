@@ -637,7 +637,7 @@ async function _handleFactorySetup(medicoId) {
 
     } catch (err) {
         console.error('[Factory] Error en setup:', err);
-        _showSetupError('No se pudo conectar con el servidor. Verificá tu conexión a internet e intentá de nuevo.', 'NETWORK');
+        _showSetupError('Error: ' + (err.message || err) + '. Recargá la página para reintentar.', 'NETWORK');
     }
 }
 

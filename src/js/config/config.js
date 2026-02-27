@@ -49,8 +49,19 @@ window.CLIENT_CONFIG = {
         const setupId = params.get('id');
         if (setupId) {
             window._PENDING_SETUP_ID = setupId;
+            // Guardar también en sessionStorage por si la página se recarga
+            try { sessionStorage.setItem('pending_setup_id', setupId); } catch(_) {}
             // Limpiar URL inmediatamente (sin recargar)
             history.replaceState({}, document.title, window.location.pathname);
+        } else {
+            // Recuperar de sessionStorage si existe (retry tras recarga)
+            try {
+                const saved = sessionStorage.getItem('pending_setup_id');
+                if (saved) {
+                    window._PENDING_SETUP_ID = saved;
+                    sessionStorage.removeItem('pending_setup_id');
+                }
+            } catch(_) {}
         }
     } catch (_) { /* navegadores antiguos sin URLSearchParams */ }
 })();

@@ -2064,13 +2064,14 @@
                             console.log('[SW] Registrado:', reg.scope);
                             // Forzar check de update cada carga
                             reg.update().catch(() => {});
-                            // Cuando hay un SW nuevo esperando, activarlo inmediatamente
+                            // Solo recargar para UPDATES (no first install)
                             reg.addEventListener('updatefound', () => {
                                 const newSW = reg.installing;
-                                if (newSW) {
+                                // navigator.serviceWorker.controller es null en first install
+                                if (newSW && navigator.serviceWorker.controller) {
                                     newSW.addEventListener('statechange', () => {
                                         if (newSW.state === 'activated') {
-                                            console.log('[SW] Nuevo SW activado, recargando...');
+                                            console.log('[SW] Update activado, recargando...');
                                             window.location.reload();
                                         }
                                     });
