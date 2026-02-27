@@ -249,7 +249,11 @@
         tourElements = {};
 
         // Mark tour as seen
-        localStorage.setItem('tour_completed', 'true');
+        if (typeof appDB !== 'undefined') {
+            appDB.set('tour_completed', true); // fire-and-forget
+        } else {
+            localStorage.setItem('tour_completed', 'true');
+        }
 
         if (typeof showToast === 'function') {
             showToast('✅ Tour completado. Podés acceder a la ayuda desde el botón ❓', 'success', 3000);
@@ -310,9 +314,13 @@
     });
 
     // ── Auto-show tour on first visit ──
-    function maybeAutoTour() {
-        const tourDone = localStorage.getItem('tour_completed');
-        const onboardingDone = localStorage.getItem('onboarding_done');
+    async function maybeAutoTour() {
+        const tourDone = typeof appDB !== 'undefined'
+            ? await appDB.get('tour_completed')
+            : localStorage.getItem('tour_completed');
+        const onboardingDone = typeof appDB !== 'undefined'
+            ? await appDB.get('onboarding_done')
+            : localStorage.getItem('onboarding_done');
         // Only auto-show if onboarding was completed and tour never seen
         if (onboardingDone && !tourDone) {
             // Small delay so the UI is fully loaded

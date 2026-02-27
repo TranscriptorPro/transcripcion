@@ -6,14 +6,26 @@
 const REGISTRY_KEY = 'patient_registry';
 const REGISTRY_MAX = 500; // máximo de pacientes almacenados
 
+// ── Write-through cache (síncrono para callers, persiste via appDB) ───────────
+let _registryCache = null;
+if (typeof appDB !== 'undefined') {
+    appDB.get(REGISTRY_KEY).then(function(v) { _registryCache = v || []; }).catch(function() {});
+}
+
 // ---- Leer / escribir ----
 function getRegistry() {
+    if (_registryCache !== null) return _registryCache;
     try { return JSON.parse(localStorage.getItem(REGISTRY_KEY) || '[]'); }
     catch (_) { return []; }
 }
 
 function setRegistry(arr) {
-    localStorage.setItem(REGISTRY_KEY, JSON.stringify(arr));
+    _registryCache = arr;
+    if (typeof appDB !== 'undefined') {
+        appDB.set(REGISTRY_KEY, arr); // fire-and-forget
+    } else {
+        try { localStorage.setItem(REGISTRY_KEY, JSON.stringify(arr)); } catch(_) {}
+    }
 }
 
 // ---- Guardar paciente ----

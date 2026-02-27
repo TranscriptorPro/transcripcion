@@ -23,6 +23,44 @@ const { LocalStorage } = (() => {
     return { LocalStorage };
 })();
 global.localStorage      = new LocalStorage();
+
+// ── Mock de appDB (wrapper IndexedDB) para tests en Node ─────────────────────
+// Escribe síncronamente en localStorage para mantener compatibilidad con tests síncronos.
+// El body de set/remove/clear se ejecuta síncronamente al invocarlos — solo .then() es diferido.
+global.appDB = {
+    get(key) {
+        const v = global.localStorage.getItem(key);
+        if (v === null) return Promise.resolve(undefined);
+        try { return Promise.resolve(JSON.parse(v)); } catch(_) { return Promise.resolve(v); }
+    },
+    set(key, value) {
+        global.localStorage.setItem(key, JSON.stringify(value));
+        return Promise.resolve();
+    },
+    remove(key) {
+        global.localStorage.removeItem(key);
+        return Promise.resolve();
+    },
+    clear() {
+        global.localStorage.clear();
+        return Promise.resolve();
+    },
+    keys() {
+        return Promise.resolve(Object.keys(global.localStorage._data));
+    },
+    getAll() {
+        const d = global.localStorage._data;
+        const r = {};
+        Object.keys(d).forEach(k => { try { r[k] = JSON.parse(d[k]); } catch(_) { r[k] = d[k]; } });
+        return Promise.resolve(r);
+    },
+    sizeInBytes() {
+        let t = 0;
+        Object.entries(global.localStorage._data).forEach(([k,v]) => t += (k+v).length * 2);
+        return Promise.resolve(t);
+    }
+};
+
 global.window            = global;
 global.showToast         = () => {};
 global.showToastWithAction = () => {};

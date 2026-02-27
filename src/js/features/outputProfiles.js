@@ -7,14 +7,26 @@
 
     const STORAGE_KEY = 'output_profiles';
 
+    // ── Write-through cache (síncrono para callers, persiste via appDB) ─────────
+    let _profilesCache = null;
+    if (typeof appDB !== 'undefined') {
+        appDB.get(STORAGE_KEY).then(function(v) { _profilesCache = v || []; }).catch(function() {});
+    }
+
     // ── CRUD ─────────────────────────────────────────────────────────
     function getProfiles() {
+        if (_profilesCache !== null) return _profilesCache;
         try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
         catch { return []; }
     }
 
     function saveProfiles(list) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+        _profilesCache = list;
+        if (typeof appDB !== 'undefined') {
+            appDB.set(STORAGE_KEY, list); // fire-and-forget
+        } else {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); } catch(_) {}
+        }
     }
 
     function generateId() {

@@ -321,16 +321,27 @@ const MEDICAL_DICT_BASE = {
     "retroperitoneo":           "retroperitoneo",
 };
 
-// ─── 2. Diccionario PERSONALIZADO (localStorage) ────────────
+// ─── 2. Diccionario PERSONALIZADO (appDB / write-through cache) ────────────
 const CUSTOM_DICT_KEY = 'med_dict_custom';
 
+let _customDictCache = null;
+if (typeof appDB !== 'undefined') {
+    appDB.get(CUSTOM_DICT_KEY).then(function(v) { _customDictCache = v || {}; }).catch(function() {});
+}
+
 function getMedCustomDict() {
+    if (_customDictCache !== null) return _customDictCache;
     try { return JSON.parse(localStorage.getItem(CUSTOM_DICT_KEY) || '{}'); }
     catch { return {}; }
 }
 
 function saveMedCustomDict(dict) {
-    localStorage.setItem(CUSTOM_DICT_KEY, JSON.stringify(dict));
+    _customDictCache = dict;
+    if (typeof appDB !== 'undefined') {
+        appDB.set(CUSTOM_DICT_KEY, dict); // fire-and-forget
+    } else {
+        try { localStorage.setItem(CUSTOM_DICT_KEY, JSON.stringify(dict)); } catch(_) {}
+    }
 }
 
 function addMedDictEntry(from, to) {
@@ -423,7 +434,7 @@ function applyDictCorrections(editorEl, accepted) {
 
 // ─── 5. Scan con IA para sugerencias adicionales ────────────
 async function scanWithAI(plainText) {
-    const key = window.GROQ_API_KEY || localStorage.getItem('groq_api_key');
+    const key = window.GROQ_API_KEY || (typeof appDB !== 'undefined' ? await appDB.get('groq_api_key') : null);
     if (!key) return [];
 
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -670,7 +681,7 @@ window.initMedDictModal = function () {
     // Scan con IA
     document.getElementById('btnMedDictScanAI')?.addEventListener('click', async () => {
         if (_dictModalAILoaded) return;
-        const key = window.GROQ_API_KEY || localStorage.getItem('groq_api_key');
+        const key = window.GROQ_API_KEY || (typeof appDB !== 'undefined' ? await appDB.get('groq_api_key') : null);
         if (!key) {
             if (typeof showToast === 'function') showToast('Configurá la API Key para usar IA', 'error');
             return;

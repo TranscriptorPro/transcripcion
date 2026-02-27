@@ -91,14 +91,28 @@ const GROQ_API_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
 // ============ RB-6: CONTEO LOCAL DE USO DE API ============
 window.apiUsageTracker = {
     _KEY: 'api_usage_stats',
+    _cache: null,
     _get() {
+        if (this._cache !== null) return this._cache;
         try { return JSON.parse(localStorage.getItem(this._KEY)) || this._default(); }
         catch (_) { return this._default(); }
     },
     _default() {
         return { transcriptions: 0, structurings: 0, lastReset: new Date().toISOString(), history: [] };
     },
-    _save(data) { localStorage.setItem(this._KEY, JSON.stringify(data)); },
+    _save(data) {
+        this._cache = data;
+        if (typeof appDB !== 'undefined') {
+            appDB.set(this._KEY, data); // fire-and-forget
+        } else {
+            localStorage.setItem(this._KEY, JSON.stringify(data));
+        }
+    },
+    _initCache() {
+        if (typeof appDB !== 'undefined') {
+            appDB.get(this._KEY).then((v) => { if (v) this._cache = v; }).catch(function() {});
+        }
+    },
     trackTranscription() {
         const d = this._get();
         d.transcriptions++;
@@ -116,3 +130,4 @@ window.apiUsageTracker = {
     getStats() { return this._get(); },
     reset() { this._save(this._default()); }
 };
+window.apiUsageTracker._initCache();
