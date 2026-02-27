@@ -1001,7 +1001,7 @@ test('index.html — manifest.json está vinculado', () => {
 
 test('index.html — SW se registra', () => {
     const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
-    assert(html.includes("register('./sw.js')") || html.includes('register("./sw.js")'),
+    assert(html.includes("register('./sw.js'") || html.includes('register("./sw.js"'),
         'Debe registrar sw.js');
 });
 
