@@ -751,7 +751,7 @@ function _initAdmin() {
     _showSettingsGear();
 
     const onboardingOverlay = document.getElementById('onboardingOverlay');
-    if (onboardingOverlay) onboardingOverlay.style.display = 'none';
+    if (onboardingOverlay) onboardingOverlay.classList.remove('active');
 }
 
 // ─── Datos de prueba para admin ──────────────────────────────────────────────
@@ -840,7 +840,7 @@ function _initClient() {
     _showSettingsGear();
 
     const onboardingOverlay = document.getElementById('onboardingOverlay');
-    if (onboardingOverlay) onboardingOverlay.style.display = 'none';
+    if (onboardingOverlay) onboardingOverlay.classList.remove('active');
 
     // Session Assistant — se abre cada vez que carga la app
     _launchSessionAssistant();
@@ -848,8 +848,14 @@ function _initClient() {
 
 // ─── Módulos comunes (admin + cliente) ───────────────────────────────────────
 function _initCommonModules() {
+    // SIEMPRE cargar API Key desde localStorage (puede haber sido guardada por factory setup)
+    const storedKey = localStorage.getItem('groq_api_key') || '';
+    if (storedKey && !window.GROQ_API_KEY) {
+        window.GROQ_API_KEY = storedKey;
+    }
+
     if (typeof initTheme === 'function') initTheme();
-    if (typeof updateApiStatus === 'function') updateApiStatus(localStorage.getItem('groq_api_key'));
+    if (typeof updateApiStatus === 'function') updateApiStatus(storedKey || window.GROQ_API_KEY);
     if (typeof populateTemplateDropdown === 'function') populateTemplateDropdown();
 
     // Pedir permiso de notificaciones desktop (no-blocking)
@@ -888,7 +894,7 @@ function _showClientOnboarding() {
     // Crear partículas decorativas
     _createOnboardingParticles();
 
-    overlay.style.display = 'flex';
+    overlay.classList.add('active');
 
     // ─── Step navigation ─────────────────────────────────
     function goToStep(step) {
@@ -943,9 +949,11 @@ function _showClientOnboarding() {
             _launchConfetti();
 
             setTimeout(() => {
-                overlay.style.display = 'none';
+                overlay.classList.remove('active');
 
+                // Cargar API Key desde localStorage (fue guardada por _handleFactorySetup)
                 window.GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
+                console.info('[Onboarding] API Key loaded:', window.GROQ_API_KEY ? 'gsk_...' + window.GROQ_API_KEY.slice(-4) : 'NONE');
                 _initCommonModules();
 
                 try {

@@ -72,22 +72,28 @@
         const closeBtn = document.getElementById('closeSettings');
         const btnSettings = document.getElementById('btnSettings');
 
+        const openModal = () => {
+            if (overlay) {
+                populateSettingsModal();
+                overlay.classList.add('active');
+            }
+        };
+        const closeModal = () => {
+            if (overlay) overlay.classList.remove('active');
+        };
+
         if (btnSettings) {
-            btnSettings.addEventListener('click', () => {
-                if (overlay) {
-                    populateSettingsModal();
-                    overlay.style.display = 'grid';
-                }
-            });
+            btnSettings.addEventListener('click', openModal);
         }
         if (closeBtn) {
-            closeBtn.addEventListener('click', () => {
-                if (overlay) overlay.style.display = 'none';
-            });
+            closeBtn.addEventListener('click', closeModal);
         }
         if (overlay) {
             overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) overlay.style.display = 'none';
+                if (e.target === overlay) closeModal();
+            });
+            overlay.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeModal();
             });
         }
     }
@@ -193,7 +199,7 @@
             btn.addEventListener('click', () => {
                 // Close settings, open Session Assistant
                 const overlay = document.getElementById('settingsModalOverlay');
-                if (overlay) overlay.style.display = 'none';
+                if (overlay) overlay.classList.remove('active');
                 if (typeof openSessionAssistant === 'function') openSessionAssistant();
             });
         }
@@ -293,7 +299,7 @@
             if (sel) sel.value = profile.template;
         }
         const overlay = document.getElementById('settingsModalOverlay');
-        if (overlay) overlay.style.display = 'none';
+        if (overlay) overlay.classList.remove('active');
         if (typeof showToast === 'function') showToast('⚡ Perfil cargado: ' + profile.name, 'success');
     }
 
@@ -303,7 +309,7 @@
         if (btn) {
             btn.addEventListener('click', () => {
                 const overlay = document.getElementById('settingsModalOverlay');
-                if (overlay) overlay.style.display = 'none';
+                if (overlay) overlay.classList.remove('active');
                 const pdfOverlay = document.getElementById('pdfModalOverlay');
                 if (pdfOverlay) pdfOverlay.classList.add('active');
             });
@@ -416,14 +422,14 @@
 
         if (historyBtn) {
             historyBtn.addEventListener('click', () => {
-                if (overlay) overlay.style.display = 'none';
+                if (overlay) overlay.classList.remove('active');
                 const histOverlay = document.getElementById('reportHistoryOverlay');
                 if (histOverlay) histOverlay.classList.add('active');
             });
         }
         if (dictBtn) {
             dictBtn.addEventListener('click', () => {
-                if (overlay) overlay.style.display = 'none';
+                if (overlay) overlay.classList.remove('active');
                 if (typeof window.openMedDictModal === 'function') {
                     window.openMedDictModal();
                 } else {
@@ -434,7 +440,7 @@
         }
         if (shortcutsBtn) {
             shortcutsBtn.addEventListener('click', () => {
-                if (overlay) overlay.style.display = 'none';
+                if (overlay) overlay.classList.remove('active');
                 // Open help modal which includes shortcuts
                 const helpEl = document.getElementById('helpBtn');
                 if (helpEl) helpEl.click();
@@ -599,7 +605,7 @@
         if (contactBtn) {
             contactBtn.addEventListener('click', () => {
                 const overlay = document.getElementById('settingsModalOverlay');
-                if (overlay) overlay.style.display = 'none';
+                if (overlay) overlay.classList.remove('active');
                 // Use existing contact button
                 const btnContacto = document.getElementById('btnContacto');
                 if (btnContacto) btnContacto.click();
