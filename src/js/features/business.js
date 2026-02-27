@@ -617,9 +617,10 @@ async function _handleFactorySetup(medicoId) {
             } catch(_) {}
         }
 
-        // API Key (si el admin la configuró en el Sheet)
-        if (doctor.API_Key) {
-            localStorage.setItem('groq_api_key', doctor.API_Key);
+        // API Key (si el admin la configuró en el Sheet o viene en Registro_Datos)
+        const apiKey = doctor.API_Key || regDatos.apiKey || '';
+        if (apiKey) {
+            localStorage.setItem('groq_api_key', apiKey);
         }
 
         // Guardar ID del médico
