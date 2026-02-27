@@ -7,7 +7,7 @@
 //   2. Perfil de salida activo → extraer estudio del nombre → studyTerminology.js
 //   3. Especialidad del profesional activo → todos los términos de esa categoría
 //   4. Prompt médico universal (términos frecuentes en español)
-function buildWhisperPrompt() {
+async function buildWhisperPrompt() {
     const MAX_PROMPT_CHARS = 800; // Whisper acepta hasta ~224 tokens de prompt
     const studies = (typeof window.STUDY_TERMINOLOGY !== 'undefined') ? window.STUDY_TERMINOLOGY : [];
 
@@ -84,8 +84,8 @@ function buildWhisperPrompt() {
     // ── PRIORIDAD 2: Perfil de salida activo (extraer estudio del nombre) ─
     if (!promptTerms) {
         try {
-            const profiles = JSON.parse(localStorage.getItem('output_profiles') || '[]');
-            const pdfCfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+            const profiles = (await appDB.get('output_profiles')) || [];
+            const pdfCfg = (await appDB.get('pdf_config')) || {};
             // Buscar perfil default o el activo según workplace+professional index
             let activeProfile = profiles.find(p => p.isDefault);
             if (!activeProfile && pdfCfg.activeWorkplaceIndex !== undefined) {
@@ -118,7 +118,7 @@ function buildWhisperPrompt() {
     // ── PRIORIDAD 3: Especialidad del profesional activo ─────────
     if (!promptTerms) {
         try {
-            const pdfCfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+            const pdfCfg = (await appDB.get('pdf_config')) || {};
             const prof = pdfCfg.activeProfessional;
             if (prof && prof.especialidades) {
                 // Puede tener múltiples especialidades separadas por coma
@@ -466,7 +466,7 @@ async function transcribeWithGroqParams(file, { language = 'es', model = 'whispe
 
     // Inyectar prompt contextual para mejorar reconocimiento de terminología médica
     try {
-        const whisperPrompt = buildWhisperPrompt();
+        const whisperPrompt = await buildWhisperPrompt();
         if (whisperPrompt) {
             form.append('prompt', whisperPrompt);
         }

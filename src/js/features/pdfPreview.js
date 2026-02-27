@@ -26,10 +26,10 @@ window.updatePdfModalByMode = function () {
     });
 }
 
-window.openPdfConfigModal = function () {
+window.openPdfConfigModal = async function () {
     if (typeof loadPdfConfiguration === 'function') loadPdfConfiguration();
 
-    const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
+    const profData = (await appDB.get('prof_data')) || {};
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
     const isAdmin = typeof isAdminUser === 'function' && isAdminUser();
     const isPro = window.currentMode === 'pro';
@@ -162,7 +162,7 @@ window.openPdfConfigModal = function () {
     if (typeof populatePatientDatalist === 'function') populatePatientDatalist();
 
     // Restaurar profesional activo
-    const pdfCfgRestore = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+    const pdfCfgRestore = (await appDB.get('pdf_config')) || {};
     const activeProRestore = pdfCfgRestore.activeProfessional;
     if (activeProRestore) {
         set('pdfProfName',        activeProRestore.nombre        || '');
@@ -204,9 +204,9 @@ window.openPdfConfigModal = function () {
     document.getElementById('pdfModalOverlay')?.classList.add('active');
 }
 
-window.openPrintPreview = function () {
-    const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
-    const config   = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+window.openPrintPreview = async function () {
+    const profData = (await appDB.get('prof_data')) || {};
+    const config   = (await appDB.get('pdf_config')) || {};
 
     const esc = (t) => t != null ? String(t)
         .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
@@ -231,7 +231,7 @@ window.openPrintPreview = function () {
     const accentColor     = activePro?.headerColor || profData.headerColor || '#1a56a0';
 
     // Datos del lugar de trabajo (desde workplace_profiles)
-    const wpProfiles = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+    const wpProfiles = (await appDB.get('workplace_profiles')) || [];
     const wpIdx = config.activeWorkplaceIndex;
     const activeWp = (wpIdx !== undefined && wpIdx !== null) ? wpProfiles[Number(wpIdx)] : wpProfiles[0];
     const wpName = escName(activeWp?.name || '');
@@ -281,8 +281,8 @@ window.openPrintPreview = function () {
     const showSignName = config.showSignName ?? true;
     const showSignMat  = config.showSignMatricula ?? true;
     // Logo/firma: profesional activo sobreescribe los globales
-    const logoSrc = (activePro?.logo  && activePro.logo.startsWith('data:'))  ? activePro.logo  : localStorage.getItem('pdf_logo');
-    const sigSrc  = (activePro?.firma && activePro.firma.startsWith('data:')) ? activePro.firma : localStorage.getItem('pdf_signature');
+    const logoSrc = (activePro?.logo  && activePro.logo.startsWith('data:'))  ? activePro.logo  : await appDB.get('pdf_logo');
+    const sigSrc  = (activePro?.firma && activePro.firma.startsWith('data:')) ? activePro.firma : await appDB.get('pdf_signature');
     const hasLogo = logoSrc && logoSrc.startsWith('data:image/');
     const hasSig  = sigSrc  && sigSrc.startsWith('data:image/');
 
@@ -567,9 +567,9 @@ window.openPrintPreview = function () {
 }
 
 // ============ ENVIAR POR EMAIL DESDE VISTA PREVIA ============
-window.emailFromPreview = function () {
-    const config   = JSON.parse(localStorage.getItem('pdf_config') || '{}');
-    const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
+window.emailFromPreview = async function () {
+    const config   = (await appDB.get('pdf_config')) || {};
+    const profData = (await appDB.get('prof_data')) || {};
     const activePro = config.activeProfessional || null;
     const profName  = activePro?.nombre || profData.nombre || 'Profesional';
     const patientName = config.patientName || '';
@@ -584,7 +584,7 @@ window.emailFromPreview = function () {
     const subject = `Informe de ${studyType}${patientName ? ' — ' + patientName : ''} — Fecha: ${studyDate}`;
 
     // Cuerpo HTML del email
-    const wpProfiles = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+    const wpProfiles = (await appDB.get('workplace_profiles')) || [];
     const wpIdx = config.activeWorkplaceIndex;
     const activeWp = (wpIdx !== undefined && wpIdx !== null) ? wpProfiles[Number(wpIdx)] : wpProfiles[0];
     const wpName = activeWp?.name || '';
@@ -660,8 +660,8 @@ window.generatePDFBase64 = async function () {
     }
     try {
         const { jsPDF } = window.jspdf;
-        const profData  = JSON.parse(localStorage.getItem('prof_data') || '{}');
-        const config    = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        const profData  = (await appDB.get('prof_data')) || {};
+        const config    = (await appDB.get('pdf_config')) || {};
         const editorEl  = window.editor || document.getElementById('editor');
         if (!editorEl || !editorEl.innerHTML.trim()) return null;
 
@@ -726,7 +726,7 @@ window.initEmailSendModal = function () {
         if (!data) return;
 
         // Obtener URL del backend
-        const backendUrl = localStorage.getItem('backend_url') || '';
+        const backendUrl = (await appDB.get('backend_url')) || '';
         if (!backendUrl) {
             // Fallback: mailto
             if (statusEl) {
@@ -762,8 +762,8 @@ window.initEmailSendModal = function () {
             sendBtn.textContent = '📨 Enviando...';
             if (statusEl) statusEl.textContent = '📨 Enviando email...';
 
-            const config = JSON.parse(localStorage.getItem('pdf_config') || '{}');
-            const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
+            const config = (await appDB.get('pdf_config')) || {};
+            const profData = (await appDB.get('prof_data')) || {};
             const activePro = config.activeProfessional || null;
             const senderName = activePro?.nombre || profData.nombre || 'Transcriptor Médico Pro';
 
@@ -816,7 +816,8 @@ window.initEmailSendModal = function () {
         }
     });
 };
-window.workplaceProfiles = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+window.workplaceProfiles = [];
+appDB.get('workplace_profiles').then(function(v) { window.workplaceProfiles = v || []; }).catch(function() {});
 
 window.populateWorkplaceDropdown = function () {
     const dropdown = document.getElementById('pdfWorkplace');
@@ -992,8 +993,8 @@ window.evaluateConfigCompleteness = function () {
     const specs = Array.isArray(profData.specialties) ? profData.specialties.join('') : (profData.especialidad || '');
     if (!specs) missing.push('Especialidad');
 
-    // Workplace
-    const workplaces = JSON.parse(localStorage.getItem('workplaces') || '[]');
+    // Workplace — TODO Fase 6: migrar a appDB. Bug fix: clave correcta es workplace_profiles
+    const workplaces = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
     if (workplaces.length === 0 && !pdfConfig.selectedWorkplace) {
         missing.push('Lugar de trabajo');
     }

@@ -24,8 +24,8 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const { jsPDF } = window.jspdf;
 
         // ── Datos de configuración (leer ANTES de crear el doc) ──────
-        const profData  = (typeof safeJSONParse === 'function') ? safeJSONParse('prof_data', {}) : JSON.parse(localStorage.getItem('prof_data') || '{}');
-        const config    = (typeof safeJSONParse === 'function') ? safeJSONParse('pdf_config', {}) : JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        const profData  = (typeof safeJSONParse === 'function') ? await safeJSONParse('prof_data', {}) : (await appDB.get('prof_data')) || {};
+        const config    = (typeof safeJSONParse === 'function') ? await safeJSONParse('pdf_config', {}) : (await appDB.get('pdf_config')) || {};
         const activePro = config.activeProfessional || null;
 
         // ── Crear documento con formato/orientación del usuario ──────
@@ -57,9 +57,9 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
 
         // Logo/firma: profesional activo tiene prioridad sobre los globales
         const logoB64 = (activePro?.logo  && activePro.logo.startsWith('data:'))
-            ? activePro.logo  : (localStorage.getItem('pdf_logo')      || '');
+            ? activePro.logo  : ((await appDB.get('pdf_logo'))      || '');
         const sigB64  = (activePro?.firma && activePro.firma.startsWith('data:'))
-            ? activePro.firma : (localStorage.getItem('pdf_signature') || '');
+            ? activePro.firma : ((await appDB.get('pdf_signature')) || '');
 
         // Datos del profesional: activo sobreescribe prof_data
         const profName     = activePro?.nombre         || profData.nombre      || '';
@@ -73,7 +73,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const accent       = _hexToRgb(activePro?.headerColor || profData.headerColor || '#1a56a0');
 
         // Datos del lugar de trabajo (con fallback al workplace activo)
-        const wpProfiles = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+        const wpProfiles = (await appDB.get('workplace_profiles')) || [];
         const wpIdx = config.activeWorkplaceIndex;
         const activeWp = (wpIdx !== undefined && wpIdx !== null) ? wpProfiles[Number(wpIdx)] : wpProfiles[0];
         const wpAddress = config.workplaceAddress || activeWp?.address || '';

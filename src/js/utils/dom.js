@@ -1,8 +1,11 @@
 const $ = id => document.getElementById(id);
 
-// RA-5: Helper seguro para leer JSON de localStorage (evita crash por datos corruptos)
-window.safeJSONParse = function(key, fallback) {
-    try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); }
+// RA-5: Helper seguro para leer JSON de appDB/IndexedDB (evita crash por datos corruptos)
+window.safeJSONParse = async function(key, fallback) {
+    try {
+        const val = await appDB.get(key);
+        return (val !== undefined && val !== null) ? val : fallback;
+    }
     catch (_) { return fallback; }
 };
 

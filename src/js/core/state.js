@@ -24,5 +24,8 @@ window.isRecording = false;
 window.recordingInterval = null;
 window.recordingStartTime = 0;
 
-// API Key State - initialize early from localStorage
-window.GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
+// API Key State - initialize async from IndexedDB (appDB already queues calls while IDB opens)
+window.GROQ_API_KEY = '';
+if (typeof appDB !== 'undefined') {
+    appDB.get('groq_api_key').then(function(v) { window.GROQ_API_KEY = v || ''; }).catch(function() {});
+}
