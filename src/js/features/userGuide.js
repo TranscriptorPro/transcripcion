@@ -283,13 +283,31 @@
         });
     }
 
-    // ── Botón Manual Profesional (header) — abre en nueva pestaña ──
+    // ── Botón Manual Profesional (header) — abre overlay iframe dentro de la app ──
     const btnManual = document.getElementById('btnManual');
     if (btnManual) {
         btnManual.addEventListener('click', () => {
-            window.open('recursos/manual.html', '_blank');
+            const overlay = document.getElementById('manualOverlay');
+            const frame = document.getElementById('manualFrame');
+            if (overlay && frame) {
+                frame.src = 'recursos/manual.html';
+                overlay.style.display = '';
+            } else {
+                window.open('recursos/manual.html', '_blank');
+            }
         });
     }
+
+    // Cerrar manual overlay con ESC
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const overlay = document.getElementById('manualOverlay');
+            if (overlay && overlay.style.display !== 'none') {
+                overlay.style.display = 'none';
+                document.getElementById('manualFrame').src = '';
+            }
+        }
+    });
 
     // ── Auto-show tour on first visit ──
     function maybeAutoTour() {

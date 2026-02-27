@@ -1436,6 +1436,20 @@
         </div>
 
 
+        <!-- Manual Profesional (iframe overlay) -->
+        <div id="manualOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);">
+            <div style="position:absolute;inset:8px;background:var(--bg-card,#fff);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.3);">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:var(--bg-secondary,#f1f5f9);border-bottom:1px solid var(--border,#e2e8f0);flex-shrink:0;">
+                    <span style="font-weight:600;font-size:.95rem;">📘 Manual Profesional</span>
+                    <div style="display:flex;gap:8px;">
+                        <button onclick="window.open('recursos/manual.html','_blank');" style="padding:4px 12px;border:1px solid var(--border,#e2e8f0);border-radius:6px;background:var(--bg-card,#fff);cursor:pointer;font-size:.82rem;" title="Abrir en pestaña nueva">↗️ Nueva pestaña</button>
+                        <button onclick="document.getElementById('manualOverlay').style.display='none';document.getElementById('manualFrame').src='';" style="width:32px;height:32px;border:none;background:transparent;font-size:1.3rem;cursor:pointer;border-radius:6px;" title="Cerrar">&times;</button>
+                    </div>
+                </div>
+                <iframe id="manualFrame" style="flex:1;border:none;width:100%;" src=""></iframe>
+            </div>
+        </div>
+
         <!-- Terms and Conditions Modal -->
         <div class="modal-overlay" id="termsModal" role="dialog" aria-modal="true" aria-labelledby="termsModalTitle">
             <div class="modal" style="max-width: 600px;">
