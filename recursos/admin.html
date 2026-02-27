@@ -6,13 +6,29 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
     <title>Admin Dashboard - Transcriptor Médico Pro</title>
     <script>
-    // Force SW update on admin pages
+    // v22 — Force SW update + purge old caches on admin pages
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(regs => {
-            regs.forEach(r => r.update());
+            regs.forEach(r => {
+                r.update();
+                // Force activate waiting worker
+                if (r.waiting) {
+                    r.waiting.postMessage({ type: 'SKIP_WAITING' });
+                }
+            });
         });
+        // Also purge any old caches directly
+        if (window.caches) {
+            caches.keys().then(keys => {
+                keys.forEach(k => {
+                    if (k !== 'transcriptor-pro-v22') caches.delete(k);
+                });
+            });
+        }
     }
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
