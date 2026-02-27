@@ -339,6 +339,7 @@ window.initSessionAssistant = function () {
 
         // Toast de confirmación
         const wpName = profiles[wpIdx]?.name || 'Lugar';
+        localStorage.setItem('current_workplace_name', wpName);
         const profs = profiles[wpIdx]?.professionals || [];
         let msg = `✅ ${wpName}`;
         if (clinic && !isNaN(proIdx) && profs[proIdx]) {

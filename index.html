@@ -81,6 +81,12 @@
                         <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
                     </svg>
                 </button>
+                <!-- Settings gear button -->
+                <button class="theme-toggle" id="btnSettings" title="Configuración" style="display:none;">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+                    </svg>
+                </button>
                 <button class="theme-toggle" id="themeToggle" title="Cambiar tema">
                     <svg id="themeIcon" viewBox="0 0 24 24">
                         <path
@@ -96,7 +102,7 @@
         <!-- Banner: API Key inválida (activado por validación silenciosa al inicio) -->
         <div id="apiKeyWarningBanner" style="display:none;background:#f59e0b;color:#1c1917;padding:8px 16px;font-size:0.83rem;font-weight:600;position:sticky;top:0;z-index:9999;gap:8px;align-items:center;justify-content:center;text-align:center;">
             <span>⚠️ Tu API Key parece inválida o expirada.</span>
-            <button onclick="document.getElementById('adminApiKeyCard')?.scrollIntoView({behavior:'smooth'});document.getElementById('apiKeyInput')?.focus();" style="background:var(--bg-card);color:var(--text-primary);border:none;border-radius:4px;padding:2px 12px;cursor:pointer;font-weight:700;font-size:0.8rem;">⚙️ Configurar</button>
+            <button onclick="var s=document.getElementById('settingsModalOverlay');if(s){s.style.display='grid';} else {document.getElementById('adminApiKeyCard')?.scrollIntoView({behavior:'smooth'});document.getElementById('apiKeyInput')?.focus();}" style="background:var(--bg-card);color:var(--text-primary);border:none;border-radius:4px;padding:2px 12px;cursor:pointer;font-weight:700;font-size:0.8rem;">⚙️ Configurar</button>
             <button onclick="this.closest('#apiKeyWarningBanner').style.display='none';" style="background:transparent;border:none;cursor:pointer;font-size:1.1rem;font-weight:700;padding:0 4px;">✕</button>
         </div>
         <!-- Modals moved to top for early DOM parsing -->
@@ -135,60 +141,381 @@
             </div>
         </div>
 
-        <!-- Onboarding / Welcome Modal -->
-        <div class="modal-overlay" id="onboardingOverlay">
-            <div class="modal" style="max-width: 500px;">
-                <div class="modal-header">
-                    <h2>🩺 ¡Bienvenido/a a Transcriptor Pro!</h2>
+        <!-- Onboarding / Welcome Modal — Spectacular multi-step -->
+        <div class="modal-overlay" id="onboardingOverlay" style="background: linear-gradient(135deg, rgba(15,118,110,0.15), rgba(0,0,0,0.85));">
+            <div class="modal onboarding-modal" style="max-width: 520px; overflow: hidden; border: 2px solid var(--primary); position: relative;">
+                <!-- Animated particles background -->
+                <div class="onboarding-particles" id="onboardingParticles"></div>
+
+                <!-- Step 1: Welcome -->
+                <div class="onboarding-step active" id="onboardingStep1">
+                    <div style="text-align: center; padding: 2.5rem 2rem 1.5rem;">
+                        <div class="onboarding-logo-anim">
+                            <div class="onboarding-logo-circle">
+                                <span style="font-size: 3rem;">🩺</span>
+                            </div>
+                            <div class="onboarding-sparkles">
+                                <span class="sparkle s1">✨</span>
+                                <span class="sparkle s2">⭐</span>
+                                <span class="sparkle s3">✨</span>
+                                <span class="sparkle s4">💫</span>
+                            </div>
+                        </div>
+                        <h1 class="onboarding-title" style="font-size: 1.6rem; color: var(--primary); margin: 1rem 0 0.5rem; font-weight: 800;">
+                            ¡Bienvenido/a a<br>Transcriptor Pro!
+                        </h1>
+                        <p class="onboarding-subtitle" style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 1.5rem; line-height: 1.5;">
+                            Tu asistente de informes médicos con IA 🎙️<br>
+                            <strong style="color: var(--primary-light);">Audio → Informe profesional en segundos</strong>
+                        </p>
+                        <div class="onboarding-features">
+                            <div class="onboarding-feature-item">
+                                <span>🎤</span> <span>Grabá o subí audio</span>
+                            </div>
+                            <div class="onboarding-feature-item">
+                                <span>🤖</span> <span>IA transcribe y estructura</span>
+                            </div>
+                            <div class="onboarding-feature-item">
+                                <span>📄</span> <span>Informe PDF listo para firmar</span>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary btn-full onboarding-btn-next" id="onboardingNext1"
+                            style="margin-top: 1.5rem; padding: 0.85rem; font-size: 1rem; font-weight: 700; border-radius: 12px;">
+                            Continuar →
+                        </button>
+                    </div>
                 </div>
-                <div class="modal-body">
-                    <p style="text-align: center; color: var(--primary); font-weight: 700; margin-bottom: 1.5rem; font-size: 1.1rem;">
-                        ¡Tus grabaciones de audio a informe médico en instantes! 🎙️✨
-                    </p>
-                    <p style="margin-bottom: 1.25rem; color: var(--text-secondary); font-size: 0.9rem;">
-                        Tu cuenta fue configurada por tu administrador. Confirmá tus datos y aceptá los términos para activar la app.
-                    </p>
 
-                    <!-- Datos precargados por el admin (solo lectura) -->
-                    <div style="background: var(--bg-hover); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
-                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em;">Datos de tu cuenta</p>
-                        <div style="display:flex; gap: 0.5rem; align-items: baseline; margin-bottom: 0.4rem;">
-                            <span style="font-size: 0.85rem; color: var(--text-secondary); min-width: 80px;">Profesional:</span>
-                            <strong id="onboardingDisplayNombre" style="color: var(--text-primary);">—</strong>
+                <!-- Step 2: Confirm data -->
+                <div class="onboarding-step" id="onboardingStep2">
+                    <div style="padding: 2rem;">
+                        <div style="text-align: center; margin-bottom: 1.5rem;">
+                            <span style="font-size: 2.5rem;">👤</span>
+                            <h2 style="font-size: 1.3rem; color: var(--primary); margin-top: 0.5rem;">Confirmá tus datos</h2>
+                            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.25rem;">
+                                Tu cuenta fue configurada por tu administrador
+                            </p>
                         </div>
-                        <div style="display:flex; gap: 0.5rem; align-items: baseline;">
-                            <span style="font-size: 0.85rem; color: var(--text-secondary); min-width: 80px;">Matrícula:</span>
-                            <strong id="onboardingDisplayMatricula" style="color: var(--text-primary);">—</strong>
+                        <div style="background: var(--bg-hover); border: 2px solid var(--primary); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem;">
+                            <div style="display:flex; gap: 0.5rem; align-items: baseline; margin-bottom: 0.6rem;">
+                                <span style="font-size: 0.85rem; color: var(--text-secondary); min-width: 90px;">👨‍⚕️ Profesional:</span>
+                                <strong id="onboardingDisplayNombre" style="color: var(--text-primary); font-size: 1.05rem;">—</strong>
+                            </div>
+                            <div style="display:flex; gap: 0.5rem; align-items: baseline;">
+                                <span style="font-size: 0.85rem; color: var(--text-secondary); min-width: 90px;">🏷️ Matrícula:</span>
+                                <strong id="onboardingDisplayMatricula" style="color: var(--text-primary); font-size: 1.05rem;">—</strong>
+                            </div>
+                        </div>
+
+                        <!-- K1: API Key step (oculto para clientes, solo admin lo ve) -->
+                        <div class="help-section" id="onboardingApiKeyStep" style="display:none;">
+                            <label class="sidebar-label">🔑 API Key de Groq:</label>
+                            <input type="text" id="onboardingApiKey" class="toolbar-input" style="width:100%;"
+                                placeholder="gsk_..." autocomplete="off">
+                            <small style="display:block;margin-top:.4rem;font-size:.72rem;color:var(--text-secondary);">
+                                Obtenela gratis en
+                                <a href="https://console.groq.com/keys" target="_blank"
+                                    style="color:var(--primary-light);">console.groq.com/keys</a>.
+                            </small>
+                        </div>
+
+                        <button type="button" class="btn btn-primary btn-full onboarding-btn-next" id="onboardingNext2"
+                            style="padding: 0.85rem; font-size: 1rem; font-weight: 700; border-radius: 12px;">
+                            Mis datos son correctos ✓
+                        </button>
+                        <button type="button" class="onboarding-btn-back" id="onboardingBack2">← Volver</button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Terms & Conditions -->
+                <div class="onboarding-step" id="onboardingStep3">
+                    <div style="padding: 2rem;">
+                        <div style="text-align: center; margin-bottom: 1.5rem;">
+                            <span style="font-size: 2.5rem;">📋</span>
+                            <h2 style="font-size: 1.3rem; color: var(--primary); margin-top: 0.5rem;">Términos y condiciones</h2>
+                            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.25rem;">
+                                Último paso antes de empezar
+                            </p>
+                        </div>
+                        <div style="background: var(--bg-main); border-radius: 10px; padding: 1rem; max-height: 160px; overflow-y: auto; margin-bottom: 1.25rem; font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; border: 1px solid var(--border);">
+                            <strong style="color: var(--text-primary);">Términos de uso — Transcriptor Pro</strong><br><br>
+                            1. <strong>Propósito:</strong> Esta herramienta es un asistente de transcripción y no reemplaza el criterio médico profesional.<br>
+                            2. <strong>Responsabilidad:</strong> El profesional es responsable de revisar y aprobar toda transcripción generada.<br>
+                            3. <strong>Privacidad:</strong> Los audios se procesan a través de la API de Groq y no se almacenan en nuestros servidores.<br>
+                            4. <strong>Datos locales:</strong> Toda la información clínica se guarda exclusivamente en tu dispositivo (localStorage).<br>
+                            5. <strong>API Key:</strong> Tu clave es personal e intransferible. No la compartas con terceros.<br>
+                            6. <strong>Uso adecuado:</strong> El servicio es para uso médico profesional legítimo únicamente.
+                        </div>
+                        <div style="padding: 0.85rem; background: var(--bg-hover); border-radius: 10px; margin-bottom: 1.25rem;">
+                            <label style="display: flex; align-items: center; gap: 0.65rem; cursor: pointer;">
+                                <input type="checkbox" id="acceptTerms" required
+                                    style="width: 20px; height: 20px; accent-color: var(--primary); flex-shrink: 0;">
+                                <span style="font-size: 0.88rem; color: var(--text-primary); font-weight: 500;">
+                                    Acepto los <a href="#" id="linkTerms"
+                                        style="color: var(--primary); text-decoration: underline; font-weight: 700;">términos y condiciones</a> de uso
+                                </span>
+                            </label>
+                        </div>
+                        <button type="button" class="btn btn-primary btn-full" id="btnSubmitOnboarding" disabled
+                            style="padding: 0.85rem; font-size: 1.05rem; font-weight: 700; border-radius: 12px;">
+                            🚀 ¡Activar Transcriptor Pro!
+                        </button>
+                        <button type="button" class="onboarding-btn-back" id="onboardingBack3">← Volver</button>
+                    </div>
+                </div>
+
+                <!-- Step progress dots -->
+                <div class="onboarding-dots" id="onboardingDots">
+                    <span class="onboarding-dot active" data-step="1"></span>
+                    <span class="onboarding-dot" data-step="2"></span>
+                    <span class="onboarding-dot" data-step="3"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Modal — Mega Panel con acordeones -->
+        <div class="modal-overlay" id="settingsModalOverlay">
+            <div class="modal settings-modal" style="max-width: 560px; max-height: 92vh; display:flex; flex-direction:column;">
+                <div class="modal-header">
+                    <h2>⚙️ Configuración</h2>
+                    <button class="modal-close" id="closeSettings">&times;</button>
+                </div>
+                <div class="modal-body settings-body" style="padding: 0; overflow-y: auto; flex: 1;">
+
+                    <!-- 1. Cuenta -->
+                    <div class="stg-accordion open" data-stg="cuenta">
+                        <button class="stg-accordion-btn" type="button">
+                            <span>🩺 Mi Cuenta</span>
+                            <span class="stg-chevron">▾</span>
+                        </button>
+                        <div class="stg-accordion-content">
+                            <div class="stg-card">
+                                <div class="stg-row"><span class="stg-label">Profesional:</span><strong id="settingsProfName">—</strong></div>
+                                <div class="stg-row"><span class="stg-label">Matrícula:</span><strong id="settingsProfMatricula">—</strong></div>
+                                <div class="stg-row"><span class="stg-label">Especialidad:</span><strong id="settingsProfEspecialidad">—</strong></div>
+                                <div class="stg-row"><span class="stg-label">Plan:</span><span class="stg-badge" id="settingsProfPlan">—</span></div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- K1: API Key step (oculto para clientes, solo admin lo ve) -->
-                    <div class="help-section" id="onboardingApiKeyStep" style="display:none;">
-                        <label class="sidebar-label">🔑 API Key de Groq:</label>
-                        <input type="text" id="onboardingApiKey" class="toolbar-input" style="width:100%;"
-                            placeholder="gsk_..." autocomplete="off">
-                        <small style="display:block;margin-top:.4rem;font-size:.72rem;color:var(--text-secondary);">
-                            Obtenela gratis en
-                            <a href="https://console.groq.com/keys" target="_blank"
-                                style="color:var(--primary-light);">console.groq.com/keys</a>.
-                            Se guarda solo en este dispositivo.
-                        </small>
+                    <!-- 2. API Key -->
+                    <div class="stg-accordion" data-stg="apikey">
+                        <button class="stg-accordion-btn" type="button">
+                            <span>🔑 API Key de Groq</span>
+                            <span class="stg-status" id="settingsApiDot">●</span>
+                            <span class="stg-chevron">▾</span>
+                        </button>
+                        <div class="stg-accordion-content">
+                            <div class="api-status disconnected" id="settingsApiStatus" style="padding: 4px 8px; font-size: 0.75rem; margin-bottom: 0.5rem;">
+                                <span>No configurada</span>
+                            </div>
+                            <div style="display: flex; gap: 6px; margin-bottom: 0.5rem;">
+                                <input type="password" id="settingsApiKeyInput" class="toolbar-input"
+                                    style="flex: 1; font-size: 0.85rem; padding: 6px 10px;" placeholder="gsk_...">
+                                <button class="btn btn-primary" id="settingsSaveApiKey" style="padding: 0 12px;" title="Guardar">💾</button>
+                                <button class="btn btn-secondary" id="settingsTestApiKey" style="padding: 0 12px;" title="Probar">🔌</button>
+                            </div>
+                            <div id="settingsApiTestResult" style="font-size: 0.78rem; display: none; margin-bottom: 0.5rem;"></div>
+                            <details class="stg-tutorial">
+                                <summary style="cursor:pointer; font-size: 0.78rem; color: var(--primary); font-weight: 600;">📘 ¿Cómo obtener tu API Key?</summary>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem; line-height: 1.6;">
+                                    <ol style="padding-left: 1.2rem; margin: 0;">
+                                        <li>Visitá <a href="https://console.groq.com/keys" target="_blank" style="color: var(--primary-light); font-weight: 600;">console.groq.com/keys</a></li>
+                                        <li>Creá una cuenta gratuita (Google o email)</li>
+                                        <li>Hacé clic en <strong>"Create API Key"</strong></li>
+                                        <li>Copiá la clave (empieza con <code>gsk_</code>)</li>
+                                        <li>Pegala arriba y presioná 💾</li>
+                                    </ol>
+                                </div>
+                            </details>
+                        </div>
                     </div>
 
-                    <div class="terms-section"
-                        style="margin-top: 1rem; padding: 1rem; background: var(--bg-main); border-radius: 8px; margin-bottom: 1.25rem;">
-                        <label style="display: flex; align-items: start; gap: 0.5rem; cursor: pointer;">
-                            <input type="checkbox" id="acceptTerms" required style="margin-top: 0.25rem;">
-                            <span style="font-size: 0.85rem; color: var(--text-secondary);">
-                                Acepto los <a href="#" id="linkTerms"
-                                    style="color: var(--primary); text-decoration: underline;">términos y
-                                    condiciones</a> de uso
-                            </span>
-                        </label>
+                    <!-- 3. Lugar de trabajo -->
+                    <div class="stg-accordion" data-stg="workplace">
+                        <button class="stg-accordion-btn" type="button">
+                            <span>📍 Lugar de trabajo</span>
+                            <span class="stg-chevron">▾</span>
+                        </button>
+                        <div class="stg-accordion-content">
+                            <div class="stg-card">
+                                <div class="stg-row">
+                                    <span class="stg-label">Actual:</span>
+                                    <strong id="settingsCurrentWorkplace">—</strong>
+                                </div>
+                            </div>
+                            <button class="btn btn-outline btn-full stg-action-btn" id="settingsChangeWorkplace" style="margin-top: 0.5rem;">
+                                🔄 Cambiar lugar de trabajo
+                            </button>
+                        </div>
                     </div>
-                    <button type="button" class="btn btn-primary btn-full" id="btnSubmitOnboarding" disabled>
-                        Comenzar a usar la app
-                    </button>
+
+                    <!-- 4. Perfiles rápidos de sesión -->
+                    <div class="stg-accordion" data-stg="profiles">
+                        <button class="stg-accordion-btn" type="button">
+                            <span>⚡ Perfiles rápidos</span>
+                            <span class="stg-chevron">▾</span>
+                        </button>
+                        <div class="stg-accordion-content">
+                            <p class="stg-hint">Guardá presets de configuración para arrancar más rápido.</p>
+                            <div id="settingsQuickProfiles" class="stg-profiles-list"></div>
+                            <button class="btn btn-accent btn-full stg-action-btn" id="settingsSaveProfile" style="margin-top: 0.5rem;">
+                                ➕ Guardar perfil actual
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 5. Config informes PDF -->
+                    <div class="stg-accordion" data-stg="pdf">
+                        <button class="stg-accordion-btn" type="button">
+                            <span>📄 Configurar informes PDF</span>
+                            <span class="stg-chevron">▾</span>
+                        </button>
+                        <div class="stg-accordion-content">
+                            <p class="stg-hint">Logo, encabezado, márgenes y datos del informe.</p>
+                            <button class="btn btn-primary btn-full stg-action-btn" id="settingsOpenPdfConfig">
+                                📄 Abrir configuración de informe
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 6. Editor -->
+                    <div class="stg-accordion" data-stg="editor">
+                        <button class="stg-accordion-btn" type="button">
+                            <span>✏️ Editor</span>
+                            <span class="stg-chevron">▾</span>
+                        </button>
+                        <div class="stg-accordion-content">
+                            <div class="stg-opt-row">
+                                <span class="stg-opt-label">🔤 Tamaño del texto</span>
+                                <select id="settingsEditorFontSize" class="stg-select">
+                                    <option value="small">Chico</option>
+                                    <option value="medium" selected>Mediano</option>
+                                    <option value="large">Grande</option>
+                                </select>
+                            </div>
+                            <div class="stg-opt-row">
+                                <span class="stg-opt-label">💾 Auto-guardado</span>
+                                <label class="stg-switch">
+                                    <input type="checkbox" id="settingsAutosave" checked>
+                                    <span class="stg-switch-slider"></span>
+                                </label>
+                            </div>
+                            <div class="stg-opt-row">
+                                <span class="stg-opt-label">↩️ Historial de cambios</span>
+                                <label class="stg-switch">
+                                    <input type="checkbox" id="settingsUndoHistory" checked>
+                                    <span class="stg-switch-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 7. Herramientas -->
+                    <div class="stg-accordion" data-stg="tools">
+                        <button class="stg-accordion-btn" type="button">
+                            <span>🛠️ Herramientas</span>
+                            <span class="stg-chevron">▾</span>
+                        </button>
+                        <div class="stg-accordion-content">
+                            <button class="btn btn-outline btn-full stg-action-btn" id="settingsOpenHistory">
+                                📋 Historial de informes
+                            </button>
+                            <button class="btn btn-outline btn-full stg-action-btn" id="settingsOpenDictionary" style="margin-top: 0.4rem;">
+                                📖 Diccionario médico
+                            </button>
+                            <button class="btn btn-outline btn-full stg-action-btn" id="settingsOpenShortcuts" style="margin-top: 0.4rem;">
+                                ⌨️ Atajos de teclado
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 8. Apariencia -->
+                    <div class="stg-accordion" data-stg="theme">
+                        <button class="stg-accordion-btn" type="button">
+                            <span>🎨 Apariencia</span>
+                            <span class="stg-chevron">▾</span>
+                        </button>
+                        <div class="stg-accordion-content">
+                            <div class="stg-opt-row">
+                                <span class="stg-opt-label">Tema</span>
+                                <div class="stg-theme-btns">
+                                    <button class="stg-theme-btn" id="settingsThemeLight" title="Tema claro">☀️ Claro</button>
+                                    <button class="stg-theme-btn" id="settingsThemeDark" title="Tema oscuro">🌙 Oscuro</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 9. Estadísticas -->
+                    <div class="stg-accordion" data-stg="stats">
+                        <button class="stg-accordion-btn" type="button">
+                            <span>📊 Estadísticas de uso</span>
+                            <span class="stg-chevron">▾</span>
+                        </button>
+                        <div class="stg-accordion-content">
+                            <div class="stg-stats-grid" id="settingsStatsGrid">
+                                <div class="stg-stat-card">
+                                    <span class="stg-stat-num" id="statTotalReports">0</span>
+                                    <span class="stg-stat-label">Informes</span>
+                                </div>
+                                <div class="stg-stat-card">
+                                    <span class="stg-stat-num" id="statTotalTranscriptions">0</span>
+                                    <span class="stg-stat-label">Transcripciones</span>
+                                </div>
+                                <div class="stg-stat-card">
+                                    <span class="stg-stat-num" id="statTotalPatients">0</span>
+                                    <span class="stg-stat-label">Pacientes</span>
+                                </div>
+                                <div class="stg-stat-card">
+                                    <span class="stg-stat-num" id="statDictEntries">0</span>
+                                    <span class="stg-stat-label">Términos dict.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 10. Backup & Datos -->
+                    <div class="stg-accordion" data-stg="backup">
+                        <button class="stg-accordion-btn" type="button">
+                            <span>💾 Backup y datos</span>
+                            <span class="stg-chevron">▾</span>
+                        </button>
+                        <div class="stg-accordion-content">
+                            <button class="btn btn-primary btn-full stg-action-btn" id="settingsExportBackup">
+                                📤 Exportar configuración (JSON)
+                            </button>
+                            <div style="margin-top: 0.5rem;">
+                                <label class="btn btn-outline btn-full stg-action-btn" style="cursor:pointer; text-align:center; display:block;">
+                                    📥 Importar configuración
+                                    <input type="file" id="settingsImportBackup" accept=".json" style="display:none;">
+                                </label>
+                            </div>
+                            <hr style="border: none; border-top: 1px solid var(--border); margin: 0.75rem 0;">
+                            <button class="btn btn-outline btn-full stg-action-btn" id="settingsClearData" style="color: #ef4444; border-color: #ef4444;">
+                                🗑️ Borrar todos mis datos locales
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 11. Info & Soporte -->
+                    <div class="stg-accordion" data-stg="info">
+                        <button class="stg-accordion-btn" type="button">
+                            <span>📱 Info y soporte</span>
+                            <span class="stg-chevron">▾</span>
+                        </button>
+                        <div class="stg-accordion-content">
+                            <div class="stg-card" style="font-size: 0.82rem;">
+                                <div class="stg-row"><span class="stg-label">Versión:</span><strong id="settingsAppVersion">2.0</strong></div>
+                                <div class="stg-row"><span class="stg-label">Device ID:</span><code id="settingsDeviceId" style="font-size:0.72rem;">—</code></div>
+                                <div class="stg-row"><span class="stg-label">Tipo:</span><span id="settingsAccountType">—</span></div>
+                            </div>
+                            <button class="btn btn-outline btn-full stg-action-btn" id="settingsContactSupport" style="margin-top: 0.5rem;">
+                                📧 Contactar soporte
+                            </button>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -1535,6 +1862,7 @@
         <script src="src/js/features/licenseManager.js"></script>
         <script src="src/js/features/patientRegistry.js"></script>
         <script src="src/js/features/formHandler.js"></script>
+        <script src="src/js/features/settingsPanel.js"></script>
         <script src="src/js/features/business.js"></script>
         <script src="src/js/features/sessionAssistant.js"></script>
         <script src="src/js/features/outputProfiles.js"></script>

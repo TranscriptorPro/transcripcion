@@ -994,8 +994,8 @@
             padding: 4px 8px;
             border-radius: 6px;
             border: 1px solid var(--border);
-            background: var(--bg);
-            color: var(--text);
+            background: var(--bg-card);
+            color: var(--text-primary);
             cursor: pointer;
         }
 
@@ -3743,7 +3743,7 @@
             backdrop-filter: blur(6px);
         }
         .sa-card {
-            background: var(--bg);
+            background: var(--bg-card);
             border-radius: 16px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.25), 0 0 0 1px var(--border);
             max-width: 440px;
@@ -3840,4 +3840,264 @@
             .sa-header { padding: 1.5rem 1rem 0.75rem; }
             .sa-body { padding: 1rem 1rem 0.5rem; }
             .sa-footer { padding: 0.5rem 1rem 1.25rem; }
+        }
+
+        /* ─── Settings Panel — Accordion Styles ──────────────────────── */
+        .settings-modal .modal-header {
+            position: sticky; top: 0; z-index: 10; background: var(--bg-card);
+        }
+        .settings-body {
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) transparent;
+        }
+        .stg-accordion {
+            border-bottom: 1px solid var(--border);
+        }
+        .stg-accordion-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.85rem 1.25rem;
+            background: none;
+            border: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: background 0.2s;
+            text-align: left;
+        }
+        .stg-accordion-btn:hover {
+            background: var(--bg-hover);
+        }
+        .stg-chevron {
+            margin-left: auto;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            transition: transform 0.25s;
+        }
+        .stg-accordion.open .stg-chevron {
+            transform: rotate(180deg);
+        }
+        .stg-accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+            padding: 0 1.25rem;
+        }
+        .stg-accordion.open .stg-accordion-content {
+            max-height: 600px;
+            padding: 0 1.25rem 1rem;
+        }
+
+        .stg-card {
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+        }
+        .stg-row {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            padding: 0.3rem 0;
+            font-size: 0.85rem;
+        }
+        .stg-row + .stg-row {
+            border-top: 1px solid rgba(0,0,0,0.04);
+        }
+        .stg-label {
+            color: var(--text-secondary);
+            min-width: 85px;
+            font-size: 0.82rem;
+        }
+        .stg-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: #fff;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 2px 10px;
+            border-radius: 20px;
+            letter-spacing: 0.03em;
+        }
+        .stg-hint {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            line-height: 1.5;
+        }
+        .stg-action-btn {
+            font-size: 0.82rem !important;
+            padding: 0.55rem 0.8rem !important;
+            border-radius: 8px !important;
+        }
+        .stg-status {
+            font-size: 0.7rem;
+            transition: color 0.3s;
+        }
+        .stg-status.ok { color: #22c55e; }
+        .stg-status.fail { color: #ef4444; }
+
+        /* Option rows */
+        .stg-opt-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+        }
+        .stg-opt-row:last-child { border-bottom: none; }
+        .stg-opt-label {
+            font-size: 0.85rem;
+            color: var(--text-primary);
+        }
+        .stg-select {
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 0.82rem;
+        }
+
+        /* Mini toggle switch */
+        .stg-switch {
+            position: relative;
+            width: 40px;
+            height: 22px;
+            display: inline-block;
+        }
+        .stg-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .stg-switch-slider {
+            position: absolute;
+            inset: 0;
+            background: var(--border);
+            border-radius: 22px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .stg-switch-slider::before {
+            content: '';
+            position: absolute;
+            left: 3px;
+            top: 3px;
+            width: 16px;
+            height: 16px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+        .stg-switch input:checked + .stg-switch-slider {
+            background: var(--primary);
+        }
+        .stg-switch input:checked + .stg-switch-slider::before {
+            transform: translateX(18px);
+        }
+
+        /* Theme buttons */
+        .stg-theme-btns {
+            display: flex;
+            gap: 6px;
+        }
+        .stg-theme-btn {
+            padding: 4px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .stg-theme-btn:hover,
+        .stg-theme-btn.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        /* Stats grid */
+        .stg-stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .stg-stat-card {
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.75rem;
+            text-align: center;
+        }
+        .stg-stat-num {
+            display: block;
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1;
+        }
+        .stg-stat-label {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        /* Quick profiles */
+        .stg-profiles-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .stg-profile-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .stg-profile-item:hover {
+            border-color: var(--primary);
+            background: rgba(15,118,110,0.06);
+        }
+        .stg-profile-name {
+            flex: 1;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .stg-profile-meta {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+        }
+        .stg-profile-del {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 0 4px;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+        .stg-profile-del:hover { opacity: 1; }
+
+        /* Tutorial details */
+        .stg-tutorial {
+            margin-top: 0.5rem;
+            background: var(--bg-hover);
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
         }

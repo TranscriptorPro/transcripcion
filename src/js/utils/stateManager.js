@@ -176,12 +176,20 @@ function initializeMode() {
     const savedMode = localStorage.getItem('last_profile_type');
     if (savedMode) {
         setMode(savedMode);
+        // Even with saved mode, hide toggle for PRO users (they're always PRO)
+        if (['PRO'].includes(CLIENT_CONFIG.type) && proToggleContainer) {
+            proToggleContainer.style.display = 'none';
+        }
         return;
     }
 
     const isAdminOrPro = ['ADMIN', 'PRO', 'TRIAL'].includes(CLIENT_CONFIG.type);
     if (isAdminOrPro) {
         setMode('pro');
+        // PRO users (Gift/Clinic/Enterprise) are always PRO — hide the toggle entirely
+        if (CLIENT_CONFIG.type === 'PRO' && proToggleContainer) {
+            proToggleContainer.style.display = 'none';
+        }
     } else {
         setMode('normal');
         if (proModeToggle) {

@@ -47,3 +47,184 @@
             75%      { transform: scale(1.25) rotate(15deg); opacity: 0.85; }
         }
 
+        /* ─── Onboarding Spectacular Animations ───────────────────────── */
+        .onboarding-modal {
+            position: relative;
+            overflow: hidden;
+        }
+        .onboarding-modal .onboarding-particles {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .onboarding-particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            opacity: 0;
+            animation: particleFloat 4s ease-in-out infinite;
+        }
+        @keyframes particleFloat {
+            0%   { opacity: 0; transform: translateY(0) scale(0); }
+            20%  { opacity: 0.6; transform: translateY(-20px) scale(1); }
+            80%  { opacity: 0.3; transform: translateY(-80px) scale(0.8); }
+            100% { opacity: 0; transform: translateY(-120px) scale(0); }
+        }
+
+        .onboarding-step {
+            display: none;
+            animation: onboardingSlideIn 0.4s ease-out;
+            position: relative;
+            z-index: 1;
+        }
+        .onboarding-step.active {
+            display: block;
+        }
+        @keyframes onboardingSlideIn {
+            from { opacity: 0; transform: translateX(30px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes onboardingSlideOut {
+            from { opacity: 1; transform: translateX(0); }
+            to   { opacity: 0; transform: translateX(-30px); }
+        }
+
+        .onboarding-logo-anim {
+            position: relative;
+            display: inline-block;
+        }
+        .onboarding-logo-circle {
+            width: 90px;
+            height: 90px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            margin: 0 auto;
+            box-shadow: 0 8px 32px rgba(15, 118, 110, 0.35);
+            animation: logoPulse 2s ease-in-out infinite;
+        }
+        @keyframes logoPulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 8px 32px rgba(15, 118, 110, 0.35); }
+            50%      { transform: scale(1.05); box-shadow: 0 12px 40px rgba(15, 118, 110, 0.5); }
+        }
+
+        .onboarding-sparkles {
+            position: absolute;
+            inset: -20px;
+            pointer-events: none;
+        }
+        .sparkle {
+            position: absolute;
+            font-size: 1.2rem;
+            animation: sparkleAnim 2.5s ease-in-out infinite;
+        }
+        .sparkle.s1 { top: 0; left: 10%; animation-delay: 0s; }
+        .sparkle.s2 { top: 10%; right: 5%; animation-delay: 0.5s; }
+        .sparkle.s3 { bottom: 5%; left: 5%; animation-delay: 1s; }
+        .sparkle.s4 { bottom: 10%; right: 10%; animation-delay: 1.5s; }
+        @keyframes sparkleAnim {
+            0%, 100% { opacity: 0; transform: scale(0.5) rotate(0deg); }
+            50%      { opacity: 1; transform: scale(1.2) rotate(180deg); }
+        }
+
+        .onboarding-title {
+            animation: fadeInUp 0.6s ease-out 0.15s both;
+        }
+        .onboarding-subtitle {
+            animation: fadeInUp 0.6s ease-out 0.3s both;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .onboarding-features {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            margin-top: 0.5rem;
+        }
+        .onboarding-feature-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.6rem 1rem;
+            background: var(--bg-hover);
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            animation: fadeInUp 0.5s ease-out both;
+            border: 1px solid var(--border);
+        }
+        .onboarding-feature-item:nth-child(1) { animation-delay: 0.4s; }
+        .onboarding-feature-item:nth-child(2) { animation-delay: 0.55s; }
+        .onboarding-feature-item:nth-child(3) { animation-delay: 0.7s; }
+
+        .onboarding-btn-next {
+            animation: fadeInUp 0.5s ease-out 0.85s both;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .onboarding-btn-next:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(15, 118, 110, 0.3);
+        }
+
+        .onboarding-btn-back {
+            display: block;
+            width: 100%;
+            text-align: center;
+            margin-top: 0.75rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: color 0.2s, background 0.2s;
+        }
+        .onboarding-btn-back:hover {
+            color: var(--primary);
+            background: var(--bg-hover);
+        }
+
+        .onboarding-dots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+        .onboarding-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--border);
+            transition: all 0.3s;
+        }
+        .onboarding-dot.active {
+            background: var(--primary);
+            width: 28px;
+            border-radius: 5px;
+        }
+
+        /* ─── Confetti burst on activation ───────────────────────────── */
+        .confetti-piece {
+            position: fixed;
+            width: 8px;
+            height: 16px;
+            z-index: 10010;
+            animation: confettiFall 3s ease-out forwards;
+        }
+        @keyframes confettiFall {
+            0%   { opacity: 1; transform: translateY(0) rotate(0deg); }
+            100% { opacity: 0; transform: translateY(100vh) rotate(720deg); }
+        }
+

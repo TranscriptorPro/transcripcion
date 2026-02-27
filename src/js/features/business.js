@@ -747,6 +747,9 @@ function _initAdmin() {
         _initResetApp();
     }
 
+    // Admin también ve ⚙️ Settings (además de su panel lateral)
+    _showSettingsGear();
+
     const onboardingOverlay = document.getElementById('onboardingOverlay');
     if (onboardingOverlay) onboardingOverlay.style.display = 'none';
 }
@@ -806,9 +809,11 @@ function _initResetApp() {
 
 // ─── Flujo CLIENTE (NORMAL / PRO / TRIAL) ────────────────────────────────────
 function _initClient() {
-    // K2: ocultar panel de API Key del admin
+    // K2: ocultar panel de API Key y botón admin para clientes
     const apiKeyCard = document.getElementById('adminApiKeyCard');
     if (apiKeyCard) apiKeyCard.style.display = 'none';
+    const btnAdminAccess = document.getElementById('btnAdminAccess');
+    if (btnAdminAccess) btnAdminAccess.style.display = 'none';
 
     // K1: el criterio de primer uso es la aceptación de T&C, NO la ausencia de datos.
     // Los datos (nombre, matrícula, API key) los precarga el admin antes de entregar la app.
@@ -830,6 +835,9 @@ function _initClient() {
     } catch (e) {
         console.error('Error inicializando datos cliente:', e);
     }
+
+    // Settings gear button
+    _showSettingsGear();
 
     const onboardingOverlay = document.getElementById('onboardingOverlay');
     if (onboardingOverlay) onboardingOverlay.style.display = 'none';
@@ -859,61 +867,150 @@ function _initCommonModules() {
     if (typeof initPatientRegistryPanel === 'function') initPatientRegistryPanel();
 }
 
-// ─── Onboarding de cliente: bienvenida + T&C + confirmación de datos precargados ─
+// ─── Onboarding de cliente: bienvenida espectacular multi-step + T&C ──────────
 function _showClientOnboarding() {
     const overlay = document.getElementById('onboardingOverlay');
     if (!overlay) return;
 
-    // Leer datos que el admin precargó en localStorage antes de entregar la app
     const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
+    let currentStep = 1;
 
-    // Rellenar la tarjeta de datos precargados (solo lectura)
-    const displayNombre    = document.getElementById('onboardingDisplayNombre');
+    // Rellenar datos precargados
+    const displayNombre = document.getElementById('onboardingDisplayNombre');
     const displayMatricula = document.getElementById('onboardingDisplayMatricula');
-    if (displayNombre)    displayNombre.textContent    = profData.nombre    || '(no configurado)';
+    if (displayNombre) displayNombre.textContent = profData.nombre || '(no configurado)';
     if (displayMatricula) displayMatricula.textContent = profData.matricula || '(no configurado)';
 
-    // Ocultar el step de API Key (solo lo usa el flujo admin, nunca el cliente)
+    // Ocultar step API Key (solo para admin)
     const apiStep = document.getElementById('onboardingApiKeyStep');
     if (apiStep) apiStep.style.display = 'none';
 
+    // Crear partículas decorativas
+    _createOnboardingParticles();
+
     overlay.style.display = 'flex';
 
-    // T&C → habilitar botón
+    // ─── Step navigation ─────────────────────────────────
+    function goToStep(step) {
+        const prev = document.getElementById('onboardingStep' + currentStep);
+        const next = document.getElementById('onboardingStep' + step);
+        if (!prev || !next) return;
+
+        prev.style.animation = 'onboardingSlideOut 0.25s ease-in forwards';
+        setTimeout(() => {
+            prev.classList.remove('active');
+            prev.style.animation = '';
+            next.classList.add('active');
+            currentStep = step;
+            _updateOnboardingDots(step);
+        }, 250);
+    }
+
+    function _updateOnboardingDots(step) {
+        document.querySelectorAll('.onboarding-dot').forEach(d => {
+            d.classList.toggle('active', parseInt(d.dataset.step) === step);
+        });
+    }
+
+    // Botones next/back
+    const next1 = document.getElementById('onboardingNext1');
+    const next2 = document.getElementById('onboardingNext2');
+    const back2 = document.getElementById('onboardingBack2');
+    const back3 = document.getElementById('onboardingBack3');
+
+    if (next1) next1.addEventListener('click', () => goToStep(2));
+    if (next2) next2.addEventListener('click', () => goToStep(3));
+    if (back2) back2.addEventListener('click', () => goToStep(1));
+    if (back3) back3.addEventListener('click', () => goToStep(2));
+
+    // T&C → habilitar botón de activación
     const acceptTerms = document.getElementById('acceptTerms');
-    const submitBtn   = document.getElementById('btnSubmitOnboarding');
+    const submitBtn = document.getElementById('btnSubmitOnboarding');
     if (acceptTerms && submitBtn) {
         acceptTerms.addEventListener('change', () => {
             submitBtn.disabled = !acceptTerms.checked;
         });
     }
 
-    // Aceptación
+    // Aceptación final
     if (submitBtn) {
         submitBtn.addEventListener('click', () => {
             if (!acceptTerms?.checked) return;
 
             localStorage.setItem('onboarding_accepted', 'true');
-            overlay.style.display = 'none';
 
-            window.GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
-            _initCommonModules();
+            // Confetti burst 🎉
+            _launchConfetti();
 
-            try {
-                if (typeof applyProfessionalData === 'function') applyProfessionalData(profData);
-                if (typeof updatePersonalization === 'function') updatePersonalization(profData);
-                if (typeof initializeMode === 'function') initializeMode();
-            } catch (err) {
-                console.error('Error tras onboarding cliente:', err);
-            }
+            setTimeout(() => {
+                overlay.style.display = 'none';
 
-            const saludo = profData.nombre ? `¡Bienvenido/a, ${profData.nombre}! 🎉` : '¡Bienvenido/a! 🎉';
-            if (typeof showToast === 'function') showToast(saludo, 'success');
+                window.GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
+                _initCommonModules();
 
-            // Session Assistant — abrir tras onboarding
-            _launchSessionAssistant();
+                try {
+                    if (typeof applyProfessionalData === 'function') applyProfessionalData(profData);
+                    if (typeof updatePersonalization === 'function') updatePersonalization(profData);
+                    if (typeof initializeMode === 'function') initializeMode();
+                } catch (err) {
+                    console.error('Error tras onboarding cliente:', err);
+                }
+
+                // Mostrar configuración gear
+                _showSettingsGear();
+
+                const saludo = profData.nombre ? `¡Bienvenido/a, ${profData.nombre}! 🎉` : '¡Bienvenido/a! 🎉';
+                if (typeof showToast === 'function') showToast(saludo, 'success');
+
+                _launchSessionAssistant();
+            }, 800);
         });
     }
+}
+
+// ─── Partículas decorativas para onboarding ──────────────────────────────────
+function _createOnboardingParticles() {
+    const container = document.getElementById('onboardingParticles');
+    if (!container) return;
+    container.innerHTML = '';
+    const colors = ['#14b8a6', '#0f766e', '#f59e0b', '#6366f1', '#ec4899'];
+    for (let i = 0; i < 15; i++) {
+        const p = document.createElement('span');
+        p.className = 'onboarding-particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.top = 60 + Math.random() * 40 + '%';
+        p.style.background = colors[Math.floor(Math.random() * colors.length)];
+        p.style.animationDelay = Math.random() * 4 + 's';
+        p.style.animationDuration = 3 + Math.random() * 3 + 's';
+        p.style.width = 4 + Math.random() * 6 + 'px';
+        p.style.height = p.style.width;
+        container.appendChild(p);
+    }
+}
+
+// ─── Confetti burst al activar la app ────────────────────────────────────────
+function _launchConfetti() {
+    const colors = ['#14b8a6', '#0f766e', '#f59e0b', '#6366f1', '#ec4899', '#22c55e', '#ef4444'];
+    for (let i = 0; i < 50; i++) {
+        const el = document.createElement('div');
+        el.className = 'confetti-piece';
+        el.style.left = Math.random() * 100 + 'vw';
+        el.style.top = '-10px';
+        el.style.background = colors[Math.floor(Math.random() * colors.length)];
+        el.style.animationDelay = Math.random() * 0.5 + 's';
+        el.style.animationDuration = 2 + Math.random() * 2 + 's';
+        el.style.transform = 'rotate(' + Math.random() * 360 + 'deg)';
+        el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 4000);
+    }
+}
+
+// ─── Settings Gear — mostrar botón e inicializar panel ──────────────────────
+function _showSettingsGear() {
+    const btnSettings = document.getElementById('btnSettings');
+    if (btnSettings) btnSettings.style.display = '';
+    if (typeof initSettingsPanel === 'function') initSettingsPanel();
 }
 
 // ─── Helper: inicializar y abrir Session Assistant ────────────────────────────
