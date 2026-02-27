@@ -15,6 +15,7 @@ const { minify } = require('terser');
 
 // ─── Archivos JS en el orden exacto de carga de index.html ────────
 const JS_FILES = [
+    'src/js/utils/db.js',
     'src/js/config/config.js',
     'src/js/config/templates.js',
     'src/js/config/studyTerminology.js',
