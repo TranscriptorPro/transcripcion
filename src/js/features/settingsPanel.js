@@ -34,7 +34,7 @@
         _initEditorPrefs();
         _initToolsLinks();
         _initThemeSection();
-        _initStatsSection();
+        // Stats section has no interactive init — only populate
         _initBackupSection();
         _initInfoSection();
         _initModalControls();
