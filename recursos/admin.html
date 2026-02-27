@@ -3983,10 +3983,10 @@
                     const session = JSON.parse(sessionStorage.getItem('adminSession') || '{}');
                     const postPayload = {
                         action: 'admin_create_user',
-                        sessionToken:  session.token   || '',
-                        sessionUser:   session.user    || '',
-                        sessionNivel:  session.nivel   || '',
-                        sessionExpiry: session.expiry  || '',
+                        sessionToken:  session.sessionToken  || '',
+                        sessionUser:   session.username      || '',
+                        sessionNivel:  session.nivel         || '',
+                        sessionExpiry: session.tokenExpiry   || '',
                         userData: userData
                     };
 
