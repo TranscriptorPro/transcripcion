@@ -226,9 +226,6 @@ if (insertTableBtn && editor) {
 }
 
 
-    });
-}
-
 // ============ ETAPA 8: VERSIONADO / SNAPSHOTS DEL EDITOR ============
 // Guarda snapshots nombrados en localStorage (persistentes entre recargas).
 // Momentos: transcripción cruda, estructurado, edición manual (cada 5 min).

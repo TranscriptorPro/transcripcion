@@ -357,6 +357,63 @@ function _lmStartMetricsSync() {
     });
 }
 
+/* ── Protección anti-tamper ────────────────────────────────────────────────── */
+
+/**
+ * Guarda el tipo original de CLIENT_CONFIG al inicio para detectar cambios.
+ * Si alguien cambia type a 'ADMIN' en runtime → re-bloquear.
+ */
+const _lmOriginalType = (function () {
+    try {
+        return (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type) ? CLIENT_CONFIG.type : 'UNKNOWN';
+    } catch (e) { return 'UNKNOWN'; }
+})();
+
+/**
+ * Comprobación periódica de integridad:
+ * 1. Si type cambió de no-ADMIN a ADMIN → rebloquear
+ * 2. Si overlay de bloqueo fue removido sin validación → re-mostrar
+ * 3. Si _lmValidated cambió a true sin pasar por el flujo → recalibrar
+ */
+function _lmTamperGuard() {
+    // Solo aplica a usuarios no-ADMIN
+    if (_lmOriginalType === 'ADMIN') return;
+
+    setInterval(function () {
+        // 1. Detectar cambio de tipo a ADMIN
+        try {
+            if (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'ADMIN' && _lmOriginalType !== 'ADMIN') {
+                console.error('[licenseManager] Intento de escalación detectado');
+                CLIENT_CONFIG.type = _lmOriginalType;
+                _lmValidated = false;
+                _lmShowBlockedUI({ error: 'Sesión no autorizada', code: 'TAMPER' });
+            }
+        } catch (e) { /* noop */ }
+
+        // 2. Si no está validado y el overlay fue removido → re-mostrarlo
+        if (!_lmValidated && _lmLicenseData && _lmLicenseData.error) {
+            const overlay = document.getElementById('licenseBlockOverlay');
+            if (!overlay) {
+                _lmShowBlockedUI(_lmLicenseData);
+            }
+        }
+    }, 8000 + Math.random() * 4000); // Intervalo variable para dificultar predicción
+}
+
+/** Proteger funciones críticas contra sobre-escritura */
+function _lmSealFunctions() {
+    try {
+        Object.defineProperty(window, 'isLicenseValid', {
+            configurable: false,
+            writable: false
+        });
+        Object.defineProperty(window, 'validateLicense', {
+            configurable: false,
+            writable: false
+        });
+    } catch (e) { /* entorno sin soporte → no bloquear */ }
+}
+
 /* ── Inicialización ───────────────────────────────────────────────────────── */
 
 /**
@@ -369,6 +426,12 @@ window.initLicenseManager = function () {
         console.info('[licenseManager] Modo ADMIN — license manager desactivado');
         return;
     }
+
+    // Sellar funciones críticas
+    _lmSealFunctions();
+
+    // Iniciar guardia anti-tamper
+    _lmTamperGuard();
 
     // Validar licencia al cargar
     window.validateLicense().then(result => {
