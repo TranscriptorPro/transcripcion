@@ -10,22 +10,20 @@
     <meta http-equiv="Pragma" content="no-cache">
     <title>Admin Dashboard - Transcriptor Médico Pro</title>
     <script>
-    // v22 — Force SW update + purge old caches on admin pages
+    // v23 — Force SW update + purge ALL old caches on admin pages
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(regs => {
             regs.forEach(r => {
                 r.update();
-                // Force activate waiting worker
                 if (r.waiting) {
                     r.waiting.postMessage({ type: 'SKIP_WAITING' });
                 }
             });
         });
-        // Also purge any old caches directly
         if (window.caches) {
             caches.keys().then(keys => {
                 keys.forEach(k => {
-                    if (k !== 'transcriptor-pro-v22') caches.delete(k);
+                    if (k !== 'transcriptor-pro-v23') caches.delete(k);
                 });
             });
         }
@@ -755,17 +753,19 @@
         /* ── Notification ── */
         .notification {
             position: fixed;
-            top: 20px;
+            top: 80px;
             right: 20px;
-            padding: 16px 24px;
+            padding: 12px 20px;
             border-radius: 8px;
             background: white;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             font-weight: 500;
+            font-size: .85rem;
             opacity: 0;
             transform: translateY(-20px);
             transition: all 0.3s ease;
             z-index: 10000;
+            max-width: 280px;
         }
 
         .notification.show {

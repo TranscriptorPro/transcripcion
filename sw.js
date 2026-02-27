@@ -3,7 +3,7 @@
  * Cache-First para el app shell; Network-First para llamadas a la API de Groq.
  */
 
-const CACHE_NAME   = 'transcriptor-pro-v22';
+const CACHE_NAME   = 'transcriptor-pro-v23';
 const GROQ_ORIGIN  = 'api.groq.com';
 
 // Rutas que NUNCA deben cachearse (siempre network-first)
@@ -89,9 +89,10 @@ self.addEventListener('fetch', event => {
     if (event.request.method !== 'GET') return;
 
     // Network-First: rutas que NUNCA deben cachearse (admin, login, tests)
+    // cache:'no-store' bypasses browser HTTP cache entirely
     if (NEVER_CACHE.some(path => url.pathname.includes(path))) {
         event.respondWith(
-            fetch(event.request).catch(() => {
+            fetch(event.request, { cache: 'no-store' }).catch(() => {
                 // Offline: intentar cache como último recurso
                 return caches.match(event.request);
             })
