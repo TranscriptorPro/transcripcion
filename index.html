@@ -1184,12 +1184,14 @@
                     </div>
                     <!-- Panel Escribir -->
                     <div id="efPanelWrite">
-                        <!-- Opciones rápidas -->
-                        <div style="display:flex;gap:0.5rem;margin-bottom:0.6rem;flex-wrap:wrap;">
+                        <!-- Opciones rápidas fijas -->
+                        <div style="display:flex;gap:0.5rem;margin-bottom:0.4rem;flex-wrap:wrap;">
                             <button type="button" class="btn btn-outline btn-sm ef-quick-btn" data-val="s/p" title="Sin particularidades al examen">s/p</button>
                             <button type="button" class="btn btn-outline btn-sm ef-quick-btn" data-val="Sin particularidades" title="Sin particularidades">Sin particularidades</button>
                             <button type="button" class="btn btn-outline btn-sm ef-quick-btn" data-val="No evaluado" title="No evaluado en este estudio">No evaluado</button>
                         </div>
+                        <!-- Etapa 5: Chips dinámicos según el campo -->
+                        <div id="efDynamicChips" style="display:none;gap:0.4rem;margin-bottom:0.6rem;flex-wrap:wrap;"></div>
                         <textarea id="efTextInput" rows="3" style="width:100%;padding:0.6rem 0.75rem;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:0.9rem;resize:vertical;background:var(--bg-card);color:var(--text-primary);" placeholder="O escribí el texto libremente..."></textarea>
                     </div>
                     <!-- Panel Grabar -->
@@ -1887,6 +1889,9 @@
                     </button>
                     <button class="toolbar-btn" id="redoBtn" title="Rehacer (Ctrl+Y)">
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg>
+                    </button>
+                    <button class="toolbar-btn" id="btnEditorSnapshots" title="Historial de versiones">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
                     </button>
                 </div>
 

@@ -1,5 +1,5 @@
 # Transcriptor Médico Pro — Hoja de Ruta
-> Actualizado: 27 de febrero de 2026 (commit 7cc140e)  
+> Actualizado: 27 de febrero de 2026 (post-auditoría completa)  
 > Documento de planificación interna. No subir como parte del deploy.
 
 ---
@@ -67,6 +67,13 @@ https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRA
 | `update_usage` | POST | ✅ | Incrementa uso + registra en Metricas_Uso |
 | `save_diagnostic` | POST | ✅ | Cliente guarda su diagnóstico |
 | `send_email` | POST | ✅ | Envío de contacto/soporte |
+| `admin_log_action` | GET | ✅ | Registra acción en Admin_Logs |
+| `admin_list_registrations` | GET | ✅ | Lista solicitudes de registro pendientes |
+| `admin_approve_registration` | GET | ✅ | Aprueba solicitud de registro |
+| `admin_reject_registration` | GET | ✅ | Rechaza solicitud de registro |
+| `register_doctor` | POST | ✅ | Auto-registro de doctor (crea solicitud) |
+
+**Total: 19 endpoints funcionales**
 
 **6 Hojas en Google Sheets:**
 Usuarios · Metricas_Uso · Dispositivos · Admin_Logs · Diagnosticos · Admin_Users
@@ -133,90 +140,88 @@ Usuarios · Metricas_Uso · Dispositivos · Admin_Logs · Diagnosticos · Admin_
 
 ---
 
-## 🗺️ LO QUE FALTA — ETAPAS PENDIENTES
+## 🗺️ ETAPAS COMPLETADAS
 
 ---
 
-### ETAPA 4 — Historial de informes por paciente ⬅️ SIGUIENTE
+### ETAPA 4 — Historial de informes por paciente ✅
 
-**Estado:** ❌ No implementado
+**Estado:** ✅ Implementado — `reportHistory.js` (491 líneas)
 
-**Qué falta:**  
-El `patientRegistry` guarda datos del paciente (nombre, DNI, obra social, visitas) pero **no guarda los informes generados**. Si el médico quiere ver el informe de la semana pasada, no puede.
-
-**Decisiones tomadas:**
-- Sin límite de informes por paciente (hasta que se llene localStorage ~5MB)
-- Solo lectura + re-exportar a PDF (no editable)
-- Con export/import JSON como backup
-
-**Implementación planificada:**
-- Nuevo módulo `reportHistory.js`
-- Guardar en localStorage: HTML del informe + fecha + tipo de estudio + datos del paciente
-- Acceder desde el panel del registro de pacientes
-- "Ver informe" → abre en modo lectura con botón re-exportar PDF
-- Export/import JSON del historial completo
+**Lo que está hecho:**
+- `saveReportToHistory()` — guarda HTML + metadata al descargar PDF
+- `getReportById()`, `getPatientReports()`, `deleteReport()` — CRUD completo
+- `exportReportHistory()` / `importReportHistory()` — backup JSON
+- `viewReport()` — visor de lectura con re-exportar PDF
+- `initReportHistoryPanel()` — panel con tabla, búsqueda, borrar todo
+- `viewPatientReportHistory()` — integrado con panel de pacientes
+- Invocado automáticamente desde `pdfMaker.js` al descargar
 
 ---
 
-### ETAPA 5 — Autocompletado de campos con valores frecuentes
+### ETAPA 5 — Autocompletado de campos con valores frecuentes ✅
 
-**Estado:** ❌ No implementado
+**Estado:** ✅ Implementado — `editor.js` (chips dinámicos)
 
-**Qué es:**  
-Cuando hay un campo `[No especificado]` y el médico lo abre, mostrar chips con valores habituales según el campo.
-
-**Ejemplo:**
-- Campo "Preparación" → chips: "Ayuno de 8hs", "Sin preparación especial"
-- Campo "Acceso" → chips: "Oral", "Nasal", "Transanal"
-- Campo "Sexo" → chips: "Masculino", "Femenino"
-
-**Decisiones pendientes:**
-- ¿Valores fijos por campo o aprendidos del uso?
-- ¿Chips dentro del modal de edición o desplegable bajo el input?
+**Lo que está hecho:**
+- Diccionario fijo de ~35 campos médicos con sugerencias (sexo, preparación, acceso, contraste, lateralidad, ecogenicidad, etc.)
+- Aprendizaje del uso: guarda últimos 8 valores por campo en localStorage
+- Chips dinámicos renderizados en el modal de edición según el nombre del campo
+- Valores aprendidos se muestran con estilo diferenciado (borde primary)
+- Click en chip → aplica valor inmediatamente
 
 ---
 
-### ETAPA 6 — Mejoras visuales del PDF (parcialmente hecho)
+### ETAPA 6 — Mejoras visuales del PDF ✅
 
-**Lo que ya está:**
+**Estado:** ✅ Completado
+
 - ✅ Encabezado profesional con logo, nombre, especialidad, institución, matrícula, color de acento
 - ✅ Datos del paciente en tabla
 - ✅ Firma/sello con imagen
 - ✅ Pie de página configurable con fecha y paginación
-- ✅ QR en vista previa HTML
+- ✅ QR en vista previa HTML y en PDF jsPDF descargado (`addImage()`)
 - ✅ Márgenes, fuente, tamaño configurables
+- ✅ Estilo s/p en gris itálica en el PDF (`setGray(150)`, `fontSize - 1`)
 
-**Lo que falta:**
-- ❌ Estilo s/p en gris/discreto en el PDF descargado (solo aparece como texto normal)
-- ❌ QR en el PDF jsPDF descargado (solo está en la vista previa HTML)
+---
+
+### ETAPA 8 — Versionado del informe en el editor ✅
+
+**Estado:** ✅ Implementado — `editor.js` (snapshots persistentes)
+
+**Lo que está hecho:**
+- Snapshots automáticos cada 5 minutos si el editor cambió
+- Snapshot al transcribir (etiqueta "Transcripción cruda")
+- Snapshot al estructurar (etiqueta "Estructurado con IA")
+- Hasta 30 snapshots con deduplicación por hash
+- Panel de historial de versiones accesible desde toolbar (botón reloj)
+- Restaurar cualquier versión con un click (guarda estado previo antes)
+- Borrar historial completo con confirmación
+- Persistente entre recargas (localStorage)
+
+---
+
+## 🗺️ ETAPAS DIFERIDAS — Baja prioridad
 
 ---
 
 ### ETAPA 7 — Internacionalización / idioma del informe
 
-**Estado:** ❌ No implementado · Baja prioridad
+**Estado:** ❌ No implementado · Baja prioridad · Diferido
 
-Toda la UI está en español. Agregar selector de idioma (español, inglés, portugués) para el informe generado.
-
----
-
-### ETAPA 8 — Versionado del informe en el editor
-
-**Estado:** ❌ No implementado · Prioridad media
-
-Solo existe undo/redo en memoria (max 50 estados, se pierde al recargar).  
-Propuesta: guardar snapshots automáticos (texto crudo → estructurado → editado) con navegación temporal.
+Toda la UI está en español. Agregar selector de idioma (español, inglés, portugués) para el informe generado. No es necesario para el lanzamiento.
 
 ---
 
 ## 📊 RESUMEN DE PROGRESO
 
 ```
-Completado:  Features F1 (21/21) + Backend (14 endpoints) + Diccionario (54 estudios)
-             + Bugs (7/7) + UX/Settings (10 componentes) + SW v26
-Pendiente:   Etapa 4 (historial informes) · Etapa 5 (autocompletado) · Etapa 6 (2 items PDF)
-             · Etapa 7 (i18n) · Etapa 8 (versionado)
-Próximo:     Etapa 4 — Historial de informes por paciente
-Tests:       287/287 pasando
-Último push: 7cc140e — 2026-02-27
+Completado:  Features F1 (21/21) + Backend (19 endpoints) + Diccionario (54 estudios)
+             + Bugs (7/7 + 3 adicionales) + UX/Settings (11 componentes)
+             + Etapa 4 (historial informes) + Etapa 5 (autocomplete)
+             + Etapa 6 (PDF completo) + Etapa 8 (versionado)
+Diferido:    Etapa 7 (i18n) — baja prioridad
+Próximo:     Fase de revisión y medidas de seguridad
+SW:          v37
 ```

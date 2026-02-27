@@ -553,6 +553,7 @@ window.processPendingItem = async function(id) {
             const rawMarkdown = await structureWithRetry(entry.text, entry.templateKey);
             const { body } = parseAIResponse(rawMarkdown);
             editor.innerHTML = body;
+            if (typeof saveEditorSnapshot === 'function') saveEditorSnapshot('Estructurado (pendiente)', 'structuring');
             removeFromStructurePendingQueue(id);
             if (typeof showToast === 'function') showToast('✅ Texto pendiente estructurado', 'success');
             if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURED');
@@ -701,6 +702,7 @@ window.autoStructure = async function (options = {}) {
         const { body, note } = parseAIResponse(rawMarkdown);
         editor.innerHTML = body;
         window._lastStructuredHTML = body;
+        if (typeof saveEditorSnapshot === 'function') saveEditorSnapshot('Estructurado con IA', 'structuring');
         showAINote(null, null);
         const btnR = document.getElementById('btnRestoreOriginal');
         if (btnR) { btnR.style.display = ''; btnR._showingOriginal = false; btnR.innerHTML = '↩ Original'; btnR.classList.remove('toggle-active'); }
@@ -768,6 +770,7 @@ window.initStructurer = function () {
                 const { body, note } = parseAIResponse(rawMarkdown);
                 editor.innerHTML = body;
                 window._lastStructuredHTML = body;
+                if (typeof saveEditorSnapshot === 'function') saveEditorSnapshot('Re-estructurado', 'structuring');
                 // No mostrar el panel de plantilla/nota — solo el informe
                 showAINote(null, null);
                 const btnR2 = document.getElementById('btnRestoreOriginal');

@@ -348,6 +348,9 @@ if (transcribeBtn) {
             if (typeof createTabs === 'function') createTabs();
             if (typeof updateWordCount === 'function') updateWordCount();
 
+            // Etapa 8: snapshot post-transcripción
+            if (typeof saveEditorSnapshot === 'function') saveEditorSnapshot('Transcripción cruda', 'transcription');
+
             // Update state to TRANSCRIBED and populate templates for Normal mode
             if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
             if (window.currentMode === 'normal' && typeof populateLimitedTemplates === 'function') {
