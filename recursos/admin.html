@@ -3284,6 +3284,28 @@
             document.getElementById('cfBtnCopyLink')?.addEventListener('click', handleCfCopyLink);
             document.getElementById('cfBtnWhatsApp')?.addEventListener('click', handleCfWhatsApp);
             document.getElementById('cfBtnEmail')?.addEventListener('click', handleCfEmail);
+
+            // ── Gift Wizard: Drag & Drop delegado para upload zones ──
+            document.addEventListener('dragover', (e) => {
+                const zone = e.target.closest('.gw-upload-zone');
+                if (zone) { e.preventDefault(); zone.classList.add('dragover'); }
+            });
+            document.addEventListener('dragleave', (e) => {
+                const zone = e.target.closest('.gw-upload-zone');
+                if (zone) zone.classList.remove('dragover');
+            });
+            document.addEventListener('drop', (e) => {
+                const zone = e.target.closest('.gw-upload-zone');
+                if (zone) {
+                    e.preventDefault();
+                    zone.classList.remove('dragover');
+                    const input = zone.querySelector('input[type="file"]');
+                    if (e.dataTransfer.files.length && input) {
+                        input.files = e.dataTransfer.files;
+                        input.dispatchEvent(new Event('change'));
+                    }
+                }
+            });
         });
 
         // ========== NUEVO USUARIO ==========
@@ -3606,21 +3628,34 @@
             document.getElementById('giftTelefono').value = '';
             document.getElementById('giftEspecialidad').value = '';
 
-            // Reset campos gift — Paso 2 (Lugar de trabajo)
-            document.getElementById('giftWpName').value = '';
-            document.getElementById('giftWpAddress').value = '';
-            document.getElementById('giftWpPhone').value = '';
-            document.getElementById('giftWpEmail').value = '';
+            // Reset campos gift — Paso 2 (Workplaces)
+            _giftWpCounter = 0;
+            _giftWpLogoData = {};
+            const wpContainer = document.getElementById('giftWorkplacesContainer');
+            if (wpContainer) wpContainer.innerHTML = '';
+            renderGiftWorkplace(0, false); // Primer lugar (principal)
 
-            // Reset campos gift — Paso 3 (Apariencia)
+            // Reset campos gift — Paso 3 (Apariencia + Firma + Logo)
             _giftSelectedColor = '#1a56a0';
+            _giftImageData = { firma: null, proLogo: null };
             document.getElementById('giftFooterText').value = '';
             document.getElementById('giftColorPreview').style.background = '#1a56a0';
             document.querySelectorAll('#giftColorPalette .gift-color-swatch').forEach(s => {
                 s.style.border = '3px solid transparent';
+                s.style.boxShadow = 'none';
             });
             const firstSwatch = document.querySelector('#giftColorPalette .gift-color-swatch');
             if (firstSwatch) { firstSwatch.style.border = '3px solid #1a56a0'; firstSwatch.style.boxShadow = '0 0 0 2px white inset'; }
+            const firmaPreview = document.getElementById('giftFirmaPreview');
+            if (firmaPreview) firmaPreview.innerHTML = '';
+            const proLogoPreview = document.getElementById('giftProLogoPreview');
+            if (proLogoPreview) proLogoPreview.innerHTML = '';
+            const firmaInput = document.getElementById('giftFirma');
+            if (firmaInput) firmaInput.value = '';
+            const proLogoInput = document.getElementById('giftProLogo');
+            if (proLogoInput) proLogoInput.value = '';
+            const notasEl = document.getElementById('giftNotas');
+            if (notasEl) notasEl.value = '';
 
             // Wizard: empezar en paso 1
             giftGoStep(1);
@@ -3652,15 +3687,18 @@
             giftGoStep(1);
         }
 
-        // ── Gift Wizard: navegación de pasos ─────────────────────────────────
+        // ── Gift Wizard: state ──────────────────────────────────────────────
         let _giftSelectedColor = '#1a56a0';
+        let _giftWpCounter = 0;
+        let _giftWpLogoData = {};
+        let _giftImageData = { firma: null, proLogo: null };
 
+        // ── Gift Wizard: navegación de pasos ─────────────────────────────────
         function giftGoStep(step) {
             for (let i = 1; i <= 3; i++) {
                 const el = document.getElementById('giftStep' + i);
                 if (el) el.style.display = (i === step) ? 'block' : 'none';
             }
-            // Stepper dots
             document.querySelectorAll('#giftStepper .gift-step-dot').forEach(dot => {
                 const s = parseInt(dot.dataset.step);
                 dot.style.background = s <= step ? '#f59e0b' : '#e5e7eb';
@@ -3671,10 +3709,142 @@
             _giftSelectedColor = color;
             document.querySelectorAll('#giftColorPalette .gift-color-swatch').forEach(s => {
                 s.style.border = '3px solid transparent';
+                s.style.boxShadow = 'none';
             });
             el.style.border = `3px solid ${color}`;
             el.style.boxShadow = '0 0 0 2px white inset';
             document.getElementById('giftColorPreview').style.background = color;
+        }
+
+        // ── Gift Wizard: Workplace Accordion ─────────────────────────────────
+        function renderGiftWorkplace(index, collapsed) {
+            const container = document.getElementById('giftWorkplacesContainer');
+            const isMain = index === 0;
+            const div = document.createElement('div');
+            div.className = 'gw-wp-accordion' + (collapsed ? ' collapsed' : '');
+            div.id = 'gw-wp-' + index;
+            div.dataset.wpIndex = index;
+
+            div.innerHTML = `
+                <div class="gw-wp-header" onclick="toggleGiftWorkplace(${index})">
+                    <div class="gw-wp-header-info">
+                        <span class="gw-wp-badge ${isMain ? '' : 'extra'}">${isMain ? 'Principal' : 'Adicional'}</span>
+                        <span id="gwWpNameDisplay${index}">${isMain ? '🏥 Lugar de Trabajo Principal' : '🏢 Lugar adicional'}</span>
+                    </div>
+                    <div class="gw-wp-header-actions">
+                        ${!isMain ? '<button type="button" class="gw-wp-remove" onclick="event.stopPropagation();removeGiftWorkplace(' + index + ')" title="Eliminar">✕</button>' : ''}
+                        <span class="gw-wp-chevron">▾</span>
+                    </div>
+                </div>
+                <div class="gw-wp-body">
+                    <div class="gw-field-row">
+                        <div class="gw-field-group">
+                            <label>Nombre del lugar ${isMain ? '<span class="gw-req">*</span>' : ''}</label>
+                            <input type="text" id="gwWpName${index}" placeholder="Clínica San Martín" oninput="updateGiftWpName(${index})">
+                        </div>
+                        <div class="gw-field-group">
+                            <label>Dirección</label>
+                            <input type="text" id="gwWpAddress${index}" placeholder="Av. Corrientes 1234, CABA">
+                        </div>
+                    </div>
+                    <div class="gw-field-row">
+                        <div class="gw-field-group">
+                            <label>Teléfono del lugar</label>
+                            <input type="tel" id="gwWpPhone${index}" placeholder="(011) 4567-8901">
+                        </div>
+                        <div class="gw-field-group">
+                            <label>Email institucional</label>
+                            <input type="email" id="gwWpEmail${index}" placeholder="info@clinica.com">
+                        </div>
+                    </div>
+                    <div class="gw-field-group" style="margin-top:.4rem;">
+                        <label>Logo del Lugar / Institución</label>
+                        <div class="gw-upload-zone">
+                            <div class="gw-upload-icon">🖼️</div>
+                            <div class="gw-upload-text">Clic o arrastrá para subir<br><small>PNG o JPG, máx 2 MB</small></div>
+                            <input type="file" accept="image/png,image/jpeg,image/webp" onchange="previewGiftWpLogo(this, ${index})">
+                        </div>
+                        <div class="gw-upload-preview" id="gwWpLogoPreview${index}"></div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function toggleGiftWorkplace(index) {
+            const acc = document.getElementById('gw-wp-' + index);
+            if (!acc) return;
+            const wasCollapsed = acc.classList.contains('collapsed');
+            if (wasCollapsed) {
+                // Colapsar todos, expandir este
+                document.querySelectorAll('.gw-wp-accordion').forEach(a => a.classList.add('collapsed'));
+                acc.classList.remove('collapsed');
+            } else {
+                acc.classList.add('collapsed');
+            }
+        }
+
+        function addGiftWorkplace() {
+            document.querySelectorAll('.gw-wp-accordion').forEach(a => a.classList.add('collapsed'));
+            _giftWpCounter++;
+            renderGiftWorkplace(_giftWpCounter, false);
+            const el = document.getElementById('gw-wp-' + _giftWpCounter);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function removeGiftWorkplace(index) {
+            if (!confirm('¿Eliminar este lugar de trabajo?')) return;
+            const el = document.getElementById('gw-wp-' + index);
+            if (el) {
+                el.style.opacity = '0';
+                el.style.transform = 'scale(.95)';
+                el.style.transition = 'all .2s ease';
+                setTimeout(() => el.remove(), 200);
+            }
+            delete _giftWpLogoData[index];
+        }
+
+        function updateGiftWpName(index) {
+            const input = document.getElementById('gwWpName' + index);
+            const display = document.getElementById('gwWpNameDisplay' + index);
+            if (input && display) {
+                const icon = index === 0 ? '🏥' : '🏢';
+                display.textContent = input.value.trim() || (icon + ' ' + (index === 0 ? 'Lugar de Trabajo Principal' : 'Lugar adicional'));
+            }
+        }
+
+        function previewGiftWpLogo(input, index) {
+            const file = input.files[0];
+            if (!file) return;
+            if (file.size > 2 * 1024 * 1024) {
+                dashAlert('La imagen no puede superar 2 MB', '📷');
+                input.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('gwWpLogoPreview' + index).innerHTML = '<img src="' + e.target.result + '" alt="Logo">';
+                _giftWpLogoData[index] = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ── Gift Wizard: Firma/Logo preview ──────────────────────────────────
+        function previewGiftImage(input, previewId, type) {
+            const file = input.files[0];
+            if (!file) return;
+            if (file.size > 2 * 1024 * 1024) {
+                dashAlert('La imagen no puede superar 2 MB', '📷');
+                input.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const container = document.getElementById(previewId);
+                if (container) container.innerHTML = '<img src="' + e.target.result + '" alt="Preview">';
+                _giftImageData[type] = e.target.result;
+            };
+            reader.readAsDataURL(file);
         }
 
         /**
@@ -3709,15 +3879,29 @@
                     const telefono = document.getElementById('giftTelefono').value.trim();
                     const especialidad = document.getElementById('giftEspecialidad').value;
 
-                    // Lugar de trabajo
-                    const wpName = document.getElementById('giftWpName').value.trim();
-                    const wpAddress = document.getElementById('giftWpAddress').value.trim();
-                    const wpPhone = document.getElementById('giftWpPhone').value.trim();
-                    const wpEmail = document.getElementById('giftWpEmail').value.trim();
+                    // Recoger TODOS los lugares de trabajo del accordion
+                    const allWorkplaces = [];
+                    document.querySelectorAll('.gw-wp-accordion').forEach(acc => {
+                        const idx = acc.dataset.wpIndex;
+                        allWorkplaces.push({
+                            name:    (document.getElementById('gwWpName' + idx) || {}).value?.trim() || '',
+                            address: (document.getElementById('gwWpAddress' + idx) || {}).value?.trim() || '',
+                            phone:   (document.getElementById('gwWpPhone' + idx) || {}).value?.trim() || '',
+                            email:   (document.getElementById('gwWpEmail' + idx) || {}).value?.trim() || '',
+                            logo:    _giftWpLogoData[idx] || null
+                        });
+                    });
 
                     // Apariencia PDF
                     const headerColor = _giftSelectedColor || '#1a56a0';
                     const footerText = document.getElementById('giftFooterText').value.trim();
+
+                    // Firma y Logo profesional
+                    const firma = _giftImageData.firma || null;
+                    const proLogo = _giftImageData.proLogo || null;
+
+                    // Notas
+                    const notas = (document.getElementById('giftNotas') || {}).value?.trim() || '';
 
                     if (!nombre) {
                         dashAlert('Ingresá el nombre del usuario', '⚠️');
@@ -3744,11 +3928,15 @@
                     venc.setFullYear(venc.getFullYear() + 1);
                     const fechaVenc = venc.toISOString().split('T')[0];
 
-                    // Datos enriquecidos (workplace + apariencia) → se precargan en la app
+                    // Datos enriquecidos (workplaces + apariencia + firma + logo) → se precargan en la app
                     const registroDatos = {
-                        workplace: { name: wpName, address: wpAddress, phone: wpPhone, email: wpEmail },
+                        workplace: allWorkplaces[0] || {},
+                        extraWorkplaces: allWorkplaces.slice(1),
                         headerColor: headerColor,
-                        footerText: footerText
+                        footerText: footerText,
+                        firma: firma,
+                        proLogo: proLogo,
+                        notas: notas
                     };
 
                     const userData = {
@@ -3769,7 +3957,7 @@
                         Devices_Logged: '[]',
                         Diagnostico_Pendiente: 'false',
                         Registro_Datos: JSON.stringify(registroDatos),
-                        Notas_Admin: '🎁 Usuario regalo — creado desde Fábrica de Clones'
+                        Notas_Admin: '🎁 Usuario regalo — creado desde Fábrica de Clones' + (notas ? ' | ' + notas : '')
                     };
 
                     // Crear usuario en el backend
@@ -5053,7 +5241,44 @@
                     </div>
                 </div>
 
-                <!-- ═══ MODO GIFT: Wizard completo ═══ -->
+                <!-- ═══ MODO GIFT: Wizard completo (igual que registro.html) ═══ -->
+                <style>
+                    /* ── Gift Wizard: Workplace Accordion ── */
+                    .gw-wp-accordion { background:#fff; border-radius:10px; box-shadow:0 1px 3px rgba(0,0,0,.08); border:1px solid #e2e8f0; margin-bottom:.6rem; overflow:hidden; transition:all .3s ease; }
+                    .gw-wp-accordion.collapsed .gw-wp-body { display:none; }
+                    .gw-wp-header { display:flex; justify-content:space-between; align-items:center; padding:.7rem 1rem; cursor:pointer; background:#f8fafc; border-bottom:1px solid #e2e8f0; transition:background .2s; user-select:none; }
+                    .gw-wp-header:hover { background:#f0fdf4; }
+                    .gw-wp-accordion.collapsed .gw-wp-header { border-bottom:none; }
+                    .gw-wp-header-info { display:flex; align-items:center; gap:.5rem; font-weight:600; font-size:.82rem; }
+                    .gw-wp-badge { background:#0f766e; color:white; font-size:.65rem; padding:1px 7px; border-radius:8px; font-weight:600; }
+                    .gw-wp-badge.extra { background:#f59e0b; }
+                    .gw-wp-header-actions { display:flex; align-items:center; gap:.5rem; }
+                    .gw-wp-chevron { font-size:.75rem; color:#94a3b8; transition:transform .3s; }
+                    .gw-wp-accordion.collapsed .gw-wp-chevron { transform:rotate(-90deg); }
+                    .gw-wp-remove { background:none; border:none; color:#ef4444; cursor:pointer; font-size:.8rem; padding:2px 5px; border-radius:4px; opacity:.7; transition:opacity .2s; }
+                    .gw-wp-remove:hover { opacity:1; }
+                    .gw-wp-body { padding:1rem; animation:gwSlideDown .3s ease; }
+                    @keyframes gwSlideDown { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+                    .gw-btn-add-wp { display:flex; align-items:center; justify-content:center; gap:.4rem; width:100%; padding:9px; border:2px dashed #e2e8f0; border-radius:10px; background:transparent; color:#0f766e; font-weight:600; font-size:.8rem; cursor:pointer; transition:all .2s; margin-bottom:.6rem; }
+                    .gw-btn-add-wp:hover { border-color:#0f766e; background:#f0fdf4; }
+                    /* ── Gift Wizard: Upload Zone ── */
+                    .gw-upload-zone { border:2px dashed #e2e8f0; border-radius:8px; padding:.8rem; text-align:center; cursor:pointer; transition:all .2s; background:#fafbfc; position:relative; }
+                    .gw-upload-zone:hover, .gw-upload-zone.dragover { border-color:#0f766e; background:#f0fdf4; }
+                    .gw-upload-zone .gw-upload-icon { font-size:1.4rem; margin-bottom:.2rem; }
+                    .gw-upload-zone .gw-upload-text { font-size:.75rem; color:#94a3b8; }
+                    .gw-upload-zone input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; }
+                    .gw-upload-preview { margin-top:6px; text-align:center; }
+                    .gw-upload-preview img { max-height:60px; border-radius:6px; border:1px solid #e2e8f0; }
+                    .gw-field-row { display:grid; grid-template-columns:1fr 1fr; gap:.5rem; margin-bottom:.5rem; }
+                    .gw-field-group { margin-bottom:.3rem; }
+                    .gw-field-group label { font-size:.75rem; color:#64748b; font-weight:600; display:block; margin-bottom:2px; }
+                    .gw-field-group label .gw-req { color:#ef4444; }
+                    .gw-field-group input, .gw-field-group select, .gw-field-group textarea { width:100%; padding:6px 9px; border:1px solid #d1d5db; border-radius:7px; font-size:.8rem; font-family:inherit; }
+                    .gw-field-group textarea { resize:vertical; }
+                    .gw-card { background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:.8rem 1rem; margin-bottom:.6rem; }
+                    .gw-section-title { font-size:.82rem; font-weight:700; color:#334155; margin:0 0 .3rem; }
+                    .gw-section-sub { font-size:.72rem; color:#94a3b8; margin:0 0 .5rem; }
+                </style>
                 <div id="cfModeGift" style="display:none;">
                     <!-- Badge regalo -->
                     <div style="background:linear-gradient(135deg,#fef3c7,#fde68a);border:2px solid #f59e0b;border-radius:12px;padding:.6rem 1rem;margin-bottom:.8rem;text-align:center;">
@@ -5062,95 +5287,151 @@
                         <p style="margin:0;font-size:.72rem;color:#a16207;">TODAS las plantillas · 10 dispositivos · Plan GIFT · 1 año</p>
                     </div>
 
-                    <!-- Stepper visual -->
+                    <!-- Stepper visual (3 pasos) -->
                     <div id="giftStepper" style="display:flex;justify-content:center;gap:.3rem;margin-bottom:.8rem;">
                         <div class="gift-step-dot active" data-step="1" style="width:28px;height:4px;border-radius:3px;background:#f59e0b;transition:all .3s;cursor:pointer;" onclick="giftGoStep(1)"></div>
                         <div class="gift-step-dot" data-step="2" style="width:28px;height:4px;border-radius:3px;background:#e5e7eb;transition:all .3s;cursor:pointer;" onclick="giftGoStep(2)"></div>
                         <div class="gift-step-dot" data-step="3" style="width:28px;height:4px;border-radius:3px;background:#e5e7eb;transition:all .3s;cursor:pointer;" onclick="giftGoStep(3)"></div>
                     </div>
 
+                    <!-- ══════════════════════════════════════════════════════════ -->
                     <!-- ── PASO 1: Datos del Profesional ── -->
+                    <!-- ══════════════════════════════════════════════════════════ -->
                     <div id="giftStep1">
-                        <p style="font-size:.82rem;font-weight:600;color:#334155;margin:0 0 .5rem;">👤 Paso 1 — Datos del Profesional</p>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.6rem;">
-                            <div>
-                                <label style="font-size:.78rem;color:#64748b;font-weight:600;display:block;margin-bottom:2px;">Nombre y Apellido *</label>
-                                <input type="text" id="giftNombre" placeholder="Dr. Juan Pérez" style="width:100%;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.84rem;">
+                        <p class="gw-section-title">👤 Paso 1 — Datos del Profesional</p>
+                        <div class="gw-field-row">
+                            <div class="gw-field-group">
+                                <label>Nombre y Apellido <span class="gw-req">*</span></label>
+                                <input type="text" id="giftNombre" placeholder="Dr. Juan Pérez">
                             </div>
-                            <div>
-                                <label style="font-size:.78rem;color:#64748b;font-weight:600;display:block;margin-bottom:2px;">Email *</label>
-                                <input type="email" id="giftEmail" placeholder="doctor@example.com" style="width:100%;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.84rem;">
-                            </div>
-                            <div>
-                                <label style="font-size:.78rem;color:#64748b;font-weight:600;display:block;margin-bottom:2px;">Matrícula</label>
-                                <input type="text" id="giftMatricula" placeholder="MN 12345" style="width:100%;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.84rem;">
-                            </div>
-                            <div>
-                                <label style="font-size:.78rem;color:#64748b;font-weight:600;display:block;margin-bottom:2px;">Teléfono</label>
-                                <input type="tel" id="giftTelefono" placeholder="+54 9 11 1234-5678" style="width:100%;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.84rem;">
+                            <div class="gw-field-group">
+                                <label>Email <span class="gw-req">*</span></label>
+                                <input type="email" id="giftEmail" placeholder="doctor@example.com">
                             </div>
                         </div>
-                        <div style="margin-bottom:.6rem;">
-                            <label style="font-size:.78rem;color:#64748b;font-weight:600;display:block;margin-bottom:2px;">🩺 Especialidad</label>
-                            <select id="giftEspecialidad" style="width:100%;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.84rem;background:#fff;">
+                        <div class="gw-field-row">
+                            <div class="gw-field-group">
+                                <label>Matrícula</label>
+                                <input type="text" id="giftMatricula" placeholder="MN 12345">
+                            </div>
+                            <div class="gw-field-group">
+                                <label>Teléfono</label>
+                                <input type="tel" id="giftTelefono" placeholder="+54 9 11 1234-5678">
+                            </div>
+                        </div>
+                        <div class="gw-field-group">
+                            <label>🩺 Especialidad</label>
+                            <select id="giftEspecialidad">
                                 <option value="">— Seleccioná —</option>
                             </select>
                         </div>
-                        <div style="text-align:right;">
+                        <div style="text-align:right;margin-top:.5rem;">
                             <button type="button" class="btn-primary" onclick="giftGoStep(2)" style="padding:7px 20px;font-size:.84rem;">Siguiente →</button>
                         </div>
                     </div>
 
-                    <!-- ── PASO 2: Lugar de Trabajo ── -->
+                    <!-- ══════════════════════════════════════════════════════════ -->
+                    <!-- ── PASO 2: Lugares de Trabajo (múltiples, con accordion) ── -->
+                    <!-- ══════════════════════════════════════════════════════════ -->
                     <div id="giftStep2" style="display:none;">
-                        <p style="font-size:.82rem;font-weight:600;color:#334155;margin:0 0 .5rem;">🏥 Paso 2 — Lugar de Trabajo</p>
-                        <p style="font-size:.75rem;color:#94a3b8;margin:0 0 .5rem;">Estos datos aparecen en el encabezado de los informes del usuario.</p>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.6rem;">
-                            <div>
-                                <label style="font-size:.78rem;color:#64748b;font-weight:600;display:block;margin-bottom:2px;">Nombre del lugar *</label>
-                                <input type="text" id="giftWpName" placeholder="Clínica San Martín" style="width:100%;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.84rem;">
-                            </div>
-                            <div>
-                                <label style="font-size:.78rem;color:#64748b;font-weight:600;display:block;margin-bottom:2px;">Dirección</label>
-                                <input type="text" id="giftWpAddress" placeholder="Av. Corrientes 1234, CABA" style="width:100%;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.84rem;">
-                            </div>
-                            <div>
-                                <label style="font-size:.78rem;color:#64748b;font-weight:600;display:block;margin-bottom:2px;">Teléfono del lugar</label>
-                                <input type="tel" id="giftWpPhone" placeholder="(011) 4567-8901" style="width:100%;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.84rem;">
-                            </div>
-                            <div>
-                                <label style="font-size:.78rem;color:#64748b;font-weight:600;display:block;margin-bottom:2px;">Email institucional</label>
-                                <input type="email" id="giftWpEmail" placeholder="info@clinica.com" style="width:100%;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.84rem;">
-                            </div>
+                        <p class="gw-section-title">🏥 Paso 2 — Lugares de Trabajo</p>
+                        <p class="gw-section-sub">Configurá el/los lugar/es de trabajo. Estos datos aparecen en el encabezado de los informes.</p>
+
+                        <div id="giftWorkplacesContainer">
+                            <!-- Rendered by JS: renderGiftWorkplace() -->
                         </div>
-                        <div style="display:flex;justify-content:space-between;">
+
+                        <button type="button" class="gw-btn-add-wp" onclick="addGiftWorkplace()">
+                            ➕ Agregar otro lugar de trabajo
+                        </button>
+
+                        <div style="display:flex;justify-content:space-between;margin-top:.3rem;">
                             <button type="button" class="btn-secondary" onclick="giftGoStep(1)" style="padding:7px 16px;font-size:.84rem;">← Anterior</button>
                             <button type="button" class="btn-primary" onclick="giftGoStep(3)" style="padding:7px 20px;font-size:.84rem;">Siguiente →</button>
                         </div>
                     </div>
 
-                    <!-- ── PASO 3: Apariencia PDF + API Key ── -->
+                    <!-- ══════════════════════════════════════════════════════════ -->
+                    <!-- ── PASO 3: Apariencia PDF + Firma + Logo Pro ── -->
+                    <!-- ══════════════════════════════════════════════════════════ -->
                     <div id="giftStep3" style="display:none;">
-                        <p style="font-size:.82rem;font-weight:600;color:#334155;margin:0 0 .5rem;">🎨 Paso 3 — Apariencia del Informe</p>
-                        <!-- Color palette -->
-                        <div style="margin-bottom:.6rem;">
-                            <label style="font-size:.78rem;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Color del encabezado</label>
-                            <div id="giftColorPalette" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
-                                <div onclick="selectGiftColor('#1a56a0',this)" style="width:32px;height:32px;border-radius:8px;background:#1a56a0;cursor:pointer;border:3px solid #1a56a0;box-shadow:0 0 0 2px white inset;" title="Azul" class="gift-color-swatch selected"></div>
-                                <div onclick="selectGiftColor('#0f766e',this)" style="width:32px;height:32px;border-radius:8px;background:#0f766e;cursor:pointer;border:3px solid transparent;" title="Verde" class="gift-color-swatch"></div>
-                                <div onclick="selectGiftColor('#db2777',this)" style="width:32px;height:32px;border-radius:8px;background:#db2777;cursor:pointer;border:3px solid transparent;" title="Rosa" class="gift-color-swatch"></div>
-                                <div onclick="selectGiftColor('#1e293b',this)" style="width:32px;height:32px;border-radius:8px;background:#1e293b;cursor:pointer;border:3px solid transparent;" title="Negro" class="gift-color-swatch"></div>
-                                <div onclick="selectGiftColor('#b8860b',this)" style="width:32px;height:32px;border-radius:8px;background:#b8860b;cursor:pointer;border:3px solid transparent;" title="Dorado" class="gift-color-swatch"></div>
-                                <div onclick="selectGiftColor('#708090',this)" style="width:32px;height:32px;border-radius:8px;background:#708090;cursor:pointer;border:3px solid transparent;" title="Plateado" class="gift-color-swatch"></div>
+                        <!-- Color del encabezado -->
+                        <div class="gw-card">
+                            <p class="gw-section-title">🎨 Apariencia del Informe</p>
+                            <p class="gw-section-sub">Estos ajustes definen cómo se ven los informes en PDF e impresión.</p>
+                            <div class="gw-field-group">
+                                <label>Color del encabezado del informe</label>
+                                <div id="giftColorPalette" style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 4px;">
+                                    <div style="text-align:center;">
+                                        <div onclick="selectGiftColor('#1a56a0',this)" style="width:32px;height:32px;border-radius:8px;background:#1a56a0;cursor:pointer;border:3px solid #1a56a0;box-shadow:0 0 0 2px white inset;" title="Azul" class="gift-color-swatch selected"></div>
+                                        <span style="font-size:.6rem;color:#94a3b8;">Azul</span>
+                                    </div>
+                                    <div style="text-align:center;">
+                                        <div onclick="selectGiftColor('#0f766e',this)" style="width:32px;height:32px;border-radius:8px;background:#0f766e;cursor:pointer;border:3px solid transparent;" title="Verde" class="gift-color-swatch"></div>
+                                        <span style="font-size:.6rem;color:#94a3b8;">Verde</span>
+                                    </div>
+                                    <div style="text-align:center;">
+                                        <div onclick="selectGiftColor('#db2777',this)" style="width:32px;height:32px;border-radius:8px;background:#db2777;cursor:pointer;border:3px solid transparent;" title="Rosa" class="gift-color-swatch"></div>
+                                        <span style="font-size:.6rem;color:#94a3b8;">Rosa</span>
+                                    </div>
+                                    <div style="text-align:center;">
+                                        <div onclick="selectGiftColor('#1e293b',this)" style="width:32px;height:32px;border-radius:8px;background:#1e293b;cursor:pointer;border:3px solid transparent;" title="Negro" class="gift-color-swatch"></div>
+                                        <span style="font-size:.6rem;color:#94a3b8;">Negro</span>
+                                    </div>
+                                    <div style="text-align:center;">
+                                        <div onclick="selectGiftColor('#b8860b',this)" style="width:32px;height:32px;border-radius:8px;background:#b8860b;cursor:pointer;border:3px solid transparent;" title="Dorado" class="gift-color-swatch"></div>
+                                        <span style="font-size:.6rem;color:#94a3b8;">Dorado</span>
+                                    </div>
+                                    <div style="text-align:center;">
+                                        <div onclick="selectGiftColor('#708090',this)" style="width:32px;height:32px;border-radius:8px;background:#708090;cursor:pointer;border:3px solid transparent;" title="Plateado" class="gift-color-swatch"></div>
+                                        <span style="font-size:.6rem;color:#94a3b8;">Plateado</span>
+                                    </div>
+                                </div>
+                                <div id="giftColorPreview" style="height:6px;border-radius:3px;background:#1a56a0;transition:background .3s;"></div>
+                                <small style="font-size:.68rem;color:#94a3b8;">Se aplica al banner superior de cada página del informe</small>
                             </div>
-                            <div id="giftColorPreview" style="height:6px;border-radius:3px;background:#1a56a0;transition:background .3s;"></div>
+                            <div class="gw-field-group" style="margin-top:.5rem;">
+                                <label>Texto del pie de página</label>
+                                <input type="text" id="giftFooterText" placeholder="Consultorio médico — Tel: (011) 4567-8901">
+                                <small style="font-size:.68rem;color:#94a3b8;">Aparece en todas las páginas, abajo</small>
+                            </div>
                         </div>
-                        <!-- Footer text -->
-                        <div style="margin-bottom:.6rem;">
-                            <label style="font-size:.78rem;color:#64748b;font-weight:600;display:block;margin-bottom:2px;">Texto del pie de página</label>
-                            <input type="text" id="giftFooterText" placeholder="Consultorio médico — Tel: (011) 4567-8901" style="width:100%;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.84rem;">
+
+                        <!-- Firma -->
+                        <div class="gw-card">
+                            <p class="gw-section-title">✍️ Firma</p>
+                            <p class="gw-section-sub">Imagen de firma escaneada. Aparece al pie de cada informe.</p>
+                            <div class="gw-field-row">
+                                <div class="gw-field-group">
+                                    <label>Imagen de Firma</label>
+                                    <div class="gw-upload-zone" id="giftFirmaDropZone">
+                                        <div class="gw-upload-icon">✍️</div>
+                                        <div class="gw-upload-text">Clic o arrastrá para subir<br><small>PNG con fondo transparente ideal</small></div>
+                                        <input type="file" id="giftFirma" accept="image/png,image/jpeg,image/webp" onchange="previewGiftImage(this, 'giftFirmaPreview', 'firma')">
+                                    </div>
+                                    <div class="gw-upload-preview" id="giftFirmaPreview"></div>
+                                </div>
+                                <div class="gw-field-group">
+                                    <label>Logo Profesional</label>
+                                    <div class="gw-upload-zone" id="giftProLogoDropZone">
+                                        <div class="gw-upload-icon">🩺</div>
+                                        <div class="gw-upload-text">Logo personal (opcional)<br><small>Si diferente del lugar</small></div>
+                                        <input type="file" id="giftProLogo" accept="image/png,image/jpeg,image/webp" onchange="previewGiftImage(this, 'giftProLogoPreview', 'proLogo')">
+                                    </div>
+                                    <div class="gw-upload-preview" id="giftProLogoPreview"></div>
+                                </div>
+                            </div>
                         </div>
-                        <!-- Auto-config reminder -->
+
+                        <!-- Notas -->
+                        <div class="gw-card">
+                            <p class="gw-section-title">📝 Notas adicionales</p>
+                            <div class="gw-field-group">
+                                <textarea id="giftNotas" rows="2" placeholder="Algún dato extra que quieras comunicar..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Resumen plan -->
                         <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.5rem .8rem;margin-bottom:.6rem;">
                             <div style="display:flex;gap:.8rem;font-size:.73rem;color:#166534;flex-wrap:wrap;">
                                 <span>🏷️ Plan: <strong>GIFT</strong></span>

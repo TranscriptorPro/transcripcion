@@ -522,29 +522,72 @@ async function _handleFactorySetup(medicoId) {
             try {
                 const wp = typeof regDatos.workplace === 'string' ? JSON.parse(regDatos.workplace) : regDatos.workplace;
                 if (wp && wp.name) {
+                    // Construir perfil del profesional para cada lugar
+                    const buildProfessional = () => ({
+                        nombre:          doctor.Nombre    || '',
+                        matricula:       doctor.Matricula || '',
+                        especialidades:  doctor.Especialidad || '',
+                        telefono:        doctor.Telefono  || '',
+                        email:           doctor.Email     || '',
+                        firma:           regDatos.firma   || '',
+                        logo:            regDatos.proLogo || ''
+                    });
+
                     const workplaceProfiles = [{
                         name:    wp.name    || '',
                         address: wp.address || '',
                         phone:   wp.phone   || '',
                         email:   wp.email   || '',
                         footer:  regDatos.footerText || '',
-                        logo:    '',  // logo/images se configuran desde la app
-                        professionals: [{
-                            nombre:          doctor.Nombre    || '',
-                            matricula:       doctor.Matricula || '',
-                            especialidades:  doctor.Especialidad || '',
-                            telefono:        doctor.Telefono  || '',
-                            email:           doctor.Email     || '',
-                            firma:           '',
-                            logo:            ''
-                        }]
+                        logo:    wp.logo    || '',
+                        professionals: [buildProfessional()]
                     }];
+
+                    // Agregar workplaces extras (si existen)
+                    let extras = regDatos.extraWorkplaces || [];
+                    if (typeof extras === 'string') {
+                        try { extras = JSON.parse(extras); } catch(_) { extras = []; }
+                    }
+                    if (Array.isArray(extras)) {
+                        extras.forEach(ewp => {
+                            if (ewp && ewp.name) {
+                                workplaceProfiles.push({
+                                    name:    ewp.name    || '',
+                                    address: ewp.address || '',
+                                    phone:   ewp.phone   || '',
+                                    email:   ewp.email   || '',
+                                    footer:  regDatos.footerText || '',
+                                    logo:    ewp.logo    || '',
+                                    professionals: [buildProfessional()]
+                                });
+                            }
+                        });
+                    }
+
                     localStorage.setItem('workplace_profiles', JSON.stringify(workplaceProfiles));
 
                     // Actualizar prof_data con workplace
                     profData.workplace = wp.name || '';
                     localStorage.setItem('prof_data', JSON.stringify(profData));
                 }
+            } catch(_) {}
+        }
+
+        // Firma del profesional (base64)
+        if (regDatos.firma) {
+            try {
+                const existingConfig = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+                existingConfig.signature = regDatos.firma;
+                localStorage.setItem('pdf_config', JSON.stringify(existingConfig));
+            } catch(_) {}
+        }
+
+        // Logo profesional (base64)
+        if (regDatos.proLogo) {
+            try {
+                const existingConfig = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+                existingConfig.professionalLogo = regDatos.proLogo;
+                localStorage.setItem('pdf_config', JSON.stringify(existingConfig));
             } catch(_) {}
         }
 
