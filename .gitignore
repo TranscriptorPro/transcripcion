@@ -26,4 +26,4 @@ Thumbs.db
 *.log
 
 # Test output (keep audit_diagnostic.js but ignore generated reports)
-anexos/tests/audit_report.json
+tests/audit_report.json

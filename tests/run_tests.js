@@ -59,7 +59,7 @@ const fs   = require('fs');
 const path = require('path');
 const vm   = require('vm');
 
-const root = path.join(__dirname, '..', '..');
+const root = path.join(__dirname, '..');
 
 // Crear un contexto VM compartido que tiene acceso a todos los globals que definimos arriba
 const ctx = vm.createContext(global);
