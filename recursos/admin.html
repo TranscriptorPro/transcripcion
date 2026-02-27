@@ -7,6 +7,14 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Admin Dashboard - Transcriptor Médico Pro</title>
+    <script>
+    // Force SW update on admin pages
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(regs => {
+            regs.forEach(r => r.update());
+        });
+    }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -3655,10 +3663,14 @@
 
                     if (!nombre) {
                         dashAlert('Ingresá el nombre del usuario', '⚠️');
+                        btn.disabled = false;
+                        btn.textContent = originalText;
                         return;
                     }
                     if (!email) {
                         dashAlert('Ingresá el email del usuario', '⚠️');
+                        btn.disabled = false;
+                        btn.textContent = originalText;
                         return;
                     }
 
