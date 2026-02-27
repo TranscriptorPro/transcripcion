@@ -3976,12 +3976,34 @@
                         Notas_Admin: '🎁 Usuario regalo — creado desde Fábrica de Clones' + (notas ? ' | ' + notas : '')
                     };
 
-                    // Crear usuario en el backend
-                    const createUrl = `${CONFIG.scriptUrl}?action=admin_create_user&${_getSessionAuthParams()}&updates=${encodeURIComponent(JSON.stringify(userData))}`;
-                    const resp = await fetch(createUrl);
+                    // Mostrar barra de progreso
+                    _showGiftProgress('Conectando con el servidor...', 20);
+
+                    // Crear usuario en el backend via POST (soporta payloads grandes con imágenes)
+                    const session = JSON.parse(sessionStorage.getItem('adminSession') || '{}');
+                    const postPayload = {
+                        action: 'admin_create_user',
+                        sessionToken:  session.token   || '',
+                        sessionUser:   session.user    || '',
+                        sessionNivel:  session.nivel   || '',
+                        sessionExpiry: session.expiry  || '',
+                        userData: userData
+                    };
+
+                    _showGiftProgress('Enviando datos del usuario...', 45);
+
+                    const resp = await fetch(CONFIG.scriptUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: JSON.stringify(postPayload)
+                    });
+
+                    _showGiftProgress('Procesando respuesta...', 75);
                     const result = await resp.json();
 
                     if (result.error) throw new Error(result.error);
+
+                    _showGiftProgress('¡Usuario creado! Generando link...', 100);
 
                     userId = newId;
                     userName = nombre;
@@ -4032,11 +4054,29 @@
                 }
 
             } catch (err) {
+                _hideGiftProgress();
                 dashAlert('Error: ' + err.message, '❌');
             } finally {
                 btn.disabled = false;
                 btn.textContent = originalText;
+                // Ocultar progress después de un momento
+                setTimeout(() => _hideGiftProgress(), 1500);
             }
+        }
+
+        // ── Barra de progreso del Gift ──────────────────────────────
+        function _showGiftProgress(text, percent) {
+            let bar = document.getElementById('giftProgressBar');
+            if (!bar) return;
+            bar.style.display = 'block';
+            const fill = bar.querySelector('.gw-progress-fill');
+            const label = bar.querySelector('.gw-progress-label');
+            if (fill) { fill.style.width = percent + '%'; }
+            if (label) { label.textContent = text; }
+        }
+        function _hideGiftProgress() {
+            const bar = document.getElementById('giftProgressBar');
+            if (bar) bar.style.display = 'none';
         }
 
         // Botón Copiar Link
@@ -5486,6 +5526,16 @@
                     <div id="cfApiKeyNotice" style="display:none;background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:8px 10px;margin-top:10px;">
                         <p style="font-size:.78rem;color:#78350f;margin:0;">⚠️ <strong>Importante:</strong> Antes de enviar el link, asegurate de haber guardado la API Key del usuario en el Sheet (columna API_Key). Si no la configuraste acá, el usuario deberá ingresarla manualmente.</p>
                     </div>
+                </div>
+            </div>
+            <!-- Barra de progreso Gift -->
+            <div id="giftProgressBar" style="display:none;padding:0 1.25rem .5rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <span class="gw-progress-label" style="font-size:.78rem;color:#64748b;font-weight:500;">Procesando...</span>
+                    <span style="font-size:.72rem;color:#94a3b8;">⏳</span>
+                </div>
+                <div style="height:8px;background:#e5e7eb;border-radius:6px;overflow:hidden;">
+                    <div class="gw-progress-fill" style="height:100%;width:0%;background:linear-gradient(90deg,#f59e0b,#10b981);border-radius:6px;transition:width .5s ease;"></div>
                 </div>
             </div>
             <div class="modal-footer">

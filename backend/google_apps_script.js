@@ -832,6 +832,35 @@ function doPost(e) {
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
 
+  // ── admin_create_user via POST (soporta payloads grandes con imágenes base64) ──
+  if (action === 'admin_create_user') {
+    // Auth check: sessionToken, sessionUser, sessionNivel, sessionExpiry from payload
+    const authParam = {
+      sessionToken:  payload.sessionToken  || '',
+      sessionUser:   payload.sessionUser   || '',
+      sessionNivel:  payload.sessionNivel  || '',
+      sessionExpiry: payload.sessionExpiry || ''
+    };
+    const auth = _verifyAdminAuth(authParam);
+    if (!auth.authorized) return createResponse({ error: auth.error });
+
+    const userData = payload.userData || {};
+    if (!userData.ID_Medico) return createResponse({ error: 'Falta ID_Medico' });
+
+    // Verificar que el ID no exista ya
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0]) === String(userData.ID_Medico)) {
+        return createResponse({ error: 'ID_Medico ya existe: ' + userData.ID_Medico });
+      }
+    }
+
+    // Construir fila siguiendo el orden de los headers
+    const row = headers.map(h => (userData[h] !== undefined ? userData[h] : ''));
+    sheet.appendRow(row);
+    appendAdminLog(payload.sessionUser || 'admin', 'create_user', userData.ID_Medico, userData.Nombre || '');
+    return createResponse({ success: true, userId: userData.ID_Medico });
+  }
+
   // save_diagnostic — guarda el diagnóstico del cliente en la hoja Diagnosticos
   if (action === 'save_diagnostic') {
     const id = payload.id || 'unknown';
