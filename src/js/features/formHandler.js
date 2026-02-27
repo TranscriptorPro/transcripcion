@@ -85,9 +85,11 @@ window.extractPatientDataFromText = function (text) {
 // ---- Report numbering ----
 window.generateReportNumber = function () {
     const year = new Date().getFullYear();
-    let counter = parseInt(localStorage.getItem('report_counter_' + year) || '0');
+    const key = 'report_counter_' + year;
+    let counter = parseInt(localStorage.getItem(key) || '0');
     counter++;
-    localStorage.setItem('report_counter_' + year, counter);
+    if (typeof appDB !== 'undefined') appDB.set(key, counter);
+    localStorage.setItem(key, counter);
     return `${year}-${String(counter).padStart(4, '0')}`;
 }
 
@@ -101,11 +103,15 @@ window.handleImageUpload = function (inputId, previewId, storageKey) {
             const dataUrl = event.target.result;
             const preview = document.getElementById(previewId);
             if (preview) preview.innerHTML = `<img src="${dataUrl}" alt="Preview" style="max-height:80px;">`;
-            try {
-                localStorage.setItem(storageKey, dataUrl);
-            } catch (storageErr) {
-                console.error('Storage error:', storageErr);
-                if (typeof showToast === 'function') showToast('No se pudo guardar la imagen (almacenamiento lleno)', 'error');
+            if (typeof appDB !== 'undefined') {
+                appDB.set(storageKey, dataUrl);
+            } else {
+                try {
+                    localStorage.setItem(storageKey, dataUrl);
+                } catch (storageErr) {
+                    console.error('Storage error:', storageErr);
+                    if (typeof showToast === 'function') showToast('No se pudo guardar la imagen (almacenamiento lleno)', 'error');
+                }
             }
         };
         reader.readAsDataURL(file);
@@ -118,7 +124,7 @@ window.savePdfConfiguration = function () {
     const chk = (id, def) => document.getElementById(id)?.checked ?? def;
 
     // Preservar datos del profesional activo que fueron seteados por business.js
-    const existing = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+    const existing = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
 
     const config = {
         studyType: val('pdfStudyType'),
@@ -163,12 +169,16 @@ window.savePdfConfiguration = function () {
     if (existing.activeProfessionalIndex !== undefined) config.activeProfessionalIndex = existing.activeProfessionalIndex;
     if (existing.activeWorkplaceIndex    !== undefined) config.activeWorkplaceIndex    = existing.activeWorkplaceIndex;
 
-    localStorage.setItem('pdf_config', JSON.stringify(config));
+    window._pdfConfigCache = config;
+    if (typeof appDB !== 'undefined') appDB.set('pdf_config', config);
+    else localStorage.setItem('pdf_config', JSON.stringify(config));
     if (typeof showToast === 'function') showToast('💾 Configuración PDF guardada', 'success');
 }
 
-window.loadPdfConfiguration = function () {
-    const config = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+window.loadPdfConfiguration = async function () {
+    const config = (typeof appDB !== 'undefined' ? await appDB.get('pdf_config') : null)
+        || window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
+    window._pdfConfigCache = config;
     const set = (id, v) => { if (v !== undefined && v !== null) { const el = document.getElementById(id); if (el) el.value = v; } };
     const setChk = (id, v, def) => { const el = document.getElementById(id); if (el) el.checked = (v !== undefined) ? v : def; };
 
@@ -208,12 +218,12 @@ window.loadPdfConfiguration = function () {
     set('pdfWorkplaceEmail', config.workplaceEmail);
 
     // Restore logo preview
-    const savedLogo = localStorage.getItem('pdf_logo');
+    const savedLogo = typeof appDB !== 'undefined' ? await appDB.get('pdf_logo') : localStorage.getItem('pdf_logo');
     if (savedLogo && savedLogo.startsWith('data:image/')) {
         const lp = document.getElementById('pdfLogoPreview');
         if (lp) lp.innerHTML = `<img src="${savedLogo}" alt="Logo" style="max-height:80px;">`;
     }
-    const savedSig = localStorage.getItem('pdf_signature');
+    const savedSig = typeof appDB !== 'undefined' ? await appDB.get('pdf_signature') : localStorage.getItem('pdf_signature');
     if (savedSig && savedSig.startsWith('data:image/')) {
         const sp = document.getElementById('pdfSignaturePreview');
         if (sp) sp.innerHTML = `<img src="${savedSig}" alt="Firma" style="max-height:80px;">`;

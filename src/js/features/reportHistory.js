@@ -5,14 +5,24 @@
 
 const REPORT_HISTORY_KEY = 'report_history';
 
+let _reportHistCache = null;
+(function _initReportHistCache() {
+    if (typeof appDB !== 'undefined') {
+        appDB.get(REPORT_HISTORY_KEY).then(function(v) { _reportHistCache = v || []; }).catch(function() {});
+    }
+})();
+
 // ---- Leer / escribir ----
 function _getReportHistory() {
+    if (_reportHistCache !== null) return _reportHistCache;
     try { return JSON.parse(localStorage.getItem(REPORT_HISTORY_KEY) || '[]'); }
     catch (_) { return []; }
 }
 
 function _setReportHistory(arr) {
-    localStorage.setItem(REPORT_HISTORY_KEY, JSON.stringify(arr));
+    _reportHistCache = arr;
+    if (typeof appDB !== 'undefined') appDB.set(REPORT_HISTORY_KEY, arr);
+    else { try { localStorage.setItem(REPORT_HISTORY_KEY, JSON.stringify(arr)); } catch(_) {} }
 }
 
 // ---- Guardar informe ----
@@ -20,7 +30,7 @@ function _setReportHistory(arr) {
 window.saveReportToHistory = function (data) {
     if (!data || !data.htmlContent) return null;
 
-    const pdfConfig = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+    const pdfConfig = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
     const patientName = data.patientName || pdfConfig.patientName || '';
     const patientDni  = data.patientDni  || pdfConfig.patientDni  || '';
 
@@ -166,7 +176,9 @@ window.getReportHistoryStats = function () {
         patients: patients.size,
         oldest:   history.length ? history[history.length - 1].date : null,
         newest:   history.length ? history[0].date : null,
-        sizeKB:   Math.round((localStorage.getItem(REPORT_HISTORY_KEY) || '').length / 1024)
+        sizeKB:   _reportHistCache !== null
+            ? Math.round(JSON.stringify(_reportHistCache).length / 1024)
+            : Math.round((localStorage.getItem(REPORT_HISTORY_KEY) || '').length / 1024)
     };
 };
 
@@ -235,7 +247,8 @@ window.viewReport = function (reportId) {
             return;
         }
         // Cargar temporalmente los datos del paciente para el PDF
-        const pdfConfig = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        const pdfConfig = (typeof appDB !== 'undefined' ? await appDB.get('pdf_config') : null)
+            || window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
         const origConfig = { ...pdfConfig };
 
         if (report.patientData) {
@@ -245,7 +258,9 @@ window.viewReport = function (reportId) {
             if (report.patientData.sex)     pdfConfig.patientSex          = report.patientData.sex;
             if (report.patientData.insurance)    pdfConfig.patientInsurance    = report.patientData.insurance;
             if (report.patientData.affiliateNum) pdfConfig.patientAffiliateNum = report.patientData.affiliateNum;
-            localStorage.setItem('pdf_config', JSON.stringify(pdfConfig));
+            window._pdfConfigCache = pdfConfig;
+            if (typeof appDB !== 'undefined') appDB.set('pdf_config', pdfConfig);
+            else localStorage.setItem('pdf_config', JSON.stringify(pdfConfig));
         }
 
         try {
@@ -257,7 +272,9 @@ window.viewReport = function (reportId) {
         } finally {
             window._skipReportSave = false;
             // Restaurar config original
-            localStorage.setItem('pdf_config', JSON.stringify(origConfig));
+            window._pdfConfigCache = origConfig;
+            if (typeof appDB !== 'undefined') appDB.set('pdf_config', origConfig);
+            else localStorage.setItem('pdf_config', JSON.stringify(origConfig));
         }
     };
 

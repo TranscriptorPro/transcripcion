@@ -7,13 +7,15 @@
 
 /* ── Reenviar contactos pendientes ───────────────────────────────────────── */
 window._retryPendingContacts = async function () {
-    const raw = localStorage.getItem('pending_contacts');
-    if (!raw) return;
     let pending;
-    try { pending = JSON.parse(raw); } catch (_) { return; }
-    if (!pending.length) return;
+    try {
+        pending = (typeof appDB !== 'undefined' ? await appDB.get('pending_contacts') : null)
+            || JSON.parse(localStorage.getItem('pending_contacts') || '[]');
+    } catch (_) { return; }
+    if (!pending || !pending.length) return;
 
     const backendUrl = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.backendUrl)
+        || (typeof appDB !== 'undefined' ? await appDB.get('backend_url') : null)
         || localStorage.getItem('backend_url');
     if (!backendUrl) return; // sin backend no podemos reintentar
 
@@ -39,10 +41,12 @@ window._retryPendingContacts = async function () {
     }
 
     if (still.length === 0) {
-        localStorage.removeItem('pending_contacts');
+        if (typeof appDB !== 'undefined') await appDB.remove('pending_contacts');
+        else localStorage.removeItem('pending_contacts');
         if (typeof showToast === 'function') showToast('✅ Mensajes pendientes enviados', 'success');
     } else {
-        localStorage.setItem('pending_contacts', JSON.stringify(still));
+        if (typeof appDB !== 'undefined') await appDB.set('pending_contacts', still);
+        else localStorage.setItem('pending_contacts', JSON.stringify(still));
     }
 };
 
@@ -112,10 +116,12 @@ window.initContact = function () {
 
             const motivo  = document.getElementById('contactMotivo')?.value  || 'Sin motivo';
             const detalle = document.getElementById('contactDetalle')?.value?.trim() || '';
-            const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
+            const profData = (typeof appDB !== 'undefined' ? await appDB.get('prof_data') : null)
+                || JSON.parse(localStorage.getItem('prof_data') || '{}');
             const nombre   = profData.nombre   || 'Médico';
             const mat      = profData.matricula || '';
-            const deviceId = localStorage.getItem('device_id') || '—';
+            const deviceId = (typeof appDB !== 'undefined' ? await appDB.get('device_id') : null)
+                || localStorage.getItem('device_id') || '—';
             const medicoId = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.medicoId) || '—';
             const plan     = (typeof CLIENT_CONFIG !== 'undefined' && (CLIENT_CONFIG.plan || CLIENT_CONFIG.type)) || '—';
 
@@ -145,6 +151,7 @@ window.initContact = function () {
 
             // Intentar envío via backend
             const backendUrl = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.backendUrl)
+                || (typeof appDB !== 'undefined' ? await appDB.get('backend_url') : null)
                 || localStorage.getItem('backend_url');
 
             if (backendUrl) {
@@ -183,9 +190,11 @@ window.initContact = function () {
             // Fallback si no hay backend configurado: enviar sin abrir pestaña
             // (guardar localmente y avisar)
             try {
-                const pending = JSON.parse(localStorage.getItem('pending_contacts') || '[]');
+                const pending = (typeof appDB !== 'undefined' ? await appDB.get('pending_contacts') : null)
+                    || JSON.parse(localStorage.getItem('pending_contacts') || '[]');
                 pending.push({ motivo, detalle, nombre, mat, date: new Date().toISOString() });
-                localStorage.setItem('pending_contacts', JSON.stringify(pending));
+                if (typeof appDB !== 'undefined') await appDB.set('pending_contacts', pending);
+                else localStorage.setItem('pending_contacts', JSON.stringify(pending));
             } catch (_) {}
 
             if (form)       form.style.display       = 'none';

@@ -237,12 +237,19 @@ if (insertTableBtn && editor) {
     const _AUTO_INTERVAL = 5 * 60 * 1000; // 5 min
     let _autoTimer = null;
     let _lastAutoHash = '';
+    let _snapsCache = null;
+    if (typeof appDB !== 'undefined') {
+        appDB.get(_SNAP_KEY).then(function(v) { _snapsCache = v || []; }).catch(function() {});
+    }
 
     function _getSnaps() {
+        if (_snapsCache !== null) return _snapsCache;
         try { return JSON.parse(localStorage.getItem(_SNAP_KEY)) || []; } catch(_) { return []; }
     }
     function _saveSnaps(arr) {
-        try { localStorage.setItem(_SNAP_KEY, JSON.stringify(arr)); } catch(_) {}
+        _snapsCache = arr;
+        if (typeof appDB !== 'undefined') appDB.set(_SNAP_KEY, arr);
+        else { try { localStorage.setItem(_SNAP_KEY, JSON.stringify(arr)); } catch(_) {} }
     }
 
     /**
@@ -309,7 +316,9 @@ if (insertTableBtn && editor) {
 
     /** Borrar todos los snapshots */
     window.clearEditorSnapshots = function() {
-        localStorage.removeItem(_SNAP_KEY);
+        _snapsCache = [];
+        if (typeof appDB !== 'undefined') appDB.remove(_SNAP_KEY);
+        else localStorage.removeItem(_SNAP_KEY);
     };
 
     /** Mostrar panel de versiones (modal simple) */
@@ -617,12 +626,19 @@ const downloadBtnChevron = document.getElementById('downloadBtn');
 // ── Download Favorite System ──
 const FORMAT_LABELS = { pdf: 'PDF', rtf: 'RTF', txt: 'TXT', html: 'HTML' };
 
+let _prefFmtCache = null;
+if (typeof appDB !== 'undefined') {
+    appDB.get('preferred_download_format').then(function(v) { if (v) _prefFmtCache = v; }).catch(function() {});
+}
+
 function getPreferredFormat() {
-    return localStorage.getItem('preferred_download_format') || 'pdf';
+    return _prefFmtCache || localStorage.getItem('preferred_download_format') || 'pdf';
 }
 
 function setPreferredFormat(fmt) {
-    localStorage.setItem('preferred_download_format', fmt);
+    _prefFmtCache = fmt;
+    if (typeof appDB !== 'undefined') appDB.set('preferred_download_format', fmt);
+    else localStorage.setItem('preferred_download_format', fmt);
     updateFavUI();
 }
 
@@ -692,7 +708,8 @@ async function downloadFile(format) {
     if (typeof validateBeforeDownload === 'function' && !validateBeforeDownload(format)) return;
 
     // Advertencia si no hay datos del paciente
-    const pdfConfig = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+    const pdfConfig = (typeof appDB !== 'undefined' ? await appDB.get('pdf_config') : null)
+        || window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
     if (!pdfConfig.patientName) {
         return new Promise(resolve => {
             const overlay = document.getElementById('customConfirmModal');
@@ -862,7 +879,7 @@ async function applyNormalTemplate(templateKey) {
 
     window._lastRawTranscription = rawText;
 
-    const hasKey = window.GROQ_API_KEY || localStorage.getItem('groq_api_key');
+    const hasKey = window.GROQ_API_KEY;
     const canUseAI = hasKey && typeof structureTranscription === 'function';
 
     if (canUseAI) {
@@ -972,7 +989,13 @@ const _fieldSuggestions = {
 
 const _FIELD_HISTORY_KEY = 'field_value_history';
 
+let _fldHistCache = null;
+if (typeof appDB !== 'undefined') {
+    appDB.get(_FIELD_HISTORY_KEY).then(function(v) { _fldHistCache = v || {}; }).catch(function() {});
+}
+
 function _getFieldHistory() {
+    if (_fldHistCache !== null) return _fldHistCache;
     try { return JSON.parse(localStorage.getItem(_FIELD_HISTORY_KEY)) || {}; } catch(_) { return {}; }
 }
 
@@ -986,7 +1009,9 @@ function _saveFieldValue(fieldName, value) {
         h[key].unshift(value);
         if (h[key].length > 8) h[key] = h[key].slice(0, 8);
     }
-    try { localStorage.setItem(_FIELD_HISTORY_KEY, JSON.stringify(h)); } catch(_) {}
+    _fldHistCache = h;
+    if (typeof appDB !== 'undefined') appDB.set(_FIELD_HISTORY_KEY, h);
+    else { try { localStorage.setItem(_FIELD_HISTORY_KEY, JSON.stringify(h)); } catch(_) {} }
 }
 
 function _renderDynamicChips(fieldName) {

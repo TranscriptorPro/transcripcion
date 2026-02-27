@@ -13,18 +13,33 @@
 const _DIAG_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec';
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
+let _diagDeviceCache = null;
+(function _initDiagDeviceCache() {
+    if (typeof appDB !== 'undefined') {
+        appDB.get('device_id').then(function(v) { if (v) _diagDeviceCache = v; }).catch(function() {});
+    }
+})();
+
 function _diagDeviceId() {
-    let id = localStorage.getItem('device_id');
+    if (_diagDeviceCache) return _diagDeviceCache;
+    let id = localStorage.getItem('device_id') || null;
     if (!id) {
         id = 'DEV_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7).toUpperCase();
-        localStorage.setItem('device_id', id);
+        _diagDeviceCache = id;
+        if (typeof appDB !== 'undefined') appDB.set('device_id', id);
+        else localStorage.setItem('device_id', id);
+    } else {
+        _diagDeviceCache = id;
     }
     return id;
 }
 
-function _safeJson(key, fallback) {
-    try { return JSON.parse(localStorage.getItem(key) || 'null') ?? fallback; }
-    catch (_) { return fallback; }
+async function _safeJson(key, fallback) {
+    try {
+        const val = (typeof appDB !== 'undefined' ? await appDB.get(key) : null)
+            ?? JSON.parse(localStorage.getItem(key) || 'null');
+        return val ?? fallback;
+    } catch (_) { return fallback; }
 }
 
 /* ── Core ─────────────────────────────────────────────────────────────────── */
@@ -34,11 +49,14 @@ function _safeJson(key, fallback) {
  * Nunca incluye el valor real de la API key, solo su presencia.
  * @returns {Object}
  */
-window.buildDiagnosticReport = function () {
-    const profData   = _safeJson('prof_data', {});
-    const pendQueue  = _safeJson('struct_pending_queue', []);
+window.buildDiagnosticReport = async function () {
+    const profData   = await _safeJson('prof_data', {});
+    const pendQueue  = await _safeJson('struct_pending_queue', []);
     const isPwa      = !!(window.matchMedia?.('(display-mode: standalone)')?.matches);
     const swActive   = !!(navigator.serviceWorker?.controller);
+
+    const _get = async (key) => (typeof appDB !== 'undefined' ? await appDB.get(key) : null)
+        ?? localStorage.getItem(key);
 
     return {
         timestamp:            new Date().toISOString(),
@@ -49,15 +67,15 @@ window.buildDiagnosticReport = function () {
         matricula:            profData.matricula || '',
         prof_data_complete:   !!(profData.nombre && profData.matricula),
         // Estado de la API key
-        api_key_present:      !!(localStorage.getItem('groq_api_key')),
-        api_key_last_status:  localStorage.getItem('api_key_last_status') || 'unknown',
-        api_key_last_check:   localStorage.getItem('api_key_last_check')  || null,
+        api_key_present:      !!(window.GROQ_API_KEY || await _get('groq_api_key')),
+        api_key_last_status:  (await _get('api_key_last_status')) || 'unknown',
+        api_key_last_check:   (await _get('api_key_last_check'))  || null,
         // Configuración PDF / firma
-        has_logo:             !!(localStorage.getItem('pdf_logo')),
-        has_signature:        !!(localStorage.getItem('pdf_signature')),
+        has_logo:             !!(await _get('pdf_logo')),
+        has_signature:        !!(await _get('pdf_signature')),
         // Cola de estructurado pendiente
         pending_queue_count:  Array.isArray(pendQueue) ? pendQueue.length : 0,
-        last_struct_error:    localStorage.getItem('last_struct_error') || null,
+        last_struct_error:    (await _get('last_struct_error')) || null,
         // Modo y configuración de la app
         current_mode:         window.currentMode || 'normal',
         client_type:          (typeof CLIENT_CONFIG !== 'undefined') ? CLIENT_CONFIG.type   : 'unknown',
@@ -68,7 +86,7 @@ window.buildDiagnosticReport = function () {
         pwa_installed:        isPwa,
         sw_active:            swActive,
         // Meta
-        last_diag_sent:       localStorage.getItem('last_diagnostic_sent') || null
+        last_diag_sent:       (await _get('last_diagnostic_sent')) || null
     };
 };
 
@@ -121,10 +139,11 @@ window.sendManualDiagnostic = async function (silent = false) {
 
     try {
         if (!silent) toast('📡 Enviando diagnóstico al soporte…', 'info');
-        const report = window.buildDiagnosticReport();
+        const report = await window.buildDiagnosticReport();
         await _sendDiagnosticToSheet(report);
         toast('✅ Diagnóstico enviado al soporte', 'success');
-        localStorage.setItem('last_diagnostic_sent', new Date().toISOString());
+        if (typeof appDB !== 'undefined') appDB.set('last_diagnostic_sent', new Date().toISOString());
+        else localStorage.setItem('last_diagnostic_sent', new Date().toISOString());
     } catch (err) {
         console.warn('[diagnostic] Error al enviar diagnóstico:', err);
         if (!silent) toast('❌ No se pudo enviar el diagnóstico', 'error');

@@ -33,14 +33,30 @@ let _lmValidated   = false;
 let _lmLicenseData = null;
 let _lmMetricsTimer = null;
 
+let _lmDeviceCache  = null;    // device_id en memoria
+let _lmCacheCache   = null;    // license_cache en memoria
+let _lmMetricsCache = null;    // pending_metrics en memoria
+(function _initLmCaches() {
+    if (typeof appDB !== 'undefined') {
+        appDB.get('device_id').then(function(v) { if (v) _lmDeviceCache = v; }).catch(function() {});
+        appDB.get(_LM_CACHE_KEY).then(function(v) { if (v) _lmCacheCache = v; }).catch(function() {});
+        appDB.get(_LM_METRICS_KEY).then(function(v) { _lmMetricsCache = v || []; }).catch(function() {});
+    }
+})();
+
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
 
 /** Obtiene o genera el device_id (mismo que diagnostic.js) */
 function _lmGetDeviceId() {
-    let id = localStorage.getItem('device_id');
+    if (_lmDeviceCache) return _lmDeviceCache;
+    let id = localStorage.getItem('device_id') || null;
     if (!id) {
         id = 'dev_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
-        localStorage.setItem('device_id', id);
+        _lmDeviceCache = id;
+        if (typeof appDB !== 'undefined') appDB.set('device_id', id);
+        else localStorage.setItem('device_id', id);
+    } else {
+        _lmDeviceCache = id;
     }
     return id;
 }
@@ -56,11 +72,12 @@ function _lmGetMedicoId() {
 /** Lee licencia cachedada */
 function _lmGetCache() {
     try {
-        const raw = localStorage.getItem(_LM_CACHE_KEY);
-        if (!raw) return null;
-        const cached = JSON.parse(raw);
+        const cached = _lmCacheCache || JSON.parse(localStorage.getItem(_LM_CACHE_KEY) || 'null');
+        if (!cached) return null;
         if (Date.now() - cached.timestamp > _LM_CACHE_TTL) {
-            localStorage.removeItem(_LM_CACHE_KEY);
+            _lmCacheCache = null;
+            if (typeof appDB !== 'undefined') appDB.remove(_LM_CACHE_KEY);
+            else localStorage.removeItem(_LM_CACHE_KEY);
             return null;
         }
         return cached.data;
@@ -71,10 +88,10 @@ function _lmGetCache() {
 
 /** Guarda licencia en cache */
 function _lmSetCache(data) {
-    localStorage.setItem(_LM_CACHE_KEY, JSON.stringify({
-        data: data,
-        timestamp: Date.now()
-    }));
+    const entry = { data: data, timestamp: Date.now() };
+    _lmCacheCache = entry;
+    if (typeof appDB !== 'undefined') appDB.set(_LM_CACHE_KEY, entry);
+    else localStorage.setItem(_LM_CACHE_KEY, JSON.stringify(entry));
 }
 
 /* ── Validación de Licencia ───────────────────────────────────────────────── */
@@ -267,16 +284,19 @@ window.trackUsageMetric = function (type, meta) {
 
     // Agregar a cola de pendientes para envío al backend
     try {
-        const pending = JSON.parse(localStorage.getItem(_LM_METRICS_KEY) || '[]');
-        pending.push({
+        if (_lmMetricsCache === null) {
+            _lmMetricsCache = JSON.parse(localStorage.getItem(_LM_METRICS_KEY) || '[]');
+        }
+        _lmMetricsCache.push({
             type: type,
             palabras: (meta && meta.palabras) || 0,
             minutos:  (meta && meta.minutos) || 0,
             timestamp: new Date().toISOString()
         });
         // Limitar cola a 500 entradas
-        if (pending.length > 500) pending.splice(0, pending.length - 500);
-        localStorage.setItem(_LM_METRICS_KEY, JSON.stringify(pending));
+        if (_lmMetricsCache.length > 500) _lmMetricsCache.splice(0, _lmMetricsCache.length - 500);
+        if (typeof appDB !== 'undefined') appDB.set(_LM_METRICS_KEY, _lmMetricsCache);
+        else localStorage.setItem(_LM_METRICS_KEY, JSON.stringify(_lmMetricsCache));
     } catch (e) {
         console.warn('[licenseManager] Error guardando métrica:', e);
     }
@@ -290,7 +310,9 @@ async function _lmFlushMetrics() {
 
     let pending;
     try {
-        pending = JSON.parse(localStorage.getItem(_LM_METRICS_KEY) || '[]');
+        pending = _lmMetricsCache !== null
+            ? _lmMetricsCache
+            : JSON.parse(localStorage.getItem(_LM_METRICS_KEY) || '[]');
     } catch (e) {
         return;
     }
@@ -317,7 +339,9 @@ async function _lmFlushMetrics() {
 
         if (response.ok) {
             // Limpiar cola después de envío exitoso
-            localStorage.removeItem(_LM_METRICS_KEY);
+            _lmMetricsCache = [];
+            if (typeof appDB !== 'undefined') appDB.remove(_LM_METRICS_KEY);
+            else localStorage.removeItem(_LM_METRICS_KEY);
             console.info(`[licenseManager] Métricas enviadas: ${count} transcripciones, ${totalPalabras} palabras`);
         }
     } catch (err) {
@@ -341,7 +365,7 @@ function _lmStartMetricsSync() {
         const medicoId = _lmGetMedicoId();
         const deviceId = _lmGetDeviceId();
         let pending;
-        try { pending = JSON.parse(localStorage.getItem(_LM_METRICS_KEY) || '[]'); } catch (e) { return; }
+        try { pending = _lmMetricsCache !== null ? _lmMetricsCache : JSON.parse(localStorage.getItem(_LM_METRICS_KEY) || '[]'); } catch (e) { return; }
         if (pending.length === 0 || !medicoId) return;
 
         const totalPalabras = pending.reduce((s, m) => s + (m.palabras || 0), 0);

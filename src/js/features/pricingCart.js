@@ -206,16 +206,21 @@
         const cfg = window.CLIENT_CONFIG || {};
         const payload = {
             action: 'upgrade_request',
-            medicoId: cfg.medicoId || localStorage.getItem('medico_id') || '—',
+            medicoId: cfg.medicoId
+                || (typeof appDB !== 'undefined' ? await appDB.get('medico_id') : null)
+                || localStorage.getItem('medico_id') || '—',
             currentPlan: _getCurrentPlan(),
             requestedPlan: _cart.upgradePlan || _getCurrentPlan(),
             requestedTemplates: Array.from(_cart.addonTemplates),
             timestamp: new Date().toISOString(),
-            deviceId: localStorage.getItem('device_id') || '—'
+            deviceId: (typeof appDB !== 'undefined' ? await appDB.get('device_id') : null)
+                || localStorage.getItem('device_id') || '—'
         };
 
         try {
-            const backendUrl = cfg.backendUrl || localStorage.getItem('backend_url');
+            const backendUrl = cfg.backendUrl
+                || (typeof appDB !== 'undefined' ? await appDB.get('backend_url') : null)
+                || localStorage.getItem('backend_url');
             if (backendUrl) {
                 const response = await fetch(backendUrl, {
                     method: 'POST',
@@ -227,9 +232,11 @@
             }
 
             // Guardar solicitud localmente
-            const requests = JSON.parse(localStorage.getItem('upgrade_requests') || '[]');
+            const requests = (typeof appDB !== 'undefined' ? await appDB.get('upgrade_requests') : null)
+                || JSON.parse(localStorage.getItem('upgrade_requests') || '[]');
             requests.push(payload);
-            localStorage.setItem('upgrade_requests', JSON.stringify(requests));
+            if (typeof appDB !== 'undefined') appDB.set('upgrade_requests', requests);
+            else localStorage.setItem('upgrade_requests', JSON.stringify(requests));
 
             if (typeof showToast === 'function') {
                 showToast('✅ Solicitud de upgrade enviada. Te notificaremos cuando sea aprobada.', 'success', 5000);

@@ -389,7 +389,7 @@ function classifyStructError(err) {
 
 // ── Pre-flight: verificar requisitos antes de estructurar ──────────────────
 function checkStructurePrerequisites() {
-    const key = window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '';
+    const key = window.GROQ_API_KEY || '';
     if (!key || !key.startsWith('gsk_')) {
         if (typeof showToastWithAction === 'function') {
             showToastWithAction('🔑 API Key no configurada.', 'error', '⚙️ Configurar', () => {
@@ -475,6 +475,16 @@ async function structureWithRetry(text, templateKey) {
 // ── Cola de textos pendientes de estructuración ──────────────────────────────
 const STRUCT_QUEUE_KEY = 'struct_pending_queue';
 
+function _getStructQueue() {
+    try { return JSON.parse(localStorage.getItem(STRUCT_QUEUE_KEY) || '[]'); } catch(_) { return []; }
+}
+
+function _saveStructQueue(arr) {
+    // Escribe a IDB (fire-and-forget) y también a localStorage (fallback síncrono)
+    if (typeof appDB !== 'undefined') appDB.set(STRUCT_QUEUE_KEY, arr);
+    try { localStorage.setItem(STRUCT_QUEUE_KEY, JSON.stringify(arr)); } catch(_) {}
+}
+
 function addToStructurePendingQueue(text, templateKey) {
     const queue = getStructurePendingQueue();
     const entry = {
@@ -486,14 +496,14 @@ function addToStructurePendingQueue(text, templateKey) {
     };
     queue.unshift(entry);
     if (queue.length > 10) queue.pop(); // máximo 10
-    localStorage.setItem(STRUCT_QUEUE_KEY, JSON.stringify(queue));
+    _saveStructQueue(queue);
     updatePendingQueueBadge();
     return entry;
 }
 
 function getStructurePendingQueue() {
     try {
-        const queue = JSON.parse(localStorage.getItem(STRUCT_QUEUE_KEY) || '[]');
+        const queue = _getStructQueue();
         // Auto-expirar items > 7 días
         const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
         return queue.filter(e => Date.now() - e.id < SEVEN_DAYS);
@@ -503,7 +513,7 @@ function getStructurePendingQueue() {
 
 function removeFromStructurePendingQueue(id) {
     const filtered = getStructurePendingQueue().filter(e => e.id !== Number(id));
-    localStorage.setItem(STRUCT_QUEUE_KEY, JSON.stringify(filtered));
+    _saveStructQueue(filtered);
     updatePendingQueueBadge();
 }
 
@@ -588,12 +598,14 @@ function showAINote(note, templateLabel) {
 // ---- Patient data check after structuring ----
 window.triggerPatientDataCheck = function(rawText) {
     // Siempre limpia datos del paciente anterior — nunca hay carry-over entre informes
-    const savedConfig = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+    const savedConfig = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
     delete savedConfig.patientName;
     delete savedConfig.patientDni;
     delete savedConfig.patientAge;
     delete savedConfig.patientSex;
-    localStorage.setItem('pdf_config', JSON.stringify(savedConfig));
+    window._pdfConfigCache = savedConfig;
+    if (typeof appDB !== 'undefined') appDB.set('pdf_config', savedConfig);
+    else localStorage.setItem('pdf_config', JSON.stringify(savedConfig));
 
     // Intentar extraer datos del paciente desde el audio transcripto
     const extracted = typeof extractPatientDataFromText === 'function'
@@ -605,7 +617,9 @@ window.triggerPatientDataCheck = function(rawText) {
         if (extracted.dni) savedConfig.patientDni = extracted.dni;
         if (extracted.age) savedConfig.patientAge = extracted.age;
         if (extracted.sex) savedConfig.patientSex = extracted.sex;
-        localStorage.setItem('pdf_config', JSON.stringify(savedConfig));
+        window._pdfConfigCache = savedConfig;
+        if (typeof appDB !== 'undefined') appDB.set('pdf_config', savedConfig);
+        else localStorage.setItem('pdf_config', JSON.stringify(savedConfig));
         if (typeof showToast === 'function')
             showToast(`👤 Paciente detectado: ${extracted.name}`, 'success');
         // Quitar placeholder si existía

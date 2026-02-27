@@ -22,6 +22,16 @@ window.initSessionAssistant = function () {
     const btnSkip        = document.getElementById('saBtnSkip');
     const statusEl       = document.getElementById('saStatus');
 
+    // ── Write-through cache para workplace_profiles ───────────────────────────────
+    let _wpProfilesCache = null;
+    if (typeof appDB !== 'undefined') {
+        appDB.get('workplace_profiles').then(function(v) { _wpProfilesCache = v || []; }).catch(function() {});
+    }
+    function _getWpProfiles() {
+        if (_wpProfilesCache !== null) return _wpProfilesCache;
+        try { return JSON.parse(localStorage.getItem('workplace_profiles') || '[]'); } catch(_) { return []; }
+    }
+
     // ── Helpers: detectar tipo de usuario ────────────────────────────────────
     function isProUser() {
         if (typeof CLIENT_CONFIG === 'undefined') return true; // admin = pro
@@ -29,7 +39,7 @@ window.initSessionAssistant = function () {
     }
 
     function isClinicMode() {
-        const profiles = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+        const profiles = _getWpProfiles();
         return profiles.some(p => (p.professionals?.length || 0) > 1);
     }
 
@@ -48,7 +58,7 @@ window.initSessionAssistant = function () {
 
     // ── Populate: lugares ────────────────────────────────────────────────────
     function populateWorkplaces() {
-        const profiles = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+        const profiles = _getWpProfiles();
         if (!wpSelect) return profiles;
 
         wpSelect.innerHTML = '';
@@ -71,7 +81,7 @@ window.initSessionAssistant = function () {
     // ── Populate: profesionales (solo clínica) ───────────────────────────────
     function populateProfessionals(wpIndex) {
         if (!profSelect || !profGroup) return;
-        const profiles = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+        const profiles = _getWpProfiles();
         const wp = profiles[wpIndex];
         const profs = wp?.professionals || [];
 
@@ -143,9 +153,9 @@ window.initSessionAssistant = function () {
 
     // ── Abrir el asistente ───────────────────────────────────────────────────
     function open() {
-        const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
-        const cfg      = JSON.parse(localStorage.getItem('pdf_config') || '{}');
-        const profiles = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+        const profData = window._profDataCache || JSON.parse(localStorage.getItem('prof_data') || '{}');
+        const cfg      = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        const profiles = _getWpProfiles();
         const clinic   = isClinicMode();
         const pro      = isProUser();
 
@@ -230,7 +240,7 @@ window.initSessionAssistant = function () {
     // ── Estado visual ────────────────────────────────────────────────────────
     function updateStatus() {
         if (!statusEl) return;
-        const profiles = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+        const profiles = _getWpProfiles();
         const clinic   = isClinicMode();
         const pro      = isProUser();
         const wpIdx    = wpSelect?.value;
@@ -263,7 +273,7 @@ window.initSessionAssistant = function () {
 
     // ── Confirmar selección ──────────────────────────────────────────────────
     function confirm() {
-        const profiles = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+        const profiles = _getWpProfiles();
         const clinic   = isClinicMode();
         const pro      = isProUser();
 
@@ -339,7 +349,8 @@ window.initSessionAssistant = function () {
 
         // Toast de confirmación
         const wpName = profiles[wpIdx]?.name || 'Lugar';
-        localStorage.setItem('current_workplace_name', wpName);
+        if (typeof appDB !== 'undefined') appDB.set('current_workplace_name', wpName);
+        else localStorage.setItem('current_workplace_name', wpName);
         const profs = profiles[wpIdx]?.professionals || [];
         let msg = `✅ ${wpName}`;
         if (clinic && !isNaN(proIdx) && profs[proIdx]) {

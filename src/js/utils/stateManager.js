@@ -135,11 +135,17 @@ const proModeToggle = document.getElementById('proModeToggle');
 const proToggleContainer = document.getElementById('proToggleContainer');
 const resetBtn = document.getElementById('resetBtn');
 
+// ── Cache para last_profile_type ──────────────────────────────────────────
+if (typeof appDB !== 'undefined') {
+    appDB.get('last_profile_type').then(function(v) { if (v) window._lastProfileTypeCache = v; }).catch(function() {});
+}
 if (proModeToggle) {
     proModeToggle.addEventListener('change', (e) => {
         const mode = e.target.checked ? 'pro' : 'normal';
         setMode(mode, true);
-        localStorage.setItem('last_profile_type', mode);
+        if (typeof appDB !== 'undefined') appDB.set('last_profile_type', mode);
+        else localStorage.setItem('last_profile_type', mode);
+        window._lastProfileTypeCache = mode;
 
         if (proToggleContainer) {
             proToggleContainer.classList.toggle('mode-normal', !e.target.checked);
@@ -173,7 +179,7 @@ function initializeMode() {
     if (typeof CLIENT_CONFIG === 'undefined') return;
 
     // Check saved preference first
-    const savedMode = localStorage.getItem('last_profile_type');
+    const savedMode = window._lastProfileTypeCache || localStorage.getItem('last_profile_type');
     if (savedMode) {
         setMode(savedMode);
         // Even with saved mode, hide toggle for PRO users (they're always PRO)
@@ -296,8 +302,14 @@ if (resetBtn) {
             showToastWithAction('🗑️ Sesión limpiada', 'success', '↩ Deshacer', () => {
                 if (editor) editor.innerHTML = editorContent;
                 // Restaurar autosave si existía
-                if (savedAutosave) localStorage.setItem('editor_autosave', savedAutosave);
-                if (savedAutosaveMeta) localStorage.setItem('editor_autosave_meta', savedAutosaveMeta);
+                if (savedAutosave) {
+                    if (typeof appDB !== 'undefined') appDB.set('editor_autosave', savedAutosave);
+                    else localStorage.setItem('editor_autosave', savedAutosave);
+                }
+                if (savedAutosaveMeta) {
+                    if (typeof appDB !== 'undefined') appDB.set('editor_autosave_meta', savedAutosaveMeta);
+                    else localStorage.setItem('editor_autosave_meta', savedAutosaveMeta);
+                }
                 if (typeof updateWordCount === 'function') updateWordCount();
                 if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
                 if (typeof showToast !== 'undefined') showToast('↩ Sesión restaurada', 'success');
