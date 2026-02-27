@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Login - Admin Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -234,7 +237,7 @@
                         timestamp: Date.now()
                     }));
 
-                    window.location.href = 'admin.html';
+                    window.location.href = 'admin.html?v=' + Date.now();
                 } else {
                     showError(data.error || 'Usuario o contraseña incorrectos');
                 }
@@ -272,10 +275,13 @@
         if (session) {
             try {
                 const data = JSON.parse(session);
-                const hoursSinceLogin = (Date.now() - data.timestamp) / (1000 * 60 * 60);
+                // Verificar tokenExpiry del backend (fuente de verdad)
+                const isExpired = data.tokenExpiry
+                    ? Date.now() > data.tokenExpiry
+                    : (Date.now() - data.timestamp) / (1000 * 60 * 60) >= 8;
                 
-                if (hoursSinceLogin < 8 && data.sessionToken) {
-                    window.location.href = 'admin.html';
+                if (!isExpired && data.sessionToken) {
+                    window.location.href = 'admin.html?v=' + Date.now();
                 } else {
                     sessionStorage.removeItem('adminSession');
                 }

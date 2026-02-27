@@ -3,8 +3,11 @@
  * Cache-First para el app shell; Network-First para llamadas a la API de Groq.
  */
 
-const CACHE_NAME   = 'transcriptor-pro-v19';
+const CACHE_NAME   = 'transcriptor-pro-v20';
 const GROQ_ORIGIN  = 'api.groq.com';
+
+// Rutas que NUNCA deben cachearse (siempre network-first)
+const NEVER_CACHE = ['/recursos/', '/tests/', '/backend/'];
 
 // Recursos del app shell que se cachean en la instalación
 const APP_SHELL = [
@@ -85,7 +88,29 @@ self.addEventListener('fetch', event => {
     // No manejar solicitudes no-GET
     if (event.request.method !== 'GET') return;
 
-    // Cache-First: app shell y recursos estáticos
+    // Network-First: rutas que NUNCA deben cachearse (admin, login, tests)
+    if (NEVER_CACHE.some(path => url.pathname.includes(path))) {
+        event.respondWith(
+            fetch(event.request).catch(() => {
+                // Offline: intentar cache como último recurso
+                return caches.match(event.request);
+            })
+        );
+        return;
+    }
+
+    // Network-First: Google Apps Script (backend)
+    if (url.hostname.includes('script.google.com') || url.hostname.includes('script.googleusercontent.com')) {
+        event.respondWith(
+            fetch(event.request).catch(() => new Response(
+                JSON.stringify({ error: 'Sin conexión' }),
+                { status: 503, headers: { 'Content-Type': 'application/json' } }
+            ))
+        );
+        return;
+    }
+
+    // Cache-First: app shell y recursos estáticos (solo la app principal)
     event.respondWith(
         caches.match(event.request).then(cached => {
             if (cached) return cached;
