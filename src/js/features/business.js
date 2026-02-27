@@ -888,9 +888,10 @@ function _showClientOnboarding() {
     if (displayNombre) displayNombre.textContent = profData.nombre || '(no configurado)';
     if (displayMatricula) displayMatricula.textContent = profData.matricula || '(no configurado)';
 
-    // Ocultar step API Key (solo para admin)
+    // K1: Mostrar campo API Key solo si NO hay key precargada por admin
     const apiStep = document.getElementById('onboardingApiKeyStep');
-    if (apiStep) apiStep.style.display = 'none';
+    const hasPreloadedKey = !!localStorage.getItem('groq_api_key');
+    if (apiStep) apiStep.style.display = hasPreloadedKey ? 'none' : '';
 
     // Crear partículas decorativas
     _createOnboardingParticles();
@@ -926,7 +927,23 @@ function _showClientOnboarding() {
     const back3 = document.getElementById('onboardingBack3');
 
     if (next1) next1.addEventListener('click', () => goToStep(2));
-    if (next2) next2.addEventListener('click', () => goToStep(3));
+    if (next2) next2.addEventListener('click', () => {
+        // K1: validar API Key si el campo está visible (no precargada)
+        if (apiStep && apiStep.style.display !== 'none') {
+            const keyInput = document.getElementById('onboardingApiKey');
+            const keyVal = keyInput ? keyInput.value.trim() : '';
+            if (keyVal && !keyVal.startsWith('gsk_')) {
+                if (typeof showToast === 'function') showToast('❌ La API Key debe empezar con gsk_', 'error');
+                return;
+            }
+            // Guardar inmediatamente si fue ingresada
+            if (keyVal) {
+                localStorage.setItem('groq_api_key', keyVal);
+                window.GROQ_API_KEY = keyVal;
+            }
+        }
+        goToStep(3);
+    });
     if (back2) back2.addEventListener('click', () => goToStep(1));
     if (back3) back3.addEventListener('click', () => goToStep(2));
 
@@ -952,7 +969,13 @@ function _showClientOnboarding() {
             setTimeout(() => {
                 overlay.classList.remove('active');
 
-                // Cargar API Key desde localStorage (fue guardada por _handleFactorySetup)
+                // K1: guardar API Key ingresada en onboarding (si la hay)
+                const onbKey = document.getElementById('onboardingApiKey');
+                if (onbKey && onbKey.value.trim() && onbKey.value.trim().startsWith('gsk_')) {
+                    localStorage.setItem('groq_api_key', onbKey.value.trim());
+                }
+
+                // Cargar API Key desde localStorage
                 window.GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
                 console.info('[Onboarding] API Key loaded:', window.GROQ_API_KEY ? 'gsk_...' + window.GROQ_API_KEY.slice(-4) : 'NONE');
                 _initCommonModules();

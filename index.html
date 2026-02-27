@@ -207,15 +207,19 @@
                             </div>
                         </div>
 
-                        <!-- K1: API Key step (oculto para clientes, solo admin lo ve) -->
-                        <div class="help-section" id="onboardingApiKeyStep" style="display:none;">
-                            <label class="sidebar-label">🔑 API Key de Groq:</label>
+                        <!-- K1: API Key step — visible solo si NO hay key precargada -->
+                        <div class="help-section" id="onboardingApiKeyStep" style="display:none; background: var(--bg-hover); border-radius: 10px; padding: 1rem; margin-bottom: 1.25rem; border: 1px solid var(--border);">
+                            <label class="sidebar-label" style="font-weight:600; margin-bottom:0.5rem; display:block;">🔑 API Key de Groq</label>
+                            <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.6rem; line-height:1.4;">
+                                Para transcribir audio necesitás una clave de API. Es gratuita.
+                            </p>
                             <input type="text" id="onboardingApiKey" class="toolbar-input" style="width:100%;"
                                 placeholder="gsk_..." autocomplete="off">
                             <small style="display:block;margin-top:.4rem;font-size:.72rem;color:var(--text-secondary);">
                                 Obtenela gratis en
                                 <a href="https://console.groq.com/keys" target="_blank"
                                     style="color:var(--primary-light);">console.groq.com/keys</a>.
+                                Podés agregarla después en Configuración.
                             </small>
                         </div>
 
