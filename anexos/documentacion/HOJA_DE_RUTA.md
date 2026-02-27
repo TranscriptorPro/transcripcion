@@ -1,5 +1,5 @@
 # Transcriptor Médico Pro — Hoja de Ruta
-> Actualizado: 27 de febrero de 2026  
+> Actualizado: 27 de febrero de 2026 (commit 7cc140e)  
 > Documento de planificación interna. No subir como parte del deploy.
 
 ---
@@ -95,7 +95,8 @@ Usuarios · Metricas_Uso · Dispositivos · Admin_Logs · Diagnosticos · Admin_
 | Módulo | Propósito |
 |--------|-----------|
 | sessionAssistant.js | Asistente de inicio: elige profesional/lugar/plantilla según tipo de licencia |
-| business.js | Gestión de perfiles de trabajo (CRUD), onboarding, punto de entrada principal |
+| business.js | Gestión de perfiles de trabajo (CRUD), onboarding espectacular, punto de entrada principal |
+| settingsPanel.js | **NUEVO** — Mega panel de configuración con 11 secciones en acordeón |
 | diagnostic.js | Diagnóstico remoto del cliente enviado al backend |
 | userGuide.js | Tour interactivo de 6 pasos + modal de ayuda con pestañas |
 | licenseManager.js | Validación de licencia al iniciar, flush métricas cada 15min, sendBeacon on unload |
@@ -103,6 +104,21 @@ Usuarios · Metricas_Uso · Dispositivos · Admin_Logs · Diagnosticos · Admin_
 | patientRegistry.js | CRUD de pacientes (hasta 500) + panel admin con tabla, búsqueda, export/import |
 | outputProfiles.js | CRUD de perfiles de salida (lugar + profesional + formato PDF) |
 | pdfPreview.js | Vista previa tipo A4 multipágina con QR, imprimir, email |
+
+### UX y Personalización — Completado ✅ (commit 7cc140e)
+
+| Componente | Descripción |
+|------------|-------------|
+| Onboarding espectacular | Multi-step (3 pasos): bienvenida con partículas + confirmar datos + T&C con confetti 🎉 |
+| Settings Panel (⚙️) | 11 acordeones: Cuenta, API Key, Lugar, Perfiles rápidos, PDF, Editor, Herramientas, Apariencia, Estadísticas, Backup, Info |
+| PRO slider oculto | GIFT/Clinic/Enterprise siempre en modo PRO — toggle oculto automáticamente |
+| Admin button oculto | Botón "Panel de Administración" oculto para todos los clones |
+| Settings gear (⚙️) | Visible para admin Y clientes — abre el mega panel de configuración |
+| Auto-guardado | Borrador del editor guardado cada 30s en localStorage (recuperable < 24h) |
+| Quick profiles | Perfiles rápidos: guardar/cargar/eliminar combinaciones de lugar + profesional |
+| Backup/Restore | Export/import JSON de toda la configuración local |
+| Estadísticas | Informes generados, transcripciones, pacientes, entradas diccionario |
+| Editor prefs | Tamaño de fuente (S/M/L), autosave, historial de cambios |
 
 ### Fábrica de Clones — Completado ✅
 
@@ -196,7 +212,11 @@ Propuesta: guardar snapshots automáticos (texto crudo → estructurado → edit
 ## 📊 RESUMEN DE PROGRESO
 
 ```
-Completado:  Features F1 (21/21) + Backend (14 endpoints) + Diccionario (54 estudios) + Bugs (7/7)
-Pendiente:   Etapa 4 (historial informes) · Etapa 5 (autocompletado) · Etapa 6 (2 items PDF) · Etapa 7 (i18n) · Etapa 8 (versionado)
+Completado:  Features F1 (21/21) + Backend (14 endpoints) + Diccionario (54 estudios)
+             + Bugs (7/7) + UX/Settings (10 componentes) + SW v26
+Pendiente:   Etapa 4 (historial informes) · Etapa 5 (autocompletado) · Etapa 6 (2 items PDF)
+             · Etapa 7 (i18n) · Etapa 8 (versionado)
 Próximo:     Etapa 4 — Historial de informes por paciente
+Tests:       287/287 pasando
+Último push: 7cc140e — 2026-02-27
 ```

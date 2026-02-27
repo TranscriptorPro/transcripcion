@@ -7,7 +7,7 @@ const CACHE_NAME   = 'transcriptor-pro-v26';
 const GROQ_ORIGIN  = 'api.groq.com';
 
 // Rutas que NUNCA deben cachearse (siempre network-first)
-const NEVER_CACHE = ['/recursos/', '/tests/', '/backend/'];
+const NEVER_CACHE = ['/recursos/', '/anexos/'];
 
 // Recursos del app shell que se cachean en la instalación
 const APP_SHELL = [
