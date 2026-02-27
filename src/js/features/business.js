@@ -970,6 +970,23 @@ function _showClientOnboarding() {
                 const saludo = profData.nombre ? `¡Bienvenido/a, ${profData.nombre}! 🎉` : '¡Bienvenido/a! 🎉';
                 if (typeof showToast === 'function') showToast(saludo, 'success');
 
+                // PWA: ofrecer instalar la app automáticamente tras el onboarding
+                setTimeout(() => {
+                    if (window._pwaInstallPrompt) {
+                        try {
+                            window._pwaInstallPrompt.prompt();
+                            window._pwaInstallPrompt.userChoice.then(choice => {
+                                console.info('[PWA] Install after onboarding:', choice.outcome);
+                                window._pwaInstallPrompt = null;
+                                const btnInstall = document.getElementById('btnInstallPwa');
+                                if (btnInstall) btnInstall.style.display = 'none';
+                            });
+                        } catch (e) {
+                            console.warn('[PWA] Install prompt error:', e);
+                        }
+                    }
+                }, 1500);
+
                 _launchSessionAssistant();
             }, 800);
         });

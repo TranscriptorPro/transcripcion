@@ -2067,11 +2067,13 @@
 
             // PWA3: capturar beforeinstallprompt
             let deferredPrompt = null;
+            window._pwaInstallPrompt = null; // Exponer globalmente
             const btnInstall   = document.getElementById('btnInstallPwa');
 
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
                 deferredPrompt = e;
+                window._pwaInstallPrompt = e; // Para que business.js pueda usarlo
                 if (btnInstall) btnInstall.style.display = '';
             });
 
@@ -2082,6 +2084,7 @@
                     const { outcome } = await deferredPrompt.userChoice;
                     console.log('[PWA] Install outcome:', outcome);
                     deferredPrompt = null;
+                    window._pwaInstallPrompt = null;
                     btnInstall.style.display = 'none';
                 });
             }
@@ -2090,6 +2093,7 @@
             window.addEventListener('appinstalled', () => {
                 if (btnInstall) btnInstall.style.display = 'none';
                 deferredPrompt = null;
+                window._pwaInstallPrompt = null;
             });
         })();
         </script>
