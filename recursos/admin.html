@@ -3692,7 +3692,7 @@
                     };
 
                     // Crear usuario en el backend
-                    const createUrl = `${CONFIG.scriptUrl}?action=admin_create_user&sessionToken=${encodeURIComponent(sessionToken)}&updates=${encodeURIComponent(JSON.stringify(userData))}`;
+                    const createUrl = `${CONFIG.scriptUrl}?action=admin_create_user&${_getSessionAuthParams()}&updates=${encodeURIComponent(JSON.stringify(userData))}`;
                     const resp = await fetch(createUrl);
                     const result = await resp.json();
 
@@ -3708,7 +3708,7 @@
                     applyFilters();
 
                     // Log
-                    const logUrl = `${CONFIG.scriptUrl}?action=admin_log_action&sessionToken=${encodeURIComponent(sessionToken)}&adminUser=${encodeURIComponent('admin')}&logAction=create_gift_user&userId=${encodeURIComponent(newId)}&details=${encodeURIComponent('GIFT: ' + nombre + ' - ' + email)}`;
+                    const logUrl = `${CONFIG.scriptUrl}?action=admin_log_action&${_getSessionAuthParams()}&adminUser=${encodeURIComponent('admin')}&logAction=create_gift_user&userId=${encodeURIComponent(newId)}&details=${encodeURIComponent('GIFT: ' + nombre + ' - ' + email)}`;
                     fetch(logUrl).catch(() => {});
 
                 } else {
@@ -3720,12 +3720,12 @@
 
                     // Si hay API Key, guardarla en el Sheet
                     if (apiKey) {
-                        const updateUrl = `${CONFIG.scriptUrl}?action=admin_update_user&sessionToken=${encodeURIComponent(sessionToken)}&userId=${encodeURIComponent(userId)}&updates=${encodeURIComponent(JSON.stringify({ API_Key: apiKey }))}`;
+                        const updateUrl = `${CONFIG.scriptUrl}?action=admin_update_user&${_getSessionAuthParams()}&userId=${encodeURIComponent(userId)}&updates=${encodeURIComponent(JSON.stringify({ API_Key: apiKey }))}`;
                         await fetch(updateUrl);
                     }
 
                     // Log
-                    const logUrl = `${CONFIG.scriptUrl}?action=admin_log_action&sessionToken=${encodeURIComponent(sessionToken)}&adminUser=${encodeURIComponent('admin')}&logAction=generate_link&userId=${encodeURIComponent(userId)}&details=${encodeURIComponent('Link generado' + (apiKey ? ' con API Key' : ' sin API Key'))}`;
+                    const logUrl = `${CONFIG.scriptUrl}?action=admin_log_action&${_getSessionAuthParams()}&adminUser=${encodeURIComponent('admin')}&logAction=generate_link&userId=${encodeURIComponent(userId)}&details=${encodeURIComponent('Link generado' + (apiKey ? ' con API Key' : ' sin API Key'))}`;
                     fetch(logUrl).catch(() => {});
                 }
 
@@ -3880,7 +3880,7 @@
 
                     // Log de la acción
                     try {
-                        const logUrl = `${CONFIG.scriptUrl}?action=admin_log_action&sessionToken=${encodeURIComponent(sessionToken)}&adminUser=${encodeURIComponent('admin')}&logAction=send_email&userId=${encodeURIComponent(_deCurrentUser.ID_Medico)}&details=${encodeURIComponent('Email directo: ' + subject)}`;
+                        const logUrl = `${CONFIG.scriptUrl}?action=admin_log_action&${_getSessionAuthParams()}&adminUser=${encodeURIComponent('admin')}&logAction=send_email&userId=${encodeURIComponent(_deCurrentUser.ID_Medico)}&details=${encodeURIComponent('Email directo: ' + subject)}`;
                         fetch(logUrl).catch(() => {});
                     } catch(e) {}
 
