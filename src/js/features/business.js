@@ -859,10 +859,6 @@ function _initCommonModules() {
     if (typeof updateApiStatus === 'function') updateApiStatus(storedKey || window.GROQ_API_KEY);
     if (typeof populateTemplateDropdown === 'function') populateTemplateDropdown();
 
-    // Pedir permiso de notificaciones desktop (no-blocking)
-    if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission();
-    }
     if (typeof initModals === 'function') initModals();
     if (typeof initShortcuts === 'function') initShortcuts();
     if (typeof initApiManagement === 'function') initApiManagement();
