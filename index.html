@@ -2181,6 +2181,13 @@
             window._pwaInstallPrompt = null; // Exponer globalmente
             const btnInstall   = document.getElementById('btnInstallPwa');
 
+            // Debug: verificar estado PWA
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                console.log('[PWA] App ya instalada (standalone mode)');
+            } else {
+                console.log('[PWA] App en navegador — esperando beforeinstallprompt...');
+            }
+
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
                 deferredPrompt = e;
