@@ -1225,6 +1225,26 @@ window.applyProfessionalData = function (data) {
     const welcomeName = document.getElementById('doctorWelcomeName');
     if (welcomeName && !isAdmin) welcomeName.textContent = `Dr/a. ${nombre}`;
 
+    // Header logo: reemplazar con logo del profesional o de la clínica
+    if (!isAdmin) {
+        const headerLogo = document.getElementById('headerLogoImg');
+        if (headerLogo) {
+            // Prioridad: 1) logo profesional (proLogo) 2) logo del workplace activo 3) default
+            const pdfCfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+            const proLogo = pdfCfg.professionalLogo || '';
+            const wpProfiles = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+            const activeIdx = pdfCfg.activeWorkplaceIndex ?? 0;
+            const wpLogo = wpProfiles[activeIdx]?.logo || wpProfiles[0]?.logo || '';
+            const bestLogo = proLogo || wpLogo;
+            if (bestLogo && bestLogo.startsWith('data:image/')) {
+                headerLogo.src = bestLogo;
+                headerLogo.style.borderRadius = '50%';
+                headerLogo.style.objectFit = 'cover';
+                headerLogo.style.border = '3px solid rgba(255,255,255,0.3)';
+            }
+        }
+    }
+
     // Locked display in metadata card
     const lockName = document.getElementById('lockNameDisplay');
     const lockMatricula = document.getElementById('lockMatriculaDisplay');
