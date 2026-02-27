@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎁 Test E2E — Gift Wizard (POST con imágenes)</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0d1117; color: #c9d1d9; padding: 20px; }
+        h1 { color: #58a6ff; margin-bottom: 6px; font-size: 1.5em; }
+        .subtitle { color: #8b949e; margin-bottom: 20px; font-size: 0.9em; }
+        .config-panel {
+            background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+            padding: 16px; margin-bottom: 20px;
+        }
+        .config-panel label { display: block; color: #8b949e; font-size: 0.85em; margin-bottom: 4px; }
+        .config-panel input {
+            width: 100%; padding: 8px 12px; background: #0d1117; border: 1px solid #30363d;
+            border-radius: 6px; color: #c9d1d9; font-size: 0.9em; margin-bottom: 10px;
+        }
+        .btn-run {
+            background: #238636; color: #fff; border: none; padding: 10px 24px;
+            border-radius: 6px; font-size: 1em; cursor: pointer; font-weight: 600;
+            margin-right: 10px;
+        }
+        .btn-run:hover { background: #2ea043; }
+        .btn-run:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-secondary {
+            background: #21262d; color: #c9d1d9; border: 1px solid #30363d; padding: 10px 20px;
+            border-radius: 6px; font-size: 0.9em; cursor: pointer;
+        }
+        .btn-secondary:hover { background: #30363d; }
+        #results {
+            margin-top: 16px; max-height: 70vh; overflow-y: auto;
+        }
+        .test-item {
+            background: #161b22; border: 1px solid #30363d; border-radius: 6px;
+            padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 12px;
+        }
+        .test-item.pass { border-left: 3px solid #3fb950; }
+        .test-item.fail { border-left: 3px solid #f85149; }
+        .test-item.info { border-left: 3px solid #58a6ff; }
+        .test-item.warn { border-left: 3px solid #d29922; }
+        .test-icon { font-size: 1.2em; flex-shrink: 0; }
+        .test-body { flex: 1; }
+        .test-title { font-weight: 600; margin-bottom: 4px; }
+        .test-detail { color: #8b949e; font-size: 0.85em; word-break: break-all; }
+        .summary {
+            background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+            padding: 16px; margin-top: 16px; text-align: center; font-size: 1.1em;
+        }
+        .summary.all-pass { border-color: #3fb950; color: #3fb950; }
+        .summary.has-fail { border-color: #f85149; color: #f85149; }
+        .progress-bar {
+            height: 4px; background: #21262d; border-radius: 2px; margin: 12px 0; overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%; background: #58a6ff; border-radius: 2px; width: 0%; transition: width 0.3s;
+        }
+        .payload-preview {
+            background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
+            padding: 12px; margin-top: 12px; max-height: 200px; overflow-y: auto;
+            font-family: 'Cascadia Code', monospace; font-size: 0.75em; color: #8b949e;
+            white-space: pre-wrap; word-break: break-all; display: none;
+        }
+        .toggle-payload {
+            color: #58a6ff; font-size: 0.8em; cursor: pointer; text-decoration: underline;
+            display: inline-block; margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>🎁 Test E2E — Creación de Usuario Gift con POST</h1>
+<p class="subtitle">Prueba automática completa: Login → Construir payload con imágenes → POST admin_create_user → Verificar → Limpiar</p>
+
+<div class="config-panel">
+    <label>🔗 Backend URL (Google Apps Script)</label>
+    <input type="text" id="cfgUrl" value="https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec">
+    
+    <label>🔑 Admin Key (la misma de Script Properties)</label>
+    <input type="password" id="cfgAdminKey" placeholder="Tu ADMIN_KEY">
+
+    <label>👤 Admin Username</label>
+    <input type="text" id="cfgUser" value="admin">
+
+    <label>🔒 Admin Password</label>
+    <input type="password" id="cfgPass" value="admin2026">
+
+    <label>🔑 API Key de Groq (para el usuario gift de prueba)</label>
+    <input type="text" id="cfgApiKey" placeholder="gsk_... (opcional, puede ir vacío)">
+
+    <div style="margin-top: 12px;">
+        <button class="btn-run" id="btnRun" onclick="runAllTests()">▶ Ejecutar Tests E2E</button>
+        <button class="btn-secondary" onclick="document.getElementById('results').innerHTML=''; document.getElementById('summary').innerHTML='';">🗑 Limpiar</button>
+    </div>
+</div>
+
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+<div id="results"></div>
+<div id="summary"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// DATOS FICTICIOS DEL DOCTOR DE PRUEBA
+// ══════════════════════════════════════════════════════════════
+
+// Imagen SVG mínima codificada en base64 (~200 bytes) para simular logo/firma
+const FAKE_LOGO_1 = 'data:image/svg+xml;base64,' + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#1a56a0" rx="20"/><text x="100" y="110" font-family="Arial" font-size="60" fill="#fff" text-anchor="middle">CM</text></svg>');
+const FAKE_LOGO_2 = 'data:image/svg+xml;base64,' + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#2d7d46" rx="20"/><text x="100" y="110" font-family="Arial" font-size="50" fill="#fff" text-anchor="middle">S+</text></svg>');
+const FAKE_FIRMA  = 'data:image/svg+xml;base64,' + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100"><path d="M10 80 Q 52 10, 95 80 T 180 80 T 270 60" stroke="#222" stroke-width="3" fill="none"/><text x="150" y="95" font-family="cursive" font-size="12" fill="#555" text-anchor="middle">Dr. Ficticio</text></svg>');
+const FAKE_PRO_LOGO = 'data:image/svg+xml;base64,' + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150"><circle cx="75" cy="75" r="70" fill="#e8f0fe" stroke="#1a56a0" stroke-width="3"/><text x="75" y="55" font-family="Arial" font-size="14" fill="#1a56a0" text-anchor="middle">Dr. Carlos</text><text x="75" y="75" font-family="Arial" font-size="14" fill="#1a56a0" text-anchor="middle">Mendoza</text><text x="75" y="95" font-family="Arial" font-size="10" fill="#888" text-anchor="middle">MP 45892</text></svg>');
+
+// También generar un logo PNG-like más pesado para probar payloads grandes
+function generateFakePNG(width, height, color) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width; canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 40px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('TEST', width / 2, height / 2);
+    return canvas.toDataURL('image/png');
+}
+
+const FAKE_DOCTOR = {
+    nombre: 'Dr. Carlos Alberto Mendoza Ríos',
+    email: 'carlos.mendoza.test@fakeclinica.com',
+    matricula: 'MP 45892 / MN 31207',
+    telefono: '+54 11 5555-7890',
+    especialidad: 'Medicina General',
+    apiKey: '' // se llena dinámicamente
+};
+
+const FAKE_WORKPLACES = [
+    {
+        name: 'Clínica San Martín',
+        address: 'Av. Rivadavia 4520, CABA, Argentina',
+        phone: '+54 11 4555-1234',
+        email: 'turnos@clinicasanmartin.com.ar',
+        logo: FAKE_LOGO_1
+    },
+    {
+        name: 'Consultorio Particular Dr. Mendoza',
+        address: 'Calle Libertad 1890 Piso 3° "B", CABA',
+        phone: '+54 11 6789-0000',
+        email: 'consultorio@drmendoza.com',
+        logo: FAKE_LOGO_2
+    }
+];
+
+const FAKE_HEADER_COLOR = '#1a56a0';
+const FAKE_FOOTER_TEXT = 'Clínica San Martín — Av. Rivadavia 4520 — Tel: 4555-1234 — www.clinicasanmartin.com.ar';
+const FAKE_NOTAS = 'Doctor de prueba E2E — no es real. Creado para testear el flujo Gift completo con imágenes.';
+
+// Templates (simulación de _getAllTemplateKeys)
+const ALL_TEMPLATE_KEYS = [
+    "ecografia_general", "ecografia_obstetrica", "ecografia_ginecologica",
+    "ecografia_mamaria", "ecografia_tiroidea", "ecografia_renal",
+    "ecografia_hepatobiliopancreatica", "ecografia_testicular",
+    "ecografia_partes_blandas", "ecografia_musculoesqueletica",
+    "eco_doppler_vasos_cuello", "eco_doppler_arterial_mmii",
+    "eco_doppler_venoso_mmii", "eco_doppler_aorta_abdominal",
+    "eco_doppler_renal", "ecocardiograma_trantoracico",
+    "nota_evolucion", "epicrisis"
+];
+
+// ══════════════════════════════════════════════════════════════
+// ENGINE DE TESTS
+// ══════════════════════════════════════════════════════════════
+
+const resultsDiv = () => document.getElementById('results');
+const summaryDiv = () => document.getElementById('summary');
+let testsPassed = 0;
+let testsFailed = 0;
+let testsTotal = 0;
+
+function log(type, title, detail) {
+    const icons = { pass: '✅', fail: '❌', info: 'ℹ️', warn: '⚠️' };
+    const div = document.createElement('div');
+    div.className = `test-item ${type}`;
+    div.innerHTML = `
+        <span class="test-icon">${icons[type]}</span>
+        <div class="test-body">
+            <div class="test-title">${title}</div>
+            ${detail ? `<div class="test-detail">${detail}</div>` : ''}
+        </div>`;
+    resultsDiv().appendChild(div);
+    resultsDiv().scrollTop = resultsDiv().scrollHeight;
+}
+
+function assert(condition, title, passDetail, failDetail) {
+    testsTotal++;
+    if (condition) {
+        testsPassed++;
+        log('pass', title, passDetail || '');
+    } else {
+        testsFailed++;
+        log('fail', title, failDetail || 'Assertion failed');
+    }
+    return condition;
+}
+
+function setProgress(pct) {
+    document.getElementById('progressFill').style.width = pct + '%';
+}
+
+// ══════════════════════════════════════════════════════════════
+// TESTS
+// ══════════════════════════════════════════════════════════════
+
+let _sessionData = null; // { sessionToken, username, nivel, tokenExpiry }
+let _createdUserId = null; // para cleanup
+
+async function runAllTests() {
+    const btn = document.getElementById('btnRun');
+    btn.disabled = true;
+    resultsDiv().innerHTML = '';
+    summaryDiv().innerHTML = '';
+    testsPassed = 0; testsFailed = 0; testsTotal = 0;
+    _createdUserId = null;
+
+    const BACKEND = document.getElementById('cfgUrl').value.trim();
+    const ADMIN_KEY = document.getElementById('cfgAdminKey').value.trim();
+    const ADMIN_USER = document.getElementById('cfgUser').value.trim();
+    const ADMIN_PASS = document.getElementById('cfgPass').value.trim();
+    FAKE_DOCTOR.apiKey = document.getElementById('cfgApiKey').value.trim();
+
+    if (!BACKEND || BACKEND === 'PASTE_APPS_SCRIPT_URL_HERE') {
+        log('fail', 'Configuración', 'Falta el Backend URL');
+        btn.disabled = false; return;
+    }
+    if (!ADMIN_KEY) {
+        log('fail', 'Configuración', 'Falta la Admin Key');
+        btn.disabled = false; return;
+    }
+
+    try {
+        // ────────────────────────────────────────────────────────────
+        // TEST 1: Login de admin
+        // ────────────────────────────────────────────────────────────
+        setProgress(10);
+        log('info', '1. Login de administrador', `Conectando a ${BACKEND.substring(0, 60)}...`);
+
+        const loginUrl = `${BACKEND}?action=admin_login&username=${encodeURIComponent(ADMIN_USER)}&password=${encodeURIComponent(ADMIN_PASS)}&adminKey=${encodeURIComponent(ADMIN_KEY)}`;
+        const loginResp = await fetch(loginUrl);
+        const loginData = await loginResp.json();
+
+        const loginOk = assert(
+            loginData.success === true,
+            '1a. Login exitoso',
+            `Token: ${(loginData.sessionToken || '').substring(0, 20)}...`,
+            `Error: ${loginData.error || 'sin respuesta'}`
+        );
+
+        if (!loginOk) {
+            log('fail', 'ABORTANDO', 'Sin login no se puede continuar');
+            showSummary(); btn.disabled = false; return;
+        }
+
+        // Guardar sesión exactamente como login.html
+        _sessionData = {
+            username: loginData.user.Username,
+            nombre: loginData.user.Nombre,
+            nivel: loginData.user.Nivel,
+            sessionToken: loginData.sessionToken,
+            tokenExpiry: loginData.tokenExpiry,
+            timestamp: Date.now()
+        };
+
+        assert(
+            _sessionData.sessionToken && _sessionData.sessionToken.length > 10,
+            '1b. Token de sesión válido',
+            `Longitud: ${_sessionData.sessionToken.length} chars`
+        );
+        assert(
+            _sessionData.tokenExpiry > Date.now(),
+            '1c. Token no expirado',
+            `Expira en: ${Math.round((_sessionData.tokenExpiry - Date.now()) / 3600000)}h`
+        );
+
+        // ────────────────────────────────────────────────────────────
+        // TEST 2: Construir payload Gift idéntico al de admin.html
+        // ────────────────────────────────────────────────────────────
+        setProgress(25);
+        log('info', '2. Construir payload Gift', 'Generando datos completos con 2 consultorios + firma + logos...');
+
+        const newId = 'TEST_GIFT_' + Date.now().toString(36).toUpperCase();
+        _createdUserId = newId;
+        const now = new Date().toISOString();
+        const venc = new Date();
+        venc.setFullYear(venc.getFullYear() + 1);
+        const fechaVenc = venc.toISOString().split('T')[0];
+
+        // Generar logos PNG más pesados para simular imágenes reales
+        const pngLogo1 = generateFakePNG(192, 192, '#1a56a0');
+        const pngLogo2 = generateFakePNG(192, 192, '#2d7d46');
+        const pngFirma = generateFakePNG(300, 100, '#f5f5f5');
+        const pngProLogo = generateFakePNG(150, 150, '#e8f0fe');
+
+        log('info', '2a. Imágenes generadas', 
+            `Logo1: ${(pngLogo1.length / 1024).toFixed(1)}KB · Logo2: ${(pngLogo2.length / 1024).toFixed(1)}KB · Firma: ${(pngFirma.length / 1024).toFixed(1)}KB · ProLogo: ${(pngProLogo.length / 1024).toFixed(1)}KB`);
+
+        const workplaces = [
+            { ...FAKE_WORKPLACES[0], logo: pngLogo1 },
+            { ...FAKE_WORKPLACES[1], logo: pngLogo2 }
+        ];
+
+        const registroDatos = {
+            workplace: workplaces[0],
+            extraWorkplaces: workplaces.slice(1),
+            headerColor: FAKE_HEADER_COLOR,
+            footerText: FAKE_FOOTER_TEXT,
+            firma: pngFirma,
+            proLogo: pngProLogo,
+            notas: FAKE_NOTAS
+        };
+
+        const userData = {
+            ID_Medico: newId,
+            Nombre: FAKE_DOCTOR.nombre,
+            Email: FAKE_DOCTOR.email,
+            Matricula: FAKE_DOCTOR.matricula,
+            Telefono: FAKE_DOCTOR.telefono,
+            Especialidad: FAKE_DOCTOR.especialidad,
+            Plan: 'GIFT',
+            Estado: 'active',
+            Fecha_Registro: now,
+            Fecha_Vencimiento: fechaVenc,
+            API_Key: FAKE_DOCTOR.apiKey,
+            Devices_Max: 10,
+            Allowed_Templates: JSON.stringify(ALL_TEMPLATE_KEYS),
+            Usage_Count: 0,
+            Devices_Logged: '[]',
+            Diagnostico_Pendiente: 'false',
+            Registro_Datos: JSON.stringify(registroDatos),
+            Notas_Admin: '🎁 TEST E2E — usuario regalo de prueba | ' + FAKE_NOTAS
+        };
+
+        // ── Construir POST payload exactamente como admin.html ──
+        const postPayload = {
+            action: 'admin_create_user',
+            sessionToken:  _sessionData.sessionToken,
+            sessionUser:   _sessionData.username,
+            sessionNivel:  _sessionData.nivel,
+            sessionExpiry: _sessionData.tokenExpiry,
+            userData: userData
+        };
+
+        const payloadJson = JSON.stringify(postPayload);
+        const payloadSizeKB = (payloadJson.length / 1024).toFixed(1);
+
+        assert(
+            payloadJson.length > 1000,
+            '2b. Payload construido',
+            `Tamaño total: ${payloadSizeKB} KB · ID: ${newId}`,
+            'Payload vacío o muy corto'
+        );
+
+        assert(
+            postPayload.sessionToken && postPayload.sessionToken.length > 10,
+            '2c. sessionToken en payload',
+            `sessionToken: ${postPayload.sessionToken.substring(0, 20)}...`
+        );
+        assert(
+            postPayload.sessionUser && postPayload.sessionUser.length > 0,
+            '2d. sessionUser en payload',
+            `sessionUser: "${postPayload.sessionUser}"`
+        );
+        assert(
+            postPayload.sessionExpiry > Date.now(),
+            '2e. sessionExpiry futuro',
+            `Valor: ${postPayload.sessionExpiry}`
+        );
+
+        assert(
+            userData.Registro_Datos.includes('extraWorkplaces'),
+            '2f. Registro_Datos contiene extraWorkplaces'
+        );
+        assert(
+            userData.Registro_Datos.includes('firma'),
+            '2g. Registro_Datos contiene firma'
+        );
+        assert(
+            userData.Registro_Datos.includes('proLogo'),
+            '2h. Registro_Datos contiene proLogo'
+        );
+
+        // ────────────────────────────────────────────────────────────
+        // TEST 3: Enviar POST admin_create_user
+        // ────────────────────────────────────────────────────────────
+        setProgress(45);
+        log('info', '3. POST admin_create_user', `Enviando ${payloadSizeKB} KB al backend...`);
+
+        const t0 = performance.now();
+        let createResp, createData;
+
+        try {
+            createResp = await fetch(BACKEND, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: payloadJson
+            });
+            createData = await createResp.json();
+        } catch (netErr) {
+            assert(false, '3a. Conexión POST', '', `Error de red: ${netErr.message}`);
+            showSummary(); btn.disabled = false; return;
+        }
+
+        const elapsed = ((performance.now() - t0) / 1000).toFixed(2);
+
+        assert(
+            createResp.ok,
+            '3a. HTTP status OK',
+            `Status: ${createResp.status} en ${elapsed}s`,
+            `Status: ${createResp.status}`
+        );
+
+        const createOk = assert(
+            createData.success === true,
+            '3b. Backend respondió success:true',
+            `userId: ${createData.userId || '?'}`,
+            `Error del backend: ${createData.error || JSON.stringify(createData)}`
+        );
+
+        if (createOk) {
+            assert(
+                createData.userId === newId,
+                '3c. userId coincide con el enviado',
+                `${createData.userId} === ${newId}`
+            );
+        }
+
+        // ────────────────────────────────────────────────────────────
+        // TEST 4: Verificar que el usuario existe (GET validate)
+        // ────────────────────────────────────────────────────────────
+        setProgress(65);
+
+        if (createOk) {
+            log('info', '4. Verificar usuario creado', `Consultando ID: ${newId}...`);
+
+            const validateUrl = `${BACKEND}?action=validate&id=${encodeURIComponent(newId)}`;
+            const valResp = await fetch(validateUrl);
+            const valData = await valResp.json();
+
+            assert(
+                valData.validated === true,
+                '4a. Usuario validado exitosamente',
+                `Nombre: ${valData.Nombre || '?'} · Plan: ${valData.Plan || '?'}`,
+                `Error: ${valData.error || 'no validado'}`
+            );
+
+            assert(
+                valData.Nombre === FAKE_DOCTOR.nombre,
+                '4b. Nombre correcto',
+                `"${valData.Nombre}"`,
+                `Esperado: "${FAKE_DOCTOR.nombre}" · Recibido: "${valData.Nombre}"`
+            );
+
+            assert(
+                String(valData.Plan || '').toUpperCase() === 'GIFT',
+                '4c. Plan es GIFT',
+                `Plan: ${valData.Plan}`,
+                `Plan: ${valData.Plan}`
+            );
+
+            assert(
+                valData.Email === FAKE_DOCTOR.email,
+                '4d. Email correcto',
+                `"${valData.Email}"`
+            );
+
+            assert(
+                Number(valData.Devices_Max) === 10,
+                '4e. Devices_Max = 10',
+                `${valData.Devices_Max}`
+            );
+
+            // Verificar que Registro_Datos se guardó y es parseable
+            let regDatos = null;
+            try { regDatos = JSON.parse(valData.Registro_Datos || '{}'); } catch(e) {}
+
+            assert(
+                regDatos && regDatos.workplace,
+                '4f. Registro_Datos es JSON válido con workplace',
+                `workplace.name: "${regDatos?.workplace?.name || '?'}"`
+            );
+
+            if (regDatos) {
+                assert(
+                    regDatos.workplace.name === FAKE_WORKPLACES[0].name,
+                    '4g. Workplace principal correcto',
+                    `"${regDatos.workplace.name}"`
+                );
+                assert(
+                    Array.isArray(regDatos.extraWorkplaces) && regDatos.extraWorkplaces.length === 1,
+                    '4h. extraWorkplaces tiene 1 consultorio extra',
+                    `Cantidad: ${regDatos.extraWorkplaces?.length}`
+                );
+                assert(
+                    regDatos.extraWorkplaces?.[0]?.name === FAKE_WORKPLACES[1].name,
+                    '4i. Nombre del 2° consultorio correcto',
+                    `"${regDatos.extraWorkplaces?.[0]?.name}"`
+                );
+                assert(
+                    regDatos.firma && regDatos.firma.startsWith('data:image'),
+                    '4j. Firma guardada como base64',
+                    `Largo: ${(regDatos.firma || '').length} chars`
+                );
+                assert(
+                    regDatos.proLogo && regDatos.proLogo.startsWith('data:image'),
+                    '4k. Logo profesional guardado como base64',
+                    `Largo: ${(regDatos.proLogo || '').length} chars`
+                );
+                assert(
+                    regDatos.headerColor === FAKE_HEADER_COLOR,
+                    '4l. Color del header correcto',
+                    regDatos.headerColor
+                );
+                assert(
+                    regDatos.footerText === FAKE_FOOTER_TEXT,
+                    '4m. Texto del footer correcto'
+                );
+                assert(
+                    regDatos.workplace.logo && regDatos.workplace.logo.startsWith('data:image'),
+                    '4n. Logo del consultorio 1 guardado',
+                    `Largo: ${(regDatos.workplace.logo || '').length} chars`
+                );
+                assert(
+                    regDatos.extraWorkplaces?.[0]?.logo?.startsWith('data:image'),
+                    '4o. Logo del consultorio 2 guardado',
+                    `Largo: ${(regDatos.extraWorkplaces?.[0]?.logo || '').length} chars`
+                );
+            }
+        } else {
+            log('warn', '4. SKIPPED — Verificación', 'No se creó el usuario, se omite la verificación');
+        }
+
+        // ────────────────────────────────────────────────────────────
+        // TEST 5: Verificar que NO se puede crear un ID duplicado
+        // ────────────────────────────────────────────────────────────
+        setProgress(80);
+
+        if (createOk) {
+            log('info', '5. Test de ID duplicado', 'Intentando crear el mismo ID de nuevo...');
+
+            const dupPayload = {
+                action: 'admin_create_user',
+                sessionToken: _sessionData.sessionToken,
+                sessionUser: _sessionData.username,
+                sessionNivel: _sessionData.nivel,
+                sessionExpiry: _sessionData.tokenExpiry,
+                userData: { ID_Medico: newId, Nombre: 'Duplicado', Email: 'dup@test.com' }
+            };
+
+            const dupResp = await fetch(BACKEND, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(dupPayload)
+            });
+            const dupData = await dupResp.json();
+
+            assert(
+                dupData.error && dupData.error.includes('ya existe'),
+                '5a. Backend rechaza ID duplicado',
+                `Error: "${dupData.error}"`,
+                `Esperaba error de duplicado, recibió: ${JSON.stringify(dupData)}`
+            );
+        }
+
+        // ────────────────────────────────────────────────────────────
+        // TEST 6: Verificar auth inválido
+        // ────────────────────────────────────────────────────────────
+        setProgress(85);
+        log('info', '6. Test de auth inválido', 'Enviando POST sin credenciales...');
+
+        const noAuthPayload = {
+            action: 'admin_create_user',
+            sessionToken: '',
+            sessionUser: '',
+            sessionNivel: '',
+            sessionExpiry: '',
+            userData: { ID_Medico: 'SHOULD_NOT_EXIST', Nombre: 'Hacker' }
+        };
+        const noAuthResp = await fetch(BACKEND, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(noAuthPayload)
+        });
+        const noAuthData = await noAuthResp.json();
+
+        assert(
+            noAuthData.error && noAuthData.error.toLowerCase().includes('unauthorized'),
+            '6a. POST sin auth es rechazado',
+            `Error: "${noAuthData.error}"`,
+            `Esperaba Unauthorized, recibió: ${JSON.stringify(noAuthData)}`
+        );
+
+        // Test con token expirado
+        const expiredPayload = {
+            action: 'admin_create_user',
+            sessionToken: _sessionData.sessionToken,
+            sessionUser: _sessionData.username,
+            sessionNivel: _sessionData.nivel,
+            sessionExpiry: 1000, // Expiry en 1970 → expirado
+            userData: { ID_Medico: 'SHOULD_NOT_EXIST_2', Nombre: 'Expired' }
+        };
+        const expResp = await fetch(BACKEND, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(expiredPayload)
+        });
+        const expData = await expResp.json();
+
+        assert(
+            expData.error && (expData.error.toLowerCase().includes('expired') || expData.error.toLowerCase().includes('invalid')),
+            '6b. POST con token expirado es rechazado',
+            `Error: "${expData.error}"`,
+            `Esperaba expired/invalid, recibió: ${JSON.stringify(expData)}`
+        );
+
+        // ────────────────────────────────────────────────────────────
+        // TEST 7: Verificar que _getSessionAuthParams funciona igual
+        // ────────────────────────────────────────────────────────────
+        setProgress(90);
+        log('info', '7. Comparación GET vs POST auth', 'Verificando que los mismos datos de sesión funcionan en GET...');
+
+        // Simular _getSessionAuthParams() exactamente como admin.html
+        const getAuthStr = `sessionToken=${encodeURIComponent(_sessionData.sessionToken)}&sessionUser=${encodeURIComponent(_sessionData.username)}&sessionNivel=${encodeURIComponent(_sessionData.nivel || '')}&sessionExpiry=${encodeURIComponent(_sessionData.tokenExpiry || '')}`;
+        
+        const getUrl = `${BACKEND}?action=admin_list_users&${getAuthStr}`;
+        const getResp = await fetch(getUrl);
+        const getData = await getResp.json();
+
+        assert(
+            Array.isArray(getData.users),
+            '7a. GET admin_list_users funciona con misma sesión',
+            `${getData.total || getData.users?.length || 0} usuarios encontrados`
+        );
+
+        // Verificar que nuestro usuario creado aparece en la lista
+        if (createOk && getData.users) {
+            const found = getData.users.find(u => String(u.ID_Medico) === newId);
+            assert(
+                !!found,
+                '7b. Usuario Gift aparece en admin_list_users',
+                `Encontrado: ${found?.Nombre || '?'}`
+            );
+        }
+
+        // ────────────────────────────────────────────────────────────
+        // CLEANUP: Borrar usuario de prueba (cambiar estado a 'deleted')
+        // ────────────────────────────────────────────────────────────
+        setProgress(95);
+
+        if (createOk) {
+            log('info', '🧹 Limpieza', `Marcando usuario ${newId} como inactive para no contaminar...`);
+
+            const cleanupUrl = `${BACKEND}?action=admin_update_user&${getAuthStr}&userId=${encodeURIComponent(newId)}&updates=${encodeURIComponent(JSON.stringify({ Estado: 'inactive', Notas_Admin: '🧹 Auto-cleanup por test E2E — ' + new Date().toISOString() }))}`;
+            const cleanResp = await fetch(cleanupUrl);
+            const cleanData = await cleanResp.json();
+
+            assert(
+                cleanData.success === true,
+                '🧹 Usuario de prueba marcado como inactive',
+                'Limpieza exitosa',
+                `Error al limpiar: ${cleanData.error || '?'}`
+            );
+        }
+
+        setProgress(100);
+
+    } catch (err) {
+        log('fail', 'ERROR INESPERADO', `${err.message}\n${err.stack || ''}`);
+    }
+
+    showSummary();
+    btn.disabled = false;
+}
+
+function showSummary() {
+    const div = summaryDiv();
+    const allPassed = testsFailed === 0;
+    div.className = `summary ${allPassed ? 'all-pass' : 'has-fail'}`;
+    div.innerHTML = `
+        <strong>${allPassed ? '🎉 TODOS LOS TESTS PASARON' : '⚠️ HAY ERRORES'}</strong><br>
+        ✅ ${testsPassed} passed · ❌ ${testsFailed} failed · Total: ${testsTotal}
+        <br><small style="color:#8b949e">${new Date().toLocaleString()}</small>
+    `;
+}
+</script>
+
+</body>
+</html>
