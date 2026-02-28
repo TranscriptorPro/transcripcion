@@ -75,40 +75,48 @@
   .header::before {
     content: '';
     position: absolute;
-    inset: 0;
-    background-image: radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px);
-    background-size: 28px 28px;
-    animation: headerDotMove 18s linear infinite;
+    inset: -60%;
+    background:
+      radial-gradient(ellipse 320px 200px at 18% 55%, rgba(255,255,255,0.11) 0%, transparent 65%),
+      radial-gradient(ellipse 180px 280px at 78% 25%, rgba(255,255,255,0.09) 0%, transparent 65%),
+      radial-gradient(ellipse 240px 130px at 50% 85%, rgba(255,255,255,0.07) 0%, transparent 65%),
+      radial-gradient(ellipse 100px 100px at 88% 75%, rgba(255,255,255,0.10) 0%, transparent 60%),
+      radial-gradient(ellipse 70px 110px at 35% 15%, rgba(255,255,255,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 50px 50px at 62% 48%, rgba(255,255,255,0.12) 0%, transparent 55%),
+      radial-gradient(ellipse 90px 60px at 10% 80%, rgba(255,255,255,0.07) 0%, transparent 60%);
+    filter: blur(18px);
+    animation: fractalA 22s ease-in-out infinite alternate;
     pointer-events: none;
     z-index: 0;
   }
   .header::after {
     content: '';
     position: absolute;
-    top: -100%;
-    left: -60%;
-    width: 60%;
-    height: 300%;
-    background: linear-gradient(
-      105deg,
-      transparent 40%,
-      rgba(255,255,255,0.04) 50%,
-      rgba(255,255,255,0.07) 52%,
-      rgba(255,255,255,0.04) 54%,
-      transparent 64%
-    );
-    animation: headerSweep 7s ease-in-out infinite;
+    inset: -60%;
+    background:
+      radial-gradient(ellipse 200px 300px at 65% 18%, rgba(255,255,255,0.08) 0%, transparent 65%),
+      radial-gradient(ellipse 140px 90px at 25% 72%, rgba(255,255,255,0.10) 0%, transparent 60%),
+      radial-gradient(ellipse 80px 130px at 92% 55%, rgba(255,255,255,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 110px 70px at 44% 90%, rgba(255,255,255,0.09) 0%, transparent 60%),
+      radial-gradient(ellipse 55px 55px at 8%  35%, rgba(255,255,255,0.11) 0%, transparent 55%),
+      radial-gradient(ellipse 160px 110px at 72% 65%, rgba(255,255,255,0.06) 0%, transparent 65%);
+    filter: blur(24px);
+    animation: fractalB 30s ease-in-out infinite alternate-reverse;
     pointer-events: none;
     z-index: 0;
   }
-  @keyframes headerDotMove {
-    0%   { background-position: 0 0; }
-    100% { background-position: 28px 28px; }
+  @keyframes fractalA {
+    0%   { transform: translate(0px,   0px)  scale(1)    rotate(0deg);  }
+    25%  { transform: translate(18px,  -10px) scale(1.04) rotate(2deg);  }
+    50%  { transform: translate(-12px,  14px) scale(0.97) rotate(-1deg); }
+    75%  { transform: translate(22px,   6px)  scale(1.03) rotate(3deg);  }
+    100% { transform: translate(-6px,  -18px) scale(1.07) rotate(-2deg); }
   }
-  @keyframes headerSweep {
-    0%   { left: -60%; }
-    60%  { left: 110%; }
-    100% { left: 110%; }
+  @keyframes fractalB {
+    0%   { transform: translate(0px,   0px)  scale(1)    rotate(0deg);  }
+    30%  { transform: translate(-20px,  12px) scale(1.05) rotate(-3deg); }
+    60%  { transform: translate(14px,  -16px) scale(0.96) rotate(2deg);  }
+    100% { transform: translate(-8px,   20px) scale(1.06) rotate(-1deg); }
   }
   .header-content {
     max-width: 1400px;
