@@ -443,10 +443,19 @@ window.openPrintPreview = async function () {
     if (qrEl) {
         const showQR = config.showQR ?? false;
         if (showQR && typeof generateQRCode === 'function') {
-            // RM-5: QR con referencia interna (sin datos del paciente en texto plano)
-            const qrData = reportNum
-                ? `TPRO-${reportNum}`
-                : `TPRO-${Date.now()}`;
+            // Construir texto de verificación con datos del informe
+            const qrParts = [
+                'TPRO-VERIFY',
+                `ID:${reportNum || 'TPRO-' + Date.now()}`,
+                `Fecha:${new Date().toLocaleDateString('es-ES')}`,
+                profName ? `Prof:${profName}` : '',
+                matricula ? `Mat:${matricula}` : '',
+                config.patientName ? `Pac:${config.patientName}` : '',
+                config.patientDni ? `DNI:${config.patientDni}` : '',
+                studyType ? `Estudio:${studyType}` : '',
+                institutionName ? `Inst:${institutionName}` : ''
+            ].filter(Boolean);
+            const qrData = qrParts.join('|');
             const qrImgSrc = generateQRCode(qrData || 'Transcriptor Médico Pro');
             qrEl.innerHTML = `<img src="${qrImgSrc}" alt="QR" style="width:72px;height:72px;">
                 <span class="pvqr-label">Código de verificación</span>`;

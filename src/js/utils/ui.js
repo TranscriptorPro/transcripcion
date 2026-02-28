@@ -425,6 +425,15 @@ window.initModals = function () {
 
     if (btnDownloadFromPreview) {
         btnDownloadFromPreview.addEventListener('click', async () => {
+            // Si el plan no permite PDF, descargar TXT en su lugar
+            if (btnDownloadFromPreview._forceTxt) {
+                if (typeof window.downloadTXT === 'function') {
+                    window.downloadTXT();
+                } else {
+                    if (typeof showToast === 'function') showToast('Formato TXT no disponible', 'info');
+                }
+                return;
+            }
             const editorEl = window.editor || document.getElementById('editor');
             if (!editorEl || !editorEl.innerHTML.trim()) {
                 if (typeof showToast === 'function') showToast('No hay contenido en el editor', 'error');
@@ -449,8 +458,40 @@ window.initModals = function () {
         const svgInBtn = btnDownloadPreviewMore.querySelector('svg');
         if (svgInBtn) svgInBtn.style.pointerEvents = 'none';
 
+        // Determinar formatos permitidos según plan
+        const _getAllowedFormats = () => {
+            const cfg = window.CLIENT_CONFIG || {};
+            const type = (cfg.type || 'ADMIN').toUpperCase();
+            if (type === 'ADMIN' || type === 'PRO') return ['pdf', 'rtf', 'txt', 'html'];
+            if (type === 'NORMAL') return ['txt', 'pdf'];
+            return ['txt']; // TRIAL
+        };
+
+        // Aplicar filtros de formato al dropdown y botón principal
+        const _applyFormatRestrictions = () => {
+            const allowed = _getAllowedFormats();
+            previewDownloadDropdown.querySelectorAll('button[data-format]').forEach(btn => {
+                const fmt = btn.dataset.format;
+                btn.style.display = allowed.includes(fmt) ? 'block' : 'none';
+            });
+            // Cambiar texto del botón principal según el formato por defecto
+            if (btnDownloadFromPreview) {
+                if (allowed.includes('pdf')) {
+                    btnDownloadFromPreview.textContent = '📥 Descargar PDF';
+                } else {
+                    btnDownloadFromPreview.textContent = '📥 Descargar TXT';
+                    // Override la acción para que descargue TXT
+                    btnDownloadFromPreview._forceTxt = true;
+                }
+            }
+            // Ocultar chevron si solo hay 1 formato
+            btnDownloadPreviewMore.style.display = allowed.length > 1 ? '' : 'none';
+        };
+        _applyFormatRestrictions();
+
         btnDownloadPreviewMore.addEventListener('click', (e) => {
             e.stopPropagation();
+            _applyFormatRestrictions(); // refrescar por si cambió
             const isOpen = previewDownloadDropdown.style.display !== 'none';
             previewDownloadDropdown.style.display = isOpen ? 'none' : 'block';
         });

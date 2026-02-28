@@ -480,6 +480,10 @@ async function _handleFactorySetup(medicoId) {
             return;
         }
 
+        // ── Parsear datos enriquecidos del registro ANTES de usarlos ─────────
+        let regDatos = {};
+        try { regDatos = JSON.parse(doctor.Registro_Datos || '{}'); } catch(_) {}
+
         // ── Mapear plan → CLIENT_CONFIG ──────────────────────────────────────
         const plan = String(doctor.Plan || 'trial').toLowerCase();
         const planMap = {
@@ -541,9 +545,8 @@ async function _handleFactorySetup(medicoId) {
         if (typeof appDB !== 'undefined') appDB.set('prof_data', profData);
         localStorage.setItem('prof_data', JSON.stringify(profData));
 
-        // ── Cargar datos enriquecidos del registro (si existen) ──────────────
-        let regDatos = {};
-        try { regDatos = JSON.parse(doctor.Registro_Datos || '{}'); } catch(_) {}
+        // ── Cargar datos enriquecidos del registro ─────────────────────────────
+        // (regDatos ya fue parseado arriba, antes de clientConfig)
 
         // Workplace profiles (si el registro incluía datos de lugar de trabajo)
         if (regDatos.workplace) {
@@ -605,21 +608,19 @@ async function _handleFactorySetup(medicoId) {
             } catch(_) {}
         }
 
-        // Firma del profesional (base64)
+        // Firma del profesional (base64) → guardar en la key que pdfMaker lee
         if (regDatos.firma) {
             try {
-                const existingConfig = getProfConfig();
-                existingConfig.signature = regDatos.firma;
-                setProfConfig(existingConfig);
+                if (typeof appDB !== 'undefined') appDB.set('pdf_signature', regDatos.firma);
+                localStorage.setItem('pdf_signature', regDatos.firma);
             } catch(_) {}
         }
 
-        // Logo profesional (base64)
+        // Logo profesional (base64) → guardar en la key que pdfMaker lee
         if (regDatos.proLogo) {
             try {
-                const existingConfig = getProfConfig();
-                existingConfig.professionalLogo = regDatos.proLogo;
-                setProfConfig(existingConfig);
+                if (typeof appDB !== 'undefined') appDB.set('pdf_logo', regDatos.proLogo);
+                localStorage.setItem('pdf_logo', regDatos.proLogo);
             } catch(_) {}
         }
 
@@ -648,12 +649,14 @@ async function _handleFactorySetup(medicoId) {
             } catch(_) {}
         }
 
-        // Footer text del PDF
+        // Footer text del PDF → guardar en pdf_config directamente
         if (regDatos.footerText) {
             try {
-                const existingConfig = getProfConfig();
-                existingConfig.footerText = regDatos.footerText;
-                setProfConfig(existingConfig);
+                const existingCfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+                existingCfg.footerText = regDatos.footerText;
+                if (typeof appDB !== 'undefined') appDB.set('pdf_config', existingCfg);
+                localStorage.setItem('pdf_config', JSON.stringify(existingCfg));
+                window._pdfConfigCache = existingCfg;
             } catch(_) {}
         }
 
@@ -899,6 +902,11 @@ function _initClient() {
 
     // Session Assistant — se abre cada vez que carga la app
     _launchSessionAssistant();
+
+    // PWA: ofrecer instalar la app en cada visita (si no está instalada todavía)
+    if (!window.matchMedia('(display-mode: standalone)').matches) {
+        _tryPwaInstall(3);
+    }
 }
 
 // ─── Módulos comunes (admin + cliente) ───────────────────────────────────────

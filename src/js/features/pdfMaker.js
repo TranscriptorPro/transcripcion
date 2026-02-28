@@ -55,11 +55,19 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const cfgShowPageNum = config.showPageNum !== false;
         const cfgShowDate    = config.showDate    === true;
 
-        // Logo/firma: profesional activo tiene prioridad sobre los globales
-        const logoB64 = (activePro?.logo  && activePro.logo.startsWith('data:'))
-            ? activePro.logo  : ((await appDB.get('pdf_logo'))      || '');
+        // Logo institucional: del workplace o fallback global pdf_logo
+        const wpLogo = activeWp?.logo || '';
+        const instLogoB64 = (wpLogo && wpLogo.startsWith('data:'))
+            ? wpLogo : ((await appDB.get('pdf_logo')) || '');
+        // Logo del profesional: del profesional activo
+        const profLogoB64 = (activePro?.logo && activePro.logo.startsWith('data:'))
+            ? activePro.logo : '';
+        // Firma del profesional
         const sigB64  = (activePro?.firma && activePro.firma.startsWith('data:'))
             ? activePro.firma : ((await appDB.get('pdf_signature')) || '');
+
+        // Compatibilidad: si no hay logo institucional pero sí logo genérico, usarlo
+        const logoB64 = instLogoB64 || profLogoB64;
 
         // Datos del profesional: activo sobreescribe prof_data
         const profName     = activePro?.nombre         || profData.nombre      || '';
@@ -157,17 +165,27 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             cy = 10;
             let infoX = ML;
 
-            // Logo (izquierda)
-            if (logoB64) {
+            // Logo institucional (izquierda del header)
+            if (instLogoB64) {
                 try {
                     const imgW = 28, imgH = 18;
-                    const imgType = logoB64.includes('data:image/png') ? 'PNG' : 'JPEG';
-                    const b64data = logoB64.includes(',') ? logoB64.split(',')[1] : logoB64;
+                    const imgType = instLogoB64.includes('data:image/png') ? 'PNG' : 'JPEG';
+                    const b64data = instLogoB64.includes(',') ? instLogoB64.split(',')[1] : instLogoB64;
                     doc.addImage(b64data, imgType, ML, cy, imgW, imgH);
                     infoX = ML + imgW + 6;
                 } catch (e) {
                     infoX = ML;
                 }
+            }
+
+            // Logo/foto del profesional (al lado derecho del header)
+            if (profLogoB64 && profLogoB64 !== instLogoB64) {
+                try {
+                    const profImgW = 16, profImgH = 16;
+                    const profImgType = profLogoB64.includes('data:image/png') ? 'PNG' : 'JPEG';
+                    const profB64data = profLogoB64.includes(',') ? profLogoB64.split(',')[1] : profLogoB64;
+                    doc.addImage(profB64data, profImgType, PAGE_W - MR - profImgW, cy, profImgW, profImgH);
+                } catch (e) { /* imagen inválida */ }
             }
 
             // Nombre del profesional
@@ -617,7 +635,19 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const cfgShowQR = config.showQR ?? false;
         if (cfgShowQR && typeof generateQRCode === 'function') {
             try {
-                const qrText = `TPRO-${Date.now()}`;
+                // Construir texto de verificación con datos del informe
+                const qrParts = [
+                    'TPRO-VERIFY',
+                    `ID:${reportNum || 'TPRO-' + Date.now()}`,
+                    `Fecha:${pDate}`,
+                    profName ? `Prof:${profName}` : '',
+                    matricula ? `Mat:${matricula}` : '',
+                    pName ? `Pac:${pName}` : '',
+                    pDni ? `DNI:${pDni}` : '',
+                    studyType ? `Estudio:${studyType}` : '',
+                    institutionName ? `Inst:${institutionName}` : ''
+                ].filter(Boolean);
+                const qrText = qrParts.join('|');
                 const qrDataUrl = generateQRCode(qrText);
                 if (qrDataUrl) {
                     cy += 6;

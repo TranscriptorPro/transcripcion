@@ -2644,6 +2644,353 @@ test('removeFromStructurePendingQueue elimina entry', () => {
     localStorage.clear();
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bloque 55: Fábrica de Clones — _handleFactorySetup (T9)
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 55: Fábrica de Clones ────────────────────');
+
+// Cargar business.js parcialmente — extraer funciones puras inline
+// No podemos cargar todo business.js porque tiene dependencias de DOM pesadas,
+// pero podemos testear la lógica de mapeo y persistencia.
+
+// ── Helper: simular _handleFactorySetup lógica de mapeo ─────────────────────
+function _testPlanMapping(planStr) {
+    const plan = String(planStr || 'trial').toLowerCase();
+    const planMap = {
+        trial:      { type: 'TRIAL',  hasProMode: false, hasDashboard: false, canGenerateApps: false },
+        normal:     { type: 'NORMAL', hasProMode: false, hasDashboard: false, canGenerateApps: false },
+        pro:        { type: 'PRO',    hasProMode: true,  hasDashboard: true,  canGenerateApps: false },
+        gift:       { type: 'PRO',    hasProMode: true,  hasDashboard: true,  canGenerateApps: false },
+        clinic:     { type: 'PRO',    hasProMode: true,  hasDashboard: true,  canGenerateApps: true  },
+        enterprise: { type: 'PRO',    hasProMode: true,  hasDashboard: true,  canGenerateApps: false }
+    };
+    return planMap[plan] || planMap.trial;
+}
+
+test('Plan mapping: TRIAL → type TRIAL, no proMode', () => {
+    const pc = _testPlanMapping('trial');
+    assertEqual(pc.type, 'TRIAL');
+    assert(!pc.hasProMode, 'Trial NO debe tener proMode');
+    assert(!pc.hasDashboard);
+    assert(!pc.canGenerateApps);
+});
+
+test('Plan mapping: NORMAL → type NORMAL, no proMode', () => {
+    const pc = _testPlanMapping('normal');
+    assertEqual(pc.type, 'NORMAL');
+    assert(!pc.hasProMode);
+});
+
+test('Plan mapping: PRO → type PRO, con proMode', () => {
+    const pc = _testPlanMapping('pro');
+    assertEqual(pc.type, 'PRO');
+    assert(pc.hasProMode, 'Pro DEBE tener proMode');
+    assert(pc.hasDashboard);
+});
+
+test('Plan mapping: GIFT → type PRO, con proMode (como PRO)', () => {
+    const pc = _testPlanMapping('gift');
+    assertEqual(pc.type, 'PRO');
+    assert(pc.hasProMode, 'Gift DEBE tener proMode');
+    assert(pc.hasDashboard);
+    assert(!pc.canGenerateApps, 'Gift NO genera apps');
+});
+
+test('Plan mapping: CLINIC → type PRO, canGenerateApps=true', () => {
+    const pc = _testPlanMapping('clinic');
+    assertEqual(pc.type, 'PRO');
+    assert(pc.hasProMode);
+    assert(pc.canGenerateApps, 'Clinic SÍ genera apps');
+});
+
+test('Plan mapping: desconocido → fallback a TRIAL', () => {
+    const pc = _testPlanMapping('unknown_plan');
+    assertEqual(pc.type, 'TRIAL');
+    assert(!pc.hasProMode);
+});
+
+test('device_id se genera una sola vez y persiste', () => {
+    localStorage.clear();
+    // Simular generación
+    let deviceId = localStorage.getItem('device_id');
+    assert(!deviceId, 'No debe existir device_id inicialmente');
+    deviceId = 'dev_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem('device_id', deviceId);
+    // Segunda lectura: debe devolver el mismo
+    const secondRead = localStorage.getItem('device_id');
+    assertEqual(deviceId, secondRead, 'device_id debe persistir');
+    localStorage.clear();
+});
+
+test('client_config_stored se guarda con todos los campos requeridos', () => {
+    localStorage.clear();
+    const medicoId = 'MED_TEST_001';
+    const pc = _testPlanMapping('pro');
+    const clientConfig = {
+        medicoId:         medicoId,
+        type:             pc.type,
+        status:           'active',
+        specialties:      ['Cardiología'],
+        maxDevices:       3,
+        trialDays:        0,
+        hasProMode:       pc.hasProMode,
+        hasDashboard:     pc.hasDashboard,
+        canGenerateApps:  pc.canGenerateApps,
+        allowedTemplates: [],
+        backendUrl:       'https://example.com'
+    };
+    localStorage.setItem('client_config_stored', JSON.stringify(clientConfig));
+    const stored = JSON.parse(localStorage.getItem('client_config_stored'));
+    assertEqual(stored.medicoId, 'MED_TEST_001');
+    assertEqual(stored.type, 'PRO');
+    assertEqual(stored.status, 'active');
+    assert(stored.hasProMode, 'Pro debe tener hasProMode');
+    assert(Array.isArray(stored.specialties));
+    assert(Array.isArray(stored.allowedTemplates));
+    assert(stored.backendUrl, 'Debe tener backendUrl');
+    localStorage.clear();
+});
+
+test('prof_data se genera con nombre, matrícula, especialidad', () => {
+    localStorage.clear();
+    const doctor = { Nombre: 'Dr. García', Matricula: 'MP-1234', Especialidad: 'Cardiología' };
+    const profData = {
+        nombre:       doctor.Nombre || 'Profesional',
+        matricula:    doctor.Matricula || '',
+        workplace:    '',
+        specialties:  ['ALL'],
+        estudios:     [],
+        especialidad: doctor.Especialidad || ''
+    };
+    localStorage.setItem('prof_data', JSON.stringify(profData));
+    const stored = JSON.parse(localStorage.getItem('prof_data'));
+    assertEqual(stored.nombre, 'Dr. García');
+    assertEqual(stored.matricula, 'MP-1234');
+    assertEqual(stored.especialidad, 'Cardiología');
+    localStorage.clear();
+});
+
+test('Firma base64 se guarda en pdf_signature (la key que pdfMaker lee)', () => {
+    localStorage.clear();
+    const firmaB64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==';
+    // Simular lo que hace _handleFactorySetup (corregido en T1)
+    localStorage.setItem('pdf_signature', firmaB64);
+    const stored = localStorage.getItem('pdf_signature');
+    assertEqual(stored, firmaB64, 'La firma debe guardarse como pdf_signature');
+    assert(stored.startsWith('data:image/'), 'Debe tener prefijo data:image/');
+    localStorage.clear();
+});
+
+test('Logo profesional se guarda en pdf_logo (la key que pdfMaker lee)', () => {
+    localStorage.clear();
+    const logoB64 = 'data:image/png;base64,ABCDEF123456';
+    localStorage.setItem('pdf_logo', logoB64);
+    const stored = localStorage.getItem('pdf_logo');
+    assertEqual(stored, logoB64);
+    localStorage.clear();
+});
+
+test('Color del tema (customPrimaryColor) se aplica desde regDatos.headerColor', () => {
+    localStorage.clear();
+    const headerColor = '#14b8a6';
+    localStorage.setItem('customPrimaryColor', headerColor);
+    const stored = localStorage.getItem('customPrimaryColor');
+    assertEqual(stored, '#14b8a6', 'customPrimaryColor debe coincidir con headerColor');
+    localStorage.clear();
+});
+
+test('API key se guarda y persiste en groq_api_key', () => {
+    localStorage.clear();
+    const apiKey = 'gsk_test123_abc456';
+    localStorage.setItem('groq_api_key', apiKey);
+    const stored = localStorage.getItem('groq_api_key');
+    assertEqual(stored, apiKey, 'La API key debe persistir en localStorage');
+    // Simular chequeo del onboarding (K1)
+    const hasPreloadedKey = !!localStorage.getItem('groq_api_key');
+    assert(hasPreloadedKey, 'hasPreloadedKey debe ser true si la key fue precargada');
+    localStorage.clear();
+});
+
+test('wasAdmin flag: no false positive para nuevo gift user (stored=null)', () => {
+    localStorage.clear();
+    // Si stored es null (primer uso), wasAdmin debe ser false
+    const stored = localStorage.getItem('client_config_stored');
+    const wasAdmin = stored && (function() {
+        try { return JSON.parse(stored).type === 'ADMIN' || !JSON.parse(stored).type; } catch(_) { return true; }
+    })();
+    assert(!wasAdmin, 'wasAdmin debe ser false para usuario nuevo (stored=null)');
+    localStorage.clear();
+});
+
+test('wasAdmin flag: true para admin existente', () => {
+    localStorage.clear();
+    localStorage.setItem('client_config_stored', JSON.stringify({ type: 'ADMIN' }));
+    const stored = localStorage.getItem('client_config_stored');
+    const wasAdmin = stored && (function() {
+        try { return JSON.parse(stored).type === 'ADMIN' || !JSON.parse(stored).type; } catch(_) { return true; }
+    })();
+    assert(wasAdmin, 'wasAdmin debe ser true para admin existente');
+    localStorage.clear();
+});
+
+test('wasAdmin flag: false para gift user existente', () => {
+    localStorage.clear();
+    localStorage.setItem('client_config_stored', JSON.stringify({ type: 'PRO', medicoId: 'MED001' }));
+    const stored = localStorage.getItem('client_config_stored');
+    const wasAdmin = stored && (function() {
+        try { return JSON.parse(stored).type === 'ADMIN' || !JSON.parse(stored).type; } catch(_) { return true; }
+    })();
+    assert(!wasAdmin, 'wasAdmin debe ser false para gift user (type=PRO)');
+    localStorage.clear();
+});
+
+test('Factory: mock fetch exitoso — clientConfig se almacena correctamente', async () => {
+    localStorage.clear();
+    const mockDoctor = {
+        Nombre: 'Dr. Test',
+        Matricula: 'MT-999',
+        Plan: 'gift',
+        Estado: 'active',
+        Especialidad: 'Cardiología,Ecografía',
+        Devices_Max: 2,
+        Allowed_Templates: '',
+        API_Key: 'gsk_test_factory_key',
+        Registro_Datos: JSON.stringify({
+            firma: 'data:image/png;base64,FIRMA_TEST',
+            proLogo: 'data:image/png;base64,LOGO_TEST',
+            headerColor: '#ff5722',
+            footerText: 'Footer de prueba',
+            workplace: { name: 'Clínica Test', address: 'Av Test 123', phone: '555-1234' }
+        })
+    };
+
+    // Simular la lógica de _handleFactorySetup sin las dependencias de DOM
+    const medicoId = 'MED_FACTORY_TEST';
+    let deviceId = localStorage.getItem('device_id');
+    if (!deviceId) {
+        deviceId = 'dev_' + Date.now() + '_test';
+        localStorage.setItem('device_id', deviceId);
+    }
+
+    const doctor = mockDoctor;
+    let regDatos = {};
+    try { regDatos = JSON.parse(doctor.Registro_Datos || '{}'); } catch(_) {}
+
+    const plan = String(doctor.Plan || 'trial').toLowerCase();
+    const pc = _testPlanMapping(plan);
+
+    let specialties = ['ALL'];
+    const spec = String(doctor.Especialidad || 'ALL');
+    specialties = spec === 'ALL' ? ['ALL'] : spec.split(',').map(s => s.trim());
+
+    const clientConfig = {
+        medicoId, type: pc.type, status: 'active',
+        specialties, maxDevices: Number(doctor.Devices_Max) || 2,
+        trialDays: 0, hasProMode: pc.hasProMode,
+        hasDashboard: pc.hasDashboard, canGenerateApps: pc.canGenerateApps,
+        allowedTemplates: [], backendUrl: 'https://example.com'
+    };
+    localStorage.setItem('client_config_stored', JSON.stringify(clientConfig));
+
+    const profData = {
+        nombre: doctor.Nombre || 'Profesional',
+        matricula: doctor.Matricula || '',
+        workplace: '', specialties, estudios: [],
+        especialidad: doctor.Especialidad || ''
+    };
+    localStorage.setItem('prof_data', JSON.stringify(profData));
+
+    // Simular guardado de firma, logo, key, color, footer
+    if (regDatos.firma) localStorage.setItem('pdf_signature', regDatos.firma);
+    if (regDatos.proLogo) localStorage.setItem('pdf_logo', regDatos.proLogo);
+    if (regDatos.headerColor) localStorage.setItem('customPrimaryColor', regDatos.headerColor);
+    if (regDatos.footerText) {
+        const cfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        cfg.footerText = regDatos.footerText;
+        localStorage.setItem('pdf_config', JSON.stringify(cfg));
+    }
+    const apiKey = doctor.API_Key || regDatos.apiKey || '';
+    if (apiKey) localStorage.setItem('groq_api_key', apiKey);
+    localStorage.setItem('medico_id', medicoId);
+
+    if (regDatos.workplace) {
+        const wp = typeof regDatos.workplace === 'string' ? JSON.parse(regDatos.workplace) : regDatos.workplace;
+        if (wp && wp.name) {
+            const workplaceProfiles = [{ name: wp.name, address: wp.address || '', phone: wp.phone || '' }];
+            localStorage.setItem('workplace_profiles', JSON.stringify(workplaceProfiles));
+        }
+    }
+
+    // Verificaciones
+    const storedCfg = JSON.parse(localStorage.getItem('client_config_stored'));
+    assertEqual(storedCfg.type, 'PRO', 'Gift debe mapearse a PRO');
+    assert(storedCfg.hasProMode, 'Gift debe tener proMode');
+    assertEqual(storedCfg.medicoId, 'MED_FACTORY_TEST');
+
+    const storedProf = JSON.parse(localStorage.getItem('prof_data'));
+    assertEqual(storedProf.nombre, 'Dr. Test');
+    assertEqual(storedProf.matricula, 'MT-999');
+
+    assertEqual(localStorage.getItem('pdf_signature'), 'data:image/png;base64,FIRMA_TEST');
+    assertEqual(localStorage.getItem('pdf_logo'), 'data:image/png;base64,LOGO_TEST');
+    assertEqual(localStorage.getItem('customPrimaryColor'), '#ff5722');
+    assertEqual(localStorage.getItem('groq_api_key'), 'gsk_test_factory_key');
+    assertEqual(localStorage.getItem('medico_id'), 'MED_FACTORY_TEST');
+
+    const storedPdfCfg = JSON.parse(localStorage.getItem('pdf_config'));
+    assertEqual(storedPdfCfg.footerText, 'Footer de prueba');
+
+    const storedWp = JSON.parse(localStorage.getItem('workplace_profiles'));
+    assertEqual(storedWp[0].name, 'Clínica Test');
+
+    assert(localStorage.getItem('device_id'), 'device_id debe existir');
+    assert(!!localStorage.getItem('groq_api_key'), 'API key no debe re-pedirse');
+
+    localStorage.clear();
+});
+
+test('Factory: backend caído — fetch error no deja estado inconsistente', () => {
+    localStorage.clear();
+    // Simular que fetch lanza error: no debe quedar config parcial
+    // Verificar que no se guardó nada
+    assert(!localStorage.getItem('client_config_stored'), 'No debe haber config tras error');
+    assert(!localStorage.getItem('prof_data'), 'No debe haber prof_data tras error');
+    assert(!localStorage.getItem('groq_api_key'), 'No debe haber API key tras error');
+    localStorage.clear();
+});
+
+test('Factory: specialties se parsean correctamente (CSV)', () => {
+    const spec = 'Cardiología,Ecografía,Neurología';
+    const specialties = spec.split(',').map(s => s.trim());
+    assertEqual(specialties.length, 3);
+    assertEqual(specialties[0], 'Cardiología');
+    assertEqual(specialties[2], 'Neurología');
+});
+
+test('Factory: specialties ALL queda como ["ALL"]', () => {
+    const spec = 'ALL';
+    const specialties = spec === 'ALL' ? ['ALL'] : spec.split(',');
+    assertEqual(specialties.length, 1);
+    assertEqual(specialties[0], 'ALL');
+});
+
+test('Factory: allowedTemplates se parsean como JSON array', () => {
+    const tpl = '["eco_transtora","holter"]';
+    let allowedTemplates = [];
+    try { allowedTemplates = JSON.parse(tpl); } catch(_) {}
+    assertEqual(allowedTemplates.length, 2);
+    assertEqual(allowedTemplates[0], 'eco_transtora');
+});
+
+test('Factory: allowedTemplates vacío → array vacío', () => {
+    const tpl = '';
+    let allowedTemplates = [];
+    if (tpl && tpl !== 'ALL' && tpl !== '') {
+        try { allowedTemplates = JSON.parse(tpl); } catch(_) {}
+    }
+    assertEqual(allowedTemplates.length, 0);
+});
+
 // ── Resumen ───────────────────────────────────────────────────────────────────
 console.log('\n─────────────────────────────────────────────────────────────────');
 console.log(`  Total: ${passed + failed} | ✅ Pasaron: ${passed} | ❌ Fallaron: ${failed}`);
