@@ -6,11 +6,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Transcriptor Médico Pro | Audio a Texto</title>
 
-    <!-- PURGE: ?purge en la URL → nuclear reset de SW + caches + config cliente -->
+    <!-- PURGE: auto-purge al detectar nueva versión + ?purge manual. Preserva tema y color -->
     <script>
     (function() {
-        if (new URLSearchParams(window.location.search).has('purge')) {
-            document.title = 'Limpiando caché...';
+        var APP_VERSION = 'v44'; // ← bump esto en cada deploy para forzar auto-purge
+        var params = new URLSearchParams(window.location.search);
+        var forcePurge = params.has('purge');
+        var storedVersion = null;
+        try { storedVersion = localStorage.getItem('app_version'); } catch(_) {}
+        var needsPurge = forcePurge || (storedVersion && storedVersion !== APP_VERSION);
+
+        if (needsPurge) {
+            document.title = 'Actualizando...';
+            // Preservar tema y color personalizado
+            var savedTheme = null, savedColor = null;
+            try { savedTheme = localStorage.getItem('theme'); } catch(_) {}
+            try { savedColor = localStorage.getItem('customPrimaryColor'); } catch(_) {}
+
             // 1) Desregistrar todos los Service Workers
             var p1 = navigator.serviceWorker
                 ? navigator.serviceWorker.getRegistrations().then(function(regs) {
@@ -23,17 +35,26 @@
                     return Promise.all(keys.map(function(k) { return caches.delete(k); }));
                 })
                 : Promise.resolve();
-            // 3) Limpiar config de cliente (restaurar ADMIN)
-            try { localStorage.removeItem('client_config_stored'); } catch(_) {}
-            try { sessionStorage.removeItem('pending_setup_id'); } catch(_) {}
-            // Esperar y recargar limpio
+            // 3) Limpiar config de cliente (restaurar ADMIN) si es purge manual
+            if (forcePurge) {
+                try { localStorage.removeItem('client_config_stored'); } catch(_) {}
+                try { sessionStorage.removeItem('pending_setup_id'); } catch(_) {}
+            }
+            // 4) Restaurar versión + tema después de limpiar
             Promise.all([p1, p2]).then(function() {
+                try { localStorage.setItem('app_version', APP_VERSION); } catch(_) {}
+                if (savedTheme) try { localStorage.setItem('theme', savedTheme); } catch(_) {}
+                if (savedColor) try { localStorage.setItem('customPrimaryColor', savedColor); } catch(_) {}
                 window.location.replace(window.location.pathname);
             });
             // Bloquear el resto de la carga
-            document.write('<body style="font-family:sans-serif;padding:2rem;text-align:center"><h2>Limpiando cach\u00e9...</h2><p>La p\u00e1gina se recargar\u00e1 autom\u00e1ticamente.</p></body>');
+            document.write('<body style="font-family:Inter,sans-serif;padding:3rem;text-align:center;background:#f8fafc"><h2 style="color:#1a56a0">Actualizando...</h2><p style="color:#666">Se detect\u00f3 una nueva versi\u00f3n. La app se recargar\u00e1 en un instante.</p></body>');
             document.close();
             return;
+        }
+        // Primera visita o misma versión → guardar versión actual
+        if (!storedVersion) {
+            try { localStorage.setItem('app_version', APP_VERSION); } catch(_) {}
         }
     })();
     </script>
