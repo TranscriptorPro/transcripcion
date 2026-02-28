@@ -3,7 +3,7 @@
  * Cache-First para el app shell; Network-First para llamadas a la API de Groq.
  */
 
-const CACHE_NAME   = 'transcriptor-pro-v41';
+const CACHE_NAME   = 'transcriptor-pro-v42';
 const GROQ_ORIGIN  = 'api.groq.com';
 
 // Rutas que NUNCA deben cachearse (siempre network-first)
@@ -21,6 +21,7 @@ const APP_SHELL = [
     './src/css/layout.css',
     './src/css/components.css',
     './src/css/animations.css',
+    './src/js/utils/db.js',
     './src/js/config/config.js',
     './src/js/config/templates.js',
     './src/js/config/studyTerminology.js',
@@ -57,7 +58,9 @@ const APP_SHELL = [
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME).then(cache => {
-            return cache.addAll(APP_SHELL).catch(err => {
+            // cache:'no-store' bypasa el HTTP cache del browser → siempre trae la versión fresca del servidor
+            const requests = APP_SHELL.map(url => new Request(url, { cache: 'no-store' }));
+            return cache.addAll(requests).catch(err => {
                 console.warn('[SW] Algunos recursos no pudieron cachearse:', err);
             });
         }).then(() => self.skipWaiting())
@@ -71,6 +74,13 @@ self.addEventListener('activate', event => {
             keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
         )).then(() => self.clients.claim())
     );
+});
+
+// ── Message: forzar activación desde la página ───────────────────────────────
+self.addEventListener('message', event => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });
 
 // ── Fetch ─────────────────────────────────────────────────────────────────────
@@ -114,12 +124,12 @@ self.addEventListener('fetch', event => {
         return;
     }
 
-    // Cache-First: app shell y recursos estáticos (solo la app principal)
-    // Network-First para HTML y JS del app shell (para recibir updates rápido)
+    // Network-First para HTML, JS y CSS del app shell
+    // cache:'no-store' bypasa el HTTP cache del browser → siempre trae la versión fresca
     const isAppShellUpdate = url.pathname.endsWith('.html') || url.pathname.endsWith('.js') || url.pathname.endsWith('.css');
     if (isAppShellUpdate) {
         event.respondWith(
-            fetch(event.request).then(response => {
+            fetch(event.request, { cache: 'no-store' }).then(response => {
                 if (response && response.status === 200) {
                     const clone = response.clone();
                     caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
