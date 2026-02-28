@@ -934,10 +934,10 @@ Pulsá **⚙️** en el encabezado.
 
 | Plan | Ícono | Precio | Incluye |
 |------|-------|--------|---------|
-| **Trial** | 🧪 | Gratis (7 días) | Transcripción básica, 1 plantilla genérica, exportar TXT |
-| **Normal** | 📝 | $4.990/mes | Transcripción ilimitada, 1 plantilla genérica, PDF básico, diccionario médico |
-| **Pro** | ⚡ | $9.990/mes | Todo de Normal + Modo Pro + Todas las plantillas + PDF profesional + Historial + Soporte prioritario |
-| **Clínica** | 🏥 | $24.990/mes | Todo de Pro + Multi-profesional + Multi-dispositivo + Apps para médicos + Dashboard + Soporte dedicado |
+| **Trial** | 🧪 | Gratis (15 días) | Transcripción básica, todas las plantillas, exportar TXT |
+| **Normal** | 📝 | $15 USD/mes | Transcripción ilimitada, plantillas estáticas, PDF básico, diccionario médico |
+| **Pro** | ⚡ | $25 USD/mes | Todo de Normal + Modo Pro + Todas las plantillas + PDF profesional + Historial + Soporte prioritario |
+| **Clínica** | 🏥 | Consultar | Todo de Pro + Multi-profesional + Multi-dispositivo + Apps para médicos + Dashboard + Soporte dedicado |
 
 ### Plantillas adicionales (Add-ons)
 Para usuarios en plan Trial o Normal, es posible adquirir plantillas individuales a **$990 cada una** sin necesidad de subir de plan.

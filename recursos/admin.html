@@ -3833,7 +3833,7 @@
             const proSel = document.getElementById('giftProMode');
             const durSel = document.getElementById('giftDuration');
             const defaults = {
-                TRIAL:  { devices: '2',  pro: 'false', duration: '7' },
+                TRIAL:  { devices: '2',  pro: 'true',  duration: '15' },
                 NORMAL: { devices: '2',  pro: 'false', duration: '365' },
                 PRO:    { devices: '5',  pro: 'true',  duration: '365' },
                 GIFT:   { devices: '10', pro: 'true',  duration: '365' },
@@ -3851,7 +3851,7 @@
             const plan = document.getElementById('giftPlan')?.value || 'GIFT';
             const dev = document.getElementById('giftDevices')?.value || '10';
             const dur = document.getElementById('giftDuration')?.value || '365';
-            const durMap = { '7': '7 días', '30': '1 mes', '90': '3 meses', '180': '6 meses', '365': '1 año', '0': 'Sin vencimiento' };
+            const durMap = { '7': '7 días', '15': '15 días', '30': '1 mes', '90': '3 meses', '180': '6 meses', '365': '1 año', '0': 'Sin vencimiento' };
             const allTpl = document.getElementById('giftAllTemplates')?.checked !== false;
             document.getElementById('giftSummaryPlan').textContent = plan;
             document.getElementById('giftSummaryDevices').textContent = dev === '999' ? '∞' : dev;
@@ -3892,7 +3892,7 @@
             const pro = document.getElementById('giftProMode')?.value === 'true';
             const allTpl = document.getElementById('giftAllTemplates')?.checked !== false;
             const tplCount = allTpl ? _getAllTemplateKeys().length : document.querySelectorAll('.giftTplCheck:checked').length;
-            const durMap = { '7': '7 días', '30': '1 mes', '90': '3 meses', '180': '6 meses', '365': '1 año', '0': 'Sin vencimiento' };
+            const durMap = { '7': '7 días', '15': '15 días', '30': '1 mes', '90': '3 meses', '180': '6 meses', '365': '1 año', '0': 'Sin vencimiento' };
 
             const el = document.getElementById('giftFinalSummaryContent');
             el.innerHTML = `
@@ -4238,7 +4238,7 @@
                 _cfCurrentUser = { ID_Medico: userId, Nombre: userName, Email: userEmail };
 
                 if (_cfMode === 'gift') {
-                    const durMap = { '7': '7 días', '30': '1 mes', '90': '3 meses', '180': '6 meses', '365': '1 año', '0': 'Sin vencimiento' };
+                    const durMap = { '7': '7 días', '15': '15 días', '30': '1 mes', '90': '3 meses', '180': '6 meses', '365': '1 año', '0': 'Sin vencimiento' };
                     const durLabel = durMap[String(selectedDuration)] || selectedDuration + ' días';
                     const devLabel = selectedDevices >= 999 ? 'Ilimitados' : selectedDevices;
                     const tplLabel = selectedTemplates.length >= _getAllTemplateKeys().length ? 'Todas las plantillas' : selectedTemplates.length + ' plantillas';
@@ -5745,6 +5745,7 @@
                                     <label>Duración de la licencia</label>
                                     <select id="giftDuration">
                                         <option value="7">7 días</option>
+                                        <option value="15">15 días</option>
                                         <option value="30">30 días (1 mes)</option>
                                         <option value="90">90 días (3 meses)</option>
                                         <option value="180">180 días (6 meses)</option>

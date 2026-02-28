@@ -4,10 +4,10 @@
 
     // ── Definición de planes ──────────────────────────────────────────
     const PLANS = {
-        trial:  { order: 0, label: 'Trial',      icon: '🧪', price: 'Gratis',     period: '7 días', features: ['Transcripción básica', '1 plantilla genérica', 'Exportar TXT'] },
-        normal: { order: 1, label: 'Normal',      icon: '📝', price: '$4.990',      period: '/mes',   features: ['Transcripción ilimitada', '1 plantilla genérica', 'Exportar TXT y PDF básico', 'Diccionario médico'] },
-        pro:    { order: 2, label: 'Pro',          icon: '⚡', price: '$9.990',      period: '/mes',   features: ['Todo de Normal', 'Modo Pro: estructurado IA', 'Todas las plantillas médicas', 'PDF profesional con firma', 'Historial de informes', 'Soporte prioritario'], recommended: true },
-        clinic: { order: 3, label: 'Clínica',      icon: '🏥', price: '$24.990',     period: '/mes',   features: ['Todo de Pro', 'Multi-profesional', 'Multi-dispositivo', 'Generación de apps GIFT', 'Dashboard de métricas', 'Soporte dedicado'] },
+        trial:  { order: 0, label: 'Trial',      icon: '🧪', price: 'Gratis',     period: '15 días', features: ['Transcripción básica', 'Todas las plantillas', 'Exportar TXT'] },
+        normal: { order: 1, label: 'Normal',      icon: '📝', price: '$15',         period: 'USD/mes', features: ['Transcripción ilimitada', 'Plantillas estáticas', 'Exportar TXT y PDF básico', 'Diccionario médico'] },
+        pro:    { order: 2, label: 'Pro',          icon: '⚡', price: '$25',         period: 'USD/mes', features: ['Todo de Normal', 'Modo Pro: estructurado IA', 'Todas las plantillas médicas', 'PDF profesional con firma', 'Historial de informes', 'Soporte prioritario'], recommended: true },
+        clinic: { order: 3, label: 'Clínica',      icon: '🏥', price: 'Consultar',   period: '',        features: ['Todo de Pro', 'Multi-profesional', 'Multi-dispositivo', 'Generación de apps GIFT', 'Dashboard de métricas', 'Soporte dedicado'] },
     };
 
     // ── Templates disponibles como addons ─────────────────────────────
