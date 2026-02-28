@@ -175,32 +175,21 @@
     }
 
     /**
-     * Inject the skin selector gallery into the settings "Apariencia" accordion.
-     * Called once from initSettingsPanel or on DOMContentLoaded.
-     * This finds the existing DOM and appends — does NOT modify index.html.
+     * Populate the skin selector gallery inside the dedicated #skinSelectorContainer.
+     * The container lives in its own accordion (data-stg="skins") in index.html.
      */
     function injectSelectorUI() {
-        // Target: the stg-accordion-content inside data-stg="theme"
-        const themeAccordion = document.querySelector('.stg-accordion[data-stg="theme"] .stg-accordion-content');
-        if (!themeAccordion) {
-            console.warn('[ThemeManager] No se encontró el acordeón de Apariencia');
+        const container = document.getElementById('skinSelectorContainer');
+        if (!container) {
+            console.warn('[ThemeManager] No se encontró #skinSelectorContainer');
             return;
         }
 
-        // Don't inject twice
-        if (document.getElementById('skinSelectorContainer')) return;
-
-        // Build the selector HTML
-        const wrapper = document.createElement('div');
-        wrapper.id = 'skinSelectorContainer';
-        wrapper.className = 'stg-opt-row';
-        wrapper.style.cssText = 'flex-direction: column; align-items: stretch; gap: 0.5rem; margin-top: 0.25rem; border-top: 1px solid var(--border); padding-top: 0.75rem;';
-
-        const label = document.createElement('span');
-        label.className = 'stg-opt-label';
-        label.textContent = '🎭 Skin de la app';
-        label.style.cssText = 'margin-bottom: 0.25rem;';
-        wrapper.appendChild(label);
+        // Don't inject twice — if already has cards, just update active state
+        if (container.querySelector('.skin-option')) {
+            _updateSelectorUI(_currentSkinId);
+            return;
+        }
 
         const gallery = document.createElement('div');
         gallery.className = 'skin-gallery';
@@ -269,10 +258,7 @@
             gallery.appendChild(card);
         });
 
-        wrapper.appendChild(gallery);
-
-        // Insert at the END of the theme accordion content
-        themeAccordion.appendChild(wrapper);
+        container.appendChild(gallery);
 
         // Style for active state (inject once)
         if (!document.getElementById('skin-selector-styles')) {
