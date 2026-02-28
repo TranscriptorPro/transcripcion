@@ -6,6 +6,51 @@
             top: 0;
             z-index: 100;
             box-shadow: 0 2px 20px rgba(15, 118, 110, 0.3);
+            overflow: hidden;
+        }
+
+        /* Animación fondo header — capa 1: grilla de puntos en movimiento */
+        .header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px);
+            background-size: 28px 28px;
+            animation: headerDotMove 18s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Animación fondo header — capa 2: barrido de luz diagonal */
+        .header::after {
+            content: '';
+            position: absolute;
+            top: -100%;
+            left: -60%;
+            width: 60%;
+            height: 300%;
+            background: linear-gradient(
+                105deg,
+                transparent 40%,
+                rgba(255,255,255,0.04) 50%,
+                rgba(255,255,255,0.07) 52%,
+                rgba(255,255,255,0.04) 54%,
+                transparent 64%
+            );
+            animation: headerSweep 7s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes headerDotMove {
+            0%   { background-position: 0 0; }
+            100% { background-position: 28px 28px; }
+        }
+
+        @keyframes headerSweep {
+            0%   { left: -60%; }
+            60%  { left: 110%; }
+            100% { left: 110%; }
         }
 
         .header-content {
@@ -15,6 +60,8 @@
             align-items: center;
             justify-content: space-between;
             gap: 1rem;
+            position: relative;
+            z-index: 1;
         }
 
         .logo {
@@ -125,30 +172,6 @@
             width: 20px;
             height: 20px;
             fill: white;
-        }
-
-        /* Settings standalone — solo ícono, sin recuadro */
-        .btn-settings-standalone {
-            background: none;
-            border: none;
-            cursor: pointer;
-            display: grid;
-            place-items: center;
-            padding: 6px;
-            margin-left: 4px;
-            opacity: 0.75;
-            transition: opacity 0.2s, transform 0.3s;
-        }
-
-        .btn-settings-standalone svg {
-            width: 22px;
-            height: 22px;
-            fill: white;
-        }
-
-        .btn-settings-standalone:hover {
-            opacity: 1;
-            transform: rotate(45deg);
         }
 
         /* Main Layout */
