@@ -3743,6 +3743,17 @@
             const notasEl = document.getElementById('giftNotas');
             if (notasEl) notasEl.value = '';
 
+            // Reset campos gift — Paso 4 (Licencia y Permisos)
+            document.getElementById('giftPlan').value = 'GIFT';
+            document.getElementById('giftProMode').value = 'true';
+            document.getElementById('giftDevices').value = '10';
+            document.getElementById('giftDuration').value = '365';
+            const allTplCheck = document.getElementById('giftAllTemplates');
+            if (allTplCheck) { allTplCheck.checked = true; }
+            const tplGrid = document.getElementById('giftTemplatesGrid');
+            if (tplGrid) { tplGrid.style.display = 'none'; tplGrid.innerHTML = ''; }
+            updateGiftSummaryBadge();
+
             // Wizard: empezar en paso 1
             giftGoStep(1);
 
@@ -3781,7 +3792,7 @@
 
         // ── Gift Wizard: navegación de pasos ─────────────────────────────────
         function giftGoStep(step) {
-            for (let i = 1; i <= 3; i++) {
+            for (let i = 1; i <= 4; i++) {
                 const el = document.getElementById('giftStep' + i);
                 if (el) el.style.display = (i === step) ? 'block' : 'none';
             }
@@ -3789,6 +3800,8 @@
                 const s = parseInt(dot.dataset.step);
                 dot.style.background = s <= step ? '#f59e0b' : '#e5e7eb';
             });
+            // Actualizar resumen si entramos al paso 4
+            if (step === 4) updateGiftFinalSummary();
         }
 
         function selectGiftColor(color, el) {
@@ -3800,6 +3813,98 @@
             el.style.border = `3px solid ${color}`;
             el.style.boxShadow = '0 0 0 2px white inset';
             document.getElementById('giftColorPreview').style.background = color;
+        }
+
+        function selectGiftColor(color, el) {
+            _giftSelectedColor = color;
+            document.querySelectorAll('#giftColorPalette .gift-color-swatch').forEach(s => {
+                s.style.border = '3px solid transparent';
+                s.style.boxShadow = 'none';
+            });
+            el.style.border = `3px solid ${color}`;
+            el.style.boxShadow = '0 0 0 2px white inset';
+            document.getElementById('giftColorPreview').style.background = color;
+        }
+
+        // ── Gift Step 4: Plan defaults, templates grid, summary ──────────────
+        function updateGiftPlanDefaults() {
+            const plan = document.getElementById('giftPlan').value;
+            const devSel = document.getElementById('giftDevices');
+            const proSel = document.getElementById('giftProMode');
+            const durSel = document.getElementById('giftDuration');
+            const defaults = {
+                TRIAL:  { devices: '2',  pro: 'false', duration: '7' },
+                NORMAL: { devices: '2',  pro: 'false', duration: '365' },
+                PRO:    { devices: '5',  pro: 'true',  duration: '365' },
+                GIFT:   { devices: '10', pro: 'true',  duration: '365' },
+                CLINIC: { devices: '999', pro: 'true', duration: '365' }
+            };
+            const d = defaults[plan] || defaults.GIFT;
+            devSel.value = d.devices;
+            proSel.value = d.pro;
+            durSel.value = d.duration;
+            // Actualizar resumen inline en paso 3
+            updateGiftSummaryBadge();
+        }
+
+        function updateGiftSummaryBadge() {
+            const plan = document.getElementById('giftPlan')?.value || 'GIFT';
+            const dev = document.getElementById('giftDevices')?.value || '10';
+            const dur = document.getElementById('giftDuration')?.value || '365';
+            const durMap = { '7': '7 días', '30': '1 mes', '90': '3 meses', '180': '6 meses', '365': '1 año', '0': 'Sin vencimiento' };
+            const allTpl = document.getElementById('giftAllTemplates')?.checked !== false;
+            document.getElementById('giftSummaryPlan').textContent = plan;
+            document.getElementById('giftSummaryDevices').textContent = dev === '999' ? '∞' : dev;
+            document.getElementById('giftSummaryDuration').textContent = durMap[dur] || dur + ' días';
+            document.getElementById('giftSummaryTemplates').textContent = allTpl ? 'TODAS' : 'Seleccionadas';
+        }
+
+        function toggleGiftAllTemplates(checked) {
+            const grid = document.getElementById('giftTemplatesGrid');
+            grid.style.display = checked ? 'none' : 'block';
+            if (!checked && grid.innerHTML === '') {
+                // Poblar el grid con los template checkboxes
+                let html = '';
+                Object.entries(TEMPLATE_MAP).forEach(([cat, templates]) => {
+                    html += '<div style="margin-bottom:.4rem;"><strong style="font-size:.75rem;color:#374151;">' + cat + '</strong><div style="display:flex;flex-wrap:wrap;gap:.3rem .8rem;margin-left:.5rem;">';
+                    templates.forEach(t => {
+                        html += '<label style="font-size:.78rem;display:flex;align-items:center;gap:.3rem;cursor:pointer;"><input type="checkbox" value="' + t.key + '" checked class="giftTplCheck"> ' + t.name + '</label>';
+                    });
+                    html += '</div></div>';
+                });
+                grid.innerHTML = html;
+            }
+            updateGiftSummaryBadge();
+        }
+
+        function _getSelectedGiftTemplates() {
+            if (document.getElementById('giftAllTemplates')?.checked) {
+                return _getAllTemplateKeys();
+            }
+            const checked = document.querySelectorAll('.giftTplCheck:checked');
+            return Array.from(checked).map(c => c.value);
+        }
+
+        function updateGiftFinalSummary() {
+            const plan = document.getElementById('giftPlan')?.value || 'GIFT';
+            const dev = document.getElementById('giftDevices')?.value || '10';
+            const dur = document.getElementById('giftDuration')?.value || '365';
+            const pro = document.getElementById('giftProMode')?.value === 'true';
+            const allTpl = document.getElementById('giftAllTemplates')?.checked !== false;
+            const tplCount = allTpl ? _getAllTemplateKeys().length : document.querySelectorAll('.giftTplCheck:checked').length;
+            const durMap = { '7': '7 días', '30': '1 mes', '90': '3 meses', '180': '6 meses', '365': '1 año', '0': 'Sin vencimiento' };
+
+            const el = document.getElementById('giftFinalSummaryContent');
+            el.innerHTML = `
+                <span>🏷️ Plan: <strong>${plan}</strong></span>
+                <span>📱 <strong>${dev === '999' ? 'Ilimitados' : dev}</strong> disp.</span>
+                <span>📅 <strong>${durMap[dur] || dur + ' días'}</strong></span>
+                <span>⭐ Pro Mode: <strong>${pro ? 'Sí' : 'No'}</strong></span>
+                <span>📄 <strong>${allTpl ? 'Todas' : tplCount}</strong> plantillas</span>
+                <span>🎨 Color: <span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:${_giftSelectedColor};vertical-align:middle;border:1px solid rgba(0,0,0,.2);"></span></span>
+            `;
+            // También actualizar badge del paso 3
+            updateGiftSummaryBadge();
         }
 
         // ── Gift Wizard: Workplace Accordion ─────────────────────────────────
@@ -4007,13 +4112,23 @@
 
                     // Generar ID
                     const newId = 'GIFT' + Date.now().toString(36).toUpperCase();
-                    const allTemplates = JSON.stringify(_getAllTemplateKeys());
+                    const selectedTemplates = _getSelectedGiftTemplates();
+                    const allTemplatesJson = JSON.stringify(selectedTemplates);
                     const now = new Date().toISOString();
 
-                    // Calcular fecha vencimiento (1 año desde hoy)
-                    const venc = new Date();
-                    venc.setFullYear(venc.getFullYear() + 1);
-                    const fechaVenc = venc.toISOString().split('T')[0];
+                    // Leer opciones de licencia del paso 4
+                    const selectedPlan = document.getElementById('giftPlan').value || 'GIFT';
+                    const selectedDevices = parseInt(document.getElementById('giftDevices').value) || 10;
+                    const selectedDuration = parseInt(document.getElementById('giftDuration').value);
+                    const selectedProMode = document.getElementById('giftProMode').value === 'true';
+
+                    // Calcular fecha vencimiento según duración elegida
+                    let fechaVenc = '';
+                    if (selectedDuration > 0) {
+                        const venc = new Date();
+                        venc.setDate(venc.getDate() + selectedDuration);
+                        fechaVenc = venc.toISOString().split('T')[0];
+                    }
 
                     // Datos enriquecidos (workplaces + apariencia + firma + logo) → se precargan en la app
                     const registroDatos = {
@@ -4023,7 +4138,9 @@
                         footerText: footerText,
                         firma: firma,
                         proLogo: proLogo,
-                        notas: notas
+                        notas: notas,
+                        apiKey: apiKey,
+                        hasProMode: selectedProMode
                     };
 
                     const userData = {
@@ -4033,13 +4150,13 @@
                         Matricula: matricula,
                         Telefono: telefono,
                         Especialidad: especialidad || 'ALL',
-                        Plan: 'GIFT',
+                        Plan: selectedPlan,
                         Estado: 'active',
                         Fecha_Registro: now,
                         Fecha_Vencimiento: fechaVenc,
                         API_Key: apiKey,
-                        Devices_Max: 10,
-                        Allowed_Templates: allTemplates,
+                        Devices_Max: selectedDevices,
+                        Allowed_Templates: allTemplatesJson,
                         Usage_Count: 0,
                         Devices_Logged: '[]',
                         Diagnostico_Pendiente: 'false',
@@ -4121,7 +4238,11 @@
                 _cfCurrentUser = { ID_Medico: userId, Nombre: userName, Email: userEmail };
 
                 if (_cfMode === 'gift') {
-                    dashAlert(`✅ Usuario regalo <strong>${userName}</strong> creado exitosamente\n\nID: ${userId}\nPlan: GIFT · Todas las plantillas · 10 dispositivos`, '🎁');
+                    const durMap = { '7': '7 días', '30': '1 mes', '90': '3 meses', '180': '6 meses', '365': '1 año', '0': 'Sin vencimiento' };
+                    const durLabel = durMap[String(selectedDuration)] || selectedDuration + ' días';
+                    const devLabel = selectedDevices >= 999 ? 'Ilimitados' : selectedDevices;
+                    const tplLabel = selectedTemplates.length >= _getAllTemplateKeys().length ? 'Todas las plantillas' : selectedTemplates.length + ' plantillas';
+                    dashAlert(`✅ Usuario <strong>${userName}</strong> creado exitosamente\n\nID: ${userId}\nPlan: ${selectedPlan} · ${tplLabel} · ${devLabel} dispositivos · ${durLabel}`, '🎁');
                 }
 
             } catch (err) {
@@ -5414,11 +5535,12 @@
                         <p style="margin:0;font-size:.72rem;color:#a16207;">TODAS las plantillas · 10 dispositivos · Plan GIFT · 1 año</p>
                     </div>
 
-                    <!-- Stepper visual (3 pasos) -->
+                    <!-- Stepper visual (4 pasos) -->
                     <div id="giftStepper" style="display:flex;justify-content:center;gap:.3rem;margin-bottom:.8rem;">
                         <div class="gift-step-dot active" data-step="1" style="width:28px;height:4px;border-radius:3px;background:#f59e0b;transition:all .3s;cursor:pointer;" onclick="giftGoStep(1)"></div>
                         <div class="gift-step-dot" data-step="2" style="width:28px;height:4px;border-radius:3px;background:#e5e7eb;transition:all .3s;cursor:pointer;" onclick="giftGoStep(2)"></div>
                         <div class="gift-step-dot" data-step="3" style="width:28px;height:4px;border-radius:3px;background:#e5e7eb;transition:all .3s;cursor:pointer;" onclick="giftGoStep(3)"></div>
+                        <div class="gift-step-dot" data-step="4" style="width:28px;height:4px;border-radius:3px;background:#e5e7eb;transition:all .3s;cursor:pointer;" onclick="giftGoStep(4)"></div>
                     </div>
 
                     <!-- ══════════════════════════════════════════════════════════ -->
@@ -5558,17 +5680,102 @@
                             </div>
                         </div>
 
-                        <!-- Resumen plan -->
-                        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.5rem .8rem;margin-bottom:.6rem;">
+                        <!-- Resumen plan (dinámico) -->
+                        <div id="giftPlanSummary" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.5rem .8rem;margin-bottom:.6rem;">
                             <div style="display:flex;gap:.8rem;font-size:.73rem;color:#166534;flex-wrap:wrap;">
-                                <span>🏷️ Plan: <strong>GIFT</strong></span>
-                                <span>📄 <strong>TODAS</strong> las plantillas</span>
-                                <span>📱 <strong>10</strong> dispositivos</span>
-                                <span>📅 <strong>1 año</strong></span>
+                                <span>🏷️ Plan: <strong id="giftSummaryPlan">GIFT</strong></span>
+                                <span>📄 <strong id="giftSummaryTemplates">TODAS</strong> las plantillas</span>
+                                <span>📱 <strong id="giftSummaryDevices">10</strong> dispositivos</span>
+                                <span>📅 <strong id="giftSummaryDuration">1 año</strong></span>
                             </div>
                         </div>
                         <div style="display:flex;justify-content:space-between;">
                             <button type="button" class="btn-secondary" onclick="giftGoStep(2)" style="padding:7px 16px;font-size:.84rem;">← Anterior</button>
+                            <button type="button" class="btn-primary" onclick="giftGoStep(4)" style="padding:7px 20px;font-size:.84rem;">Siguiente →</button>
+                        </div>
+                    </div>
+
+                    <!-- ══════════════════════════════════════════════════════════ -->
+                    <!-- ── PASO 4: Licencia y Permisos ── -->
+                    <!-- ══════════════════════════════════════════════════════════ -->
+                    <div id="giftStep4" style="display:none;">
+                        <p class="gw-section-title">🔐 Paso 4 — Licencia y Permisos</p>
+                        <p class="gw-section-sub">Configurá el plan, duración y funcionalidades del usuario.</p>
+
+                        <!-- Plan + Pro Mode -->
+                        <div class="gw-card">
+                            <p class="gw-section-title">🏷️ Plan y Modo</p>
+                            <div class="gw-field-row">
+                                <div class="gw-field-group">
+                                    <label>Plan</label>
+                                    <select id="giftPlan" onchange="updateGiftPlanDefaults()">
+                                        <option value="GIFT" selected>🎁 Gift (completo)</option>
+                                        <option value="TRIAL">🕐 Trial</option>
+                                        <option value="NORMAL">📋 Normal</option>
+                                        <option value="PRO">⭐ Pro</option>
+                                        <option value="CLINIC">🏥 Clinic</option>
+                                    </select>
+                                </div>
+                                <div class="gw-field-group">
+                                    <label>Modo Profesional</label>
+                                    <select id="giftProMode">
+                                        <option value="true" selected>✅ Habilitado</option>
+                                        <option value="false">❌ Deshabilitado</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dispositivos + Duración -->
+                        <div class="gw-card">
+                            <p class="gw-section-title">📱 Dispositivos y Duración</p>
+                            <div class="gw-field-row">
+                                <div class="gw-field-group">
+                                    <label>Máx. dispositivos</label>
+                                    <select id="giftDevices">
+                                        <option value="1">1 dispositivo</option>
+                                        <option value="2">2 dispositivos</option>
+                                        <option value="3">3 dispositivos</option>
+                                        <option value="5">5 dispositivos</option>
+                                        <option value="10" selected>10 dispositivos</option>
+                                        <option value="999">Ilimitados</option>
+                                    </select>
+                                </div>
+                                <div class="gw-field-group">
+                                    <label>Duración de la licencia</label>
+                                    <select id="giftDuration">
+                                        <option value="7">7 días</option>
+                                        <option value="30">30 días (1 mes)</option>
+                                        <option value="90">90 días (3 meses)</option>
+                                        <option value="180">180 días (6 meses)</option>
+                                        <option value="365" selected>365 días (1 año)</option>
+                                        <option value="0">Sin vencimiento</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Plantillas permitidas -->
+                        <div class="gw-card">
+                            <p class="gw-section-title">📄 Plantillas Permitidas</p>
+                            <div style="margin-bottom:.4rem;">
+                                <label style="display:flex;align-items:center;gap:.4rem;cursor:pointer;font-size:.83rem;">
+                                    <input type="checkbox" id="giftAllTemplates" checked onchange="toggleGiftAllTemplates(this.checked)">
+                                    <strong>Todas las plantillas</strong>
+                                </label>
+                            </div>
+                            <div id="giftTemplatesGrid" style="display:none;max-height:200px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:8px;padding:.5rem;">
+                            </div>
+                        </div>
+
+                        <!-- Resumen final -->
+                        <div id="giftFinalSummary" style="background:linear-gradient(135deg,#fef3c7,#fff7ed);border:1px solid #f59e0b;border-radius:8px;padding:.6rem .8rem;margin-bottom:.6rem;">
+                            <p style="font-size:.78rem;font-weight:700;color:#92400e;margin:0 0 .3rem;">📋 Resumen de la licencia:</p>
+                            <div id="giftFinalSummaryContent" style="display:flex;gap:.8rem;font-size:.73rem;color:#78350f;flex-wrap:wrap;"></div>
+                        </div>
+
+                        <div style="display:flex;justify-content:space-between;">
+                            <button type="button" class="btn-secondary" onclick="giftGoStep(3)" style="padding:7px 16px;font-size:.84rem;">← Anterior</button>
                         </div>
                     </div>
                 </div>

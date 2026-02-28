@@ -63,16 +63,14 @@ window.CLIENT_CONFIG = {
         const setupId = params.get('id');
         if (setupId) {
             // ── Protección: si ya era ADMIN, no sobreescribir por accidente ──
-            const wasAdmin = !stored || (function() {
+            // Solo marcar como "admin activo" si EXISTE una config almacenada de tipo ADMIN.
+            // Si stored es null (usuario nuevo), NO es admin — es un gift user legítimo.
+            const wasAdmin = stored && (function() {
                 try { return JSON.parse(stored).type === 'ADMIN' || !JSON.parse(stored).type; } catch(_) { return true; }
             })();
+            window._PENDING_SETUP_ID = setupId;
             if (wasAdmin) {
-                // Marcar como pendiente pero NO activar automáticamente
-                // El onboarding de business.js decidirá si procede
-                window._PENDING_SETUP_ID = setupId;
                 window._ADMIN_WAS_ACTIVE = true; // flag para que business.js pregunte
-            } else {
-                window._PENDING_SETUP_ID = setupId;
             }
             try { sessionStorage.setItem('pending_setup_id', setupId); } catch(_) {}
             // Limpiar URL inmediatamente (sin recargar)

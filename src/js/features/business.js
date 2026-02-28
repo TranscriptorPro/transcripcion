@@ -515,7 +515,8 @@ async function _handleFactorySetup(medicoId) {
             specialties:      specialties,
             maxDevices:       Number(doctor.Devices_Max) || 2,
             trialDays:        plan === 'trial' ? 7 : 0,
-            hasProMode:       pc.hasProMode,
+            // regDatos.hasProMode puede venir del admin para override del plan
+            hasProMode:       regDatos.hasProMode !== undefined ? !!regDatos.hasProMode : pc.hasProMode,
             hasDashboard:     pc.hasDashboard,
             canGenerateApps:  pc.canGenerateApps,
             allowedTemplates: allowedTemplates,
@@ -622,12 +623,16 @@ async function _handleFactorySetup(medicoId) {
             } catch(_) {}
         }
 
-        // Header Color del PDF
+        // Header Color del PDF + color del tema de la app
         if (regDatos.headerColor) {
             profData.headerColor = regDatos.headerColor;
             window._profDataCache = profData;
             if (typeof appDB !== 'undefined') appDB.set('prof_data', profData);
             localStorage.setItem('prof_data', JSON.stringify(profData));
+
+            // Aplicar también como color del tema de la app (customPrimaryColor)
+            localStorage.setItem('customPrimaryColor', regDatos.headerColor);
+            if (typeof appDB !== 'undefined') appDB.set('customPrimaryColor', regDatos.headerColor);
         }
 
         // Estudios seleccionados
