@@ -9,7 +9,7 @@
     <!-- PURGE: auto-purge al detectar nueva versión + ?purge manual. Preserva tema y color -->
     <script>
     (function() {
-        var APP_VERSION = 'v56'; // ← bump esto en cada deploy para forzar auto-purge
+        var APP_VERSION = 'v57'; // ← bump esto en cada deploy para forzar auto-purge
         var params = new URLSearchParams(window.location.search);
         var forcePurge = params.has('purge');
         var storedVersion = null;
@@ -620,7 +620,7 @@
                                 <div class="skin-gallery" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:0.5rem;">
 
                                     <!-- Skin: Default -->
-                                    <button type="button" class="skin-option skin-option--active" data-skin="default" title="Tema original de la aplicación">
+                                    <button type="button" class="skin-option skin-option--active" data-skin="default" title="Tema original de la aplicación" onclick="window.ThemeManager&&window.ThemeManager.apply('default')">
                                         <div style="height:40px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; gap:4px; padding:0 8px; border-bottom:2px solid #0f766e;">
                                             <span style="width:10px;height:10px;border-radius:50%;background:#0f766e;border:1px solid rgba(0,0,0,0.1)"></span>
                                             <span style="width:10px;height:10px;border-radius:50%;background:#ffffff;border:1px solid rgba(0,0,0,0.1)"></span>
@@ -636,7 +636,7 @@
                                     </button>
 
                                     <!-- Skin: Cyberpunk Neon -->
-                                    <button type="button" class="skin-option" data-skin="cyberpunk" title="Glassmorphism oscuro con neón azul">
+                                    <button type="button" class="skin-option" data-skin="cyberpunk" title="Glassmorphism oscuro con neón azul" onclick="window.ThemeManager&&window.ThemeManager.apply('cyberpunk')">
                                         <div style="height:40px; background:#050811; display:flex; align-items:center; justify-content:center; gap:4px; padding:0 8px; border-bottom:2px solid #00d4ff;">
                                             <span style="width:10px;height:10px;border-radius:50%;background:#00d4ff;border:1px solid rgba(0,0,0,0.1)"></span>
                                             <span style="width:10px;height:10px;border-radius:50%;background:#0a0f1e;border:1px solid rgba(0,0,0,0.1)"></span>
@@ -652,7 +652,7 @@
                                     </button>
 
                                     <!-- Skin: Light Minimal -->
-                                    <button type="button" class="skin-option" data-skin="light-minimal" title="Limpio, luminoso y minimalista">
+                                    <button type="button" class="skin-option" data-skin="light-minimal" title="Limpio, luminoso y minimalista" onclick="window.ThemeManager&&window.ThemeManager.apply('light-minimal')">
                                         <div style="height:40px; background:#fafafa; display:flex; align-items:center; justify-content:center; gap:4px; padding:0 8px; border-bottom:2px solid #2563eb;">
                                             <span style="width:10px;height:10px;border-radius:50%;background:#2563eb;border:1px solid rgba(0,0,0,0.1)"></span>
                                             <span style="width:10px;height:10px;border-radius:50%;background:#ffffff;border:1px solid rgba(0,0,0,0.1)"></span>
@@ -667,6 +667,12 @@
                                         </div>
                                     </button>
 
+                                </div>
+                                <!-- Botón Más skins -->
+                                <div style="text-align:center; margin-top:0.75rem;">
+                                    <button type="button" class="btn-secondary" onclick="if(typeof openPricingCart==='function'){openPricingCart();}" style="font-size:0.8rem; padding:0.4rem 1.2rem; border-radius:8px; cursor:pointer;">
+                                        🛒 Más skins y complementos
+                                    </button>
                                 </div>
                             </div>
                         </div>

@@ -93,10 +93,12 @@ En la barra lateral, completá:
 ## 9. Tips importantes
 
 - 🌙 **Modo oscuro:** Botón de luna/sol en el encabezado
+- 🎭 **Skins:** En Configuración → Skins, elegí entre *Por Defecto*, *Cyberpunk Neon* o *Light Minimal*. Pulsá "Más skins y complementos" para ver opciones adicionales
 - 💾 **Autoguardado:** La app guarda tu trabajo cada 30 segundos. Si cerrás sin querer, al volver te restaura la sesión
 - 📥 **Instalar como app:** Pulsá "Instalar app" para acceso directo desde tu escritorio
 - 📋 **Registro de pacientes:** Botón en la barra lateral para ver, buscar y exportar todos tus pacientes
 - 🕒 **Versiones:** Botón 🕒 en la barra del editor para ver y restaurar versiones anteriores del informe
+- 🎨 **Colores personalizados:** En Configuración → Apariencia, usá el selector de color corporativo para adaptar la paleta a tu institución
 - ✉️ **Soporte:** Botón de contacto en el encabezado para reportar problemas o sugerencias
 
 ---

@@ -1,7 +1,7 @@
 # 📘 Manual de Usuario — Transcriptor Médico Pro
 
-> **Versión:** 1.0.0  
-> **Última actualización:** 24 de febrero de 2026  
+> **Versión:** 2.0.0  
+> **Última actualización:** 28 de febrero de 2026  
 > **Plataforma:** Aplicación web progresiva (PWA)
 
 ---
@@ -28,10 +28,13 @@
 18. [Diccionario médico](#18-diccionario-médico)
 19. [Atajos de teclado](#19-atajos-de-teclado)
 20. [Guardado automático](#20-guardado-automático)
-21. [Modo oscuro / claro](#21-modo-oscuro--claro)
-22. [Solución de problemas (FAQ)](#22-solución-de-problemas-faq)
-23. [Contacto y soporte](#23-contacto-y-soporte)
-24. [Privacidad y seguridad](#24-privacidad-y-seguridad)
+21. [Apariencia y personalización](#21-apariencia-y-personalización)
+22. [Asistente de sesión](#22-asistente-de-sesión)
+23. [Historial de informes](#23-historial-de-informes)
+24. [Versionado y snapshots](#24-versionado-y-snapshots)
+25. [Solución de problemas (FAQ)](#25-solución-de-problemas-faq)
+26. [Contacto y soporte](#26-contacto-y-soporte)
+27. [Privacidad y seguridad](#27-privacidad-y-seguridad)
 
 ---
 
@@ -451,15 +454,97 @@ La app guarda automáticamente el contenido del editor cada **30 segundos** en e
 
 ---
 
-## 21. Modo oscuro / claro
+## 21. Apariencia y personalización
 
-Pulsá el botón **🌙/☀️** en el encabezado para alternar entre tema claro y oscuro.
+### Modo oscuro / claro
+Pulsá el botón **🌙/☀️** en el encabezado para alternar entre tema claro y oscuro. La preferencia se guarda y persiste entre sesiones. Todos los elementos de la interfaz se adaptan al tema seleccionado.
 
-La preferencia se guarda y persiste entre sesiones. Todos los elementos de la interfaz (modals, editor, PDF preview, botones) se adaptan al tema seleccionado.
+### Skins (temas visuales)
+Además del modo claro/oscuro, la app ofrece **skins completos** que cambian toda la estética visual.
+
+#### Cómo cambiar el skin
+1. Abrí **⚙️ Configuración** (ícono de engranaje)
+2. Desplegá el acordeón **🎭 Skins**
+3. Hacé clic en la tarjeta del skin que querés aplicar
+4. El cambio es inmediato y se guarda automáticamente
+
+#### Skins incluidos
+
+| Skin | Descripción |
+|------|-------------|
+| **🎨 Por Defecto** | Tema original de la aplicación, equilibrado y profesional |
+| **🌃 Cyberpunk Neon** | Glassmorphism oscuro con acentos neón azul, ideal para entornos con poca luz |
+| **☀️ Light Minimal** | Limpio, luminoso y minimalista, con acento azul |
+
+#### Más skins
+Pulsá el botón **🛒 Más skins y complementos** debajo de la galería para ver opciones adicionales disponibles según tu plan.
+
+### Color corporativo
+En **⚙️ Configuración** → **🎨 Apariencia**, podés personalizar el color de acento de la app con el **selector de color corporativo**. Esto cambia el color primario de botones, bordes y elementos destacados para que coincida con la identidad visual de tu institución.
 
 ---
 
-## 22. Solución de problemas (FAQ)
+## 22. Asistente de sesión
+
+El **Asistente de sesión** aparece al iniciar una nueva sesión de trabajo y te ayuda a configurar rápidamente el contexto.
+
+### Qué pregunta el asistente
+1. **Lugar de trabajo:** Si tenés más de un consultorio configurado, seleccioná dónde estás trabajando
+2. **Profesional:** Si el lugar tiene más de un médico registrado, elegí quién dictará
+3. **Plantilla:** (Opcional) Preseleccioná la plantilla del estudio. Si no la elegís, se detecta automáticamente al transcribir
+
+### Cuándo aparece
+- Al abrir la app por primera vez en la sesión
+- Al pulsar el botón de **nueva sesión**
+- Si cambiaste de lugar de trabajo o profesional
+
+### Beneficio
+Configura automáticamente los datos del profesional, logo, firma y perfil de salida según el lugar y el profesional seleccionados. Esto evita tener que cambiar manualmente la configuración de impresión.
+
+---
+
+## 23. Historial de informes
+
+La app mantiene un historial de los informes generados para referencia rápida.
+
+### Acceder al historial
+Pulsá el botón **🕒 Historial** en la barra lateral o desde el menú.
+
+### Funciones
+- **Lista de informes:** Muestra los últimos informes generados con fecha, tipo de estudio y paciente
+- **Buscar:** Filtrá por nombre de paciente, tipo de estudio o fecha
+- **Re-abrir:** Hacé clic en un informe del historial para cargarlo en el editor
+- **Re-exportar:** Volvé a generar el PDF o cualquier formato de salida
+
+### Almacenamiento
+Los informes se guardan en el almacenamiento local del navegador (localStorage / IndexedDB). Se recomienda exportar periódicamente como respaldo.
+
+---
+
+## 24. Versionado y snapshots
+
+El editor guarda automáticamente **versiones (snapshots)** de tu informe a medida que trabajás.
+
+### Cuándo se crean versiones
+- Automáticamente antes de cada cambio estructural importante
+- Antes de re-estructurar con IA
+- Antes de aplicar correcciones del diccionario
+- Manualmente al pulsar el botón de guardado
+
+### Panel de versiones
+1. Pulsá el botón **🕒** en la barra del editor
+2. Se abre un panel lateral con la lista de versiones
+3. Cada versión muestra fecha, hora y tipo de cambio
+4. Hacé clic en una versión para **previsualizarla**
+5. Pulsá **↩️ Restaurar** para volver a esa versión
+
+### Límites
+- Se guardan hasta **20 versiones** por sesión
+- Las versiones se limpian al iniciar una nueva sesión o al pulsar **🗑️ Limpiar**
+
+---
+
+## 25. Solución de problemas (FAQ)
 
 ### "No se escucha la grabación" / El audio grabado está en silencio
 - Verificá que el micrófono esté seleccionado correctamente en la configuración del navegador
@@ -517,8 +602,9 @@ La preferencia se guarda y persiste entre sesiones. Todos los elementos de la in
 
 ### "La app se ve rara / los colores están mal"
 - Probá cambiar entre modo claro y oscuro (botón 🌙/☀️)
+- Si tenés un skin aplicado, probá volver a **Por Defecto** en ⚙️ Configuración → 🎭 Skins
 - Limpiá la caché del navegador: Ctrl+Shift+Delete → Imágenes y archivos en caché
-- Cerrá y reabrí la app
+- Cerrá y reabrí la app, o usá `?purge` al final de la URL
 
 ### "¿Es seguro para datos de pacientes?"
 - Los datos se procesan **localmente** en tu navegador
@@ -528,7 +614,7 @@ La preferencia se guarda y persiste entre sesiones. Todos los elementos de la in
 
 ---
 
-## 23. Contacto y soporte
+## 26. Contacto y soporte
 
 ### Botón de contacto
 Pulsá el botón **✉️ Contacto** en el encabezado (o desde **❓ Ayuda** → **Contactar soporte**).
@@ -549,7 +635,7 @@ Si el equipo de soporte lo solicita, podés enviar un **diagnóstico técnico** 
 
 ---
 
-## 24. Privacidad y seguridad
+## 27. Privacidad y seguridad
 
 | Aspecto | Detalle |
 |---------|---------|
@@ -563,4 +649,4 @@ Si el equipo de soporte lo solicita, podés enviar un **diagnóstico técnico** 
 
 ---
 
-*Documento generado el 24/02/2026. Para distribución a usuarios finales de Transcriptor Médico Pro.*
+*Documento generado el 28/02/2026. Para distribución a usuarios finales de Transcriptor Médico Pro.*

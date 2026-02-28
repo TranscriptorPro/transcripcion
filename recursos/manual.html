@@ -810,7 +810,12 @@ Documento generado el 27/02/2026<br>
 (function(){
 const toc=document.getElementById('toc');
 const headings=document.querySelectorAll('.main h2, .main h3');
+let autoIdx=0;
 headings.forEach(h=>{
+// Auto-generate id for headings that don't have one (fixes h3 links)
+if(!h.id){
+    h.id='auto-heading-'+(++autoIdx);
+}
 const a=document.createElement('a');
 a.textContent=h.textContent;
 a.href='#'+h.id;
