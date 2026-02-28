@@ -1198,8 +1198,8 @@
             background: rgba(239, 68, 68, 0.15);
         }
         [data-theme="dark"] .modal-close:hover {
-            background: rgba(239, 68, 68, 0.15);
-            color: #f87171;
+            background: rgba(255,255,255,0.25);
+            color: white;
         }
         [data-theme="dark"] .repair-note {
             background: rgba(202, 138, 4, 0.12);
@@ -1926,14 +1926,16 @@
 
         .modal-header {
             padding: 1.25rem 1.5rem;
-            border-bottom: 1px solid var(--border);
+            border-bottom: none;
             display: flex;
             align-items: center;
             justify-content: space-between;
             position: sticky;
             top: 0;
-            background: var(--bg-card);
+            background: var(--primary);
+            color: white;
             z-index: 10;
+            border-radius: 12px 12px 0 0;
         }
 
         .modal-header h2 {
@@ -1941,29 +1943,86 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            color: white;
         }
 
         .modal-close {
             width: 36px;
             height: 36px;
             border: none;
-            background: var(--bg-main);
+            background: rgba(255,255,255,0.15);
+            color: white;
             border-radius: 50%;
             cursor: pointer;
             display: grid;
             place-items: center;
             transition: all 0.2s;
+            font-size: 1.2rem;
         }
 
         .modal-close:hover {
-            background: #fee2e2;
-            color: #ef4444;
+            background: rgba(255,255,255,0.3);
+            color: white;
         }
 
         .modal-close svg {
             width: 18px;
             height: 18px;
             fill: currentColor;
+        }
+
+        /* Manual overlay title bar */
+        .manual-overlay-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: var(--primary);
+            flex-shrink: 0;
+        }
+        .manual-overlay-title {
+            font-weight: 600;
+            font-size: .95rem;
+            color: white;
+        }
+        .manual-newtab-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border: 1.5px solid rgba(255,255,255,0.35);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.12);
+            color: white;
+            cursor: pointer;
+            font-size: .8rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            backdrop-filter: blur(4px);
+        }
+        .manual-newtab-btn:hover {
+            background: rgba(255,255,255,0.25);
+            border-color: rgba(255,255,255,0.5);
+            transform: translateY(-1px);
+        }
+        .manual-newtab-btn svg {
+            flex-shrink: 0;
+        }
+        .manual-close-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: rgba(255,255,255,0.12);
+            color: white;
+            font-size: 1.3rem;
+            cursor: pointer;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            transition: all 0.2s;
+        }
+        .manual-close-btn:hover {
+            background: rgba(255,255,255,0.3);
         }
 
         .modal-body {
@@ -3848,7 +3907,7 @@
 
         /* ─── Settings Panel — Accordion Styles ──────────────────────── */
         .settings-modal .modal-header {
-            position: sticky; top: 0; z-index: 10; background: var(--bg-card);
+            position: sticky; top: 0; z-index: 10; background: var(--primary); color: white;
         }
         .settings-body {
             scrollbar-width: thin;

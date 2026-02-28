@@ -9,7 +9,7 @@
     <!-- PURGE: auto-purge al detectar nueva versión + ?purge manual. Preserva tema y color -->
     <script>
     (function() {
-        var APP_VERSION = 'v50'; // ← bump esto en cada deploy para forzar auto-purge
+        var APP_VERSION = 'v51'; // ← bump esto en cada deploy para forzar auto-purge
         var params = new URLSearchParams(window.location.search);
         var forcePurge = params.has('purge');
         var storedVersion = null;
@@ -1101,8 +1101,8 @@
         <!-- Reset App Modal (solo admin) -->
         <div class="modal-overlay" id="resetAppModal">
             <div class="modal" style="max-width:440px;">
-                <div class="modal-header" style="border-bottom:2px solid #ef4444;">
-                    <h3 style="margin:0;color:#ef4444;">&#128465;&#65039; Resetear aplicación</h3>
+                <div class="modal-header" style="background:#ef4444;">
+                    <h3 style="margin:0;color:white;">&#128465;&#65039; Resetear aplicación</h3>
                     <button class="modal-close" id="btnCloseResetModal">&times;</button>
                 </div>
                 <div class="modal-body" style="padding:1.25rem 1.5rem;">
@@ -1551,11 +1551,14 @@
         <!-- Manual Profesional (iframe overlay) -->
         <div id="manualOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);">
             <div style="position:absolute;inset:8px;background:var(--bg-card,#fff);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.3);">
-                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:var(--bg-secondary,#f1f5f9);border-bottom:1px solid var(--border,#e2e8f0);flex-shrink:0;">
-                    <span style="font-weight:600;font-size:.95rem;">📘 Manual Profesional</span>
-                    <div style="display:flex;gap:8px;">
-                        <button onclick="window.open('recursos/manual.html','_blank');" style="padding:4px 12px;border:1px solid var(--border,#e2e8f0);border-radius:6px;background:var(--bg-card,#fff);cursor:pointer;font-size:.82rem;" title="Abrir en pestaña nueva">↗️ Nueva pestaña</button>
-                        <button onclick="document.getElementById('manualOverlay').style.display='none';document.getElementById('manualFrame').src='';" style="width:32px;height:32px;border:none;background:transparent;font-size:1.3rem;cursor:pointer;border-radius:6px;" title="Cerrar">&times;</button>
+                <div class="manual-overlay-header">
+                    <span class="manual-overlay-title">📘 Manual Profesional</span>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <button onclick="window.open('recursos/manual.html','_blank');" class="manual-newtab-btn" title="Abrir en pestaña nueva">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                            Nueva pestaña
+                        </button>
+                        <button onclick="document.getElementById('manualOverlay').style.display='none';document.getElementById('manualFrame').src='';" class="manual-close-btn" title="Cerrar">&times;</button>
                     </div>
                 </div>
                 <iframe id="manualFrame" style="flex:1;border:none;width:100%;" src=""></iframe>
