@@ -3956,7 +3956,7 @@
             padding: 0 1.25rem;
         }
         .stg-accordion.open .stg-accordion-content {
-            max-height: 600px;
+            max-height: 1200px;
             padding: 0 1.25rem 1rem;
         }
 

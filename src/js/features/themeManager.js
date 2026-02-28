@@ -317,21 +317,16 @@
         // Apply on load (no save needed, it's already saved)
         apply(savedSkin, { save: false });
 
-        // Inject UI when settings panel is opened for the first time
-        // Listen for the settings modal becoming active
+        // Inject UI each time settings modal becomes active
         const settingsOverlay = document.getElementById('settingsModalOverlay');
         if (settingsOverlay) {
             const observer = new MutationObserver(() => {
                 if (settingsOverlay.classList.contains('active')) {
                     injectSelectorUI();
-                    observer.disconnect();
                 }
             });
             observer.observe(settingsOverlay, { attributes: true, attributeFilter: ['class'] });
         }
-
-        // Also try immediate injection (if settings are already rendered)
-        setTimeout(injectSelectorUI, 500);
     }
 
     // Boot
