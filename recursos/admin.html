@@ -1052,38 +1052,16 @@
             display: block;
         }
 
-        /* ── Image Processor Tab ── */
-        .imgproc-section { padding: 1.5rem 0 2rem; }
-        .imgproc-layout { display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem; }
-        @media (max-width: 800px) { .imgproc-layout { grid-template-columns: 1fr; } }
-        .imgproc-controls { display: flex; flex-direction: column; gap: 1rem; }
-        .imgproc-field label { display: block; font-weight: 600; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px; }
-        .imgproc-field select { width: 100%; padding: 8px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); font-size: 0.9rem; background: var(--bg-card); color: var(--text-primary); }
-        .imgproc-upload-row { display: flex; gap: 0.5rem; }
-        .imgproc-upload-btn { display: inline-flex; align-items: center; gap: 4px; padding: 8px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-card); color: var(--text-primary); cursor: pointer; font-size: 0.85rem; transition: background 0.15s, border-color 0.15s; }
-        .imgproc-upload-btn:hover { background: var(--primary-light); color: #fff; border-color: var(--primary); }
+        /* ── Image Processor (dentro del wizard gift) ── */
         .imgproc-options { display: flex; flex-direction: column; gap: 6px; }
-        .imgproc-checkbox { display: flex; align-items: center; gap: 6px; font-size: 0.88rem; color: var(--text-primary); cursor: pointer; }
+        .imgproc-checkbox { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--text-primary); cursor: pointer; }
         .imgproc-checkbox input[type=checkbox] { accent-color: var(--primary); width: 16px; height: 16px; }
-        .imgproc-threshold-row { display: flex; align-items: center; gap: 8px; padding-left: 22px; font-size: 0.82rem; color: var(--text-secondary); }
-        .imgproc-threshold-row input[type=range] { flex: 1; accent-color: var(--primary); }
-        .imgproc-preview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .imgproc-preview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
         @media (max-width: 600px) { .imgproc-preview-grid { grid-template-columns: 1fr; } }
-        .imgproc-preview-box h4 { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px; }
-        .imgproc-preview-area { width: 100%; min-height: 160px; border-radius: var(--radius-sm); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
-        .imgproc-preview-area img { max-width: 100%; max-height: 200px; object-fit: contain; }
+        .imgproc-preview-area { width: 100%; min-height: 120px; border-radius: 8px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .imgproc-checkerboard { background-image: linear-gradient(45deg, #e0e0e0 25%, transparent 25%), linear-gradient(-45deg, #e0e0e0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e0e0e0 75%), linear-gradient(-45deg, transparent 75%, #e0e0e0 75%); background-size: 16px 16px; background-position: 0 0, 0 8px, 8px -8px, -8px 0px; }
-        .imgproc-placeholder { color: var(--text-secondary); font-size: 0.85rem; }
-        .imgproc-pdf-sim { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 16px; font-family: 'Times New Roman', serif; color: #222; max-width: 480px; }
-        .imgproc-pdf-header { display: flex; align-items: center; gap: 10px; min-height: 50px; }
-        .imgproc-pdf-logo-left, .imgproc-pdf-logo-right { flex-shrink: 0; }
-        .imgproc-pdf-logo-left img { max-width: 70px; max-height: 45px; }
-        .imgproc-pdf-logo-right img { max-width: 40px; max-height: 40px; }
-        .imgproc-pdf-info { flex:1; font-size: 12px; }
-        .imgproc-pdf-sig { text-align: center; margin-top: 10px; font-size: 10px; }
-        .imgproc-pdf-sig img { max-width: 120px; max-height: 50px; }
-        .imgproc-actions { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
-        .imgproc-b64-info { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem; }
+        .imgproc-placeholder { color: var(--text-secondary); font-size: 0.82rem; }
+        .imgproc-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
         [data-theme="dark"] .imgproc-checkerboard { background-image: linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(-45deg, #333 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #333 75%), linear-gradient(-45deg, transparent 75%, #333 75%); }
 
         /* ── Metrics Tab ── */
@@ -1919,7 +1897,6 @@
             <button class="tab-btn" data-tab="metricas">📊 Métricas</button>
             <button class="tab-btn" data-tab="logs">🚨 Logs</button>
             <button class="tab-btn" data-tab="planes">💰 Planes</button>
-            <button class="tab-btn" data-tab="imagenes">🖼️ Imágenes</button>
         </div>
     </nav>
 
@@ -2163,105 +2140,6 @@
         </div>
     </section>
     </div><!-- /#tab-planes -->
-
-    <!-- ── Tab: Procesador de Imágenes ── -->
-    <div id="tab-imagenes" class="tab-content">
-    <section class="imgproc-section">
-        <div class="container">
-            <h2 style="margin-bottom:0.5rem;color:var(--text-primary);">🖼️ Procesador de Logos y Firmas</h2>
-            <p style="color:var(--text-secondary);margin-bottom:1.5rem;">Procesá imágenes para uso en el PDF: quitá fondos, recortá y escalá al tamaño exacto.</p>
-
-            <div class="imgproc-layout">
-                <!-- Panel izquierdo: controles -->
-                <div class="imgproc-controls">
-                    <div class="imgproc-field">
-                        <label for="imgprocType">Tipo de imagen</label>
-                        <select id="imgprocType">
-                            <option value="inst">Logo institucional (28×18 mm)</option>
-                            <option value="prof">Logo profesional (16×16 mm)</option>
-                            <option value="firma">Firma digital (50×20 mm)</option>
-                        </select>
-                    </div>
-
-                    <div class="imgproc-field">
-                        <label>Origen</label>
-                        <div class="imgproc-upload-row">
-                            <label class="imgproc-upload-btn" for="imgprocFileInput">📂 Subir imagen</label>
-                            <input type="file" id="imgprocFileInput" accept="image/*" style="display:none;">
-                            <button class="imgproc-upload-btn" id="imgprocPasteUrl">📋 Pegar URL</button>
-                        </div>
-                    </div>
-
-                    <div class="imgproc-field">
-                        <label>Opciones de procesamiento</label>
-                        <div class="imgproc-options">
-                            <label class="imgproc-checkbox"><input type="checkbox" id="imgprocRemoveBg" checked> Quitar fondo</label>
-                            <div class="imgproc-threshold-row" id="imgprocThresholdRow">
-                                <span>Umbral:</span>
-                                <input type="range" id="imgprocThreshold" min="5" max="80" value="30">
-                                <span id="imgprocThresholdVal">30</span>
-                            </div>
-                            <label class="imgproc-checkbox"><input type="checkbox" id="imgprocTrim" checked> Auto-recortar bordes vacíos</label>
-                            <label class="imgproc-checkbox"><input type="checkbox" id="imgprocScale" checked> Escalar a medidas del PDF</label>
-                        </div>
-                    </div>
-
-                    <button class="btn-primary" id="imgprocProcess" style="width:100%;padding:10px 0;margin-top:0.5rem;" disabled>⚙️ Procesar imagen</button>
-                </div>
-
-                <!-- Panel derecho: previews -->
-                <div class="imgproc-previews">
-                    <div class="imgproc-preview-grid">
-                        <div class="imgproc-preview-box">
-                            <h4>Original</h4>
-                            <div class="imgproc-preview-area imgproc-checkerboard" id="imgprocOrigPreview">
-                                <span class="imgproc-placeholder">Sin imagen</span>
-                            </div>
-                        </div>
-                        <div class="imgproc-preview-box">
-                            <h4>Resultado</h4>
-                            <div class="imgproc-preview-area imgproc-checkerboard" id="imgprocResultPreview">
-                                <span class="imgproc-placeholder">—</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Simulación header PDF -->
-                    <div class="imgproc-preview-box" id="imgprocSimBox" style="display:none;">
-                        <h4>Preview en contexto (Header PDF)</h4>
-                        <div class="imgproc-pdf-sim" id="imgprocPdfSim">
-                            <div class="imgproc-pdf-header" id="imgprocPdfHeader">
-                                <div class="imgproc-pdf-logo-left" id="imgprocSimLogoLeft"></div>
-                                <div class="imgproc-pdf-info">
-                                    <strong>Dr. Nombre Ejemplo</strong><br>
-                                    <small>Especialidad · Mat. MP-000</small>
-                                </div>
-                                <div class="imgproc-pdf-logo-right" id="imgprocSimLogoRight"></div>
-                            </div>
-                            <div class="imgproc-pdf-body">
-                                <div style="border-top:2px solid var(--primary);margin:6px 0;"></div>
-                                <p style="font-size:11px;color:#888;margin:8px 0;">Contenido del informe...</p>
-                            </div>
-                            <div class="imgproc-pdf-sig" id="imgprocSimFirma" style="display:none;">
-                                <div id="imgprocSimFirmaImg"></div>
-                                <div style="border-top:1px solid #333;width:80px;margin:2px auto 0;"></div>
-                                <small>Dr. Nombre Ejemplo<br>Mat. MP-000</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Acciones -->
-                    <div class="imgproc-actions" id="imgprocActions" style="display:none;">
-                        <button class="btn-secondary" id="imgprocDownload">⬇️ Descargar PNG</button>
-                        <button class="btn-secondary" id="imgprocCopyB64">📋 Copiar Base64</button>
-                        <button class="btn-primary" id="imgprocSaveReg" title="Guardar en el registro del médico" disabled>💾 Guardar en registro</button>
-                    </div>
-                    <p class="imgproc-b64-info" id="imgprocB64Info" style="display:none;"></p>
-                </div>
-            </div>
-        </div>
-    </section>
-    </div><!-- /#tab-imagenes -->
 
     <!-- ── Edit Modal ── -->
     <div class="modal-overlay" id="editModal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
@@ -3944,7 +3822,7 @@
 
         // ── Gift Wizard: navegación de pasos ─────────────────────────────────
         function giftGoStep(step) {
-            for (let i = 1; i <= 4; i++) {
+            for (let i = 1; i <= 5; i++) {
                 const el = document.getElementById('giftStep' + i);
                 if (el) el.style.display = (i === step) ? 'block' : 'none';
             }
@@ -3954,6 +3832,8 @@
             });
             // Actualizar resumen si entramos al paso 4
             if (step === 4) updateGiftFinalSummary();
+            // Inicializar procesador de imágenes al entrar al paso 5
+            if (step === 5 && typeof _imgprocInitStep5 === 'function') _imgprocInitStep5();
         }
 
         function selectGiftColor(color, el) {
@@ -5687,12 +5567,13 @@
                         <p style="margin:0;font-size:.72rem;color:#a16207;">TODAS las plantillas · 10 dispositivos · Plan GIFT · 1 año</p>
                     </div>
 
-                    <!-- Stepper visual (4 pasos) -->
+                    <!-- Stepper visual (5 pasos) -->
                     <div id="giftStepper" style="display:flex;justify-content:center;gap:.3rem;margin-bottom:.8rem;">
                         <div class="gift-step-dot active" data-step="1" style="width:28px;height:4px;border-radius:3px;background:#f59e0b;transition:all .3s;cursor:pointer;" onclick="giftGoStep(1)"></div>
                         <div class="gift-step-dot" data-step="2" style="width:28px;height:4px;border-radius:3px;background:#e5e7eb;transition:all .3s;cursor:pointer;" onclick="giftGoStep(2)"></div>
                         <div class="gift-step-dot" data-step="3" style="width:28px;height:4px;border-radius:3px;background:#e5e7eb;transition:all .3s;cursor:pointer;" onclick="giftGoStep(3)"></div>
                         <div class="gift-step-dot" data-step="4" style="width:28px;height:4px;border-radius:3px;background:#e5e7eb;transition:all .3s;cursor:pointer;" onclick="giftGoStep(4)"></div>
+                        <div class="gift-step-dot" data-step="5" style="width:28px;height:4px;border-radius:3px;background:#e5e7eb;transition:all .3s;cursor:pointer;" onclick="giftGoStep(5)"></div>
                     </div>
 
                     <!-- ══════════════════════════════════════════════════════════ -->
@@ -5929,6 +5810,102 @@
 
                         <div style="display:flex;justify-content:space-between;">
                             <button type="button" class="btn-secondary" onclick="giftGoStep(3)" style="padding:7px 16px;font-size:.84rem;">← Anterior</button>
+                            <button type="button" class="btn-primary" onclick="giftGoStep(5)" style="padding:7px 20px;font-size:.84rem;">Siguiente →</button>
+                        </div>
+                    </div>
+
+                    <!-- ══════════════════════════════════════════════════════════ -->
+                    <!-- ── PASO 5: Procesador de Imágenes ── -->
+                    <!-- ══════════════════════════════════════════════════════════ -->
+                    <div id="giftStep5" style="display:none;">
+                        <p class="gw-section-title">🖼️ Paso 5 — Procesador de Imágenes</p>
+                        <p class="gw-section-sub">Procesá las imágenes que subiste: quitá fondos, recortá y escalá al tamaño exacto del PDF. También podés subir nuevas.</p>
+
+                        <!-- Selector de imagen a procesar -->
+                        <div class="gw-card">
+                            <p class="gw-section-title">📷 Seleccionar Imagen</p>
+                            <div class="imgproc-field">
+                                <label for="imgprocType">Tipo de imagen</label>
+                                <select id="imgprocType" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #d1d5db;font-size:.85rem;">
+                                    <option value="inst">Logo institucional (28×18 mm)</option>
+                                    <option value="prof">Logo profesional (16×16 mm)</option>
+                                    <option value="firma">Firma digital (50×20 mm)</option>
+                                </select>
+                            </div>
+                            <div style="display:flex;gap:0.5rem;margin-top:.5rem;flex-wrap:wrap;">
+                                <button type="button" class="btn-secondary" id="imgprocLoadFromStep3" style="padding:6px 14px;font-size:.82rem;">📥 Cargar imagen del paso 3</button>
+                                <label class="btn-secondary" for="imgprocFileInput" style="padding:6px 14px;font-size:.82rem;cursor:pointer;display:inline-flex;align-items:center;">📂 Subir nueva</label>
+                                <input type="file" id="imgprocFileInput" accept="image/*" style="display:none;">
+                                <button type="button" class="btn-secondary" id="imgprocPasteUrl" style="padding:6px 14px;font-size:.82rem;">📋 Pegar URL</button>
+                            </div>
+                        </div>
+
+                        <!-- Opciones de procesamiento -->
+                        <div class="gw-card">
+                            <p class="gw-section-title">⚙️ Opciones</p>
+                            <div class="imgproc-options">
+                                <label class="imgproc-checkbox"><input type="checkbox" id="imgprocRemoveBg" checked> Quitar fondo</label>
+                                <div class="imgproc-threshold-row" id="imgprocThresholdRow" style="display:flex;align-items:center;gap:8px;padding-left:22px;font-size:.82rem;color:#64748b;">
+                                    <span>Umbral:</span>
+                                    <input type="range" id="imgprocThreshold" min="5" max="80" value="30" style="flex:1;accent-color:var(--primary);">
+                                    <span id="imgprocThresholdVal">30</span>
+                                </div>
+                                <label class="imgproc-checkbox"><input type="checkbox" id="imgprocTrim" checked> Auto-recortar bordes vacíos</label>
+                                <label class="imgproc-checkbox"><input type="checkbox" id="imgprocScale" checked> Escalar a medidas del PDF</label>
+                            </div>
+                            <button type="button" class="btn-primary" id="imgprocProcess" style="width:100%;padding:8px 0;margin-top:.5rem;font-size:.85rem;" disabled>⚙️ Procesar imagen</button>
+                        </div>
+
+                        <!-- Previews -->
+                        <div class="gw-card">
+                            <div class="imgproc-preview-grid">
+                                <div class="imgproc-preview-box">
+                                    <h4 style="font-size:.82rem;color:#64748b;margin-bottom:4px;">Original</h4>
+                                    <div class="imgproc-preview-area imgproc-checkerboard" id="imgprocOrigPreview">
+                                        <span class="imgproc-placeholder">Sin imagen</span>
+                                    </div>
+                                </div>
+                                <div class="imgproc-preview-box">
+                                    <h4 style="font-size:.82rem;color:#64748b;margin-bottom:4px;">Resultado</h4>
+                                    <div class="imgproc-preview-area imgproc-checkerboard" id="imgprocResultPreview">
+                                        <span class="imgproc-placeholder">—</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Simulación header PDF -->
+                        <div class="gw-card" id="imgprocSimBox" style="display:none;">
+                            <h4 style="font-size:.82rem;color:#64748b;margin-bottom:6px;">Preview en contexto (Header PDF)</h4>
+                            <div class="imgproc-pdf-sim" id="imgprocPdfSim" style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px 16px;font-family:'Times New Roman',serif;color:#222;">
+                                <div style="display:flex;align-items:center;gap:10px;min-height:50px;">
+                                    <div id="imgprocSimLogoLeft" style="flex-shrink:0;"></div>
+                                    <div style="flex:1;font-size:12px;">
+                                        <strong>Dr. Nombre Ejemplo</strong><br>
+                                        <small>Especialidad · Mat. MP-000</small>
+                                    </div>
+                                    <div id="imgprocSimLogoRight" style="flex-shrink:0;"></div>
+                                </div>
+                                <div style="border-top:2px solid var(--primary);margin:6px 0;"></div>
+                                <p style="font-size:11px;color:#888;margin:8px 0;">Contenido del informe...</p>
+                                <div id="imgprocSimFirma" style="display:none;text-align:center;margin-top:10px;font-size:10px;">
+                                    <div id="imgprocSimFirmaImg"></div>
+                                    <div style="border-top:1px solid #333;width:80px;margin:2px auto 0;"></div>
+                                    <small>Dr. Nombre Ejemplo<br>Mat. MP-000</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Acciones -->
+                        <div class="imgproc-actions" id="imgprocActions" style="display:none;margin-top:.5rem;">
+                            <button type="button" class="btn-secondary" id="imgprocDownload" style="padding:6px 14px;font-size:.82rem;">⬇️ Descargar PNG</button>
+                            <button type="button" class="btn-secondary" id="imgprocCopyB64" style="padding:6px 14px;font-size:.82rem;">📋 Copiar Base64</button>
+                            <button type="button" class="btn-primary" id="imgprocApply" style="padding:6px 14px;font-size:.82rem;">✅ Aplicar al registro</button>
+                        </div>
+                        <p id="imgprocB64Info" style="display:none;font-size:.78rem;color:#64748b;margin-top:.3rem;"></p>
+
+                        <div style="display:flex;justify-content:space-between;margin-top:.8rem;">
+                            <button type="button" class="btn-secondary" onclick="giftGoStep(4)" style="padding:7px 16px;font-size:.84rem;">← Anterior</button>
                         </div>
                     </div>
                 </div>
@@ -6272,7 +6249,7 @@
     })();
     </script>
 
-    <!-- ── Image Processor JS ── -->
+    <!-- ── Image Processor JS (integrado en wizard gift) ── -->
     <script>
     (function() {
         'use strict';
@@ -6285,34 +6262,10 @@
         };
 
         /* ── Estado ── */
-        let _originalImage = null;   // HTMLImageElement
-        let _resultB64 = null;       // data:image/png;base64,...
+        let _originalImage = null;
+        let _resultB64 = null;
 
-        /* ── DOM refs ── */
-        const elType        = document.getElementById('imgprocType');
-        const elFileInput   = document.getElementById('imgprocFileInput');
-        const elPasteUrl    = document.getElementById('imgprocPasteUrl');
-        const elRemoveBg    = document.getElementById('imgprocRemoveBg');
-        const elThreshold   = document.getElementById('imgprocThreshold');
-        const elThresholdVal= document.getElementById('imgprocThresholdVal');
-        const elThresholdRow= document.getElementById('imgprocThresholdRow');
-        const elTrim        = document.getElementById('imgprocTrim');
-        const elScale       = document.getElementById('imgprocScale');
-        const elProcess     = document.getElementById('imgprocProcess');
-        const elOrigPrev    = document.getElementById('imgprocOrigPreview');
-        const elResultPrev  = document.getElementById('imgprocResultPreview');
-        const elSimBox      = document.getElementById('imgprocSimBox');
-        const elSimLogoL    = document.getElementById('imgprocSimLogoLeft');
-        const elSimLogoR    = document.getElementById('imgprocSimLogoRight');
-        const elSimFirma    = document.getElementById('imgprocSimFirma');
-        const elSimFirmaImg = document.getElementById('imgprocSimFirmaImg');
-        const elActions     = document.getElementById('imgprocActions');
-        const elDownload    = document.getElementById('imgprocDownload');
-        const elCopyB64     = document.getElementById('imgprocCopyB64');
-        const elSaveReg     = document.getElementById('imgprocSaveReg');
-        const elB64Info     = document.getElementById('imgprocB64Info');
-
-        /* ── Utilidades ──────────────────────────────────────────── */
+        /* ── Utilidades Canvas ──────────────────────────────────── */
 
         function loadImageFromSrc(src) {
             return new Promise((resolve, reject) => {
@@ -6324,34 +6277,27 @@
             });
         }
 
-        /** Detectar color de fondo muestreando las 4 esquinas */
         function detectBackgroundColor(imageData) {
             const { data, width, height } = imageData;
             const sampleSize = Math.min(10, Math.floor(Math.min(width, height) / 4));
             let rSum = 0, gSum = 0, bSum = 0, count = 0;
-
             const corners = [
                 { x: 0, y: 0 },
                 { x: width - sampleSize, y: 0 },
                 { x: 0, y: height - sampleSize },
                 { x: width - sampleSize, y: height - sampleSize }
             ];
-
             for (const corner of corners) {
                 for (let dy = 0; dy < sampleSize; dy++) {
                     for (let dx = 0; dx < sampleSize; dx++) {
                         const idx = ((corner.y + dy) * width + (corner.x + dx)) * 4;
-                        rSum += data[idx];
-                        gSum += data[idx + 1];
-                        bSum += data[idx + 2];
-                        count++;
+                        rSum += data[idx]; gSum += data[idx + 1]; bSum += data[idx + 2]; count++;
                     }
                 }
             }
             return { r: Math.round(rSum / count), g: Math.round(gSum / count), b: Math.round(bSum / count) };
         }
 
-        /** Remover color de fondo con feathering suave */
         function removeColor(imageData, bgColor, threshold) {
             const { data } = imageData;
             const t2 = threshold * threshold;
@@ -6361,24 +6307,20 @@
                 const db = data[i + 2] - bgColor.b;
                 const dist2 = dr * dr + dg * dg + db * db;
                 if (dist2 < t2) {
-                    // Distancia normalizada → feathering
                     const distNorm = Math.sqrt(dist2) / threshold;
                     data[i + 3] = Math.round(data[i + 3] * Math.max(0, distNorm * 0.8));
                 }
             }
         }
 
-        /** Recortar bordes transparentes */
         function trimTransparent(canvas) {
             const ctx = canvas.getContext('2d');
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const { data, width, height } = imageData;
             let top = height, left = width, bottom = 0, right = 0;
-
             for (let y = 0; y < height; y++) {
                 for (let x = 0; x < width; x++) {
-                    const alpha = data[(y * width + x) * 4 + 3];
-                    if (alpha > 10) {
+                    if (data[(y * width + x) * 4 + 3] > 10) {
                         if (y < top) top = y;
                         if (y > bottom) bottom = y;
                         if (x < left) left = x;
@@ -6386,260 +6328,291 @@
                     }
                 }
             }
-
-            if (top > bottom || left > right) return canvas; // nada visible
-
-            const trimW = right - left + 1;
-            const trimH = bottom - top + 1;
+            if (top > bottom || left > right) return canvas;
+            const trimW = right - left + 1, trimH = bottom - top + 1;
             const trimmed = document.createElement('canvas');
-            trimmed.width = trimW;
-            trimmed.height = trimH;
+            trimmed.width = trimW; trimmed.height = trimH;
             trimmed.getContext('2d').drawImage(canvas, left, top, trimW, trimH, 0, 0, trimW, trimH);
             return trimmed;
         }
 
-        /** Escalar manteniendo aspect ratio */
         function scaleToFit(canvas, maxW, maxH) {
             const ratio = Math.min(maxW / canvas.width, maxH / canvas.height, 1);
             const newW = Math.round(canvas.width * ratio);
             const newH = Math.round(canvas.height * ratio);
-
             const out = document.createElement('canvas');
-            out.width = maxW;
-            out.height = maxH;
+            out.width = maxW; out.height = maxH;
             const ctx = out.getContext('2d');
-            // Centrar la imagen en el canvas final
             const offX = Math.round((maxW - newW) / 2);
             const offY = Math.round((maxH - newH) / 2);
             ctx.drawImage(canvas, 0, 0, canvas.width, canvas.height, offX, offY, newW, newH);
             return out;
         }
 
-        /* ── Pipeline de procesamiento ───────────────────────────── */
         async function processImage(img, type, options) {
-            // 1. Dibujar en canvas temporal
             const canvas = document.createElement('canvas');
             canvas.width = img.naturalWidth || img.width;
             canvas.height = img.naturalHeight || img.height;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0);
-
-            // 2. Remover fondo
             if (options.removeBackground) {
                 const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 const bgColor = detectBackgroundColor(imageData);
                 removeColor(imageData, bgColor, options.threshold);
                 ctx.putImageData(imageData, 0, 0);
             }
-
-            // 3. Auto-trim
             let result = canvas;
-            if (options.autoTrim) {
-                result = trimTransparent(canvas);
-            }
-
-            // 4. Escalar
+            if (options.autoTrim) result = trimTransparent(canvas);
             if (options.scale) {
                 const t = TARGETS[type];
                 result = scaleToFit(result, t.w, t.h);
             }
-
-            // 5. Exportar
             return result.toDataURL('image/png');
         }
 
-        /* ── UI: cargar imagen ───────────────────────────────────── */
-        function showOriginalPreview(img) {
-            _originalImage = img;
-            elOrigPrev.innerHTML = '';
-            const preview = document.createElement('img');
-            preview.src = img.src;
-            preview.alt = 'Original';
-            elOrigPrev.appendChild(preview);
-            elProcess.disabled = false;
-            // Limpiar resultado previo
-            elResultPrev.innerHTML = '<span class="imgproc-placeholder">—</span>';
-            elActions.style.display = 'none';
-            elSimBox.style.display = 'none';
-            elB64Info.style.display = 'none';
-            _resultB64 = null;
-        }
+        /* ── Inicialización al entrar al Step 5 ─────────────────── */
+        window._imgprocInitStep5 = function() {
+            // Nada que reiniciar, el estado se mantiene mientras el modal esté abierto
+        };
 
-        elFileInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            try {
+        /* ── Conectar eventos una vez que el DOM esté listo ─────── */
+        function initImageProcessor() {
+            const elType        = document.getElementById('imgprocType');
+            const elFileInput   = document.getElementById('imgprocFileInput');
+            const elPasteUrl    = document.getElementById('imgprocPasteUrl');
+            const elRemoveBg    = document.getElementById('imgprocRemoveBg');
+            const elThreshold   = document.getElementById('imgprocThreshold');
+            const elThresholdVal= document.getElementById('imgprocThresholdVal');
+            const elThresholdRow= document.getElementById('imgprocThresholdRow');
+            const elTrim        = document.getElementById('imgprocTrim');
+            const elScale       = document.getElementById('imgprocScale');
+            const elProcess     = document.getElementById('imgprocProcess');
+            const elOrigPrev    = document.getElementById('imgprocOrigPreview');
+            const elResultPrev  = document.getElementById('imgprocResultPreview');
+            const elSimBox      = document.getElementById('imgprocSimBox');
+            const elSimLogoL    = document.getElementById('imgprocSimLogoLeft');
+            const elSimLogoR    = document.getElementById('imgprocSimLogoRight');
+            const elSimFirma    = document.getElementById('imgprocSimFirma');
+            const elSimFirmaImg = document.getElementById('imgprocSimFirmaImg');
+            const elActions     = document.getElementById('imgprocActions');
+            const elDownload    = document.getElementById('imgprocDownload');
+            const elCopyB64     = document.getElementById('imgprocCopyB64');
+            const elApply       = document.getElementById('imgprocApply');
+            const elB64Info     = document.getElementById('imgprocB64Info');
+            const elLoadStep3   = document.getElementById('imgprocLoadFromStep3');
+
+            if (!elType || !elProcess) return; // guard
+
+            function showOriginalPreview(img) {
+                _originalImage = img;
+                elOrigPrev.innerHTML = '';
+                const preview = document.createElement('img');
+                preview.src = img.src;
+                preview.alt = 'Original';
+                preview.style.maxWidth = '100%';
+                preview.style.maxHeight = '180px';
+                preview.style.objectFit = 'contain';
+                elOrigPrev.appendChild(preview);
+                elProcess.disabled = false;
+                elResultPrev.innerHTML = '<span class="imgproc-placeholder">—</span>';
+                elActions.style.display = 'none';
+                elSimBox.style.display = 'none';
+                elB64Info.style.display = 'none';
+                _resultB64 = null;
+            }
+
+            // Cargar imagen desde Step 3
+            elLoadStep3.addEventListener('click', async () => {
+                const type = elType.value;
+                let b64 = null;
+                if (type === 'firma' && _giftImageData && _giftImageData.firma) {
+                    b64 = _giftImageData.firma;
+                } else if (type === 'prof' && _giftImageData && _giftImageData.proLogo) {
+                    b64 = _giftImageData.proLogo;
+                } else if (type === 'inst') {
+                    // Buscar logo del primer workplace
+                    const firstKey = Object.keys(_giftWpLogoData || {})[0];
+                    if (firstKey && _giftWpLogoData[firstKey]) b64 = _giftWpLogoData[firstKey];
+                }
+                if (!b64) {
+                    if (typeof dashAlert === 'function') dashAlert('No se encontró imagen de este tipo en el paso 3. Subí una primero.', '📷');
+                    else alert('No se encontró imagen de este tipo en el paso 3.');
+                    return;
+                }
+                try {
+                    const img = await loadImageFromSrc(b64);
+                    showOriginalPreview(img);
+                } catch (err) {
+                    alert('Error al cargar la imagen: ' + err.message);
+                }
+            });
+
+            // Subir nueva imagen
+            elFileInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('La imagen no puede superar 5 MB');
+                    elFileInput.value = '';
+                    return;
+                }
                 const reader = new FileReader();
                 reader.onload = async (ev) => {
-                    const img = await loadImageFromSrc(ev.target.result);
-                    showOriginalPreview(img);
+                    try {
+                        const img = await loadImageFromSrc(ev.target.result);
+                        showOriginalPreview(img);
+                    } catch (err) {
+                        alert('Error al cargar imagen: ' + err.message);
+                    }
                 };
                 reader.readAsDataURL(file);
-            } catch (err) {
-                alert('Error al cargar archivo: ' + err.message);
-            }
-        });
+            });
 
-        elPasteUrl.addEventListener('click', async () => {
-            const url = prompt('Pegá la URL de la imagen:');
-            if (!url || !url.trim()) return;
-            try {
-                const img = await loadImageFromSrc(url.trim());
-                showOriginalPreview(img);
-            } catch (err) {
-                alert('No se pudo cargar la imagen desde esa URL. Asegurate de que sea una URL directa a imagen y permita CORS.');
-            }
-        });
+            // Pegar URL
+            elPasteUrl.addEventListener('click', async () => {
+                const url = prompt('Pegá la URL de la imagen:');
+                if (!url || !url.trim()) return;
+                try {
+                    const img = await loadImageFromSrc(url.trim());
+                    showOriginalPreview(img);
+                } catch (err) {
+                    alert('No se pudo cargar desde esa URL. Verificá que sea una URL directa a imagen y permita CORS.');
+                }
+            });
 
-        /* ── UI: umbral / opciones ──────────────────────────────── */
-        elThreshold.addEventListener('input', () => {
-            elThresholdVal.textContent = elThreshold.value;
-        });
+            // Umbral
+            elThreshold.addEventListener('input', () => {
+                elThresholdVal.textContent = elThreshold.value;
+            });
+            elRemoveBg.addEventListener('change', () => {
+                elThresholdRow.style.display = elRemoveBg.checked ? 'flex' : 'none';
+            });
 
-        elRemoveBg.addEventListener('change', () => {
-            elThresholdRow.style.display = elRemoveBg.checked ? 'flex' : 'none';
-        });
+            // Procesar
+            elProcess.addEventListener('click', async () => {
+                if (!_originalImage) return;
+                elProcess.disabled = true;
+                elProcess.textContent = '⏳ Procesando...';
+                try {
+                    const type = elType.value;
+                    const options = {
+                        removeBackground: elRemoveBg.checked,
+                        threshold: parseInt(elThreshold.value, 10),
+                        autoTrim: elTrim.checked,
+                        scale: elScale.checked
+                    };
+                    _resultB64 = await processImage(_originalImage, type, options);
 
-        /* ── UI: Procesar ──────────────────────────────────────── */
-        elProcess.addEventListener('click', async () => {
-            if (!_originalImage) return;
-            elProcess.disabled = true;
-            elProcess.textContent = '⏳ Procesando...';
+                    elResultPrev.innerHTML = '';
+                    const resImg = document.createElement('img');
+                    resImg.src = _resultB64;
+                    resImg.alt = 'Resultado';
+                    resImg.style.maxWidth = '100%';
+                    resImg.style.maxHeight = '180px';
+                    resImg.style.objectFit = 'contain';
+                    elResultPrev.appendChild(resImg);
 
-            try {
+                    const sizeKB = Math.round((_resultB64.length * 3 / 4) / 1024);
+                    elB64Info.textContent = 'Tamaño base64: ~' + sizeKB + ' KB';
+                    elB64Info.style.display = 'block';
+
+                    // Simulación PDF
+                    elSimBox.style.display = 'block';
+                    elSimLogoL.innerHTML = '';
+                    elSimLogoR.innerHTML = '';
+                    elSimFirma.style.display = 'none';
+                    const simImg = document.createElement('img');
+                    simImg.src = _resultB64;
+                    simImg.style.maxWidth = type === 'inst' ? '70px' : type === 'prof' ? '40px' : '120px';
+                    simImg.style.maxHeight = type === 'inst' ? '45px' : type === 'prof' ? '40px' : '50px';
+                    if (type === 'inst') elSimLogoL.appendChild(simImg);
+                    else if (type === 'prof') elSimLogoR.appendChild(simImg);
+                    else {
+                        elSimFirma.style.display = 'block';
+                        elSimFirmaImg.innerHTML = '';
+                        elSimFirmaImg.appendChild(simImg);
+                    }
+
+                    elActions.style.display = 'flex';
+                } catch (err) {
+                    alert('Error al procesar: ' + err.message);
+                } finally {
+                    elProcess.disabled = false;
+                    elProcess.textContent = '⚙️ Procesar imagen';
+                }
+            });
+
+            // Descargar
+            elDownload.addEventListener('click', () => {
+                if (!_resultB64) return;
                 const type = elType.value;
-                const options = {
-                    removeBackground: elRemoveBg.checked,
-                    threshold: parseInt(elThreshold.value, 10),
-                    autoTrim: elTrim.checked,
-                    scale: elScale.checked
-                };
+                const label = TARGETS[type].label.replace(/\s+/g, '_');
+                const a = document.createElement('a');
+                a.href = _resultB64;
+                a.download = label + '_' + Date.now() + '.png';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            });
 
-                _resultB64 = await processImage(_originalImage, type, options);
+            // Copiar base64
+            elCopyB64.addEventListener('click', async () => {
+                if (!_resultB64) return;
+                try {
+                    await navigator.clipboard.writeText(_resultB64);
+                    elCopyB64.textContent = '✅ Copiado!';
+                    setTimeout(() => { elCopyB64.textContent = '📋 Copiar Base64'; }, 2000);
+                } catch (_) {
+                    const ta = document.createElement('textarea');
+                    ta.value = _resultB64;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                    elCopyB64.textContent = '✅ Copiado!';
+                    setTimeout(() => { elCopyB64.textContent = '📋 Copiar Base64'; }, 2000);
+                }
+            });
 
-                // Mostrar resultado
-                elResultPrev.innerHTML = '';
-                const resImg = document.createElement('img');
-                resImg.src = _resultB64;
-                resImg.alt = 'Resultado';
-                elResultPrev.appendChild(resImg);
+            // Aplicar al registro (inyectar en _giftImageData / _giftWpLogoData)
+            elApply.addEventListener('click', () => {
+                if (!_resultB64) return;
+                const type = elType.value;
+                let label = '';
+                if (type === 'firma') {
+                    _giftImageData.firma = _resultB64;
+                    label = 'Firma';
+                    // Actualizar preview del paso 3
+                    const prev = document.getElementById('giftFirmaPreview');
+                    if (prev) prev.innerHTML = '<img src="' + _resultB64 + '" alt="Firma procesada" style="max-height:60px;">';
+                } else if (type === 'prof') {
+                    _giftImageData.proLogo = _resultB64;
+                    label = 'Logo profesional';
+                    const prev = document.getElementById('giftProLogoPreview');
+                    if (prev) prev.innerHTML = '<img src="' + _resultB64 + '" alt="Logo procesado" style="max-height:60px;">';
+                } else {
+                    // inst → primer workplace
+                    const firstKey = Object.keys(_giftWpLogoData || {})[0];
+                    if (firstKey) {
+                        _giftWpLogoData[firstKey] = _resultB64;
+                    }
+                    label = 'Logo institucional';
+                }
 
-                // Info de tamaño
-                const sizeKB = Math.round((_resultB64.length * 3 / 4) / 1024);
-                elB64Info.textContent = `Tamaño base64: ~${sizeKB} KB`;
-                elB64Info.style.display = 'block';
-
-                // Simulación header PDF
-                showPdfSimulation(type, _resultB64);
-
-                // Mostrar acciones
-                elActions.style.display = 'flex';
-                elSaveReg.disabled = true; // TODO: habilitar si hay registro abierto
-
-            } catch (err) {
-                alert('Error al procesar: ' + err.message);
-            } finally {
-                elProcess.disabled = false;
-                elProcess.textContent = '⚙️ Procesar imagen';
-            }
-        });
-
-        /* ── Simulación PDF ──────────────────────────────────────── */
-        function showPdfSimulation(type, b64) {
-            elSimBox.style.display = 'block';
-            // Reset
-            elSimLogoL.innerHTML = '';
-            elSimLogoR.innerHTML = '';
-            elSimFirma.style.display = 'none';
-
-            const img = document.createElement('img');
-            img.src = b64;
-
-            if (type === 'inst') {
-                elSimLogoL.appendChild(img);
-            } else if (type === 'prof') {
-                elSimLogoR.appendChild(img);
-            } else if (type === 'firma') {
-                elSimFirma.style.display = 'block';
-                elSimFirmaImg.innerHTML = '';
-                elSimFirmaImg.appendChild(img);
-            }
+                if (typeof dashAlert === 'function') {
+                    dashAlert('✅ ' + label + ' procesado y aplicado al registro. Los datos se usarán al generar el link.', '🖼️');
+                } else {
+                    alert(label + ' aplicado al registro.');
+                }
+            });
         }
 
-        /* ── Acciones: descargar ─────────────────────────────────── */
-        elDownload.addEventListener('click', () => {
-            if (!_resultB64) return;
-            const type = elType.value;
-            const label = TARGETS[type].label.replace(/\s+/g, '_');
-            const a = document.createElement('a');
-            a.href = _resultB64;
-            a.download = `${label}_${Date.now()}.png`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        });
-
-        /* ── Acciones: copiar base64 ─────────────────────────────── */
-        elCopyB64.addEventListener('click', async () => {
-            if (!_resultB64) return;
-            try {
-                await navigator.clipboard.writeText(_resultB64);
-                const origText = elCopyB64.textContent;
-                elCopyB64.textContent = '✅ Copiado!';
-                setTimeout(() => { elCopyB64.textContent = origText; }, 2000);
-            } catch (_) {
-                // Fallback
-                const ta = document.createElement('textarea');
-                ta.value = _resultB64;
-                document.body.appendChild(ta);
-                ta.select();
-                document.execCommand('copy');
-                document.body.removeChild(ta);
-                elCopyB64.textContent = '✅ Copiado!';
-                setTimeout(() => { elCopyB64.textContent = '📋 Copiar Base64'; }, 2000);
-            }
-        });
-
-        /* ── Acciones: guardar en registro ───────────────────────── */
-        elSaveReg.addEventListener('click', () => {
-            if (!_resultB64) return;
-            const type = elType.value;
-
-            // Buscar si hay un registro abierto en edición (en el modal de gift/registro)
-            const giftModal = document.getElementById('giftWizardModal');
-            if (!giftModal) {
-                alert('No hay un registro abierto en edición. Usá "Copiar Base64" e insertalo manualmente.');
-                return;
-            }
-
-            // Mapear tipo → campo del formulario gift
-            let fieldId, fieldLabel;
-            if (type === 'firma') {
-                fieldId = 'giftFirma';
-                fieldLabel = 'Firma';
-            } else if (type === 'prof') {
-                fieldId = 'giftProLogo';
-                fieldLabel = 'Logo profesional';
-            } else {
-                // inst → logo del workplace
-                fieldId = 'giftWpLogo';
-                fieldLabel = 'Logo institucional';
-            }
-
-            const field = document.getElementById(fieldId);
-            if (field) {
-                // Si es file input, no podemos setear valor; verificar si hay campo de datos asociado
-                // Intentar setear via la variable global _giftImageData
-                if (typeof _giftImageData !== 'undefined') {
-                    if (type === 'firma') _giftImageData.firma = _resultB64;
-                    else if (type === 'prof') _giftImageData.proLogo = _resultB64;
-                }
-                alert(`${fieldLabel} guardado. Asegurate de finalizar el registro para aplicar los cambios.`);
-            } else {
-                alert('No se encontró el campo de destino. Usá "Copiar Base64" e insertalo manualmente en el registro.');
-            }
-        });
-
+        // Inicializar cuando el DOM esté listo
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initImageProcessor);
+        } else {
+            initImageProcessor();
+        }
     })();
     </script>
 </body>
