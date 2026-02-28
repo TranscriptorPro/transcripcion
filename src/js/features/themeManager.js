@@ -175,96 +175,48 @@
     }
 
     /**
-     * Populate the skin selector gallery inside the dedicated #skinSelectorContainer.
-     * The container lives in its own accordion (data-stg="skins") in index.html.
+     * Attach click handlers to the static skin cards in index.html
+     * and inject the CSS for hover/active states.
+     * Cards are in #skinSelectorContainer as static HTML — no dynamic creation.
      */
     function injectSelectorUI() {
         const container = document.getElementById('skinSelectorContainer');
-        if (!container) {
-            console.warn('[ThemeManager] No se encontró #skinSelectorContainer');
-            return;
-        }
+        if (!container) return;
 
-        // Don't inject twice — if already has cards, just update active state
-        if (container.querySelector('.skin-option')) {
-            _updateSelectorUI(_currentSkinId);
-            return;
-        }
-
-        const gallery = document.createElement('div');
-        gallery.className = 'skin-gallery';
-        gallery.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem;';
-
-        SKIN_REGISTRY.forEach(skin => {
-            const card = document.createElement('button');
-            card.type = 'button';
-            card.className = 'skin-option' + (skin.id === _currentSkinId ? ' skin-option--active' : '');
-            card.dataset.skin = skin.id;
-            card.title = skin.description;
-            card.style.cssText = `
-                position: relative;
-                border: 2px solid var(--border);
-                border-radius: 10px;
-                padding: 0;
-                cursor: pointer;
-                transition: all 0.25s;
-                overflow: hidden;
-                background: var(--bg-card);
-                text-align: left;
-                outline: none;
-            `;
-
-            // Preview bar (visual swatch)
-            const preview = document.createElement('div');
-            preview.className = 'skin-preview-bar';
-            preview.style.cssText = `
-                height: 40px;
-                background: ${skin.preview.bg};
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 4px;
-                padding: 0 8px;
-                border-bottom: 2px solid ${skin.preview.accent};
-            `;
-            // Mini colored dots
-            ['accent', 'card', 'text'].forEach(key => {
-                const dot = document.createElement('span');
-                dot.style.cssText = `width: 10px; height: 10px; border-radius: 50%; background: ${skin.preview[key]}; border: 1px solid rgba(0,0,0,0.1);`;
-                preview.appendChild(dot);
-            });
-            card.appendChild(preview);
-
-            // Info
-            const info = document.createElement('div');
-            info.style.cssText = 'padding: 6px 8px 8px;';
-            info.innerHTML = `
-                <div style="display:flex; align-items:center; gap:4px; font-size:0.82rem; font-weight:600; color: var(--text-primary);">
-                    <span>${skin.icon}</span> ${skin.name}
-                    <span class="skin-check" style="margin-left:auto; color: var(--primary); font-weight:700; font-size:0.9rem;">${skin.id === _currentSkinId ? '✓' : ''}</span>
-                </div>
-                <div style="font-size:0.7rem; color: var(--text-secondary); margin-top:2px; line-height:1.3;">${skin.description}</div>
-            `;
-            card.appendChild(info);
-
-            // Click handler
+        // Attach click handlers (idempotent via data attribute)
+        container.querySelectorAll('.skin-option').forEach(card => {
+            if (card.dataset.skinBound) return; // already bound
+            card.dataset.skinBound = '1';
             card.addEventListener('click', () => {
-                apply(skin.id);
+                const skinId = card.dataset.skin;
+                apply(skinId);
                 if (typeof showToast === 'function') {
-                    showToast('🎭 Skin aplicado: ' + skin.name, 'success', 2500);
+                    const skin = SKIN_REGISTRY.find(s => s.id === skinId);
+                    showToast('🎭 Skin aplicado: ' + (skin ? skin.name : skinId), 'success', 2500);
                 }
             });
-
-            gallery.appendChild(card);
         });
 
-        container.appendChild(gallery);
+        // Update active state
+        _updateSelectorUI(_currentSkinId);
 
-        // Style for active state (inject once)
+        // Inject CSS for hover/active (once)
         if (!document.getElementById('skin-selector-styles')) {
             const style = document.createElement('style');
             style.id = 'skin-selector-styles';
             style.textContent = `
+                .skin-option {
+                    position: relative;
+                    border: 2px solid var(--border);
+                    border-radius: 10px;
+                    padding: 0;
+                    cursor: pointer;
+                    transition: all 0.25s;
+                    overflow: hidden;
+                    background: var(--bg-card);
+                    text-align: left;
+                    outline: none;
+                }
                 .skin-option:hover {
                     border-color: var(--primary-light) !important;
                     transform: translateY(-1px);
@@ -273,15 +225,6 @@
                 .skin-option--active {
                     border-color: var(--primary) !important;
                     box-shadow: 0 0 0 2px var(--primary-light), 0 4px 12px rgba(0,0,0,0.1) !important;
-                }
-                .skin-option--active .skin-preview-bar {
-                    position: relative;
-                }
-                .skin-option--active .skin-preview-bar::after {
-                    content: '';
-                    position: absolute;
-                    inset: 0;
-                    background: rgba(255,255,255,0.08);
                 }
             `;
             document.head.appendChild(style);
