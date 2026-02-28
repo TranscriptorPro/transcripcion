@@ -405,16 +405,17 @@ window.initWorkplaceManagement = function () {
 }
 
 // ---- Original initBusinessSuite updated ----
-window.initBusinessSuite = function () {
+window.initBusinessSuite = async function () {
     // ── Interceptar link de la fábrica (?id=MED001) ──────────────────────────
     if (window._PENDING_SETUP_ID) {
         // ── Protección: si ya era ADMIN, confirmar antes de sobreescribir ──
         if (window._ADMIN_WAS_ACTIVE) {
-            const confirmar = confirm(
-                '⚠️ ATENCIÓN: Estás abriendo un link de usuario en tu sesión de ADMINISTRADOR.\n\n' +
-                'Si continúas, tu sesión admin se convertirá en la del usuario "' + window._PENDING_SETUP_ID + '".\n\n' +
-                '¿Querés continuar? (Cancelar = seguir como admin)'
-            );
+            const confirmar = typeof window.showCustomConfirm === 'function'
+                ? await window.showCustomConfirm(
+                    '⚠️ Atención',
+                    'Estás abriendo un link de usuario en tu sesión de ADMINISTRADOR.\n\nSi continúas, tu sesión admin se convertirá en la del usuario "' + window._PENDING_SETUP_ID + '".\n\n¿Querés continuar?'
+                )
+                : confirm('⚠️ ATENCIÓN: ¿Querés convertir tu sesión admin en la del usuario "' + window._PENDING_SETUP_ID + '"?');
             if (!confirmar) {
                 // Limpiar y seguir como admin
                 delete window._PENDING_SETUP_ID;

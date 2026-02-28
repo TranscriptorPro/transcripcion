@@ -9,7 +9,7 @@
     <!-- PURGE: auto-purge al detectar nueva versión + ?purge manual. Preserva tema y color -->
     <script>
     (function() {
-        var APP_VERSION = 'v49'; // ← bump esto en cada deploy para forzar auto-purge
+        var APP_VERSION = 'v50'; // ← bump esto en cada deploy para forzar auto-purge
         var params = new URLSearchParams(window.location.search);
         var forcePurge = params.has('purge');
         var storedVersion = null;
@@ -555,29 +555,40 @@
                             <div class="stg-opt-row stg-color-panel" id="settingsColorPanel" style="display:none;">
                                 <div class="stg-color-panel-inner">
                                     <!-- Slider de Hue -->
+                                    <label class="stg-slider-label">Tono</label>
                                     <input type="range" min="0" max="360" value="174" class="stg-hue-slider" id="settingsHueSlider" title="Tono">
-                                    <!-- Presets rápidos -->
+                                    <!-- Slider de Saturación/Intensidad -->
+                                    <label class="stg-slider-label">Intensidad</label>
+                                    <input type="range" min="10" max="100" value="75" class="stg-sat-slider" id="settingsSatSlider" title="Intensidad">
+                                    <!-- Presets rápidos (14 colores, ancho completo) -->
                                     <div class="stg-color-presets" id="settingsColorPresets">
                                         <button type="button" class="stg-preset" data-color="#1a56a0" style="background:#1a56a0" title="Azul"></button>
+                                        <button type="button" class="stg-preset" data-color="#5b8fd9" style="background:#5b8fd9" title="Azul pastel"></button>
                                         <button type="button" class="stg-preset" data-color="#0f766e" style="background:#0f766e" title="Teal"></button>
+                                        <button type="button" class="stg-preset" data-color="#5eafaa" style="background:#5eafaa" title="Teal suave"></button>
                                         <button type="button" class="stg-preset" data-color="#7c3aed" style="background:#7c3aed" title="Violeta"></button>
+                                        <button type="button" class="stg-preset" data-color="#a78bfa" style="background:#a78bfa" title="Lavanda"></button>
                                         <button type="button" class="stg-preset" data-color="#db2777" style="background:#db2777" title="Rosa"></button>
+                                        <button type="button" class="stg-preset" data-color="#f472b6" style="background:#f472b6" title="Rosa suave"></button>
                                         <button type="button" class="stg-preset" data-color="#ea580c" style="background:#ea580c" title="Naranja"></button>
                                         <button type="button" class="stg-preset" data-color="#16a34a" style="background:#16a34a" title="Verde"></button>
+                                        <button type="button" class="stg-preset" data-color="#4ade80" style="background:#4ade80" title="Verde menta"></button>
                                         <button type="button" class="stg-preset" data-color="#dc2626" style="background:#dc2626" title="Rojo"></button>
                                         <button type="button" class="stg-preset" data-color="#1e293b" style="background:#1e293b" title="Grafito"></button>
+                                        <button type="button" class="stg-preset" data-color="#64748b" style="background:#64748b" title="Gris"></button>
                                     </div>
-                                    <!-- Input hex manual -->
-                                    <div class="stg-hex-input-row">
-                                        <span class="stg-hex-label">#</span>
-                                        <input type="text" class="stg-hex-text" id="settingsHexInput" maxlength="6" value="0f766e" placeholder="hex">
-                                    </div>
-                                    <!-- Swatches preview (movidos aquí) -->
-                                    <div class="stg-color-swatches">
-                                        <span class="stg-swatch" id="swatchDark" title="Oscuro"></span>
-                                        <span class="stg-swatch" id="swatchPrimary" title="Principal"></span>
-                                        <span class="stg-swatch" id="swatchLight" title="Claro"></span>
-                                        <span class="stg-swatch" id="swatchAccent" title="Acento"></span>
+                                    <!-- Hex + Swatches en una fila -->
+                                    <div class="stg-picker-bottom">
+                                        <div class="stg-hex-input-row">
+                                            <span class="stg-hex-label">#</span>
+                                            <input type="text" class="stg-hex-text" id="settingsHexInput" maxlength="6" value="0f766e" placeholder="hex">
+                                        </div>
+                                        <div class="stg-color-swatches" id="settingsColorPreview">
+                                            <span class="stg-swatch" id="swatchDark" title="Oscuro"></span>
+                                            <span class="stg-swatch" id="swatchPrimary" title="Principal"></span>
+                                            <span class="stg-swatch" id="swatchLight" title="Claro"></span>
+                                            <span class="stg-swatch" id="swatchAccent" title="Acento"></span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

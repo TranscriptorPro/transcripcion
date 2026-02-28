@@ -157,13 +157,22 @@
         [data-theme="dark"] .notification {
             background: var(--bg-card);
             color: var(--text-primary);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            border-color: var(--border);
+        }
+
+        [data-theme="dark"] .notification-success,
+        [data-theme="dark"] .notification-info {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark, var(--primary)));
+            color: white;
         }
 
         [data-theme="dark"] .toast {
             background: var(--bg-card);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+        }
+
+        [data-theme="dark"] .toast-message {
             color: var(--text-primary);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
         }
 
         [data-theme="dark"] .modal-header {
@@ -800,42 +809,47 @@
             background: var(--bg-main);
         }
 
-        /* ── Notification ── */
+        /* ── Notification (inline banner, no tapa contenido) ── */
         .notification {
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            padding: 12px 20px;
+            position: relative;
+            margin: 0 auto 12px;
+            padding: 10px 16px;
             border-radius: 8px;
-            background: white;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             font-weight: 500;
             font-size: .85rem;
             opacity: 0;
-            transform: translateY(-20px);
+            transform: translateY(-10px);
             transition: all 0.3s ease;
-            z-index: 10000;
-            max-width: 280px;
+            max-width: 600px;
+            text-align: center;
+            pointer-events: none;
         }
 
         .notification.show {
             opacity: 1;
             transform: translateY(0);
+            pointer-events: auto;
         }
 
         .notification-success {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark, var(--primary)));
             color: white;
+            border-color: var(--primary);
         }
 
         .notification-error {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            background: linear-gradient(135deg, #ef4444, #dc2626);
             color: white;
+            border-color: #dc2626;
         }
 
         .notification-info {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            background: linear-gradient(135deg, var(--primary-light, var(--primary)), var(--primary));
             color: white;
+            border-color: var(--primary);
         }
 
         /* ── Banned row ── */
@@ -1655,13 +1669,13 @@
         /* ── Rich Toast Notifications ── */
         .toast {
             position: fixed;
-            top: 20px;
+            bottom: 20px;
             right: 20px;
             min-width: 300px;
             padding: 1rem 1.5rem;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            background: var(--bg-card);
+            border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
             display: flex;
             align-items: center;
             gap: 1rem;
@@ -1684,27 +1698,27 @@
 
         .toast-message {
             flex: 1;
-            color: #1f2937;
+            color: var(--text-primary);
         }
 
         .toast-close {
             background: none;
             border: none;
             font-size: 1.5rem;
-            color: #6b7280;
+            color: var(--text-secondary);
             cursor: pointer;
             padding: 0;
             line-height: 1;
         }
 
-        .toast-success { border-left: 4px solid #28a745; }
-        .toast-success .toast-icon { color: #28a745; }
+        .toast-success { border-left: 4px solid var(--primary); }
+        .toast-success .toast-icon { color: var(--primary); }
         .toast-error   { border-left: 4px solid #dc3545; }
         .toast-error .toast-icon   { color: #dc3545; }
-        .toast-info    { border-left: 4px solid #17a2b8; }
-        .toast-info .toast-icon    { color: #17a2b8; }
-        .toast-warning { border-left: 4px solid #ffc107; }
-        .toast-warning .toast-icon { color: #ffc107; }
+        .toast-info    { border-left: 4px solid var(--primary-light, var(--primary)); }
+        .toast-info .toast-icon    { color: var(--primary-light, var(--primary)); }
+        .toast-warning { border-left: 4px solid #f59e0b; }
+        .toast-warning .toast-icon { color: #f59e0b; }
 
         /* ── Form Validation ── */
         .form-control.is-invalid,
@@ -2264,16 +2278,18 @@
                 // Verificar tokenExpiry del backend (fuente de verdad)
                 if (session.tokenExpiry && Date.now() > session.tokenExpiry) {
                     sessionStorage.removeItem('adminSession');
-                    alert('⏰ Tu sesión expiró (8 horas). Volvé a iniciar sesión.');
-                    window.location.href = 'login.html';
+                    dashAlert('⏰ Tu sesión expiró (8 horas). Volvé a iniciar sesión.', '⏰').then(() => {
+                        window.location.href = 'login.html';
+                    });
                     return;
                 }
                 // Fallback: verificar por timestamp si no hay tokenExpiry
                 const hoursSinceLogin = (Date.now() - session.timestamp) / (1000 * 60 * 60);
                 if (hoursSinceLogin >= 8) {
                     sessionStorage.removeItem('adminSession');
-                    alert('⏰ Tu sesión expiró (8 horas). Volvé a iniciar sesión.');
-                    window.location.href = 'login.html';
+                    dashAlert('⏰ Tu sesión expiró (8 horas). Volvé a iniciar sesión.', '⏰').then(() => {
+                        window.location.href = 'login.html';
+                    });
                     return;
                 }
             } catch (e) {
@@ -2453,8 +2469,9 @@
                     if (errLower.includes('unauthorized') || errLower.includes('expired') || errLower.includes('invalid session')) {
                         console.warn('Session expired on backend:', data.error);
                         sessionStorage.removeItem('adminSession');
-                        alert('⏰ Tu sesión expiró. Volvé a iniciar sesión.');
-                        window.location.href = 'login.html';
+                        dashAlert('⏰ Tu sesión expiró. Volvé a iniciar sesión.', '⏰').then(() => {
+                            window.location.href = 'login.html';
+                        });
                         return [];
                     }
                     throw new Error(data.error);
@@ -2539,7 +2556,13 @@
                 notification = document.createElement('div');
                 notification.id = 'notification';
                 notification.className = 'notification';
-                document.body.appendChild(notification);
+                // Insert after tabs nav (before tab content) to not overlap
+                const tabsNav = document.querySelector('.tabs-nav');
+                if (tabsNav && tabsNav.nextSibling) {
+                    tabsNav.parentNode.insertBefore(notification, tabsNav.nextSibling);
+                } else {
+                    document.body.appendChild(notification);
+                }
             }
 
             notification.textContent = message;
@@ -3856,8 +3879,9 @@
             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
-        function removeGiftWorkplace(index) {
-            if (!confirm('¿Eliminar este lugar de trabajo?')) return;
+        async function removeGiftWorkplace(index) {
+            const ok = await dashConfirm('¿Eliminar este lugar de trabajo?', '🗑️');
+            if (!ok) return;
             const el = document.getElementById('gw-wp-' + index);
             if (el) {
                 el.style.opacity = '0';

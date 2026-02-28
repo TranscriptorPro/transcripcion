@@ -4072,65 +4072,122 @@
         .stg-color-panel-inner {
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            padding: 8px 0;
+            gap: 12px;
+            padding: 12px 0;
             width: 100%;
+        }
+        .stg-slider-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: -6px;
         }
         .stg-hue-slider {
             -webkit-appearance: none;
             appearance: none;
             width: 100%;
-            height: 12px;
-            border-radius: 6px;
+            height: 14px;
+            border-radius: 7px;
             outline: none;
             background: linear-gradient(to right,
-                hsl(0,85%,55%), hsl(30,85%,55%), hsl(60,85%,55%),
-                hsl(90,85%,55%), hsl(120,85%,55%), hsl(150,85%,55%),
-                hsl(180,85%,55%), hsl(210,85%,55%), hsl(240,85%,55%),
-                hsl(270,85%,55%), hsl(300,85%,55%), hsl(330,85%,55%),
-                hsl(360,85%,55%));
+                hsl(0,85%,50%), hsl(30,85%,50%), hsl(60,85%,50%),
+                hsl(90,85%,50%), hsl(120,85%,50%), hsl(150,85%,50%),
+                hsl(180,85%,50%), hsl(210,85%,50%), hsl(240,85%,50%),
+                hsl(270,85%,50%), hsl(300,85%,50%), hsl(330,85%,50%),
+                hsl(360,85%,50%));
             cursor: pointer;
+            border: 1px solid rgba(0,0,0,0.08);
         }
         .stg-hue-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
             background: white;
-            border: 2px solid rgba(0,0,0,0.3);
-            box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+            border: 2.5px solid rgba(0,0,0,0.25);
+            box-shadow: 0 1px 6px rgba(0,0,0,0.3);
             cursor: pointer;
+            transition: box-shadow 0.15s;
+        }
+        .stg-hue-slider::-webkit-slider-thumb:hover {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.4);
         }
         .stg-hue-slider::-moz-range-thumb {
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
             background: white;
-            border: 2px solid rgba(0,0,0,0.3);
-            box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+            border: 2.5px solid rgba(0,0,0,0.25);
+            box-shadow: 0 1px 6px rgba(0,0,0,0.3);
+            cursor: pointer;
+        }
+        /* Saturation/intensity slider */
+        .stg-sat-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 14px;
+            border-radius: 7px;
+            outline: none;
+            cursor: pointer;
+            border: 1px solid rgba(0,0,0,0.08);
+            /* gradient se actualiza con JS, fallback: */
+            background: linear-gradient(to right, hsl(174,10%,70%), hsl(174,50%,50%), hsl(174,100%,35%));
+        }
+        .stg-sat-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            border: 2.5px solid rgba(0,0,0,0.25);
+            box-shadow: 0 1px 6px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: box-shadow 0.15s;
+        }
+        .stg-sat-slider::-webkit-slider-thumb:hover {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+        }
+        .stg-sat-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            border: 2.5px solid rgba(0,0,0,0.25);
+            box-shadow: 0 1px 6px rgba(0,0,0,0.3);
             cursor: pointer;
         }
         .stg-color-presets {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
             gap: 6px;
-            flex-wrap: wrap;
         }
         .stg-preset {
-            width: 28px;
-            height: 28px;
-            border-radius: 7px;
-            border: 2px solid transparent;
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 8px;
+            border: 2.5px solid transparent;
             cursor: pointer;
             transition: transform 0.15s, border-color 0.2s, box-shadow 0.2s;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+            min-height: 28px;
         }
         .stg-preset:hover {
-            transform: scale(1.15);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+            transform: scale(1.12);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.25);
         }
         .stg-preset.active {
             border-color: var(--text-primary);
             box-shadow: 0 0 0 2px rgba(0,0,0,0.15);
+            transform: scale(1.08);
+        }
+        .stg-picker-bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
         }
         .stg-hex-input-row {
             display: flex;
@@ -4147,13 +4204,14 @@
             font-family: monospace;
             font-size: 0.82rem;
             width: 70px;
-            padding: 4px 6px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
+            padding: 5px 8px;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
             color: var(--text-primary);
             background: var(--bg-card);
             outline: none;
             text-transform: lowercase;
+            transition: border-color 0.2s;
         }
         .stg-hex-text:focus {
             border-color: var(--primary);
@@ -4183,10 +4241,15 @@
             gap: 6px;
         }
         .stg-swatch {
-            width: 24px;
-            height: 24px;
-            border-radius: 6px;
-            border: 1px solid rgba(0,0,0,0.1);
+            width: 26px;
+            height: 26px;
+            border-radius: 7px;
+            border: 1.5px solid rgba(0,0,0,0.1);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .stg-swatch:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
         }
 
         /* Stats grid */

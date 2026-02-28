@@ -617,8 +617,12 @@
         const colorCircle = document.getElementById('settingsColorCircle');
         const colorPanel = document.getElementById('settingsColorPanel');
         const hueSlider = document.getElementById('settingsHueSlider');
+        const satSlider = document.getElementById('settingsSatSlider');
         const hexInput = document.getElementById('settingsHexInput');
         const presets = document.getElementById('settingsColorPresets');
+
+        // Persisted saturation for slider-based picking
+        let _currentSat = 75; // 10-100 range
 
         if (lightBtn) {
             lightBtn.addEventListener('click', () => {
@@ -637,6 +641,13 @@
             });
         }
 
+        // ── Helpers for saturation slider gradient ──
+        function _updateSatSliderGradient(hue) {
+            if (!satSlider) return;
+            // Show gradient from desaturated (pastel) to fully saturated
+            satSlider.style.background = `linear-gradient(to right, hsl(${hue},10%,70%), hsl(${hue},50%,50%), hsl(${hue},100%,40%))`;
+        }
+
         // ── Custom color picker ──────────────────────────────────────────
         function _setColor(hex, save) {
             if (colorPicker) colorPicker.value = hex;
@@ -645,10 +656,17 @@
             if (colorCircle) colorCircle.style.background = hex;
             _applyCustomColor(hex);
             // Update hue slider to match
+            const hsl = _hexToHSL(hex);
             if (hueSlider) {
-                const { h } = _hexToHSL(hex);
-                hueSlider.value = Math.round(h);
+                hueSlider.value = Math.round(hsl.h);
             }
+            // Update sat slider to match
+            _currentSat = Math.round(hsl.s * 100);
+            if (satSlider) {
+                satSlider.value = Math.max(10, _currentSat);
+            }
+            // Update sat slider gradient for current hue
+            _updateSatSliderGradient(hsl.h);
             // Mark active preset
             if (presets) {
                 presets.querySelectorAll('.stg-preset').forEach(btn => {
@@ -678,12 +696,36 @@
         if (hueSlider) {
             hueSlider.addEventListener('input', () => {
                 const h = parseInt(hueSlider.value);
-                const hex = _hslToHex(h, 0.75, 0.4);
+                const s = _currentSat / 100;
+                const l = s > 0.6 ? 0.35 + (1 - s) * 0.25 : 0.5 + (0.6 - s) * 0.3;
+                const hex = _hslToHex(h, s, l);
                 _setColor(hex, false);
             });
             hueSlider.addEventListener('change', () => {
                 const h = parseInt(hueSlider.value);
-                const hex = _hslToHex(h, 0.75, 0.4);
+                const s = _currentSat / 100;
+                const l = s > 0.6 ? 0.35 + (1 - s) * 0.25 : 0.5 + (0.6 - s) * 0.3;
+                const hex = _hslToHex(h, s, l);
+                _setColor(hex, true);
+            });
+        }
+
+        // Saturation slider
+        if (satSlider) {
+            satSlider.addEventListener('input', () => {
+                const s = parseInt(satSlider.value) / 100;
+                _currentSat = parseInt(satSlider.value);
+                const h = hueSlider ? parseInt(hueSlider.value) : 174;
+                const l = s > 0.6 ? 0.35 + (1 - s) * 0.25 : 0.5 + (0.6 - s) * 0.3;
+                const hex = _hslToHex(h, s, l);
+                _setColor(hex, false);
+            });
+            satSlider.addEventListener('change', () => {
+                const s = parseInt(satSlider.value) / 100;
+                _currentSat = parseInt(satSlider.value);
+                const h = hueSlider ? parseInt(hueSlider.value) : 174;
+                const l = s > 0.6 ? 0.35 + (1 - s) * 0.25 : 0.5 + (0.6 - s) * 0.3;
+                const hex = _hslToHex(h, s, l);
                 _setColor(hex, true);
             });
         }
@@ -732,7 +774,10 @@
                 if (hueSlider) {
                     const { h } = _hexToHSL(DEFAULT_PRIMARY);
                     hueSlider.value = Math.round(h);
+                    _updateSatSliderGradient(h);
                 }
+                if (satSlider) satSlider.value = 75;
+                _currentSat = 75;
                 if (presets) presets.querySelectorAll('.stg-preset').forEach(b => b.classList.remove('active'));
                 if (colorPanel) colorPanel.style.display = 'none';
                 if (colorTrigger) colorTrigger.classList.remove('active');
@@ -746,6 +791,13 @@
             // Keep panel closed on init
             if (colorPanel) colorPanel.style.display = 'none';
             if (colorTrigger) colorTrigger.classList.remove('active');
+        } else {
+            // Even without saved color, initialize sliders and swatches with defaults
+            if (hueSlider) {
+                const { h } = _hexToHSL(DEFAULT_PRIMARY);
+                _updateSatSliderGradient(h);
+            }
+            _applyCustomColor(DEFAULT_PRIMARY);
         }
     }
 
@@ -819,9 +871,15 @@
             });
         }
         if (clearBtn) {
-            clearBtn.addEventListener('click', () => {
-                if (!confirm('⚠️ ¿Estás seguro? Esto borrará TODOS tus datos locales (historial, configuración, diccionario, etc.). Esta acción NO se puede deshacer.')) return;
-                if (!confirm('🔴 Última confirmación: se borrarán todos los datos. ¿Continuar?')) return;
+            clearBtn.addEventListener('click', async () => {
+                const ok1 = typeof window.showCustomConfirm === 'function'
+                    ? await window.showCustomConfirm('⚠️ Borrar datos', '¿Estás seguro? Esto borrará TODOS tus datos locales (historial, configuración, diccionario, etc.). Esta acción NO se puede deshacer.')
+                    : confirm('⚠️ ¿Estás seguro? Esto borrará TODOS tus datos locales?');
+                if (!ok1) return;
+                const ok2 = typeof window.showCustomConfirm === 'function'
+                    ? await window.showCustomConfirm('🔴 Última confirmación', 'Se borrarán todos los datos. ¿Continuar?')
+                    : confirm('🔴 Última confirmación: se borrarán todos los datos. ¿Continuar?');
+                if (!ok2) return;
 
                 // Keep only essential keys
                 const keepKeys = ['groq_api_key', 'prof_data', 'workplace_profiles', 'CLIENT_CONFIG', 'device_id', 'onboarding_accepted'];
