@@ -2228,9 +2228,8 @@
                     return `sessionToken=${encodeURIComponent(s.sessionToken)}&sessionUser=${encodeURIComponent(s.username)}&sessionNivel=${encodeURIComponent(s.nivel || '')}&sessionExpiry=${encodeURIComponent(s.tokenExpiry || '')}`;
                 }
             } catch(e) {}
-            // Fallback: adminKey en localStorage (legacy)
-            const key = localStorage.getItem('_admin_key');
-            return key ? `adminKey=${encodeURIComponent(key)}` : '';
+            // Fallback: admin key hardcodeada
+            return `adminKey=${encodeURIComponent('ADMIN_SECRET_2026')}`;
         }
 
         /* ── Authentication ─────────────────────────────────────────────────── */

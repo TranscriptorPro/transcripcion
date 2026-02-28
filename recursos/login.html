@@ -209,13 +209,8 @@
             
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-            // adminKey se obtiene de localStorage (configurado por el admin en el primer deployment)
-            const adminKey = localStorage.getItem('_admin_key') || '';
-
-            if (!adminKey) {
-                showError('Falta la clave de administrador. Configure la Admin Key primero.');
-                return;
-            }
+            // Admin Key hardcodeada — no depende de localStorage
+            const adminKey = 'ADMIN_SECRET_2026';
 
             errorMessage.classList.remove('show');
             btnLogin.disabled = true;
@@ -254,21 +249,7 @@
             errorMessage.classList.add('show');
         }
 
-        // ── Configuración de Admin Key (primer deployment) ──────────────────
-        (function initAdminKey() {
-            const stored = localStorage.getItem('_admin_key');
-            if (!stored) {
-                // Mostrar prompt para ingresar la Admin Key
-                const key = prompt(
-                    'Primer inicio: ingrese la ADMIN_KEY configurada en las Script Properties de Google Apps Script.\n\n' +
-                    'Esta clave se guardará en este navegador y no aparecerá en el código fuente.',
-                    ''
-                );
-                if (key && key.trim()) {
-                    localStorage.setItem('_admin_key', key.trim());
-                }
-            }
-        })();
+        // Admin Key hardcodeada — ya no se necesita prompt ni localStorage
 
         // ── Auto-redirect si ya hay sesión válida ───────────────────────────
         const session = sessionStorage.getItem('adminSession');
