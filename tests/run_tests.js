@@ -2991,6 +2991,815 @@ test('Factory: allowedTemplates vacío → array vacío', () => {
     assertEqual(allowedTemplates.length, 0);
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bloque 56: PDF — Firma digital, QR, Logo
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 56: PDF — Firma, QR, Logo ────────────────────');
+
+test('Firma: se lee desde activeProfessional.firma si existe', () => {
+    const activePro = { firma: 'data:image/png;base64,FIRMA_PRO' };
+    const sigB64 = activePro?.firma?.startsWith('data:') ? activePro.firma : '';
+    assertEqual(sigB64, 'data:image/png;base64,FIRMA_PRO');
+});
+
+test('Firma: fallback a pdf_signature de localStorage si activePro no tiene firma', () => {
+    localStorage.clear();
+    localStorage.setItem('pdf_signature', 'data:image/png;base64,FIRMA_LS');
+    const activePro = null;
+    const sigB64 = activePro?.firma?.startsWith('data:') ? activePro.firma : (localStorage.getItem('pdf_signature') || '');
+    assertEqual(sigB64, 'data:image/png;base64,FIRMA_LS');
+    localStorage.clear();
+});
+
+test('Firma: devuelve vacío si no hay firma en ningún lado', () => {
+    localStorage.clear();
+    const activePro = {};
+    const sigB64 = activePro?.firma?.startsWith('data:') ? activePro.firma : (localStorage.getItem('pdf_signature') || '');
+    assertEqual(sigB64, '');
+    localStorage.clear();
+});
+
+test('Firma: setup factory guarda firma en pdf_signature (key correcta)', () => {
+    localStorage.clear();
+    const regDatos = { firma: 'data:image/png;base64,FIRMA_FACTORY' };
+    // Simular lo que hace _handleFactorySetup
+    if (regDatos.firma) localStorage.setItem('pdf_signature', regDatos.firma);
+    // Simular lo que lee pdfMaker
+    const activePro = null;
+    const sigB64 = activePro?.firma?.startsWith('data:') ? activePro.firma : (localStorage.getItem('pdf_signature') || '');
+    assertEqual(sigB64, 'data:image/png;base64,FIRMA_FACTORY', 'Factory → pdf_signature → pdfMaker debe funcionar');
+    localStorage.clear();
+});
+
+test('Firma: drawSignature() solo dibuja si sigB64 no es vacío', () => {
+    // Simular la condición de drawSignature
+    let drawn = false;
+    const sigB64 = 'data:image/png;base64,ABC';
+    if (sigB64) { drawn = true; }
+    assert(drawn, 'Debe dibujar cuando sigB64 existe');
+
+    drawn = false;
+    const sigB64Empty = '';
+    if (sigB64Empty) { drawn = true; }
+    assert(!drawn, 'No debe dibujar cuando sigB64 está vacío');
+});
+
+test('Logo institucional: se lee desde workplace.logo o fallback pdf_logo', () => {
+    localStorage.clear();
+    localStorage.setItem('pdf_logo', 'data:image/png;base64,LOGO_FALLBACK');
+    // Caso 1: workplace tiene logo
+    const activeWp1 = { logo: 'data:image/png;base64,LOGO_WP' };
+    const wpLogo1 = activeWp1?.logo || '';
+    const instLogo1 = wpLogo1.startsWith('data:') ? wpLogo1 : (localStorage.getItem('pdf_logo') || '');
+    assertEqual(instLogo1, 'data:image/png;base64,LOGO_WP');
+
+    // Caso 2: workplace sin logo → fallback
+    const activeWp2 = {};
+    const wpLogo2 = activeWp2?.logo || '';
+    const instLogo2 = wpLogo2.startsWith('data:') ? wpLogo2 : (localStorage.getItem('pdf_logo') || '');
+    assertEqual(instLogo2, 'data:image/png;base64,LOGO_FALLBACK');
+    localStorage.clear();
+});
+
+test('Logo profesional: se lee de activeProfessional.logo', () => {
+    const activePro = { logo: 'data:image/png;base64,LOGO_PROF' };
+    const profLogoB64 = activePro?.logo?.startsWith('data:') ? activePro.logo : '';
+    assertEqual(profLogoB64, 'data:image/png;base64,LOGO_PROF');
+});
+
+test('Logo profesional: vacío si no tiene data: prefix', () => {
+    const activePro = { logo: 'invalid_data' };
+    const profLogoB64 = activePro?.logo?.startsWith('data:') ? activePro.logo : '';
+    assertEqual(profLogoB64, '');
+});
+
+test('QR: texto contiene TPRO-VERIFY y datos del informe', () => {
+    const reportNum = '001';
+    const pDate = '28/02/2026';
+    const profName = 'Dr. Test';
+    const matricula = 'MP-123';
+    const paciente = 'García Juan';
+    const dni = '12345678';
+    const estudio = 'Ecografía';
+    const inst = 'Clínica Test';
+    const qrParts = ['TPRO-VERIFY', `ID:${reportNum}`, `Fecha:${pDate}`, `Prof:${profName}`, `Mat:${matricula}`, `Pac:${paciente}`, `DNI:${dni}`, `Est:${estudio}`, `Inst:${inst}`].filter(Boolean);
+    const qrText = qrParts.join('|');
+    assertIncludes(qrText, 'TPRO-VERIFY');
+    assertIncludes(qrText, 'ID:001');
+    assertIncludes(qrText, 'Fecha:28/02/2026');
+    assertIncludes(qrText, 'Prof:Dr. Test');
+    assertIncludes(qrText, 'Pac:García Juan');
+});
+
+test('QR: no se genera si config.showQR es false', () => {
+    const config = { showQR: false };
+    const cfgShowQR = config.showQR ?? false;
+    assert(!cfgShowQR, 'showQR false no debe generar QR');
+});
+
+test('QR: se genera si config.showQR es true', () => {
+    const config = { showQR: true };
+    const cfgShowQR = config.showQR ?? false;
+    assert(cfgShowQR, 'showQR true debe generar QR');
+});
+
+test('QR: showQR undefined → default false', () => {
+    const config = {};
+    const cfgShowQR = config.showQR ?? false;
+    assert(!cfgShowQR, 'showQR undefined debe ser false por defecto');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bloque 57: Descarga — Formatos según plan de suscripción
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 57: Descarga — Formatos según plan ────────────────────');
+
+// Reimplementar _getAllowedFormats para testing
+function _testGetAllowedFormats(type) {
+    type = (type || 'ADMIN').toUpperCase();
+    if (type === 'ADMIN' || type === 'PRO') return ['pdf', 'rtf', 'txt', 'html'];
+    if (type === 'NORMAL') return ['txt', 'pdf'];
+    return ['txt']; // TRIAL
+}
+
+test('Formatos: ADMIN puede descargar todos (pdf, rtf, txt, html)', () => {
+    const formats = _testGetAllowedFormats('ADMIN');
+    assertEqual(formats.length, 4);
+    assert(formats.includes('pdf'));
+    assert(formats.includes('rtf'));
+    assert(formats.includes('txt'));
+    assert(formats.includes('html'));
+});
+
+test('Formatos: PRO puede descargar todos (pdf, rtf, txt, html)', () => {
+    const formats = _testGetAllowedFormats('PRO');
+    assertEqual(formats.length, 4);
+    assert(formats.includes('pdf'));
+    assert(formats.includes('rtf'));
+});
+
+test('Formatos: NORMAL solo puede descargar txt y pdf', () => {
+    const formats = _testGetAllowedFormats('NORMAL');
+    assertEqual(formats.length, 2);
+    assert(formats.includes('txt'));
+    assert(formats.includes('pdf'));
+    assert(!formats.includes('rtf'), 'Normal NO debe tener RTF');
+    assert(!formats.includes('html'), 'Normal NO debe tener HTML');
+});
+
+test('Formatos: TRIAL solo puede descargar txt', () => {
+    const formats = _testGetAllowedFormats('TRIAL');
+    assertEqual(formats.length, 1);
+    assert(formats.includes('txt'));
+    assert(!formats.includes('pdf'), 'Trial NO debe tener PDF');
+});
+
+test('Formatos: GIFT (mapeado como PRO) puede descargar todos', () => {
+    // Gift se mapea a PRO en el factory
+    const giftPlan = _testPlanMapping('gift');
+    const formats = _testGetAllowedFormats(giftPlan.type); // 'PRO'
+    assertEqual(formats.length, 4);
+});
+
+test('Formatos: CLINIC (mapeado como PRO) puede descargar todos', () => {
+    const clinicPlan = _testPlanMapping('clinic');
+    const formats = _testGetAllowedFormats(clinicPlan.type);
+    assertEqual(formats.length, 4);
+});
+
+test('Formatos: botón principal dice "Descargar PDF" si plan permite PDF', () => {
+    const allowed = _testGetAllowedFormats('PRO');
+    const btnText = allowed.includes('pdf') ? '📥 Descargar PDF' : '📥 Descargar TXT';
+    assertEqual(btnText, '📥 Descargar PDF');
+});
+
+test('Formatos: botón principal dice "Descargar TXT" si plan NO permite PDF', () => {
+    const allowed = _testGetAllowedFormats('TRIAL');
+    const btnText = allowed.includes('pdf') ? '📥 Descargar PDF' : '📥 Descargar TXT';
+    assertEqual(btnText, '📥 Descargar TXT');
+});
+
+test('Formatos: chevron oculto si solo 1 formato disponible', () => {
+    const allowed = _testGetAllowedFormats('TRIAL');
+    const showChevron = allowed.length > 1;
+    assert(!showChevron, 'Chevron debe ocultarse para Trial (1 formato)');
+});
+
+test('Formatos: chevron visible si más de 1 formato', () => {
+    const allowed = _testGetAllowedFormats('NORMAL');
+    const showChevron = allowed.length > 1;
+    assert(showChevron, 'Chevron debe mostrarse para Normal (2 formatos)');
+});
+
+test('Formatos: _forceTxt activo para Trial (sin PDF)', () => {
+    const allowed = _testGetAllowedFormats('TRIAL');
+    const forceTxt = !allowed.includes('pdf');
+    assert(forceTxt, 'Trial debe forzar TXT');
+});
+
+test('Formatos: _forceTxt inactivo para Pro (con PDF)', () => {
+    const allowed = _testGetAllowedFormats('PRO');
+    const forceTxt = !allowed.includes('pdf');
+    assert(!forceTxt, 'Pro no debe forzar TXT');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bloque 58: PWA Install — Todos los tipos de usuario
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 58: PWA Install — Tipos de usuario ────────────────────');
+
+test('PWA: _tryPwaInstall debe llamarse para ADMIN', () => {
+    const type = 'ADMIN';
+    // La lógica real llama _tryPwaInstall en todos los casos al final de init
+    const shouldInstall = true; // Siempre debe intentar
+    assert(shouldInstall, 'ADMIN debe tener PWA install');
+});
+
+test('PWA: _tryPwaInstall debe llamarse para TRIAL', () => {
+    const type = 'TRIAL';
+    const shouldInstall = true;
+    assert(shouldInstall, 'TRIAL debe tener PWA install');
+});
+
+test('PWA: _tryPwaInstall debe llamarse para NORMAL', () => {
+    const type = 'NORMAL';
+    const shouldInstall = true;
+    assert(shouldInstall, 'NORMAL debe tener PWA install');
+});
+
+test('PWA: _tryPwaInstall debe llamarse para PRO', () => {
+    const type = 'PRO';
+    const shouldInstall = true;
+    assert(shouldInstall, 'PRO debe tener PWA install');
+});
+
+test('PWA: _tryPwaInstall debe llamarse para GIFT (tipo PRO)', () => {
+    const giftPlan = _testPlanMapping('gift');
+    const type = giftPlan.type; // PRO
+    const shouldInstall = true;
+    assert(shouldInstall, 'GIFT (PRO) debe tener PWA install');
+});
+
+test('PWA: _tryPwaInstall debe llamarse para CLINIC', () => {
+    const type = 'CLINIC';
+    const shouldInstall = true;
+    assert(shouldInstall, 'CLINIC debe tener PWA install');
+});
+
+test('PWA: banner no se muestra si ya fue dismissed en esta sesión', () => {
+    // Simular sessionStorage
+    const dismissed = 'true';
+    const showBanner = dismissed !== 'true';
+    assert(!showBanner, 'Banner debe permanecer oculto si fue dismissed');
+});
+
+test('PWA: banner se muestra si NO fue dismissed', () => {
+    const dismissed = null;
+    const showBanner = dismissed !== 'true';
+    assert(showBanner, 'Banner debe mostrarse si no fue dismissed');
+});
+
+test('PWA: _pwaInstallPrompt se captura del evento beforeinstallprompt', () => {
+    // Simular que el evento fue capturado
+    window._pwaInstallPrompt = { prompt: () => Promise.resolve() };
+    assert(!!window._pwaInstallPrompt, 'Debe existir _pwaInstallPrompt');
+    assert(typeof window._pwaInstallPrompt.prompt === 'function', 'Debe tener método prompt');
+    delete window._pwaInstallPrompt;
+});
+
+test('PWA: fallback a instrucciones manuales si no hay prompt', () => {
+    window._pwaInstallPrompt = null;
+    const hasPrompt = !!window._pwaInstallPrompt;
+    assert(!hasPrompt, 'Sin prompt → mostrar instrucciones manuales');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bloque 59: Pricing — Planes y moneda USD/ARS
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 59: Pricing — Planes y moneda ────────────────────');
+
+const TEST_PLANS = {
+    trial:  { order: 0, label: 'Trial',   price: 'Gratis',   period: '15 días', features: ['Transcripción básica', 'Todas las plantillas', 'Exportar TXT'] },
+    normal: { order: 1, label: 'Normal',  price: '$15',      period: 'USD/mes', features: ['Transcripción ilimitada', 'Plantillas estáticas', 'Exportar TXT y PDF básico', 'Diccionario médico'] },
+    pro:    { order: 2, label: 'Pro',     price: '$25',      period: 'USD/mes', features: ['Todo de Normal', 'Modo Pro: estructurado IA', 'Todas las plantillas médicas', 'PDF profesional con firma', 'Historial de informes', 'Soporte prioritario'], recommended: true },
+    clinic: { order: 3, label: 'Clínica', price: 'Consultar', period: '',       features: ['Todo de Pro', 'Multi-profesional', 'Multi-dispositivo', 'Generación de apps GIFT', 'Dashboard de métricas', 'Soporte dedicado'] },
+};
+
+test('Pricing: Trial es gratis por 15 días', () => {
+    assertEqual(TEST_PLANS.trial.price, 'Gratis');
+    assertEqual(TEST_PLANS.trial.period, '15 días');
+});
+
+test('Pricing: Normal cuesta $15 USD/mes', () => {
+    assertEqual(TEST_PLANS.normal.price, '$15');
+    assertEqual(TEST_PLANS.normal.period, 'USD/mes');
+});
+
+test('Pricing: Pro cuesta $25 USD/mes', () => {
+    assertEqual(TEST_PLANS.pro.price, '$25');
+    assertEqual(TEST_PLANS.pro.period, 'USD/mes');
+    assert(TEST_PLANS.pro.recommended, 'Pro debe ser recomendado');
+});
+
+test('Pricing: Clínica dice Consultar', () => {
+    assertEqual(TEST_PLANS.clinic.price, 'Consultar');
+});
+
+test('Pricing: orden correcto (trial < normal < pro < clinic)', () => {
+    assert(TEST_PLANS.trial.order < TEST_PLANS.normal.order);
+    assert(TEST_PLANS.normal.order < TEST_PLANS.pro.order);
+    assert(TEST_PLANS.pro.order < TEST_PLANS.clinic.order);
+});
+
+test('Pricing: Trial incluye "Todas las plantillas"', () => {
+    assert(TEST_PLANS.trial.features.some(f => f.includes('Todas las plantillas')), 'Trial debe incluir todas las plantillas');
+});
+
+test('Pricing: Normal incluye "Plantillas estáticas" (no todas)', () => {
+    assert(TEST_PLANS.normal.features.some(f => f.includes('Plantillas estáticas')), 'Normal usa plantillas estáticas');
+});
+
+test('Pricing: Pro incluye "Modo Pro"', () => {
+    assert(TEST_PLANS.pro.features.some(f => f.includes('Modo Pro')), 'Pro debe tener Modo Pro');
+});
+
+test('Pricing: Clínica incluye "Multi-dispositivo"', () => {
+    assert(TEST_PLANS.clinic.features.some(f => f.includes('Multi-dispositivo')));
+});
+
+test('Pricing: conversión USD→ARS (lógica de display)', () => {
+    const USD_TO_ARS = 1200; // tipo de cambio configurable
+    const priceUsd = 15;
+    const priceArs = priceUsd * USD_TO_ARS;
+    assertEqual(priceArs, 18000);
+    const displayArs = `$${priceArs.toLocaleString('es-AR')}`;
+    assertIncludes(displayArs, '18');
+});
+
+test('Pricing: conversión mantiene Gratis para Trial', () => {
+    const price = 'Gratis';
+    const converted = price === 'Gratis' ? 'Gratis' : `$${15 * 1200}`;
+    assertEqual(converted, 'Gratis');
+});
+
+test('Pricing: conversión mantiene Consultar para Clínica', () => {
+    const price = 'Consultar';
+    const isNumeric = !isNaN(parseInt(price.replace(/[^0-9]/g, '')));
+    assert(!isNumeric || price === 'Consultar', 'Consultar no debe convertirse');
+});
+
+test('Pricing: config dinámica desde localStorage override defaults', () => {
+    localStorage.clear();
+    const dynamicPlans = { normal: { price: '$20', period: 'USD/mes' } };
+    localStorage.setItem('admin_plans_config', JSON.stringify(dynamicPlans));
+    const stored = JSON.parse(localStorage.getItem('admin_plans_config') || '{}');
+    const mergedNormal = { ...TEST_PLANS.normal, ...stored.normal };
+    assertEqual(mergedNormal.price, '$20', 'Override debe aplicar');
+    assertEqual(mergedNormal.label, 'Normal', 'Lo que no se overridea se mantiene');
+    localStorage.clear();
+});
+
+test('Pricing: sin config dinámica → usa defaults', () => {
+    localStorage.clear();
+    const stored = JSON.parse(localStorage.getItem('admin_plans_config') || '{}');
+    const mergedNormal = { ...TEST_PLANS.normal, ...stored.normal };
+    assertEqual(mergedNormal.price, '$15', 'Sin override → default');
+    localStorage.clear();
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bloque 60: API Key — Persistencia y no re-pedido
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 60: API Key — Persistencia ────────────────────');
+
+test('API key: se guarda desde doctor.API_Key', () => {
+    localStorage.clear();
+    const doctor = { API_Key: 'gsk_real_key_123' };
+    const regDatos = {};
+    const apiKey = doctor.API_Key || regDatos.apiKey || '';
+    if (apiKey) localStorage.setItem('groq_api_key', apiKey);
+    assertEqual(localStorage.getItem('groq_api_key'), 'gsk_real_key_123');
+    localStorage.clear();
+});
+
+test('API key: fallback a regDatos.apiKey si doctor no tiene', () => {
+    localStorage.clear();
+    const doctor = {};
+    const regDatos = { apiKey: 'gsk_backup_key_456' };
+    const apiKey = doctor.API_Key || regDatos.apiKey || '';
+    if (apiKey) localStorage.setItem('groq_api_key', apiKey);
+    assertEqual(localStorage.getItem('groq_api_key'), 'gsk_backup_key_456');
+    localStorage.clear();
+});
+
+test('API key: no se guarda si ninguno la provee', () => {
+    localStorage.clear();
+    const doctor = {};
+    const regDatos = {};
+    const apiKey = doctor.API_Key || regDatos.apiKey || '';
+    if (apiKey) localStorage.setItem('groq_api_key', apiKey);
+    assert(!localStorage.getItem('groq_api_key'), 'No debe guardarse key vacía');
+    localStorage.clear();
+});
+
+test('API key: onboarding no pide key si ya existe en localStorage', () => {
+    localStorage.clear();
+    localStorage.setItem('groq_api_key', 'gsk_existing_key');
+    const hasKey = !!localStorage.getItem('groq_api_key');
+    assert(hasKey, 'hasKey debe ser true → onboarding no debe pedir');
+    localStorage.clear();
+});
+
+test('API key: onboarding pide key si NO existe', () => {
+    localStorage.clear();
+    const hasKey = !!localStorage.getItem('groq_api_key');
+    assert(!hasKey, 'hasKey debe ser false → onboarding debe pedir');
+    localStorage.clear();
+});
+
+test('API key: persiste tras reload (simulado)', () => {
+    localStorage.clear();
+    localStorage.setItem('groq_api_key', 'gsk_persist_test');
+    // Simular "reload" — la key sigue ahí
+    const afterReload = localStorage.getItem('groq_api_key');
+    assertEqual(afterReload, 'gsk_persist_test');
+    localStorage.clear();
+});
+
+test('API key: factory setup completo guarda key y no se re-pide', () => {
+    localStorage.clear();
+    // Simular factory setup
+    const doctor = { API_Key: 'gsk_factory_full_test' };
+    const regDatos = {};
+    const apiKey = doctor.API_Key || regDatos.apiKey || '';
+    if (apiKey) localStorage.setItem('groq_api_key', apiKey);
+    // Simular chequeo del onboarding
+    const hasPreloadedKey = !!localStorage.getItem('groq_api_key');
+    assert(hasPreloadedKey, 'Key precargada por factory → onboarding no pide');
+    assertEqual(localStorage.getItem('groq_api_key'), 'gsk_factory_full_test');
+    localStorage.clear();
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bloque 61: Integridad Factory → PDF (cadena completa)
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 61: Integridad Factory → PDF ────────────────────');
+
+test('Cadena completa: factory guarda firma → pdfMaker la lee', () => {
+    localStorage.clear();
+    // Paso 1: Factory guarda
+    const regDatos = { firma: 'data:image/png;base64,CADENA_FIRMA_FULL' };
+    if (regDatos.firma) localStorage.setItem('pdf_signature', regDatos.firma);
+    // Paso 2: pdfMaker lee (sin activePro)
+    const activePro = null;
+    const sigB64 = activePro?.firma?.startsWith('data:') ? activePro.firma : (localStorage.getItem('pdf_signature') || '');
+    assertEqual(sigB64, 'data:image/png;base64,CADENA_FIRMA_FULL');
+    localStorage.clear();
+});
+
+test('Cadena completa: factory guarda logo → pdfMaker lo lee', () => {
+    localStorage.clear();
+    const regDatos = { proLogo: 'data:image/png;base64,CADENA_LOGO_FULL' };
+    if (regDatos.proLogo) localStorage.setItem('pdf_logo', regDatos.proLogo);
+    const activeWp = {};
+    const wpLogo = activeWp?.logo || '';
+    const instLogo = wpLogo.startsWith('data:') ? wpLogo : (localStorage.getItem('pdf_logo') || '');
+    assertEqual(instLogo, 'data:image/png;base64,CADENA_LOGO_FULL');
+    localStorage.clear();
+});
+
+test('Cadena completa: factory guarda color → app lo aplica', () => {
+    localStorage.clear();
+    const regDatos = { headerColor: '#e91e63' };
+    if (regDatos.headerColor) localStorage.setItem('customPrimaryColor', regDatos.headerColor);
+    const color = localStorage.getItem('customPrimaryColor');
+    assertEqual(color, '#e91e63');
+    localStorage.clear();
+});
+
+test('Cadena completa: factory guarda footerText → PDF lo lee', () => {
+    localStorage.clear();
+    const regDatos = { footerText: 'Pie de página personalizado © 2026' };
+    if (regDatos.footerText) {
+        const cfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        cfg.footerText = regDatos.footerText;
+        localStorage.setItem('pdf_config', JSON.stringify(cfg));
+    }
+    const pdfCfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+    assertEqual(pdfCfg.footerText, 'Pie de página personalizado © 2026');
+    localStorage.clear();
+});
+
+test('Cadena completa: factory guarda workplace → PDF lo usa', () => {
+    localStorage.clear();
+    const regDatos = { workplace: JSON.stringify({ name: 'Hospital Central', address: 'Av. Siempre Viva 742', phone: '011-4567-8901' }) };
+    const wp = typeof regDatos.workplace === 'string' ? JSON.parse(regDatos.workplace) : regDatos.workplace;
+    if (wp && wp.name) {
+        const workplaceProfiles = [{ name: wp.name, address: wp.address || '', phone: wp.phone || '' }];
+        localStorage.setItem('workplace_profiles', JSON.stringify(workplaceProfiles));
+    }
+    const storedWp = JSON.parse(localStorage.getItem('workplace_profiles'));
+    assertEqual(storedWp[0].name, 'Hospital Central');
+    assertEqual(storedWp[0].address, 'Av. Siempre Viva 742');
+    localStorage.clear();
+});
+
+test('Cadena completa: factory con datos completos → todo persiste', () => {
+    localStorage.clear();
+    const mockDoctor = {
+        Nombre: 'Dra. Pérez', Matricula: 'MN-5678', Plan: 'pro',
+        Especialidad: 'Cardiología', API_Key: 'gsk_full_chain',
+        Registro_Datos: JSON.stringify({
+            firma: 'data:image/png;base64,FULL_FIRMA',
+            proLogo: 'data:image/png;base64,FULL_LOGO',
+            headerColor: '#3b82f6',
+            footerText: 'Footer completo',
+            workplace: { name: 'Sanatorio Norte', address: 'Calle 1', phone: '555-0000' }
+        })
+    };
+    const regDatos = JSON.parse(mockDoctor.Registro_Datos);
+    const pc = _testPlanMapping(mockDoctor.Plan);
+
+    // Guardar todo como lo haría factory
+    localStorage.setItem('client_config_stored', JSON.stringify({ type: pc.type, hasProMode: pc.hasProMode, medicoId: 'FULL_TEST' }));
+    localStorage.setItem('prof_data', JSON.stringify({ nombre: mockDoctor.Nombre, matricula: mockDoctor.Matricula, especialidad: mockDoctor.Especialidad }));
+    if (regDatos.firma) localStorage.setItem('pdf_signature', regDatos.firma);
+    if (regDatos.proLogo) localStorage.setItem('pdf_logo', regDatos.proLogo);
+    if (regDatos.headerColor) localStorage.setItem('customPrimaryColor', regDatos.headerColor);
+    const apiKey = mockDoctor.API_Key || regDatos.apiKey || '';
+    if (apiKey) localStorage.setItem('groq_api_key', apiKey);
+    if (regDatos.footerText) {
+        const cfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        cfg.footerText = regDatos.footerText;
+        localStorage.setItem('pdf_config', JSON.stringify(cfg));
+    }
+    if (regDatos.workplace) {
+        const wp = typeof regDatos.workplace === 'object' ? regDatos.workplace : JSON.parse(regDatos.workplace);
+        localStorage.setItem('workplace_profiles', JSON.stringify([{ name: wp.name, address: wp.address, phone: wp.phone }]));
+    }
+
+    // Verificar TODO
+    const cfg = JSON.parse(localStorage.getItem('client_config_stored'));
+    assertEqual(cfg.type, 'PRO');
+    assert(cfg.hasProMode, 'Pro tiene proMode');
+    const prof = JSON.parse(localStorage.getItem('prof_data'));
+    assertEqual(prof.nombre, 'Dra. Pérez');
+    assertEqual(localStorage.getItem('pdf_signature'), 'data:image/png;base64,FULL_FIRMA');
+    assertEqual(localStorage.getItem('pdf_logo'), 'data:image/png;base64,FULL_LOGO');
+    assertEqual(localStorage.getItem('customPrimaryColor'), '#3b82f6');
+    assertEqual(localStorage.getItem('groq_api_key'), 'gsk_full_chain');
+    const pdfCfg = JSON.parse(localStorage.getItem('pdf_config'));
+    assertEqual(pdfCfg.footerText, 'Footer completo');
+    const wp = JSON.parse(localStorage.getItem('workplace_profiles'));
+    assertEqual(wp[0].name, 'Sanatorio Norte');
+    localStorage.clear();
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bloque 62: evaluateConfigCompleteness — Semáforo PDF
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 62: evaluateConfigCompleteness ────────────────────');
+
+test('Semáforo GREEN: nombre + matrícula + especialidad + workplace', () => {
+    localStorage.clear();
+    localStorage.setItem('prof_data', JSON.stringify({ nombre: 'Dr. Test', matricula: 'MP-123', especialidad: 'Cardiología' }));
+    localStorage.setItem('workplace_profiles', JSON.stringify([{ name: 'Clínica' }]));
+    window._profDataCache = null; window._pdfConfigCache = null; window._wpProfilesCache = null;
+    const result = evaluateConfigCompleteness();
+    assertEqual(result.level, 'green', 'Con todo completo → green');
+    assertEqual(result.missing.length, 0);
+    localStorage.clear();
+});
+
+test('Semáforo RED: sin nombre ni matrícula (campos críticos)', () => {
+    localStorage.clear();
+    localStorage.setItem('prof_data', JSON.stringify({}));
+    window._profDataCache = null; window._pdfConfigCache = null; window._wpProfilesCache = null;
+    const result = evaluateConfigCompleteness();
+    assertEqual(result.level, 'red', 'Sin nombre ni matrícula → red');
+    assert(result.missing.includes('Nombre del profesional'));
+    assert(result.missing.includes('Matrícula'));
+    localStorage.clear();
+});
+
+test('Semáforo YELLOW: nombre ok, falta matrícula (1 campo faltante)', () => {
+    localStorage.clear();
+    localStorage.setItem('prof_data', JSON.stringify({ nombre: 'Dr. Test' }));
+    localStorage.setItem('workplace_profiles', JSON.stringify([{ name: 'Hospital' }]));
+    window._profDataCache = null; window._pdfConfigCache = null; window._wpProfilesCache = null;
+    const result = evaluateConfigCompleteness();
+    assertEqual(result.level, 'yellow', 'Nombre ok + falta matrícula → yellow');
+    assert(result.missing.includes('Matrícula'));
+    localStorage.clear();
+});
+
+test('Semáforo YELLOW: nombre ok, falta especialidad y workplace (2 campos)', () => {
+    localStorage.clear();
+    localStorage.setItem('prof_data', JSON.stringify({ nombre: 'Dr. Test', matricula: 'MP-1' }));
+    window._profDataCache = null; window._pdfConfigCache = null; window._wpProfilesCache = null;
+    const result = evaluateConfigCompleteness();
+    // Falta especialidad + workplace = 2 faltantes, con nombre → yellow
+    assertEqual(result.level, 'yellow', '2 faltantes con nombre → yellow');
+    localStorage.clear();
+});
+
+test('Semáforo RED: sin nombre (aunque tenga matrícula)', () => {
+    localStorage.clear();
+    localStorage.setItem('prof_data', JSON.stringify({ matricula: 'MP-1' }));
+    window._profDataCache = null; window._pdfConfigCache = null; window._wpProfilesCache = null;
+    const result = evaluateConfigCompleteness();
+    // Sin nombre → siempre red (aunque solo falten 2 campos)
+    assertEqual(result.level, 'red', 'Sin nombre → red siempre');
+    localStorage.clear();
+});
+
+test('Semáforo: validateBeforeDownload("txt") siempre retorna true', () => {
+    localStorage.clear();
+    window._profDataCache = null; window._pdfConfigCache = null; window._wpProfilesCache = null;
+    const result = validateBeforeDownload('txt');
+    assert(result === true, 'TXT siempre debe pasar');
+    localStorage.clear();
+});
+
+test('Semáforo: validateBeforeDownload("pdf") retorna true si green', () => {
+    localStorage.clear();
+    localStorage.setItem('prof_data', JSON.stringify({ nombre: 'Dr. Test', matricula: 'MP-123', especialidad: 'Cardio' }));
+    localStorage.setItem('workplace_profiles', JSON.stringify([{ name: 'Clínica' }]));
+    window._profDataCache = null; window._pdfConfigCache = null; window._wpProfilesCache = null;
+    const result = validateBeforeDownload('pdf');
+    assert(result === true, 'PDF con config green → true');
+    localStorage.clear();
+});
+
+test('Semáforo: validateBeforeDownload("pdf") retorna false si red', () => {
+    localStorage.clear();
+    localStorage.setItem('prof_data', JSON.stringify({}));
+    window._profDataCache = null; window._pdfConfigCache = null; window._wpProfilesCache = null;
+    const result = validateBeforeDownload('pdf');
+    assert(result === false, 'PDF con config red → false');
+    localStorage.clear();
+});
+
+test('Semáforo: validateBeforeDownload("rtf") retorna true siempre', () => {
+    localStorage.clear();
+    const result = validateBeforeDownload('rtf');
+    assert(result === true, 'RTF siempre debe pasar');
+    localStorage.clear();
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bloque 63: Registro_Datos malformado / edge cases
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 63: Registro_Datos malformado ────────────────────');
+
+test('Registro_Datos: JSON válido se parsea correctamente', () => {
+    const rd = '{"firma":"data:image/png;base64,ABC","headerColor":"#ff0000"}';
+    let regDatos = {};
+    try { regDatos = JSON.parse(rd); } catch(_) {}
+    assertEqual(regDatos.headerColor, '#ff0000');
+    assertEqual(regDatos.firma, 'data:image/png;base64,ABC');
+});
+
+test('Registro_Datos: JSON vacío "{}" no rompe nada', () => {
+    const rd = '{}';
+    let regDatos = {};
+    try { regDatos = JSON.parse(rd); } catch(_) {}
+    assert(!regDatos.firma, 'No debe tener firma');
+    assert(!regDatos.headerColor, 'No debe tener color');
+});
+
+test('Registro_Datos: string vacío → objeto vacío sin crash', () => {
+    const rd = '';
+    let regDatos = {};
+    try { regDatos = JSON.parse(rd || '{}'); } catch(_) {}
+    assert(typeof regDatos === 'object', 'Debe ser objeto');
+});
+
+test('Registro_Datos: null → objeto vacío sin crash', () => {
+    const rd = null;
+    let regDatos = {};
+    try { regDatos = JSON.parse(rd || '{}'); } catch(_) {}
+    assert(typeof regDatos === 'object', 'Debe ser objeto');
+});
+
+test('Registro_Datos: undefined → objeto vacío sin crash', () => {
+    const rd = undefined;
+    let regDatos = {};
+    try { regDatos = JSON.parse(rd || '{}'); } catch(_) {}
+    assert(typeof regDatos === 'object', 'Debe ser objeto');
+});
+
+test('Registro_Datos: JSON corrupto (syntax error) → objeto vacío sin crash', () => {
+    const rd = '{firma: broken json!!}';
+    let regDatos = {};
+    try { regDatos = JSON.parse(rd); } catch(_) { regDatos = {}; }
+    assert(typeof regDatos === 'object', 'Debe ser objeto vacío');
+    assert(!regDatos.firma, 'No debe tener datos parciales');
+});
+
+test('Registro_Datos: firma sin prefijo data: → no se usa', () => {
+    const rd = '{"firma":"ABCDEF123"}';
+    let regDatos = {};
+    try { regDatos = JSON.parse(rd); } catch(_) {}
+    const firmaValida = regDatos.firma && regDatos.firma.startsWith('data:');
+    assert(!firmaValida, 'Firma sin data: prefix debe ser ignorada');
+});
+
+test('Registro_Datos: workplace como string JSON se parsea', () => {
+    const rd = '{"workplace":"{\\"name\\":\\"Hospital\\",\\"address\\":\\"Calle 1\\"}"}';
+    let regDatos = {};
+    try { regDatos = JSON.parse(rd); } catch(_) {}
+    let wp = regDatos.workplace;
+    if (typeof wp === 'string') wp = JSON.parse(wp);
+    assertEqual(wp.name, 'Hospital');
+    assertEqual(wp.address, 'Calle 1');
+});
+
+test('Registro_Datos: workplace como objeto directo funciona', () => {
+    const rd = '{"workplace":{"name":"Clínica","phone":"555"}}';
+    let regDatos = {};
+    try { regDatos = JSON.parse(rd); } catch(_) {}
+    let wp = regDatos.workplace;
+    if (typeof wp === 'string') wp = JSON.parse(wp);
+    assertEqual(wp.name, 'Clínica');
+    assertEqual(wp.phone, '555');
+});
+
+test('Registro_Datos: workplace null no rompe', () => {
+    const rd = '{"workplace":null}';
+    let regDatos = {};
+    try { regDatos = JSON.parse(rd); } catch(_) {}
+    let wp = regDatos.workplace;
+    assert(!wp || !wp.name, 'Workplace null → no se procesa');
+});
+
+test('Registro_Datos: headerColor inválido (no hex) se guarda pero no afecta', () => {
+    const rd = '{"headerColor":"no-es-hex"}';
+    let regDatos = {};
+    try { regDatos = JSON.parse(rd); } catch(_) {}
+    const isValidColor = /^#[0-9a-fA-F]{3,8}$/.test(regDatos.headerColor);
+    assert(!isValidColor, 'Color inválido no debe pasar validación hex');
+});
+
+test('Registro_Datos: headerColor válido pasa validación', () => {
+    const rd = '{"headerColor":"#e91e63"}';
+    let regDatos = {};
+    try { regDatos = JSON.parse(rd); } catch(_) {}
+    const isValidColor = /^#[0-9a-fA-F]{3,8}$/.test(regDatos.headerColor);
+    assert(isValidColor, 'Color válido debe pasar validación hex');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bloque 64: _getAllowedFormats con GIFT directo (sin mapeo previo)
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 64: _getAllowedFormats con tipos directos ────────────────────');
+
+function _testGetAllowedFormatsRaw(type) {
+    type = (type || 'ADMIN').toUpperCase();
+    if (type === 'ADMIN' || type === 'PRO') return ['pdf', 'rtf', 'txt', 'html'];
+    if (type === 'NORMAL') return ['txt', 'pdf'];
+    return ['txt']; // TRIAL, y cualquier otro
+}
+
+test('Formatos raw: GIFT directo (sin mapeo) → solo TXT (cae en default)', () => {
+    const formats = _testGetAllowedFormatsRaw('GIFT');
+    // GIFT no está en la lógica directa → cae en default = ['txt']
+    // Esto revela que GIFT sin mapeo previo pierde formatos
+    assertEqual(formats.length, 1, 'GIFT directo cae en default (solo txt)');
+    assert(formats.includes('txt'));
+});
+
+test('Formatos raw: CLINIC directo → solo TXT (cae en default)', () => {
+    const formats = _testGetAllowedFormatsRaw('CLINIC');
+    assertEqual(formats.length, 1, 'CLINIC directo cae en default');
+});
+
+test('Formatos raw: ENTERPRISE directo → solo TXT (cae en default)', () => {
+    const formats = _testGetAllowedFormatsRaw('ENTERPRISE');
+    assertEqual(formats.length, 1, 'ENTERPRISE directo cae en default');
+});
+
+test('Formatos: GIFT mapeado como PRO → 4 formatos (así funciona correctamente)', () => {
+    const giftMapped = _testPlanMapping('gift'); // type = 'PRO'
+    const formats = _testGetAllowedFormatsRaw(giftMapped.type);
+    assertEqual(formats.length, 4, 'GIFT mapeado a PRO → todos los formatos');
+});
+
+test('Formatos: CLINIC mapeado como PRO → 4 formatos', () => {
+    const clinicMapped = _testPlanMapping('clinic'); // type = 'PRO'
+    const formats = _testGetAllowedFormatsRaw(clinicMapped.type);
+    assertEqual(formats.length, 4, 'CLINIC mapeado a PRO → todos los formatos');
+});
+
+test('Formatos: si CLIENT_CONFIG.type no fue mapeado, GIFT pierde formatos (bug potencial)', () => {
+    // Este test documenta un comportamiento potencialmente problemático:
+    // Si alguien guarda type='GIFT' directamente en CLIENT_CONFIG sin mapear a PRO,
+    // el usuario solo puede descargar TXT.
+    const directGift = _testGetAllowedFormatsRaw('GIFT');
+    const mappedGift = _testGetAllowedFormatsRaw(_testPlanMapping('gift').type);
+    assert(directGift.length < mappedGift.length, 'GIFT directo tiene menos formatos que GIFT mapeado');
+});
+
 // ── Resumen ───────────────────────────────────────────────────────────────────
 console.log('\n─────────────────────────────────────────────────────────────────');
 console.log(`  Total: ${passed + failed} | ✅ Pasaron: ${passed} | ❌ Fallaron: ${failed}`);

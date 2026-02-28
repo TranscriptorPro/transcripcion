@@ -18,10 +18,11 @@
 
         if (needsPurge) {
             document.title = 'Actualizando...';
-            // Preservar tema y color personalizado
-            var savedTheme = null, savedColor = null;
+            // Preservar tema, skin y color personalizado
+            var savedTheme = null, savedColor = null, savedSkin = null;
             try { savedTheme = localStorage.getItem('theme'); } catch(_) {}
             try { savedColor = localStorage.getItem('customPrimaryColor'); } catch(_) {}
+            try { savedSkin = localStorage.getItem('app_skin'); } catch(_) {}
 
             // 1) Desregistrar todos los Service Workers
             var p1 = navigator.serviceWorker
@@ -45,6 +46,7 @@
                 try { localStorage.setItem('app_version', APP_VERSION); } catch(_) {}
                 if (savedTheme) try { localStorage.setItem('theme', savedTheme); } catch(_) {}
                 if (savedColor) try { localStorage.setItem('customPrimaryColor', savedColor); } catch(_) {}
+                if (savedSkin) try { localStorage.setItem('app_skin', savedSkin); } catch(_) {}
                 window.location.replace(window.location.pathname);
             });
             // Bloquear el resto de la carga
@@ -81,6 +83,22 @@
                 el.style.setProperty('--primary-light', _hsl2hex(_h, Math.min(_s*1.2,1), Math.min(_l+0.15,0.85)));
                 el.style.setProperty('--primary-dark',  _hsl2hex(_h, _s, Math.max(_l-0.08,0.1)));
                 el.style.setProperty('--accent',        _hsl2hex((_h+45)%360, 0.85, 0.55));
+            }
+        } catch(_) {}
+        // Anti-FOUC para skins: aplicar clase skin-* al body antes del render
+        try {
+            var _skin = localStorage.getItem('app_skin');
+            if (_skin && _skin !== 'default') {
+                // Inyectar CSS del skin antes del primer paint
+                var _skinLink = document.createElement('link');
+                _skinLink.rel = 'stylesheet';
+                _skinLink.href = 'src/css/skins/' + _skin + '.css';
+                _skinLink.id = 'skin-css-' + _skin;
+                document.head.appendChild(_skinLink);
+                // La clase se aplica al body en DOMContentLoaded (ver themeManager.js)
+                document.addEventListener('DOMContentLoaded', function() {
+                    document.body.classList.add('skin-' + _skin);
+                });
             }
         } catch(_) {}
     })();
@@ -2099,6 +2117,7 @@
         <script src="src/js/features/licenseManager.js"></script>
         <script src="src/js/features/patientRegistry.js"></script>
         <script src="src/js/features/formHandler.js"></script>
+        <script src="src/js/features/themeManager.js"></script>
         <script src="src/js/features/settingsPanel.js"></script>
         <script src="src/js/features/pricingCart.js"></script>
         <script src="src/js/features/business.js"></script>
