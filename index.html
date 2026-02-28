@@ -9,7 +9,7 @@
     <!-- PURGE: auto-purge al detectar nueva versión + ?purge manual. Preserva tema y color -->
     <script>
     (function() {
-        var APP_VERSION = 'v44'; // ← bump esto en cada deploy para forzar auto-purge
+        var APP_VERSION = 'v48'; // ← bump esto en cada deploy para forzar auto-purge
         var params = new URLSearchParams(window.location.search);
         var forcePurge = params.has('purge');
         var storedVersion = null;
@@ -56,6 +56,13 @@
         if (!storedVersion) {
             try { localStorage.setItem('app_version', APP_VERSION); } catch(_) {}
         }
+        // Anti-FOUC: aplicar tema y color primario ANTES del primer render
+        try {
+            var _t = localStorage.getItem('theme');
+            if (_t) document.documentElement.setAttribute('data-theme', _t);
+            var _c = localStorage.getItem('customPrimaryColor');
+            if (_c) document.documentElement.style.setProperty('--primary', _c);
+        } catch(_) {}
     })();
     </script>
 
