@@ -35,6 +35,7 @@ const JS_FILES = [
     'src/js/features/licenseManager.js',
     'src/js/features/patientRegistry.js',
     'src/js/features/formHandler.js',
+    'src/js/features/themeManager.js',
     'src/js/features/settingsPanel.js',
     'src/js/features/pricingCart.js',
     'src/js/features/business.js',
@@ -168,6 +169,11 @@ async function build() {
     // Copiar carpeta assets/
     if (fs.existsSync(path.join(__dirname, 'assets'))) {
         copyDirSync(path.join(__dirname, 'assets'), path.join(DIST, 'assets'));
+    }
+
+    // Copiar skins CSS (cargados dinámicamente por ThemeManager)
+    if (fs.existsSync(path.join(__dirname, 'src', 'css', 'skins'))) {
+        copyDirSync(path.join(__dirname, 'src', 'css', 'skins'), path.join(DIST, 'src', 'css', 'skins'));
     }
 
     // Copiar recursos/ (admin.html, login, registro)
