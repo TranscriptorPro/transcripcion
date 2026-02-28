@@ -541,18 +541,44 @@
                             <div class="stg-opt-row">
                                 <span class="stg-opt-label">Color principal</span>
                                 <div class="stg-color-picker-wrap">
-                                    <input type="color" id="settingsColorPicker" class="stg-color-input" value="#0f766e" title="Elegir color">
+                                    <!-- Botón trigger: muestra el color actual -->
+                                    <button type="button" class="stg-color-trigger" id="settingsColorTrigger" title="Elegir color">
+                                        <span class="stg-color-circle" id="settingsColorCircle"></span>
+                                    </button>
                                     <span class="stg-color-hex" id="settingsColorHex">#0f766e</span>
                                     <button class="stg-color-reset" id="settingsColorReset" title="Restaurar color original">↺</button>
+                                    <!-- Input oculto para mantener compatibilidad con settingsPanel.js -->
+                                    <input type="color" id="settingsColorPicker" class="stg-color-input-hidden" value="#0f766e" tabindex="-1">
                                 </div>
                             </div>
-                            <div class="stg-opt-row" id="settingsColorPreview" style="display:none;">
-                                <span class="stg-opt-label">Vista previa</span>
-                                <div class="stg-color-swatches">
-                                    <span class="stg-swatch" id="swatchDark" title="Oscuro"></span>
-                                    <span class="stg-swatch" id="swatchPrimary" title="Principal"></span>
-                                    <span class="stg-swatch" id="swatchLight" title="Claro"></span>
-                                    <span class="stg-swatch" id="swatchAccent" title="Acento"></span>
+                            <!-- Panel custom de color (oculto por defecto) -->
+                            <div class="stg-opt-row stg-color-panel" id="settingsColorPanel" style="display:none;">
+                                <div class="stg-color-panel-inner">
+                                    <!-- Slider de Hue -->
+                                    <input type="range" min="0" max="360" value="174" class="stg-hue-slider" id="settingsHueSlider" title="Tono">
+                                    <!-- Presets rápidos -->
+                                    <div class="stg-color-presets" id="settingsColorPresets">
+                                        <button type="button" class="stg-preset" data-color="#1a56a0" style="background:#1a56a0" title="Azul"></button>
+                                        <button type="button" class="stg-preset" data-color="#0f766e" style="background:#0f766e" title="Teal"></button>
+                                        <button type="button" class="stg-preset" data-color="#7c3aed" style="background:#7c3aed" title="Violeta"></button>
+                                        <button type="button" class="stg-preset" data-color="#db2777" style="background:#db2777" title="Rosa"></button>
+                                        <button type="button" class="stg-preset" data-color="#ea580c" style="background:#ea580c" title="Naranja"></button>
+                                        <button type="button" class="stg-preset" data-color="#16a34a" style="background:#16a34a" title="Verde"></button>
+                                        <button type="button" class="stg-preset" data-color="#dc2626" style="background:#dc2626" title="Rojo"></button>
+                                        <button type="button" class="stg-preset" data-color="#1e293b" style="background:#1e293b" title="Grafito"></button>
+                                    </div>
+                                    <!-- Input hex manual -->
+                                    <div class="stg-hex-input-row">
+                                        <span class="stg-hex-label">#</span>
+                                        <input type="text" class="stg-hex-text" id="settingsHexInput" maxlength="6" value="0f766e" placeholder="hex">
+                                    </div>
+                                    <!-- Swatches preview (movidos aquí) -->
+                                    <div class="stg-color-swatches">
+                                        <span class="stg-swatch" id="swatchDark" title="Oscuro"></span>
+                                        <span class="stg-swatch" id="swatchPrimary" title="Principal"></span>
+                                        <span class="stg-swatch" id="swatchLight" title="Claro"></span>
+                                        <span class="stg-swatch" id="swatchAccent" title="Acento"></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>

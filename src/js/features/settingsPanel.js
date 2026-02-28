@@ -610,9 +610,15 @@
     function _initThemeSection() {
         const lightBtn = document.getElementById('settingsThemeLight');
         const darkBtn = document.getElementById('settingsThemeDark');
-        const colorPicker = document.getElementById('settingsColorPicker');
+        const colorPicker = document.getElementById('settingsColorPicker'); // input hidden
         const colorReset = document.getElementById('settingsColorReset');
         const hexLabel = document.getElementById('settingsColorHex');
+        const colorTrigger = document.getElementById('settingsColorTrigger');
+        const colorCircle = document.getElementById('settingsColorCircle');
+        const colorPanel = document.getElementById('settingsColorPanel');
+        const hueSlider = document.getElementById('settingsHueSlider');
+        const hexInput = document.getElementById('settingsHexInput');
+        const presets = document.getElementById('settingsColorPresets');
 
         if (lightBtn) {
             lightBtn.addEventListener('click', () => {
@@ -631,28 +637,115 @@
             });
         }
 
-        // Color picker
-        if (colorPicker) {
-            colorPicker.addEventListener('input', (e) => {
-                const hex = e.target.value;
-                if (hexLabel) hexLabel.textContent = hex;
-                _applyCustomColor(hex);
-            });
-            colorPicker.addEventListener('change', (e) => {
-                if (typeof appDB !== 'undefined') appDB.set('customPrimaryColor', e.target.value);
-                localStorage.setItem('customPrimaryColor', e.target.value);
+        // ── Custom color picker ──────────────────────────────────────────
+        function _setColor(hex, save) {
+            if (colorPicker) colorPicker.value = hex;
+            if (hexLabel) hexLabel.textContent = hex;
+            if (hexInput) hexInput.value = hex.replace('#', '');
+            if (colorCircle) colorCircle.style.background = hex;
+            _applyCustomColor(hex);
+            // Update hue slider to match
+            if (hueSlider) {
+                const { h } = _hexToHSL(hex);
+                hueSlider.value = Math.round(h);
+            }
+            // Mark active preset
+            if (presets) {
+                presets.querySelectorAll('.stg-preset').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.color === hex);
+                });
+            }
+            // Show swatches
+            const preview = document.getElementById('settingsColorPreview');
+            if (preview) preview.style.display = '';
+            if (colorPanel) colorPanel.style.display = '';
+            if (save) {
+                if (typeof appDB !== 'undefined') appDB.set('customPrimaryColor', hex);
+                localStorage.setItem('customPrimaryColor', hex);
+            }
+        }
+
+        // Toggle panel on trigger click
+        if (colorTrigger) {
+            colorTrigger.addEventListener('click', () => {
+                const visible = colorPanel && colorPanel.style.display !== 'none';
+                if (colorPanel) colorPanel.style.display = visible ? 'none' : '';
+                colorTrigger.classList.toggle('active', !visible);
             });
         }
+
+        // Hue slider
+        if (hueSlider) {
+            hueSlider.addEventListener('input', () => {
+                const h = parseInt(hueSlider.value);
+                const hex = _hslToHex(h, 0.75, 0.4);
+                _setColor(hex, false);
+            });
+            hueSlider.addEventListener('change', () => {
+                const h = parseInt(hueSlider.value);
+                const hex = _hslToHex(h, 0.75, 0.4);
+                _setColor(hex, true);
+            });
+        }
+
+        // Presets
+        if (presets) {
+            presets.addEventListener('click', (e) => {
+                const btn = e.target.closest('.stg-preset');
+                if (!btn || !btn.dataset.color) return;
+                _setColor(btn.dataset.color, true);
+            });
+        }
+
+        // Hex input
+        if (hexInput) {
+            hexInput.addEventListener('input', () => {
+                let v = hexInput.value.replace(/[^0-9a-fA-F]/g, '').slice(0, 6);
+                hexInput.value = v;
+                if (v.length === 6) {
+                    _setColor('#' + v, false);
+                }
+            });
+            hexInput.addEventListener('change', () => {
+                let v = hexInput.value.replace(/[^0-9a-fA-F]/g, '').slice(0, 6);
+                if (v.length === 6) {
+                    _setColor('#' + v, true);
+                }
+            });
+        }
+
+        // Also keep hidden input in sync (for any code that reads it)
+        if (colorPicker) {
+            colorPicker.addEventListener('input', (e) => {
+                _setColor(e.target.value, false);
+            });
+            colorPicker.addEventListener('change', (e) => {
+                _setColor(e.target.value, true);
+            });
+        }
+
         if (colorReset) {
-            colorReset.addEventListener('click', _resetCustomColor);
+            colorReset.addEventListener('click', () => {
+                _resetCustomColor();
+                if (colorCircle) colorCircle.style.background = DEFAULT_PRIMARY;
+                if (hexInput) hexInput.value = DEFAULT_PRIMARY.replace('#', '');
+                if (hueSlider) {
+                    const { h } = _hexToHSL(DEFAULT_PRIMARY);
+                    hueSlider.value = Math.round(h);
+                }
+                if (presets) presets.querySelectorAll('.stg-preset').forEach(b => b.classList.remove('active'));
+                if (colorPanel) colorPanel.style.display = 'none';
+                if (colorTrigger) colorTrigger.classList.remove('active');
+            });
         }
 
         // Aplicar color guardado al iniciar
         const saved = localStorage.getItem('customPrimaryColor');
         if (saved) {
-            _applyCustomColor(saved);
-            if (colorPicker) colorPicker.value = saved;
-            if (hexLabel) hexLabel.textContent = saved;
+            _setColor(saved, false);
+            // Keep panel closed on init
+            if (colorPanel) colorPanel.style.display = 'none';
+            if (colorTrigger) colorTrigger.classList.remove('active');
         }
     }
 
