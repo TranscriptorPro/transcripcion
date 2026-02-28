@@ -303,7 +303,10 @@
         // Apply on load (no save needed, it's already saved)
         apply(savedSkin, { save: false });
 
-        // Inject UI each time settings modal becomes active
+        // Inject UI: try immediately (container exists in static HTML)
+        injectSelectorUI();
+
+        // Also inject when settings modal becomes active (backup)
         const settingsOverlay = document.getElementById('settingsModalOverlay');
         if (settingsOverlay) {
             const observer = new MutationObserver(() => {

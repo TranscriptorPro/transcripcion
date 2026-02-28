@@ -70,6 +70,10 @@
         _populateInfo();
         _populateEditorPrefs();
         _populateThemeButtons();
+        // Inyectar galería de skins si ThemeManager está disponible
+        if (window.ThemeManager && typeof window.ThemeManager.injectSelectorUI === 'function') {
+            window.ThemeManager.injectSelectorUI();
+        }
     };
 
     // ─── Accordion toggle logic ──────────────────────────────────────
