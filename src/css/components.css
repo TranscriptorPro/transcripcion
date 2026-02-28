@@ -1234,25 +1234,29 @@
             color: #f87171;
         }
 
-        /* Small icon button (restore original, medical check) */
+        /* Small icon button (restore original, compare, medical check) */
         .btn-sm-icon {
-            padding: 0.3rem 0.5rem;
-            font-size: 0.9rem;
+            padding: 0.3rem 0.6rem;
+            font-size: 0.8rem;
             min-width: 28px;
-            height: 28px;
+            height: 32px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            border-radius: 6px;
-            border: 1px solid var(--border);
-            background: var(--bg-card);
-            color: var(--text-secondary);
+            gap: 0.25rem;
+            border-radius: 8px;
+            border: 1px solid color-mix(in srgb, var(--primary) 35%, var(--border));
+            background: color-mix(in srgb, var(--primary) 8%, var(--bg-card));
+            color: var(--primary-dark, var(--primary));
             cursor: pointer;
-            transition: all 0.15s;
+            transition: all 0.2s;
+            font-weight: 500;
         }
         .btn-sm-icon:hover {
             border-color: var(--primary);
+            background: color-mix(in srgb, var(--primary) 15%, var(--bg-card));
             color: var(--primary);
+            box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 20%, transparent);
         }
 
         /* AI Note Panel */
@@ -1424,8 +1428,9 @@
         .btn-append-inline {
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-end;
             margin-bottom: 0.75rem;
+            padding-right: 0.5rem;
             user-select: none;
         }
         .btn-append-inline button {
@@ -3535,9 +3540,9 @@
             }
         }
 
-        /* ===== Action Green Buttons (Config PDF, Preview PDF, Copiar, Imprimir) ===== */
+        /* ===== Action Themed Buttons (Config PDF, Preview PDF, Copiar, Imprimir) ===== */
         .btn-action-green {
-            background-color: #0f766e;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
             border: none;
             height: 36px;
@@ -3548,12 +3553,13 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: background-color 0.2s ease, box-shadow 0.2s ease;
+            transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s;
         }
 
         .btn-action-green:hover:not(:disabled) {
-            background-color: #0d6660;
-            box-shadow: 0 0 10px rgba(15, 118, 110, 0.4);
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            box-shadow: 0 0 12px color-mix(in srgb, var(--primary) 40%, transparent);
+            transform: translateY(-1px);
         }
 
         .btn-action-green:disabled {
