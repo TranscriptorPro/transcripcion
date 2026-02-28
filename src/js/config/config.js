@@ -38,6 +38,10 @@ window.CLIENT_CONFIG = {
         if (params.has('admin')) {
             localStorage.removeItem('client_config_stored');
             sessionStorage.removeItem('pending_setup_id');
+            // También limpiar de IndexedDB si appDB existe
+            if (typeof appDB !== 'undefined' && appDB.remove) {
+                try { appDB.remove('client_config_stored'); } catch(_) {}
+            }
             history.replaceState({}, document.title, window.location.pathname);
             // CLIENT_CONFIG ya es ADMIN por defecto — no hacer nada más
             return;

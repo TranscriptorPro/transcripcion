@@ -5,6 +5,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Transcriptor Médico Pro | Audio a Texto</title>
+
+    <!-- PURGE: ?purge en la URL → nuclear reset de SW + caches + config cliente -->
+    <script>
+    (function() {
+        if (new URLSearchParams(window.location.search).has('purge')) {
+            document.title = 'Limpiando caché...';
+            // 1) Desregistrar todos los Service Workers
+            var p1 = navigator.serviceWorker
+                ? navigator.serviceWorker.getRegistrations().then(function(regs) {
+                    return Promise.all(regs.map(function(r) { return r.unregister(); }));
+                })
+                : Promise.resolve();
+            // 2) Borrar todos los CacheStorage
+            var p2 = caches
+                ? caches.keys().then(function(keys) {
+                    return Promise.all(keys.map(function(k) { return caches.delete(k); }));
+                })
+                : Promise.resolve();
+            // 3) Limpiar config de cliente (restaurar ADMIN)
+            try { localStorage.removeItem('client_config_stored'); } catch(_) {}
+            try { sessionStorage.removeItem('pending_setup_id'); } catch(_) {}
+            // Esperar y recargar limpio
+            Promise.all([p1, p2]).then(function() {
+                window.location.replace(window.location.pathname);
+            });
+            // Bloquear el resto de la carga
+            document.write('<body style="font-family:sans-serif;padding:2rem;text-align:center"><h2>Limpiando cach\u00e9...</h2><p>La p\u00e1gina se recargar\u00e1 autom\u00e1ticamente.</p></body>');
+            document.close();
+            return;
+        }
+    })();
+    </script>
+
     <!-- PWA1: manifest + metas -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a56a0">
