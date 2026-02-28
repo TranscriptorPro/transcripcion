@@ -75,6 +75,7 @@
     const LS_KEY = 'app_skin';
     const LINK_ID_PREFIX = 'skin-css-';
     let _currentSkinId = 'default';
+    let _applying = false;  // guard: prevent concurrent apply()
 
     // ─── Helpers ─────────────────────────────────────────────────────
 
@@ -116,10 +117,18 @@
      * @param {object} [opts] - Options { save: true, animate: true }
      */
     async function apply(skinId, opts = {}) {
+        // Reentrance guard — prevent double-apply race condition
+        if (_applying) {
+            console.log('[ThemeManager] apply() ya en curso, ignorando duplicado:', skinId);
+            return;
+        }
+        _applying = true;
+
         const save = opts.save !== false;
         const skin = SKIN_REGISTRY.find(s => s.id === skinId);
         if (!skin) {
             console.warn('[ThemeManager] Skin no encontrado:', skinId);
+            _applying = false;
             return;
         }
 
@@ -148,6 +157,7 @@
         document.dispatchEvent(new CustomEvent('skinChanged', { detail: { skinId: skin.id, skin } }));
 
         console.log('[ThemeManager] Skin aplicado:', skin.name);
+        _applying = false;
     }
 
     /** Get current skin id */

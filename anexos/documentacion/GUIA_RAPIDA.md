@@ -22,6 +22,8 @@ Al iniciar, el **Asistente de sesión** te pide:
 - **Profesional** (si el lugar tiene más de un médico)
 - **Plantilla** (opcional — también se detecta automáticamente)
 
+> 💡 **Configuración:** Pulsá el ícono **⚙️** en el encabezado para abrir el panel de Configuración. Desde ahí podés cambiar el skin visual (🎭 Skins), ajustar la apariencia, gestionar tu cuenta y más.
+
 ---
 
 ## 3. Cargá o grabá el audio

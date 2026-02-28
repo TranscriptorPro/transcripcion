@@ -108,7 +108,7 @@ La interfaz se divide en:
 ### Encabezado (Header)
 - **Logo y título** de la app
 - **Toggle Pro/Normal:** Cambia entre modos de operación
-- **Botones:** Panel admin (🛡️), Contacto (✉️), Ayuda (❓), Instalar PWA (📥), Tema (🌙/☀️)
+- **Botones:** Panel admin (🛡️), Contacto (✉️), Ayuda (❓), Instalar PWA (📥), Tema (🌙/☀️), Configuración (⚙️)
 
 ### Panel lateral (Sidebar)
 - **Grabar o Subir:** Botón de grabación + zona de carga
@@ -121,6 +121,23 @@ La interfaz se divide en:
 - **Barra de herramientas:** Formato, buscar/reemplazar, diccionario médico
 - **Editor WYSIWYG:** Texto editable con formato
 - **Botones de acción:** Configurar impresión, previsualizar, copiar, imprimir, descargar
+
+### Panel de Configuración (⚙️)
+Pulsá el botón **⚙️** en el encabezado para abrir el modal de Configuración. Contiene los siguientes acordeones:
+
+| Sección | Qué incluye |
+|---------|-------------|
+| **👤 Mi Cuenta** | Datos del profesional (nombre, matrícula, especialidad) |
+| **🔑 API Key** | Clave de acceso a los servicios de IA |
+| **🏥 Lugar de trabajo** | Consultorios y centros donde trabajás |
+| **⚡ Perfiles rápidos** | Combinaciones guardadas de lugar + profesional |
+| **📝 Configuración del editor** | Opciones del editor de texto (fuente, tamaño, etc.) |
+| **🛠️ Herramientas** | Diccionario médico, respaldo, diagnósticos automáticos |
+| **🎨 Apariencia** | Toggle modo oscuro/claro + selector de color corporativo |
+| **🎭 Skins** | 3 temas visuales (*Por Defecto*, *Cyberpunk Neon*, *Light Minimal*) + botón "🛒 Más skins y complementos" |
+| **📊 Estadísticas** | Uso de la app, conteo de transcripciones e informes |
+| **💾 Respaldo** | Exportar/importar configuración y datos |
+| **ℹ️ Info de la app** | Versión, estado de la licencia, ID del dispositivo |
 
 ---
 
