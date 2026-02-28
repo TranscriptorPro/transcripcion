@@ -936,8 +936,12 @@
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-bottom: none;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            scrollbar-width: none;   /* Firefox */
         }
+
+        .editor-toolbar::-webkit-scrollbar { display: none; } /* Chrome/Safari */
 
         .editor-toolbar.no-tabs {
             border-radius: var(--radius) var(--radius) 0 0;
