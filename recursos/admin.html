@@ -29,6 +29,26 @@
         }
     }
     </script>
+    <!-- Auth gate: verificar sesión ANTES de mostrar el body -->
+    <script>
+    (function() {
+        var raw = sessionStorage.getItem('adminSession');
+        if (!raw) { window.location.replace('login.html'); return; }
+        try {
+            var s = JSON.parse(raw);
+            if ((s.tokenExpiry && Date.now() > s.tokenExpiry) || (!s.tokenExpiry && (Date.now() - s.timestamp) / 3600000 >= 8)) {
+                sessionStorage.removeItem('adminSession');
+                window.location.replace('login.html'); return;
+            }
+        } catch(_) { sessionStorage.removeItem('adminSession'); window.location.replace('login.html'); return; }
+        // Auth OK → mostrar contenido
+        document.documentElement.style.visibility = 'visible';
+    })();
+    </script>
+    <style>
+        /* Ocultar todo hasta que auth pase (el script de arriba lo muestra) */
+        html { visibility: hidden; }
+    </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Sincronizar tema + color personalizado desde la app principal (anti-FOUC) -->
     <script>
@@ -2232,12 +2252,11 @@
             return `adminKey=${encodeURIComponent('ADMIN_SECRET_2026')}`;
         }
 
-        /* ── Authentication ─────────────────────────────────────────────────── */
+        /* ── Authentication (ya verificada en <head>, esto es solo cleanup) ── */
         (function checkAuth() {
             const raw = sessionStorage.getItem('adminSession');
             if (!raw) {
-                // Sin sesión → redirigir a login.html
-                window.location.href = 'login.html';
+                window.location.replace('login.html');
                 return;
             }
             try {
