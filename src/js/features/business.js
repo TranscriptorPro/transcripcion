@@ -645,6 +645,15 @@ async function _handleFactorySetup(medicoId) {
             if (typeof appDB !== 'undefined') appDB.set('customPrimaryColor', regDatos.headerColor);
         }
 
+        // Skin siempre arranca en 'default' en el primer uso — cada usuario parte
+        // de la app original. Si después quiere cambiar a cyberpunk, etc., ese
+        // cambio queda solo en SU dispositivo y no afecta a ningún otro clone.
+        localStorage.setItem('app_skin', 'default');
+        if (typeof appDB !== 'undefined') appDB.set('app_skin', 'default');
+        if (window.ThemeManager && typeof window.ThemeManager.apply === 'function') {
+            window.ThemeManager.apply('default', { save: false });
+        }
+
         // Estudios seleccionados
         if (regDatos.estudios) {
             try {
