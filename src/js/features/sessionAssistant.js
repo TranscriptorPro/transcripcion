@@ -159,6 +159,9 @@ window.initSessionAssistant = function () {
         const clinic   = isClinicMode();
         const pro      = isProUser();
 
+        // Si no hay lugares configurados → skip silencioso (no molestar al usuario con modal vacío)
+        if (profiles.length === 0) return;
+
         // Saludo
         if (greetingEl) greetingEl.textContent = getGreeting(profData.nombre, clinic);
 
