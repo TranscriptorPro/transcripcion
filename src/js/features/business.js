@@ -633,16 +633,14 @@ async function _handleFactorySetup(medicoId) {
             } catch(_) {}
         }
 
-        // Header Color del PDF + color del tema de la app
+        // Header Color del PDF (solo afecta informes, NO el color de la app)
         if (regDatos.headerColor) {
             profData.headerColor = regDatos.headerColor;
             window._profDataCache = profData;
             if (typeof appDB !== 'undefined') appDB.set('prof_data', profData);
             localStorage.setItem('prof_data', JSON.stringify(profData));
-
-            // Aplicar también como color del tema de la app (customPrimaryColor)
-            localStorage.setItem('customPrimaryColor', regDatos.headerColor);
-            if (typeof appDB !== 'undefined') appDB.set('customPrimaryColor', regDatos.headerColor);
+            // NO aplicar como customPrimaryColor: el color de encabezado del informe
+            // es independiente del color primario de la app
         }
 
         // Skin siempre arranca en 'default' en el primer uso — cada usuario parte
@@ -980,6 +978,13 @@ function _showClientOnboarding() {
         const next = document.getElementById('onboardingStep' + step);
         if (!prev || !next) return;
 
+        // Ajustar ancho del modal para paso 3 (tiene vista previa side-by-side)
+        const modal = document.querySelector('.onboarding-modal');
+        if (modal) {
+            modal.style.maxWidth = (step === 3) ? '720px' : '520px';
+            modal.style.transition = 'max-width 0.3s ease';
+        }
+
         prev.style.animation = 'onboardingSlideOut 0.25s ease-in forwards';
         setTimeout(() => {
             prev.classList.remove('active');
@@ -1040,7 +1045,7 @@ function _showClientOnboarding() {
         const palette = document.getElementById('onbColorPalette');
         if (!palette || palette.children.length) return; // ya inicializado
         const presetColors = ['#1a56a0','#0f766e','#7c3aed','#dc2626','#c2410c','#0369a1','#1d4ed8','#374151'];
-        const savedColor = (profData.headerColor || localStorage.getItem('customPrimaryColor') || '#1a56a0').toLowerCase();
+        const savedColor = (profData.headerColor || '#1a56a0').toLowerCase();
         presetColors.forEach(c => {
             const sw = document.createElement('div');
             sw.className = 'onb-color-swatch' + (c === savedColor ? ' selected' : '');
@@ -1050,8 +1055,8 @@ function _showClientOnboarding() {
             sw.addEventListener('click', () => {
                 palette.querySelectorAll('.onb-color-swatch').forEach(s => s.classList.remove('selected'));
                 sw.classList.add('selected');
-                // Live preview: actualizar color primario del modal en tiempo real
-                document.documentElement.style.setProperty('--primary', c);
+                // Actualizar solo la mini vista previa del informe, NO el color de la app
+                _updateOnbPreview();
             });
             palette.appendChild(sw);
         });
@@ -1062,19 +1067,109 @@ function _showClientOnboarding() {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.onb-margin-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
+                _updateOnbPreview();
             });
         });
-        // QR: PRO gate
+        // PRO gate: Firma y QR solo para PRO
+        const firmaToggle = document.getElementById('onbToggleFirma');
         const qrToggle = document.getElementById('onbToggleQR');
-        if (qrToggle) {
-            if (_isProUser) {
-                qrToggle.checked = true;
-            } else {
+        const firmaBadge = document.getElementById('onbFirmaBadge');
+        if (_isProUser) {
+            if (firmaToggle) firmaToggle.checked = true;
+            if (qrToggle) qrToggle.checked = true;
+        } else {
+            // Normal: deshabilitar firma y QR, mostrar badge PRO en firma
+            if (firmaBadge) firmaBadge.style.display = '';
+            if (firmaToggle) {
+                firmaToggle.checked = false;
+                firmaToggle.disabled = true;
+                const firmaNote = firmaToggle.closest('.onb-config-card')?.querySelector('small');
+                if (firmaNote) firmaNote.textContent = 'Solo disponible en plan PRO';
+            }
+            if (qrToggle) {
                 qrToggle.disabled = true;
                 const note = document.getElementById('onbQrNote');
                 if (note) note.textContent = 'Solo disponible en plan PRO';
             }
         }
+        // Listeners para actualizar vista previa en vivo
+        ['onbToggleFirma','onbToggleLogoProf','onbToggleLogoInst','onbToggleQR'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('change', () => _updateOnbPreview());
+        });
+        // Inicializar vista previa
+        _updateOnbPreview();
+    }
+
+    /** Actualiza la mini vista previa del informe en el paso 3 */
+    function _updateOnbPreview() {
+        const preview = document.getElementById('onbPdfPreview');
+        if (!preview) return;
+        const selectedColor = document.querySelector('#onbColorPalette .onb-color-swatch.selected')?.dataset.color || '#1a56a0';
+        const showFirma   = document.getElementById('onbToggleFirma')?.checked ?? true;
+        const showLogoPro = document.getElementById('onbToggleLogoProf')?.checked ?? true;
+        const showLogoInst = document.getElementById('onbToggleLogoInst')?.checked ?? true;
+        const showQR      = document.getElementById('onbToggleQR')?.checked ?? false;
+        const activeMargin = document.querySelector('.onb-margin-btn.active')?.dataset.margin || 'normal';
+        const marginPx = activeMargin === 'narrow' ? '8px' : activeMargin === 'wide' ? '22px' : '14px';
+        const profName = profData.nombre || 'Dr. Juan Pérez';
+        const profMat = profData.matricula || 'MP 12345';
+        preview.innerHTML = `
+            <div class="onb-prev-page" style="padding:${marginPx};">
+                <!-- Institución -->
+                <div class="onb-prev-inst" style="${showLogoInst ? '' : 'opacity:0.25;'}">
+                    <div class="onb-prev-inst-logo" style="${showLogoInst ? '' : 'background:#ddd;'}">🏥</div>
+                    <div class="onb-prev-inst-text">
+                        <div style="font-weight:700;font-size:6px;color:#333;">Centro Médico</div>
+                        <div style="font-size:4.5px;color:#888;">Av. Ejemplo 1234 • Tel: 0341-4567890</div>
+                    </div>
+                </div>
+                <!-- Encabezado profesional -->
+                <div class="onb-prev-header" style="border-color:${selectedColor};">
+                    <div style="display:flex;align-items:center;gap:4px;">
+                        ${showLogoPro ? '<div class="onb-prev-prof-logo">👨‍⚕️</div>' : ''}
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-weight:700;font-size:5.5px;color:${selectedColor};">${profName}</div>
+                            <div style="font-size:4.5px;color:#666;">${profMat}</div>
+                        </div>
+                        <div style="font-size:4px;color:#999;">01/03/2026</div>
+                    </div>
+                </div>
+                <!-- Datos paciente -->
+                <div class="onb-prev-patient">
+                    <div class="onb-prev-field"><span class="onb-prev-lbl">Paciente</span> <span>María García</span></div>
+                    <div class="onb-prev-field"><span class="onb-prev-lbl">DNI</span> <span>30.123.456</span></div>
+                    <div class="onb-prev-field"><span class="onb-prev-lbl">Edad</span> <span>45 años</span></div>
+                </div>
+                <!-- Estudio -->
+                <div style="margin:3px 0;padding:2px 0;border-bottom:1px solid #eee;">
+                    <div style="display:flex;gap:6px;">
+                        <span style="font-size:4.5px;color:${selectedColor};font-weight:700;">ESTUDIO:</span>
+                        <span style="font-size:4.5px;color:#555;">Ecografía abdominal</span>
+                    </div>
+                </div>
+                <!-- Contenido -->
+                <div class="onb-prev-body">
+                    <div style="font-size:5px;font-weight:700;color:${selectedColor};margin-bottom:2px;">HALLAZGOS</div>
+                    <div class="onb-prev-line" style="width:100%;"></div>
+                    <div class="onb-prev-line" style="width:90%;"></div>
+                    <div class="onb-prev-line" style="width:95%;"></div>
+                    <div class="onb-prev-line" style="width:70%;"></div>
+                    <div style="font-size:5px;font-weight:700;color:${selectedColor};margin:4px 0 2px;">CONCLUSIÓN</div>
+                    <div class="onb-prev-line" style="width:85%;"></div>
+                    <div class="onb-prev-line" style="width:60%;"></div>
+                </div>
+                <!-- Firma -->
+                <div class="onb-prev-firma" style="${showFirma ? '' : 'opacity:0.2;'}">
+                    ${showFirma ? '<div style="font-size:10px;margin-bottom:1px;">✍️</div>' : ''}
+                    <div style="width:40px;border-top:1px solid #666;margin:0 auto;"></div>
+                    <div style="font-size:4.5px;color:#555;margin-top:1px;">${profName}</div>
+                    <div style="font-size:4px;color:#888;">${profMat}</div>
+                </div>
+                <!-- QR -->
+                ${showQR ? '<div class="onb-prev-qr"><div style="width:18px;height:18px;background:#f0f0f0;border:1px solid #ddd;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:9px;">📱</div><div style="font-size:3.5px;color:#aaa;">QR Verificación</div></div>' : ''}
+            </div>
+        `;
     }
 
     function _saveOnbConfig() {
@@ -1085,12 +1180,13 @@ function _showClientOnboarding() {
             window._profDataCache = profData;
             localStorage.setItem('prof_data', JSON.stringify(profData));
             if (typeof appDB !== 'undefined') appDB.set('prof_data', profData);
-            localStorage.setItem('customPrimaryColor', color);
-            if (typeof appDB !== 'undefined') appDB.set('customPrimaryColor', color);
+            // NO guardar como customPrimaryColor: el color de encabezado del informe
+            // es independiente del color primario de la app
         }
         const pdfCfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
         pdfCfg.showSignImage = document.getElementById('onbToggleFirma')?.checked ?? true;
         pdfCfg.showHeader    = document.getElementById('onbToggleLogoInst')?.checked ?? true;
+        pdfCfg.showLogoProfessional = document.getElementById('onbToggleLogoProf')?.checked ?? true;
         pdfCfg.showQR        = document.getElementById('onbToggleQR')?.checked ?? false;
         const activeMarginBtn = document.querySelector('.onb-margin-btn.active');
         if (activeMarginBtn) pdfCfg.margins = activeMarginBtn.dataset.margin;

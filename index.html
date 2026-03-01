@@ -342,61 +342,74 @@
                         <div style="text-align: center; margin-bottom: 0.9rem;">
                             <span style="font-size: 1.9rem;">⚡</span>
                             <h2 style="font-size: 1.15rem; color: var(--primary); margin: 0.25rem 0 0.15rem; font-weight: 800;">Configuración rápida</h2>
-                            <p style="color: var(--text-secondary); font-size: 0.78rem; margin: 0;">Personalizá tu app en un clic. Podés cambiar todo después.</p>
+                            <p style="color: var(--text-secondary); font-size: 0.78rem; margin: 0;">Personalizá tu informe PDF. Podés cambiar todo después.</p>
                         </div>
-                        <!-- Nota aclaratoria -->
-                        <div style="display:flex;align-items:flex-start;gap:8px;background:color-mix(in srgb,var(--primary) 8%,transparent);border:1px solid color-mix(in srgb,var(--primary) 25%,transparent);border-radius:9px;padding:0.6rem 0.75rem;margin-bottom:0.75rem;">
-                            <span style="font-size:1rem;flex-shrink:0;margin-top:1px;">ℹ️</span>
-                            <p style="margin:0;font-size:0.76rem;color:var(--text-secondary);line-height:1.45;">
-                                Estas opciones se aplicarán a <strong style="color:var(--text-primary);">todos tus informes</strong> desde el primer momento.
-                                Si querés ajustarlas más adelante, podés hacerlo en cualquier momento desde el
-                                <strong style="color:var(--text-primary);">menú ⚙️ Configuración</strong>, en la sección <em>Formato del PDF</em>.
-                            </p>
-                        </div>
-                        <!-- Color de encabezado -->
-                        <div class="onb-config-card">
-                            <div class="onb-config-label" style="margin-bottom: 7px;">🎨 Color de encabezados del informe</div>
-                            <div id="onbColorPalette" style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;"></div>
-                        </div>
-                        <!-- Firma digital -->
-                        <div class="onb-config-card">
-                            <div class="onb-toggle-row">
-                                <div><div class="onb-config-label">✍️ Firma digital al pie del informe</div>
-                                <small style="color: var(--text-secondary); font-size: 0.72rem;">Imagen de tu firma en cada PDF</small></div>
-                                <label class="onb-switch"><input type="checkbox" id="onbToggleFirma" checked><span class="onb-slider"></span></label>
+                        <!-- Layout: controles + vista previa -->
+                        <div class="onb-step3-layout">
+                            <!-- Columna izquierda: controles -->
+                            <div class="onb-step3-controls">
+                                <!-- Nota aclaratoria -->
+                                <div style="display:flex;align-items:flex-start;gap:8px;background:color-mix(in srgb,var(--primary) 8%,transparent);border:1px solid color-mix(in srgb,var(--primary) 25%,transparent);border-radius:9px;padding:0.6rem 0.75rem;margin-bottom:0.75rem;">
+                                    <span style="font-size:1rem;flex-shrink:0;margin-top:1px;">ℹ️</span>
+                                    <p style="margin:0;font-size:0.76rem;color:var(--text-secondary);line-height:1.45;">
+                                        Estas opciones se aplicarán a <strong style="color:var(--text-primary);">todos tus informes</strong> desde el primer momento.
+                                        Si querés ajustarlas más adelante, podés hacerlo desde el
+                                        <strong style="color:var(--text-primary);">menú ⚙️ Configuración</strong>, en la sección <em>Formato del PDF</em>.
+                                    </p>
+                                </div>
+                                <!-- Color de encabezado del informe -->
+                                <div class="onb-config-card">
+                                    <div class="onb-config-label" style="margin-bottom: 7px;">🎨 Color de encabezados del informe</div>
+                                    <div id="onbColorPalette" style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;"></div>
+                                </div>
+                                <!-- Firma digital -->
+                                <div class="onb-config-card">
+                                    <div class="onb-toggle-row">
+                                        <div><div class="onb-config-label">✍️ Firma digital al pie del informe <span class="onb-pro-badge" id="onbFirmaBadge" style="display:none;">PRO</span></div>
+                                        <small style="color: var(--text-secondary); font-size: 0.72rem;">Imagen de tu firma en cada PDF</small></div>
+                                        <label class="onb-switch"><input type="checkbox" id="onbToggleFirma" checked><span class="onb-slider"></span></label>
+                                    </div>
+                                </div>
+                                <!-- Logo profesional -->
+                                <div class="onb-config-card">
+                                    <div class="onb-toggle-row">
+                                        <div><div class="onb-config-label">🏷️ Logo profesional en encabezado</div>
+                                        <small style="color: var(--text-secondary); font-size: 0.72rem;">Tu logo junto a tu nombre</small></div>
+                                        <label class="onb-switch"><input type="checkbox" id="onbToggleLogoProf" checked><span class="onb-slider"></span></label>
+                                    </div>
+                                </div>
+                                <!-- Logo institución -->
+                                <div class="onb-config-card">
+                                    <div class="onb-toggle-row">
+                                        <div><div class="onb-config-label">🏥 Logo institucional en encabezado</div>
+                                        <small style="color: var(--text-secondary); font-size: 0.72rem;">Logo del lugar de trabajo</small></div>
+                                        <label class="onb-switch"><input type="checkbox" id="onbToggleLogoInst" checked><span class="onb-slider"></span></label>
+                                    </div>
+                                </div>
+                                <!-- QR (PRO) -->
+                                <div class="onb-config-card">
+                                    <div class="onb-toggle-row">
+                                        <div><div class="onb-config-label">🔗 QR de verificación al pie <span class="onb-pro-badge">PRO</span></div>
+                                        <small style="color: var(--text-secondary); font-size: 0.72rem;" id="onbQrNote">Código QR en cada informe</small></div>
+                                        <label class="onb-switch"><input type="checkbox" id="onbToggleQR"><span class="onb-slider"></span></label>
+                                    </div>
+                                </div>
+                                <!-- Márgenes -->
+                                <div class="onb-config-card">
+                                    <div class="onb-config-label" style="margin-bottom: 7px;">📐 Márgenes del PDF</div>
+                                    <div style="display: flex; gap: 6px;">
+                                        <button type="button" class="onb-margin-btn" data-margin="narrow">Estrecho</button>
+                                        <button type="button" class="onb-margin-btn active" data-margin="normal">Normal</button>
+                                        <button type="button" class="onb-margin-btn" data-margin="wide">Amplio</button>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <!-- Logo profesional -->
-                        <div class="onb-config-card">
-                            <div class="onb-toggle-row">
-                                <div><div class="onb-config-label">🏷️ Logo profesional en encabezado</div>
-                                <small style="color: var(--text-secondary); font-size: 0.72rem;">Tu logo junto a tu nombre</small></div>
-                                <label class="onb-switch"><input type="checkbox" id="onbToggleLogoProf" checked><span class="onb-slider"></span></label>
-                            </div>
-                        </div>
-                        <!-- Logo institución -->
-                        <div class="onb-config-card">
-                            <div class="onb-toggle-row">
-                                <div><div class="onb-config-label">🏥 Logo institucional en encabezado</div>
-                                <small style="color: var(--text-secondary); font-size: 0.72rem;">Logo del lugar de trabajo</small></div>
-                                <label class="onb-switch"><input type="checkbox" id="onbToggleLogoInst" checked><span class="onb-slider"></span></label>
-                            </div>
-                        </div>
-                        <!-- QR (PRO) -->
-                        <div class="onb-config-card">
-                            <div class="onb-toggle-row">
-                                <div><div class="onb-config-label">🔗 QR de verificación al pie <span class="onb-pro-badge">PRO</span></div>
-                                <small style="color: var(--text-secondary); font-size: 0.72rem;" id="onbQrNote">Código QR en cada informe</small></div>
-                                <label class="onb-switch"><input type="checkbox" id="onbToggleQR"><span class="onb-slider"></span></label>
-                            </div>
-                        </div>
-                        <!-- Márgenes -->
-                        <div class="onb-config-card">
-                            <div class="onb-config-label" style="margin-bottom: 7px;">📐 Márgenes del PDF</div>
-                            <div style="display: flex; gap: 6px;">
-                                <button type="button" class="onb-margin-btn" data-margin="narrow">Estrecho</button>
-                                <button type="button" class="onb-margin-btn active" data-margin="normal">Normal</button>
-                                <button type="button" class="onb-margin-btn" data-margin="wide">Amplio</button>
+                            <!-- Columna derecha: vista previa mini del informe -->
+                            <div class="onb-step3-preview">
+                                <div class="onb-prev-label">Vista previa</div>
+                                <div id="onbPdfPreview" class="onb-prev-container">
+                                    <!-- Contenido generado por JS -->
+                                </div>
                             </div>
                         </div>
                         <button type="button" class="btn btn-primary btn-full onboarding-btn-next" id="onboardingNext3"
