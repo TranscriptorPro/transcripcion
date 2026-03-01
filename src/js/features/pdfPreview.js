@@ -206,7 +206,9 @@ window.openPdfConfigModal = async function () {
 
 window.openPrintPreview = async function () {
     const profData = (await appDB.get('prof_data')) || {};
-    const config   = (await appDB.get('pdf_config')) || {};
+    // Priorizar _pdfConfigCache (actualizado en memoria de forma síncrona por el botón Previsualizar)
+    // para que los cambios del formulario sean visibles ANTES de guardar en IndexedDB
+    const config   = window._pdfConfigCache || (await appDB.get('pdf_config')) || {};
 
     const esc = (t) => t != null ? String(t)
         .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
@@ -280,11 +282,17 @@ window.openPrintPreview = async function () {
     const showSignLine = config.showSignLine ?? true;
     const showSignName = config.showSignName ?? true;
     const showSignMat  = config.showSignMatricula ?? true;
-    // Logo/firma: profesional activo sobreescribe los globales
-    const logoSrc = (activePro?.logo  && activePro.logo.startsWith('data:'))  ? activePro.logo  : await appDB.get('pdf_logo');
-    const sigSrc  = (activePro?.firma && activePro.firma.startsWith('data:')) ? activePro.firma : await appDB.get('pdf_signature');
-    const hasLogo = logoSrc && logoSrc.startsWith('data:image/');
-    const hasSig  = sigSrc  && sigSrc.startsWith('data:image/');
+    // Logo institucional: del workplace activo (wp.logo) → fallback a pdf_logo para compat. con usuarios sin factory setup
+    const _wpLogoRaw = activeWp?.logo || '';
+    const instLogoSrc = (_wpLogoRaw && _wpLogoRaw.startsWith('data:')) ? _wpLogoRaw : ((await appDB.get('pdf_logo')) || '');
+    // Logo del profesional (foto/logo del médico, distinto del logo institucional)
+    const profLogoSrc = (activePro?.logo && activePro.logo.startsWith('data:')) ? activePro.logo : '';
+    // Firma digital
+    const sigSrc  = (activePro?.firma && activePro.firma.startsWith('data:')) ? activePro.firma : ((await appDB.get('pdf_signature')) || '');
+    const hasInstLogo = !!(instLogoSrc && instLogoSrc.startsWith('data:image/'));
+    const hasProfLogo = !!(profLogoSrc && profLogoSrc.startsWith('data:image/'));
+    const hasLogo = hasInstLogo; // alias para compat. interna
+    const hasSig  = !!(sigSrc && sigSrc.startsWith('data:image/'));
 
     // Aplicar color de acento a la página
     const page = document.getElementById('previewPage');
@@ -315,8 +323,8 @@ window.openPrintPreview = async function () {
         if (hasWpData) {
             wpHeaderEl.style.display = '';
             let wpHtml = '<div class="pvw-block">';
-            // Logo de la institución (a la izquierda del nombre)
-            if (hasLogo) wpHtml += `<img class="pvw-logo" src="${logoSrc}" alt="Logo">`;
+            // Logo institucional (a la izquierda del nombre de la institución)
+            if (hasInstLogo) wpHtml += `<img class="pvw-logo" src="${instLogoSrc}" alt="Logo">`;
             wpHtml += '<div class="pvw-text">';
             if (wpName)  wpHtml += `<div class="pvw-name">${wpName}</div>`;
             const wpDetails = [wkAddr, wkPhone ? 'Tel: ' + wkPhone : '', wpEmail].filter(Boolean);
@@ -341,9 +349,10 @@ window.openPrintPreview = async function () {
         } else {
             headerEl.style.display = '';
             headerEl.innerHTML = `
-                <div class="pvh-body">
+                <div class="pvh-body" style="display:flex;align-items:center;gap:12px;">
+                    ${hasProfLogo ? `<img src="${profLogoSrc}" alt="Logo Prof" style="height:48px;width:48px;object-fit:contain;flex-shrink:0;border-radius:4px;">` : ''}
                     <div class="pvh-info">
-                        <div class="pvh-name">${profName}</div>
+                        <div class="pvh-name">Estudio realizado por el/la Dr./Dra. ${profName}</div>
                         ${especialidad   ? `<div class="pvh-spec">${especialidad}</div>`   : ''}
                         ${institutionName ? `<div class="pvh-inst">${institutionName}</div>` : ''}
                         ${matricula      ? `<div class="pvh-mat">Mat. ${matricula}</div>` : ''}
@@ -404,7 +413,8 @@ window.openPrintPreview = async function () {
 
     // ── FIRMA ────────────────────────────────────────────────────
     const sigEl = document.getElementById('previewSignature');
-    const showSignImage = config.showSignImage ?? false;
+    // Mostrar imagen de firma por defecto si existe (el usuario puede desactivarla en la config)
+    const showSignImage = config.showSignImage ?? hasSig;
     if (sigEl) {
         // Ocultar firma si es ADMIN sin profesional activo
         const isAdminSig = (!activePro || !activePro.nombre) &&

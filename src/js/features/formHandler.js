@@ -157,6 +157,7 @@ window.savePdfConfiguration = function () {
         showSignLine: chk('pdfShowSignLine', true),
         showSignName: chk('pdfShowSignName', true),
         showSignMatricula: chk('pdfShowSignMatricula', true),
+        showSignImage: chk('pdfShowSignImage', false),
         footerText: val('pdfFooterText'),
         selectedWorkplace: val('pdfWorkplace'),
         workplaceAddress: val('pdfWorkplaceAddress'),

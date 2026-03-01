@@ -463,7 +463,7 @@ window.initModals = function () {
             const cfg = window.CLIENT_CONFIG || {};
             const type = (cfg.type || 'ADMIN').toUpperCase();
             if (type === 'ADMIN' || type === 'PRO') return ['pdf', 'rtf', 'txt', 'html'];
-            if (type === 'NORMAL') return ['txt', 'pdf'];
+            if (type === 'NORMAL') return ['pdf']; // Modo Normal: solo PDF
             return ['txt']; // TRIAL
         };
 
@@ -493,7 +493,17 @@ window.initModals = function () {
             e.stopPropagation();
             _applyFormatRestrictions(); // refrescar por si cambió
             const isOpen = previewDownloadDropdown.style.display !== 'none';
-            previewDownloadDropdown.style.display = isOpen ? 'none' : 'block';
+            if (isOpen) {
+                previewDownloadDropdown.style.display = 'none';
+                return;
+            }
+            // position:fixed para escapar overflow:hidden del modal y stacking contexts
+            const rect = btnDownloadPreviewMore.getBoundingClientRect();
+            previewDownloadDropdown.style.position = 'fixed';
+            previewDownloadDropdown.style.top = 'auto';
+            previewDownloadDropdown.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
+            previewDownloadDropdown.style.left = rect.left + 'px';
+            previewDownloadDropdown.style.display = 'block';
         });
         previewDownloadDropdown.querySelectorAll('button[data-format]').forEach(btn => {
             btn.addEventListener('click', async (e) => {
