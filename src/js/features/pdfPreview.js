@@ -229,6 +229,15 @@ window.openPrintPreview = async function () {
             ? profData.specialties.filter(s => s && s !== 'Todas').join(' / ')
             : (profData.especialidad || ''));
     const especialidad    = escSentence(especialidadRaw);
+    const especialidadDisplay = esc((especialidadRaw || '').replace(/^ALL$/i, '').replace(/^General$/i, 'Medicina General').trim());
+    // Detectar título Dr./Dra. del nombre del profesional
+    const _rawNameStr = activePro?.nombre || profData.nombre || '';
+    const _titleMatch = _rawNameStr.match(/^(Dra?\.?\s*)/i);
+    const profDisplayTitle = _titleMatch
+        ? (_titleMatch[1].trim().toLowerCase().startsWith('dra') ? 'Dra.' : 'Dr.')
+        : 'Dr.';
+    const profDisplayName = escName(_rawNameStr.replace(/^(Dra?\.?\s*)/i, '').trim()) || profName;
+    const profLogoSize = parseInt(localStorage.getItem('prof_logo_size_px') || '60');
     const institutionName = escName(activePro?.institutionName || profData.institutionName || '');
     const accentColor     = activePro?.headerColor || profData.headerColor || '#1a56a0';
 
@@ -350,12 +359,14 @@ window.openPrintPreview = async function () {
             headerEl.style.display = '';
             headerEl.innerHTML = `
                 <div class="pvh-body" style="display:flex;align-items:center;gap:12px;">
-                    ${hasProfLogo ? `<img src="${profLogoSrc}" alt="Logo Prof" style="height:48px;width:48px;object-fit:contain;flex-shrink:0;border-radius:4px;">` : ''}
-                    <div class="pvh-info">
-                        <div class="pvh-name">Estudio realizado por el/la Dr./Dra. ${profName}</div>
-                        ${especialidad   ? `<div class="pvh-spec">${especialidad}</div>`   : ''}
+                    ${hasProfLogo ? `<img src="${profLogoSrc}" alt="Logo Prof" style="height:${profLogoSize}px;width:auto;object-fit:contain;flex-shrink:0;">` : ''}
+                    <div class="pvh-info" style="flex:1;min-width:0;">
+                        <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px;">
+                            <span class="pvh-name">Estudio realizado por: ${profDisplayTitle} ${profDisplayName}</span>
+                            <span style="font-size:0.82em;opacity:0.85;white-space:nowrap;">Fecha de estudio: ${studyDate}${studyTime ? ' ' + studyTime : ''}</span>
+                        </div>
+                        ${(especialidadDisplay || matricula) ? `<div class="pvh-spec" style="text-align:center;">${[especialidadDisplay, matricula ? 'Mat. ' + matricula : ''].filter(Boolean).join(' &nbsp;&bull;&nbsp; ')}</div>` : ''}
                         ${institutionName ? `<div class="pvh-inst">${institutionName}</div>` : ''}
-                        ${matricula      ? `<div class="pvh-mat">Mat. ${matricula}</div>` : ''}
                     </div>
                 </div>`;
         }
@@ -384,16 +395,15 @@ window.openPrintPreview = async function () {
     // ── DATOS DEL ESTUDIO (3 columnas, 2 filas) ─────────────────────
     const studyEl = document.getElementById('previewStudy');
     if (studyEl) {
-        // Fila 1: Estudio | Informe Nº | Fecha (dd/mm/aaaa)
+        // Fila 1: Estudio | Informe Nº  (Fecha movida al encabezado profesional)
         // Fila 2: Solicitante | Motivo
         let row1 = '';
-        row1 += `<div class="pvs-cell"><span class="pvs-lbl">Estudio</span><span class="pvs-val">${studyType || '—'}</span></div>`;
-        row1 += `<div class="pvs-cell"><span class="pvs-lbl">Informe Nº</span><span class="pvs-val">${reportNum || '—'}</span></div>`;
-        row1 += `<div class="pvs-cell"><span class="pvs-lbl">Fecha</span><span class="pvs-val">${studyDate}${studyTime ? ' ' + studyTime : ''}</span></div>`;
+        row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">ESTUDIO:</span><span class="pvs-val">${studyType || '—'}</span></div>`;
+        row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">INFORME Nº:</span><span class="pvs-val">${reportNum || '—'}</span></div>`;
         let row2 = '';
-        if (refDoctor)   row2 += `<div class="pvs-cell"><span class="pvs-lbl">Solicitante</span><span class="pvs-val">${refDoctor}</span></div>`;
-        if (studyReason) row2 += `<div class="pvs-cell"><span class="pvs-lbl">Motivo</span><span class="pvs-val">${studyReason}</span></div>`;
-        studyEl.innerHTML = `<div class="pvs-grid pvs-3col">${row1}</div>`
+        if (refDoctor)   row2 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">SOLICITANTE:</span><span class="pvs-val">${refDoctor}</span></div>`;
+        if (studyReason) row2 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">MOTIVO:</span><span class="pvs-val">${studyReason}</span></div>`;
+        studyEl.innerHTML = `<div class="pvs-grid pvs-2col">${row1}</div>`
             + (row2 ? `<div class="pvs-grid pvs-2col">${row2}</div>` : '');
     }
 

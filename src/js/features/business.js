@@ -625,6 +625,14 @@ async function _handleFactorySetup(medicoId) {
             } catch(_) {}
         }
 
+        // Tamaño del logo profesional en PDF
+        if (regDatos.proLogoSize) {
+            try {
+                if (typeof appDB !== 'undefined') appDB.set('prof_logo_size_px', regDatos.proLogoSize);
+                localStorage.setItem('prof_logo_size_px', String(regDatos.proLogoSize));
+            } catch(_) {}
+        }
+
         // Header Color del PDF + color del tema de la app
         if (regDatos.headerColor) {
             profData.headerColor = regDatos.headerColor;

@@ -848,6 +848,8 @@ window.initModals = function () {
         }
         if (compStructured) {
             compStructured.innerHTML = window._lastStructuredHTML;
+            // Asegurar que el botón inline nunca aparezca en el panel de comparación
+            compStructured.querySelectorAll('.btn-append-inline').forEach(el => el.remove());
         }
 
         // Show comparison, hide editor
@@ -1319,9 +1321,16 @@ window.applyProfessionalData = function (data) {
 
             if (proLogo && proLogo.startsWith('data:image/')) {
                 headerLogo.src = proLogo;
-                headerLogo.style.borderRadius = '50%';
-                headerLogo.style.objectFit = 'cover';
-                headerLogo.style.border = '3px solid rgba(255,255,255,0.3)';
+                // Logo sin bordes ni fondo: incrustado limpio sobre el header
+                headerLogo.style.borderRadius = '0';
+                headerLogo.style.objectFit = 'contain';
+                headerLogo.style.border = 'none';
+                headerLogo.style.background = 'transparent';
+                headerLogo.style.boxShadow = 'none';
+                // Tamaño configurable (guardado por setup gift/admin)
+                const sizePx = localStorage.getItem('prof_logo_size_px') || '60';
+                headerLogo.style.height = sizePx + 'px';
+                headerLogo.style.width = 'auto';
             }
             // Si no hay logo del profesional → dejar el logo por defecto de Transcriptor Pro
         }

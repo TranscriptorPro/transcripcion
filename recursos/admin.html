@@ -3753,7 +3753,7 @@
 
             // Reset campos gift — Paso 3 (Apariencia + Firma + Logo)
             _giftSelectedColor = '#1a56a0';
-            _giftImageData = { firma: null, proLogo: null };
+            _giftImageData = { firma: null, proLogo: null, proLogoSize: 60, firmaSize: 60 };
             document.getElementById('giftFooterText').value = '';
             document.getElementById('giftColorPreview').style.background = '#1a56a0';
             document.querySelectorAll('#giftColorPalette .gift-color-swatch').forEach(s => {
@@ -3818,7 +3818,7 @@
         let _giftSelectedColor = '#1a56a0';
         let _giftWpCounter = 0;
         let _giftWpLogoData = {};
-        let _giftImageData = { firma: null, proLogo: null };
+        let _giftImageData = { firma: null, proLogo: null, proLogoSize: 60, firmaSize: 60 };
 
         // ── Gift Wizard: navegación de pasos ─────────────────────────────────
         function giftGoStep(step) {
@@ -4174,6 +4174,8 @@
                         footerText: footerText,
                         firma: firma,
                         proLogo: proLogo,
+                        proLogoSize: _giftImageData.proLogoSize || 60,
+                        firmaSize: _giftImageData.firmaSize || 60,
                         notas: notas,
                         apiKey: apiKey,
                         hasProMode: selectedProMode
@@ -5908,6 +5910,10 @@
                                     <div><label style="color:#64748b;">☀️ Brillo <span id="imgProf-brval">100</span>%</label><input type="range" id="imgProf-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                     <div><label style="color:#64748b;">🎨 Contraste <span id="imgProf-cnval">100</span>%</label><input type="range" id="imgProf-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                 </div>
+                                <div style="font-size:.78rem;margin-bottom:.35rem;">
+                                    <label style="color:#64748b;">📏 Tamaño en PDF <span id="imgProf-szval">60</span>px</label>
+                                    <input type="range" id="imgProf-sz" min="30" max="120" value="60" style="width:100%;accent-color:var(--primary);" oninput="document.getElementById('imgProf-szval').textContent=this.value; _giftImageData.proLogoSize=parseInt(this.value);">
+                                </div>
                                 <div style="display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:.35rem;">
                                     <button type="button" class="btn-secondary" id="imgProf-rotL" style="padding:3px 9px;font-size:.77rem;">↺90°</button>
                                     <button type="button" class="btn-secondary" id="imgProf-rotR" style="padding:3px 9px;font-size:.77rem;">↻90°</button>
@@ -5954,6 +5960,10 @@
                                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem .7rem;font-size:.78rem;margin-bottom:.35rem;">
                                     <div><label style="color:#64748b;">☀️ Brillo <span id="imgFirma-brval">100</span>%</label><input type="range" id="imgFirma-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                     <div><label style="color:#64748b;">🎨 Contraste <span id="imgFirma-cnval">100</span>%</label><input type="range" id="imgFirma-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
+                                </div>
+                                <div style="font-size:.78rem;margin-bottom:.35rem;">
+                                    <label style="color:#64748b;">📏 Tamaño en PDF <span id="imgFirma-szval">60</span>px</label>
+                                    <input type="range" id="imgFirma-sz" min="30" max="120" value="60" style="width:100%;accent-color:var(--primary);" oninput="document.getElementById('imgFirma-szval').textContent=this.value; _giftImageData.firmaSize=parseInt(this.value);">
                                 </div>
                                 <div style="display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:.35rem;">
                                     <button type="button" class="btn-secondary" id="imgFirma-rotL" style="padding:3px 9px;font-size:.77rem;">↺90°</button>
