@@ -5874,6 +5874,46 @@
                             </div>
                         </div>
 
+                        <!-- ── Editor interactivo post-proceso ── -->
+                        <div class="gw-card" id="imgprocEditorCard" style="display:none;">
+                            <p class="gw-section-title" style="margin-bottom:.4rem;">✏️ Editor Interactivo</p>
+                            <p style="font-size:.78rem;color:#64748b;margin-bottom:.5rem;">Ajustá el resultado antes de aplicar. Arrastrá sobre la imagen para recortar.</p>
+
+                            <!-- Canvas de edición -->
+                            <div style="position:relative;width:100%;border-radius:8px;overflow:hidden;background:repeating-conic-gradient(#e0e0e0 0% 25%,#f5f5f5 0% 50%) 0 0 / 16px 16px;margin-bottom:.5rem;" id="imgprocEditorWrap">
+                                <canvas id="imgprocEditorCanvas" style="display:block;width:100%;height:auto;cursor:crosshair;"></canvas>
+                                <canvas id="imgprocCropOverlay" style="position:absolute;top:0;left:0;width:100%;height:100%;cursor:crosshair;"></canvas>
+                            </div>
+
+                            <!-- Controles principales -->
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem .8rem;font-size:.82rem;margin-bottom:.5rem;">
+                                <div>
+                                    <label style="color:#64748b;">☀️ Brillo <span id="imgprocBrightnessVal">100%</span></label>
+                                    <input type="range" id="imgprocBrightness" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);">
+                                </div>
+                                <div>
+                                    <label style="color:#64748b;">🎨 Contraste <span id="imgprocContrastVal">100%</span></label>
+                                    <input type="range" id="imgprocContrast" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);">
+                                </div>
+                            </div>
+
+                            <!-- Botones transform -->
+                            <div style="display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.5rem;">
+                                <button type="button" class="btn-secondary" id="imgprocRotL" style="padding:5px 10px;font-size:.8rem;" title="Rotar 90° izquierda">↺ 90°</button>
+                                <button type="button" class="btn-secondary" id="imgprocRotR" style="padding:5px 10px;font-size:.8rem;" title="Rotar 90° derecha">↻ 90°</button>
+                                <button type="button" class="btn-secondary" id="imgprocFlipH" style="padding:5px 10px;font-size:.8rem;" title="Voltear horizontal">⟺ H</button>
+                                <button type="button" class="btn-secondary" id="imgprocFlipV" style="padding:5px 10px;font-size:.8rem;" title="Voltear vertical">⇅ V</button>
+                                <button type="button" class="btn-secondary" id="imgprocCropApply" style="padding:5px 10px;font-size:.8rem;display:none;">✂️ Aplicar recorte</button>
+                                <button type="button" class="btn-secondary" id="imgprocCropCancel" style="padding:5px 10px;font-size:.8rem;display:none;">✕ Cancelar recorte</button>
+                                <button type="button" class="btn-secondary" id="imgprocEditorReset" style="padding:5px 10px;font-size:.8rem;margin-left:auto;">↩ Resetear</button>
+                            </div>
+
+                            <!-- Hint crop -->
+                            <p id="imgprocCropHint" style="font-size:.75rem;color:#94a3b8;margin-bottom:.4rem;">Arrastrá sobre la imagen para seleccionar un área de recorte.</p>
+
+                            <button type="button" class="btn-primary" id="imgprocEditorApply" style="width:100%;padding:7px 0;font-size:.84rem;">✅ Aplicar ediciones al resultado</button>
+                        </div>
+
                         <!-- Simulación header PDF -->
                         <div class="gw-card" id="imgprocSimBox" style="display:none;">
                             <h4 style="font-size:.82rem;color:#64748b;margin-bottom:6px;">Preview en contexto (Header PDF)</h4>
@@ -6430,18 +6470,70 @@
             return out;
         }
 
-        async function processImage(img, type, options) {
+        /* ── Carga dinámica de la librería AI de background removal ── */
+        let _bgLibLoading = null;
+        async function loadBgRemovalLib() {
+            if (window._imglyBgRemoval) return window._imglyBgRemoval;
+            if (_bgLibLoading) return _bgLibLoading;
+            _bgLibLoading = new Promise((resolve) => {
+                const s = document.createElement('script');
+                s.src = 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/bundle/index.umd.js';
+                s.onload = () => {
+                    const lib = window['@imgly/background-removal'] || window.BackgroundRemoval || null;
+                    window._imglyBgRemoval = lib;
+                    resolve(lib);
+                };
+                s.onerror = () => resolve(null); // fallback al método canvas
+                document.head.appendChild(s);
+            });
+            return _bgLibLoading;
+        }
+
+        async function processImage(img, type, options, onProgress) {
             const canvas = document.createElement('canvas');
             canvas.width = img.naturalWidth || img.width;
             canvas.height = img.naturalHeight || img.height;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0);
+
             if (options.removeBackground) {
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const bgColor = detectBackgroundColor(imageData);
-                removeColor(imageData, bgColor, options.threshold);
-                ctx.putImageData(imageData, 0, 0);
+                let aiDone = false;
+                try {
+                    const lib = await loadBgRemovalLib();
+                    if (lib && lib.removeBackground) {
+                        // Convertir canvas → blob para la IA
+                        const inputBlob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+                        const resultBlob = await lib.removeBackground(inputBlob, {
+                            model: 'small',
+                            debug: false,
+                            progress: (key, cur, total) => {
+                                if (typeof onProgress === 'function' && total > 0) {
+                                    onProgress(key, Math.round(cur / total * 100));
+                                }
+                            }
+                        });
+                        // Volcar resultado de vuelta al canvas
+                        const objUrl = URL.createObjectURL(resultBlob);
+                        const aiImg = await loadImageFromSrc(objUrl);
+                        canvas.width = aiImg.naturalWidth;
+                        canvas.height = aiImg.naturalHeight;
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(aiImg, 0, 0);
+                        URL.revokeObjectURL(objUrl);
+                        aiDone = true;
+                    }
+                } catch (e) {
+                    console.warn('[imgproc] AI bg removal falló, usando método canvas:', e.message);
+                }
+                if (!aiDone) {
+                    // Fallback: algoritmo canvas (muestreo de esquinas)
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const bgColor = detectBackgroundColor(imageData);
+                    removeColor(imageData, bgColor, options.threshold);
+                    ctx.putImageData(imageData, 0, 0);
+                }
             }
+
             let result = canvas;
             if (options.autoTrim) result = trimTransparent(canvas);
             if (options.scale) {
@@ -6582,7 +6674,14 @@
                         autoTrim: elTrim.checked,
                         scale: elScale.checked
                     };
-                    _resultB64 = await processImage(_originalImage, type, options);
+                    let _procProgressLabel = '⚙️ Procesando...';
+                    _resultB64 = await processImage(_originalImage, type, options, (key, pct) => {
+                        if (key.includes('load') || key.includes('fetch')) {
+                            elProcess.textContent = '🤖 Cargando modelo IA... ' + pct + '%';
+                        } else if (key.includes('compute') || key.includes('inference')) {
+                            elProcess.textContent = '🤖 Procesando con IA... ' + pct + '%';
+                        }
+                    });
 
                     elResultPrev.innerHTML = '';
                     const resImg = document.createElement('img');
@@ -6615,6 +6714,11 @@
                     }
 
                     elActions.style.display = 'flex';
+
+                    // Abrir editor interactivo automáticamente
+                    if (typeof window._imgprocOpenEditor === 'function') {
+                        window._imgprocOpenEditor(_resultB64);
+                    }
                 } catch (err) {
                     alert('Error al procesar: ' + err.message);
                 } finally {
@@ -6654,6 +6758,254 @@
                     setTimeout(() => { elCopyB64.textContent = '📋 Copiar Base64'; }, 2000);
                 }
             });
+
+            // ── EDITOR INTERACTIVO ────────────────────────────────────────
+            const elEditorCard   = document.getElementById('imgprocEditorCard');
+            const elEditorCanvas = document.getElementById('imgprocEditorCanvas');
+            const elCropOverlay  = document.getElementById('imgprocCropOverlay');
+            const elBrightness   = document.getElementById('imgprocBrightness');
+            const elBrightnessV  = document.getElementById('imgprocBrightnessVal');
+            const elContrast     = document.getElementById('imgprocContrast');
+            const elContrastV    = document.getElementById('imgprocContrastVal');
+            const elRotL         = document.getElementById('imgprocRotL');
+            const elRotR         = document.getElementById('imgprocRotR');
+            const elFlipH        = document.getElementById('imgprocFlipH');
+            const elFlipV        = document.getElementById('imgprocFlipV');
+            const elCropApply    = document.getElementById('imgprocCropApply');
+            const elCropCancel   = document.getElementById('imgprocCropCancel');
+            const elEditorReset  = document.getElementById('imgprocEditorReset');
+            const elEditorApply  = document.getElementById('imgprocEditorApply');
+
+            // Estado del editor
+            const _ed = {
+                baseCanvas: null,  // canvas original post-proceso (inmutable)
+                rotation: 0, flipH: false, flipV: false,
+                brightness: 100, contrast: 100,
+                crop: null,        // {x,y,w,h} en coords del canvas renderizado
+                _dragging: false, _dragStart: {x:0,y:0}, _dragCurrent: {x:0,y:0}
+            };
+
+            function _edRenderToCanvas() {
+                if (!_ed.baseCanvas) return;
+                const base = _ed.baseCanvas;
+                const rot  = _ed.rotation;
+                const swapped = rot === 90 || rot === 270;
+                const outW = swapped ? base.height : base.width;
+                const outH = swapped ? base.width  : base.height;
+
+                const ctx = elEditorCanvas.getContext('2d');
+                elEditorCanvas.width  = outW;
+                elEditorCanvas.height = outH;
+
+                ctx.save();
+                ctx.filter = `brightness(${_ed.brightness}%) contrast(${_ed.contrast}%)`;
+                ctx.translate(outW / 2, outH / 2);
+                ctx.rotate(rot * Math.PI / 180);
+                ctx.scale(_ed.flipH ? -1 : 1, _ed.flipV ? -1 : 1);
+                ctx.drawImage(base, -base.width / 2, -base.height / 2);
+                ctx.restore();
+
+                // Sync crop overlay size
+                elCropOverlay.width  = outW;
+                elCropOverlay.height = outH;
+                _edDrawCropOverlay();
+            }
+
+            function _edDrawCropOverlay() {
+                const ctx = elCropOverlay.getContext('2d');
+                ctx.clearRect(0, 0, elCropOverlay.width, elCropOverlay.height);
+                const rect = _ed._dragging
+                    ? _edNormalizeRect(_ed._dragStart, _ed._dragCurrent)
+                    : _ed.crop;
+                if (!rect || rect.w < 4 || rect.h < 4) return;
+                ctx.fillStyle = 'rgba(0,0,0,0.4)';
+                ctx.fillRect(0, 0, elCropOverlay.width, elCropOverlay.height);
+                ctx.clearRect(rect.x, rect.y, rect.w, rect.h);
+                ctx.strokeStyle = '#f59e0b';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+            }
+
+            function _edNormalizeRect(a, b) {
+                const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y);
+                return { x, y, w: Math.abs(b.x - a.x), h: Math.abs(b.y - a.y) };
+            }
+
+            function _edCanvasCoords(e) {
+                const rect = elCropOverlay.getBoundingClientRect();
+                const scaleX = elCropOverlay.width  / rect.width;
+                const scaleY = elCropOverlay.height / rect.height;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return {
+                    x: Math.max(0, Math.min(elCropOverlay.width,  (clientX - rect.left) * scaleX)),
+                    y: Math.max(0, Math.min(elCropOverlay.height, (clientY - rect.top)  * scaleY))
+                };
+            }
+
+            // Drag para recorte
+            elCropOverlay.addEventListener('mousedown',  startDrag);
+            elCropOverlay.addEventListener('touchstart', startDrag, {passive:true});
+            elCropOverlay.addEventListener('mousemove',  moveDrag);
+            elCropOverlay.addEventListener('touchmove',  moveDrag, {passive:true});
+            elCropOverlay.addEventListener('mouseup',    endDrag);
+            elCropOverlay.addEventListener('touchend',   endDrag);
+
+            function startDrag(e) {
+                _ed._dragging = true;
+                _ed._dragStart = _edCanvasCoords(e);
+                _ed._dragCurrent = {..._ed._dragStart};
+                _ed.crop = null;
+                elCropApply.style.display = 'none';
+                elCropCancel.style.display = 'none';
+            }
+            function moveDrag(e) {
+                if (!_ed._dragging) return;
+                _ed._dragCurrent = _edCanvasCoords(e);
+                _edDrawCropOverlay();
+            }
+            function endDrag(e) {
+                if (!_ed._dragging) return;
+                _ed._dragging = false;
+                const r = _edNormalizeRect(_ed._dragStart, _ed._dragCurrent);
+                if (r.w > 10 && r.h > 10) {
+                    _ed.crop = r;
+                    elCropApply.style.display = 'inline-flex';
+                    elCropCancel.style.display = 'inline-flex';
+                } else {
+                    _ed.crop = null;
+                }
+                _edDrawCropOverlay();
+            }
+
+            elCropApply.addEventListener('click', () => {
+                if (!_ed.crop || !_ed.baseCanvas) return;
+                // Renderizar el canvas actual y recortarlo
+                const src = elEditorCanvas;
+                const {x, y, w, h} = _ed.crop;
+                const cropped = document.createElement('canvas');
+                cropped.width = Math.round(w); cropped.height = Math.round(h);
+                cropped.getContext('2d').drawImage(src, x, y, w, h, 0, 0, w, h);
+                // El recorte pasa a ser la nueva base (sin rotación/flip/ajustes adicionales)
+                _ed.baseCanvas = cropped;
+                _ed.rotation = 0; _ed.flipH = false; _ed.flipV = false;
+                _ed.brightness = 100; _ed.contrast = 100;
+                elBrightness.value = '100'; elBrightnessV.textContent = '100%';
+                elContrast.value   = '100'; elContrastV.textContent   = '100%';
+                _ed.crop = null;
+                elCropApply.style.display = 'none';
+                elCropCancel.style.display = 'none';
+                _edRenderToCanvas();
+            });
+
+            elCropCancel.addEventListener('click', () => {
+                _ed.crop = null;
+                elCropApply.style.display = 'none';
+                elCropCancel.style.display = 'none';
+                _edDrawCropOverlay();
+            });
+
+            // Brillo / Contraste
+            elBrightness.addEventListener('input', () => {
+                _ed.brightness = parseInt(elBrightness.value, 10);
+                elBrightnessV.textContent = _ed.brightness + '%';
+                _edRenderToCanvas();
+            });
+            elContrast.addEventListener('input', () => {
+                _ed.contrast = parseInt(elContrast.value, 10);
+                elContrastV.textContent = _ed.contrast + '%';
+                _edRenderToCanvas();
+            });
+
+            // Rotar
+            elRotL.addEventListener('click', () => { _ed.rotation = (_ed.rotation - 90 + 360) % 360; _edRenderToCanvas(); });
+            elRotR.addEventListener('click', () => { _ed.rotation = (_ed.rotation + 90) % 360;         _edRenderToCanvas(); });
+
+            // Voltear
+            elFlipH.addEventListener('click', () => { _ed.flipH = !_ed.flipH; _edRenderToCanvas(); });
+            elFlipV.addEventListener('click', () => { _ed.flipV = !_ed.flipV; _edRenderToCanvas(); });
+
+            // Resetear
+            elEditorReset.addEventListener('click', () => {
+                if (!_resultB64) return;
+                const img = new Image();
+                img.onload = () => {
+                    const c = document.createElement('canvas');
+                    c.width = img.naturalWidth; c.height = img.naturalHeight;
+                    c.getContext('2d').drawImage(img, 0, 0);
+                    _ed.baseCanvas = c;
+                    _ed.rotation = 0; _ed.flipH = false; _ed.flipV = false;
+                    _ed.brightness = 100; _ed.contrast = 100; _ed.crop = null;
+                    elBrightness.value = '100'; elBrightnessV.textContent = '100%';
+                    elContrast.value   = '100'; elContrastV.textContent   = '100%';
+                    elCropApply.style.display = 'none';
+                    elCropCancel.style.display = 'none';
+                    _edRenderToCanvas();
+                };
+                img.src = _resultB64;
+            });
+
+            // Función pública para abrir el editor con un base64
+            window._imgprocOpenEditor = function(b64) {
+                if (!b64 || !elEditorCard) return;
+                const img = new Image();
+                img.onload = () => {
+                    const c = document.createElement('canvas');
+                    c.width = img.naturalWidth; c.height = img.naturalHeight;
+                    c.getContext('2d').drawImage(img, 0, 0);
+                    _ed.baseCanvas = c;
+                    _ed.rotation = 0; _ed.flipH = false; _ed.flipV = false;
+                    _ed.brightness = 100; _ed.contrast = 100; _ed.crop = null;
+                    elBrightness.value = '100'; elBrightnessV.textContent = '100%';
+                    elContrast.value   = '100'; elContrastV.textContent   = '100%';
+                    elCropApply.style.display = 'none';
+                    elCropCancel.style.display = 'none';
+                    elEditorCard.style.display = 'block';
+                    _edRenderToCanvas();
+                    elEditorCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                };
+                img.src = b64;
+            };
+
+            // Aplicar ediciones → actualiza _resultB64 y preview principal
+            elEditorApply.addEventListener('click', () => {
+                if (!_ed.baseCanvas) return;
+                // Renderizar el estado actual (sin crop pendiente)
+                const final = document.createElement('canvas');
+                const rot = _ed.rotation;
+                const swapped = rot === 90 || rot === 270;
+                final.width  = swapped ? _ed.baseCanvas.height : _ed.baseCanvas.width;
+                final.height = swapped ? _ed.baseCanvas.width  : _ed.baseCanvas.height;
+                const fctx = final.getContext('2d');
+                fctx.filter = `brightness(${_ed.brightness}%) contrast(${_ed.contrast}%)`;
+                fctx.save();
+                fctx.translate(final.width / 2, final.height / 2);
+                fctx.rotate(rot * Math.PI / 180);
+                fctx.scale(_ed.flipH ? -1 : 1, _ed.flipV ? -1 : 1);
+                fctx.drawImage(_ed.baseCanvas, -_ed.baseCanvas.width / 2, -_ed.baseCanvas.height / 2);
+                fctx.restore();
+
+                _resultB64 = final.toDataURL('image/png');
+
+                // Actualizar preview del resultado
+                elResultPrev.innerHTML = '';
+                const img = document.createElement('img');
+                img.src = _resultB64;
+                img.alt = 'Resultado editado';
+                img.style.maxWidth = '100%';
+                img.style.maxHeight = '180px';
+                img.style.objectFit = 'contain';
+                elResultPrev.appendChild(img);
+
+                const kb = Math.round((_resultB64.length * 3 / 4) / 1024);
+                elB64Info.textContent = 'Tamaño: ~' + kb + ' KB (editado)';
+                elB64Info.style.display = 'block';
+                elActions.style.display = 'flex';
+                elEditorCard.style.display = 'none';
+
+                if (typeof dashAlert === 'function') dashAlert('✅ Ediciones aplicadas. Ahora podés hacer clic en "Aplicar al registro".', '✏️');
+            });
+            // ── FIN EDITOR INTERACTIVO ────────────────────────────────────────
 
             // Aplicar al registro (inyectar en _giftImageData / _giftWpLogoData)
             elApply.addEventListener('click', () => {
