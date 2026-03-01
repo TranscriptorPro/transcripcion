@@ -3068,9 +3068,9 @@
             max-width: 80px;
             object-fit: contain;
             flex-shrink: 0;
-            border-radius: 4px;
-            background: rgba(255,255,255,0.15);
-            padding: 3px;
+            border-radius: 0;
+            background: transparent;
+            padding: 0;
         }
         .pvw-text { text-align: center; }
         .pvw-name {
@@ -3206,7 +3206,7 @@
             border: 1px solid #e3e8ef;
             font-family: Helvetica, Arial, sans-serif;
         }
-        .pvs-grid.pvs-3col { grid-template-columns: repeat(3, 1fr); border-bottom: none; }
+        .pvs-grid.pvs-3col { grid-template-columns: repeat(3, 1fr); border-radius: 4px 4px 0 0; border-bottom: none; }
         .pvs-grid.pvs-2col {
             grid-template-columns: 1fr 1fr;
             border-radius: 0 0 4px 4px;

@@ -360,11 +360,10 @@ window.openPrintPreview = async function () {
             headerEl.style.display = '';
             headerEl.innerHTML = `
                 <div class="pvh-body" style="display:flex;align-items:center;gap:12px;">
-                    ${hasProfLogo ? `<img src="${profLogoSrc}" alt="Logo Prof" style="height:${profLogoSize}px;width:auto;object-fit:contain;flex-shrink:0;">` : ''}
+                    ${hasProfLogo ? `<img src="${profLogoSrc}" alt="Logo Prof" style="height:${profLogoSize}px;width:auto;object-fit:contain;flex-shrink:0;background:transparent;">` : ''}
                     <div class="pvh-info" style="flex:1;min-width:0;">
-                        <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px;">
+                        <div style="text-align:center;">
                             <span class="pvh-name">Estudio realizado por: ${profDisplayTitle} ${profDisplayName}</span>
-                            <span style="font-size:0.82em;opacity:0.85;white-space:nowrap;">Fecha de estudio: ${studyDate}${studyTime ? ' ' + studyTime : ''}</span>
                         </div>
                         ${(especialidadDisplay || matricula) ? `<div class="pvh-spec" style="text-align:center;">${[especialidadDisplay, matricula ? 'Mat. ' + matricula : ''].filter(Boolean).join(' &nbsp;&bull;&nbsp; ')}</div>` : ''}
                         ${institutionName ? `<div class="pvh-inst">${institutionName}</div>` : ''}
@@ -393,18 +392,19 @@ window.openPrintPreview = async function () {
         }
     }
 
-    // ── DATOS DEL ESTUDIO (3 columnas, 2 filas) ─────────────────────
+    // ── DATOS DEL ESTUDIO (3 columnas fila 1, 2 columnas fila 2) ────
     const studyEl = document.getElementById('previewStudy');
     if (studyEl) {
-        // Fila 1: Estudio | Informe Nº  (Fecha movida al encabezado profesional)
+        // Fila 1: Estudio | Informe Nº | Fecha
         // Fila 2: Solicitante | Motivo
         let row1 = '';
         row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">ESTUDIO:</span><span class="pvs-val">${studyType || '—'}</span></div>`;
         row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">INFORME Nº:</span><span class="pvs-val">${reportNum || '—'}</span></div>`;
+        row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">FECHA:</span><span class="pvs-val">${studyDate}${studyTime ? ' ' + studyTime : ''}</span></div>`;
         let row2 = '';
         if (refDoctor)   row2 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">SOLICITANTE:</span><span class="pvs-val">${refDoctor}</span></div>`;
         if (studyReason) row2 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">MOTIVO:</span><span class="pvs-val">${studyReason}</span></div>`;
-        studyEl.innerHTML = `<div class="pvs-grid pvs-2col">${row1}</div>`
+        studyEl.innerHTML = `<div class="pvs-grid pvs-3col">${row1}</div>`
             + (row2 ? `<div class="pvs-grid pvs-2col">${row2}</div>` : '');
     }
 

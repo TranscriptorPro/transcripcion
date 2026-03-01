@@ -733,9 +733,11 @@ window.initModals = function () {
         if (document.getElementById('btnRestoreOriginal')?._showingOriginal) return;
         if (window._isComparisonMode) return;
 
-        // Solo Pro mode estricto con contenido en el editor
+        // Solo Pro mode estricto con contenido estructurado en el editor
         if (window.currentMode !== 'pro') return;
         if (!editor.innerText.trim()) return;
+        // No mostrar si el contenido no está estructurado (texto plano sin secciones)
+        if (!editor.querySelector('h3, h4, .section-header, strong')) return;
 
         // Crear wrapper contenteditable=false
         const wrap = document.createElement('div');

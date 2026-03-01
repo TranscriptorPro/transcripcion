@@ -1001,15 +1001,13 @@ function _showClientOnboarding() {
         });
     }
 
-    // Botones next/back
+    // Botones next/back (4 pasos: Bienvenida, Datos, Config, T&C)
     const next1 = document.getElementById('onboardingNext1');
     const next2 = document.getElementById('onboardingNext2');
     const next3 = document.getElementById('onboardingNext3');
-    const next4 = document.getElementById('onboardingNext4');
     const back2 = document.getElementById('onboardingBack2');
     const back3 = document.getElementById('onboardingBack3');
     const back4 = document.getElementById('onboardingBack4');
-    const back5 = document.getElementById('onboardingBack5');
 
     if (next1) next1.addEventListener('click', () => goToStep(2));
     if (next2) next2.addEventListener('click', () => {
@@ -1033,10 +1031,8 @@ function _showClientOnboarding() {
     });
     if (back2) back2.addEventListener('click', () => goToStep(1));
     if (back3) back3.addEventListener('click', () => goToStep(2));
-    if (next3) next3.addEventListener('click', () => { _saveOnbConfig(); _initOnbStep4(); goToStep(4); });
+    if (next3) next3.addEventListener('click', () => { _saveOnbConfig(); goToStep(4); });
     if (back4) back4.addEventListener('click', () => goToStep(3));
-    if (next4) next4.addEventListener('click', () => { _saveOnbWorkplace(); goToStep(5); });
-    if (back5) back5.addEventListener('click', () => goToStep(4));
 
     // ── Config Asistida: helpers ──────────────────────────────────────
     const _isProUser = !!profData.hasProMode;

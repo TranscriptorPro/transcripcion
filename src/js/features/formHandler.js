@@ -152,12 +152,12 @@ window.savePdfConfiguration = function () {
         showHeader: chk('pdfShowHeader', true),
         showFooter: chk('pdfShowFooter', true),
         showPageNum: chk('pdfShowPageNum', true),
-        showDate: chk('pdfShowDate', false),
-        showQR: chk('pdfShowQR', false),
+        showDate: chk('pdfShowDate', true),
+        showQR: chk('pdfShowQR', true),
         showSignLine: chk('pdfShowSignLine', true),
         showSignName: chk('pdfShowSignName', true),
         showSignMatricula: chk('pdfShowSignMatricula', true),
-        showSignImage: chk('pdfShowSignImage', false),
+        showSignImage: chk('pdfShowSignImage', true),
         logoSizePx: parseInt(document.getElementById('pdfLogoSize')?.value || '60'),
         firmaSizePx: parseInt(document.getElementById('pdfFirmaSize')?.value || '60'),
         footerText: val('pdfFooterText'),
@@ -216,11 +216,12 @@ window.loadPdfConfiguration = async function () {
     setChk('pdfShowHeader', config.showHeader, true);
     setChk('pdfShowFooter', config.showFooter, true);
     setChk('pdfShowPageNum', config.showPageNum, true);
-    setChk('pdfShowDate', config.showDate, false);
-    setChk('pdfShowQR', config.showQR, false);
+    setChk('pdfShowDate', config.showDate, true);
+    setChk('pdfShowQR', config.showQR, true);
     setChk('pdfShowSignLine', config.showSignLine, true);
     setChk('pdfShowSignName', config.showSignName, true);
     setChk('pdfShowSignMatricula', config.showSignMatricula, true);
+    setChk('pdfShowSignImage', config.showSignImage, true);
     // Sliders de tamaño
     const logoSlider = document.getElementById('pdfLogoSize');
     const firmaSlider = document.getElementById('pdfFirmaSize');
