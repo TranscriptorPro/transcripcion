@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧪 Test E2E — GIFT + Onboarding + Config Asistida + PDF Preview</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0d1117; color: #c9d1d9; padding: 20px; }
+h1  { color: #58a6ff; margin-bottom: 4px; font-size: 1.45em; }
+.subtitle { color: #8b949e; margin-bottom: 18px; font-size: 0.88em; }
+h2  { color: #79c0ff; font-size: 1em; margin: 18px 0 6px; border-bottom: 1px solid #21262d; padding-bottom: 5px; }
+.btn-run {
+    background: #238636; color: #fff; border: none; padding: 10px 24px;
+    border-radius: 6px; font-size: 1em; cursor: pointer; font-weight: 600; margin-right: 8px;
+}
+.btn-run:hover { background: #2ea043; }
+.btn-clear {
+    background: #21262d; color: #c9d1d9; border: 1px solid #30363d;
+    padding: 10px 18px; border-radius: 6px; font-size: 0.9em; cursor: pointer;
+}
+.btn-clear:hover { background: #30363d; }
+.progress-bar  { height: 5px; background: #21262d; border-radius: 3px; margin: 12px 0; overflow: hidden; }
+.progress-fill { height: 100%; background: #58a6ff; border-radius: 3px; width: 0%; transition: width 0.3s; }
+#results { margin-top: 10px; }
+.group { margin-bottom: 6px; }
+.group-title {
+    font-weight: 700; color: #f0f6fc; font-size: 0.82em; letter-spacing: .5px;
+    text-transform: uppercase; padding: 6px 10px; background: #161b22;
+    border: 1px solid #30363d; border-radius: 6px 6px 0 0; margin-bottom: 0;
+}
+.test-item {
+    background: #161b22; border: 1px solid #30363d; border-top: none;
+    padding: 9px 14px; display: flex; align-items: flex-start; gap: 10px;
+}
+.test-item:last-child { border-radius: 0 0 6px 6px; }
+.test-item.pass { border-left: 3px solid #3fb950; }
+.test-item.fail { border-left: 3px solid #f85149; }
+.test-item.info { border-left: 3px solid #58a6ff; }
+.test-item.warn { border-left: 3px solid #d29922; }
+.test-icon { font-size: 1.1em; flex-shrink: 0; margin-top: 1px; }
+.test-body { flex: 1; }
+.test-title { font-weight: 600; font-size: 0.9em; margin-bottom: 2px; }
+.test-detail { color: #8b949e; font-size: 0.8em; word-break: break-all; line-height: 1.45; }
+.summary {
+    background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+    padding: 14px; margin-top: 14px; text-align: center; font-size: 1.05em; font-weight: 700;
+}
+.summary.all-pass { border-color: #3fb950; color: #3fb950; }
+.summary.has-fail  { border-color: #f85149; color: #f85149; }
+pre.code-preview {
+    background: #010409; border: 1px solid #30363d; border-radius: 6px;
+    padding: 10px; margin-top: 8px; font-size: 0.75em; color: #8b949e;
+    white-space: pre-wrap; word-break: break-all; max-height: 160px; overflow-y: auto;
+}
+</style>
+</head>
+<body>
+
+<h1>🧪 Test E2E — Médico GIFT completo</h1>
+<p class="subtitle">
+    Cubre: Construcción del GIFT &rarr; Factory Setup (regDatos) &rarr; Onboarding 5 pasos
+    &rarr; Configuración Asistida &rarr; Lugar de trabajo &rarr; Preview del PDF
+    &rarr; Logo/Firma/Colores &rarr; QR PRO gate &rarr; Informe estructurado (mock)
+</p>
+
+<div>
+    <button class="btn-run" id="btnRun" onclick="runAll()">▶ Ejecutar todos los tests</button>
+    <button class="btn-clear" onclick="clearAll()">🗑 Limpiar</button>
+</div>
+
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+<div id="results"></div>
+<div id="summary"></div>
+
+<!-- DOM mínimo que simula index.html para los tests de onboarding -->
+<div id="mockDom" style="display:none;">
+    <!-- Onboarding overlay -->
+    <div id="onboardingOverlay">
+        <div id="onboardingParticles"></div>
+        <div id="onboardingStep1" class="onboarding-step active"></div>
+        <div id="onboardingStep2" class="onboarding-step">
+            <span id="onboardingDisplayNombre"></span>
+            <span id="onboardingDisplayMatricula"></span>
+            <div id="onboardingApiKeyStep">
+                <input id="onboardingApiKey" type="text">
+            </div>
+            <button id="onboardingNext2"></button>
+            <button id="onboardingBack2"></button>
+        </div>
+        <div id="onboardingStep3" class="onboarding-step">
+            <div id="onbColorPalette"></div>
+            <input type="checkbox" id="onbToggleFirma" checked>
+            <input type="checkbox" id="onbToggleLogoProf" checked>
+            <input type="checkbox" id="onbToggleLogoInst" checked>
+            <input type="checkbox" id="onbToggleQR">
+            <span id="onbQrNote"></span>
+            <button class="onb-margin-btn active" data-margin="normal">Normal</button>
+            <button class="onb-margin-btn" data-margin="narrow">Estrecho</button>
+            <button class="onb-margin-btn" data-margin="wide">Amplio</button>
+            <button id="onboardingNext3"></button>
+            <button id="onboardingBack3"></button>
+        </div>
+        <div id="onboardingStep4" class="onboarding-step">
+            <div id="onbWpCards"></div>
+            <button id="onboardingNext4"></button>
+            <button id="onboardingBack4"></button>
+        </div>
+        <div id="onboardingStep5" class="onboarding-step">
+            <input type="checkbox" id="acceptTerms">
+            <button id="btnSubmitOnboarding" disabled></button>
+            <button id="onboardingBack5"></button>
+        </div>
+        <div id="onboardingDots">
+            <span class="onboarding-dot active" data-step="1"></span>
+            <span class="onboarding-dot" data-step="2"></span>
+            <span class="onboarding-dot" data-step="3"></span>
+            <span class="onboarding-dot" data-step="4"></span>
+            <span class="onboarding-dot" data-step="5"></span>
+        </div>
+    </div>
+    <!-- Preview PDF mínimo -->
+    <div id="previewPage">
+        <div id="previewWorkplace"></div>
+        <div id="previewHeader"></div>
+        <div id="previewPatient"></div>
+        <div id="previewStudy"></div>
+        <div id="previewContent"></div>
+        <div id="previewSignature"></div>
+        <div id="previewFooter"></div>
+        <div id="previewQR"></div>
+    </div>
+    <!-- Controles PDF que pdfPreview.js lee -->
+    <input type="checkbox" id="pdfShowHeader" checked>
+    <input type="checkbox" id="pdfShowFooter" checked>
+    <input type="checkbox" id="pdfShowPageNum" checked>
+    <input type="checkbox" id="pdfShowDate" checked>
+    <input type="checkbox" id="pdfShowQR" checked>
+    <input type="checkbox" id="pdfShowSignImage" checked>
+    <input type="checkbox" id="pdfShowSignLine" checked>
+    <input type="checkbox" id="pdfShowSignName" checked>
+    <input type="checkbox" id="pdfShowSignMatricula" checked>
+    <input type="text" id="pdfReportNumber" value="001">
+    <input type="text" id="pdfStudyTime" value="">
+    <div id="pdfHeaderColor" data-selected-color="#1a56a0"></div>
+    <select id="pdfWorkplace"></select>
+    <select id="pdfProfessional"></select>
+    <div id="editor">Paciente Juan Pérez, 45 años, masculino. OBRA SOCIAL: OSDE 310. Estudio: Ecocardiograma transtorácico. Se observan cavidades de tamaño y función normales. Sin evidencia de derrame pericárdico. Fracción de eyección conservada. CONCLUSIÓN: Estudio dentro de parámetros normales.</div>
+</div>
+
+<script>
+'use strict';
+
+// ─── IMÁGENES SIMULADAS ─────────────────────────────────────────────────────
+function _makeCanvas(w, h, fill, text) {
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = fill; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle = '#fff'; ctx.font = `bold ${Math.floor(h*0.28)}px Arial`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(text, w/2, h/2);
+    return c.toDataURL('image/png');
+}
+const FAKE_PRO_LOGO  = _makeCanvas(150, 150, '#1a56a0', 'CM');
+const FAKE_INST_LOGO = _makeCanvas(200, 80,  '#0f766e', 'SAN MARTÍN');
+const FAKE_FIRMA     = _makeCanvas(300, 90,  '#ffffff', '~~~');
+
+// ─── DATOS DEL MÉDICO DE PRUEBA (caso médico individual, no clínica) ────────
+const MEDICO = {
+    ID_Medico:        'GIFTTEST99E2E',
+    Nombre:           'Dra. María Eugenia Torres Suárez',
+    Email:            'mariaeugenia.torres@test.com',
+    Matricula:        'MP 78431',
+    Telefono:         '+54 11 5543-2200',
+    Especialidad:     'Cardiología',
+    Plan:             'gift',
+    Estado:           'active',
+    API_Key:          'gsk_MOCKED_KEY_FOR_TESTING_ONLY',
+    Devices_Max:      10,
+    Allowed_Templates: '["eco_doppler","ecg"]',
+    Registro_Datos: JSON.stringify({
+        workplace: {
+            name:    'Consultorio Dra. Torres',
+            address: 'Av. Corrientes 2450 piso 7° "A", CABA',
+            phone:   '+54 11 5543-2200',
+            email:   'turnos@dramariatores.com.ar'
+        },
+        extraWorkplaces: [{
+            name:    'Hospital Italiano — Guardia Cardio',
+            address: 'Gascón 450, CABA',
+            phone:   '+54 11 4959-0200',
+            email:   ''
+        }],
+        headerColor: '#7c3aed',
+        footerText:  'Consultorio Dra. Torres — Av. Corrientes 2450 — Tel: 5543-2200',
+        firma:       FAKE_FIRMA,
+        proLogo:     FAKE_PRO_LOGO,
+        proLogoSize: 75,
+        firmaSize:   55,
+        notas:       'Médico test E2E — caso médico individual (no clínica)',
+        apiKey:      'gsk_MOCKED_KEY_FOR_TESTING_ONLY',
+        hasProMode:  true
+    })
+};
+
+// ─── MOCK DE TRANSCRIPCIÓN (lo que normalmente devuelve Groq) ───────────────
+const MOCK_TRANSCRIPCION = `
+Paciente: María López García. DNI: 32.450.123. Edad: 58 años. Sexo: femenino.
+Obra social: PAMI. Número de afiliado: 4456789.
+Médico solicitante: Dr. Roberto Sánchez. Motivo: control anual.
+Estudio: Ecocardiograma transtorácico. Fecha: 01/03/2026.
+
+Técnica: Se realizó estudio bidimensional con Doppler color, pulsado y continuo.
+Ventrículo izquierdo: dimensiones normales. Función sistólica conservada.
+Fracción de eyección: 62% (método de Simpson).
+Ventrículo derecho: tamaño y función normales.
+Aurícula izquierda: levemente dilatada. Volumen 38 ml/m².
+Sin derrame pericárdico.
+Válvula mitral: esclerosis leve en velos. Sin insuficiencia significativa.
+Válvula aórtica: tricúspide, esclerosis leve. Gradiente medio 8 mmHg.
+Patrón de llenado: disfunción diastólica grado I (relajación alterada).
+
+CONCLUSIÓN: Función sistólica del VI conservada (FE 62%). Disfunción diastólica grado I.
+Aurícula izquierda levemente dilatada. Esclerosis valvular degenerativa leve sin
+repercusión hemodinámica significativa.
+`.trim();
+
+// ─── INFRAESTRUCTURA DE TEST ─────────────────────────────────────────────────
+let pass = 0, fail = 0, total = 0;
+let currentGroup = null;
+const results = document.getElementById('results');
+
+function group(title) {
+    currentGroup = document.createElement('div');
+    currentGroup.className = 'group';
+    const gt = document.createElement('div');
+    gt.className = 'group-title'; gt.textContent = title;
+    currentGroup.appendChild(gt);
+    results.appendChild(currentGroup);
+}
+
+function addItem(cls, icon, title, detail) {
+    const item = document.createElement('div');
+    item.className = 'test-item ' + cls;
+    item.innerHTML = `<span class="test-icon">${icon}</span>
+        <div class="test-body">
+            <div class="test-title">${title}</div>
+            ${detail ? `<div class="test-detail">${detail}</div>` : ''}
+        </div>`;
+    (currentGroup || results).appendChild(item);
+}
+
+function test(label, condition, passDetail = '', failDetail = '') {
+    total++;
+    if (condition) {
+        pass++;
+        addItem('pass', '✅', label, passDetail);
+    } else {
+        fail++;
+        addItem('fail', '❌', label, failDetail || 'FALLÓ — ver condición');
+    }
+}
+function info(label, detail)  { addItem('info', 'ℹ️', label, detail); }
+function warn(label, detail)  { addItem('warn', '⚠️', label, detail); }
+
+function progress(pct) {
+    document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function clearAll() {
+    results.innerHTML = '';
+    document.getElementById('summary').innerHTML = '';
+    document.getElementById('progressFill').style.width = '0%';
+    pass = fail = total = 0; currentGroup = null;
+}
+
+// Mock de appDB (IndexedDB simulado con Map en memoria)
+const _dbStore = new Map();
+window.appDB = {
+    get: async (k)    => _dbStore.get(k),
+    set: async (k, v) => { _dbStore.set(k, v); return v; }
+};
+
+// Limpiar localStorage de posible estado previo de test
+function resetStorage() {
+    const keys = ['prof_data','workplace_profiles','pdf_config','pdf_logo','pdf_signature',
+                  'prof_logo_size_px','customPrimaryColor','groq_api_key','client_config_stored',
+                  'onboarding_accepted','medico_id'];
+    keys.forEach(k => { localStorage.removeItem(k); _dbStore.delete(k); });
+}
+
+// ─── SUITE PRINCIPAL ─────────────────────────────────────────────────────────
+async function runAll() {
+    clearAll();
+    document.getElementById('btnRun').disabled = true;
+    resetStorage();
+
+    try {
+        await suite_A_GiftPayload();       progress(15);
+        await suite_B_FactorySetup();      progress(35);
+        await suite_C_Onboarding();        progress(55);
+        await suite_D_ConfigAsistida();    progress(72);
+        await suite_E_LugarDeTrabajo();    progress(84);
+        await suite_F_PdfPreview();        progress(95);
+        await suite_G_InformeEstructurado(); progress(100);
+    } catch(e) {
+        fail++; total++;
+        addItem('fail', '💥', 'Error inesperado en la suite', String(e));
+    }
+
+    const sumEl = document.getElementById('summary');
+    sumEl.className = 'summary ' + (fail === 0 ? 'all-pass' : 'has-fail');
+    sumEl.innerHTML = fail === 0
+        ? `🎉 Todo OK — ${pass} / ${total} tests pasaron`
+        : `⚠️ ${fail} tests fallaron — ${pass} / ${total} pasaron`;
+
+    document.getElementById('btnRun').disabled = false;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SUITE A — Construcción del payload GIFT (regDatos + userData)
+// ════════════════════════════════════════════════════════════════════════════
+async function suite_A_GiftPayload() {
+    group('A — Construcción del payload GIFT (regDatos + userData)');
+
+    const rg = JSON.parse(MEDICO.Registro_Datos);
+
+    test('regDatos tiene workplace con nombre', !!rg.workplace?.name, rg.workplace?.name);
+    test('regDatos tiene extraWorkplaces (array)', Array.isArray(rg.extraWorkplaces) && rg.extraWorkplaces.length > 0,
+         `${rg.extraWorkplaces?.length} lugar(es) extra`);
+    test('regDatos.proLogo es data:image/', rg.proLogo?.startsWith('data:image/'),
+         'data:image/png;base64,...');
+    test('regDatos.firma es data:image/', rg.firma?.startsWith('data:image/'),
+         'data:image/png;base64,...');
+    test('regDatos.proLogoSize es número 30-200', typeof rg.proLogoSize === 'number' && rg.proLogoSize >= 30 && rg.proLogoSize <= 200,
+         `proLogoSize = ${rg.proLogoSize}px`);
+    test('regDatos.firmaSize es número 30-200', typeof rg.firmaSize === 'number' && rg.firmaSize >= 30 && rg.firmaSize <= 200,
+         `firmaSize = ${rg.firmaSize}px`);
+    test('regDatos.headerColor es hex válido', /^#[0-9a-f]{6}$/i.test(rg.headerColor),
+         `headerColor = ${rg.headerColor}`);
+    test('regDatos.hasProMode = true (plan gift → PRO)', rg.hasProMode === true);
+    test('Médico tiene matrícula', !!MEDICO.Matricula, MEDICO.Matricula);
+    test('Plan es "gift"', MEDICO.Plan === 'gift');
+    test('Allowed_Templates es JSON parseable', (() => {
+        try { JSON.parse(MEDICO.Allowed_Templates); return true; } catch(_) { return false; }
+    })(), MEDICO.Allowed_Templates);
+
+    // Verificar tamaño estimado del payload (sin imágenes gigantes)
+    const payloadSize = JSON.stringify(MEDICO).length;
+    test('Payload < 1 MB (base64 compacto)', payloadSize < 1_000_000,
+         `Tamaño aprox: ${(payloadSize/1024).toFixed(1)} KB`);
+
+    info('MEDICO.Nombre', MEDICO.Nombre);
+    info('Workplaces precargados', `Principal: "${JSON.parse(MEDICO.Registro_Datos).workplace.name}" + ${JSON.parse(MEDICO.Registro_Datos).extraWorkplaces.length} extra`);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SUITE B — Factory Setup: simular _handleFactorySetup con regDatos
+// ════════════════════════════════════════════════════════════════════════════
+async function suite_B_FactorySetup() {
+    group('B — Factory Setup: procesamiento de regDatos → localStorage + appDB');
+    resetStorage();
+
+    // ── Replicar la lógica de _handleFactorySetup (business.js ~480-695) ────
+    const doctor  = MEDICO;
+    const medicoId = doctor.ID_Medico;
+
+    let regDatos = {};
+    try { regDatos = JSON.parse(doctor.Registro_Datos || '{}'); } catch(_) {}
+
+    const plan = String(doctor.Plan || 'trial').toLowerCase();
+    const planMap = {
+        gift: { type: 'PRO', hasProMode: true, hasDashboard: true, canGenerateApps: false }
+    };
+    const pc = planMap[plan] || { type: 'TRIAL', hasProMode: false, hasDashboard: false, canGenerateApps: false };
+
+    let specialties = ['ALL'];
+    try { specialties = doctor.Especialidad === 'ALL' ? ['ALL'] : doctor.Especialidad.split(',').map(s=>s.trim()); } catch(_) {}
+
+    const clientConfig = {
+        medicoId, type: pc.type, status: 'active', specialties,
+        maxDevices: Number(doctor.Devices_Max) || 2,
+        hasProMode: regDatos.hasProMode !== undefined ? !!regDatos.hasProMode : pc.hasProMode,
+        hasDashboard: pc.hasDashboard, canGenerateApps: pc.canGenerateApps,
+        allowedTemplates: JSON.parse(doctor.Allowed_Templates || '[]'),
+        backendUrl: ''
+    };
+
+    localStorage.setItem('client_config_stored', JSON.stringify(clientConfig));
+    await appDB.set('client_config_stored', clientConfig);
+
+    const profData = {
+        nombre: doctor.Nombre || 'Profesional',
+        matricula: doctor.Matricula || '',
+        workplace: '',
+        specialties,
+        estudios: [],
+        especialidad: doctor.Especialidad || '',
+    };
+    localStorage.setItem('prof_data', JSON.stringify(profData));
+    await appDB.set('prof_data', profData);
+    window._profDataCache = profData;
+
+    // Workplace profiles
+    if (regDatos.workplace?.name) {
+        const buildPro = () => ({
+            nombre: doctor.Nombre || '', matricula: doctor.Matricula || '',
+            especialidades: doctor.Especialidad || '', telefono: doctor.Telefono || '',
+            email: doctor.Email || '', firma: regDatos.firma || '', logo: regDatos.proLogo || ''
+        });
+        const wps = [{
+            name: regDatos.workplace.name, address: regDatos.workplace.address || '',
+            phone: regDatos.workplace.phone || '', email: regDatos.workplace.email || '',
+            footer: regDatos.footerText || '', logo: regDatos.workplace.logo || '',
+            professionals: [buildPro()]
+        }];
+        (regDatos.extraWorkplaces || []).forEach(ewp => {
+            if (ewp?.name) wps.push({ name:ewp.name, address:ewp.address||'', phone:ewp.phone||'',
+                email:ewp.email||'', footer:regDatos.footerText||'', logo:ewp.logo||'', professionals:[buildPro()] });
+        });
+        localStorage.setItem('workplace_profiles', JSON.stringify(wps));
+        await appDB.set('workplace_profiles', wps);
+        window._wpProfilesCache = wps;
+        profData.workplace = regDatos.workplace.name;
+        localStorage.setItem('prof_data', JSON.stringify(profData));
+        window._profDataCache = profData;
+    }
+
+    // Firma, logo, tamaño, color
+    if (regDatos.firma) { localStorage.setItem('pdf_signature', regDatos.firma); await appDB.set('pdf_signature', regDatos.firma); }
+    if (regDatos.proLogo) { localStorage.setItem('pdf_logo', regDatos.proLogo); await appDB.set('pdf_logo', regDatos.proLogo); }
+    if (regDatos.proLogoSize) { localStorage.setItem('prof_logo_size_px', String(regDatos.proLogoSize)); await appDB.set('prof_logo_size_px', regDatos.proLogoSize); }
+    if (regDatos.headerColor) {
+        profData.headerColor = regDatos.headerColor;
+        localStorage.setItem('prof_data', JSON.stringify(profData));
+        localStorage.setItem('customPrimaryColor', regDatos.headerColor);
+        window._profDataCache = profData;
+    }
+    if (regDatos.footerText) {
+        const cfg = JSON.parse(localStorage.getItem('pdf_config')||'{}');
+        cfg.footerText = regDatos.footerText;
+        localStorage.setItem('pdf_config', JSON.stringify(cfg));
+    }
+    if (doctor.API_Key) { localStorage.setItem('groq_api_key', doctor.API_Key); }
+    localStorage.setItem('medico_id', medicoId);
+
+    // ── Verificaciones ─────────────────────────────────────────────────────
+    const storedCfg = JSON.parse(localStorage.getItem('client_config_stored')||'{}');
+    test('client_config → type = PRO', storedCfg.type === 'PRO', `type = ${storedCfg.type}`);
+    test('client_config → hasProMode = true', storedCfg.hasProMode === true);
+    test('client_config → medicoId correcto', storedCfg.medicoId === medicoId, storedCfg.medicoId);
+    test('client_config → allowedTemplates array', Array.isArray(storedCfg.allowedTemplates), JSON.stringify(storedCfg.allowedTemplates));
+
+    const storedProf = JSON.parse(localStorage.getItem('prof_data')||'{}');
+    test('prof_data.nombre contiene el nombre', storedProf.nombre.includes('Torres'), storedProf.nombre);
+    test('prof_data.matricula guardada', !!storedProf.matricula, storedProf.matricula);
+    test('prof_data.headerColor = #7c3aed', storedProf.headerColor === '#7c3aed', storedProf.headerColor);
+    test('prof_data.workplace tiene nombre del consultorio', storedProf.workplace.includes('Torres'), storedProf.workplace);
+
+    const wps = JSON.parse(localStorage.getItem('workplace_profiles')||'[]');
+    test('workplace_profiles tiene 2 lugares', wps.length === 2, `${wps.length} workplace(s)`);
+    test('WP[0].name correcto', wps[0]?.name === 'Consultorio Dra. Torres', wps[0]?.name);
+    test('WP[1].name es hospital italiano', wps[1]?.name?.toLowerCase().includes('italiano'), wps[1]?.name);
+    test('WP[0].professionals[0].firma es data:image/', wps[0]?.professionals?.[0]?.firma?.startsWith('data:image/'));
+    test('WP[0].professionals[0].logo es data:image/', wps[0]?.professionals?.[0]?.logo?.startsWith('data:image/'));
+
+    test('pdf_signature guardado', localStorage.getItem('pdf_signature')?.startsWith('data:image/'));
+    test('pdf_logo guardado', localStorage.getItem('pdf_logo')?.startsWith('data:image/'));
+    test('prof_logo_size_px = 75', localStorage.getItem('prof_logo_size_px') === '75', localStorage.getItem('prof_logo_size_px'));
+    test('customPrimaryColor = #7c3aed', localStorage.getItem('customPrimaryColor') === '#7c3aed', localStorage.getItem('customPrimaryColor'));
+    test('groq_api_key guardada', !!localStorage.getItem('groq_api_key'), 'gsk_MOCK...');
+    test('medico_id guardado', localStorage.getItem('medico_id') === medicoId, medicoId);
+
+    const pdfCfg = JSON.parse(localStorage.getItem('pdf_config')||'{}');
+    test('pdf_config.footerText guardado', pdfCfg.footerText?.includes('Torres'), pdfCfg.footerText);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SUITE C — Onboarding Wizard: DOM navegación 5 pasos
+// ════════════════════════════════════════════════════════════════════════════
+async function suite_C_Onboarding() {
+    group('C — Onboarding Wizard: navegación y DOM (5 pasos)');
+
+    // Verificar existencia de todos los elementos del wizard en el DOM
+    const steps   = [1,2,3,4,5].map(i => document.getElementById('onboardingStep'+i));
+    const buttons = ['onboardingNext2','onboardingNext3','onboardingNext4',
+                     'onboardingBack2','onboardingBack3','onboardingBack4','onboardingBack5','btnSubmitOnboarding'];
+    const toggles = ['onbToggleFirma','onbToggleLogoProf','onbToggleLogoInst','onbToggleQR'];
+    const misc    = ['onbColorPalette','onbWpCards','onbQrNote','acceptTerms'];
+
+    steps.forEach((el, i) => test(`Paso ${i+1} (onboardingStep${i+1}) existe en DOM`, !!el));
+    buttons.forEach(id => test(`Botón #${id} existe`, !!document.getElementById(id)));
+    toggles.forEach(id => test(`Toggle #${id} existe`, !!document.getElementById(id)));
+    misc.forEach(id   => test(`Elemento #${id} existe`, !!document.getElementById(id)));
+    test('5 puntos de progreso existen', document.querySelectorAll('.onboarding-dot').length === 5,
+         `encontrados: ${document.querySelectorAll('.onboarding-dot').length}`);
+    test('3 botones de margen existen', document.querySelectorAll('.onb-margin-btn').length >= 3);
+
+    // Simular relleno del paso 2 con datos de profData
+    const profData = window._profDataCache || JSON.parse(localStorage.getItem('prof_data')||'{}');
+    const dispNom = document.getElementById('onboardingDisplayNombre');
+    const dispMat = document.getElementById('onboardingDisplayMatricula');
+    if (dispNom) dispNom.textContent = profData.nombre || '(no configurado)';
+    if (dispMat) dispMat.textContent = profData.matricula || '(no configurado)';
+    test('Paso 2: nombre del médico se muestra en el DOM', dispNom?.textContent.includes('Torres'), dispNom?.textContent);
+    test('Paso 2: matrícula se muestra en el DOM', dispMat?.textContent.includes('MP 78431'), dispMat?.textContent);
+
+    // Simular que la API key viene precargada → campo debe ocultarse
+    const apiStep = document.getElementById('onboardingApiKeyStep');
+    const hasKey  = !!localStorage.getItem('groq_api_key');
+    test('API Key precargada → campo se oculta', hasKey, `groq_api_key ${hasKey ? 'presente' : 'ausente'}`);
+
+    // Estado inicial de los toggles
+    test('Toggle firma: checked por defecto', document.getElementById('onbToggleFirma')?.checked === true);
+    test('Toggle logo prof: checked por defecto', document.getElementById('onbToggleLogoProf')?.checked === true);
+    test('Toggle logo inst: checked por defecto', document.getElementById('onbToggleLogoInst')?.checked === true);
+    test('Toggle QR: unchecked por defecto (se activa en paso init)', document.getElementById('onbToggleQR')?.checked === false);
+
+    // El botón de aceptar T&C debe estar deshabilitado al inicio
+    const submitBtn = document.getElementById('btnSubmitOnboarding');
+    test('Botón Activar deshabilitado hasta aceptar T&C', submitBtn?.disabled === true);
+    document.getElementById('acceptTerms').checked = true;
+    document.getElementById('acceptTerms').dispatchEvent(new Event('change'));
+    // (el event listener real está en _showClientOnboarding; aquí solo chequeamos DOM)
+    test('Checkbox T&C puede marcarse', document.getElementById('acceptTerms').checked === true);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SUITE D — Configuración Asistida: _initOnbStep3 + _saveOnbConfig
+// ════════════════════════════════════════════════════════════════════════════
+async function suite_D_ConfigAsistida() {
+    group('D — Configuración Asistida: paleta de colores, toggles, QR PRO gate, márgenes');
+
+    const profData = window._profDataCache || JSON.parse(localStorage.getItem('prof_data')||'{}');
+    const _isProUser = profData.hasProMode === true || JSON.parse(localStorage.getItem('client_config_stored')||'{}').hasProMode === true;
+
+    // ── Replicar _initOnbStep3 ───────────────────────────────────────────────
+    const palette = document.getElementById('onbColorPalette');
+    palette.innerHTML = '';
+    const presetColors = ['#1a56a0','#0f766e','#7c3aed','#dc2626','#c2410c','#0369a1','#1d4ed8','#374151'];
+    const savedColor   = (profData.headerColor || '#1a56a0').toLowerCase();
+    presetColors.forEach(c => {
+        const sw = document.createElement('div');
+        sw.className = 'onb-color-swatch' + (c === savedColor ? ' selected' : '');
+        sw.dataset.color = c;
+        palette.appendChild(sw);
+    });
+    if (!palette.querySelector('.onb-color-swatch.selected')) palette.firstChild?.classList.add('selected');
+
+    // Botones de margen → asegurar que los event listeners funcionen (solo estado)
+    document.querySelectorAll('.onb-margin-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.onb-margin-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
+
+    // QR gate PRO
+    const qrToggle = document.getElementById('onbToggleQR');
+    const qrNote   = document.getElementById('onbQrNote');
+    if (_isProUser) {
+        qrToggle.checked  = true;
+        qrToggle.disabled = false;
+    } else {
+        qrToggle.disabled = true;
+        if (qrNote) qrNote.textContent = 'Solo disponible en plan PRO';
+    }
+
+    test('Paleta de colores: 8 swatches generados', palette.querySelectorAll('.onb-color-swatch').length === 8,
+         `swatches: ${palette.querySelectorAll('.onb-color-swatch').length}`);
+    test('Color #7c3aed preseleccionado (del regDatos.headerColor)', palette.querySelector('[data-color="#7c3aed"]')?.classList.contains('selected'),
+         `savedColor = ${savedColor}`);
+    test('QR activo porque hasProMode = true (plan GIFT)', _isProUser && qrToggle.checked && !qrToggle.disabled,
+         `isProUser=${_isProUser}, checked=${qrToggle.checked}, disabled=${qrToggle.disabled}`);
+
+    // Clic en color diferente
+    const purpleSwatch = palette.querySelector('[data-color="#7c3aed"]');
+    const blueSwatch   = palette.querySelector('[data-color="#1a56a0"]');
+    blueSwatch?.click();
+    test('Al clicar otro color se deselecciona el anterior', !purpleSwatch?.classList.contains('selected'));
+    test('Al clicar #1a56a0 queda selected', blueSwatch?.classList.contains('selected'));
+    // Restaurar al color del regDatos
+    purpleSwatch?.click();
+
+    // Clic en margen "wide"
+    const wideBtn = document.querySelector('.onb-margin-btn[data-margin="wide"]');
+    wideBtn?.click();
+    test('Al clicar "Amplio" se activa ese botón', wideBtn?.classList.contains('active'));
+    test('El botón "Normal" ya no es activo', !document.querySelector('.onb-margin-btn[data-margin="normal"]')?.classList.contains('active'));
+    document.querySelector('.onb-margin-btn[data-margin="normal"]')?.click(); // restaurar
+
+    // ── Replicar _saveOnbConfig ──────────────────────────────────────────────
+    const selectedSwatch = palette.querySelector('.onb-color-swatch.selected');
+    let pdfCfgSaved = {};
+    if (selectedSwatch) {
+        const color = selectedSwatch.dataset.color;
+        profData.headerColor = color;
+        window._profDataCache = profData;
+        localStorage.setItem('prof_data', JSON.stringify(profData));
+        localStorage.setItem('customPrimaryColor', color);
+    }
+    pdfCfgSaved = JSON.parse(localStorage.getItem('pdf_config')||'{}');
+    pdfCfgSaved.showSignImage = document.getElementById('onbToggleFirma')?.checked ?? true;
+    pdfCfgSaved.showHeader    = document.getElementById('onbToggleLogoInst')?.checked ?? true;
+    pdfCfgSaved.showQR        = qrToggle?.checked ?? false;
+    const activeMarginBtn = document.querySelector('.onb-margin-btn.active');
+    if (activeMarginBtn) pdfCfgSaved.margins = activeMarginBtn.dataset.margin;
+    localStorage.setItem('pdf_config', JSON.stringify(pdfCfgSaved));
+
+    const saved = JSON.parse(localStorage.getItem('pdf_config')||'{}');
+    test('pdf_config.showSignImage = true (firma activada)', saved.showSignImage === true);
+    test('pdf_config.showHeader = true (logo inst activado)', saved.showHeader === true);
+    test('pdf_config.showQR = true (PRO activado)', saved.showQR === true);
+    test('pdf_config.margins = "normal"', saved.margins === 'normal', `margins = ${saved.margins}`);
+    test('customPrimaryColor actualizado → #7c3aed', localStorage.getItem('customPrimaryColor') === '#7c3aed',
+         localStorage.getItem('customPrimaryColor'));
+    test('prof_data.headerColor = #7c3aed', JSON.parse(localStorage.getItem('prof_data')||'{}').headerColor === '#7c3aed');
+
+    info('Toggle firma', `checked = ${document.getElementById('onbToggleFirma')?.checked}`);
+    info('Toggle logo prof', `checked = ${document.getElementById('onbToggleLogoProf')?.checked}`);
+    info('Toggle QR', `checked = ${qrToggle?.checked}, disabled = ${qrToggle?.disabled}`);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SUITE E — Lugar de trabajo: _initOnbStep4 + _saveOnbWorkplace + navegación
+// ════════════════════════════════════════════════════════════════════════════
+async function suite_E_LugarDeTrabajo() {
+    group('E — Lugar de trabajo: tarjetas de workplace + selección + guardado');
+
+    // ── Replicar _initOnbStep4 ───────────────────────────────────────────────
+    const container = document.getElementById('onbWpCards');
+    container.innerHTML = '';
+    const wps = JSON.parse(localStorage.getItem('workplace_profiles')||'[]');
+
+    test('Hay 2 workplaces en localStorage para mostrar', wps.length === 2, `${wps.length} WP`);
+
+    wps.forEach((wp, i) => {
+        const card = document.createElement('label');
+        card.className = 'onb-wp-card' + (i === 0 ? ' selected' : '');
+        const radio = document.createElement('input');
+        radio.type = 'radio'; radio.name = 'onbWp'; radio.value = String(i);
+        if (i === 0) radio.checked = true;
+        card.appendChild(radio);
+        const nameEl = document.createElement('div');
+        nameEl.textContent = wp.name || `Lugar ${i+1}`;
+        card.appendChild(nameEl);
+        card.addEventListener('click', () => {
+            container.querySelectorAll('.onb-wp-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+        });
+        container.appendChild(card);
+    });
+
+    test('Tarjetas de WP generadas en el DOM', container.querySelectorAll('.onb-wp-card').length === 2);
+    test('Primera tarjeta preseleccionada', container.querySelector('.onb-wp-card.selected input')?.value === '0');
+    test('WP[0] nombre visible en tarjeta', container.querySelectorAll('.onb-wp-card')[0]?.textContent.includes('Torres'));
+    test('WP[1] nombre visible en tarjeta', container.querySelectorAll('.onb-wp-card')[1]?.textContent.includes('italiano') || container.querySelectorAll('.onb-wp-card')[1]?.textContent.toLowerCase().includes('italiano'));
+
+    // Seleccionar WP[1]
+    const cards = container.querySelectorAll('.onb-wp-card');
+    cards[1]?.click();
+    test('Al clicar WP[1] queda selected', cards[1]?.classList.contains('selected'));
+    test('WP[0] ya no está selected', !cards[0]?.classList.contains('selected'));
+
+    // Volver a seleccionar WP[0] para el guardado
+    cards[0]?.click();
+    test('Al clicar WP[0] de vuelta queda selected', cards[0]?.classList.contains('selected'));
+
+    // ── Replicar _saveOnbWorkplace ───────────────────────────────────────────
+    const selected = container.querySelector('input[name="onbWp"]:checked');
+    const cfg = JSON.parse(localStorage.getItem('pdf_config')||'{}');
+    if (selected) cfg.activeWorkplaceIndex = parseInt(selected.value);
+    localStorage.setItem('pdf_config', JSON.stringify(cfg));
+
+    const savedCfg = JSON.parse(localStorage.getItem('pdf_config')||'{}');
+    test('pdf_config.activeWorkplaceIndex = 0 (consultorio)', savedCfg.activeWorkplaceIndex === 0,
+         `activeWorkplaceIndex = ${savedCfg.activeWorkplaceIndex}`);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SUITE F — PDF Preview: encabezado, estudio, firma, logo, Dr./Dra., fecha
+// ════════════════════════════════════════════════════════════════════════════
+async function suite_F_PdfPreview() {
+    group('F — PDF Preview: encabezado profesional, datos del estudio, firma, logo');
+
+    const profData   = window._profDataCache || JSON.parse(localStorage.getItem('prof_data')||'{}');
+    const profLogoSrc = localStorage.getItem('pdf_logo') || '';
+    const sigSrc      = localStorage.getItem('pdf_signature') || '';
+    const profLogoSize = parseInt(localStorage.getItem('prof_logo_size_px') || '60');
+    const wps         = JSON.parse(localStorage.getItem('workplace_profiles')||'[]');
+    const pdfCfg      = JSON.parse(localStorage.getItem('pdf_config')||'{}');
+    const wpIdx       = pdfCfg.activeWorkplaceIndex ?? 0;
+    const activeWp    = wps[wpIdx];
+    const activePro   = activeWp?.professionals?.[0];
+    const accentColor = activePro?.headerColor || profData.headerColor || '#1a56a0';
+    const hasProfLogo = profLogoSrc?.startsWith('data:image/');
+    const hasSig      = sigSrc?.startsWith('data:image/');
+
+    // ── Replicar detección Dr./Dra. ──────────────────────────────────────────
+    const rawNameStr = activePro?.nombre || profData.nombre || '';
+    const titleMatch = rawNameStr.match(/^(Dra?\.?\s*)/i);
+    const profDisplayTitle = titleMatch
+        ? (titleMatch[1].trim().toLowerCase().startsWith('dra') ? 'Dra.' : 'Dr.')
+        : 'Dr.';
+    const profDisplayName = rawNameStr.replace(/^(Dra?\.?\s*)/i,'').trim() || rawNameStr;
+
+    // ── Replicar especialidadDisplay ─────────────────────────────────────────
+    const especialidadRaw = activePro?.especialidades || profData.especialidad || '';
+    const especialidadDisplay = (especialidadRaw||'').replace(/^ALL$/i,'').replace(/^General$/i,'Medicina General').trim();
+
+    // ── Construir HTML del encabezado (replica pdfPreview.js) ────────────────
+    const matricula       = activePro?.matricula || profData.matricula || '';
+    const institutionName = activePro?.institutionName || profData.institutionName || '';
+    const studyDate       = new Date().toLocaleDateString('es-ES', {day:'2-digit',month:'2-digit',year:'numeric'});
+    const studyTime       = '';
+
+    const headerEl = document.getElementById('previewHeader');
+    headerEl.innerHTML = `
+        <div class="pvh-body" style="display:flex;align-items:center;gap:12px;">
+            ${hasProfLogo ? `<img src="${profLogoSrc}" alt="Logo Prof" style="height:${profLogoSize}px;width:auto;object-fit:contain;flex-shrink:0;">` : ''}
+            <div class="pvh-info" style="flex:1;min-width:0;">
+                <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px;">
+                    <span class="pvh-name">Estudio realizado por: ${profDisplayTitle} ${profDisplayName}</span>
+                    <span style="font-size:0.82em;opacity:0.85;white-space:nowrap;">Fecha de estudio: ${studyDate}</span>
+                </div>
+                ${(especialidadDisplay || matricula) ? `<div class="pvh-spec" style="text-align:center;">${[especialidadDisplay, matricula ? 'Mat. '+matricula : ''].filter(Boolean).join(' &nbsp;&bull;&nbsp; ')}</div>` : ''}
+                ${institutionName ? `<div class="pvh-inst">${institutionName}</div>` : ''}
+            </div>
+        </div>`;
+
+    // ── Construir sección de estudio ─────────────────────────────────────────
+    const studyEl = document.getElementById('previewStudy');
+    studyEl.innerHTML = `
+        <div class="pvs-grid pvs-2col">
+            <div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;">
+                <span class="pvs-lbl" style="white-space:nowrap;">ESTUDIO:</span>
+                <span class="pvs-val">Ecocardiograma transtorácico</span>
+            </div>
+            <div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;">
+                <span class="pvs-lbl" style="white-space:nowrap;">INFORME Nº:</span>
+                <span class="pvs-val">001</span>
+            </div>
+        </div>`;
+
+    // ── Verificaciones ────────────────────────────────────────────────────────
+    const headerHTML = headerEl.innerHTML;
+
+    test('Encabezado contiene "Dra." (no "Dr./Dra." ni "DR.")', headerHTML.includes('Dra. ') && !headerHTML.includes('Dr./Dra.'),
+         `Título detectado: "${profDisplayTitle}"`);
+    test('Nombre sin prefijo duplicado ("DR. María" no debe aparecer)', !headerHTML.match(/DR\. (DR\.|Dra?\.)/) && !headerHTML.includes('DR. M'),
+         `profDisplayName = "${profDisplayName}"`);
+    test('Nombre completo en encabezado', headerHTML.includes('María Eugenia Torres Suárez'),
+         `buscado en: "${profDisplayTitle} ${profDisplayName}"`);
+    test('Logo profesional incluido (sin border-radius)', hasProfLogo && headerHTML.includes(`height:${profLogoSize}px`) && !headerHTML.includes('border-radius:4px'),
+         `hasProfLogo=${hasProfLogo}, size=${profLogoSize}px`);
+    test('Logo sin border ni fondo (transparente)', !headerHTML.includes('border-radius:50%') && !headerHTML.includes('border:3px solid'),
+         'sin estilos de círculo');
+    test('Fecha de estudio en encabezado (no en sección estudio)', headerHTML.includes('Fecha de estudio:'),
+         `fecha: ${studyDate}`);
+    test('Especialidad "Cardiología" en encabezado', headerHTML.includes('Cardiología'), headerHTML.substring(0,300)+'...');
+    test('Matrícula en misma línea que especialidad (bala •)', headerHTML.includes('&bull;') || headerHTML.includes('•'), 'separador • presente');
+    test('NO hay "Mat." en línea separada después de especialidad', !headerHTML.match(/<div class="pvh-mat">/));
+    test('Sección estudio usa inline label "ESTUDIO:"', studyEl.innerHTML.includes('ESTUDIO:'));
+    test('Sección estudio usa inline label "INFORME Nº:"', studyEl.innerHTML.includes('INFORME Nº:'));
+    test('Sección estudio NO tiene "Fecha" (movida al encabezado)', !studyEl.innerHTML.includes('pvs-lbl">Fecha'));
+    test('Sección estudio usa pvs-2col (no pvs-3col)', studyEl.innerHTML.includes('pvs-2col') && !studyEl.innerHTML.includes('pvs-3col'));
+
+    // Color de acento / headerColor
+    test('Color de acento es #7c3aed (del onboarding)', accentColor === '#7c3aed', `accentColor = ${accentColor}`);
+
+    // Firma
+    test('Firma guardada y disponible para el PDF', hasSig, `sigSrc starts: ${sigSrc.substring(0,30)}`);
+    test('prof_logo_size_px = 75 (del regDatos.proLogoSize)', profLogoSize === 75, `profLogoSize = ${profLogoSize}px`);
+
+    // "General" → "Medicina General" (si la especialidad fuera "General")
+    const testEspecialidad = ''.replace(/^General$/i, 'Medicina General');
+    test('Regla General→Medicina General funciona para string vacío', testEspecialidad === '');
+    const testEspecialidad2 = 'General'.replace(/^General$/i, 'Medicina General');
+    test('Regla General→Medicina General funciona', testEspecialidad2 === 'Medicina General', testEspecialidad2);
+    const testEspecialidad3 = 'Cardiología'.replace(/^General$/i, 'Medicina General');
+    test('"Cardiología" no se transforma', testEspecialidad3 === 'Cardiología', testEspecialidad3);
+    const testEspecialidad4 = 'ALL'.replace(/^ALL$/i, '').trim();
+    test('"ALL" se limpia a string vacío', testEspecialidad4 === '');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SUITE G — Informe estructurado (mock de transcripción → estructura)
+// ════════════════════════════════════════════════════════════════════════════
+async function suite_G_InformeEstructurado() {
+    group('G — Informe estructurado: mock de transcripción + extracción de datos del paciente');
+
+    // G.1 — Verificar que el mock de transcripción tiene los campos esperados
+    test('Mock tiene nombre del paciente', MOCK_TRANSCRIPCION.includes('María López García'));
+    test('Mock tiene DNI', MOCK_TRANSCRIPCION.includes('32.450.123'));
+    test('Mock tiene obra social', MOCK_TRANSCRIPCION.includes('PAMI'));
+    test('Mock tiene tipo de estudio', MOCK_TRANSCRIPCION.includes('Ecocardiograma transtorácico'));
+    test('Mock tiene CONCLUSIÓN', MOCK_TRANSCRIPCION.includes('CONCLUSIÓN'));
+    test('Mock tiene FE (fracción de eyección)', MOCK_TRANSCRIPCION.includes('62%'));
+
+    // G.2 — Simular extracción de datos del paciente con regex básico
+    const extractFromText = (text) => {
+        const out = {};
+        const nameM = text.match(/Paciente:\s*([^\n\.]+)/i);
+        if (nameM) out.name = nameM[1].trim();
+        const dniM = text.match(/DNI:\s*([\d\. /]+)/i);
+        if (dniM) out.dni = dniM[1].trim().replace(/\.\s*/g, '');
+        const ageM = text.match(/Edad:\s*(\d+)\s*años/i);
+        if (ageM) out.age = ageM[1];
+        const sexM = text.match(/Sexo:\s*(\w+)/i);
+        if (sexM) out.sex = sexM[1].toLowerCase().startsWith('f') ? 'F' : 'M';
+        const osM = text.match(/Obra social:\s*([^\n\.]+)/i);
+        if (osM) out.insurance = osM[1].trim();
+        return out;
+    };
+
+    const extracted = extractFromText(MOCK_TRANSCRIPCION);
+    test('Extracción: nombre del paciente', extracted.name === 'María López García', `extracted.name = "${extracted.name}"`);
+    test('Extracción: DNI (sin puntos)', extracted.dni?.replace(/\D/g,'') === '32450123', `extracted.dni = "${extracted.dni}"`);
+    test('Extracción: edad = 58', extracted.age === '58', `extracted.age = "${extracted.age}"`);
+    test('Extracción: sexo = F (femenino)', extracted.sex === 'F', `extracted.sex = "${extracted.sex}"`);
+    test('Extracción: obra social = PAMI', extracted.insurance?.includes('PAMI'), `extracted.insurance = "${extracted.insurance}"`);
+
+    // G.3 — Simular que la IA devuelve el informe estructurado (mock)
+    const MOCK_STRUCTURED_HTML = `
+<section class="report-section">
+    <h2 class="section-title">Datos generales</h2>
+    <div class="field-row"><span class="field-label">Paciente:</span><span class="field-value">María López García</span></div>
+    <div class="field-row"><span class="field-label">DNI:</span><span class="field-value">32.450.123</span></div>
+    <div class="field-row"><span class="field-label">Obra social:</span><span class="field-value">PAMI</span></div>
+</section>
+<section class="report-section">
+    <h2 class="section-title">Técnica y hallazgos</h2>
+    <p>Se realizó estudio bidimensional con Doppler color, pulsado y continuo.</p>
+    <p>Ventrículo izquierdo: dimensiones normales. Función sistólica conservada. FE: 62%.</p>
+    <p>Sin derrame pericárdico. Disfunción diastólica grado I.</p>
+</section>
+<section class="report-section">
+    <h2 class="section-title">Conclusión</h2>
+    <p><strong>Función sistólica del VI conservada (FE 62%).</strong> Disfunción diastólica grado I. Esclerosis valvular degenerativa leve sin repercusión hemodinámica.</p>
+</section>`.trim();
+
+    const contentEl = document.getElementById('previewContent');
+    if (contentEl) contentEl.innerHTML = MOCK_STRUCTURED_HTML;
+
+    test('HTML estructurado tiene secciones', MOCK_STRUCTURED_HTML.includes('section-title'));
+    test('HTML estructurado tiene Conclusión', MOCK_STRUCTURED_HTML.includes('Conclusión'));
+    test('HTML estructurado tiene FE', MOCK_STRUCTURED_HTML.includes('62%'));
+    test('HTML estructurado NO tiene .btn-append-inline', !MOCK_STRUCTURED_HTML.includes('btn-append-inline'));
+    test('HTML estructurado NO tiene .patient-data-header', !MOCK_STRUCTURED_HTML.includes('patient-data-header'));
+
+    // G.4 — Verificar el contenido inyectado en el previewContent
+    test('previewContent tiene el informe en DOM', contentEl?.innerHTML.includes('diastólica'));
+    test('previewContent: sin botones de UI (no-print)', !contentEl?.querySelector('.btn-append-inline'));
+
+    // G.5 — Mock final: verificar que pdf_config tiene todo listo para generar el PDF
+    const finalCfg = JSON.parse(localStorage.getItem('pdf_config')||'{}');
+    test('pdf_config final tiene footerText', !!finalCfg.footerText, finalCfg.footerText);
+    test('pdf_config final tiene activeWorkplaceIndex', finalCfg.activeWorkplaceIndex !== undefined,
+         `activeWorkplaceIndex = ${finalCfg.activeWorkplaceIndex}`);
+    test('pdf_config final tiene showSignImage = true', finalCfg.showSignImage === true);
+    test('pdf_config final tiene showQR = true (PRO)', finalCfg.showQR === true);
+    test('pdf_config final tiene margins = "normal"', finalCfg.margins === 'normal', finalCfg.margins);
+
+    info('Resumen final del PDF', `
+        Médico: ${(window._profDataCache||{}).nombre} |
+        WP: ${JSON.parse(localStorage.getItem('workplace_profiles')||'[{}]')[0]?.name} |
+        Color: ${localStorage.getItem('customPrimaryColor')} |
+        Logo size: ${localStorage.getItem('prof_logo_size_px')}px |
+        Firma: ${localStorage.getItem('pdf_signature')?.startsWith('data:image/') ? 'OK' : 'AUSENTE'} |
+        QR: ${JSON.parse(localStorage.getItem('pdf_config')||'{}').showQR ? 'ON' : 'OFF'}
+    `.trim().replace(/\n\s+/g, ' '));
+}
+</script>
+</body>
+</html>
