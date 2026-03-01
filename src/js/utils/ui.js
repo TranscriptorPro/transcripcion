@@ -1293,23 +1293,32 @@ window.applyProfessionalData = function (data) {
     const welcomeName = document.getElementById('doctorWelcomeName');
     if (welcomeName && !isAdmin) welcomeName.textContent = `Dr/a. ${nombre}`;
 
-    // Header logo: reemplazar con logo del profesional o de la clínica
+    // Header logo: mostrar SOLO el logo/foto del profesional (Dr.), nunca el logo institucional
     if (!isAdmin) {
         const headerLogo = document.getElementById('headerLogoImg');
         if (headerLogo) {
-            // Prioridad: 1) logo profesional (proLogo) 2) logo del workplace activo 3) default
-            const pdfCfg = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
-            const proLogo = pdfCfg.professionalLogo || '';
+            const pdfCfg    = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
             const wpProfiles = window._wpProfilesCache || JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
-            const activeIdx = pdfCfg.activeWorkplaceIndex ?? 0;
-            const wpLogo = wpProfiles[activeIdx]?.logo || wpProfiles[0]?.logo || '';
-            const bestLogo = proLogo || wpLogo;
-            if (bestLogo && bestLogo.startsWith('data:image/')) {
-                headerLogo.src = bestLogo;
+            const activeIdx  = Number(pdfCfg.activeWorkplaceIndex ?? 0);
+            const activeWp   = wpProfiles[activeIdx] || wpProfiles[0];
+            const proIdx     = Number(pdfCfg.activeProfessionalIndex ?? 0);
+
+            // Prioridad: 1) profesional activo seleccionado en modal PDF
+            //            2) primer profesional del workplace activo (factory/gift setup)
+            //            3) pdf_logo global (guardado por factory setup con regDatos.proLogo)
+            const proLogo = pdfCfg.activeProfessional?.logo
+                || activeWp?.professionals?.[proIdx]?.logo
+                || activeWp?.professionals?.[0]?.logo
+                || localStorage.getItem('pdf_logo')
+                || '';
+
+            if (proLogo && proLogo.startsWith('data:image/')) {
+                headerLogo.src = proLogo;
                 headerLogo.style.borderRadius = '50%';
                 headerLogo.style.objectFit = 'cover';
                 headerLogo.style.border = '3px solid rgba(255,255,255,0.3)';
             }
+            // Si no hay logo del profesional → dejar el logo por defecto de Transcriptor Pro
         }
     }
 
