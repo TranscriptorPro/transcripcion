@@ -711,6 +711,10 @@ window.initModals = function () {
         const existing = editor.querySelector('.btn-append-inline');
         if (existing) existing.remove();
 
+        // No mostrar en vista de texto original ni en modo comparación
+        if (document.getElementById('btnRestoreOriginal')?._showingOriginal) return;
+        if (window._isComparisonMode) return;
+
         // Solo Pro mode estricto con contenido en el editor
         if (window.currentMode !== 'pro') return;
         if (!editor.innerText.trim()) return;
@@ -802,12 +806,13 @@ window.initModals = function () {
                         window._lastRawTranscription
                         .split('\n').filter(l => l.trim())
                         .map(l => `<p class="report-p">${l}</p>`).join('\n');
-                    // Insertar datos del paciente también en la vista original
-                    _refreshPatientHeader();
+                    // Marcar antes de _refreshPatientHeader para que _insertInlineAppendBtn no inyecte el botón
+                    btnRestoreOriginal._showingOriginal = true;
                     btnRestoreOriginal.innerHTML = '⟳ Estructurado';
                     btnRestoreOriginal.title = 'Volver al texto estructurado';
                     btnRestoreOriginal.classList.add('toggle-active');
-                    btnRestoreOriginal._showingOriginal = true;
+                    // Insertar datos del paciente también en la vista original (sin botón inline)
+                    _refreshPatientHeader();
                 }
             }
             if (typeof updateWordCount === 'function') updateWordCount();
