@@ -702,31 +702,69 @@ document.querySelectorAll('.dropdown-item').forEach(item => {
 async function downloadFile(format) {
     if (!editor) return;
     const text = editor.innerText || '';
-    if (!text.trim()) return showToast('No hay texto', 'error');
+    if (!text.trim()) return showToast('No hay texto para descargar', 'error');
 
-    // Validación de config antes de PDF
+    // Validación de datos profesionales (solo bloquea si la app está totalmente sin configurar)
     if (typeof validateBeforeDownload === 'function' && !validateBeforeDownload(format)) return;
 
-    // Advertencia si no hay datos del paciente
-    const pdfConfig = (typeof appDB !== 'undefined' ? await appDB.get('pdf_config') : null)
-        || window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
-    if (!pdfConfig.patientName) {
+    // ── Auto-sync datos del paciente desde formularios hacia pdf_config ──────
+    // pdfMaker lee de IndexedDB/pdf_config; si el usuario ingresó datos en los campos
+    // req* del formulario de la app (sin pasar por el modal PDF), los sincronizamos ahora.
+    const pdfConfig = window._pdfConfigCache
+        || (typeof appDB !== 'undefined' ? await appDB.get('pdf_config') : null)
+        || JSON.parse(localStorage.getItem('pdf_config') || '{}');
+
+    const _vf = (id) => document.getElementById(id)?.value?.trim() || '';
+    const _syncField = (cfgKey, ...ids) => {
+        if (!pdfConfig[cfgKey]) {
+            const v = ids.reduce((acc, id) => acc || _vf(id), '');
+            if (v) { pdfConfig[cfgKey] = v; return true; }
+        }
+        return false;
+    };
+    let _cfgDirty = false;
+    _cfgDirty |= _syncField('patientName',    'reqPatientName',    'pdfPatientName');
+    _cfgDirty |= _syncField('patientDni',     'reqPatientDni',     'pdfPatientDni');
+    _cfgDirty |= _syncField('patientAge',     'reqPatientAge',     'pdfPatientAge');
+    _cfgDirty |= _syncField('patientSex',     'reqPatientSex',     'pdfPatientSex');
+    _cfgDirty |= _syncField('patientInsurance','reqPatientInsurance','pdfPatientInsurance');
+    _cfgDirty |= _syncField('patientAffiliateNum','reqPatientAffiliateNum','pdfPatientAffiliateNum');
+    if (_cfgDirty) {
+        window._pdfConfigCache = pdfConfig;
+        // Persistir en IndexedDB para que pdfMaker lo lea (await garantiza escritura antes de leer)
+        if (typeof appDB !== 'undefined') await appDB.set('pdf_config', pdfConfig);
+        else localStorage.setItem('pdf_config', JSON.stringify(pdfConfig));
+    }
+
+    // ── Advertencia por ausencia de datos del paciente ────────────────────────
+    // Solo en Modo Normal (no Pro/Gift/Clinic). En Pro/Gift el paciente puede estar
+    // en el cuerpo del informe estructurado, no en los metadatos.
+    const _isProLike = window.currentMode === 'pro'
+        || !['NORMAL', 'TRIAL'].includes((window.CLIENT_CONFIG?.type || 'NORMAL').toUpperCase());
+    const _hasPatient = !!(pdfConfig.patientName);
+
+    if (!_hasPatient && !_isProLike) {
         return new Promise(resolve => {
             const overlay = document.getElementById('customConfirmModal');
-            if (!overlay) { resolve(true); return; }
-            const titleEl = document.getElementById('customConfirmTitle');
-            const msgEl = document.getElementById('customConfirmMessage');
+            if (!overlay) { _doDownload(format, text).then(() => resolve(true)); return; }
+            const titleEl   = document.getElementById('customConfirmTitle');
+            const msgEl     = document.getElementById('customConfirmMessage');
             const acceptBtn = document.getElementById('customConfirmAccept');
             const cancelBtn = document.getElementById('customConfirmCancel');
-            titleEl.textContent = '⚠️ Sin datos del paciente';
-            msgEl.textContent = 'El informe no tiene datos del paciente. ¿Desea descargarlo así?';
+            if (titleEl) titleEl.textContent = '⚠️ Sin datos del paciente';
+            if (msgEl)   msgEl.textContent   = 'El informe no tiene datos del paciente. ¿Desea descargarlo así?';
             overlay.classList.add('active');
-            function cleanup() { overlay.classList.remove('active'); acceptBtn.removeEventListener('click', onYes); cancelBtn.removeEventListener('click', onNo); overlay.removeEventListener('click', onBg); }
-            function onYes() { cleanup(); _doDownload(format, text).then(() => resolve(true)); }
-            function onNo() { cleanup(); if (typeof window.openPatientDataModal === 'function') window.openPatientDataModal(); resolve(false); }
-            function onBg(e) { if (e.target === overlay) { cleanup(); resolve(false); } }
-            acceptBtn.addEventListener('click', onYes);
-            cancelBtn.addEventListener('click', onNo);
+            const cleanup = () => {
+                overlay.classList.remove('active');
+                acceptBtn?.removeEventListener('click', onYes);
+                cancelBtn?.removeEventListener('click', onNo);
+                overlay.removeEventListener('click', onBg);
+            };
+            const onYes = () => { cleanup(); _doDownload(format, text).then(() => resolve(true)); };
+            const onNo  = () => { cleanup(); if (typeof window.openPatientDataModal === 'function') window.openPatientDataModal(); resolve(false); };
+            const onBg  = (e) => { if (e.target === overlay) { cleanup(); resolve(false); } };
+            acceptBtn?.addEventListener('click', onYes);
+            cancelBtn?.addEventListener('click', onNo);
             overlay.addEventListener('click', onBg);
         });
     }
