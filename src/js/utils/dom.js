@@ -54,7 +54,7 @@ window.fetchWithTimeout = function(url, options, timeoutMs = 120000) {
      * @returns {string}
      */
     window.normalizeFieldText = function(text, mode) {
-        if (!text || typeof text !== 'string') return text || '';
+        if (!text || typeof text !== 'string') return (text != null) ? String(text) : '';
         const t = text.trim();
         if (!t) return '';
 

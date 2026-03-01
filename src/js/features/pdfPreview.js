@@ -999,7 +999,7 @@ window.evaluateConfigCompleteness = function () {
     if (!profData.matricula)   missing.push('Matrícula');
 
     // Campos importantes
-    const specs = Array.isArray(profData.specialties) ? profData.specialties.join('') : (profData.especialidad || '');
+    const specs = Array.isArray(profData.specialties) ? profData.specialties.join('') : (profData.especialidad || profData.especialidades || '');
     if (!specs) missing.push('Especialidad');
 
     const workplaces = window._wpProfilesCache || JSON.parse(localStorage.getItem('workplace_profiles') || '[]');

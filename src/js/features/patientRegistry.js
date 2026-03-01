@@ -64,6 +64,11 @@ window.savePatientToRegistry = function(patient) {
     setRegistry(reg);
 };
 
+// ---- Obtener todos los pacientes registrados ----
+window.getAllPatients = function() {
+    return getRegistry();
+};
+
 // ---- Buscar pacientes (nombre, apellido parcial o DNI parcial — insensible a acentos y case) ----
 window.searchPatientRegistry = function(query) {
     if (!query || query.length < 2) return [];

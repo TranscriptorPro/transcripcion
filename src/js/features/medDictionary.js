@@ -6,7 +6,7 @@
 // ─── 1. DICCIONARIO BASE predefinido ────────────────────────
 // Formato: { "texto_incorrecto": "corrección" }
 // Las claves se comparan en minúsculas sin tildes.
-const MEDICAL_DICT_BASE = {
+var MEDICAL_DICT_BASE = {
     // ── ORL / Cabeza y cuello ─────────────────────────────
     "larinx":                   "laringe",
     "larincs":                  "laringe",
@@ -322,9 +322,9 @@ const MEDICAL_DICT_BASE = {
 };
 
 // ─── 2. Diccionario PERSONALIZADO (appDB / write-through cache) ────────────
-const CUSTOM_DICT_KEY = 'med_dict_custom';
+var CUSTOM_DICT_KEY = 'med_dict_custom';
 
-let _customDictCache = null;
+var _customDictCache = null;
 if (typeof appDB !== 'undefined') {
     appDB.get(CUSTOM_DICT_KEY).then(function(v) { _customDictCache = v || {}; }).catch(function() {});
 }

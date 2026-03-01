@@ -1,8 +1,4 @@
 ﻿
-> transcriptor-pro@2.0.0 test
-> node tests/run_tests.js
-
-
 ÔöÇÔöÇ Bloque 1: autoDetectTemplateKey ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
   Ô£à  Detecta cinecoronariograf├¡a correctamente (clave cinecoro)
   Ô£à  Detecta laringoscop├¡a correctamente
@@ -367,8 +363,7 @@
   Ô£à  autoDetectTemplateKey detecta "nota_evolucion" desde texto crudo
   Ô£à  autoDetectTemplateKey detecta "epicrisis" desde texto crudo
   Ô£à  autoDetectTemplateKey detecta "resonancia" desde texto crudo
-  ÔØî  autoDetectTemplateKey detecta "protocolo_quirurgico" desde texto crudo
-        ÔåÆ Expected "protocolo_quirurgico", got "generico"
+  Ô£à  autoDetectTemplateKey detecta "protocolo_quirurgico" desde texto crudo
   Ô£à  autoDetectTemplateKey retorna generico para texto ambiguo
 
 ÔöÇÔöÇ Bloque 50: markdownToHtml ÔÇö renderizado realista ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
@@ -383,8 +378,7 @@
   Ô£à  parseAIResponse maneja nota "Nota:" al final
 
 ÔöÇÔöÇ Bloque 52: templates coverage ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-  ÔØî  MEDICAL_TEMPLATES contiene 37 plantillas
-        ÔåÆ Expected "37", got "41"
+  Ô£à  MEDICAL_TEMPLATES contiene 37 plantillas
   Ô£à  Todas las plantillas tienen name, prompt y keywords
   Ô£à  Prompts contienen regla de [No especificado]
 
@@ -551,15 +545,20 @@
   Ô£à  reportHistory ÔÇö getPatientReports filtra por DNI
   Ô£à  reportHistory ÔÇö getPatientReports vac├¡o para query sin match
   Ô£à  reportHistory ÔÇö getPatientReports vac├¡o para input vac├¡o
-  Ô£à  reportHistory ÔÇö deleteReport elimina un informe
-  Ô£à  reportHistory ÔÇö deletePatientReports elimina todos de un paciente
-  Ô£à  reportHistory ÔÇö importReportHistory agrega sin duplicados
+  ÔØî  reportHistory ÔÇö deleteReport elimina un informe
+        ÔåÆ Debe quedar 1 informe
+  ÔØî  reportHistory ÔÇö deletePatientReports elimina todos de un paciente
+        ÔåÆ Solo debe quedar el de Otro
+  ÔØî  reportHistory ÔÇö importReportHistory agrega sin duplicados
+        ÔåÆ Total: 2 informes
   Ô£à  reportHistory ÔÇö importReportHistory con JSON string
   Ô£à  reportHistory ÔÇö importReportHistory ignora entries sin id o htmlContent
   Ô£à  reportHistory ÔÇö importReportHistory con JSON inv├ílido retorna 0
   Ô£à  reportHistory ÔÇö importReportHistory con no-array retorna 0
-  Ô£à  reportHistory ÔÇö getReportHistoryStats retorna estad├¡sticas correctas
-  Ô£à  reportHistory ÔÇö getReportHistoryStats vac├¡o
+  ÔØî  reportHistory ÔÇö getReportHistoryStats retorna estad├¡sticas correctas
+        ÔåÆ Total: 3
+  ÔØî  reportHistory ÔÇö getReportHistoryStats vac├¡o
+        ÔåÆ Expected "0", got "14"
   Ô£à  reportHistory ÔÇö entry tiene todos los campos requeridos
 
 ÔöÇÔöÇ Bloque 67: outputProfiles ÔÇö CRUD perfiles ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
@@ -572,17 +571,21 @@
   Ô£à  outputProfiles ÔÇö m├║ltiples perfiles solo uno es default
 
 ÔöÇÔöÇ Bloque 68: medDictionary ÔÇö diccionario m├®dico ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-  Ô£à  medDictionary ÔÇö MEDICAL_DICT_BASE tiene m├ís de 100 entradas
+  ÔØî  medDictionary ÔÇö MEDICAL_DICT_BASE tiene m├ís de 100 entradas
+        ÔåÆ MEDICAL_DICT_BASE is not defined
   Ô£à  medDictionary ÔÇö getMedCustomDict retorna objeto
   Ô£à  medDictionary ÔÇö addMedDictEntry agrega entrada
-  Ô£à  medDictionary ÔÇö addMedDictEntry ignora entradas vac├¡as
+  ÔØî  medDictionary ÔÇö addMedDictEntry ignora entradas vac├¡as
+        ÔåÆ No debe guardar entradas vac├¡as
   Ô£à  medDictionary ÔÇö removeMedDictEntry elimina entrada
   Ô£à  medDictionary ÔÇö getFullDict fusiona base + custom
   Ô£à  medDictionary ÔÇö custom sobreescribe base en getFullDict
-  Ô£à  medDictionary ÔÇö findDictMatches encuentra errores en texto
+  ÔØî  medDictionary ÔÇö findDictMatches encuentra errores en texto
+        ÔåÆ Expected "laringe", got "laringe modificada"
   Ô£à  medDictionary ÔÇö findDictMatches ordena por count desc
   Ô£à  medDictionary ÔÇö findDictMatches sin errores retorna vac├¡o
-  Ô£à  medDictionary ÔÇö findDictMatches isBase identifica origen
+  ÔØî  medDictionary ÔÇö findDictMatches isBase identifica origen
+        ÔåÆ larinx es del diccionario base
   Ô£à  medDictionary ÔÇö _escapeRegex escapa caracteres especiales
   Ô£à  medDictionary ÔÇö findDictMatches con correcciones Whisper ASR
 
@@ -602,12 +605,16 @@
 ÔöÇÔöÇ Bloque 70: licenseManager ÔÇö cache y device ID ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
   Ô£à  licenseManager ÔÇö _lmGetDeviceId genera ID determinista tras primera llamada
   Ô£à  licenseManager ÔÇö _lmGetDeviceId usa el existente de localStorage
-  Ô£à  licenseManager ÔÇö _lmGetMedicoId lee de CLIENT_CONFIG
-  Ô£à  licenseManager ÔÇö _lmGetMedicoId fallback a localStorage
+  ÔØî  licenseManager ÔÇö _lmGetMedicoId lee de CLIENT_CONFIG
+        ÔåÆ Cannot set properties of undefined (setting 'medicoId')
+  ÔØî  licenseManager ÔÇö _lmGetMedicoId fallback a localStorage
+        ÔåÆ Cannot convert undefined or null to object
   Ô£à  licenseManager ÔÇö _lmGetCache retorna null sin datos
-  Ô£à  licenseManager ÔÇö _lmGetCache retorna datos con TTL v├ílido
+  ÔØî  licenseManager ÔÇö _lmGetCache retorna datos con TTL v├ílido
+        ÔåÆ TTL v├ílido ÔåÆ datos
   Ô£à  licenseManager ÔÇö _lmGetCache retorna null con TTL expirado
-  Ô£à  licenseManager ÔÇö _lmSetCache guarda y puede leer de nuevo
+  ÔØî  licenseManager ÔÇö _lmSetCache guarda y puede leer de nuevo
+        ÔåÆ _LM_CACHE_KEY is not defined
 
 ÔöÇÔöÇ Bloque 71: diagnostic ÔÇö funciones puras ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
   Ô£à  diagnostic ÔÇö _diagDeviceId genera ID persistente
@@ -620,7 +627,8 @@
   Ô£à  contact ÔÇö initContact es funci├│n global
   Ô£à  contact ÔÇö c├│digo contiene validaci├│n de formulario
   Ô£à  contact ÔÇö c├│digo maneja pending_contacts en localStorage
-  Ô£à  contact ÔÇö c├│digo tiene mailto como fallback
+  ÔØî  contact ÔÇö c├│digo tiene mailto como fallback
+        ÔåÆ Debe tener mailto como fallback
   Ô£à  contact ÔÇö c├│digo env├¡a al backend
 
 ÔöÇÔöÇ Bloque 73: sessionAssistant ÔÇö helpers ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
@@ -632,15 +640,19 @@
 
 ÔöÇÔöÇ Bloque 74: config.js ÔÇö apiUsageTracker ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
   Ô£à  config ÔÇö apiUsageTracker existe como global
-  Ô£à  config ÔÇö CLIENT_CONFIG tiene campos de estructura base
+  ÔØî  config ÔÇö CLIENT_CONFIG tiene campos de estructura base
+        ÔåÆ CLIENT_CONFIG debe ser objeto
   Ô£à  config ÔÇö config.js carga configuraci├│n din├ímica
   Ô£à  config ÔÇö config.js maneja _PENDING_SETUP_ID de URL
   Ô£à  config ÔÇö apiUsageTracker tiene track/get/clear
 
 ÔöÇÔöÇ Bloque 75: transcriptor ÔÇö funciones puras ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-  Ô£à  transcriptor ÔÇö cleanTranscriptionText limpia espacios m├║ltiples
-  Ô£à  transcriptor ÔÇö cleanTranscriptionText elimina saltos de l├¡nea excesivos
-  Ô£à  transcriptor ÔÇö classifyTranscriptionError clasifica 413 como file_too_large
+  ÔØî  transcriptor ÔÇö cleanTranscriptionText limpia espacios m├║ltiples
+        ÔåÆ HALLUCINATION_PHRASES is not defined
+  ÔØî  transcriptor ÔÇö cleanTranscriptionText elimina saltos de l├¡nea excesivos
+        ÔåÆ HALLUCINATION_PHRASES is not defined
+  ÔØî  transcriptor ÔÇö classifyTranscriptionError clasifica 413 como file_too_large
+        ÔåÆ (errMsg || "").toLowerCase is not a function
   Ô£à  transcriptor ÔÇö c├│digo tiene buildWhisperPrompt
   Ô£à  transcriptor ÔÇö c├│digo tiene transcribeWithRetry
   Ô£à  transcriptor ÔÇö c├│digo tiene repairAudioFile
@@ -649,7 +661,8 @@
 
 ÔöÇÔöÇ Bloque 76: editor ÔÇö funciones puras ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
   Ô£à  editor ÔÇö escapeRegex escapa par├®ntesis y puntos
-  Ô£à  editor ÔÇö buildSearchRegex retorna RegExp
+  ÔØî  editor ÔÇö buildSearchRegex retorna RegExp
+        ÔåÆ isFRWholeWord is not defined
   Ô£à  editor ÔÇö c├│digo tiene saveEditorSnapshot y restoreEditorSnapshot
   Ô£à  editor ÔÇö c├│digo tiene clearEditorSnapshots
   Ô£à  editor ÔÇö c├│digo tiene highlightText
@@ -675,12 +688,14 @@
   Ô£à  pdfPreview ÔÇö c├│digo tiene _escHtml
   Ô£à  pdfPreview ÔÇö c├│digo tiene printFromPreview
   Ô£à  pdfPreview ÔÇö c├│digo tiene updateConfigTrafficLight
-  Ô£à  pdfPreview ÔÇö evaluateConfigCompleteness con datos completos retorna green
+  ÔØî  pdfPreview ÔÇö evaluateConfigCompleteness con datos completos retorna green
+        ÔåÆ Datos completos ÔåÆ green
 
 ÔöÇÔöÇ Bloque 79: dom.js ÔÇö funciones adicionales ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
   Ô£à  dom.js ÔÇö normalizeFieldText con modo sentence preserva caps m├®dicas
   Ô£à  dom.js ÔÇö normalizeFieldText maneja undefined
-  Ô£à  dom.js ÔÇö normalizeFieldText maneja n├║mero como input
+  ÔØî  dom.js ÔÇö normalizeFieldText maneja n├║mero como input
+        ÔåÆ Debe retornar string
   Ô£à  dom.js ÔÇö safeJSONParse existe en el c├│digo
   Ô£à  dom.js ÔÇö fetchWithTimeout existe en el c├│digo
   Ô£à  dom.js ÔÇö shouldNormalize existe en el c├│digo
@@ -698,10 +713,14 @@
 
 ÔöÇÔöÇ Bloque 81: ui.js ÔÇö funciones UI ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
   Ô£à  ui.js ÔÇö escapeHtml escapa m├║ltiples entidades en secuencia
-  Ô£à  ui.js ÔÇö isAdminUser reconoce ADMIN
-  Ô£à  ui.js ÔÇö isAdminUser reconoce NORMAL como no admin
-  Ô£à  ui.js ÔÇö isAdminUser reconoce PRO como no admin
-  Ô£à  ui.js ÔÇö isAdminUser reconoce TRIAL como no admin
+  ÔØî  ui.js ÔÇö isAdminUser reconoce ADMIN
+        ÔåÆ Cannot read properties of undefined (reading 'type')
+  ÔØî  ui.js ÔÇö isAdminUser reconoce NORMAL como no admin
+        ÔåÆ Cannot read properties of undefined (reading 'type')
+  ÔØî  ui.js ÔÇö isAdminUser reconoce PRO como no admin
+        ÔåÆ Cannot read properties of undefined (reading 'type')
+  ÔØî  ui.js ÔÇö isAdminUser reconoce TRIAL como no admin
+        ÔåÆ Cannot read properties of undefined (reading 'type')
   Ô£à  ui.js ÔÇö c├│digo tiene trapFocusInModal
   Ô£à  ui.js ÔÇö c├│digo tiene releaseFocusTrap
   Ô£à  ui.js ÔÇö c├│digo tiene updateWordCount
@@ -754,7 +773,8 @@
   Ô£à  business.js ÔÇö tiene renderProfessionalList
   Ô£à  business.js ÔÇö tiene _handleFactorySetup
   Ô£à  business.js ÔÇö tiene _initAdmin
-  Ô£à  business.js ÔÇö tiene escapeHtml para XSS protection
+  ÔØî  business.js ÔÇö tiene escapeHtml para XSS protection
+        ÔåÆ Debe usar escape HTML para protecci├│n XSS
   Ô£à  business.js ÔÇö tiene populateWorkplaceDropdown
   Ô£à  business.js ÔÇö tiene loadWorkplaceProfile
   Ô£à  business.js ÔÇö tiene loadProfessionalProfile
@@ -798,7 +818,8 @@
   Ô£à  formHandler ÔÇö tiene savePdfConfiguration
   Ô£à  formHandler ÔÇö tiene _migratePatientHistory
   Ô£à  formHandler ÔÇö generateReportNumber genera IDs secuenciales
-  Ô£à  formHandler ÔÇö extractPatientDataFromText con formato con puntos en DNI
+  ÔØî  formHandler ÔÇö extractPatientDataFromText con formato con puntos en DNI
+        ÔåÆ Debe extraer DNI
   Ô£à  formHandler ÔÇö extractPatientDataFromText extrae edad con "a├▒os"
 
 ÔöÇÔöÇ Bloque 90: Cross-module ÔÇö exports globales ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
@@ -820,6 +841,6 @@
   Ô£à  Global ÔÇö generateReportNumber existe
 
 ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-  Total: 634 | Ô£à Pasaron: 632 | ÔØî Fallaron: 2
+  Total: 634 | Ô£à Pasaron: 607 | ÔØî Fallaron: 27
 ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 

@@ -886,6 +886,123 @@ Mencionar SOLO los hallazgos positivos/patológicos. Incluir FE% si fue dictada.
 REGLA DE CONCLUSIÓN: Párrafo conciso con todos los hallazgos relevantes y la FE%. PROHIBIDO inventar valores. Si no se mencionó un dato, omitirlo o escribir s/p.`
     },
 
+    // ── ECOGRAFÍA RENAL ──────────────────────────────────────────
+    ecografia_renal: {
+        name: "Ecografía Renal",
+        category: "Imágenes",
+        keywords: ["ecografía renal", "ecografía renovesical", "ultrasonido renal", "ecografía de riñones", "ecografía vesical", "riñón derecho", "riñón izquierdo", "ectasia piélica", "litiasis renal", "hidronefrosis", "parénquima renal", "ecografía de vías urinarias"],
+        prompt: `Actúa como radiólogo/nefrólogo. Estructura este informe de ecografía renal:
+
+# INFORME DE ECOGRAFÍA RENAL / RENOVESICAL
+
+## RIÑÓN DERECHO
+Forma, tamaño (eje mayor en cm), ecoestructura del parénquima, diferenciación cortico-medular, espesor cortical, sistema pielocalicial (ectasia, litiasis), quistes, masas, o s/p.
+
+## RIÑÓN IZQUIERDO
+Forma, tamaño (eje mayor en cm), ecoestructura del parénquima, diferenciación cortico-medular, espesor cortical, sistema pielocalicial (ectasia, litiasis), quistes, masas, o s/p.
+
+## VEJIGA
+Distensión, paredes, contenido, residuo post-miccional si fue evaluado, o s/p.
+
+## VÍAS URINARIAS
+Uréteres visualizados, dilatación, o s/p.
+
+## CONCLUSIÓN
+Mencionar SOLO los hallazgos positivos o patológicos. Si el estudio es normal, indicarlo.
+
+IMPORTANTE: No inventes datos. Solo estructura lo dictado. Si no se evaluó una estructura, omitirla o escribir s/p.`
+    },
+
+    // ── ECOGRAFÍA TIROIDEA ────────────────────────────────────────
+    ecografia_tiroidea: {
+        name: "Ecografía Tiroidea",
+        category: "Imágenes",
+        keywords: ["ecografía tiroidea", "ecografía de tiroides", "ultrasonido tiroideo", "nódulo tiroideo", "lóbulo tiroideo", "istmo tiroideo", "tiroides", "TIRADS", "nódulo coloide", "bocio", "tiroiditis"],
+        prompt: `Actúa como radiólogo/endocrinólogo. Estructura este informe de ecografía tiroidea:
+
+# INFORME DE ECOGRAFÍA TIROIDEA
+
+## LÓBULO DERECHO
+Dimensiones (AP × T × L en mm), volumen, ecoestructura, presencia de nódulos (tamaño, ecogenicidad, bordes, microcalcificaciones, vascularización, categoría TIRADS), o s/p.
+
+## ISTMO
+Espesor, ecoestructura, nódulos, o s/p.
+
+## LÓBULO IZQUIERDO
+Dimensiones (AP × T × L en mm), volumen, ecoestructura, presencia de nódulos (tamaño, ecogenicidad, bordes, microcalcificaciones, vascularización, categoría TIRADS), o s/p.
+
+## GANGLIOS CERVICALES
+Adenomegalias, ganglios de aspecto reactivo, cadenas cervicales evaluadas, o s/p.
+
+## VASCULARIZACIÓN
+Patrón vascular al Doppler si fue evaluado, o s/p.
+
+## CONCLUSIÓN
+Mencionar SOLO hallazgos patológicos. Incluir clasificación TIRADS si fue dictada.
+
+IMPORTANTE: No inventes datos. Solo estructura lo dictado.`
+    },
+
+    // ── ECOGRAFÍA MAMARIA ─────────────────────────────────────────
+    ecografia_mamaria: {
+        name: "Ecografía Mamaria",
+        category: "Imágenes",
+        keywords: ["ecografía mamaria", "ecografía de mama", "ultrasonido mamario", "ecografía bilateral de mamas", "nódulo mamario", "quiste mamario", "BIRADS", "tejido fibroglandular", "conductos mamarios", "axila"],
+        prompt: `Actúa como radiólogo mamario. Estructura este informe de ecografía mamaria:
+
+# INFORME DE ECOGRAFÍA MAMARIA
+
+## MAMA DERECHA
+Composición tisular (patrón ecográfico), presencia de nódulos (ubicación por cuadrante/reloj, tamaño, ecogenicidad, bordes, vascularización al Doppler, clasificación BIRADS), quistes, ectasia ductal, o s/p.
+
+## MAMA IZQUIERDA
+Composición tisular, presencia de nódulos (mismo formato), quistes, ectasia ductal, o s/p.
+
+## REGIONES AXILARES
+Ganglios axilares bilaterales: número, tamaño, morfología, hilio graso preservado o no, o s/p.
+
+## CONCLUSIÓN
+Mencionar SOLO hallazgos patológicos. Incluir clasificación BIRADS si fue dictada.
+
+REGLA DE CONCLUSIÓN: Incluir categoría BIRADS final si el médico la dictó. PROHIBIDO inventar valores.`
+    },
+
+    // ── ECOGRAFÍA OBSTÉTRICA ──────────────────────────────────────
+    ecografia_obstetrica: {
+        name: "Ecografía Obstétrica",
+        category: "Ginecología",
+        keywords: ["ecografía obstétrica", "ecografía de embarazo", "ecografía fetal", "gestación", "feto", "biometría fetal", "placenta", "líquido amniótico", "frecuencia cardíaca fetal", "diámetro biparietal", "circunferencia cefálica", "circunferencia abdominal", "longitud femoral", "translucencia nucal", "scan morfológico", "doppler fetal", "vitalidad fetal", "semanas de gestación"],
+        prompt: `Actúa como obstetra/ecografista. Estructura este informe de ecografía obstétrica:
+
+# INFORME DE ECOGRAFÍA OBSTÉTRICA
+
+## DATOS GESTACIONALES
+Edad gestacional por FUM y por biometría, número de fetos, vitalidad (FCF), presentación.
+
+## BIOMETRÍA FETAL
+DBP, CC, CA, LF (en mm), peso estimado (en gramos), percentil si fue dictado.
+
+## ANATOMÍA FETAL
+Cráneo, cara, columna, tórax, corazón, abdomen, extremidades, genitales. Hallazgos o s/p.
+
+## PLACENTA
+Ubicación, grado de madurez (Grannum), inserción del cordón, número de vasos.
+
+## LÍQUIDO AMNIÓTICO
+Cantidad (normal/oligoamnios/polihidramnios), ILA si fue dictado.
+
+## CÉRVIX
+Longitud cervical si fue evaluada, aspecto.
+
+## DOPPLER
+Arteria umbilical, arteria cerebral media, ductus venoso, arterias uterinas si fueron evaluados, o s/p.
+
+## CONCLUSIÓN
+Resumen de hallazgos relevantes. Incluir edad gestacional, peso estimado y hallazgos patológicos si los hay.
+
+IMPORTANTE: No inventes datos. Solo estructura lo dictado. Las secciones no evaluadas deben omitirse o indicar s/p.`
+    },
+
     // ── ECO DOPPLER VASCULAR ─────────────────────────────────────
     eco_doppler: {
         name: "Eco Doppler Vascular",
@@ -991,10 +1108,10 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
 window.TEMPLATE_CATEGORIES = {
     "Neumología": ["espirometria", "test_marcha", "pletismografia", "oximetria_nocturna"],
     "Oftalmología": ["campimetria", "oct_retinal", "topografia_corneal", "fondo_ojo"],
-    "Imágenes": ["tac", "resonancia", "mamografia", "densitometria", "pet_ct", "radiografia", "ecografia_abdominal", "eco_doppler"],
+    "Imágenes": ["tac", "resonancia", "mamografia", "densitometria", "pet_ct", "radiografia", "ecografia_abdominal", "ecografia_renal", "ecografia_tiroidea", "ecografia_mamaria", "eco_doppler"],
     "Endoscopía": ["gastroscopia", "colonoscopia", "broncoscopia", "laringoscopia"],
     "Cardiología": ["gammagrafia_cardiaca", "holter", "mapa", "cinecoro", "ecg", "eco_stress", "ett"],
-    "Ginecología": ["pap", "colposcopia"],
+    "Ginecología": ["pap", "colposcopia", "ecografia_obstetrica"],
     "Neurología": ["electromiografia", "polisomnografia"],
     "ORL": ["naso", "endoscopia_otologica"],
     "Quirúrgico": ["protocolo_quirurgico"],

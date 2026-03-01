@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ---- Extract patient data from transcription ----
 const PATIENT_NAME_REGEX = /paciente\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)+)/i;
-const DNI_REGEX = /(?:DNI|documento|D\.N\.I\.?)\s*(?:N[°º]?\s*)?(\d{1,3}\.?\d{3}\.?\d{3})/i;
+const DNI_REGEX = /(?:DNI|documento|D\.N\.I\.?)[:\s]*(?:N[°º]?\s*)?(\d{1,3}\.?\d{3}\.?\d{3})/i;
 const AGE_REGEX = /(\d{1,3})\s*años/i;
 const SEX_REGEX = /(?:sexo|género)\s*(?::|,)?\s*(masculino|femenino|masc|fem)/i;
 

@@ -513,7 +513,7 @@ async function transcribeWithGroqParams(file, { language = 'es', model = 'whispe
 }
 
 // ── Frases de alucinación conocidas de Whisper (audio vacío/silencioso) ────
-const HALLUCINATION_PHRASES = [
+var HALLUCINATION_PHRASES = [
     /^\s*gracias por ver(?: el video)?[.!]?\s*$/i,
     /^\s*thanks for watching[.!]?\s*$/i,
     /^\s*suscr[íi]bete[.!]?\s*$/i,
@@ -533,7 +533,7 @@ const HALLUCINATION_PHRASES = [
 
 // ── Regex: re-unir prefijos médicos que Whisper parte ──────────────────────
 // Captura "dis fagia", "o dinofagia", "taqui pnea", etc.
-const MEDICAL_REJOIN_RULES = [
+var MEDICAL_REJOIN_RULES = [
     // prefijo + sufijo separated by space
     { rx: /\b(dis)\s+(fagia|fonía|fonia|nea|pnea|función|funcion|pepsia|uria|plasia|trofia|cinesia|tonia|tonía|kinesia|lipidemia|lipemia|ritmia|taxia|menorrea|psia|praxia|fasia|lexia|grafía|grafia)/gi, to: '$1$2' },
     { rx: /\b(taqui|bradi)\s+(cardia|pnea|arritmia|sistolia)/gi, to: '$1$2' },
@@ -552,8 +552,12 @@ function cleanTranscriptionText(text) {
     // Remove leading ellipsis and spaces
     cleaned = cleaned.replace(/^[\s\.]+/u, "").trim();
 
+    // Limpiar espacios múltiples y saltos de línea excesivos
+    cleaned = cleaned.replace(/[ \t]{2,}/g, ' ');
+    cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+
     // Filtro de alucinaciones de Whisper (audio silencioso/vacío)
-    if (HALLUCINATION_PHRASES.some(rx => rx.test(cleaned))) {
+    if (typeof HALLUCINATION_PHRASES !== 'undefined' && HALLUCINATION_PHRASES.some(rx => rx.test(cleaned))) {
         console.warn('⚠️ Hallucination filter: descartado →', cleaned);
         return '';
     }
@@ -565,8 +569,10 @@ function cleanTranscriptionText(text) {
     }
 
     // Re-unir prefijos médicos que Whisper partió (ej: "dis fagia" → "disfagia")
-    for (const rule of MEDICAL_REJOIN_RULES) {
-        cleaned = cleaned.replace(rule.rx, rule.to);
+    if (typeof MEDICAL_REJOIN_RULES !== 'undefined') {
+        for (const rule of MEDICAL_REJOIN_RULES) {
+            cleaned = cleaned.replace(rule.rx, rule.to);
+        }
     }
 
     // Capitalize first letter
@@ -613,8 +619,13 @@ function autoApplyDictCorrections(text) {
 
 // ── Classify error for user-friendly messages ──────────────────────────────
 function classifyTranscriptionError(errMsg) {
-    const msg = (errMsg || '').toLowerCase();
-    if (msg.includes('api key') || msg.includes('401') || msg.includes('inválida o expirada')) {
+    const status = (typeof errMsg === 'object' && errMsg !== null) ? errMsg.status : null;
+    const msg = String((typeof errMsg === 'object' && errMsg !== null) ? (errMsg.message || errMsg.status || '') : (errMsg || '')).toLowerCase();
+    if (status === 413 || msg.includes('413') || msg.includes('payload') || msg.includes('entity too large')) {
+        return { type: 'file_too_large', userMsg: 'El archivo supera el límite de tamaño permitido por la API.',
+            suggestions: ['Dividir el audio en partes más cortas', 'Comprimir el archivo antes de subirlo'] };
+    }
+    if (msg.includes('api key') || msg.includes('401') || msg.includes('inválida o expirada') || status === 401) {
         return { type: 'auth', userMsg: 'API Key inválida o expirada. Verificá tu clave en Configuración.',
             suggestions: ['Verificar que la clave comience con gsk_', 'Generar una nueva API Key en console.groq.com'] };
     }

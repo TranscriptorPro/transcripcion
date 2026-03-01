@@ -177,8 +177,9 @@ window.initWorkplaceManagement = function () {
             return;
         }
         container.innerHTML = profs.map((p, i) => {
-            const safeName = (p.nombre || '(sin nombre)').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-            const safeMat  = p.matricula ? (' — ' + p.matricula.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')) : '';
+            const _esc = typeof escapeHtml === 'function' ? escapeHtml : (s => (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'));
+            const safeName = _esc(p.nombre || '(sin nombre)');
+            const safeMat  = p.matricula ? (' — ' + _esc(p.matricula)) : '';
             return `
             <div class="field-row" style="align-items:center;gap:0.5rem;padding:0.35rem 0;border-bottom:1px solid var(--border);">
                 <span style="flex:1;font-size:0.9rem;"><strong>${safeName}</strong>${safeMat}</span>

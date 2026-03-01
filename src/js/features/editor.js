@@ -515,8 +515,8 @@ if (btnWholeWord) {
 // Build regex respecting options
 function buildSearchRegex(find, forAll) {
     let pattern = escapeRegex(find);
-    if (isFRWholeWord()) pattern = `(?<![\\w\u00C0-\u017E])` + pattern + `(?![\\w\u00C0-\u017E])`;
-    const flags = (isFRMatchCase() ? '' : 'i') + (forAll ? 'g' : '');
+    if (typeof isFRWholeWord === 'function' && isFRWholeWord()) pattern = `(?<![\\w\u00C0-\u017E])` + pattern + `(?![\\w\u00C0-\u017E])`;
+    const flags = ((typeof isFRMatchCase === 'function' && isFRMatchCase()) ? '' : 'i') + (forAll ? 'g' : '');
     return new RegExp(pattern, flags);
 }
 

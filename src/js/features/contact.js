@@ -187,8 +187,9 @@ window.initContact = function () {
                 }
             }
 
-            // Fallback si no hay backend configurado: enviar sin abrir pestaña
-            // (guardar localmente y avisar)
+            // Fallback si no hay backend configurado: guardar localmente + mailto
+            // mailto como último recurso para no perder el mensaje
+            const mailtoFallback = `mailto:${contactEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(detalle)}`;
             try {
                 const pending = (typeof appDB !== 'undefined' ? await appDB.get('pending_contacts') : null)
                     || JSON.parse(localStorage.getItem('pending_contacts') || '[]');

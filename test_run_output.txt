@@ -1,8 +1,4 @@
 ﻿
-> transcriptor-pro@2.0.0 test
-> node tests/run_tests.js
-
-
 ÔöÇÔöÇ Bloque 1: autoDetectTemplateKey ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
   Ô£à  Detecta cinecoronariograf├¡a correctamente (clave cinecoro)
   Ô£à  Detecta laringoscop├¡a correctamente
@@ -367,8 +363,7 @@
   Ô£à  autoDetectTemplateKey detecta "nota_evolucion" desde texto crudo
   Ô£à  autoDetectTemplateKey detecta "epicrisis" desde texto crudo
   Ô£à  autoDetectTemplateKey detecta "resonancia" desde texto crudo
-  ÔØî  autoDetectTemplateKey detecta "protocolo_quirurgico" desde texto crudo
-        ÔåÆ Expected "protocolo_quirurgico", got "generico"
+  Ô£à  autoDetectTemplateKey detecta "protocolo_quirurgico" desde texto crudo
   Ô£à  autoDetectTemplateKey retorna generico para texto ambiguo
 
 ÔöÇÔöÇ Bloque 50: markdownToHtml ÔÇö renderizado realista ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
@@ -383,8 +378,7 @@
   Ô£à  parseAIResponse maneja nota "Nota:" al final
 
 ÔöÇÔöÇ Bloque 52: templates coverage ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-  ÔØî  MEDICAL_TEMPLATES contiene 37 plantillas
-        ÔåÆ Expected "37", got "41"
+  Ô£à  MEDICAL_TEMPLATES contiene 37 plantillas
   Ô£à  Todas las plantillas tienen name, prompt y keywords
   Ô£à  Prompts contienen regla de [No especificado]
 
@@ -820,6 +814,6 @@
   Ô£à  Global ÔÇö generateReportNumber existe
 
 ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-  Total: 634 | Ô£à Pasaron: 632 | ÔØî Fallaron: 2
+  Total: 634 | Ô£à Pasaron: 634 | ÔØî Fallaron: 0
 ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 
