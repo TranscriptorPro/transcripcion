@@ -481,6 +481,17 @@ async function suite_B_FactorySetup() {
 async function suite_C_Onboarding() {
     group('C — Onboarding Wizard: navegación y DOM (5 pasos)');
 
+    // Reset de estado DOM → garantiza idempotencia sin necesidad de recargar la página.
+    // Refleja exactamente los atributos iniciales del HTML:
+    //   onbToggleFirma/LogoProf/LogoInst → checked=true  (tienen atributo "checked" en el HTML)
+    //   onbToggleQR                       → checked=false, disabled=false (sin atributo "checked")
+    [['onbToggleFirma', true], ['onbToggleLogoProf', true], ['onbToggleLogoInst', true]].forEach(([id, v]) => {
+        const el = document.getElementById(id);
+        if (el) { el.checked = v; el.disabled = false; }
+    });
+    const qrReset = document.getElementById('onbToggleQR');
+    if (qrReset) { qrReset.checked = false; qrReset.disabled = false; }
+
     // Verificar existencia de todos los elementos del wizard en el DOM
     const steps   = [1,2,3,4,5].map(i => document.getElementById('onboardingStep'+i));
     const buttons = ['onboardingNext2','onboardingNext3','onboardingNext4',
