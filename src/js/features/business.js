@@ -990,8 +990,12 @@ function _showClientOnboarding() {
     // Botones next/back
     const next1 = document.getElementById('onboardingNext1');
     const next2 = document.getElementById('onboardingNext2');
+    const next3 = document.getElementById('onboardingNext3');
+    const next4 = document.getElementById('onboardingNext4');
     const back2 = document.getElementById('onboardingBack2');
     const back3 = document.getElementById('onboardingBack3');
+    const back4 = document.getElementById('onboardingBack4');
+    const back5 = document.getElementById('onboardingBack5');
 
     if (next1) next1.addEventListener('click', () => goToStep(2));
     if (next2) next2.addEventListener('click', () => {
@@ -1010,10 +1014,114 @@ function _showClientOnboarding() {
                 window.GROQ_API_KEY = keyVal;
             }
         }
+        _initOnbStep3();
         goToStep(3);
     });
     if (back2) back2.addEventListener('click', () => goToStep(1));
     if (back3) back3.addEventListener('click', () => goToStep(2));
+    if (next3) next3.addEventListener('click', () => { _saveOnbConfig(); _initOnbStep4(); goToStep(4); });
+    if (back4) back4.addEventListener('click', () => goToStep(3));
+    if (next4) next4.addEventListener('click', () => { _saveOnbWorkplace(); goToStep(5); });
+    if (back5) back5.addEventListener('click', () => goToStep(4));
+
+    // ── Config Asistida: helpers ──────────────────────────────────────
+    const _isProUser = !!profData.hasProMode;
+
+    function _initOnbStep3() {
+        const palette = document.getElementById('onbColorPalette');
+        if (!palette || palette.children.length) return; // ya inicializado
+        const presetColors = ['#1a56a0','#0f766e','#7c3aed','#dc2626','#c2410c','#0369a1','#1d4ed8','#374151'];
+        const savedColor = (profData.headerColor || localStorage.getItem('customPrimaryColor') || '#1a56a0').toLowerCase();
+        presetColors.forEach(c => {
+            const sw = document.createElement('div');
+            sw.className = 'onb-color-swatch' + (c === savedColor ? ' selected' : '');
+            sw.style.background = c;
+            sw.dataset.color = c;
+            sw.title = c;
+            sw.addEventListener('click', () => {
+                palette.querySelectorAll('.onb-color-swatch').forEach(s => s.classList.remove('selected'));
+                sw.classList.add('selected');
+                // Live preview: actualizar color primario del modal en tiempo real
+                document.documentElement.style.setProperty('--primary', c);
+            });
+            palette.appendChild(sw);
+        });
+        // Seleccionar 1er color si ninguno coincide
+        if (!palette.querySelector('.onb-color-swatch.selected')) palette.firstChild?.classList.add('selected');
+        // Botones de margen
+        document.querySelectorAll('.onb-margin-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.onb-margin-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+        // QR: PRO gate
+        const qrToggle = document.getElementById('onbToggleQR');
+        if (qrToggle) {
+            if (_isProUser) {
+                qrToggle.checked = true;
+            } else {
+                qrToggle.disabled = true;
+                const note = document.getElementById('onbQrNote');
+                if (note) note.textContent = 'Solo disponible en plan PRO';
+            }
+        }
+    }
+
+    function _saveOnbConfig() {
+        const selectedSwatch = document.querySelector('#onbColorPalette .onb-color-swatch.selected');
+        if (selectedSwatch) {
+            const color = selectedSwatch.dataset.color;
+            profData.headerColor = color;
+            window._profDataCache = profData;
+            localStorage.setItem('prof_data', JSON.stringify(profData));
+            if (typeof appDB !== 'undefined') appDB.set('prof_data', profData);
+            localStorage.setItem('customPrimaryColor', color);
+            if (typeof appDB !== 'undefined') appDB.set('customPrimaryColor', color);
+        }
+        const pdfCfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        pdfCfg.showSignImage = document.getElementById('onbToggleFirma')?.checked ?? true;
+        pdfCfg.showHeader    = document.getElementById('onbToggleLogoInst')?.checked ?? true;
+        pdfCfg.showQR        = document.getElementById('onbToggleQR')?.checked ?? false;
+        const activeMarginBtn = document.querySelector('.onb-margin-btn.active');
+        if (activeMarginBtn) pdfCfg.margins = activeMarginBtn.dataset.margin;
+        localStorage.setItem('pdf_config', JSON.stringify(pdfCfg));
+        if (typeof appDB !== 'undefined') appDB.set('pdf_config', pdfCfg);
+    }
+
+    function _initOnbStep4() {
+        const container = document.getElementById('onbWpCards');
+        if (!container) return;
+        container.innerHTML = '';
+        const wps = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+        if (wps.length === 0) {
+            container.innerHTML = '<p style="text-align:center;color:var(--text-secondary);font-size:0.84rem;padding:1.2rem 0;">Sin lugares de trabajo precargados.<br><small>Podés agregar uno después en Configuración.</small></p>';
+            return;
+        }
+        wps.forEach((wp, i) => {
+            const card = document.createElement('label');
+            card.className = 'onb-wp-card' + (i === 0 ? ' selected' : '');
+            card.innerHTML = `<input type="radio" name="onbWp" value="${i}" ${i === 0 ? 'checked' : ''} style="accent-color:var(--primary);flex-shrink:0;">
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:600;font-size:0.87rem;color:var(--text-primary)">${wp.name || 'Lugar ' + (i + 1)}</div>
+                    ${wp.address ? `<div style="font-size:0.73rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${wp.address}</div>` : ''}
+                </div>`;
+            card.addEventListener('click', () => {
+                container.querySelectorAll('.onb-wp-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+            });
+            container.appendChild(card);
+        });
+    }
+
+    function _saveOnbWorkplace() {
+        const selected = document.querySelector('input[name="onbWp"]:checked');
+        if (!selected) return;
+        const pdfCfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        pdfCfg.activeWorkplaceIndex = parseInt(selected.value);
+        localStorage.setItem('pdf_config', JSON.stringify(pdfCfg));
+        if (typeof appDB !== 'undefined') appDB.set('pdf_config', pdfCfg);
+    }
 
     // T&C → habilitar botón de activación
     const acceptTerms = document.getElementById('acceptTerms');

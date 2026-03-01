@@ -336,8 +336,87 @@
                     </div>
                 </div>
 
-                <!-- Step 3: Terms & Conditions -->
+                <!-- Step 3: Configuración Asistida -->
                 <div class="onboarding-step" id="onboardingStep3">
+                    <div style="padding: 1.2rem 1.4rem 0.8rem; overflow-y: auto; max-height: calc(80vh - 56px);">
+                        <div style="text-align: center; margin-bottom: 0.9rem;">
+                            <span style="font-size: 1.9rem;">⚡</span>
+                            <h2 style="font-size: 1.15rem; color: var(--primary); margin: 0.25rem 0 0.15rem; font-weight: 800;">Configuración rápida</h2>
+                            <p style="color: var(--text-secondary); font-size: 0.78rem; margin: 0;">Personalizá tu app en un clic. Podés cambiar todo después.</p>
+                        </div>
+                        <!-- Color de encabezado -->
+                        <div class="onb-config-card">
+                            <div class="onb-config-label" style="margin-bottom: 7px;">🎨 Color de encabezados del informe</div>
+                            <div id="onbColorPalette" style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;"></div>
+                        </div>
+                        <!-- Firma digital -->
+                        <div class="onb-config-card">
+                            <div class="onb-toggle-row">
+                                <div><div class="onb-config-label">✍️ Firma digital al pie del informe</div>
+                                <small style="color: var(--text-secondary); font-size: 0.72rem;">Imagen de tu firma en cada PDF</small></div>
+                                <label class="onb-switch"><input type="checkbox" id="onbToggleFirma" checked><span class="onb-slider"></span></label>
+                            </div>
+                        </div>
+                        <!-- Logo profesional -->
+                        <div class="onb-config-card">
+                            <div class="onb-toggle-row">
+                                <div><div class="onb-config-label">🏷️ Logo profesional en encabezado</div>
+                                <small style="color: var(--text-secondary); font-size: 0.72rem;">Tu logo junto a tu nombre</small></div>
+                                <label class="onb-switch"><input type="checkbox" id="onbToggleLogoProf" checked><span class="onb-slider"></span></label>
+                            </div>
+                        </div>
+                        <!-- Logo institución -->
+                        <div class="onb-config-card">
+                            <div class="onb-toggle-row">
+                                <div><div class="onb-config-label">🏥 Logo institucional en encabezado</div>
+                                <small style="color: var(--text-secondary); font-size: 0.72rem;">Logo del lugar de trabajo</small></div>
+                                <label class="onb-switch"><input type="checkbox" id="onbToggleLogoInst" checked><span class="onb-slider"></span></label>
+                            </div>
+                        </div>
+                        <!-- QR (PRO) -->
+                        <div class="onb-config-card">
+                            <div class="onb-toggle-row">
+                                <div><div class="onb-config-label">🔗 QR de verificación al pie <span class="onb-pro-badge">PRO</span></div>
+                                <small style="color: var(--text-secondary); font-size: 0.72rem;" id="onbQrNote">Código QR en cada informe</small></div>
+                                <label class="onb-switch"><input type="checkbox" id="onbToggleQR"><span class="onb-slider"></span></label>
+                            </div>
+                        </div>
+                        <!-- Márgenes -->
+                        <div class="onb-config-card">
+                            <div class="onb-config-label" style="margin-bottom: 7px;">📐 Márgenes del PDF</div>
+                            <div style="display: flex; gap: 6px;">
+                                <button type="button" class="onb-margin-btn" data-margin="narrow">Estrecho</button>
+                                <button type="button" class="onb-margin-btn active" data-margin="normal">Normal</button>
+                                <button type="button" class="onb-margin-btn" data-margin="wide">Amplio</button>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary btn-full onboarding-btn-next" id="onboardingNext3"
+                            style="margin-top: 0.75rem; padding: 0.78rem; font-size: 0.93rem; font-weight: 700; border-radius: 12px;">
+                            Continuar →
+                        </button>
+                        <button type="button" class="onboarding-btn-back" id="onboardingBack3">← Volver</button>
+                    </div>
+                </div>
+
+                <!-- Step 4: Lugar de trabajo -->
+                <div class="onboarding-step" id="onboardingStep4">
+                    <div style="padding: 1.5rem;">
+                        <div style="text-align: center; margin-bottom: 1.1rem;">
+                            <span style="font-size: 1.9rem;">🏥</span>
+                            <h2 style="font-size: 1.15rem; color: var(--primary); margin: 0.25rem 0 0.15rem; font-weight: 800;">¿Dónde trabajás hoy?</h2>
+                            <p style="color: var(--text-secondary); font-size: 0.78rem; margin: 0;">Elegí tu lugar de trabajo para esta sesión</p>
+                        </div>
+                        <div id="onbWpCards" style="display: flex; flex-direction: column; gap: 9px; max-height: 260px; overflow-y: auto; margin-bottom: 1.1rem;"></div>
+                        <button type="button" class="btn btn-primary btn-full onboarding-btn-next" id="onboardingNext4"
+                            style="padding: 0.78rem; font-size: 0.93rem; font-weight: 700; border-radius: 12px;">
+                            Continuar →
+                        </button>
+                        <button type="button" class="onboarding-btn-back" id="onboardingBack4">← Volver</button>
+                    </div>
+                </div>
+
+                <!-- Step 5: Términos y condiciones -->
+                <div class="onboarding-step" id="onboardingStep5">
                     <div style="padding: 2rem;">
                         <div style="text-align: center; margin-bottom: 1.5rem;">
                             <span style="font-size: 2.5rem;">📋</span>
@@ -369,7 +448,7 @@
                             style="padding: 0.85rem; font-size: 1.05rem; font-weight: 700; border-radius: 12px;">
                             🚀 ¡Activar Transcriptor Pro!
                         </button>
-                        <button type="button" class="onboarding-btn-back" id="onboardingBack3">← Volver</button>
+                        <button type="button" class="onboarding-btn-back" id="onboardingBack5">← Volver</button>
                     </div>
                 </div>
 
@@ -378,6 +457,8 @@
                     <span class="onboarding-dot active" data-step="1"></span>
                     <span class="onboarding-dot" data-step="2"></span>
                     <span class="onboarding-dot" data-step="3"></span>
+                    <span class="onboarding-dot" data-step="4"></span>
+                    <span class="onboarding-dot" data-step="5"></span>
                 </div>
             </div>
         </div>
