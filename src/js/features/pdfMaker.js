@@ -168,7 +168,9 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             // Logo institucional (izquierda del header)
             if (instLogoB64) {
                 try {
-                    const imgW = 28, imgH = 18;
+                    const instSizePx = parseInt(localStorage.getItem('inst_logo_size_px') || '60');
+                    const instScale = instSizePx / 60;
+                    const imgW = Math.round(28 * instScale), imgH = Math.round(18 * instScale);
                     const imgType = instLogoB64.includes('data:image/png') ? 'PNG' : 'JPEG';
                     const b64data = instLogoB64.includes(',') ? instLogoB64.split(',')[1] : instLogoB64;
                     doc.addImage(b64data, imgType, ML, cy, imgW, imgH);
@@ -181,7 +183,9 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             // Logo/foto del profesional (al lado derecho del header)
             if (profLogoB64 && profLogoB64 !== instLogoB64) {
                 try {
-                    const profImgW = 16, profImgH = 16;
+                    const profSizePx = parseInt(localStorage.getItem('prof_logo_size_px') || '60');
+                    const profScale = profSizePx / 60;
+                    const profImgW = Math.round(16 * profScale), profImgH = Math.round(16 * profScale);
                     const profImgType = profLogoB64.includes('data:image/png') ? 'PNG' : 'JPEG';
                     const profB64data = profLogoB64.includes(',') ? profLogoB64.split(',')[1] : profLogoB64;
                     doc.addImage(profB64data, profImgType, PAGE_W - MR - profImgW, cy, profImgW, profImgH);

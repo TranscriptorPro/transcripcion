@@ -239,6 +239,7 @@ window.openPrintPreview = async function () {
     const profDisplayName = escName(_rawNameStr.replace(/^(Dra?\.?\s*)/i, '').trim()) || profName;
     const profLogoSize = config.logoSizePx || parseInt(localStorage.getItem('prof_logo_size_px') || '60');
     const firmaSize   = config.firmaSizePx || parseInt(localStorage.getItem('firma_size_px') || '60');
+    const instLogoSize = config.instLogoSizePx || parseInt(localStorage.getItem('inst_logo_size_px') || '60');
     const institutionName = escName(activePro?.institutionName || profData.institutionName || '');
     const accentColor     = activePro?.headerColor || profData.headerColor || '#1a56a0';
 
@@ -334,7 +335,7 @@ window.openPrintPreview = async function () {
             wpHeaderEl.style.display = '';
             let wpHtml = '<div class="pvw-block">';
             // Logo institucional (a la izquierda del nombre de la institución)
-            if (hasInstLogo) wpHtml += `<img class="pvw-logo" src="${instLogoSrc}" alt="Logo">`;
+            if (hasInstLogo) wpHtml += `<img class="pvw-logo" src="${instLogoSrc}" alt="Logo" style="max-height:${instLogoSize}px;width:auto;object-fit:contain;">`;
             wpHtml += '<div class="pvw-text">';
             if (wpName)  wpHtml += `<div class="pvw-name">${wpName}</div>`;
             const wpDetails = [wkAddr, wkPhone ? 'Tel: ' + wkPhone : '', wpEmail].filter(Boolean);

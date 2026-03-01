@@ -633,6 +633,14 @@ async function _handleFactorySetup(medicoId) {
             } catch(_) {}
         }
 
+        // Tamaño del logo institucional en PDF
+        if (regDatos.instLogoSize) {
+            try {
+                if (typeof appDB !== 'undefined') appDB.set('inst_logo_size_px', regDatos.instLogoSize);
+                localStorage.setItem('inst_logo_size_px', String(regDatos.instLogoSize));
+            } catch(_) {}
+        }
+
         // Header Color del PDF (solo afecta informes, NO el color de la app)
         if (regDatos.headerColor) {
             profData.headerColor = regDatos.headerColor;
