@@ -330,6 +330,22 @@ window.initModals = function () {
         handleImageUpload('pdfLogoUpload',      'pdfLogoPreview',      'pdf_logo');
     }
 
+    // Sliders de tamaño de logo y firma — label en vivo
+    const logoSizeSlider = document.getElementById('pdfLogoSize');
+    const firmaSizeSlider = document.getElementById('pdfFirmaSize');
+    if (logoSizeSlider) {
+        logoSizeSlider.addEventListener('input', () => {
+            const lbl = document.getElementById('logoSizeValue');
+            if (lbl) lbl.textContent = logoSizeSlider.value;
+        });
+    }
+    if (firmaSizeSlider) {
+        firmaSizeSlider.addEventListener('input', () => {
+            const lbl = document.getElementById('firmaSizeValue');
+            if (lbl) lbl.textContent = firmaSizeSlider.value;
+        });
+    }
+
     if (btnSavePdfConfig) {
         btnSavePdfConfig.addEventListener('click', () => {
             if (typeof savePdfConfiguration === 'function') savePdfConfiguration();
@@ -389,6 +405,8 @@ window.initModals = function () {
                     showQR: chk('pdfShowQR', false), showSignLine: chk('pdfShowSignLine', true),
                     showSignName: chk('pdfShowSignName', true), showSignMatricula: chk('pdfShowSignMatricula', true),
                     showSignImage: chk('pdfShowSignImage', false),
+                    logoSizePx: parseInt(document.getElementById('pdfLogoSize')?.value || '60'),
+                    firmaSizePx: parseInt(document.getElementById('pdfFirmaSize')?.value || '60'),
                     footerText: val('pdfFooterText'), selectedWorkplace: val('pdfWorkplace'),
                     workplaceAddress: val('pdfWorkplaceAddress'), workplacePhone: val('pdfWorkplacePhone'),
                     workplaceEmail: val('pdfWorkplaceEmail')

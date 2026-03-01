@@ -53,6 +53,8 @@
             showSignLine: chk('pdfShowSignLine', true),
             showSignName: chk('pdfShowSignName', true),
             showSignMatricula: chk('pdfShowSignMatricula', true),
+            logoSizePx: parseInt(document.getElementById('pdfLogoSize')?.value || '60'),
+            firmaSizePx: parseInt(document.getElementById('pdfFirmaSize')?.value || '60'),
             footerText: val('pdfFooterText')
         };
     }
@@ -96,6 +98,12 @@
         setChk('pdfShowSignLine', profile.showSignLine !== false);
         setChk('pdfShowSignName', profile.showSignName !== false);
         setChk('pdfShowSignMatricula', profile.showSignMatricula !== false);
+
+        // Sliders de tamaño
+        const logoSlider = document.getElementById('pdfLogoSize');
+        const firmaSlider = document.getElementById('pdfFirmaSize');
+        if (logoSlider && profile.logoSizePx) { logoSlider.value = profile.logoSizePx; const lbl = document.getElementById('logoSizeValue'); if (lbl) lbl.textContent = profile.logoSizePx; }
+        if (firmaSlider && profile.firmaSizePx) { firmaSlider.value = profile.firmaSizePx; const lbl = document.getElementById('firmaSizeValue'); if (lbl) lbl.textContent = profile.firmaSizePx; }
 
         // Footer
         set('pdfFooterText', profile.footerText);

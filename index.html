@@ -997,6 +997,10 @@
                                     <input type="file" id="pdfLogoUpload" accept="image/*">
                                     <div id="pdfLogoPreview" class="logo-preview"></div>
                                 </div>
+                                <div class="field-group" id="logoSizeGroup">
+                                    <label>📐 Tamaño del logo profesional: <span id="logoSizeValue">60</span>px</label>
+                                    <input type="range" id="pdfLogoSize" min="30" max="200" value="60" step="5" style="width:100%;accent-color:var(--primary);">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1155,6 +1159,10 @@
                                 <label><input type="checkbox" id="pdfShowSignName" checked> Incluir nombre debajo de firma</label>
                                 <label><input type="checkbox" id="pdfShowSignMatricula" checked> Incluir matrícula debajo de firma</label>
                                 <label><input type="checkbox" id="pdfShowSignImage" checked> Insertar firma digital (si está disponible)</label>
+                            </div>
+                            <div class="field-group" style="margin-top:12px;">
+                                <label>📐 Tamaño de la firma digital: <span id="firmaSizeValue">60</span>px</label>
+                                <input type="range" id="pdfFirmaSize" min="30" max="150" value="60" step="5" style="width:100%;accent-color:var(--primary);">
                             </div>
                         </div>
                     </div>

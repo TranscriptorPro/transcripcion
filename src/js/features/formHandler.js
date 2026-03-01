@@ -158,6 +158,8 @@ window.savePdfConfiguration = function () {
         showSignName: chk('pdfShowSignName', true),
         showSignMatricula: chk('pdfShowSignMatricula', true),
         showSignImage: chk('pdfShowSignImage', false),
+        logoSizePx: parseInt(document.getElementById('pdfLogoSize')?.value || '60'),
+        firmaSizePx: parseInt(document.getElementById('pdfFirmaSize')?.value || '60'),
         footerText: val('pdfFooterText'),
         selectedWorkplace: val('pdfWorkplace'),
         workplaceAddress: val('pdfWorkplaceAddress'),
@@ -173,6 +175,13 @@ window.savePdfConfiguration = function () {
     window._pdfConfigCache = config;
     if (typeof appDB !== 'undefined') appDB.set('pdf_config', config);
     else localStorage.setItem('pdf_config', JSON.stringify(config));
+    // Persistir tamaños de logo y firma en localStorage para acceso rápido
+    localStorage.setItem('prof_logo_size_px', String(config.logoSizePx || 60));
+    localStorage.setItem('firma_size_px', String(config.firmaSizePx || 60));
+    if (typeof appDB !== 'undefined') {
+        appDB.set('prof_logo_size_px', config.logoSizePx || 60);
+        appDB.set('firma_size_px', config.firmaSizePx || 60);
+    }
     if (typeof showToast === 'function') showToast('💾 Configuración PDF guardada', 'success');
 }
 
@@ -212,6 +221,13 @@ window.loadPdfConfiguration = async function () {
     setChk('pdfShowSignLine', config.showSignLine, true);
     setChk('pdfShowSignName', config.showSignName, true);
     setChk('pdfShowSignMatricula', config.showSignMatricula, true);
+    // Sliders de tamaño
+    const logoSlider = document.getElementById('pdfLogoSize');
+    const firmaSlider = document.getElementById('pdfFirmaSize');
+    const lsVal = config.logoSizePx || parseInt(localStorage.getItem('prof_logo_size_px') || '60');
+    const fsVal = config.firmaSizePx || parseInt(localStorage.getItem('firma_size_px') || '60');
+    if (logoSlider) { logoSlider.value = lsVal; const lbl = document.getElementById('logoSizeValue'); if (lbl) lbl.textContent = lsVal; }
+    if (firmaSlider) { firmaSlider.value = fsVal; const lbl = document.getElementById('firmaSizeValue'); if (lbl) lbl.textContent = fsVal; }
     set('pdfFooterText', config.footerText);
     set('pdfWorkplace', config.selectedWorkplace);
     set('pdfWorkplaceAddress', config.workplaceAddress);

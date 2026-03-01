@@ -237,7 +237,8 @@ window.openPrintPreview = async function () {
         ? (_titleMatch[1].trim().toLowerCase().startsWith('dra') ? 'Dra.' : 'Dr.')
         : 'Dr.';
     const profDisplayName = escName(_rawNameStr.replace(/^(Dra?\.?\s*)/i, '').trim()) || profName;
-    const profLogoSize = parseInt(localStorage.getItem('prof_logo_size_px') || '60');
+    const profLogoSize = config.logoSizePx || parseInt(localStorage.getItem('prof_logo_size_px') || '60');
+    const firmaSize   = config.firmaSizePx || parseInt(localStorage.getItem('firma_size_px') || '60');
     const institutionName = escName(activePro?.institutionName || profData.institutionName || '');
     const accentColor     = activePro?.headerColor || profData.headerColor || '#1a56a0';
 
@@ -436,7 +437,7 @@ window.openPrintPreview = async function () {
             sigEl.style.display = '';
             let sigHtml = '<div class="pvsig-block">';
             // Imagen de firma va ENCIMA de la línea
-            if (showSignImage && hasSig) sigHtml += `<img src="${sigSrc}" class="pvsig-img" alt="Firma">`;
+            if (showSignImage && hasSig) sigHtml += `<img src="${sigSrc}" class="pvsig-img" alt="Firma" style="max-height:${firmaSize}px;">`;
             if (showSignLine) sigHtml += `<div class="pvsig-line"></div>`;
             if (showSignName && profName) sigHtml += `<div class="pvsig-name">${profName}</div>`;
             if (showSignMat  && matricula) sigHtml += `<div class="pvsig-mat">Mat. ${matricula}</div>`;
