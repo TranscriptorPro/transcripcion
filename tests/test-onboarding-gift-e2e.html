@@ -543,6 +543,11 @@ async function suite_D_ConfigAsistida() {
         const sw = document.createElement('div');
         sw.className = 'onb-color-swatch' + (c === savedColor ? ' selected' : '');
         sw.dataset.color = c;
+        sw.style.background = c;
+        sw.addEventListener('click', () => {
+            palette.querySelectorAll('.onb-color-swatch').forEach(s => s.classList.remove('selected'));
+            sw.classList.add('selected');
+        });
         palette.appendChild(sw);
     });
     if (!palette.querySelector('.onb-color-swatch.selected')) palette.firstChild?.classList.add('selected');
