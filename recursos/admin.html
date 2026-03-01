@@ -4090,6 +4090,10 @@
             const originalText = btn.textContent;
             btn.textContent = '⏳ Procesando...';
 
+            // Variables hoisted para que sean accesibles tras el if/else
+            let selectedDuration = 0, selectedDevices = 0, selectedPlan = 'GIFT',
+                selectedTemplates = [], selectedProMode = true;
+
             try {
                 let userId;
                 let userName;
@@ -4144,15 +4148,15 @@
 
                     // Generar ID
                     const newId = 'GIFT' + Date.now().toString(36).toUpperCase();
-                    const selectedTemplates = _getSelectedGiftTemplates();
+                    selectedTemplates = _getSelectedGiftTemplates();
                     const allTemplatesJson = JSON.stringify(selectedTemplates);
                     const now = new Date().toISOString();
 
                     // Leer opciones de licencia del paso 4
-                    const selectedPlan = document.getElementById('giftPlan').value || 'GIFT';
-                    const selectedDevices = parseInt(document.getElementById('giftDevices').value) || 10;
-                    const selectedDuration = parseInt(document.getElementById('giftDuration').value);
-                    const selectedProMode = document.getElementById('giftProMode').value === 'true';
+                    selectedPlan     = document.getElementById('giftPlan').value || 'GIFT';
+                    selectedDevices  = parseInt(document.getElementById('giftDevices').value) || 10;
+                    selectedDuration = parseInt(document.getElementById('giftDuration').value);
+                    selectedProMode  = document.getElementById('giftProMode').value === 'true';
 
                     // Calcular fecha vencimiento según duración elegida
                     let fechaVenc = '';
@@ -5815,134 +5819,171 @@
                     </div>
 
                     <!-- ══════════════════════════════════════════════════════════ -->
-                    <!-- ── PASO 5: Procesador de Imágenes ── -->
+                    <!-- ── PASO 5: Imágenes del Informe ── -->
                     <!-- ══════════════════════════════════════════════════════════ -->
                     <div id="giftStep5" style="display:none;">
-                        <p class="gw-section-title">🖼️ Paso 5 — Procesador de Imágenes</p>
-                        <p class="gw-section-sub">Procesá las imágenes que subiste: quitá fondos, recortá y escalá al tamaño exacto del PDF. También podés subir nuevas.</p>
+                        <p class="gw-section-title">🖼️ Paso 5 — Imágenes del Informe</p>
+                        <p class="gw-section-sub">Subí y procesá cada imagen. La IA eliminará el fondo automáticamente. Todos los campos son opcionales.</p>
 
-                        <!-- Selector de imagen a procesar -->
-                        <div class="gw-card">
-                            <p class="gw-section-title">📷 Seleccionar Imagen</p>
-                            <div class="imgproc-field">
-                                <label for="imgprocType">Tipo de imagen</label>
-                                <select id="imgprocType" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #d1d5db;font-size:.85rem;">
-                                    <option value="inst">Logo institucional (28×18 mm)</option>
-                                    <option value="prof">Logo profesional (16×16 mm)</option>
-                                    <option value="firma">Firma digital (50×20 mm)</option>
-                                </select>
+                        <!-- ── CARD: Logo Institucional ── -->
+                        <div class="gw-card" style="margin-bottom:.6rem;">
+                            <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem;">
+                                <div style="width:38px;height:38px;background:#eff6ff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">🏥</div>
+                                <div style="flex:1;">
+                                    <p style="font-weight:600;font-size:.87rem;color:#1e40af;margin:0;">Logo Institucional</p>
+                                    <p style="font-size:.73rem;color:#64748b;margin:0;">Izquierda del encabezado · 28×18 mm</p>
+                                </div>
+                                <span id="imgInst-status" style="font-size:.7rem;padding:2px 8px;border-radius:10px;background:#f1f5f9;color:#64748b;">Vacío</span>
                             </div>
-                            <div style="display:flex;gap:0.5rem;margin-top:.5rem;flex-wrap:wrap;">
-                                <button type="button" class="btn-secondary" id="imgprocLoadFromStep3" style="padding:6px 14px;font-size:.82rem;">📥 Cargar imagen del paso 3</button>
-                                <label class="btn-secondary" for="imgprocFileInput" style="padding:6px 14px;font-size:.82rem;cursor:pointer;display:inline-flex;align-items:center;">📂 Subir nueva</label>
-                                <input type="file" id="imgprocFileInput" accept="image/*" style="display:none;">
-                                <button type="button" class="btn-secondary" id="imgprocPasteUrl" style="padding:6px 14px;font-size:.82rem;">📋 Pegar URL</button>
+                            <div id="imgInst-thumb-wrap" style="display:none;background:repeating-conic-gradient(#e0e0e0 0% 25%,#fff 0% 50%) 0 0/12px 12px;border-radius:6px;padding:6px;text-align:center;margin-bottom:.45rem;">
+                                <img id="imgInst-thumb" style="max-height:50px;max-width:100%;object-fit:contain;">
+                            </div>
+                            <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
+                                <label class="btn-secondary" for="imgInst-file" style="padding:5px 11px;font-size:.8rem;cursor:pointer;">📂 Subir imagen</label>
+                                <input type="file" id="imgInst-file" accept="image/*" style="display:none;">
+                                <button type="button" class="btn-secondary" id="imgInst-from2" style="padding:5px 11px;font-size:.8rem;">📥 Del paso 2</button>
+                                <button type="button" class="btn-secondary" id="imgInst-clear" style="padding:5px 8px;font-size:.8rem;display:none;color:#ef4444;border-color:#fca5a5;" title="Quitar imagen">🗑️</button>
+                            </div>
+                            <div id="imgInst-proc-section" style="display:none;margin-top:.45rem;padding-top:.45rem;border-top:1px solid #f1f5f9;">
+                                <div style="display:flex;gap:.7rem;flex-wrap:wrap;font-size:.8rem;margin-bottom:.35rem;">
+                                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="imgInst-bg" checked style="accent-color:var(--primary);"> 🤖 Quitar fondo</label>
+                                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="imgInst-trim" checked style="accent-color:var(--primary);"> ✂️ Auto-recortar</label>
+                                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="imgInst-scale" checked style="accent-color:var(--primary);"> 📐 Escalar</label>
+                                </div>
+                                <button type="button" class="btn-primary" id="imgInst-process" style="width:100%;padding:6px 0;font-size:.82rem;">⚙️ Procesar imagen</button>
+                            </div>
+                            <div id="imgInst-edit-section" style="display:none;margin-top:.45rem;padding-top:.45rem;border-top:1px solid #f1f5f9;">
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-bottom:.4rem;">
+                                    <div><p style="font-size:.7rem;color:#64748b;margin:0 0 2px;">Original</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:60px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="imgInst-orig" style="max-width:100%;max-height:90px;object-fit:contain;"></div></div>
+                                    <div><p style="font-size:.7rem;color:#64748b;margin:0 0 2px;">Resultado</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:60px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="imgInst-result" style="max-width:100%;max-height:90px;object-fit:contain;"></div></div>
+                                </div>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem .7rem;font-size:.78rem;margin-bottom:.35rem;">
+                                    <div><label style="color:#64748b;">☀️ Brillo <span id="imgInst-brval">100</span>%</label><input type="range" id="imgInst-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
+                                    <div><label style="color:#64748b;">🎨 Contraste <span id="imgInst-cnval">100</span>%</label><input type="range" id="imgInst-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
+                                </div>
+                                <div style="display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:.35rem;">
+                                    <button type="button" class="btn-secondary" id="imgInst-rotL" style="padding:3px 9px;font-size:.77rem;" title="Rotar izquierda">↺90°</button>
+                                    <button type="button" class="btn-secondary" id="imgInst-rotR" style="padding:3px 9px;font-size:.77rem;" title="Rotar derecha">↻90°</button>
+                                    <button type="button" class="btn-secondary" id="imgInst-fH" style="padding:3px 9px;font-size:.77rem;" title="Voltear horizontal">⟺H</button>
+                                    <button type="button" class="btn-secondary" id="imgInst-fV" style="padding:3px 9px;font-size:.77rem;" title="Voltear vertical">⇅V</button>
+                                    <button type="button" class="btn-secondary" id="imgInst-reset" style="padding:3px 9px;font-size:.77rem;margin-left:auto;" title="Resetear">↩</button>
+                                </div>
+                                <button type="button" class="btn-primary" id="imgInst-apply" style="width:100%;padding:6px 0;font-size:.82rem;background:#10b981;border-color:#10b981;">✅ Usar esta imagen</button>
                             </div>
                         </div>
 
-                        <!-- Opciones de procesamiento -->
-                        <div class="gw-card">
-                            <p class="gw-section-title">⚙️ Opciones</p>
-                            <div class="imgproc-options">
-                                <label class="imgproc-checkbox"><input type="checkbox" id="imgprocRemoveBg" checked> Quitar fondo</label>
-                                <div class="imgproc-threshold-row" id="imgprocThresholdRow" style="display:flex;align-items:center;gap:8px;padding-left:22px;font-size:.82rem;color:#64748b;">
-                                    <span>Umbral:</span>
-                                    <input type="range" id="imgprocThreshold" min="5" max="80" value="30" style="flex:1;accent-color:var(--primary);">
-                                    <span id="imgprocThresholdVal">30</span>
+                        <!-- ── CARD: Logo del Médico ── -->
+                        <div class="gw-card" style="margin-bottom:.6rem;">
+                            <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem;">
+                                <div style="width:38px;height:38px;background:#f0fdf4;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">👤</div>
+                                <div style="flex:1;">
+                                    <p style="font-weight:600;font-size:.87rem;color:#166534;margin:0;">Logo del Médico</p>
+                                    <p style="font-size:.73rem;color:#64748b;margin:0;">Derecha del encabezado · 16×16 mm</p>
                                 </div>
-                                <label class="imgproc-checkbox"><input type="checkbox" id="imgprocTrim" checked> Auto-recortar bordes vacíos</label>
-                                <label class="imgproc-checkbox"><input type="checkbox" id="imgprocScale" checked> Escalar a medidas del PDF</label>
+                                <span id="imgProf-status" style="font-size:.7rem;padding:2px 8px;border-radius:10px;background:#f1f5f9;color:#64748b;">Vacío</span>
                             </div>
-                            <button type="button" class="btn-primary" id="imgprocProcess" style="width:100%;padding:8px 0;margin-top:.5rem;font-size:.85rem;" disabled>⚙️ Procesar imagen</button>
+                            <div id="imgProf-thumb-wrap" style="display:none;background:repeating-conic-gradient(#e0e0e0 0% 25%,#fff 0% 50%) 0 0/12px 12px;border-radius:6px;padding:6px;text-align:center;margin-bottom:.45rem;">
+                                <img id="imgProf-thumb" style="max-height:50px;max-width:100%;object-fit:contain;">
+                            </div>
+                            <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
+                                <label class="btn-secondary" for="imgProf-file" style="padding:5px 11px;font-size:.8rem;cursor:pointer;">📂 Subir imagen</label>
+                                <input type="file" id="imgProf-file" accept="image/*" style="display:none;">
+                                <button type="button" class="btn-secondary" id="imgProf-from3" style="padding:5px 11px;font-size:.8rem;">📥 Del paso 3</button>
+                                <button type="button" class="btn-secondary" id="imgProf-clear" style="padding:5px 8px;font-size:.8rem;display:none;color:#ef4444;border-color:#fca5a5;" title="Quitar imagen">🗑️</button>
+                            </div>
+                            <div id="imgProf-proc-section" style="display:none;margin-top:.45rem;padding-top:.45rem;border-top:1px solid #f1f5f9;">
+                                <div style="display:flex;gap:.7rem;flex-wrap:wrap;font-size:.8rem;margin-bottom:.35rem;">
+                                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="imgProf-bg" checked style="accent-color:var(--primary);"> 🤖 Quitar fondo</label>
+                                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="imgProf-trim" checked style="accent-color:var(--primary);"> ✂️ Auto-recortar</label>
+                                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="imgProf-scale" checked style="accent-color:var(--primary);"> 📐 Escalar</label>
+                                </div>
+                                <button type="button" class="btn-primary" id="imgProf-process" style="width:100%;padding:6px 0;font-size:.82rem;">⚙️ Procesar imagen</button>
+                            </div>
+                            <div id="imgProf-edit-section" style="display:none;margin-top:.45rem;padding-top:.45rem;border-top:1px solid #f1f5f9;">
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-bottom:.4rem;">
+                                    <div><p style="font-size:.7rem;color:#64748b;margin:0 0 2px;">Original</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:60px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="imgProf-orig" style="max-width:100%;max-height:90px;object-fit:contain;"></div></div>
+                                    <div><p style="font-size:.7rem;color:#64748b;margin:0 0 2px;">Resultado</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:60px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="imgProf-result" style="max-width:100%;max-height:90px;object-fit:contain;"></div></div>
+                                </div>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem .7rem;font-size:.78rem;margin-bottom:.35rem;">
+                                    <div><label style="color:#64748b;">☀️ Brillo <span id="imgProf-brval">100</span>%</label><input type="range" id="imgProf-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
+                                    <div><label style="color:#64748b;">🎨 Contraste <span id="imgProf-cnval">100</span>%</label><input type="range" id="imgProf-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
+                                </div>
+                                <div style="display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:.35rem;">
+                                    <button type="button" class="btn-secondary" id="imgProf-rotL" style="padding:3px 9px;font-size:.77rem;">↺90°</button>
+                                    <button type="button" class="btn-secondary" id="imgProf-rotR" style="padding:3px 9px;font-size:.77rem;">↻90°</button>
+                                    <button type="button" class="btn-secondary" id="imgProf-fH" style="padding:3px 9px;font-size:.77rem;">⟺H</button>
+                                    <button type="button" class="btn-secondary" id="imgProf-fV" style="padding:3px 9px;font-size:.77rem;">⇅V</button>
+                                    <button type="button" class="btn-secondary" id="imgProf-reset" style="padding:3px 9px;font-size:.77rem;margin-left:auto;">↩</button>
+                                </div>
+                                <button type="button" class="btn-primary" id="imgProf-apply" style="width:100%;padding:6px 0;font-size:.82rem;background:#10b981;border-color:#10b981;">✅ Usar esta imagen</button>
+                            </div>
                         </div>
 
-                        <!-- Previews -->
-                        <div class="gw-card">
-                            <div class="imgproc-preview-grid">
-                                <div class="imgproc-preview-box">
-                                    <h4 style="font-size:.82rem;color:#64748b;margin-bottom:4px;">Original</h4>
-                                    <div class="imgproc-preview-area imgproc-checkerboard" id="imgprocOrigPreview">
-                                        <span class="imgproc-placeholder">Sin imagen</span>
-                                    </div>
+                        <!-- ── CARD: Firma Digital ── -->
+                        <div class="gw-card" style="margin-bottom:.6rem;">
+                            <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem;">
+                                <div style="width:38px;height:38px;background:#fefce8;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">✍️</div>
+                                <div style="flex:1;">
+                                    <p style="font-weight:600;font-size:.87rem;color:#713f12;margin:0;">Firma Digital</p>
+                                    <p style="font-size:.73rem;color:#64748b;margin:0;">Al pie del informe · 50×20 mm</p>
                                 </div>
-                                <div class="imgproc-preview-box">
-                                    <h4 style="font-size:.82rem;color:#64748b;margin-bottom:4px;">Resultado</h4>
-                                    <div class="imgproc-preview-area imgproc-checkerboard" id="imgprocResultPreview">
-                                        <span class="imgproc-placeholder">—</span>
-                                    </div>
+                                <span id="imgFirma-status" style="font-size:.7rem;padding:2px 8px;border-radius:10px;background:#f1f5f9;color:#64748b;">Vacío</span>
+                            </div>
+                            <div id="imgFirma-thumb-wrap" style="display:none;background:repeating-conic-gradient(#e0e0e0 0% 25%,#fff 0% 50%) 0 0/12px 12px;border-radius:6px;padding:6px;text-align:center;margin-bottom:.45rem;">
+                                <img id="imgFirma-thumb" style="max-height:50px;max-width:100%;object-fit:contain;">
+                            </div>
+                            <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
+                                <label class="btn-secondary" for="imgFirma-file" style="padding:5px 11px;font-size:.8rem;cursor:pointer;">📂 Subir imagen</label>
+                                <input type="file" id="imgFirma-file" accept="image/*" style="display:none;">
+                                <button type="button" class="btn-secondary" id="imgFirma-from3" style="padding:5px 11px;font-size:.8rem;">📥 Del paso 3</button>
+                                <button type="button" class="btn-secondary" id="imgFirma-clear" style="padding:5px 8px;font-size:.8rem;display:none;color:#ef4444;border-color:#fca5a5;" title="Quitar imagen">🗑️</button>
+                            </div>
+                            <div id="imgFirma-proc-section" style="display:none;margin-top:.45rem;padding-top:.45rem;border-top:1px solid #f1f5f9;">
+                                <div style="display:flex;gap:.7rem;flex-wrap:wrap;font-size:.8rem;margin-bottom:.35rem;">
+                                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="imgFirma-bg" checked style="accent-color:var(--primary);"> 🤖 Quitar fondo</label>
+                                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="imgFirma-trim" checked style="accent-color:var(--primary);"> ✂️ Auto-recortar</label>
+                                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="imgFirma-scale" checked style="accent-color:var(--primary);"> 📐 Escalar</label>
                                 </div>
+                                <button type="button" class="btn-primary" id="imgFirma-process" style="width:100%;padding:6px 0;font-size:.82rem;">⚙️ Procesar imagen</button>
+                            </div>
+                            <div id="imgFirma-edit-section" style="display:none;margin-top:.45rem;padding-top:.45rem;border-top:1px solid #f1f5f9;">
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-bottom:.4rem;">
+                                    <div><p style="font-size:.7rem;color:#64748b;margin:0 0 2px;">Original</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:60px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="imgFirma-orig" style="max-width:100%;max-height:90px;object-fit:contain;"></div></div>
+                                    <div><p style="font-size:.7rem;color:#64748b;margin:0 0 2px;">Resultado</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:60px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="imgFirma-result" style="max-width:100%;max-height:90px;object-fit:contain;"></div></div>
+                                </div>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem .7rem;font-size:.78rem;margin-bottom:.35rem;">
+                                    <div><label style="color:#64748b;">☀️ Brillo <span id="imgFirma-brval">100</span>%</label><input type="range" id="imgFirma-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
+                                    <div><label style="color:#64748b;">🎨 Contraste <span id="imgFirma-cnval">100</span>%</label><input type="range" id="imgFirma-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
+                                </div>
+                                <div style="display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:.35rem;">
+                                    <button type="button" class="btn-secondary" id="imgFirma-rotL" style="padding:3px 9px;font-size:.77rem;">↺90°</button>
+                                    <button type="button" class="btn-secondary" id="imgFirma-rotR" style="padding:3px 9px;font-size:.77rem;">↻90°</button>
+                                    <button type="button" class="btn-secondary" id="imgFirma-fH" style="padding:3px 9px;font-size:.77rem;">⟺H</button>
+                                    <button type="button" class="btn-secondary" id="imgFirma-fV" style="padding:3px 9px;font-size:.77rem;">⇅V</button>
+                                    <button type="button" class="btn-secondary" id="imgFirma-reset" style="padding:3px 9px;font-size:.77rem;margin-left:auto;">↩</button>
+                                </div>
+                                <button type="button" class="btn-primary" id="imgFirma-apply" style="width:100%;padding:6px 0;font-size:.82rem;background:#10b981;border-color:#10b981;">✅ Usar esta imagen</button>
                             </div>
                         </div>
 
-                        <!-- ── Editor interactivo post-proceso ── -->
-                        <div class="gw-card" id="imgprocEditorCard" style="display:none;">
-                            <p class="gw-section-title" style="margin-bottom:.4rem;">✏️ Editor Interactivo</p>
-                            <p style="font-size:.78rem;color:#64748b;margin-bottom:.5rem;">Ajustá el resultado antes de aplicar. Arrastrá sobre la imagen para recortar.</p>
-
-                            <!-- Canvas de edición -->
-                            <div style="position:relative;width:100%;border-radius:8px;overflow:hidden;background:repeating-conic-gradient(#e0e0e0 0% 25%,#f5f5f5 0% 50%) 0 0 / 16px 16px;margin-bottom:.5rem;" id="imgprocEditorWrap">
-                                <canvas id="imgprocEditorCanvas" style="display:block;width:100%;height:auto;cursor:crosshair;"></canvas>
-                                <canvas id="imgprocCropOverlay" style="position:absolute;top:0;left:0;width:100%;height:100%;cursor:crosshair;"></canvas>
-                            </div>
-
-                            <!-- Controles principales -->
-                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem .8rem;font-size:.82rem;margin-bottom:.5rem;">
-                                <div>
-                                    <label style="color:#64748b;">☀️ Brillo <span id="imgprocBrightnessVal">100%</span></label>
-                                    <input type="range" id="imgprocBrightness" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);">
-                                </div>
-                                <div>
-                                    <label style="color:#64748b;">🎨 Contraste <span id="imgprocContrastVal">100%</span></label>
-                                    <input type="range" id="imgprocContrast" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);">
-                                </div>
-                            </div>
-
-                            <!-- Botones transform -->
-                            <div style="display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.5rem;">
-                                <button type="button" class="btn-secondary" id="imgprocRotL" style="padding:5px 10px;font-size:.8rem;" title="Rotar 90° izquierda">↺ 90°</button>
-                                <button type="button" class="btn-secondary" id="imgprocRotR" style="padding:5px 10px;font-size:.8rem;" title="Rotar 90° derecha">↻ 90°</button>
-                                <button type="button" class="btn-secondary" id="imgprocFlipH" style="padding:5px 10px;font-size:.8rem;" title="Voltear horizontal">⟺ H</button>
-                                <button type="button" class="btn-secondary" id="imgprocFlipV" style="padding:5px 10px;font-size:.8rem;" title="Voltear vertical">⇅ V</button>
-                                <button type="button" class="btn-secondary" id="imgprocCropApply" style="padding:5px 10px;font-size:.8rem;display:none;">✂️ Aplicar recorte</button>
-                                <button type="button" class="btn-secondary" id="imgprocCropCancel" style="padding:5px 10px;font-size:.8rem;display:none;">✕ Cancelar recorte</button>
-                                <button type="button" class="btn-secondary" id="imgprocEditorReset" style="padding:5px 10px;font-size:.8rem;margin-left:auto;">↩ Resetear</button>
-                            </div>
-
-                            <!-- Hint crop -->
-                            <p id="imgprocCropHint" style="font-size:.75rem;color:#94a3b8;margin-bottom:.4rem;">Arrastrá sobre la imagen para seleccionar un área de recorte.</p>
-
-                            <button type="button" class="btn-primary" id="imgprocEditorApply" style="width:100%;padding:7px 0;font-size:.84rem;">✅ Aplicar ediciones al resultado</button>
-                        </div>
-
-                        <!-- Simulación header PDF -->
+                        <!-- Preview PDF contextual -->
                         <div class="gw-card" id="imgprocSimBox" style="display:none;">
-                            <h4 style="font-size:.82rem;color:#64748b;margin-bottom:6px;">Preview en contexto (Header PDF)</h4>
-                            <div class="imgproc-pdf-sim" id="imgprocPdfSim" style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px 16px;font-family:'Times New Roman',serif;color:#222;">
-                                <div style="display:flex;align-items:center;gap:10px;min-height:50px;">
+                            <p style="font-size:.8rem;font-weight:600;color:#64748b;margin-bottom:6px;">👁️ Preview en contexto (encabezado PDF)</p>
+                            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:10px 14px;font-family:'Times New Roman',serif;color:#222;">
+                                <div style="display:flex;align-items:center;gap:10px;min-height:48px;">
                                     <div id="imgprocSimLogoLeft" style="flex-shrink:0;"></div>
-                                    <div style="flex:1;font-size:12px;">
-                                        <strong>Dr. Nombre Ejemplo</strong><br>
-                                        <small>Especialidad · Mat. MP-000</small>
-                                    </div>
+                                    <div style="flex:1;font-size:11px;"><strong>Dr. Nombre Ejemplo</strong><br><small>Especialidad · Mat. MP-000</small></div>
                                     <div id="imgprocSimLogoRight" style="flex-shrink:0;"></div>
                                 </div>
-                                <div style="border-top:2px solid var(--primary);margin:6px 0;"></div>
-                                <p style="font-size:11px;color:#888;margin:8px 0;">Contenido del informe...</p>
-                                <div id="imgprocSimFirma" style="display:none;text-align:center;margin-top:10px;font-size:10px;">
+                                <div style="border-top:2px solid var(--primary);margin:5px 0;"></div>
+                                <p style="font-size:10px;color:#888;margin:6px 0;">Contenido del informe...</p>
+                                <div id="imgprocSimFirma" style="display:none;text-align:center;margin-top:8px;font-size:9px;">
                                     <div id="imgprocSimFirmaImg"></div>
-                                    <div style="border-top:1px solid #333;width:80px;margin:2px auto 0;"></div>
-                                    <small>Dr. Nombre Ejemplo<br>Mat. MP-000</small>
+                                    <div style="border-top:1px solid #333;width:70px;margin:2px auto 0;"></div>
+                                    <small>Dr. Nombre Ejemplo · Mat. MP-000</small>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Acciones -->
-                        <div class="imgproc-actions" id="imgprocActions" style="display:none;margin-top:.5rem;">
-                            <button type="button" class="btn-secondary" id="imgprocDownload" style="padding:6px 14px;font-size:.82rem;">⬇️ Descargar PNG</button>
-                            <button type="button" class="btn-secondary" id="imgprocCopyB64" style="padding:6px 14px;font-size:.82rem;">📋 Copiar Base64</button>
-                            <button type="button" class="btn-primary" id="imgprocApply" style="padding:6px 14px;font-size:.82rem;">✅ Aplicar al registro</button>
-                        </div>
-                        <p id="imgprocB64Info" style="display:none;font-size:.78rem;color:#64748b;margin-top:.3rem;"></p>
 
                         <div style="display:flex;justify-content:space-between;margin-top:.8rem;">
                             <button type="button" class="btn-secondary" onclick="giftGoStep(4)" style="padding:7px 16px;font-size:.84rem;">← Anterior</button>
@@ -6544,498 +6585,266 @@
         }
 
         /* ── Inicialización al entrar al Step 5 ─────────────────── */
-        window._imgprocInitStep5 = function() {
-            // Nada que reiniciar, el estado se mantiene mientras el modal esté abierto
-        };
+        window._imgprocInitStep5 = function() { /* estado persistente mientras el modal esté abierto */ };
 
-        /* ── Conectar eventos una vez que el DOM esté listo ─────── */
-        function initImageProcessor() {
-            const elType        = document.getElementById('imgprocType');
-            const elFileInput   = document.getElementById('imgprocFileInput');
-            const elPasteUrl    = document.getElementById('imgprocPasteUrl');
-            const elRemoveBg    = document.getElementById('imgprocRemoveBg');
-            const elThreshold   = document.getElementById('imgprocThreshold');
-            const elThresholdVal= document.getElementById('imgprocThresholdVal');
-            const elThresholdRow= document.getElementById('imgprocThresholdRow');
-            const elTrim        = document.getElementById('imgprocTrim');
-            const elScale       = document.getElementById('imgprocScale');
-            const elProcess     = document.getElementById('imgprocProcess');
-            const elOrigPrev    = document.getElementById('imgprocOrigPreview');
-            const elResultPrev  = document.getElementById('imgprocResultPreview');
-            const elSimBox      = document.getElementById('imgprocSimBox');
-            const elSimLogoL    = document.getElementById('imgprocSimLogoLeft');
-            const elSimLogoR    = document.getElementById('imgprocSimLogoRight');
-            const elSimFirma    = document.getElementById('imgprocSimFirma');
-            const elSimFirmaImg = document.getElementById('imgprocSimFirmaImg');
-            const elActions     = document.getElementById('imgprocActions');
-            const elDownload    = document.getElementById('imgprocDownload');
-            const elCopyB64     = document.getElementById('imgprocCopyB64');
-            const elApply       = document.getElementById('imgprocApply');
-            const elB64Info     = document.getElementById('imgprocB64Info');
-            const elLoadStep3   = document.getElementById('imgprocLoadFromStep3');
+        /* ── Factory: crea un procesador independiente por tipo de imagen ─── */
+        function _makeImageSection(cfg) {
+            // cfg: { type, prefix, getFromPrev, saveResult, target }
+            const g = (id) => document.getElementById(cfg.prefix + id);
+            const state = { origImg: null, resultB64: null, rot: 0, fH: false, fV: false, br: 100, cn: 100 };
 
-            if (!elType || !elProcess) return; // guard
-
-            function showOriginalPreview(img) {
-                _originalImage = img;
-                elOrigPrev.innerHTML = '';
-                const preview = document.createElement('img');
-                preview.src = img.src;
-                preview.alt = 'Original';
-                preview.style.maxWidth = '100%';
-                preview.style.maxHeight = '180px';
-                preview.style.objectFit = 'contain';
-                elOrigPrev.appendChild(preview);
-                elProcess.disabled = false;
-                elResultPrev.innerHTML = '<span class="imgproc-placeholder">—</span>';
-                elActions.style.display = 'none';
-                elSimBox.style.display = 'none';
-                elB64Info.style.display = 'none';
-                _resultB64 = null;
+            function setStatus(text, color) {
+                const el = g('-status');
+                if (!el) return;
+                el.textContent = text;
+                el.style.background = color || '#f1f5f9';
+                el.style.color = color ? '#fff' : '#64748b';
             }
 
-            // Cargar imagen desde Step 3
-            elLoadStep3.addEventListener('click', async () => {
-                const type = elType.value;
-                let b64 = null;
-                if (type === 'firma' && _giftImageData && _giftImageData.firma) {
-                    b64 = _giftImageData.firma;
-                } else if (type === 'prof' && _giftImageData && _giftImageData.proLogo) {
-                    b64 = _giftImageData.proLogo;
-                } else if (type === 'inst') {
-                    // Buscar logo del primer workplace
-                    const firstKey = Object.keys(_giftWpLogoData || {})[0];
-                    if (firstKey && _giftWpLogoData[firstKey]) b64 = _giftWpLogoData[firstKey];
-                }
-                if (!b64) {
-                    if (typeof dashAlert === 'function') dashAlert('No se encontró imagen de este tipo en el paso 3. Subí una primero.', '📷');
-                    else alert('No se encontró imagen de este tipo en el paso 3.');
-                    return;
-                }
-                try {
-                    const img = await loadImageFromSrc(b64);
-                    showOriginalPreview(img);
-                } catch (err) {
-                    alert('Error al cargar la imagen: ' + err.message);
-                }
-            });
+            function showThumb(src) {
+                const wrap = g('-thumb-wrap'), img = g('-thumb');
+                if (!wrap || !img) return;
+                img.src = src; wrap.style.display = 'block';
+            }
 
-            // Subir nueva imagen
-            elFileInput.addEventListener('change', async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                if (file.size > 5 * 1024 * 1024) {
-                    alert('La imagen no puede superar 5 MB');
-                    elFileInput.value = '';
-                    return;
-                }
-                const reader = new FileReader();
-                reader.onload = async (ev) => {
-                    try {
-                        const img = await loadImageFromSrc(ev.target.result);
-                        showOriginalPreview(img);
-                    } catch (err) {
-                        alert('Error al cargar imagen: ' + err.message);
-                    }
+            function renderResult() {
+                if (!state.resultB64) return;
+                // Apply brightness/contrast via canvas
+                const base = new Image();
+                base.onload = () => {
+                    const sw = base.naturalWidth, sh = base.naturalHeight;
+                    const rot = state.rot, swapped = rot === 90 || rot === 270;
+                    const ow = swapped ? sh : sw, oh = swapped ? sw : sh;
+                    const c = document.createElement('canvas'); c.width = ow; c.height = oh;
+                    const ctx = c.getContext('2d');
+                    ctx.filter = `brightness(${state.br}%) contrast(${state.cn}%)`;
+                    ctx.save();
+                    ctx.translate(ow/2, oh/2);
+                    ctx.rotate(rot * Math.PI/180);
+                    ctx.scale(state.fH ? -1 : 1, state.fV ? -1 : 1);
+                    ctx.drawImage(base, -sw/2, -sh/2);
+                    ctx.restore();
+                    const edited = c.toDataURL('image/png');
+                    const ri = g('-result'); if (ri) ri.src = edited;
+                    // también actualizar thumb si ya estaba procesado
+                    showThumb(edited);
                 };
-                reader.readAsDataURL(file);
-            });
+                base.src = state.resultB64;
+            }
 
-            // Pegar URL
-            elPasteUrl.addEventListener('click', async () => {
-                const url = prompt('Pegá la URL de la imagen:');
-                if (!url || !url.trim()) return;
-                try {
-                    const img = await loadImageFromSrc(url.trim());
-                    showOriginalPreview(img);
-                } catch (err) {
-                    alert('No se pudo cargar desde esa URL. Verificá que sea una URL directa a imagen y permita CORS.');
-                }
-            });
-
-            // Umbral
-            elThreshold.addEventListener('input', () => {
-                elThresholdVal.textContent = elThreshold.value;
-            });
-            elRemoveBg.addEventListener('change', () => {
-                elThresholdRow.style.display = elRemoveBg.checked ? 'flex' : 'none';
-            });
-
-            // Procesar
-            elProcess.addEventListener('click', async () => {
-                if (!_originalImage) return;
-                elProcess.disabled = true;
-                elProcess.textContent = '⏳ Procesando...';
-                try {
-                    const type = elType.value;
-                    const options = {
-                        removeBackground: elRemoveBg.checked,
-                        threshold: parseInt(elThreshold.value, 10),
-                        autoTrim: elTrim.checked,
-                        scale: elScale.checked
+            function getEditedB64() {
+                return new Promise(resolve => {
+                    if (!state.resultB64) { resolve(null); return; }
+                    const base = new Image();
+                    base.onload = () => {
+                        const sw = base.naturalWidth, sh = base.naturalHeight;
+                        const rot = state.rot, swapped = rot === 90 || rot === 270;
+                        const ow = swapped ? sh : sw, oh = swapped ? sw : sh;
+                        const c = document.createElement('canvas'); c.width = ow; c.height = oh;
+                        const ctx = c.getContext('2d');
+                        ctx.filter = `brightness(${state.br}%) contrast(${state.cn}%)`;
+                        ctx.save(); ctx.translate(ow/2,oh/2); ctx.rotate(rot*Math.PI/180);
+                        ctx.scale(state.fH?-1:1,state.fV?-1:1);
+                        ctx.drawImage(base,-sw/2,-sh/2); ctx.restore();
+                        resolve(c.toDataURL('image/png'));
                     };
-                    let _procProgressLabel = '⚙️ Procesando...';
-                    _resultB64 = await processImage(_originalImage, type, options, (key, pct) => {
-                        if (key.includes('load') || key.includes('fetch')) {
-                            elProcess.textContent = '🤖 Cargando modelo IA... ' + pct + '%';
-                        } else if (key.includes('compute') || key.includes('inference')) {
-                            elProcess.textContent = '🤖 Procesando con IA... ' + pct + '%';
-                        }
-                    });
+                    base.src = state.resultB64;
+                });
+            }
 
-                    elResultPrev.innerHTML = '';
-                    const resImg = document.createElement('img');
-                    resImg.src = _resultB64;
-                    resImg.alt = 'Resultado';
-                    resImg.style.maxWidth = '100%';
-                    resImg.style.maxHeight = '180px';
-                    resImg.style.objectFit = 'contain';
-                    elResultPrev.appendChild(resImg);
+            async function loadB64(b64) {
+                state.origImg = await loadImageFromSrc(b64);
+                const oi = g('-orig'); if (oi) oi.src = b64;
+                showThumb(b64);
+                const ps = g('-proc-section'); if (ps) ps.style.display = 'block';
+                const es = g('-edit-section'); if (es) es.style.display = 'none';
+                state.resultB64 = null;
+                state.rot = 0; state.fH = false; state.fV = false;
+                state.br = 100; state.cn = 100;
+                const br = g('-br'); if (br) { br.value = '100'; }
+                const brval = g('-brval'); if (brval) brval.textContent = '100';
+                const cn = g('-cn'); if (cn) { cn.value = '100'; }
+                const cnval = g('-cnval'); if (cnval) cnval.textContent = '100';
+                const cl = g('-clear'); if (cl) cl.style.display = 'inline-flex';
+                setStatus('Listo para procesar', '#3b82f6');
+            }
 
-                    const sizeKB = Math.round((_resultB64.length * 3 / 4) / 1024);
-                    elB64Info.textContent = 'Tamaño base64: ~' + sizeKB + ' KB';
-                    elB64Info.style.display = 'block';
+            // ── Upload ──
+            const fileInput = g('-file');
+            if (fileInput) {
+                fileInput.addEventListener('change', async (e) => {
+                    const file = e.target.files[0]; if (!file) return;
+                    if (file.size > 5*1024*1024) { alert('Máx 5 MB'); fileInput.value=''; return; }
+                    const reader = new FileReader();
+                    reader.onload = async (ev) => { try { await loadB64(ev.target.result); } catch(err) { alert('Error: '+err.message); } };
+                    reader.readAsDataURL(file);
+                });
+            }
 
-                    // Simulación PDF
-                    elSimBox.style.display = 'block';
-                    elSimLogoL.innerHTML = '';
-                    elSimLogoR.innerHTML = '';
-                    elSimFirma.style.display = 'none';
-                    const simImg = document.createElement('img');
-                    simImg.src = _resultB64;
-                    simImg.style.maxWidth = type === 'inst' ? '70px' : type === 'prof' ? '40px' : '120px';
-                    simImg.style.maxHeight = type === 'inst' ? '45px' : type === 'prof' ? '40px' : '50px';
-                    if (type === 'inst') elSimLogoL.appendChild(simImg);
-                    else if (type === 'prof') elSimLogoR.appendChild(simImg);
-                    else {
-                        elSimFirma.style.display = 'block';
-                        elSimFirmaImg.innerHTML = '';
-                        elSimFirmaImg.appendChild(simImg);
+            // ── Cargar del paso anterior ──
+            const fromBtn = g('-from2') || g('-from3');
+            if (fromBtn) {
+                fromBtn.addEventListener('click', async () => {
+                    let b64 = cfg.getFromPrev ? cfg.getFromPrev() : null;
+                    if (!b64) {
+                        if (typeof dashAlert === 'function') dashAlert('No hay imagen subida en el paso anterior para este tipo. Subí una primero.', '📷');
+                        else alert('No hay imagen anterior para este tipo.');
+                        return;
                     }
+                    try { await loadB64(b64); } catch(err) { alert('Error: '+err.message); }
+                });
+            }
 
-                    elActions.style.display = 'flex';
+            // ── Quitar ──
+            const clearBtn = g('-clear');
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    state.origImg = null; state.resultB64 = null;
+                    const tw = g('-thumb-wrap'); if (tw) tw.style.display = 'none';
+                    const ps = g('-proc-section'); if (ps) ps.style.display = 'none';
+                    const es = g('-edit-section'); if (es) es.style.display = 'none';
+                    clearBtn.style.display = 'none';
+                    setStatus('Vacío', '');
+                    cfg.saveResult && cfg.saveResult(null);
+                    if (fileInput) fileInput.value = '';
+                });
+            }
 
-                    // Abrir editor interactivo automáticamente
-                    if (typeof window._imgprocOpenEditor === 'function') {
-                        window._imgprocOpenEditor(_resultB64);
+            // ── Procesar ──
+            const procBtn = g('-process');
+            if (procBtn) {
+                procBtn.addEventListener('click', async () => {
+                    if (!state.origImg) return;
+                    procBtn.disabled = true;
+                    procBtn.textContent = '⏳ Iniciando...';
+                    try {
+                        const opts = {
+                            removeBackground: (g('-bg') || {}).checked !== false,
+                            threshold: 30, autoTrim: (g('-trim') || {}).checked !== false,
+                            scale: (g('-scale') || {}).checked !== false
+                        };
+                        state.resultB64 = await processImage(state.origImg, cfg.type, opts, (key, pct) => {
+                            if (key.includes('load') || key.includes('fetch')) procBtn.textContent = '🤖 Cargando modelo... ' + pct + '%';
+                            else if (key.includes('compute') || key.includes('inference')) procBtn.textContent = '🤖 Procesando IA... ' + pct + '%';
+                        });
+                        // Mostrar previews
+                        const oi = g('-orig'); if (oi && state.origImg) oi.src = state.origImg.src;
+                        const ri = g('-result'); if (ri) ri.src = state.resultB64;
+                        showThumb(state.resultB64);
+                        // Mostrar editor, ocultar opciones
+                        const ps = g('-proc-section'); if (ps) ps.style.display = 'none';
+                        const es = g('-edit-section'); if (es) es.style.display = 'block';
+                        setStatus('✅ Procesada', '#10b981');
+                        // Actualizar preview PDF
+                        _updatePdfSim();
+                    } catch (err) {
+                        alert('Error al procesar: ' + err.message);
+                    } finally {
+                        procBtn.disabled = false;
+                        procBtn.textContent = '⚙️ Procesar imagen';
                     }
-                } catch (err) {
-                    alert('Error al procesar: ' + err.message);
-                } finally {
-                    elProcess.disabled = false;
-                    elProcess.textContent = '⚙️ Procesar imagen';
-                }
-            });
-
-            // Descargar
-            elDownload.addEventListener('click', () => {
-                if (!_resultB64) return;
-                const type = elType.value;
-                const label = TARGETS[type].label.replace(/\s+/g, '_');
-                const a = document.createElement('a');
-                a.href = _resultB64;
-                a.download = label + '_' + Date.now() + '.png';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-            });
-
-            // Copiar base64
-            elCopyB64.addEventListener('click', async () => {
-                if (!_resultB64) return;
-                try {
-                    await navigator.clipboard.writeText(_resultB64);
-                    elCopyB64.textContent = '✅ Copiado!';
-                    setTimeout(() => { elCopyB64.textContent = '📋 Copiar Base64'; }, 2000);
-                } catch (_) {
-                    const ta = document.createElement('textarea');
-                    ta.value = _resultB64;
-                    document.body.appendChild(ta);
-                    ta.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(ta);
-                    elCopyB64.textContent = '✅ Copiado!';
-                    setTimeout(() => { elCopyB64.textContent = '📋 Copiar Base64'; }, 2000);
-                }
-            });
-
-            // ── EDITOR INTERACTIVO ────────────────────────────────────────
-            const elEditorCard   = document.getElementById('imgprocEditorCard');
-            const elEditorCanvas = document.getElementById('imgprocEditorCanvas');
-            const elCropOverlay  = document.getElementById('imgprocCropOverlay');
-            const elBrightness   = document.getElementById('imgprocBrightness');
-            const elBrightnessV  = document.getElementById('imgprocBrightnessVal');
-            const elContrast     = document.getElementById('imgprocContrast');
-            const elContrastV    = document.getElementById('imgprocContrastVal');
-            const elRotL         = document.getElementById('imgprocRotL');
-            const elRotR         = document.getElementById('imgprocRotR');
-            const elFlipH        = document.getElementById('imgprocFlipH');
-            const elFlipV        = document.getElementById('imgprocFlipV');
-            const elCropApply    = document.getElementById('imgprocCropApply');
-            const elCropCancel   = document.getElementById('imgprocCropCancel');
-            const elEditorReset  = document.getElementById('imgprocEditorReset');
-            const elEditorApply  = document.getElementById('imgprocEditorApply');
-
-            // Estado del editor
-            const _ed = {
-                baseCanvas: null,  // canvas original post-proceso (inmutable)
-                rotation: 0, flipH: false, flipV: false,
-                brightness: 100, contrast: 100,
-                crop: null,        // {x,y,w,h} en coords del canvas renderizado
-                _dragging: false, _dragStart: {x:0,y:0}, _dragCurrent: {x:0,y:0}
-            };
-
-            function _edRenderToCanvas() {
-                if (!_ed.baseCanvas) return;
-                const base = _ed.baseCanvas;
-                const rot  = _ed.rotation;
-                const swapped = rot === 90 || rot === 270;
-                const outW = swapped ? base.height : base.width;
-                const outH = swapped ? base.width  : base.height;
-
-                const ctx = elEditorCanvas.getContext('2d');
-                elEditorCanvas.width  = outW;
-                elEditorCanvas.height = outH;
-
-                ctx.save();
-                ctx.filter = `brightness(${_ed.brightness}%) contrast(${_ed.contrast}%)`;
-                ctx.translate(outW / 2, outH / 2);
-                ctx.rotate(rot * Math.PI / 180);
-                ctx.scale(_ed.flipH ? -1 : 1, _ed.flipV ? -1 : 1);
-                ctx.drawImage(base, -base.width / 2, -base.height / 2);
-                ctx.restore();
-
-                // Sync crop overlay size
-                elCropOverlay.width  = outW;
-                elCropOverlay.height = outH;
-                _edDrawCropOverlay();
+                });
             }
 
-            function _edDrawCropOverlay() {
-                const ctx = elCropOverlay.getContext('2d');
-                ctx.clearRect(0, 0, elCropOverlay.width, elCropOverlay.height);
-                const rect = _ed._dragging
-                    ? _edNormalizeRect(_ed._dragStart, _ed._dragCurrent)
-                    : _ed.crop;
-                if (!rect || rect.w < 4 || rect.h < 4) return;
-                ctx.fillStyle = 'rgba(0,0,0,0.4)';
-                ctx.fillRect(0, 0, elCropOverlay.width, elCropOverlay.height);
-                ctx.clearRect(rect.x, rect.y, rect.w, rect.h);
-                ctx.strokeStyle = '#f59e0b';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
-            }
+            // ── Controles de edición ──
+            const brSlider = g('-br'), brVal = g('-brval');
+            if (brSlider) brSlider.addEventListener('input', () => { state.br = parseInt(brSlider.value,10); if(brVal) brVal.textContent = state.br; renderResult(); });
+            const cnSlider = g('-cn'), cnVal = g('-cnval');
+            if (cnSlider) cnSlider.addEventListener('input', () => { state.cn = parseInt(cnSlider.value,10); if(cnVal) cnVal.textContent = state.cn; renderResult(); });
 
-            function _edNormalizeRect(a, b) {
-                const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y);
-                return { x, y, w: Math.abs(b.x - a.x), h: Math.abs(b.y - a.y) };
-            }
-
-            function _edCanvasCoords(e) {
-                const rect = elCropOverlay.getBoundingClientRect();
-                const scaleX = elCropOverlay.width  / rect.width;
-                const scaleY = elCropOverlay.height / rect.height;
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                return {
-                    x: Math.max(0, Math.min(elCropOverlay.width,  (clientX - rect.left) * scaleX)),
-                    y: Math.max(0, Math.min(elCropOverlay.height, (clientY - rect.top)  * scaleY))
-                };
-            }
-
-            // Drag para recorte
-            elCropOverlay.addEventListener('mousedown',  startDrag);
-            elCropOverlay.addEventListener('touchstart', startDrag, {passive:true});
-            elCropOverlay.addEventListener('mousemove',  moveDrag);
-            elCropOverlay.addEventListener('touchmove',  moveDrag, {passive:true});
-            elCropOverlay.addEventListener('mouseup',    endDrag);
-            elCropOverlay.addEventListener('touchend',   endDrag);
-
-            function startDrag(e) {
-                _ed._dragging = true;
-                _ed._dragStart = _edCanvasCoords(e);
-                _ed._dragCurrent = {..._ed._dragStart};
-                _ed.crop = null;
-                elCropApply.style.display = 'none';
-                elCropCancel.style.display = 'none';
-            }
-            function moveDrag(e) {
-                if (!_ed._dragging) return;
-                _ed._dragCurrent = _edCanvasCoords(e);
-                _edDrawCropOverlay();
-            }
-            function endDrag(e) {
-                if (!_ed._dragging) return;
-                _ed._dragging = false;
-                const r = _edNormalizeRect(_ed._dragStart, _ed._dragCurrent);
-                if (r.w > 10 && r.h > 10) {
-                    _ed.crop = r;
-                    elCropApply.style.display = 'inline-flex';
-                    elCropCancel.style.display = 'inline-flex';
-                } else {
-                    _ed.crop = null;
-                }
-                _edDrawCropOverlay();
-            }
-
-            elCropApply.addEventListener('click', () => {
-                if (!_ed.crop || !_ed.baseCanvas) return;
-                // Renderizar el canvas actual y recortarlo
-                const src = elEditorCanvas;
-                const {x, y, w, h} = _ed.crop;
-                const cropped = document.createElement('canvas');
-                cropped.width = Math.round(w); cropped.height = Math.round(h);
-                cropped.getContext('2d').drawImage(src, x, y, w, h, 0, 0, w, h);
-                // El recorte pasa a ser la nueva base (sin rotación/flip/ajustes adicionales)
-                _ed.baseCanvas = cropped;
-                _ed.rotation = 0; _ed.flipH = false; _ed.flipV = false;
-                _ed.brightness = 100; _ed.contrast = 100;
-                elBrightness.value = '100'; elBrightnessV.textContent = '100%';
-                elContrast.value   = '100'; elContrastV.textContent   = '100%';
-                _ed.crop = null;
-                elCropApply.style.display = 'none';
-                elCropCancel.style.display = 'none';
-                _edRenderToCanvas();
+            const rotLBtn = g('-rotL'); if (rotLBtn) rotLBtn.addEventListener('click', () => { state.rot = (state.rot - 90 + 360) % 360; renderResult(); });
+            const rotRBtn = g('-rotR'); if (rotRBtn) rotRBtn.addEventListener('click', () => { state.rot = (state.rot + 90) % 360; renderResult(); });
+            const fHBtn   = g('-fH');   if (fHBtn)   fHBtn.addEventListener('click',   () => { state.fH = !state.fH; renderResult(); });
+            const fVBtn   = g('-fV');   if (fVBtn)   fVBtn.addEventListener('click',   () => { state.fV = !state.fV; renderResult(); });
+            const resetBtn = g('-reset');
+            if (resetBtn) resetBtn.addEventListener('click', () => {
+                state.rot = 0; state.fH = false; state.fV = false; state.br = 100; state.cn = 100;
+                if (brSlider) { brSlider.value = '100'; if(brVal) brVal.textContent = '100'; }
+                if (cnSlider) { cnSlider.value = '100'; if(cnVal) cnVal.textContent = '100'; }
+                renderResult();
             });
 
-            elCropCancel.addEventListener('click', () => {
-                _ed.crop = null;
-                elCropApply.style.display = 'none';
-                elCropCancel.style.display = 'none';
-                _edDrawCropOverlay();
-            });
+            // ── Aplicar ──
+            const applyBtn = g('-apply');
+            if (applyBtn) {
+                applyBtn.addEventListener('click', async () => {
+                    const edited = await getEditedB64();
+                    if (!edited) return;
+                    cfg.saveResult(edited);
+                    _updatePdfSim();
+                    if (typeof dashAlert === 'function') dashAlert('✅ Imagen guardada y lista para incluir en el link.', '🖼️');
+                    else alert('Imagen aplicada.');
+                });
+            }
+        }
 
-            // Brillo / Contraste
-            elBrightness.addEventListener('input', () => {
-                _ed.brightness = parseInt(elBrightness.value, 10);
-                elBrightnessV.textContent = _ed.brightness + '%';
-                _edRenderToCanvas();
-            });
-            elContrast.addEventListener('input', () => {
-                _ed.contrast = parseInt(elContrast.value, 10);
-                elContrastV.textContent = _ed.contrast + '%';
-                _edRenderToCanvas();
-            });
+        function _updatePdfSim() {
+            const simBox = document.getElementById('imgprocSimBox');
+            const simLL  = document.getElementById('imgprocSimLogoLeft');
+            const simLR  = document.getElementById('imgprocSimLogoRight');
+            const simFirma    = document.getElementById('imgprocSimFirma');
+            const simFirmaImg = document.getElementById('imgprocSimFirmaImg');
+            if (!simBox) return;
+            // Logo institucional
+            const firstWpKey = Object.keys(_giftWpLogoData || {})[0];
+            const instB64 = firstWpKey ? _giftWpLogoData[firstWpKey] : null;
+            if (simLL) {
+                simLL.innerHTML = '';
+                if (instB64) { const i=document.createElement('img'); i.src=instB64; i.style.maxWidth='70px'; i.style.maxHeight='45px'; simLL.appendChild(i); }
+            }
+            // Logo del médico
+            const profB64 = _giftImageData && _giftImageData.proLogo;
+            if (simLR) {
+                simLR.innerHTML = '';
+                if (profB64) { const i=document.createElement('img'); i.src=profB64; i.style.maxWidth='40px'; i.style.maxHeight='40px'; simLR.appendChild(i); }
+            }
+            // Firma
+            const firmaB64 = _giftImageData && _giftImageData.firma;
+            if (simFirma && simFirmaImg) {
+                if (firmaB64) {
+                    simFirma.style.display = 'block';
+                    simFirmaImg.innerHTML = ''; const i=document.createElement('img'); i.src=firmaB64; i.style.maxWidth='120px'; i.style.maxHeight='50px'; simFirmaImg.appendChild(i);
+                } else { simFirma.style.display = 'none'; }
+            }
+            const hasAny = instB64 || profB64 || firmaB64;
+            simBox.style.display = hasAny ? 'block' : 'none';
+        }
 
-            // Rotar
-            elRotL.addEventListener('click', () => { _ed.rotation = (_ed.rotation - 90 + 360) % 360; _edRenderToCanvas(); });
-            elRotR.addEventListener('click', () => { _ed.rotation = (_ed.rotation + 90) % 360;         _edRenderToCanvas(); });
-
-            // Voltear
-            elFlipH.addEventListener('click', () => { _ed.flipH = !_ed.flipH; _edRenderToCanvas(); });
-            elFlipV.addEventListener('click', () => { _ed.flipV = !_ed.flipV; _edRenderToCanvas(); });
-
-            // Resetear
-            elEditorReset.addEventListener('click', () => {
-                if (!_resultB64) return;
-                const img = new Image();
-                img.onload = () => {
-                    const c = document.createElement('canvas');
-                    c.width = img.naturalWidth; c.height = img.naturalHeight;
-                    c.getContext('2d').drawImage(img, 0, 0);
-                    _ed.baseCanvas = c;
-                    _ed.rotation = 0; _ed.flipH = false; _ed.flipV = false;
-                    _ed.brightness = 100; _ed.contrast = 100; _ed.crop = null;
-                    elBrightness.value = '100'; elBrightnessV.textContent = '100%';
-                    elContrast.value   = '100'; elContrastV.textContent   = '100%';
-                    elCropApply.style.display = 'none';
-                    elCropCancel.style.display = 'none';
-                    _edRenderToCanvas();
-                };
-                img.src = _resultB64;
-            });
-
-            // Función pública para abrir el editor con un base64
-            window._imgprocOpenEditor = function(b64) {
-                if (!b64 || !elEditorCard) return;
-                const img = new Image();
-                img.onload = () => {
-                    const c = document.createElement('canvas');
-                    c.width = img.naturalWidth; c.height = img.naturalHeight;
-                    c.getContext('2d').drawImage(img, 0, 0);
-                    _ed.baseCanvas = c;
-                    _ed.rotation = 0; _ed.flipH = false; _ed.flipV = false;
-                    _ed.brightness = 100; _ed.contrast = 100; _ed.crop = null;
-                    elBrightness.value = '100'; elBrightnessV.textContent = '100%';
-                    elContrast.value   = '100'; elContrastV.textContent   = '100%';
-                    elCropApply.style.display = 'none';
-                    elCropCancel.style.display = 'none';
-                    elEditorCard.style.display = 'block';
-                    _edRenderToCanvas();
-                    elEditorCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                };
-                img.src = b64;
-            };
-
-            // Aplicar ediciones → actualiza _resultB64 y preview principal
-            elEditorApply.addEventListener('click', () => {
-                if (!_ed.baseCanvas) return;
-                // Renderizar el estado actual (sin crop pendiente)
-                const final = document.createElement('canvas');
-                const rot = _ed.rotation;
-                const swapped = rot === 90 || rot === 270;
-                final.width  = swapped ? _ed.baseCanvas.height : _ed.baseCanvas.width;
-                final.height = swapped ? _ed.baseCanvas.width  : _ed.baseCanvas.height;
-                const fctx = final.getContext('2d');
-                fctx.filter = `brightness(${_ed.brightness}%) contrast(${_ed.contrast}%)`;
-                fctx.save();
-                fctx.translate(final.width / 2, final.height / 2);
-                fctx.rotate(rot * Math.PI / 180);
-                fctx.scale(_ed.flipH ? -1 : 1, _ed.flipV ? -1 : 1);
-                fctx.drawImage(_ed.baseCanvas, -_ed.baseCanvas.width / 2, -_ed.baseCanvas.height / 2);
-                fctx.restore();
-
-                _resultB64 = final.toDataURL('image/png');
-
-                // Actualizar preview del resultado
-                elResultPrev.innerHTML = '';
-                const img = document.createElement('img');
-                img.src = _resultB64;
-                img.alt = 'Resultado editado';
-                img.style.maxWidth = '100%';
-                img.style.maxHeight = '180px';
-                img.style.objectFit = 'contain';
-                elResultPrev.appendChild(img);
-
-                const kb = Math.round((_resultB64.length * 3 / 4) / 1024);
-                elB64Info.textContent = 'Tamaño: ~' + kb + ' KB (editado)';
-                elB64Info.style.display = 'block';
-                elActions.style.display = 'flex';
-                elEditorCard.style.display = 'none';
-
-                if (typeof dashAlert === 'function') dashAlert('✅ Ediciones aplicadas. Ahora podés hacer clic en "Aplicar al registro".', '✏️');
-            });
-            // ── FIN EDITOR INTERACTIVO ────────────────────────────────────────
-
-            // Aplicar al registro (inyectar en _giftImageData / _giftWpLogoData)
-            elApply.addEventListener('click', () => {
-                if (!_resultB64) return;
-                const type = elType.value;
-                let label = '';
-                if (type === 'firma') {
-                    _giftImageData.firma = _resultB64;
-                    label = 'Firma';
-                    // Actualizar preview del paso 3
-                    const prev = document.getElementById('giftFirmaPreview');
-                    if (prev) prev.innerHTML = '<img src="' + _resultB64 + '" alt="Firma procesada" style="max-height:60px;">';
-                } else if (type === 'prof') {
-                    _giftImageData.proLogo = _resultB64;
-                    label = 'Logo profesional';
-                    const prev = document.getElementById('giftProLogoPreview');
-                    if (prev) prev.innerHTML = '<img src="' + _resultB64 + '" alt="Logo procesado" style="max-height:60px;">';
-                } else {
-                    // inst → primer workplace
+        function initImageProcessor() {
+            // Sección Logo Institucional
+            _makeImageSection({
+                type: 'inst', prefix: 'imgInst',
+                getFromPrev: () => {
                     const firstKey = Object.keys(_giftWpLogoData || {})[0];
-                    if (firstKey) {
-                        _giftWpLogoData[firstKey] = _resultB64;
-                    }
-                    label = 'Logo institucional';
+                    return firstKey ? _giftWpLogoData[firstKey] : null;
+                },
+                saveResult: (b64) => {
+                    const firstKey = Object.keys(_giftWpLogoData || {});
+                    const key = firstKey.length > 0 ? firstKey[0] : '0';
+                    _giftWpLogoData[key] = b64;
+                    // Actualizar preview en paso 2
+                    const prev = document.getElementById('gwWpLogoPreview0');
+                    if (prev && b64) prev.innerHTML = '<img src="'+b64+'" alt="Logo" style="max-height:50px;">';
                 }
-
-                if (typeof dashAlert === 'function') {
-                    dashAlert('✅ ' + label + ' procesado y aplicado al registro. Los datos se usarán al generar el link.', '🖼️');
-                } else {
-                    alert(label + ' aplicado al registro.');
+            });
+            // Sección Logo del Médico
+            _makeImageSection({
+                type: 'prof', prefix: 'imgProf',
+                getFromPrev: () => _giftImageData && _giftImageData.proLogo,
+                saveResult: (b64) => {
+                    _giftImageData.proLogo = b64;
+                    const prev = document.getElementById('giftProLogoPreview');
+                    if (prev && b64) prev.innerHTML = '<img src="'+b64+'" alt="Logo" style="max-height:50px;">';
+                }
+            });
+            // Sección Firma Digital
+            _makeImageSection({
+                type: 'firma', prefix: 'imgFirma',
+                getFromPrev: () => _giftImageData && _giftImageData.firma,
+                saveResult: (b64) => {
+                    _giftImageData.firma = b64;
+                    const prev = document.getElementById('giftFirmaPreview');
+                    if (prev && b64) prev.innerHTML = '<img src="'+b64+'" alt="Firma" style="max-height:50px;">';
                 }
             });
         }
