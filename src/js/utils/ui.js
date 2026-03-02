@@ -1325,9 +1325,7 @@ window.applyProfessionalData = function (data) {
         const headerLogo = document.getElementById('headerLogoImg');
         if (headerLogo) {
             headerLogo.src = 'recursos/logo-superhero2.png';
-            headerLogo.style.height = '48px';
-            headerLogo.style.width = 'auto';
-            headerLogo.style.objectFit = 'contain';
+            // Tamaño lo controla .header-logo en CSS (100px), no sobreescribir
         }
     }
 
