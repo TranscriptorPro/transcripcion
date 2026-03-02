@@ -1318,7 +1318,24 @@ window.applyProfessionalData = function (data) {
     // Header: ADMIN siempre mantiene su banner intacto
     const isAdmin = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'ADMIN');
     const welcomeName = document.getElementById('doctorWelcomeName');
-    if (welcomeName && !isAdmin) welcomeName.textContent = `Dr/a. ${nombre}`;
+    if (welcomeName && !isAdmin) {
+        // Limpiar prefijos de título existentes del nombre
+        let cleanName = (nombre || '').trim();
+        let isFemale = false;
+        const titleMatch = cleanName.match(/^(Dra\.?|Dr\.?)\s+/i);
+        if (titleMatch) {
+            // Detectar género por el prefijo que ya traía el nombre
+            isFemale = /^dra/i.test(titleMatch[1]);
+            cleanName = cleanName.slice(titleMatch[0].length).trim();
+        } else {
+            // Heurística: nombres que terminan en 'a' suelen ser femeninos en español
+            const firstName = cleanName.split(/\s+/)[0] || '';
+            const femNames = ['maria','ana','laura','paula','andrea','carolina','claudia','monica','patricia','sandra','silvia','gabriela','daniela','fernanda','valeria','cecilia','marcela','alejandra','rosa','elena','lucia','victoria','camila','sofia','natalia','adriana','liliana','lorena','soledad','florencia','agustina','romina','mariana','graciela','beatriz','susana','norma','marta','alicia','irene','ines','nora','mirta','gladys','raquel','esther','ruth','sara','noemi','mercedes','pilar','rocio','veronica','viviana','yanina','julia','magdalena','carmen','lourdes','micaela','julieta','aldana','gimena','nadia','melina','abigail','celeste','constanza','emilia','priscila','josefina','gisela','analia','carina','eugenia','silvana','sabrina','brenda','paola','marisa'];
+            isFemale = femNames.includes(firstName.toLowerCase());
+        }
+        const title = isFemale ? 'Dra.' : 'Dr.';
+        welcomeName.textContent = `${title} ${cleanName}`;
+    }
 
     // Header logo: siempre mostrar logo-superhero2.png en la UI (el logo del profesional va solo en el PDF)
     if (!isAdmin) {
