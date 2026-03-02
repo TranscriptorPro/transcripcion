@@ -174,8 +174,8 @@
                             d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z" />
                     </svg>
                 </button>
-                <!-- PWA3: Botón instalar app (se muestra solo si hay prompt pendiente) -->
-                <button class="theme-toggle" id="btnInstallPwa" title="Instalar app" style="display:none;">
+                <!-- PWA3: Botón instalar app (visible siempre, se oculta solo si ya está instalada) -->
+                <button class="theme-toggle" id="btnInstallPwa" title="Instalar app">
                     <svg viewBox="0 0 24 24">
                         <path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5v-2z"/>
                     </svg>
@@ -2548,11 +2548,15 @@
             window._pwaInstallPrompt = null; // Exponer globalmente
             const btnInstall   = document.getElementById('btnInstallPwa');
 
-            // Debug: verificar estado PWA
-            if (window.matchMedia('(display-mode: standalone)').matches) {
+            // Si la app ya está instalada (standalone), ocultar botón
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+                              || window.navigator.standalone === true;
+            if (isStandalone) {
                 console.log('[PWA] App ya instalada (standalone mode)');
+                if (btnInstall) btnInstall.style.display = 'none';
             } else {
-                console.log('[PWA] App en navegador — esperando beforeinstallprompt...');
+                console.log('[PWA] App en navegador — botón instalar visible');
+                if (btnInstall) btnInstall.style.display = '';  // siempre visible si no instalada
             }
 
             window.addEventListener('beforeinstallprompt', (e) => {
@@ -2565,21 +2569,41 @@
 
             if (btnInstall) {
                 btnInstall.addEventListener('click', async () => {
-                    if (!deferredPrompt) return;
-                    deferredPrompt.prompt();
-                    const { outcome } = await deferredPrompt.userChoice;
-                    console.log('[PWA] Install outcome:', outcome);
-                    deferredPrompt = null;
-                    window._pwaInstallPrompt = null;
-                    btnInstall.style.display = 'none';
+                    if (deferredPrompt) {
+                        // Navegador soporta install prompt nativo
+                        deferredPrompt.prompt();
+                        const { outcome } = await deferredPrompt.userChoice;
+                        console.log('[PWA] Install outcome:', outcome);
+                        deferredPrompt = null;
+                        window._pwaInstallPrompt = null;
+                        if (outcome === 'accepted') {
+                            btnInstall.style.display = 'none';
+                            if (typeof showToast === 'function') showToast('✅ ¡App instalada! La encontrarás en tu escritorio.', 'success');
+                        }
+                    } else {
+                        // Fallback: instrucciones manuales
+                        const isChrome = /Chrome/.test(navigator.userAgent) && !/Edg/.test(navigator.userAgent);
+                        const isEdge = /Edg/.test(navigator.userAgent);
+                        const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+                        let msg = '📱 Para instalar: ';
+                        if (isChrome || isEdge) {
+                            msg += 'hacé clic en el ícono ⬇️ en la barra de direcciones del navegador.';
+                        } else if (isSafari) {
+                            msg += 'tocá el botón Compartir → "Agregar a pantalla de inicio".';
+                        } else {
+                            msg += 'usá el menú del navegador → "Instalar app" o "Agregar a pantalla de inicio".';
+                        }
+                        if (typeof showToast === 'function') showToast(msg, 'info', 8000);
+                    }
                 });
             }
 
-            // Ocultar botón si ya está instalada
+            // Ocultar botón si se instala
             window.addEventListener('appinstalled', () => {
                 if (btnInstall) btnInstall.style.display = 'none';
                 deferredPrompt = null;
                 window._pwaInstallPrompt = null;
+                console.log('[PWA] App instalada — botón oculto');
             });
         })();
         </script>
