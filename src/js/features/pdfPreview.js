@@ -335,7 +335,7 @@ window.openPrintPreview = async function () {
             wpHeaderEl.style.display = '';
             let wpHtml = '<div class="pvw-block">';
             // Logo institucional (a la izquierda del nombre de la institución)
-            if (hasInstLogo) wpHtml += `<img class="pvw-logo" src="${instLogoSrc}" alt="Logo" style="max-height:${instLogoSize}px;width:auto;object-fit:contain;">`;
+            if (hasInstLogo) wpHtml += `<img class="pvw-logo" src="${instLogoSrc}" alt="Logo" style="max-height:${instLogoSize}px;width:auto;object-fit:contain;border:none;border-radius:0;background:transparent;box-shadow:none;">`;
             wpHtml += '<div class="pvw-text">';
             if (wpName)  wpHtml += `<div class="pvw-name">${wpName}</div>`;
             const wpDetails = [wkAddr, wkPhone ? 'Tel: ' + wkPhone : '', wpEmail].filter(Boolean);
@@ -361,12 +361,12 @@ window.openPrintPreview = async function () {
             headerEl.style.display = '';
             headerEl.innerHTML = `
                 <div class="pvh-body" style="display:flex;align-items:center;gap:12px;">
-                    ${hasProfLogo ? `<img src="${profLogoSrc}" alt="Logo Prof" style="height:${profLogoSize}px;width:auto;object-fit:contain;flex-shrink:0;background:transparent;">` : ''}
+                    ${hasProfLogo ? `<img src="${profLogoSrc}" alt="Logo Prof" style="height:${profLogoSize}px;width:auto;object-fit:contain;flex-shrink:0;background:transparent;border:none;border-radius:0;">` : ''}
                     <div class="pvh-info" style="flex:1;min-width:0;">
-                        <div style="text-align:center;">
+                        <div>
                             <span class="pvh-name">Estudio realizado por: ${profDisplayTitle} ${profDisplayName}</span>
                         </div>
-                        ${(especialidadDisplay || matricula) ? `<div class="pvh-spec" style="text-align:center;">${[especialidadDisplay, matricula ? 'Mat. ' + matricula : ''].filter(Boolean).join(' &nbsp;&bull;&nbsp; ')}</div>` : ''}
+                        ${(especialidadDisplay || matricula) ? `<div class="pvh-spec">${[especialidadDisplay, matricula ? 'Mat. ' + matricula : ''].filter(Boolean).join(' &nbsp;&bull;&nbsp; ')}</div>` : ''}
                         ${institutionName ? `<div class="pvh-inst">${institutionName}</div>` : ''}
                     </div>
                 </div>`;

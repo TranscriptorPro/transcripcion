@@ -128,7 +128,7 @@
     <header class="header">
         <div class="header-content">
             <div class="header-left">
-                <img src="recursos/logo-superhero.png" alt="Transcriptor Pro Logo" class="header-logo" id="headerLogoImg">
+                <img src="recursos/logo-superhero2.png" alt="Transcriptor Pro Logo" class="header-logo" id="headerLogoImg">
                 <div class="header-texts">
                     <h1 class="header-title" id="appMainTitle">Transcriptor Pro</h1>
                     <p class="header-subtitle" id="doctorWelcomeName">Audio → Texto con IA</p>
@@ -2492,10 +2492,17 @@
         (function () {
             // Registrar Service Worker
             if ('serviceWorker' in navigator) {
-                // Recargar cuando un nuevo SW toma el control (método más confiable)
+                // Recargar cuando un nuevo SW toma el control (solo en UPDATES, no en primera instalación)
                 let refreshing = false;
+                let hadController = !!navigator.serviceWorker.controller;
                 navigator.serviceWorker.addEventListener('controllerchange', () => {
                     if (refreshing) return;
+                    if (!hadController) {
+                        // Primera activación del SW — no recargar (evita interrumpir factory setup)
+                        hadController = true;
+                        console.log('[SW] Primera activación del SW — sin recarga');
+                        return;
+                    }
                     refreshing = true;
                     console.log('[SW] Nuevo SW tomó el control, recargando...');
                     window.location.reload();

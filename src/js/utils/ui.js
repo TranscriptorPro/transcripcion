@@ -1320,39 +1320,14 @@ window.applyProfessionalData = function (data) {
     const welcomeName = document.getElementById('doctorWelcomeName');
     if (welcomeName && !isAdmin) welcomeName.textContent = `Dr/a. ${nombre}`;
 
-    // Header logo: mostrar SOLO el logo/foto del profesional (Dr.), nunca el logo institucional
+    // Header logo: siempre mostrar logo-superhero2.png en la UI (el logo del profesional va solo en el PDF)
     if (!isAdmin) {
         const headerLogo = document.getElementById('headerLogoImg');
         if (headerLogo) {
-            const pdfCfg    = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
-            const wpProfiles = window._wpProfilesCache || JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
-            const activeIdx  = Number(pdfCfg.activeWorkplaceIndex ?? 0);
-            const activeWp   = wpProfiles[activeIdx] || wpProfiles[0];
-            const proIdx     = Number(pdfCfg.activeProfessionalIndex ?? 0);
-
-            // Prioridad: 1) profesional activo seleccionado en modal PDF
-            //            2) primer profesional del workplace activo (factory/gift setup)
-            //            3) pdf_logo global (guardado por factory setup con regDatos.proLogo)
-            const proLogo = pdfCfg.activeProfessional?.logo
-                || activeWp?.professionals?.[proIdx]?.logo
-                || activeWp?.professionals?.[0]?.logo
-                || localStorage.getItem('pdf_logo')
-                || '';
-
-            if (proLogo && proLogo.startsWith('data:image/')) {
-                headerLogo.src = proLogo;
-                // Logo sin bordes ni fondo: incrustado limpio sobre el header
-                headerLogo.style.borderRadius = '0';
-                headerLogo.style.objectFit = 'contain';
-                headerLogo.style.border = 'none';
-                headerLogo.style.background = 'transparent';
-                headerLogo.style.boxShadow = 'none';
-                // Tamaño configurable (guardado por setup gift/admin)
-                const sizePx = localStorage.getItem('prof_logo_size_px') || '60';
-                headerLogo.style.height = sizePx + 'px';
-                headerLogo.style.width = 'auto';
-            }
-            // Si no hay logo del profesional → dejar el logo por defecto de Transcriptor Pro
+            headerLogo.src = 'recursos/logo-superhero2.png';
+            headerLogo.style.height = '48px';
+            headerLogo.style.width = 'auto';
+            headerLogo.style.objectFit = 'contain';
         }
     }
 

@@ -159,28 +159,54 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             setBlack();
         }
 
-        // ── Encabezado (solo página 1) ───────────────────────────────
-        function drawHeader() {
-            if (!cfgShowHeader) { cy = 10; headerH = 10; return; }
-            cy = 10;
-            let infoX = ML;
+        // ── Banner de lugar de trabajo (se repite en cada página) ─────
+        function drawWorkplaceBanner() {
+            if (!cfgShowHeader) { cy = 10; return; }
+            const hasWpData = wpName || wpAddress || wpPhone || wpEmail;
+            if (!hasWpData && !instLogoB64) { cy = 10; return; }
 
-            // Logo institucional (izquierda del header)
+            // Rectángulo de color de fondo
+            const bannerH = 14;
+            doc.setFillColor(accent.r, accent.g, accent.b);
+            doc.rect(0, 0, PAGE_W, bannerH, 'F');
+
+            let contentX = ML;
+            // Logo institucional
             if (instLogoB64) {
                 try {
                     const instSizePx = parseInt(localStorage.getItem('inst_logo_size_px') || '60');
                     const instScale = instSizePx / 60;
-                    const imgW = Math.round(28 * instScale), imgH = Math.round(18 * instScale);
+                    const imgW = Math.round(12 * instScale), imgH = Math.round(10 * instScale);
                     const imgType = instLogoB64.includes('data:image/png') ? 'PNG' : 'JPEG';
                     const b64data = instLogoB64.includes(',') ? instLogoB64.split(',')[1] : instLogoB64;
-                    doc.addImage(b64data, imgType, ML, cy, imgW, imgH);
-                    infoX = ML + imgW + 6;
-                } catch (e) {
-                    infoX = ML;
-                }
+                    doc.addImage(b64data, imgType, ML, (bannerH - imgH) / 2, imgW, imgH);
+                    contentX = ML + imgW + 4;
+                } catch (e) { /* imagen inválida */ }
             }
 
-            // Logo/foto del profesional (al lado derecho del header)
+            // Texto del lugar
+            doc.setTextColor(255, 255, 255);
+            if (wpName) {
+                doc.setFontSize(11);
+                doc.setFont(mainFont, 'bold');
+                doc.text(wpName.toUpperCase(), contentX, 6);
+            }
+            const wpDetails = [wpAddress, wpPhone ? 'Tel: ' + wpPhone : '', wpEmail].filter(Boolean);
+            if (wpDetails.length) {
+                doc.setFontSize(7.5);
+                doc.setFont(mainFont, 'normal');
+                doc.text(wpDetails.join(' • '), contentX, 11);
+            }
+            setBlack();
+            cy = bannerH + 4;
+        }
+
+        // ── Encabezado profesional (solo página 1) ───────────────────
+        function drawHeader() {
+            if (!cfgShowHeader) { headerH = cy; return; }
+            let infoX = ML;
+
+            // Logo/foto del profesional (a la izquierda)
             if (profLogoB64 && profLogoB64 !== instLogoB64) {
                 try {
                     const profSizePx = parseInt(localStorage.getItem('prof_logo_size_px') || '60');
@@ -188,52 +214,33 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                     const profImgW = Math.round(16 * profScale), profImgH = Math.round(16 * profScale);
                     const profImgType = profLogoB64.includes('data:image/png') ? 'PNG' : 'JPEG';
                     const profB64data = profLogoB64.includes(',') ? profLogoB64.split(',')[1] : profLogoB64;
-                    doc.addImage(profB64data, profImgType, PAGE_W - MR - profImgW, cy, profImgW, profImgH);
+                    doc.addImage(profB64data, profImgType, ML, cy, profImgW, profImgH);
+                    infoX = ML + profImgW + 6;
                 } catch (e) { /* imagen inválida */ }
             }
 
-            // Nombre del profesional
+            // "Estudio realizado por: Dr. Nombre"
             let iy = cy + 5;
             if (profName) {
                 doc.setFontSize(13);
                 doc.setFont(mainFont, 'bold');
                 setAccent();
-                doc.text(profName, infoX, iy);
+                doc.text('Estudio realizado por: ' + profName, infoX, iy);
                 iy += 5;
             }
-            if (especialidad) {
+            // Especialidad • Mat. XXXX
+            const specMatParts = [];
+            if (especialidad) specMatParts.push(especialidad);
+            if (matricula) specMatParts.push('Mat. ' + matricula);
+            if (specMatParts.length) {
                 doc.setFontSize(9);
-                doc.setFont(mainFont, 'normal');
+                doc.setFont(mainFont, 'italic');
                 setGray(70);
-                doc.text(especialidad, infoX, iy);
-                iy += 4;
-            }
-            if (institutionName) {
-                doc.setFontSize(8.5);
-                setGray(80);
-                doc.text(institutionName, infoX, iy);
-                iy += 4;
-            }
-            if (wpAddress) {
-                doc.setFontSize(8);
-                setGray(90);
-                doc.text(wpAddress, infoX, iy);
-                iy += 4;
-            }
-            if (wpPhone) {
-                doc.setFontSize(8);
-                setGray(90);
-                doc.text('Tel: ' + wpPhone, infoX, iy);
-                iy += 4;
-            }
-            if (matricula) {
-                doc.setFontSize(8);
-                setGray(100);
-                doc.text('Mat. Prof.: ' + matricula, infoX, iy);
+                doc.text(specMatParts.join(' • '), infoX, iy);
                 iy += 4;
             }
 
-            cy = Math.max(iy, logoB64 ? cy + 20 : iy) + 2;
+            cy = Math.max(iy, profLogoB64 ? cy + 20 : iy) + 2;
             accentLine(cy);
             cy += 4;
             headerH = cy;

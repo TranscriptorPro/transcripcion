@@ -1043,7 +1043,7 @@ function _showClientOnboarding() {
     if (back4) back4.addEventListener('click', () => goToStep(3));
 
     // ── Config Asistida: helpers ──────────────────────────────────────
-    const _isProUser = !!profData.hasProMode;
+    const _isProUser = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.hasProMode) || ['ADMIN','PRO'].includes(CLIENT_CONFIG?.type);
 
     function _initOnbStep3() {
         const palette = document.getElementById('onbColorPalette');

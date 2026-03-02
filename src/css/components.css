@@ -3060,7 +3060,7 @@
         .pvw-block {
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             gap: 14px;
         }
         .pvw-logo {
@@ -3071,6 +3071,8 @@
             border-radius: 0;
             background: transparent;
             padding: 0;
+            border: none;
+            box-shadow: none;
         }
         .pvw-text { text-align: center; }
         .pvw-name {
@@ -3103,6 +3105,9 @@
             object-fit: contain;
             flex-shrink: 0;
             background: transparent;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
         }
         .pvh-info { flex: 1; }
         .pvh-name {
