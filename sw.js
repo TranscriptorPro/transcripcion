@@ -57,6 +57,8 @@ const APP_SHELL = [
     './src/css/skins/light-minimal.css',
     './src/js/features/pricingCart.js',
     './src/js/features/userGuide.js',
+    './src/js/init.js',
+    './src/js/pwa.js',
     './recursos/manual.html',
     'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js'
 ];
