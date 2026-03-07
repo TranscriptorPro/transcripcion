@@ -731,6 +731,15 @@ function doGet(e) {
       const userHeaders = userSheet.getDataRange().getValues()[0];
 
       const now = new Date().toISOString();
+
+      // Leer imágenes reales desde Drive (si fueron guardadas en el registro)
+      let driveImages = {};
+      const firmaVal = String(regData.Firma || '');
+      if (firmaVal.startsWith('drive:')) {
+        const fileId = firmaVal.replace('drive:', '');
+        driveImages = _getImagesFromDrive(fileId);
+      }
+
       const userData = {
         ID_Medico: medicoId,
         Nombre: regData.Nombre || '',
@@ -747,24 +756,16 @@ function doGet(e) {
         Usage_Count: 0,
         Devices_Logged: '[]',
         Diagnostico_Pendiente: 'false',
-        // Leer imágenes reales desde Drive (si fueron guardadas en el registro)
-        let driveImages = {};
-        const firmaVal = String(regData.Firma || '');
-        if (firmaVal.startsWith('drive:')) {
-          const fileId = firmaVal.replace('drive:', '');
-          driveImages = _getImagesFromDrive(fileId);
-        }
-
         Registro_Datos: JSON.stringify({
-          workplace:      regData.Workplace_Data || '',
-          headerColor:    regData.Header_Color   || '#1a56a0',
-          footerText:     regData.Footer_Text    || '',
+          workplace:       regData.Workplace_Data  || '',
+          headerColor:     regData.Header_Color    || '#1a56a0',
+          footerText:      regData.Footer_Text     || '',
           extraWorkplaces: regData.Extra_Workplaces || '',
-          proLogo: driveImages.proLogo || '',
-          firma:   driveImages.firma   || '',
-          logo:    regData.Workplace_Logo ? 'yes' : '',
-          notas:   regData.Notas  || '',
-          estudios: regData.Estudios || ''
+          proLogo:         driveImages.proLogo     || '',
+          firma:           driveImages.firma       || '',
+          logo:            regData.Workplace_Logo  ? 'yes' : '',
+          notas:           regData.Notas           || '',
+          estudios:        regData.Estudios        || ''
         })
       };
 
