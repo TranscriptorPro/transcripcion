@@ -5011,6 +5011,7 @@
                     <dt>Dirección</dt><dd>${escapeHtml(wp.address || '—')}</dd>
                     <dt>Teléfono</dt><dd>${escapeHtml(wp.phone || '—')}</dd>
                     <dt>Email</dt><dd>${escapeHtml(wp.email || '—')}</dd>
+                    ${wp.footer ? `<dt>Pie de página</dt><dd>${escapeHtml(wp.footer)}</dd>` : ''}
                     <dt>Logo</dt><dd>${(wp.logo && wp.logo !== 'null') ? '✅ Sí' : '❌ No'}</dd>
                 `;
             } catch(_) {}
@@ -5031,6 +5032,7 @@
                                 ${wp.address ? `<dt>Dirección</dt><dd>${escapeHtml(wp.address)}</dd>` : ''}
                                 ${wp.phone ? `<dt>Teléfono</dt><dd>${escapeHtml(wp.phone)}</dd>` : ''}
                                 ${wp.email ? `<dt>Email</dt><dd>${escapeHtml(wp.email)}</dd>` : ''}
+                                ${wp.footer ? `<dt>Pie de página</dt><dd>${escapeHtml(wp.footer)}</dd>` : ''}
                                 <dt>Logo</dt><dd>${(wp.logo && wp.logo !== 'null' && !wp.logo.startsWith('data:')) ? '✅ Sí' : (wp.logo && wp.logo.startsWith('data:')) ? '✅ Sí' : '❌ No'}</dd>
                             </dl>
                         </div>
@@ -5115,41 +5117,198 @@
             document.getElementById('detailModalOverlay').classList.remove('show');
         }
 
+        // ── Estado interno del modal de aprobación (imágenes) ──
+        let _approveImageData = { firma: null, proLogo: null };
+
+        function _approveImgClear(type) {
+            _approveImageData[type] = null;
+            const previewId = type === 'firma' ? 'approveImgFirmaPreview' : 'approveImgProLogoPreview';
+            const label = type === 'firma' ? 'Sin firma' : 'Sin logo';
+            document.getElementById(previewId).innerHTML = `<span style="font-size:.75rem;color:#94a3b8;">${label}</span>`;
+        }
+
+        function _approveImgSetPreview(type, base64) {
+            if (!base64 || base64 === 'no' || base64 === 'null') return;
+            _approveImageData[type] = base64;
+            const previewId = type === 'firma' ? 'approveImgFirmaPreview' : 'approveImgProLogoPreview';
+            const src = base64.startsWith('data:') ? base64 : 'data:image/png;base64,' + base64;
+            document.getElementById(previewId).innerHTML = `<img src="${src}" style="max-width:100%;max-height:80px;object-fit:contain;">`;
+        }
+
+        function _initApproveImgFileInputs() {
+            const firmaInput = document.getElementById('approveImgFirmaFile');
+            const logoInput = document.getElementById('approveImgProLogoFile');
+            if (firmaInput) firmaInput.onchange = (e) => {
+                const file = e.target.files[0]; if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => { _approveImgSetPreview('firma', reader.result); };
+                reader.readAsDataURL(file);
+            };
+            if (logoInput) logoInput.onchange = (e) => {
+                const file = e.target.files[0]; if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => { _approveImgSetPreview('proLogo', reader.result); };
+                reader.readAsDataURL(file);
+            };
+        }
+
+        function _renderApproveWorkplaces(mainWp, extraWps) {
+            const container = document.getElementById('approveWorkplacesContainer');
+            if (!container) return;
+            const allWps = [mainWp || {}];
+            if (Array.isArray(extraWps)) allWps.push(...extraWps);
+
+            container.innerHTML = allWps.map((wp, i) => {
+                const label = i === 0 ? '🏥 Lugar de trabajo principal' : `🏢 Lugar de trabajo ${i + 1}`;
+                const id = `approveWp${i}`;
+                const hasLogo = wp.logo && wp.logo !== 'null' && wp.logo !== 'no';
+                const logoPreview = hasLogo
+                    ? `<img src="${wp.logo.startsWith('data:') ? wp.logo : 'data:image/png;base64,' + wp.logo}" style="max-height:40px;max-width:100%;object-fit:contain;">`
+                    : '<span style="font-size:.72rem;color:#94a3b8;">Sin logo</span>';
+                return `
+                <details ${i === 0 ? 'open' : ''} style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:.65rem;margin-bottom:.6rem;">
+                    <summary style="font-size:.8rem;font-weight:600;color:#475569;cursor:pointer;list-style:none;display:flex;align-items:center;gap:4px;">${label} ▾</summary>
+                    <div style="margin-top:.55rem;display:flex;flex-direction:column;gap:.45rem;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label style="font-size:.78rem;">Nombre del lugar</label>
+                                <input type="text" class="approve-wp-field" data-wp="${i}" data-field="name" value="${escapeHtml(wp.name || wp.nombre || '')}" style="font-size:.84rem;" placeholder="Clínica / Hospital">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:.78rem;">Dirección</label>
+                                <input type="text" class="approve-wp-field" data-wp="${i}" data-field="address" value="${escapeHtml(wp.address || wp.direccion || '')}" style="font-size:.84rem;" placeholder="Calle 123, Ciudad">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label style="font-size:.78rem;">Teléfono del lugar</label>
+                                <input type="tel" class="approve-wp-field" data-wp="${i}" data-field="phone" value="${escapeHtml(wp.phone || wp.telefono || '')}" style="font-size:.84rem;">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:.78rem;">Email del lugar</label>
+                                <input type="email" class="approve-wp-field" data-wp="${i}" data-field="email" value="${escapeHtml(wp.email || '')}" style="font-size:.84rem;">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label style="font-size:.78rem;">📄 Pie de página del lugar</label>
+                                <input type="text" class="approve-wp-field" data-wp="${i}" data-field="footer" value="${escapeHtml(wp.footer || '')}" style="font-size:.84rem;" placeholder="Texto al pie del informe">
+                            </div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:.5rem;margin-top:.2rem;">
+                            <span style="font-size:.78rem;color:#64748b;">Logo institucional:</span>
+                            <div id="${id}-logo-preview" style="min-height:40px;min-width:60px;background:repeating-conic-gradient(#e0e0e0 0% 25%,#fff 0% 50%) 0 0/10px 10px;border-radius:4px;display:flex;align-items:center;justify-content:center;padding:3px;">
+                                ${logoPreview}
+                            </div>
+                            <label class="btn-secondary" for="${id}-logo-file" style="padding:2px 7px;font-size:.72rem;cursor:pointer;">📂</label>
+                            <input type="file" id="${id}-logo-file" accept="image/*" style="display:none;" onchange="_approveWpLogoChange(${i}, this)">
+                            <button type="button" class="btn-secondary" onclick="_approveWpLogoClear(${i})" style="padding:2px 7px;font-size:.72rem;color:#ef4444;border-color:#fca5a5;">🗑️</button>
+                        </div>
+                    </div>
+                </details>`;
+            }).join('');
+        }
+
+        // State for workplace logos
+        let _approveWpLogos = {};
+
+        function _approveWpLogoChange(wpIndex, input) {
+            const file = input.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                _approveWpLogos[wpIndex] = reader.result;
+                const preview = document.getElementById(`approveWp${wpIndex}-logo-preview`);
+                if (preview) preview.innerHTML = `<img src="${reader.result}" style="max-height:40px;max-width:100%;object-fit:contain;">`;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function _approveWpLogoClear(wpIndex) {
+            _approveWpLogos[wpIndex] = null;
+            const preview = document.getElementById(`approveWp${wpIndex}-logo-preview`);
+            if (preview) preview.innerHTML = '<span style="font-size:.72rem;color:#94a3b8;">Sin logo</span>';
+        }
+
+        function _collectApproveWorkplaces() {
+            const workplaces = [];
+            const fields = document.querySelectorAll('.approve-wp-field');
+            const wpMap = {};
+            fields.forEach(f => {
+                const i = parseInt(f.dataset.wp);
+                if (!wpMap[i]) wpMap[i] = {};
+                wpMap[i][f.dataset.field] = f.value.trim();
+            });
+            Object.keys(wpMap).sort((a,b) => a-b).forEach(i => {
+                const wp = wpMap[i];
+                // Include logo from state
+                if (_approveWpLogos[i] !== undefined) {
+                    wp.logo = _approveWpLogos[i];
+                }
+                workplaces.push(wp);
+            });
+            return workplaces;
+        }
+
         function openApproveModal(regId) {
             const reg = allRegistrations.find(r => r.ID_Registro === regId);
             if (!reg) return;
 
             document.getElementById('approveRegId').value = regId;
-            // Guardar especialidades del registro
             const espStr = reg.Especialidades || '';
             document.getElementById('approveRegEspecialidades').value = espStr;
-            // Guardar addons cart del registro
             document.getElementById('approveAddonsCart').value = reg.Addons_Cart || '';
 
-            // Auto-detectar plan: primero del campo Plan_Solicitado, luego parseando Notas
+            // Auto-detectar plan
             const planSolicitado = (reg.Plan_Solicitado || _parsePlanFromNotas(reg.Notas || '')).toUpperCase();
 
             document.getElementById('approveModalInfo').textContent =
                 `Reg. ${reg.ID_Registro} · ${reg.Fecha_Registro ? new Date(reg.Fecha_Registro).toLocaleDateString('es-ES') : '—'} · Plan: ${planSolicitado || '(sin especificar)'}`;
 
-            // ── Poblar campos editables de verificación ──
+            // ── Campos del profesional ──
             document.getElementById('approveEditNombre').value         = reg.Nombre         || '';
             document.getElementById('approveEditMatricula').value      = reg.Matricula      || '';
             document.getElementById('approveEditEmail').value          = reg.Email          || '';
             document.getElementById('approveEditTelefono').value       = reg.Telefono       || '';
             document.getElementById('approveEditEspecialidades').value = reg.Especialidades || '';
-            document.getElementById('approveEditNotas').value          = reg.Notas          || '';
             const _hc = reg.Header_Color || '#1a56a0';
             document.getElementById('approveEditHeaderColor').value    = _hc;
             document.getElementById('approveEditHeaderColorVal').textContent = _hc;
             document.getElementById('approveEditFooterText').value     = reg.Footer_Text    || '';
+
+            // ── Workplaces: principal + extras ──
+            let mainWp = {};
+            try { mainWp = JSON.parse(reg.Workplace_Data || '{}'); } catch(_) {}
+            let extraWps = [];
             try {
-                const _wp = JSON.parse(reg.Workplace_Data || '{}');
-                document.getElementById('approveEditWpName').value      = _wp.name      || _wp.nombre        || '';
-                document.getElementById('approveEditWpAddress').value   = _wp.address   || _wp.direccion     || '';
-                document.getElementById('approveEditWpPhone').value     = _wp.phone     || _wp.telefono      || '';
-                document.getElementById('approveEditWpSpecialty').value = _wp.specialty || _wp.especialidad  || '';
+                if (reg.Extra_Workplaces) {
+                    extraWps = JSON.parse(reg.Extra_Workplaces);
+                    if (!Array.isArray(extraWps)) extraWps = [];
+                }
             } catch(_) {}
+
+            // Store initial logos
+            _approveWpLogos = {};
+            const allWps = [mainWp, ...extraWps];
+            allWps.forEach((wp, i) => {
+                if (wp.logo && wp.logo !== 'null' && wp.logo !== 'no') {
+                    _approveWpLogos[i] = wp.logo;
+                }
+            });
+
+            _renderApproveWorkplaces(mainWp, extraWps);
+
+            // ── Imágenes: firma y logo profesional ──
+            _approveImageData = { firma: null, proLogo: null };
+            _approveImgClear('firma');
+            _approveImgClear('proLogo');
+            if (reg.Firma && reg.Firma !== 'no' && reg.Firma !== 'null' && reg.Firma !== '') {
+                _approveImgSetPreview('firma', reg.Firma);
+            }
+            if (reg.Pro_Logo && reg.Pro_Logo !== 'no' && reg.Pro_Logo !== 'null' && reg.Pro_Logo !== '') {
+                _approveImgSetPreview('proLogo', reg.Pro_Logo);
+            }
+            _initApproveImgFileInputs();
+
             // Expandir verificación por defecto
             const _vb = document.getElementById('approveVerifyBody');
             const _vi = document.getElementById('approveVerifyToggleIcon');
@@ -5173,12 +5332,11 @@
                 planSelectRow.style.display = '';
             }
 
-            // Auto-llenar keys desde Mis Keys (permanecen ocultas, colapsadas)
+            // Auto-llenar keys
             document.getElementById('approveApiKey').value   = localStorage.getItem('admin_groq_key')    || '';
             document.getElementById('approveApiKeyB1').value = localStorage.getItem('admin_groq_key_b1') || '';
             document.getElementById('approveApiKeyB2').value = localStorage.getItem('admin_groq_key_b2') || '';
 
-            // Colapsar edición de keys y actualizar estado
             const keysEdit = document.getElementById('approveKeysEditSection');
             if (keysEdit) keysEdit.style.display = 'none';
             _updateApproveKeysStatus();
@@ -5590,15 +5748,17 @@
             const _editEmail       = (document.getElementById('approveEditEmail')?.value       || '').trim();
             const _editTelefono    = (document.getElementById('approveEditTelefono')?.value    || '').trim();
             const _editEsp         = (document.getElementById('approveEditEspecialidades')?.value || '').trim();
-            const _editNotas       = (document.getElementById('approveEditNotas')?.value       || '').trim();
             const _editHeaderColor = document.getElementById('approveEditHeaderColor')?.value   || '#1a56a0';
             const _editFooterText  = (document.getElementById('approveEditFooterText')?.value  || '').trim();
-            const _editWp = JSON.stringify({
-                name:      (document.getElementById('approveEditWpName')?.value      || '').trim(),
-                address:   (document.getElementById('approveEditWpAddress')?.value   || '').trim(),
-                phone:     (document.getElementById('approveEditWpPhone')?.value     || '').trim(),
-                specialty: (document.getElementById('approveEditWpSpecialty')?.value || '').trim()
-            });
+
+            // Recopilar todos los workplaces editados
+            const allWorkplaces = _collectApproveWorkplaces();
+            const _editWp = JSON.stringify(allWorkplaces[0] || {});
+            const _editExtraWps = JSON.stringify(allWorkplaces.slice(1));
+
+            // Imágenes
+            const _editFirma = _approveImageData.firma || '';
+            const _editProLogo = _approveImageData.proLogo || '';
 
             if (!apiKey) {
                 await dashAlert('Debés ingresar una API Key para este profesional. Usá el botón ⚙️ Ingresar para configurarla.', '🔑');
@@ -5653,9 +5813,32 @@
 
             try {
                 const authStr = _getSessionAuthParams();
-                const url = `${CONFIG.scriptUrl}?action=admin_approve_registration&regId=${encodeURIComponent(regId)}&plan=${encodeURIComponent(plan)}&apiKey=${encodeURIComponent(apiKey)}&apiKeyB1=${encodeURIComponent(apiKeyB1)}&apiKeyB2=${encodeURIComponent(apiKeyB2)}&maxDevices=${encodeURIComponent(maxDevices)}&allowedTemplates=${encodeURIComponent(templatesStr)}&editedNombre=${encodeURIComponent(_editNombre)}&editedMatricula=${encodeURIComponent(_editMatricula)}&editedEmail=${encodeURIComponent(_editEmail)}&editedTelefono=${encodeURIComponent(_editTelefono)}&editedEspecialidades=${encodeURIComponent(_editEsp)}&editedNotas=${encodeURIComponent(_editNotas)}&editedHeaderColor=${encodeURIComponent(_editHeaderColor)}&editedFooterText=${encodeURIComponent(_editFooterText)}&editedWorkplace=${encodeURIComponent(_editWp)}&${authStr}`;
+                // Usar POST para enviar datos grandes (imágenes base64)
+                const postBody = {
+                    action: 'admin_approve_registration',
+                    regId, plan, apiKey, apiKeyB1, apiKeyB2,
+                    maxDevices: String(maxDevices),
+                    allowedTemplates: templatesStr,
+                    editedNombre: _editNombre,
+                    editedMatricula: _editMatricula,
+                    editedEmail: _editEmail,
+                    editedTelefono: _editTelefono,
+                    editedEspecialidades: _editEsp,
+                    editedHeaderColor: _editHeaderColor,
+                    editedFooterText: _editFooterText,
+                    editedWorkplace: _editWp,
+                    editedExtraWorkplaces: _editExtraWps,
+                    editedFirma: _editFirma,
+                    editedProLogo: _editProLogo
+                };
+                // Agregar auth params
+                const authPairs = authStr.split('&').filter(Boolean);
+                authPairs.forEach(p => { const [k,v] = p.split('='); postBody[k] = decodeURIComponent(v); });
 
-                const res = await fetch(url);
+                const res = await fetch(CONFIG.scriptUrl, {
+                    method: 'POST',
+                    body: JSON.stringify(postBody)
+                });
                 const data = await res.json();
 
                 if (data.error) throw new Error(data.error);
@@ -6717,33 +6900,11 @@
                         <label style="font-size:.8rem;">🩺 Especialidades <span style="color:#94a3b8;font-weight:400;">(separadas por coma)</span></label>
                         <input type="text" id="approveEditEspecialidades" style="font-size:.87rem;" placeholder="Cardiología, Clínica Médica">
                     </div>
-                    <!-- Lugar de trabajo principal (colapsable con <details>) -->
-                    <details style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:.65rem;margin-bottom:.6rem;">
-                        <summary style="font-size:.8rem;font-weight:600;color:#475569;cursor:pointer;list-style:none;display:flex;align-items:center;gap:4px;">🏥 Lugar de trabajo principal ▾</summary>
-                        <div style="margin-top:.55rem;display:flex;flex-direction:column;gap:.45rem;">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label style="font-size:.78rem;">Nombre del lugar</label>
-                                    <input type="text" id="approveEditWpName" style="font-size:.84rem;" placeholder="Clínica / Hospital">
-                                </div>
-                                <div class="form-group">
-                                    <label style="font-size:.78rem;">Dirección</label>
-                                    <input type="text" id="approveEditWpAddress" style="font-size:.84rem;" placeholder="Calle 123, Ciudad">
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label style="font-size:.78rem;">Teléfono del lugar</label>
-                                    <input type="tel" id="approveEditWpPhone" style="font-size:.84rem;">
-                                </div>
-                                <div class="form-group">
-                                    <label style="font-size:.78rem;">Especialidad del lugar</label>
-                                    <input type="text" id="approveEditWpSpecialty" style="font-size:.84rem;" placeholder="Cardiología">
-                                </div>
-                            </div>
-                        </div>
-                    </details>
-                    <!-- Color de encabezado + pie -->
+
+                    <!-- ── Lugares de trabajo (dinámico) ── -->
+                    <div id="approveWorkplacesContainer"></div>
+
+                    <!-- Color de encabezado -->
                     <div class="form-row" style="margin-bottom:.55rem;">
                         <div class="form-group" style="flex:0 1 200px;">
                             <label style="font-size:.8rem;">🎨 Color de encabezado PDF</label>
@@ -6755,14 +6916,40 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label style="font-size:.8rem;">📄 Texto del pie del informe</label>
-                            <input type="text" id="approveEditFooterText" style="font-size:.84rem;" placeholder="(opcional)">
+                            <label style="font-size:.8rem;">📄 Texto pie de informe (global)</label>
+                            <input type="text" id="approveEditFooterText" style="font-size:.84rem;" placeholder="(opcional — aplica si el lugar no tiene pie propio)">
                         </div>
                     </div>
-                    <!-- Notas del registro -->
-                    <div class="form-group">
-                        <label style="font-size:.8rem;">📝 Notas del registro <span style="color:#94a3b8;font-weight:400;">(editables — se guardan en Registro_Datos)</span></label>
-                        <textarea id="approveEditNotas" rows="3" style="font-size:.82rem;line-height:1.5;resize:vertical;" placeholder="Sin notas"></textarea>
+
+                    <!-- ── Imágenes: Firma y Logo profesional ── -->
+                    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:.65rem;margin-bottom:.6rem;">
+                        <p style="font-size:.82rem;font-weight:600;color:#475569;margin:0 0 .5rem;">🖼️ Imágenes del profesional</p>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;">
+                            <!-- Firma -->
+                            <div style="text-align:center;">
+                                <label style="font-size:.78rem;color:#64748b;display:block;margin-bottom:4px;">✍️ Firma digital</label>
+                                <div id="approveImgFirmaPreview" style="min-height:60px;background:repeating-conic-gradient(#e0e0e0 0% 25%,#fff 0% 50%) 0 0/12px 12px;border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:4px;padding:4px;">
+                                    <span style="font-size:.75rem;color:#94a3b8;">Sin firma</span>
+                                </div>
+                                <div style="display:flex;gap:4px;justify-content:center;">
+                                    <label class="btn-secondary" for="approveImgFirmaFile" style="padding:3px 8px;font-size:.73rem;cursor:pointer;">📂 Cambiar</label>
+                                    <input type="file" id="approveImgFirmaFile" accept="image/*" style="display:none;">
+                                    <button type="button" class="btn-secondary" onclick="_approveImgClear('firma')" style="padding:3px 8px;font-size:.73rem;color:#ef4444;border-color:#fca5a5;">🗑️</button>
+                                </div>
+                            </div>
+                            <!-- Logo profesional -->
+                            <div style="text-align:center;">
+                                <label style="font-size:.78rem;color:#64748b;display:block;margin-bottom:4px;">👤 Logo profesional</label>
+                                <div id="approveImgProLogoPreview" style="min-height:60px;background:repeating-conic-gradient(#e0e0e0 0% 25%,#fff 0% 50%) 0 0/12px 12px;border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:4px;padding:4px;">
+                                    <span style="font-size:.75rem;color:#94a3b8;">Sin logo</span>
+                                </div>
+                                <div style="display:flex;gap:4px;justify-content:center;">
+                                    <label class="btn-secondary" for="approveImgProLogoFile" style="padding:3px 8px;font-size:.73rem;cursor:pointer;">📂 Cambiar</label>
+                                    <input type="file" id="approveImgProLogoFile" accept="image/*" style="display:none;">
+                                    <button type="button" class="btn-secondary" onclick="_approveImgClear('proLogo')" style="padding:3px 8px;font-size:.73rem;color:#ef4444;border-color:#fca5a5;">🗑️</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
