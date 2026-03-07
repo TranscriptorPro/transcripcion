@@ -4114,17 +4114,17 @@
                     <div class="gw-field-row">
                         <div class="gw-field-group">
                             <label>Nombre del lugar ${isMain ? '<span class="gw-req">*</span>' : ''}</label>
-                            <input type="text" id="gwWpName${index}" placeholder="Clínica San Martín" oninput="updateGiftWpName(${index})">
+                            <input type="text" id="gwWpName${index}" placeholder="Clínica San Martín" oninput="updateGiftWpName(${index}); _giftActiveInstWp=${index}; _updatePdfSim();" onfocus="_giftActiveInstWp=${index}; _updatePdfSim();">
                         </div>
                         <div class="gw-field-group">
                             <label>Dirección</label>
-                            <input type="text" id="gwWpAddress${index}" placeholder="Av. Corrientes 1234, CABA">
+                            <input type="text" id="gwWpAddress${index}" placeholder="Av. Corrientes 1234, CABA" oninput="_giftActiveInstWp=${index}; _updatePdfSim();" onfocus="_giftActiveInstWp=${index}; _updatePdfSim();">
                         </div>
                     </div>
                     <div class="gw-field-row">
                         <div class="gw-field-group">
                             <label>Teléfono del lugar</label>
-                            <input type="tel" id="gwWpPhone${index}" placeholder="(011) 4567-8901">
+                            <input type="tel" id="gwWpPhone${index}" placeholder="(011) 4567-8901" oninput="_giftActiveInstWp=${index}; _updatePdfSim();" onfocus="_giftActiveInstWp=${index}; _updatePdfSim();">
                         </div>
                         <div class="gw-field-group">
                             <label>Email institucional</label>
@@ -4281,14 +4281,17 @@
                     _giftWpLogoData[index] = b64;
                     const prev = document.getElementById('gwWpLogoPreview' + index);
                     if (prev && b64) prev.innerHTML = '<img src="' + b64 + '" alt="Logo" style="max-height:50px;">';
+                    _giftActiveInstWp = index;
                     _giftImagePreview.inst = b64;
                     _updatePdfSim();
                 },
                 onPreviewUpdate: (type, b64val) => {
+                    _giftActiveInstWp = index;
                     _giftImagePreview.inst = b64val;
                     _updatePdfSim();
                 },
                 onSizeUpdate: (type, sz) => {
+                    _giftActiveInstWp = index;
                     _giftImageData.instLogoSize = sz;
                     _updatePdfSim();
                 }
@@ -5512,14 +5515,17 @@
                     _approveImageData.instLogo = b64;
                     const preview = document.getElementById('approveWp' + wpIndex + '-logo-preview');
                     if (preview && b64) preview.innerHTML = '<img src="' + b64 + '" style="max-height:40px;max-width:100%;object-fit:contain;">';
+                    _approveActiveInstWp = wpIndex;
                     _approveImagePreview.inst = b64;
                     _updateApprovePreview();
                 },
                 onPreviewUpdate: (type, b64val) => {
+                    _approveActiveInstWp = wpIndex;
                     _approveImagePreview.inst = b64val;
                     _updateApprovePreview();
                 },
                 onSizeUpdate: (type, sz) => {
+                    _approveActiveInstWp = wpIndex;
                     _approveImageSizes.inst = sz;
                     _updateApprovePreview();
                 }
@@ -5633,7 +5639,11 @@
             // Listeners en campos de workplace para actualizar preview
             setTimeout(() => {
                 document.querySelectorAll('.approve-wp-field').forEach(f => {
-                    if (!f._apvListenerAdded) { f.addEventListener('input', _updateApprovePreview); f._apvListenerAdded = true; }
+                    if (!f._apvListenerAdded) {
+                        f.addEventListener('input', () => { _approveActiveInstWp = parseInt(f.dataset.wp) || 0; _updateApprovePreview(); });
+                        f.addEventListener('focus', () => { _approveActiveInstWp = parseInt(f.dataset.wp) || 0; _updateApprovePreview(); });
+                        f._apvListenerAdded = true;
+                    }
                 });
             }, 50);
 
