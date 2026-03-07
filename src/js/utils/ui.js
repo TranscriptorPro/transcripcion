@@ -1040,7 +1040,7 @@ window.initModals = function () {
                         }
                         const form = new FormData();
                         form.append('file', file);
-                        form.append('model', 'whisper-large-v3');
+                        form.append('model', 'whisper-large-v3-turbo');
                         form.append('language', 'es');
                         form.append('response_format', 'text');
 

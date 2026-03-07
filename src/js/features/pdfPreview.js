@@ -708,13 +708,17 @@ window.generatePDFBase64 = async function () {
             const origSave = window.saveToDisk;
             window.saveToDisk = async (blob, name) => {
                 window.saveToDisk = origSave; // restaurar
-                const reader = new FileReader();
-                reader.onload = () => {
-                    const base64 = reader.result.split(',')[1]; // quitar data:...;base64,
-                    resolve(base64);
-                };
-                reader.onerror = () => resolve(null);
-                reader.readAsDataURL(blob);
+                try {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const base64 = reader.result.split(',')[1]; // quitar data:...;base64,
+                        resolve(base64);
+                    };
+                    reader.onerror = () => resolve(null);
+                    reader.readAsDataURL(blob);
+                } catch(_) {
+                    resolve(null);
+                }
             };
             const fName = 'informe';
             const fecha = new Date().toLocaleDateString('es-ES');

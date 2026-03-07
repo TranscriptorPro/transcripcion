@@ -5126,6 +5126,9 @@
             // Guardar addons cart del registro
             document.getElementById('approveAddonsCart').value = reg.Addons_Cart || '';
 
+            // Auto-detectar plan: primero del campo Plan_Solicitado, luego parseando Notas
+            const planSolicitado = (reg.Plan_Solicitado || _parsePlanFromNotas(reg.Notas || '')).toUpperCase();
+
             document.getElementById('approveModalInfo').textContent =
                 `Reg. ${reg.ID_Registro} · ${reg.Fecha_Registro ? new Date(reg.Fecha_Registro).toLocaleDateString('es-ES') : '—'} · Plan: ${planSolicitado || '(sin especificar)'}`;
 
@@ -5153,8 +5156,6 @@
             if (_vb) _vb.style.display = 'block';
             if (_vi) _vi.textContent = '▲ colapsar';
 
-            // Auto-detectar plan: primero del campo Plan_Solicitado, luego parseando Notas
-            const planSolicitado = (reg.Plan_Solicitado || _parsePlanFromNotas(reg.Notas || '')).toUpperCase();
             const PLANES_VALIDOS = ['NORMAL','PRO','CLINIC','GIFT','TRIAL'];
             const planBadgeRow  = document.getElementById('approvePlanBadgeRow');
             const planSelectRow = document.getElementById('approvePlanSelectRow');
