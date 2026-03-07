@@ -7720,11 +7720,9 @@
             const newW = Math.round(canvas.width * ratio);
             const newH = Math.round(canvas.height * ratio);
             const out = document.createElement('canvas');
-            out.width = maxW; out.height = maxH;
+            out.width = newW; out.height = newH;
             const ctx = out.getContext('2d');
-            const offX = Math.round((maxW - newW) / 2);
-            const offY = Math.round((maxH - newH) / 2);
-            ctx.drawImage(canvas, 0, 0, canvas.width, canvas.height, offX, offY, newW, newH);
+            ctx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, newW, newH);
             return out;
         }
 
@@ -8023,16 +8021,14 @@
                         const ps = g('-proc-section'); if (ps) ps.style.display = 'none';
                         const es = g('-edit-section'); if (es) es.style.display = 'block';
                         setStatus('✅ Procesada', '#10b981');
-                        // Mostrar dimensiones del resultado procesado
-                        const _procImg = new Image();
-                        _procImg.onload = () => {
-                            state.aspectRatio = _procImg.naturalWidth / _procImg.naturalHeight;
-                            state.baseW = _procImg.naturalWidth;
-                            state.baseH = _procImg.naturalHeight;
-                            const _rd = g('-rdims'); if (_rd) _rd.textContent = `${_procImg.naturalWidth}×${_procImg.naturalHeight}px`;
-                            const _rs = g('-rscale'); if (_rs) { _rs.value = '100'; const _sv = g('-scaleval'); if (_sv) _sv.textContent = '100'; }
-                        };
-                        _procImg.src = state.resultB64;
+                        // Determinar dimensiones del resultado procesado (síncrono con await)
+                        const _procImg = await loadImageFromSrc(state.resultB64);
+                        state.aspectRatio = _procImg.naturalWidth / _procImg.naturalHeight;
+                        state.baseW = _procImg.naturalWidth;
+                        state.baseH = _procImg.naturalHeight;
+                        state.rw = 0; state.rh = 0;
+                        const _rd = g('-rdims'); if (_rd) _rd.textContent = `${_procImg.naturalWidth}×${_procImg.naturalHeight}px`;
+                        const _rs = g('-rscale'); if (_rs) { _rs.value = '100'; const _sv = g('-scaleval'); if (_sv) _sv.textContent = '100'; }
                         notifyPreview(state.resultB64);
                     } catch (err) {
                         alert('Error al procesar: ' + err.message);
