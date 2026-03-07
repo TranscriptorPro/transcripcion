@@ -52,7 +52,11 @@ const CSS_FILES = [
     'src/css/variables.css',
     'src/css/base.css',
     'src/css/layout.css',
-    'src/css/components.css',
+    'src/css/components-cards.css',
+    'src/css/components-editor.css',
+    'src/css/components-modals.css',
+    'src/css/components-pdf.css',
+    'src/css/components-settings.css',
     'src/css/animations.css',
 ];
 

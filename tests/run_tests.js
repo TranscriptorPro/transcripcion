@@ -5315,8 +5315,10 @@ test('CSS base — base.css existe', () => {
     assert(fs.existsSync(path.join(root, 'src/css/base.css')));
 });
 
-test('CSS base — components.css existe', () => {
-    assert(fs.existsSync(path.join(root, 'src/css/components.css')));
+test('CSS base — components.css existe (o sub-archivos)', () => {
+    const monolith = fs.existsSync(path.join(root, 'src/css/components.css'));
+    const split = fs.existsSync(path.join(root, 'src/css/components-cards.css'));
+    assert(monolith || split, 'Debe existir components.css o sus sub-archivos');
 });
 
 test('CSS base — layout.css existe', () => {
