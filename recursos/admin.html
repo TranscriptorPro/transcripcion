@@ -5166,11 +5166,20 @@
             document.getElementById('approveModalOverlay').classList.remove('show');
         }
 
-        /** Parsea el plan desde el campo Notas (ej: "Plan: PRO" o "Plan PRO") */
+        /** Parsea el plan desde el campo Notas o cualquier texto que lo contenga */
         function _parsePlanFromNotas(notas) {
             if (!notas) return '';
-            const m = String(notas).match(/Plan[:\s]+([A-Z]{2,10})/i);
-            return m ? m[1].toUpperCase() : '';
+            const s = String(notas);
+            // Formato explícito: "Plan: PRO" o "Plan PRO"
+            const m = s.match(/Plan[:\s]+([A-Z]{2,10})/i);
+            if (m) return m[1].toUpperCase();
+            // Detectar palabra clave suelta (ej: "...Cardiología NORMAL")
+            // Orden importante: más largo primero para evitar falsos positivos
+            const planes = ['CLINIC', 'NORMAL', 'GIFT', 'TRIAL', 'PRO'];
+            for (const p of planes) {
+                if (new RegExp('\\b' + p + '\\b', 'i').test(s)) return p;
+            }
+            return '';
         }
 
         /** Genera el HTML del badge grande del plan (para el modal) */
@@ -5439,13 +5448,15 @@
                 html += '</div>';
                 section.innerHTML = html;
                 onTplChange(maxTpl);
-                // Pre-seleccionar plantillas del formulario de registro
+                // Pre-seleccionar plantillas: primero del carrito (compra), luego auto por especialidad
+                let prefilledFromCart = false;
                 try {
                     const cartStr = document.getElementById('approveAddonsCart')?.value;
                     if (cartStr) {
                         const cart = JSON.parse(cartStr);
                         const preSelectedKeys = (cart.templates || []).map(t => t.key);
                         if (preSelectedKeys.length > 0) {
+                            prefilledFromCart = true;
                             section.querySelectorAll('.approve-tpl-cb').forEach(cb => { if (!cb.disabled) cb.checked = false; });
                             preSelectedKeys.forEach(key => {
                                 const cb = section.querySelector(`.approve-tpl-cb[value="${key}"]`);
@@ -5460,6 +5471,19 @@
                         }
                     }
                 } catch(_) {}
+                // Sin datos del carrito → auto-seleccionar las primeras N de la especialidad del médico
+                if (!prefilledFromCart) {
+                    let autoCount = 0;
+                    section.querySelectorAll('.approve-tpl-cb').forEach(cb => {
+                        if (!cb.disabled && autoCount < maxTpl) {
+                            cb.checked = true;
+                            autoCount++;
+                            const lbl = cb.closest('label');
+                            if (lbl) { lbl.style.background = '#f0fdf4'; lbl.style.borderColor = '#86efac'; }
+                        }
+                    });
+                    onTplChange(maxTpl);
+                }
             }
         }
 
