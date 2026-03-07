@@ -17,7 +17,8 @@ window.updateButtonsVisibility = function (state) {
 
     const isTranscribed  = ['TRANSCRIBED', 'STRUCTURED', 'PREVIEWED'].includes(state);
     const isStructured   = ['STRUCTURED', 'PREVIEWED'].includes(state);
-    const isProMode      = window.currentMode === 'pro';
+    const isProMode      = window.currentMode === 'pro'
+        || (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'PRO');
     const isNormalMode   = isTranscribed && !isProMode;
 
     // btnStructureAI: visible in pro mode after transcription, hidden after structuring
@@ -179,13 +180,16 @@ function initializeMode() {
     if (typeof CLIENT_CONFIG === 'undefined') return;
 
     // Check saved preference first
+    // PRO clones are ALWAYS pro — ignore any saved preference
+    if (CLIENT_CONFIG.type === 'PRO') {
+        setMode('pro');
+        if (proToggleContainer) proToggleContainer.style.display = 'none';
+        return;
+    }
+
     const savedMode = window._lastProfileTypeCache || localStorage.getItem('last_profile_type');
     if (savedMode) {
         setMode(savedMode);
-        // Even with saved mode, hide toggle for PRO users (they're always PRO)
-        if (['PRO'].includes(CLIENT_CONFIG.type) && proToggleContainer) {
-            proToggleContainer.style.display = 'none';
-        }
         return;
     }
 

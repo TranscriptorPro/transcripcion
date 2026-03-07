@@ -734,7 +734,9 @@ window.initModals = function () {
         if (window._isComparisonMode) return;
 
         // Solo Pro mode estricto con contenido estructurado en el editor
-        if (window.currentMode !== 'pro') return;
+        const _isPro = window.currentMode === 'pro'
+            || (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'PRO');
+        if (!_isPro) return;
         if (!editor.innerText.trim()) return;
         // No mostrar si el contenido no está estructurado (texto plano sin secciones)
         if (!editor.querySelector('h3, h4, .section-header, strong')) return;
