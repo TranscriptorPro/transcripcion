@@ -19,11 +19,7 @@ const APP_SHELL = [
     './src/css/base.css',
     './src/css/variables.css',
     './src/css/layout.css',
-    './src/css/components-cards.css',
-    './src/css/components-editor.css',
-    './src/css/components-modals.css',
-    './src/css/components-pdf.css',
-    './src/css/components-settings.css',
+    './src/css/components.css',
     './src/css/animations.css',
     './src/js/utils/db.js',
     './src/js/config/config.js',
@@ -57,8 +53,6 @@ const APP_SHELL = [
     './src/css/skins/light-minimal.css',
     './src/js/features/pricingCart.js',
     './src/js/features/userGuide.js',
-    './src/js/init.js',
-    './src/js/pwa.js',
     './recursos/manual.html',
     'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js'
 ];

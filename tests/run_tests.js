@@ -1006,11 +1006,8 @@ test('index.html — onboardingOverlay existe (K1)', () => {
 
 test('index.html — btnInstallPwa existe (PWA3)', () => {
     const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
-    const pwaJs = fs.existsSync(path.join(root, 'src/js/pwa.js'))
-        ? fs.readFileSync(path.join(root, 'src/js/pwa.js'), 'utf-8') : '';
-    assert(html.includes('id="btnInstallPwa"'), 'PWA3: btnInstallPwa debe existir en HTML');
-    assert(html.includes('beforeinstallprompt') || pwaJs.includes('beforeinstallprompt'),
-        'PWA3: beforeinstallprompt debe estar en index.html o en pwa.js');
+    assert(html.includes('id="btnInstallPwa"'), 'PWA3: btnInstallPwa debe existir');
+    assert(html.includes('beforeinstallprompt'), 'PWA3: beforeinstallprompt debe estar');
 });
 
 test('index.html — btnResetApp existe (admin reset)', () => {
@@ -1045,12 +1042,8 @@ test('index.html — manifest.json está vinculado', () => {
 
 test('index.html — SW se registra', () => {
     const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
-    const pwaJs = fs.existsSync(path.join(root, 'src/js/pwa.js'))
-        ? fs.readFileSync(path.join(root, 'src/js/pwa.js'), 'utf-8') : '';
-    assert(
-        html.includes("register('./sw.js'") || html.includes('register("./sw.js"') ||
-        pwaJs.includes("register('./sw.js'") || pwaJs.includes('register("./sw.js"'),
-        'Debe registrar sw.js (en index.html o en pwa.js)');
+    assert(html.includes("register('./sw.js'") || html.includes('register("./sw.js"'),
+        'Debe registrar sw.js');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1743,8 +1736,7 @@ console.log('\n── Bloque 33: Restaurar sesión + Modal confirm + Append reco
 test('index.html — botón btnRestoreSession existe', () => {
     const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
     assert(html.includes('id="btnRestoreSession"'), 'Debe tener botón restaurar sesión');
-    // El texto puede estar en el HTML con emojis o caracteres distintos
-    assert(html.includes('btnRestoreSession'), 'Texto del botón visible');
+    assert(html.includes('Restaurar sesión anterior'), 'Texto del botón visible');
 });
 
 test('index.html — modal customConfirmModal existe', () => {
@@ -5323,10 +5315,8 @@ test('CSS base — base.css existe', () => {
     assert(fs.existsSync(path.join(root, 'src/css/base.css')));
 });
 
-test('CSS base — components.css existe (o sub-archivos)', () => {
-    const monolith = fs.existsSync(path.join(root, 'src/css/components.css'));
-    const split = fs.existsSync(path.join(root, 'src/css/components-cards.css'));
-    assert(monolith || split, 'Debe existir components.css o sus sub-archivos');
+test('CSS base — components.css existe', () => {
+    assert(fs.existsSync(path.join(root, 'src/css/components.css')));
 });
 
 test('CSS base — layout.css existe', () => {
