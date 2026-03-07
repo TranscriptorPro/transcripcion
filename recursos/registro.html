@@ -947,12 +947,6 @@
                         <small>Se aplica al banner superior de cada página del informe</small>
                     </div>
 
-                    <!-- Pie de página -->
-                    <div class="field-group" style="margin-bottom: 1rem;">
-                        <label>Texto del pie de página</label>
-                        <input type="text" id="regFooterText" placeholder="Consultorio médico — Tel: (011) 4567-8901">
-                        <small>Aparece en todas las páginas, abajo</small>
-                    </div>
                 </div>
 
                 <div class="card">
@@ -979,13 +973,6 @@
                             </div>
                             <div class="upload-preview" id="proLogoPreview"></div>
                         </div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="section-title">📝 Notas adicionales</div>
-                    <div class="field-group">
-                        <textarea id="regNotas" rows="3" placeholder="Algún dato extra que quieras comunicar al administrador..."></textarea>
                     </div>
                 </div>
 
@@ -1748,6 +1735,11 @@
                         </div>
                         <div class="upload-preview" id="wpLogoPreview${index}"></div>
                     </div>
+                    <div class="field-group" style="margin-top:.8rem;">
+                        <label>Texto del pie de página</label>
+                        <input type="text" id="regWpFooter${index}" placeholder="Consultorio médico — Tel: (011) 4567-8901">
+                        <small>Aparece al pie de cada informe generado en este lugar</small>
+                    </div>
                 </div>
             `;
             container.appendChild(div);
@@ -2021,6 +2013,7 @@
                     address: (document.getElementById('regWpAddress' + idx) || {}).value || '',
                     phone:   (document.getElementById('regWpPhone' + idx) || {}).value || '',
                     email:   (document.getElementById('regWpEmail' + idx) || {}).value || '',
+                    footer:  (document.getElementById('regWpFooter' + idx) || {}).value || '',
                     logo:    wpLogoData[idx] || null
                 });
             });
@@ -2042,10 +2035,8 @@
                 workplace: allWorkplaces[0] || {},
                 extraWorkplaces: JSON.stringify(allWorkplaces.slice(1)),
                 headerColor: selectedHeaderColor,
-                footerText: document.getElementById('regFooterText').value.trim(),
                 firma: imageData.firma || null,
                 proLogo: imageData.proLogo || null,
-                notas: document.getElementById('regNotas').value.trim(),
                 // Plan & pricing data
                 planSeleccionado: selectedPlan,
                 billingCycle: billingCycle,

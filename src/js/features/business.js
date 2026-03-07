@@ -570,7 +570,7 @@ async function _handleFactorySetup(medicoId) {
                         address: wp.address || '',
                         phone:   wp.phone   || '',
                         email:   wp.email   || '',
-                        footer:  regDatos.footerText || '',
+                        footer:  wp.footer  || regDatos.footerText || '',
                         logo:    wp.logo    || '',
                         professionals: [buildProfessional()]
                     }];
@@ -588,7 +588,7 @@ async function _handleFactorySetup(medicoId) {
                                     address: ewp.address || '',
                                     phone:   ewp.phone   || '',
                                     email:   ewp.email   || '',
-                                    footer:  regDatos.footerText || '',
+                                    footer:  ewp.footer  || regDatos.footerText || '',
                                     logo:    ewp.logo    || '',
                                     professionals: [buildProfessional()]
                                 });
