@@ -5119,24 +5119,107 @@
 
         // ── Estado interno del modal de aprobación (imágenes) ──
         let _approveImageData = { firma: null, proLogo: null, instLogo: null };
+        let _approveImagePreview = { inst: null, prof: null, firma: null };
+        let _approveImageSizes = { inst: 60, prof: 60, firma: 60 };
         let _apvFirmaEditor = null;
         let _apvProfEditor = null;
         let _apvInstEditor = null;
 
+        function _updateApprovePreview() {
+            const simBox = document.getElementById('apvSimBox');
+            if (!simBox) return;
+            const nombre = (document.getElementById('approveEditNombre') || {}).value?.trim() || 'Dr. Nombre Ejemplo';
+            const matricula = (document.getElementById('approveEditMatricula') || {}).value?.trim() || 'MP-000';
+            const especialidad = (document.getElementById('approveEditEspecialidades') || {}).value?.trim() || '';
+            const accent = (document.getElementById('approveEditHeaderColor') || {}).value || '#1a56a0';
+            const wpFields = document.querySelectorAll('.approve-wp-field[data-wp="0"]');
+            let wpName = '', wpAddress = '', wpPhone = '';
+            wpFields.forEach(f => {
+                if (f.dataset.field === 'name') wpName = f.value.trim();
+                if (f.dataset.field === 'address') wpAddress = f.value.trim();
+                if (f.dataset.field === 'phone') wpPhone = f.value.trim();
+            });
+            const instB64 = _approveImagePreview.inst;
+            const profB64 = _approveImagePreview.prof;
+            const firmaB64 = _approveImagePreview.firma;
+            const instSize = _approveImageSizes.inst || 60;
+            const profSize = _approveImageSizes.prof || 60;
+            const firmaSize = _approveImageSizes.firma || 60;
+            const simBanner = document.getElementById('apvSimBanner');
+            const simLL = document.getElementById('apvSimLogoLeft');
+            if (simBanner) {
+                const hasWpData = wpName || wpAddress || wpPhone || instB64;
+                simBanner.style.display = hasWpData ? 'flex' : 'none';
+                simBanner.style.background = accent;
+                if (simLL) {
+                    simLL.innerHTML = '';
+                    if (instB64) {
+                        const i = document.createElement('img');
+                        i.src = instB64; i.style.maxHeight = Math.round(instSize * 0.75) + 'px';
+                        i.style.maxWidth = Math.round(instSize * 1.2) + 'px'; i.style.objectFit = 'contain';
+                        simLL.appendChild(i);
+                    }
+                }
+                const wpN = document.getElementById('apvSimWpName');
+                const wpD = document.getElementById('apvSimWpDetails');
+                if (wpN) wpN.textContent = wpName;
+                if (wpD) wpD.textContent = [wpAddress, wpPhone ? 'Tel: ' + wpPhone : ''].filter(Boolean).join(' · ');
+            }
+            const profBar = document.getElementById('apvSimProfBar');
+            if (profBar) profBar.style.borderBottomColor = accent;
+            const simStudy = document.getElementById('apvSimStudy');
+            if (simStudy) simStudy.textContent = especialidad || 'Estudio';
+            const simDate = document.getElementById('apvSimDate');
+            if (simDate) simDate.textContent = new Date().toLocaleDateString('es-ES', {day:'2-digit',month:'2-digit',year:'numeric'});
+            const simProfName = document.getElementById('apvSimProfName');
+            const simProfSpec = document.getElementById('apvSimProfSpec');
+            if (simProfName) simProfName.textContent = nombre;
+            if (simProfSpec) simProfSpec.textContent = [especialidad, matricula ? 'Mat. ' + matricula : ''].filter(Boolean).join(' · ');
+            const simLR = document.getElementById('apvSimLogoRight');
+            if (simLR) {
+                simLR.innerHTML = '';
+                if (profB64) {
+                    const i = document.createElement('img');
+                    i.src = profB64; i.style.height = Math.round(profSize * 0.6) + 'px';
+                    i.style.width = 'auto'; i.style.objectFit = 'contain';
+                    simLR.appendChild(i);
+                }
+            }
+            const simFirma = document.getElementById('apvSimFirma');
+            const simFirmaImg = document.getElementById('apvSimFirmaImg');
+            const simFirmaName = document.getElementById('apvSimFirmaName');
+            if (simFirma && simFirmaImg) {
+                if (firmaB64) {
+                    simFirma.style.display = 'block';
+                    simFirmaImg.innerHTML = '';
+                    const i = document.createElement('img');
+                    i.src = firmaB64; i.style.maxWidth = Math.round(firmaSize * 2) + 'px';
+                    i.style.maxHeight = Math.round(firmaSize * 0.8) + 'px'; i.style.objectFit = 'contain';
+                    simFirmaImg.appendChild(i);
+                } else { simFirma.style.display = 'none'; }
+            }
+            if (simFirmaName) simFirmaName.textContent = nombre + ' · Mat. ' + matricula;
+            simBox.style.display = (instB64 || profB64 || firmaB64) ? 'block' : 'none';
+        }
+
         function _initApproveImageEditors() {
             if (!window._makeImageSection) return;
+            const _apvPreviewCb = (type, b64) => { _approveImagePreview[type] = b64; _updateApprovePreview(); };
+            const _apvSizeCb = (type, sz) => { _approveImageSizes[type] = sz; _updateApprovePreview(); };
             if (!_apvFirmaEditor) {
                 _apvFirmaEditor = window._makeImageSection({
                     type: 'firma', prefix: 'apvFirma',
                     getFromPrev: null,
-                    saveResult: (b64) => { _approveImageData.firma = b64; }
+                    saveResult: (b64) => { _approveImageData.firma = b64; },
+                    onPreviewUpdate: _apvPreviewCb, onSizeUpdate: _apvSizeCb
                 });
             }
             if (!_apvProfEditor) {
                 _apvProfEditor = window._makeImageSection({
                     type: 'prof', prefix: 'apvProf',
                     getFromPrev: null,
-                    saveResult: (b64) => { _approveImageData.proLogo = b64; }
+                    saveResult: (b64) => { _approveImageData.proLogo = b64; },
+                    onPreviewUpdate: _apvPreviewCb, onSizeUpdate: _apvSizeCb
                 });
             }
             if (!_apvInstEditor) {
@@ -5145,11 +5228,11 @@
                     getFromPrev: null,
                     saveResult: (b64) => {
                         _approveImageData.instLogo = b64;
-                        // Sincronizar con el logo del primer workplace
                         _approveWpLogos[0] = b64;
                         const preview = document.getElementById('approveWp0-logo-preview');
                         if (preview && b64) preview.innerHTML = '<img src="' + b64 + '" style="max-height:40px;max-width:100%;object-fit:contain;">';
-                    }
+                    },
+                    onPreviewUpdate: _apvPreviewCb, onSizeUpdate: _apvSizeCb
                 });
             }
         }
@@ -5298,15 +5381,31 @@
             });
 
             _renderApproveWorkplaces(mainWp, extraWps);
+            // Listeners en campos de workplace para actualizar preview
+            setTimeout(() => {
+                document.querySelectorAll('.approve-wp-field[data-wp="0"]').forEach(f => {
+                    if (!f._apvListenerAdded) { f.addEventListener('input', _updateApprovePreview); f._apvListenerAdded = true; }
+                });
+            }, 50);
 
             // ── Imágenes: inicializar editores y cargar datos existentes ──
             _approveImageData = { firma: null, proLogo: null, instLogo: null };
+            _approveImagePreview = { inst: null, prof: null, firma: null };
+            _approveImageSizes = { inst: 60, prof: 60, firma: 60 };
             _initApproveImageEditors();
 
             // Limpiar editores
             if (_apvFirmaEditor) _apvFirmaEditor.clear();
             if (_apvProfEditor) _apvProfEditor.clear();
             if (_apvInstEditor) _apvInstEditor.clear();
+
+            // Listeners para actualizar preview al editar campos del profesional
+            ['approveEditNombre','approveEditMatricula','approveEditEspecialidades'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el && !el._apvListenerAdded) { el.addEventListener('input', _updateApprovePreview); el._apvListenerAdded = true; }
+            });
+            const _hcEl = document.getElementById('approveEditHeaderColor');
+            if (_hcEl && !_hcEl._apvListenerAdded) { _hcEl.addEventListener('input', _updateApprovePreview); _hcEl._apvListenerAdded = true; }
 
             // Helper para cargar una imagen en un editor
             const _loadImgToEditor = (editor, src, field) => {
@@ -5321,16 +5420,32 @@
             const hasDriveImages = firmaRef.startsWith('drive:') || proLogoRef.startsWith('drive:');
 
             if (hasDriveImages) {
-                // Obtener el fileId (ambos apuntan al mismo archivo)
                 const driveRef = firmaRef.startsWith('drive:') ? firmaRef : proLogoRef;
                 const authStr = _getSessionAuthParams();
                 const url = `${CONFIG.scriptUrl}?action=admin_get_registration_images&driveRef=${encodeURIComponent(driveRef)}&${authStr}`;
+                // Mostrar indicador de carga
+                const _firmaStatus = document.getElementById('apvFirma-status');
+                const _profStatus = document.getElementById('apvProf-status');
+                if (_firmaStatus) { _firmaStatus.textContent = '⏳ Cargando...'; _firmaStatus.style.background = '#fef3c7'; _firmaStatus.style.color = '#92400e'; }
+                if (_profStatus) { _profStatus.textContent = '⏳ Cargando...'; _profStatus.style.background = '#fef3c7'; _profStatus.style.color = '#92400e'; }
+
                 fetch(url).then(r => r.json()).then(data => {
                     if (data.success && data.images) {
                         if (data.images.firma) _loadImgToEditor(_apvFirmaEditor, data.images.firma, 'firma');
+                        else if (_firmaStatus) { _firmaStatus.textContent = 'Sin firma'; _firmaStatus.style.background = '#f1f5f9'; _firmaStatus.style.color = '#64748b'; }
                         if (data.images.proLogo) _loadImgToEditor(_apvProfEditor, data.images.proLogo, 'proLogo');
+                        else if (_profStatus) { _profStatus.textContent = 'Sin logo'; _profStatus.style.background = '#f1f5f9'; _profStatus.style.color = '#64748b'; }
+                    } else {
+                        console.warn('Respuesta sin imágenes:', data);
+                        if (_firmaStatus) { _firmaStatus.textContent = '⚠️ Error'; _firmaStatus.style.background = '#fee2e2'; _firmaStatus.style.color = '#991b1b'; }
+                        if (_profStatus) { _profStatus.textContent = '⚠️ Error'; _profStatus.style.background = '#fee2e2'; _profStatus.style.color = '#991b1b'; }
                     }
-                }).catch(err => console.warn('Error cargando imágenes del registro:', err));
+                }).catch(err => {
+                    console.warn('Error cargando imágenes del registro:', err);
+                    if (_firmaStatus) { _firmaStatus.textContent = '⚠️ Error de red'; _firmaStatus.style.background = '#fee2e2'; _firmaStatus.style.color = '#991b1b'; }
+                    if (_profStatus) { _profStatus.textContent = '⚠️ Error de red'; _profStatus.style.background = '#fee2e2'; _profStatus.style.color = '#991b1b'; }
+                    if (typeof dashAlert === 'function') dashAlert('No se pudieron cargar las imágenes del registro. Verificá que el Google Apps Script esté actualizado con el endpoint admin_get_registration_images.', '⚠️');
+                });
             } else {
                 // Fallback: imágenes inline (base64 directo en la celda)
                 if (firmaRef && firmaRef !== 'no' && firmaRef !== 'null' && firmaRef !== 'yes') {
@@ -6487,17 +6602,9 @@
                                     <div><label style="color:#64748b;">☀️ Brillo <span id="imgInst-brval">100</span>%</label><input type="range" id="imgInst-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                     <div><label style="color:#64748b;">🎨 Contraste <span id="imgInst-cnval">100</span>%</label><input type="range" id="imgInst-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                 </div>
-                                <div style="font-size:.78rem;margin-bottom:.35rem;border:1px solid #e2e8f0;border-radius:6px;padding:.4rem;background:#f8fafc;">
-                                    <label style="color:#475569;font-weight:600;">📐 Redimensionar</label>
-                                    <div style="display:flex;align-items:center;gap:.3rem;margin-top:3px;">
-                                        <input type="number" id="imgInst-rw" min="10" max="2000" placeholder="Ancho" style="width:70px;padding:3px 5px;border:1px solid #cbd5e1;border-radius:4px;font-size:.76rem;text-align:center;">
-                                        <span style="color:#94a3b8;font-size:.8rem;">×</span>
-                                        <input type="number" id="imgInst-rh" min="10" max="2000" placeholder="Alto" style="width:70px;padding:3px 5px;border:1px solid #cbd5e1;border-radius:4px;font-size:.76rem;text-align:center;">
-                                        <span style="color:#94a3b8;font-size:.7rem;">px</span>
-                                        <button type="button" id="imgInst-rlock" style="padding:2px 6px;font-size:.8rem;border:1px solid #cbd5e1;border-radius:4px;background:#e0f2fe;cursor:pointer;" title="Mantener proporción">🔗</button>
-                                        <button type="button" id="imgInst-rapply" class="btn-primary" style="padding:2px 10px;font-size:.74rem;margin-left:auto;">Aplicar</button>
-                                    </div>
-                                    <p id="imgInst-rdims" style="font-size:.66rem;color:#94a3b8;margin:3px 0 0;"></p>
+                                <div style="font-size:.78rem;margin-bottom:.35rem;">
+                                    <label style="color:#475569;font-weight:600;">📐 Escala <span id="imgInst-scaleval">100</span>% <span id="imgInst-rdims" style="font-size:.66rem;color:#94a3b8;font-weight:400;margin-left:4px;"></span></label>
+                                    <input type="range" id="imgInst-rscale" min="10" max="300" value="100" style="width:100%;accent-color:var(--primary);">
                                 </div>
                                 <div style="font-size:.78rem;margin-bottom:.35rem;">
                                     <label style="color:#64748b;">🗜️ Compresión <span id="imgInst-cmpval">92</span>%</label>
@@ -6555,17 +6662,9 @@
                                     <div><label style="color:#64748b;">☀️ Brillo <span id="imgProf-brval">100</span>%</label><input type="range" id="imgProf-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                     <div><label style="color:#64748b;">🎨 Contraste <span id="imgProf-cnval">100</span>%</label><input type="range" id="imgProf-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                 </div>
-                                <div style="font-size:.78rem;margin-bottom:.35rem;border:1px solid #e2e8f0;border-radius:6px;padding:.4rem;background:#f8fafc;">
-                                    <label style="color:#475569;font-weight:600;">📐 Redimensionar</label>
-                                    <div style="display:flex;align-items:center;gap:.3rem;margin-top:3px;">
-                                        <input type="number" id="imgProf-rw" min="10" max="2000" placeholder="Ancho" style="width:70px;padding:3px 5px;border:1px solid #cbd5e1;border-radius:4px;font-size:.76rem;text-align:center;">
-                                        <span style="color:#94a3b8;font-size:.8rem;">×</span>
-                                        <input type="number" id="imgProf-rh" min="10" max="2000" placeholder="Alto" style="width:70px;padding:3px 5px;border:1px solid #cbd5e1;border-radius:4px;font-size:.76rem;text-align:center;">
-                                        <span style="color:#94a3b8;font-size:.7rem;">px</span>
-                                        <button type="button" id="imgProf-rlock" style="padding:2px 6px;font-size:.8rem;border:1px solid #cbd5e1;border-radius:4px;background:#e0f2fe;cursor:pointer;" title="Mantener proporción">🔗</button>
-                                        <button type="button" id="imgProf-rapply" class="btn-primary" style="padding:2px 10px;font-size:.74rem;margin-left:auto;">Aplicar</button>
-                                    </div>
-                                    <p id="imgProf-rdims" style="font-size:.66rem;color:#94a3b8;margin:3px 0 0;"></p>
+                                <div style="font-size:.78rem;margin-bottom:.35rem;">
+                                    <label style="color:#475569;font-weight:600;">📐 Escala <span id="imgProf-scaleval">100</span>% <span id="imgProf-rdims" style="font-size:.66rem;color:#94a3b8;font-weight:400;margin-left:4px;"></span></label>
+                                    <input type="range" id="imgProf-rscale" min="10" max="300" value="100" style="width:100%;accent-color:var(--primary);">
                                 </div>
                                 <div style="font-size:.78rem;margin-bottom:.35rem;">
                                     <label style="color:#64748b;">🗜️ Compresión <span id="imgProf-cmpval">92</span>%</label>
@@ -6623,17 +6722,9 @@
                                     <div><label style="color:#64748b;">☀️ Brillo <span id="imgFirma-brval">100</span>%</label><input type="range" id="imgFirma-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                     <div><label style="color:#64748b;">🎨 Contraste <span id="imgFirma-cnval">100</span>%</label><input type="range" id="imgFirma-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                 </div>
-                                <div style="font-size:.78rem;margin-bottom:.35rem;border:1px solid #e2e8f0;border-radius:6px;padding:.4rem;background:#f8fafc;">
-                                    <label style="color:#475569;font-weight:600;">📐 Redimensionar</label>
-                                    <div style="display:flex;align-items:center;gap:.3rem;margin-top:3px;">
-                                        <input type="number" id="imgFirma-rw" min="10" max="2000" placeholder="Ancho" style="width:70px;padding:3px 5px;border:1px solid #cbd5e1;border-radius:4px;font-size:.76rem;text-align:center;">
-                                        <span style="color:#94a3b8;font-size:.8rem;">×</span>
-                                        <input type="number" id="imgFirma-rh" min="10" max="2000" placeholder="Alto" style="width:70px;padding:3px 5px;border:1px solid #cbd5e1;border-radius:4px;font-size:.76rem;text-align:center;">
-                                        <span style="color:#94a3b8;font-size:.7rem;">px</span>
-                                        <button type="button" id="imgFirma-rlock" style="padding:2px 6px;font-size:.8rem;border:1px solid #cbd5e1;border-radius:4px;background:#e0f2fe;cursor:pointer;" title="Mantener proporción">🔗</button>
-                                        <button type="button" id="imgFirma-rapply" class="btn-primary" style="padding:2px 10px;font-size:.74rem;margin-left:auto;">Aplicar</button>
-                                    </div>
-                                    <p id="imgFirma-rdims" style="font-size:.66rem;color:#94a3b8;margin:3px 0 0;"></p>
+                                <div style="font-size:.78rem;margin-bottom:.35rem;">
+                                    <label style="color:#475569;font-weight:600;">📐 Escala <span id="imgFirma-scaleval">100</span>% <span id="imgFirma-rdims" style="font-size:.66rem;color:#94a3b8;font-weight:400;margin-left:4px;"></span></label>
+                                    <input type="range" id="imgFirma-rscale" min="10" max="300" value="100" style="width:100%;accent-color:var(--primary);">
                                 </div>
                                 <div style="font-size:.78rem;margin-bottom:.35rem;">
                                     <label style="color:#64748b;">🗜️ Compresión <span id="imgFirma-cmpval">92</span>%</label>
@@ -7066,22 +7157,18 @@
                                     <div><label style="color:#64748b;">☀️ Brillo <span id="apvInst-brval">100</span>%</label><input type="range" id="apvInst-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                     <div><label style="color:#64748b;">🎨 Contraste <span id="apvInst-cnval">100</span>%</label><input type="range" id="apvInst-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                 </div>
-                                <div style="font-size:.74rem;margin-bottom:.3rem;border:1px solid #e2e8f0;border-radius:6px;padding:.35rem;background:#f8fafc;">
-                                    <label style="color:#475569;font-weight:600;">📐 Redimensionar</label>
-                                    <div style="display:flex;align-items:center;gap:.25rem;margin-top:3px;">
-                                        <input type="number" id="apvInst-rw" min="10" max="2000" placeholder="Ancho" style="width:65px;padding:2px 4px;border:1px solid #cbd5e1;border-radius:4px;font-size:.72rem;text-align:center;">
-                                        <span style="color:#94a3b8;font-size:.76rem;">×</span>
-                                        <input type="number" id="apvInst-rh" min="10" max="2000" placeholder="Alto" style="width:65px;padding:2px 4px;border:1px solid #cbd5e1;border-radius:4px;font-size:.72rem;text-align:center;">
-                                        <span style="color:#94a3b8;font-size:.66rem;">px</span>
-                                        <button type="button" id="apvInst-rlock" style="padding:1px 5px;font-size:.76rem;border:1px solid #cbd5e1;border-radius:4px;background:#e0f2fe;cursor:pointer;" title="Mantener proporción">🔗</button>
-                                        <button type="button" id="apvInst-rapply" class="btn-primary" style="padding:1px 8px;font-size:.7rem;margin-left:auto;">Aplicar</button>
-                                    </div>
-                                    <p id="apvInst-rdims" style="font-size:.63rem;color:#94a3b8;margin:2px 0 0;"></p>
+                                <div style="font-size:.74rem;margin-bottom:.3rem;">
+                                    <label style="color:#475569;font-weight:600;">📐 Escala <span id="apvInst-scaleval">100</span>% <span id="apvInst-rdims" style="font-size:.63rem;color:#94a3b8;font-weight:400;margin-left:4px;"></span></label>
+                                    <input type="range" id="apvInst-rscale" min="10" max="300" value="100" style="width:100%;accent-color:var(--primary);">
                                 </div>
                                 <div style="font-size:.74rem;margin-bottom:.3rem;">
                                     <label style="color:#64748b;">🗜️ Compresión <span id="apvInst-cmpval">92</span>%</label>
                                     <input type="range" id="apvInst-cmp" min="10" max="100" value="92" style="width:100%;accent-color:var(--primary);">
                                     <p id="apvInst-cmpinfo" style="font-size:.63rem;color:#94a3b8;margin:2px 0 0;"></p>
+                                </div>
+                                <div style="font-size:.74rem;margin-bottom:.3rem;">
+                                    <label style="color:#64748b;">📏 Tamaño en PDF <span id="apvInst-szval">60</span>px <span id="apvInst-szdesc" style="color:#9ca3af;font-style:italic;font-size:.66rem;">(normal)</span></label>
+                                    <input type="range" id="apvInst-sz" min="30" max="120" value="60" style="width:100%;accent-color:var(--primary);">
                                 </div>
                                 <div style="display:flex;gap:.25rem;flex-wrap:wrap;margin-bottom:.3rem;">
                                     <button type="button" class="btn-secondary" id="apvInst-rotL" style="padding:2px 8px;font-size:.73rem;">↺90°</button>
@@ -7129,22 +7216,18 @@
                                     <div><label style="color:#64748b;">☀️ Brillo <span id="apvFirma-brval">100</span>%</label><input type="range" id="apvFirma-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                     <div><label style="color:#64748b;">🎨 Contraste <span id="apvFirma-cnval">100</span>%</label><input type="range" id="apvFirma-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                 </div>
-                                <div style="font-size:.74rem;margin-bottom:.3rem;border:1px solid #e2e8f0;border-radius:6px;padding:.35rem;background:#f8fafc;">
-                                    <label style="color:#475569;font-weight:600;">📐 Redimensionar</label>
-                                    <div style="display:flex;align-items:center;gap:.25rem;margin-top:3px;">
-                                        <input type="number" id="apvFirma-rw" min="10" max="2000" placeholder="Ancho" style="width:65px;padding:2px 4px;border:1px solid #cbd5e1;border-radius:4px;font-size:.72rem;text-align:center;">
-                                        <span style="color:#94a3b8;font-size:.76rem;">×</span>
-                                        <input type="number" id="apvFirma-rh" min="10" max="2000" placeholder="Alto" style="width:65px;padding:2px 4px;border:1px solid #cbd5e1;border-radius:4px;font-size:.72rem;text-align:center;">
-                                        <span style="color:#94a3b8;font-size:.66rem;">px</span>
-                                        <button type="button" id="apvFirma-rlock" style="padding:1px 5px;font-size:.76rem;border:1px solid #cbd5e1;border-radius:4px;background:#e0f2fe;cursor:pointer;" title="Mantener proporción">🔗</button>
-                                        <button type="button" id="apvFirma-rapply" class="btn-primary" style="padding:1px 8px;font-size:.7rem;margin-left:auto;">Aplicar</button>
-                                    </div>
-                                    <p id="apvFirma-rdims" style="font-size:.63rem;color:#94a3b8;margin:2px 0 0;"></p>
+                                <div style="font-size:.74rem;margin-bottom:.3rem;">
+                                    <label style="color:#475569;font-weight:600;">📐 Escala <span id="apvFirma-scaleval">100</span>% <span id="apvFirma-rdims" style="font-size:.63rem;color:#94a3b8;font-weight:400;margin-left:4px;"></span></label>
+                                    <input type="range" id="apvFirma-rscale" min="10" max="300" value="100" style="width:100%;accent-color:var(--primary);">
                                 </div>
                                 <div style="font-size:.74rem;margin-bottom:.3rem;">
                                     <label style="color:#64748b;">🗜️ Compresión <span id="apvFirma-cmpval">92</span>%</label>
                                     <input type="range" id="apvFirma-cmp" min="10" max="100" value="92" style="width:100%;accent-color:var(--primary);">
                                     <p id="apvFirma-cmpinfo" style="font-size:.63rem;color:#94a3b8;margin:2px 0 0;"></p>
+                                </div>
+                                <div style="font-size:.74rem;margin-bottom:.3rem;">
+                                    <label style="color:#64748b;">📏 Tamaño en PDF <span id="apvFirma-szval">60</span>px <span id="apvFirma-szdesc" style="color:#9ca3af;font-style:italic;font-size:.66rem;">(normal)</span></label>
+                                    <input type="range" id="apvFirma-sz" min="30" max="120" value="60" style="width:100%;accent-color:var(--primary);">
                                 </div>
                                 <div style="display:flex;gap:.25rem;flex-wrap:wrap;margin-bottom:.3rem;">
                                     <button type="button" class="btn-secondary" id="apvFirma-rotL" style="padding:2px 8px;font-size:.73rem;">↺90°</button>
@@ -7192,22 +7275,18 @@
                                     <div><label style="color:#64748b;">☀️ Brillo <span id="apvProf-brval">100</span>%</label><input type="range" id="apvProf-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                     <div><label style="color:#64748b;">🎨 Contraste <span id="apvProf-cnval">100</span>%</label><input type="range" id="apvProf-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                 </div>
-                                <div style="font-size:.74rem;margin-bottom:.3rem;border:1px solid #e2e8f0;border-radius:6px;padding:.35rem;background:#f8fafc;">
-                                    <label style="color:#475569;font-weight:600;">📐 Redimensionar</label>
-                                    <div style="display:flex;align-items:center;gap:.25rem;margin-top:3px;">
-                                        <input type="number" id="apvProf-rw" min="10" max="2000" placeholder="Ancho" style="width:65px;padding:2px 4px;border:1px solid #cbd5e1;border-radius:4px;font-size:.72rem;text-align:center;">
-                                        <span style="color:#94a3b8;font-size:.76rem;">×</span>
-                                        <input type="number" id="apvProf-rh" min="10" max="2000" placeholder="Alto" style="width:65px;padding:2px 4px;border:1px solid #cbd5e1;border-radius:4px;font-size:.72rem;text-align:center;">
-                                        <span style="color:#94a3b8;font-size:.66rem;">px</span>
-                                        <button type="button" id="apvProf-rlock" style="padding:1px 5px;font-size:.76rem;border:1px solid #cbd5e1;border-radius:4px;background:#e0f2fe;cursor:pointer;" title="Mantener proporción">🔗</button>
-                                        <button type="button" id="apvProf-rapply" class="btn-primary" style="padding:1px 8px;font-size:.7rem;margin-left:auto;">Aplicar</button>
-                                    </div>
-                                    <p id="apvProf-rdims" style="font-size:.63rem;color:#94a3b8;margin:2px 0 0;"></p>
+                                <div style="font-size:.74rem;margin-bottom:.3rem;">
+                                    <label style="color:#475569;font-weight:600;">📐 Escala <span id="apvProf-scaleval">100</span>% <span id="apvProf-rdims" style="font-size:.63rem;color:#94a3b8;font-weight:400;margin-left:4px;"></span></label>
+                                    <input type="range" id="apvProf-rscale" min="10" max="300" value="100" style="width:100%;accent-color:var(--primary);">
                                 </div>
                                 <div style="font-size:.74rem;margin-bottom:.3rem;">
                                     <label style="color:#64748b;">🗜️ Compresión <span id="apvProf-cmpval">92</span>%</label>
                                     <input type="range" id="apvProf-cmp" min="10" max="100" value="92" style="width:100%;accent-color:var(--primary);">
                                     <p id="apvProf-cmpinfo" style="font-size:.63rem;color:#94a3b8;margin:2px 0 0;"></p>
+                                </div>
+                                <div style="font-size:.74rem;margin-bottom:.3rem;">
+                                    <label style="color:#64748b;">📏 Tamaño en PDF <span id="apvProf-szval">60</span>px <span id="apvProf-szdesc" style="color:#9ca3af;font-style:italic;font-size:.66rem;">(normal)</span></label>
+                                    <input type="range" id="apvProf-sz" min="30" max="120" value="60" style="width:100%;accent-color:var(--primary);">
                                 </div>
                                 <div style="display:flex;gap:.25rem;flex-wrap:wrap;margin-bottom:.3rem;">
                                     <button type="button" class="btn-secondary" id="apvProf-rotL" style="padding:2px 8px;font-size:.73rem;">↺90°</button>
@@ -7217,6 +7296,41 @@
                                     <button type="button" class="btn-secondary" id="apvProf-reset" style="padding:2px 8px;font-size:.73rem;margin-left:auto;">↩</button>
                                 </div>
                                 <button type="button" class="btn-primary" id="apvProf-apply" style="width:100%;padding:5px 0;font-size:.78rem;background:#10b981;border-color:#10b981;">✅ Usar esta imagen</button>
+                            </div>
+                        </div>
+
+                        <!-- Preview PDF contextual (Approve Modal) -->
+                        <div id="apvSimBox" style="display:none;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:.5rem;margin-top:.6rem;">
+                            <p style="font-size:.78rem;font-weight:600;color:#64748b;margin-bottom:6px;">👁️ Vista previa del informe PDF</p>
+                            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;font-family:'Times New Roman',serif;color:#222;font-size:10px;">
+                                <div id="apvSimBanner" style="display:none;background:#1a56a0;color:#fff;padding:8px 12px;align-items:center;gap:10px;">
+                                    <div id="apvSimLogoLeft" style="flex-shrink:0;"></div>
+                                    <div style="flex:1;text-align:right;">
+                                        <div id="apvSimWpName" style="font-weight:700;font-size:12px;"></div>
+                                        <div id="apvSimWpDetails" style="font-size:9px;opacity:.85;"></div>
+                                    </div>
+                                </div>
+                                <div style="display:flex;border-bottom:1px solid #e5e7eb;background:#f8fafc;font-size:9px;padding:4px 10px;gap:8px;">
+                                    <div style="flex:1;"><span style="color:#64748b;font-weight:600;text-transform:uppercase;">Estudio:</span> <span id="apvSimStudy">—</span></div>
+                                    <div style="flex:1;text-align:center;"><span style="color:#64748b;font-weight:600;text-transform:uppercase;">Informe Nº:</span> <span>0001</span></div>
+                                    <div style="flex:1;text-align:right;"><span style="color:#64748b;font-weight:600;text-transform:uppercase;">Fecha:</span> <span id="apvSimDate"></span></div>
+                                </div>
+                                <div style="padding:8px 12px;display:flex;align-items:center;gap:10px;border-bottom:2px solid #1a56a0;" id="apvSimProfBar">
+                                    <div style="flex:1;text-align:center;">
+                                        <div id="apvSimProfName" style="font-weight:700;font-size:11px;"></div>
+                                        <div id="apvSimProfSpec" style="font-size:9px;color:#64748b;"></div>
+                                    </div>
+                                    <div id="apvSimLogoRight" style="flex-shrink:0;"></div>
+                                </div>
+                                <div style="padding:8px 12px;">
+                                    <p style="font-size:9px;color:#aaa;margin:4px 0;">Contenido del informe médico...</p>
+                                    <p style="font-size:9px;color:#ccc;margin:4px 0;">Lorem ipsum dolor sit amet, consectetur adipiscing elit...</p>
+                                </div>
+                                <div id="apvSimFirma" style="display:none;text-align:center;padding:6px 12px 10px;font-size:9px;">
+                                    <div id="apvSimFirmaImg"></div>
+                                    <div style="border-top:1px solid #333;width:70px;margin:2px auto 0;"></div>
+                                    <small id="apvSimFirmaName">Dr. Nombre · Mat. MP-000</small>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -7588,7 +7702,20 @@
         function _makeImageSection(cfg) {
             // cfg: { type, prefix, getFromPrev, saveResult, target }
             const g = (id) => document.getElementById(cfg.prefix + id);
-            const state = { origImg: null, resultB64: null, rot: 0, fH: false, fV: false, br: 100, cn: 100, rw: 0, rh: 0, cmp: 92, ratioLock: true, aspectRatio: 1 };
+            const state = { origImg: null, resultB64: null, rot: 0, fH: false, fV: false, br: 100, cn: 100, rw: 0, rh: 0, cmp: 92, ratioLock: true, aspectRatio: 1, baseW: 0, baseH: 0 };
+
+            function notifyPreview(b64) {
+                if (cfg.onPreviewUpdate) { cfg.onPreviewUpdate(cfg.type, b64); return; }
+                _giftImagePreview[cfg.type] = b64;
+                _updatePdfSim();
+            }
+            function notifySize(type, sz) {
+                if (cfg.onSizeUpdate) { cfg.onSizeUpdate(type, sz); return; }
+                if (type === 'inst') _giftImageData.instLogoSize = sz;
+                else if (type === 'prof') _giftImageData.proLogoSize = sz;
+                else _giftImageData.firmaSize = sz;
+                _updatePdfSim();
+            }
 
             function setStatus(text, color) {
                 const el = g('-status');
@@ -7626,8 +7753,7 @@
                     const edited = q < 1 ? c.toDataURL('image/jpeg', q) : c.toDataURL('image/png');
                     const ri = g('-result'); if (ri) ri.src = edited;
                     showThumb(edited);
-                    _giftImagePreview[cfg.type] = edited;
-                    _updatePdfSim();
+                    notifyPreview(edited);
                     // Show file size estimate
                     const cmpInfo = g('-cmpinfo');
                     if (cmpInfo) {
@@ -7675,16 +7801,16 @@
                 const brval = g('-brval'); if (brval) brval.textContent = '100';
                 const cn = g('-cn'); if (cn) { cn.value = '100'; }
                 const cnval = g('-cnval'); if (cnval) cnval.textContent = '100';
-                const rw = g('-rw'); if (rw) rw.value = '';
-                const rh = g('-rh'); if (rh) rh.value = '';
-                const rdims = g('-rdims'); if (rdims) rdims.textContent = `Original: ${state.origImg.naturalWidth}×${state.origImg.naturalHeight}px`;
+                state.baseW = state.origImg.naturalWidth;
+                state.baseH = state.origImg.naturalHeight;
+                const rscale = g('-rscale'); if (rscale) rscale.value = '100';
+                const rsval = g('-scaleval'); if (rsval) rsval.textContent = '100';
+                const rdims = g('-rdims'); if (rdims) rdims.textContent = `${state.origImg.naturalWidth}×${state.origImg.naturalHeight}px`;
                 const cmpSlider = g('-cmp'); if (cmpSlider) cmpSlider.value = '92';
                 const cmpVal = g('-cmpval'); if (cmpVal) cmpVal.textContent = '92';
                 const cmpInfo = g('-cmpinfo'); if (cmpInfo) cmpInfo.textContent = '';
-                const rlock = g('-rlock'); if (rlock) rlock.style.background = '#e0f2fe';
                 const cl = g('-clear'); if (cl) cl.style.display = 'inline-flex';
-                _giftImagePreview[cfg.type] = null;
-                _updatePdfSim();
+                notifyPreview(null);
                 setStatus('Listo para procesar', '#3b82f6');
             }
 
@@ -7724,8 +7850,7 @@
                 setStatus('Vacío', '');
                 cfg.saveResult && cfg.saveResult(null);
                 if (fileInput) fileInput.value = '';
-                _giftImagePreview[cfg.type] = null;
-                _updatePdfSim();
+                notifyPreview(null);
             }
             const clearBtn = g('-clear');
             if (clearBtn) {
@@ -7761,12 +7886,13 @@
                         const _procImg = new Image();
                         _procImg.onload = () => {
                             state.aspectRatio = _procImg.naturalWidth / _procImg.naturalHeight;
-                            const _rd = g('-rdims'); if (_rd) _rd.textContent = `Procesada: ${_procImg.naturalWidth}×${_procImg.naturalHeight}px`;
+                            state.baseW = _procImg.naturalWidth;
+                            state.baseH = _procImg.naturalHeight;
+                            const _rd = g('-rdims'); if (_rd) _rd.textContent = `${_procImg.naturalWidth}×${_procImg.naturalHeight}px`;
+                            const _rs = g('-rscale'); if (_rs) { _rs.value = '100'; const _sv = g('-scaleval'); if (_sv) _sv.textContent = '100'; }
                         };
                         _procImg.src = state.resultB64;
-                        // Actualizar preview PDF con imagen procesada
-                        _giftImagePreview[cfg.type] = state.resultB64;
-                        _updatePdfSim();
+                        notifyPreview(state.resultB64);
                     } catch (err) {
                         alert('Error al procesar: ' + err.message);
                     } finally {
@@ -7782,32 +7908,17 @@
             const cnSlider = g('-cn'), cnVal = g('-cnval');
             if (cnSlider) cnSlider.addEventListener('input', () => { state.cn = parseInt(cnSlider.value,10); if(cnVal) cnVal.textContent = state.cn; renderResult(); });
 
-            // ── Redimensionar ──
-            const rwIn = g('-rw'), rhIn = g('-rh'), rlockBtn = g('-rlock'), rapplyBtn = g('-rapply'), rdimsEl = g('-rdims');
-            if (rlockBtn) rlockBtn.addEventListener('click', () => {
-                state.ratioLock = !state.ratioLock;
-                rlockBtn.style.background = state.ratioLock ? '#e0f2fe' : '#f1f5f9';
-                rlockBtn.title = state.ratioLock ? 'Proporción bloqueada' : 'Proporción libre';
-            });
-            if (rwIn && rhIn) {
-                rwIn.addEventListener('input', () => {
-                    if (!state.ratioLock || !state.aspectRatio) return;
-                    const w = parseInt(rwIn.value, 10);
-                    if (w > 0) rhIn.value = Math.round(w / state.aspectRatio);
-                });
-                rhIn.addEventListener('input', () => {
-                    if (!state.ratioLock || !state.aspectRatio) return;
-                    const h = parseInt(rhIn.value, 10);
-                    if (h > 0) rwIn.value = Math.round(h * state.aspectRatio);
-                });
-            }
-            if (rapplyBtn) rapplyBtn.addEventListener('click', () => {
-                const w = parseInt((rwIn||{}).value, 10), h = parseInt((rhIn||{}).value, 10);
-                if (!w || !h || w < 10 || h < 10) { alert('Ingresá ancho y alto válidos (mín 10px)'); return; }
-                if (w > 2000 || h > 2000) { alert('Máximo 2000px por lado'); return; }
-                state.rw = w; state.rh = h;
-                if (rdimsEl) rdimsEl.textContent = `Redimensionada: ${w}×${h}px`;
-                renderResult();
+            // ── Escala (slider) ──
+            const rscaleSlider = g('-rscale'), rscaleVal = g('-scaleval'), rdimsEl = g('-rdims');
+            if (rscaleSlider) rscaleSlider.addEventListener('input', () => {
+                const scale = parseInt(rscaleSlider.value, 10);
+                if (rscaleVal) rscaleVal.textContent = scale;
+                if (state.baseW > 0 && state.baseH > 0) {
+                    state.rw = Math.round(state.baseW * scale / 100);
+                    state.rh = Math.round(state.baseH * scale / 100);
+                    if (rdimsEl) rdimsEl.textContent = `${state.rw}×${state.rh}px`;
+                }
+                if (state.resultB64) renderResult();
             });
 
             // ── Compresión ──
@@ -7823,10 +7934,7 @@
                 const sz = parseInt(szSlider.value, 10);
                 if (szVal) szVal.textContent = sz;
                 if (szDesc) szDesc.textContent = sz <= 45 ? '(pequeño)' : sz <= 80 ? '(normal)' : '(grande)';
-                if (cfg.type === 'inst') _giftImageData.instLogoSize = sz;
-                else if (cfg.type === 'prof') _giftImageData.proLogoSize = sz;
-                else _giftImageData.firmaSize = sz;
-                _updatePdfSim();
+                notifySize(cfg.type, sz);
             });
 
             const rotLBtn = g('-rotL'); if (rotLBtn) rotLBtn.addEventListener('click', () => { state.rot = (state.rot - 90 + 360) % 360; renderResult(); });
@@ -7839,9 +7947,8 @@
                 state.rw = 0; state.rh = 0; state.cmp = 92;
                 if (brSlider) { brSlider.value = '100'; if(brVal) brVal.textContent = '100'; }
                 if (cnSlider) { cnSlider.value = '100'; if(cnVal) cnVal.textContent = '100'; }
-                if (rwIn) rwIn.value = '';
-                if (rhIn) rhIn.value = '';
-                if (rdimsEl && state.origImg) rdimsEl.textContent = `Original: ${state.origImg.naturalWidth}×${state.origImg.naturalHeight}px`;
+                if (rscaleSlider) { rscaleSlider.value = '100'; if(rscaleVal) rscaleVal.textContent = '100'; }
+                if (rdimsEl && state.baseW) rdimsEl.textContent = `${state.baseW}×${state.baseH}px`;
                 if (cmpSlider) { cmpSlider.value = '92'; if(cmpVal) cmpVal.textContent = '92'; }
                 const cmpInfo = g('-cmpinfo'); if (cmpInfo) cmpInfo.textContent = '';
                 renderResult();
@@ -7854,7 +7961,7 @@
                     const edited = await getEditedB64();
                     if (!edited) return;
                     cfg.saveResult(edited);
-                    _updatePdfSim();
+                    notifyPreview(edited);
                     if (typeof dashAlert === 'function') dashAlert('✅ Imagen guardada y lista para incluir en el link.', '🖼️');
                     else alert('Imagen aplicada.');
                 });
