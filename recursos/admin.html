@@ -5308,24 +5308,46 @@
             if (_apvProfEditor) _apvProfEditor.clear();
             if (_apvInstEditor) _apvInstEditor.clear();
 
-            // Cargar firma existente
-            if (reg.Firma && reg.Firma !== 'no' && reg.Firma !== 'null' && reg.Firma !== '') {
-                const firmaSrc = reg.Firma.startsWith('data:') ? reg.Firma : 'data:image/png;base64,' + reg.Firma;
-                _apvFirmaEditor && _apvFirmaEditor.loadB64(firmaSrc);
-                _approveImageData.firma = firmaSrc;
+            // Helper para cargar una imagen en un editor
+            const _loadImgToEditor = (editor, src, field) => {
+                if (!editor || !src) return;
+                editor.loadB64(src);
+                _approveImageData[field] = src;
+            };
+
+            // Si las imágenes están en Drive (drive:FILE_ID), fetchear el base64 real
+            const firmaRef = String(reg.Firma || '');
+            const proLogoRef = String(reg.Pro_Logo || '');
+            const hasDriveImages = firmaRef.startsWith('drive:') || proLogoRef.startsWith('drive:');
+
+            if (hasDriveImages) {
+                // Obtener el fileId (ambos apuntan al mismo archivo)
+                const driveRef = firmaRef.startsWith('drive:') ? firmaRef : proLogoRef;
+                const authStr = _getSessionAuthParams();
+                const url = `${CONFIG.scriptUrl}?action=admin_get_registration_images&driveRef=${encodeURIComponent(driveRef)}&${authStr}`;
+                fetch(url).then(r => r.json()).then(data => {
+                    if (data.success && data.images) {
+                        if (data.images.firma) _loadImgToEditor(_apvFirmaEditor, data.images.firma, 'firma');
+                        if (data.images.proLogo) _loadImgToEditor(_apvProfEditor, data.images.proLogo, 'proLogo');
+                    }
+                }).catch(err => console.warn('Error cargando imágenes del registro:', err));
+            } else {
+                // Fallback: imágenes inline (base64 directo en la celda)
+                if (firmaRef && firmaRef !== 'no' && firmaRef !== 'null' && firmaRef !== 'yes') {
+                    const firmaSrc = firmaRef.startsWith('data:') ? firmaRef : 'data:image/png;base64,' + firmaRef;
+                    _loadImgToEditor(_apvFirmaEditor, firmaSrc, 'firma');
+                }
+                if (proLogoRef && proLogoRef !== 'no' && proLogoRef !== 'null' && proLogoRef !== 'yes') {
+                    const profSrc = proLogoRef.startsWith('data:') ? proLogoRef : 'data:image/png;base64,' + proLogoRef;
+                    _loadImgToEditor(_apvProfEditor, profSrc, 'proLogo');
+                }
             }
-            // Cargar logo profesional existente
-            if (reg.Pro_Logo && reg.Pro_Logo !== 'no' && reg.Pro_Logo !== 'null' && reg.Pro_Logo !== '') {
-                const profSrc = reg.Pro_Logo.startsWith('data:') ? reg.Pro_Logo : 'data:image/png;base64,' + reg.Pro_Logo;
-                _apvProfEditor && _apvProfEditor.loadB64(profSrc);
-                _approveImageData.proLogo = profSrc;
-            }
-            // Cargar logo institucional del primer workplace
+
+            // Cargar logo institucional del primer workplace (siempre inline en Workplace_Data)
             const firstWpLogo = _approveWpLogos[0];
             if (firstWpLogo && firstWpLogo !== 'null' && firstWpLogo !== 'no') {
                 const instSrc = firstWpLogo.startsWith('data:') ? firstWpLogo : 'data:image/png;base64,' + firstWpLogo;
-                _apvInstEditor && _apvInstEditor.loadB64(instSrc);
-                _approveImageData.instLogo = instSrc;
+                _loadImgToEditor(_apvInstEditor, instSrc, 'instLogo');
             }
 
             // Expandir verificación por defecto

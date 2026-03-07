@@ -846,6 +846,19 @@ function doGet(e) {
     }
   }
 
+  // ── admin_get_registration_images — devuelve imágenes base64 desde Drive ──
+  if (action === 'admin_get_registration_images') {
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
+
+    const driveRef = e.parameter.driveRef || '';
+    if (!driveRef.startsWith('drive:')) return createResponse({ error: 'driveRef inválido' });
+
+    const fileId = driveRef.replace('drive:', '');
+    const images = _getImagesFromDrive(fileId);
+    return createResponse({ success: true, images: images });
+  }
+
   // ── admin_reject_registration — rechaza un registro pendiente ──
   if (action === 'admin_reject_registration') {
     const auth = _verifyAdminAuth(e.parameter);
@@ -889,6 +902,129 @@ function doPost(e) {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
+
+  // ── admin_approve_registration via POST (soporta payloads grandes con imágenes base64) ──
+  if (action === 'admin_approve_registration') {
+    const auth = _verifyAdminAuth(payload);
+    if (!auth.authorized) return createResponse({ error: auth.error });
+
+    const regId = payload.regId;
+    const plan = payload.plan || 'NORMAL';
+    const apiKey   = payload.apiKey   || '';
+    const apiKeyB1 = payload.apiKeyB1 || '';
+    const apiKeyB2 = payload.apiKeyB2 || '';
+    const maxDevices = Number(payload.maxDevices) || 2;
+    const allowedTemplates = payload.allowedTemplates || '';
+    const editedNombre      = payload.editedNombre      || null;
+    const editedMatricula   = payload.editedMatricula   || null;
+    const editedEmail       = payload.editedEmail       || null;
+    const editedTelefono    = payload.editedTelefono    || null;
+    const editedEsp         = payload.editedEspecialidades || null;
+    const editedNotas       = payload.editedNotas       || null;
+    const editedHeaderColor = payload.editedHeaderColor || null;
+    const editedFooterText  = payload.editedFooterText  || null;
+    const editedWorkplace   = payload.editedWorkplace   || null;
+    const editedExtraWps    = payload.editedExtraWorkplaces || null;
+    const editedFirma       = payload.editedFirma       || null;
+    const editedProLogo     = payload.editedProLogo     || null;
+
+    if (!regId) return createResponse({ error: 'Falta regId' });
+
+    try {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const regSheet = ss.getSheetByName(SHEET_REGISTROS);
+      if (!regSheet) return createResponse({ error: 'Hoja de registros no encontrada' });
+
+      const regData_ = regSheet.getDataRange().getValues();
+      const regHeaders = regData_[0];
+      const idCol = regHeaders.indexOf('ID_Registro');
+      const estadoCol = regHeaders.indexOf('Estado');
+
+      let regData = null;
+      let regRow = -1;
+      for (let i = 1; i < regData_.length; i++) {
+        if (String(regData_[i][idCol]) === String(regId)) {
+          regData = {};
+          regHeaders.forEach((h, idx) => { regData[h] = regData_[i][idx]; });
+          regRow = i + 1;
+          break;
+        }
+      }
+      if (!regData) return createResponse({ error: 'Registro no encontrado: ' + regId });
+      if (String(regData.Estado).toLowerCase() === 'aprobado') {
+        return createResponse({ error: 'Este registro ya fue aprobado' });
+      }
+
+      const medicoId = 'MED' + Date.now().toString(36).toUpperCase();
+
+      const userSheet = ss.getSheetByName(SHEET_NAME);
+      _ensureUsuariosHeaders(userSheet);
+      const userHeaders = userSheet.getDataRange().getValues()[0];
+      const now = new Date().toISOString();
+
+      // Leer imágenes originales desde Drive
+      let driveImages = {};
+      const firmaVal = String(regData.Firma || '');
+      if (firmaVal.startsWith('drive:')) {
+        const fileId = firmaVal.replace('drive:', '');
+        driveImages = _getImagesFromDrive(fileId);
+      }
+
+      // Si el admin editó imágenes, guardarlas en Drive (reemplaza las originales)
+      const finalFirma   = editedFirma   || driveImages.firma   || '';
+      const finalProLogo  = editedProLogo || driveImages.proLogo || '';
+
+      const userData = {
+        ID_Medico: medicoId,
+        Nombre:       (editedNombre     || regData.Nombre       || '').trim(),
+        Email:        (editedEmail      || regData.Email        || '').trim().toLowerCase(),
+        Telefono:     (editedTelefono   || regData.Telefono     || '').trim(),
+        Matricula:    (editedMatricula  || regData.Matricula    || '').trim(),
+        Especialidad: (editedEsp        || regData.Especialidades || 'ALL').trim(),
+        Plan: plan,
+        Estado: 'active',
+        Fecha_Registro: now,
+        API_Key: apiKey,
+        API_Key_B1: apiKeyB1,
+        API_Key_B2: apiKeyB2,
+        Devices_Max: maxDevices,
+        Allowed_Templates: allowedTemplates || '',
+        Usage_Count: 0,
+        Devices_Logged: '[]',
+        Diagnostico_Pendiente: 'false',
+        Registro_Datos: JSON.stringify({
+          workplace:       editedWorkplace   || regData.Workplace_Data  || '',
+          headerColor:     editedHeaderColor || regData.Header_Color    || '#1a56a0',
+          footerText:      editedFooterText  || regData.Footer_Text     || '',
+          extraWorkplaces: editedExtraWps    || regData.Extra_Workplaces || '',
+          proLogo:         finalProLogo,
+          firma:           finalFirma,
+          logo:            regData.Workplace_Logo ? 'yes' : '',
+          notas:           editedNotas || regData.Notas || '',
+          estudios:        regData.Estudios        || '',
+          apiKeyB1:        apiKeyB1,
+          apiKeyB2:        apiKeyB2
+        })
+      };
+
+      const userRow = userHeaders.map(h => (userData[h] !== undefined ? userData[h] : ''));
+      userSheet.appendRow(userRow);
+
+      if (estadoCol !== -1) regSheet.getRange(regRow, estadoCol + 1).setValue('aprobado');
+      const medicoIdCol = regHeaders.indexOf('ID_Medico_Asignado');
+      if (medicoIdCol !== -1) regSheet.getRange(regRow, medicoIdCol + 1).setValue(medicoId);
+
+      appendAdminLog(auth.username, 'approve_registration', regId, medicoId + ' / ' + plan);
+
+      return createResponse({
+        success: true, medicoId: medicoId,
+        nombre: userData.Nombre, email: userData.Email,
+        plan: plan, message: 'Registro aprobado y usuario creado'
+      });
+    } catch(err) {
+      return createResponse({ error: 'Error aprobando registro: ' + err.message });
+    }
+  }
 
   // ── admin_create_user via POST (soporta payloads grandes con imágenes base64) ──
   if (action === 'admin_create_user') {
