@@ -1897,6 +1897,7 @@
             <button class="tab-btn" data-tab="metricas">📊 Métricas</button>
             <button class="tab-btn" data-tab="logs">🚨 Logs</button>
             <button class="tab-btn" data-tab="planes">💰 Planes</button>
+            <button class="tab-btn" data-tab="keys">🔑 Mis Keys</button>
         </div>
     </nav>
 
@@ -2140,6 +2141,69 @@
         </div>
     </section>
     </div><!-- /#tab-planes -->
+
+    <!-- ── Tab: Keys ── -->
+    <div id="tab-keys" class="tab-content">
+    <section class="plans-section">
+        <div class="container">
+            <h2 style="margin-bottom:.4rem;color:var(--text-primary);">🔑 Mis API Keys de Groq</h2>
+            <p style="color:var(--text-secondary);margin-bottom:1.5rem;font-size:.92rem;">Guardá tus 3 claves aquí. Se usan en orden: si la Principal falla, se usa Backup 1, y si esa también falla, Backup 2. Al abrir el modal de aprobación o la Fábrica de Clones, los campos se pre-llenarán automáticamente.</p>
+
+            <div style="display:flex;flex-direction:column;gap:1.2rem;max-width:700px;">
+
+                <!-- Key Principal -->
+                <div style="background:var(--bg-secondary,#f8fafc);border:1px solid #e2e8f0;border-radius:12px;padding:1.2rem 1.4rem;">
+                    <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.7rem;">
+                        <span style="background:#16a34a;color:#fff;font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:20px;">PRINCIPAL</span>
+                        <span style="font-size:.83rem;color:#64748b;">Se usa siempre primero</span>
+                    </div>
+                    <div style="display:flex;gap:.6rem;align-items:center;">
+                        <input type="password" id="adminKeyPrincipal" placeholder="gsk_..." autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false"
+                            style="flex:1;padding:10px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:.88rem;font-family:monospace;">
+                        <button onclick="toggleKeyVisibility('adminKeyPrincipal','eyePrincipal')" title="Ver/ocultar" style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;cursor:pointer;font-size:1rem;" id="eyePrincipal">👁️</button>
+                        <button onclick="copyAdminKey('adminKeyPrincipal')" title="Copiar" style="padding:8px 14px;border:none;border-radius:8px;background:#3b82f6;color:#fff;font-weight:600;cursor:pointer;font-size:.85rem;">Copiar</button>
+                    </div>
+                </div>
+
+                <!-- Key Backup 1 -->
+                <div style="background:var(--bg-secondary,#f8fafc);border:1px solid #e2e8f0;border-radius:12px;padding:1.2rem 1.4rem;">
+                    <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.7rem;">
+                        <span style="background:#d97706;color:#fff;font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:20px;">BACKUP 1</span>
+                        <span style="font-size:.83rem;color:#64748b;">Se usa si la Principal devuelve error 401</span>
+                    </div>
+                    <div style="display:flex;gap:.6rem;align-items:center;">
+                        <input type="password" id="adminKeyB1" placeholder="gsk_..." autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false"
+                            style="flex:1;padding:10px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:.88rem;font-family:monospace;">
+                        <button onclick="toggleKeyVisibility('adminKeyB1','eyeB1')" title="Ver/ocultar" style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;cursor:pointer;font-size:1rem;" id="eyeB1">👁️</button>
+                        <button onclick="copyAdminKey('adminKeyB1')" title="Copiar" style="padding:8px 14px;border:none;border-radius:8px;background:#3b82f6;color:#fff;font-weight:600;cursor:pointer;font-size:.85rem;">Copiar</button>
+                    </div>
+                </div>
+
+                <!-- Key Backup 2 -->
+                <div style="background:var(--bg-secondary,#f8fafc);border:1px solid #e2e8f0;border-radius:12px;padding:1.2rem 1.4rem;">
+                    <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.7rem;">
+                        <span style="background:#7c3aed;color:#fff;font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:20px;">BACKUP 2</span>
+                        <span style="font-size:.83rem;color:#64748b;">Último recurso si B1 también falla</span>
+                    </div>
+                    <div style="display:flex;gap:.6rem;align-items:center;">
+                        <input type="password" id="adminKeyB2" placeholder="gsk_..." autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false"
+                            style="flex:1;padding:10px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:.88rem;font-family:monospace;">
+                        <button onclick="toggleKeyVisibility('adminKeyB2','eyeB2')" title="Ver/ocultar" style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;cursor:pointer;font-size:1rem;" id="eyeB2">👁️</button>
+                        <button onclick="copyAdminKey('adminKeyB2')" title="Copiar" style="padding:8px 14px;border:none;border-radius:8px;background:#3b82f6;color:#fff;font-weight:600;cursor:pointer;font-size:.85rem;">Copiar</button>
+                    </div>
+                </div>
+
+            </div><!-- /keys grid -->
+
+            <div style="margin-top:1.8rem;display:flex;gap:1rem;align-items:center;flex-wrap:wrap;">
+                <button class="btn-primary" onclick="saveAdminKeys()" style="padding:10px 28px;">💾 Guardar Keys</button>
+                <span id="adminKeysSavedMsg" style="font-size:.85rem;color:#16a34a;display:none;">✅ Guardadas correctamente</span>
+            </div>
+
+            <p style="margin-top:1.2rem;font-size:.8rem;color:#94a3b8;">Las keys se guardan en el localStorage de este navegador. No se sincronizan con la hoja de cálculo.</p>
+        </div>
+    </section>
+    </div><!-- /#tab-keys -->
 
     <!-- ── Edit Modal ── -->
     <div class="modal-overlay" id="editModal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
@@ -3368,6 +3432,9 @@
             await loadDashboard();
             startAutoRefresh(5);
 
+            // Cargar API Keys guardadas en el tab Mis Keys
+            loadAdminKeys();
+
             // Load registration badge count (non-blocking)
             loadRegBadgeCount();
 
@@ -3810,18 +3877,21 @@
 
             // Reset estado — API Key editable para usuario regalo (nuevo usuario, sin aprobación previa)
             const cfApiKeyInputGift = document.getElementById('cfApiKey');
-            cfApiKeyInputGift.value = '';
+            // Auto-llenar con las keys guardadas en Mis Keys
+            cfApiKeyInputGift.value = localStorage.getItem('admin_groq_key') || '';
             cfApiKeyInputGift.readOnly = false;
             cfApiKeyInputGift.style.background = '';
             cfApiKeyInputGift.style.opacity = '';
             cfApiKeyInputGift.style.cursor = '';
             const cfHintGift = document.getElementById('cfApiKeyHint');
-            if (cfHintGift) cfHintGift.textContent = 'Si lo dejás vacío, el usuario deberá ingresar su propia API Key';
-            // Backup keys editables en modo gift
+            if (cfHintGift) cfHintGift.textContent = cfApiKeyInputGift.value
+                ? '✅ Pre-llenada desde Mis Keys — podés cambiarla si necesitás'
+                : 'Si lo dejás vacío, el usuario deberá ingresar su propia API Key';
+            // Backup keys editables en modo gift (auto-llenadas)
             const cfB1g = document.getElementById('cfApiKeyB1');
             const cfB2g = document.getElementById('cfApiKeyB2');
-            if (cfB1g) { cfB1g.value = ''; cfB1g.readOnly = false; cfB1g.style.background = ''; cfB1g.style.opacity = ''; cfB1g.style.cursor = ''; }
-            if (cfB2g) { cfB2g.value = ''; cfB2g.readOnly = false; cfB2g.style.background = ''; cfB2g.style.opacity = ''; cfB2g.style.cursor = ''; }
+            if (cfB1g) { cfB1g.value = localStorage.getItem('admin_groq_key_b1') || ''; cfB1g.readOnly = false; cfB1g.style.background = ''; cfB1g.style.opacity = ''; cfB1g.style.cursor = ''; }
+            if (cfB2g) { cfB2g.value = localStorage.getItem('admin_groq_key_b2') || ''; cfB2g.readOnly = false; cfB2g.style.background = ''; cfB2g.style.opacity = ''; cfB2g.style.cursor = ''; }
             document.getElementById('cfLinkResult').style.display = 'none';
 
             // Botón con estilo gift
@@ -5047,15 +5117,61 @@
             document.getElementById('approveModalInfo').textContent =
                 `Aprobar a ${reg.Nombre || 'Sin nombre'} (${reg.Email || '—'}) — Matrícula: ${reg.Matricula || '—'}`;
             document.getElementById('approvePlan').value = 'NORMAL';
-            document.getElementById('approveApiKey').value = '';
-            document.getElementById('approveApiKeyB1').value = '';
-            document.getElementById('approveApiKeyB2').value = '';
+            // Auto-llenar con las keys guardadas en Mis Keys
+            document.getElementById('approveApiKey').value  = localStorage.getItem('admin_groq_key')    || '';
+            document.getElementById('approveApiKeyB1').value = localStorage.getItem('admin_groq_key_b1') || '';
+            document.getElementById('approveApiKeyB2').value = localStorage.getItem('admin_groq_key_b2') || '';
             document.getElementById('approveModalOverlay').classList.add('show');
             updateApproveTemplateUI();
         }
 
         function closeApproveModal() {
             document.getElementById('approveModalOverlay').classList.remove('show');
+        }
+
+        // ── Mis API Keys (tab-keys) ─────────────────────────────────────────
+
+        /** Carga las keys guardadas en localStorage y las muestra en los inputs del tab */
+        function loadAdminKeys() {
+            const k  = localStorage.getItem('admin_groq_key')    || '';
+            const b1 = localStorage.getItem('admin_groq_key_b1') || '';
+            const b2 = localStorage.getItem('admin_groq_key_b2') || '';
+            const inp  = document.getElementById('adminKeyPrincipal');
+            const inpB1 = document.getElementById('adminKeyB1');
+            const inpB2 = document.getElementById('adminKeyB2');
+            if (inp)   inp.value   = k;
+            if (inpB1) inpB1.value = b1;
+            if (inpB2) inpB2.value = b2;
+        }
+
+        /** Guarda las keys en localStorage */
+        function saveAdminKeys() {
+            const k  = (document.getElementById('adminKeyPrincipal')?.value || '').trim();
+            const b1 = (document.getElementById('adminKeyB1')?.value || '').trim();
+            const b2 = (document.getElementById('adminKeyB2')?.value || '').trim();
+            localStorage.setItem('admin_groq_key',    k);
+            localStorage.setItem('admin_groq_key_b1', b1);
+            localStorage.setItem('admin_groq_key_b2', b2);
+            const msg = document.getElementById('adminKeysSavedMsg');
+            if (msg) { msg.style.display = 'inline'; setTimeout(() => { msg.style.display = 'none'; }, 2500); }
+        }
+
+        /** Copia el valor de un input al portapapeles */
+        function copyAdminKey(inputId) {
+            const el = document.getElementById(inputId);
+            if (!el || !el.value.trim()) { showNotification('El campo está vacío', 'warning'); return; }
+            navigator.clipboard.writeText(el.value.trim())
+                .then(() => showNotification('✅ Key copiada al portapapeles', 'success'))
+                .catch(() => { el.select(); document.execCommand('copy'); showNotification('✅ Key copiada', 'success'); });
+        }
+
+        /** Alterna visibilidad del campo de key */
+        function toggleKeyVisibility(inputId, btnId) {
+            const el  = document.getElementById(inputId);
+            const btn = document.getElementById(btnId);
+            if (!el) return;
+            if (el.type === 'password') { el.type = 'text'; if (btn) btn.textContent = '🙈'; }
+            else                        { el.type = 'password'; if (btn) btn.textContent = '👁️'; }
         }
 
         /** Obtiene las categorías de plantillas relevantes para las especialidades del doctor */
