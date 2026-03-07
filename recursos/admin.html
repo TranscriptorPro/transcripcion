@@ -5118,38 +5118,40 @@
         }
 
         // ── Estado interno del modal de aprobación (imágenes) ──
-        let _approveImageData = { firma: null, proLogo: null };
+        let _approveImageData = { firma: null, proLogo: null, instLogo: null };
+        let _apvFirmaEditor = null;
+        let _apvProfEditor = null;
+        let _apvInstEditor = null;
 
-        function _approveImgClear(type) {
-            _approveImageData[type] = null;
-            const previewId = type === 'firma' ? 'approveImgFirmaPreview' : 'approveImgProLogoPreview';
-            const label = type === 'firma' ? 'Sin firma' : 'Sin logo';
-            document.getElementById(previewId).innerHTML = `<span style="font-size:.75rem;color:#94a3b8;">${label}</span>`;
-        }
-
-        function _approveImgSetPreview(type, base64) {
-            if (!base64 || base64 === 'no' || base64 === 'null') return;
-            _approveImageData[type] = base64;
-            const previewId = type === 'firma' ? 'approveImgFirmaPreview' : 'approveImgProLogoPreview';
-            const src = base64.startsWith('data:') ? base64 : 'data:image/png;base64,' + base64;
-            document.getElementById(previewId).innerHTML = `<img src="${src}" style="max-width:100%;max-height:80px;object-fit:contain;">`;
-        }
-
-        function _initApproveImgFileInputs() {
-            const firmaInput = document.getElementById('approveImgFirmaFile');
-            const logoInput = document.getElementById('approveImgProLogoFile');
-            if (firmaInput) firmaInput.onchange = (e) => {
-                const file = e.target.files[0]; if (!file) return;
-                const reader = new FileReader();
-                reader.onload = () => { _approveImgSetPreview('firma', reader.result); };
-                reader.readAsDataURL(file);
-            };
-            if (logoInput) logoInput.onchange = (e) => {
-                const file = e.target.files[0]; if (!file) return;
-                const reader = new FileReader();
-                reader.onload = () => { _approveImgSetPreview('proLogo', reader.result); };
-                reader.readAsDataURL(file);
-            };
+        function _initApproveImageEditors() {
+            if (!window._makeImageSection) return;
+            if (!_apvFirmaEditor) {
+                _apvFirmaEditor = window._makeImageSection({
+                    type: 'firma', prefix: 'apvFirma',
+                    getFromPrev: null,
+                    saveResult: (b64) => { _approveImageData.firma = b64; }
+                });
+            }
+            if (!_apvProfEditor) {
+                _apvProfEditor = window._makeImageSection({
+                    type: 'prof', prefix: 'apvProf',
+                    getFromPrev: null,
+                    saveResult: (b64) => { _approveImageData.proLogo = b64; }
+                });
+            }
+            if (!_apvInstEditor) {
+                _apvInstEditor = window._makeImageSection({
+                    type: 'inst', prefix: 'apvInst',
+                    getFromPrev: null,
+                    saveResult: (b64) => {
+                        _approveImageData.instLogo = b64;
+                        // Sincronizar con el logo del primer workplace
+                        _approveWpLogos[0] = b64;
+                        const preview = document.getElementById('approveWp0-logo-preview');
+                        if (preview && b64) preview.innerHTML = '<img src="' + b64 + '" style="max-height:40px;max-width:100%;object-fit:contain;">';
+                    }
+                });
+            }
         }
 
         function _renderApproveWorkplaces(mainWp, extraWps) {
@@ -5297,17 +5299,34 @@
 
             _renderApproveWorkplaces(mainWp, extraWps);
 
-            // ── Imágenes: firma y logo profesional ──
-            _approveImageData = { firma: null, proLogo: null };
-            _approveImgClear('firma');
-            _approveImgClear('proLogo');
+            // ── Imágenes: inicializar editores y cargar datos existentes ──
+            _approveImageData = { firma: null, proLogo: null, instLogo: null };
+            _initApproveImageEditors();
+
+            // Limpiar editores
+            if (_apvFirmaEditor) _apvFirmaEditor.clear();
+            if (_apvProfEditor) _apvProfEditor.clear();
+            if (_apvInstEditor) _apvInstEditor.clear();
+
+            // Cargar firma existente
             if (reg.Firma && reg.Firma !== 'no' && reg.Firma !== 'null' && reg.Firma !== '') {
-                _approveImgSetPreview('firma', reg.Firma);
+                const firmaSrc = reg.Firma.startsWith('data:') ? reg.Firma : 'data:image/png;base64,' + reg.Firma;
+                _apvFirmaEditor && _apvFirmaEditor.loadB64(firmaSrc);
+                _approveImageData.firma = firmaSrc;
             }
+            // Cargar logo profesional existente
             if (reg.Pro_Logo && reg.Pro_Logo !== 'no' && reg.Pro_Logo !== 'null' && reg.Pro_Logo !== '') {
-                _approveImgSetPreview('proLogo', reg.Pro_Logo);
+                const profSrc = reg.Pro_Logo.startsWith('data:') ? reg.Pro_Logo : 'data:image/png;base64,' + reg.Pro_Logo;
+                _apvProfEditor && _apvProfEditor.loadB64(profSrc);
+                _approveImageData.proLogo = profSrc;
             }
-            _initApproveImgFileInputs();
+            // Cargar logo institucional del primer workplace
+            const firstWpLogo = _approveWpLogos[0];
+            if (firstWpLogo && firstWpLogo !== 'null' && firstWpLogo !== 'no') {
+                const instSrc = firstWpLogo.startsWith('data:') ? firstWpLogo : 'data:image/png;base64,' + firstWpLogo;
+                _apvInstEditor && _apvInstEditor.loadB64(instSrc);
+                _approveImageData.instLogo = instSrc;
+            }
 
             // Expandir verificación por defecto
             const _vb = document.getElementById('approveVerifyBody');
@@ -5751,14 +5770,27 @@
             const _editHeaderColor = document.getElementById('approveEditHeaderColor')?.value   || '#1a56a0';
             const _editFooterText  = (document.getElementById('approveEditFooterText')?.value  || '').trim();
 
-            // Recopilar todos los workplaces editados
+            // Imágenes — priorizar las ya aplicadas, fallback al editor si procesó sin aplicar
+            let _editFirma = _approveImageData.firma || '';
+            let _editProLogo = _approveImageData.proLogo || '';
+            if (!_editFirma && _apvFirmaEditor) {
+                const fb = await _apvFirmaEditor.getEditedB64();
+                if (fb) _editFirma = fb;
+            }
+            if (!_editProLogo && _apvProfEditor) {
+                const fb = await _apvProfEditor.getEditedB64();
+                if (fb) _editProLogo = fb;
+            }
+            // Logo institucional procesado → sincronizar con primer workplace antes de recopilar
+            if (!_approveWpLogos[0] && _apvInstEditor) {
+                const instB64 = await _apvInstEditor.getEditedB64();
+                if (instB64) _approveWpLogos[0] = instB64;
+            }
+
+            // Recopilar todos los workplaces editados (después de sincronizar logo inst)
             const allWorkplaces = _collectApproveWorkplaces();
             const _editWp = JSON.stringify(allWorkplaces[0] || {});
             const _editExtraWps = JSON.stringify(allWorkplaces.slice(1));
-
-            // Imágenes
-            const _editFirma = _approveImageData.firma || '';
-            const _editProLogo = _approveImageData.proLogo || '';
 
             if (!apiKey) {
                 await dashAlert('Debés ingresar una API Key para este profesional. Usá el botón ⚙️ Ingresar para configurarla.', '🔑');
@@ -6921,33 +6953,146 @@
                         </div>
                     </div>
 
-                    <!-- ── Imágenes: Firma y Logo profesional ── -->
+                    <!-- ── Imágenes: Firma y Logo profesional (editor completo) ── -->
                     <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:.65rem;margin-bottom:.6rem;">
-                        <p style="font-size:.82rem;font-weight:600;color:#475569;margin:0 0 .5rem;">🖼️ Imágenes del profesional</p>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;">
-                            <!-- Firma -->
-                            <div style="text-align:center;">
-                                <label style="font-size:.78rem;color:#64748b;display:block;margin-bottom:4px;">✍️ Firma digital</label>
-                                <div id="approveImgFirmaPreview" style="min-height:60px;background:repeating-conic-gradient(#e0e0e0 0% 25%,#fff 0% 50%) 0 0/12px 12px;border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:4px;padding:4px;">
-                                    <span style="font-size:.75rem;color:#94a3b8;">Sin firma</span>
+                        <p style="font-size:.82rem;font-weight:600;color:#475569;margin:0 0 .5rem;">🖼️ Procesador de Imágenes del profesional</p>
+                        <p style="font-size:.73rem;color:#94a3b8;margin:0 0 .6rem;">Subí y procesá cada imagen. La IA eliminará el fondo automáticamente.</p>
+
+                        <!-- ── CARD: Logo Institucional ── -->
+                        <div style="border:1px solid #e2e8f0;border-radius:8px;padding:.6rem;margin-bottom:.6rem;">
+                            <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;">
+                                <div style="width:32px;height:32px;background:#eff6ff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0;">🏥</div>
+                                <div style="flex:1;">
+                                    <p style="font-weight:600;font-size:.82rem;color:#1e40af;margin:0;">Logo Institucional</p>
+                                    <p style="font-size:.68rem;color:#64748b;margin:0;">Izquierda del encabezado · 28×18 mm</p>
                                 </div>
-                                <div style="display:flex;gap:4px;justify-content:center;">
-                                    <label class="btn-secondary" for="approveImgFirmaFile" style="padding:3px 8px;font-size:.73rem;cursor:pointer;">📂 Cambiar</label>
-                                    <input type="file" id="approveImgFirmaFile" accept="image/*" style="display:none;">
-                                    <button type="button" class="btn-secondary" onclick="_approveImgClear('firma')" style="padding:3px 8px;font-size:.73rem;color:#ef4444;border-color:#fca5a5;">🗑️</button>
-                                </div>
+                                <span id="apvInst-status" style="font-size:.68rem;padding:2px 7px;border-radius:10px;background:#f1f5f9;color:#64748b;">Vacío</span>
                             </div>
-                            <!-- Logo profesional -->
-                            <div style="text-align:center;">
-                                <label style="font-size:.78rem;color:#64748b;display:block;margin-bottom:4px;">👤 Logo profesional</label>
-                                <div id="approveImgProLogoPreview" style="min-height:60px;background:repeating-conic-gradient(#e0e0e0 0% 25%,#fff 0% 50%) 0 0/12px 12px;border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:4px;padding:4px;">
-                                    <span style="font-size:.75rem;color:#94a3b8;">Sin logo</span>
+                            <div id="apvInst-thumb-wrap" style="display:none;background:repeating-conic-gradient(#e0e0e0 0% 25%,#fff 0% 50%) 0 0/12px 12px;border-radius:5px;padding:5px;text-align:center;margin-bottom:.35rem;">
+                                <img id="apvInst-thumb" style="max-height:45px;max-width:100%;object-fit:contain;">
+                            </div>
+                            <div style="display:flex;gap:.35rem;flex-wrap:wrap;">
+                                <label class="btn-secondary" for="apvInst-file" style="padding:4px 10px;font-size:.76rem;cursor:pointer;">📂 Subir imagen</label>
+                                <input type="file" id="apvInst-file" accept="image/*" style="display:none;">
+                                <button type="button" class="btn-secondary" id="apvInst-clear" style="padding:4px 7px;font-size:.76rem;display:none;color:#ef4444;border-color:#fca5a5;" title="Quitar imagen">🗑️</button>
+                            </div>
+                            <div id="apvInst-proc-section" style="display:none;margin-top:.35rem;padding-top:.35rem;border-top:1px solid #f1f5f9;">
+                                <div style="display:flex;gap:.6rem;flex-wrap:wrap;font-size:.76rem;margin-bottom:.3rem;">
+                                    <label style="display:flex;align-items:center;gap:3px;cursor:pointer;"><input type="checkbox" id="apvInst-bg" checked style="accent-color:var(--primary);"> 🤖 Quitar fondo</label>
+                                    <label style="display:flex;align-items:center;gap:3px;cursor:pointer;"><input type="checkbox" id="apvInst-trim" checked style="accent-color:var(--primary);"> ✂️ Auto-recortar</label>
+                                    <label style="display:flex;align-items:center;gap:3px;cursor:pointer;"><input type="checkbox" id="apvInst-scale" checked style="accent-color:var(--primary);"> 📐 Escalar</label>
                                 </div>
-                                <div style="display:flex;gap:4px;justify-content:center;">
-                                    <label class="btn-secondary" for="approveImgProLogoFile" style="padding:3px 8px;font-size:.73rem;cursor:pointer;">📂 Cambiar</label>
-                                    <input type="file" id="approveImgProLogoFile" accept="image/*" style="display:none;">
-                                    <button type="button" class="btn-secondary" onclick="_approveImgClear('proLogo')" style="padding:3px 8px;font-size:.73rem;color:#ef4444;border-color:#fca5a5;">🗑️</button>
+                                <button type="button" class="btn-primary" id="apvInst-process" style="width:100%;padding:5px 0;font-size:.78rem;">⚙️ Procesar imagen</button>
+                            </div>
+                            <div id="apvInst-edit-section" style="display:none;margin-top:.35rem;padding-top:.35rem;border-top:1px solid #f1f5f9;">
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.35rem;margin-bottom:.35rem;">
+                                    <div><p style="font-size:.67rem;color:#64748b;margin:0 0 2px;">Original</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:50px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="apvInst-orig" style="max-width:100%;max-height:120px;object-fit:contain;"></div></div>
+                                    <div><p style="font-size:.67rem;color:#64748b;margin:0 0 2px;">Resultado</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:50px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="apvInst-result" style="max-width:100%;max-height:120px;object-fit:contain;"></div></div>
                                 </div>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.25rem .6rem;font-size:.74rem;margin-bottom:.3rem;">
+                                    <div><label style="color:#64748b;">☀️ Brillo <span id="apvInst-brval">100</span>%</label><input type="range" id="apvInst-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
+                                    <div><label style="color:#64748b;">🎨 Contraste <span id="apvInst-cnval">100</span>%</label><input type="range" id="apvInst-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
+                                </div>
+                                <div style="display:flex;gap:.25rem;flex-wrap:wrap;margin-bottom:.3rem;">
+                                    <button type="button" class="btn-secondary" id="apvInst-rotL" style="padding:2px 8px;font-size:.73rem;">↺90°</button>
+                                    <button type="button" class="btn-secondary" id="apvInst-rotR" style="padding:2px 8px;font-size:.73rem;">↻90°</button>
+                                    <button type="button" class="btn-secondary" id="apvInst-fH" style="padding:2px 8px;font-size:.73rem;">⟺H</button>
+                                    <button type="button" class="btn-secondary" id="apvInst-fV" style="padding:2px 8px;font-size:.73rem;">⇅V</button>
+                                    <button type="button" class="btn-secondary" id="apvInst-reset" style="padding:2px 8px;font-size:.73rem;margin-left:auto;">↩</button>
+                                </div>
+                                <button type="button" class="btn-primary" id="apvInst-apply" style="width:100%;padding:5px 0;font-size:.78rem;background:#10b981;border-color:#10b981;">✅ Usar esta imagen</button>
+                            </div>
+                        </div>
+
+                        <!-- ── CARD: Firma Digital ── -->
+                        <div style="border:1px solid #e2e8f0;border-radius:8px;padding:.6rem;margin-bottom:.6rem;">
+                            <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;">
+                                <div style="width:32px;height:32px;background:#fef3c7;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0;">✍️</div>
+                                <div style="flex:1;">
+                                    <p style="font-weight:600;font-size:.82rem;color:#92400e;margin:0;">Firma Digital</p>
+                                    <p style="font-size:.68rem;color:#64748b;margin:0;">Pie del informe · 50×20 mm</p>
+                                </div>
+                                <span id="apvFirma-status" style="font-size:.68rem;padding:2px 7px;border-radius:10px;background:#f1f5f9;color:#64748b;">Vacío</span>
+                            </div>
+                            <div id="apvFirma-thumb-wrap" style="display:none;background:repeating-conic-gradient(#e0e0e0 0% 25%,#fff 0% 50%) 0 0/12px 12px;border-radius:5px;padding:5px;text-align:center;margin-bottom:.35rem;">
+                                <img id="apvFirma-thumb" style="max-height:45px;max-width:100%;object-fit:contain;">
+                            </div>
+                            <div style="display:flex;gap:.35rem;flex-wrap:wrap;">
+                                <label class="btn-secondary" for="apvFirma-file" style="padding:4px 10px;font-size:.76rem;cursor:pointer;">📂 Subir imagen</label>
+                                <input type="file" id="apvFirma-file" accept="image/*" style="display:none;">
+                                <button type="button" class="btn-secondary" id="apvFirma-clear" style="padding:4px 7px;font-size:.76rem;display:none;color:#ef4444;border-color:#fca5a5;" title="Quitar imagen">🗑️</button>
+                            </div>
+                            <div id="apvFirma-proc-section" style="display:none;margin-top:.35rem;padding-top:.35rem;border-top:1px solid #f1f5f9;">
+                                <div style="display:flex;gap:.6rem;flex-wrap:wrap;font-size:.76rem;margin-bottom:.3rem;">
+                                    <label style="display:flex;align-items:center;gap:3px;cursor:pointer;"><input type="checkbox" id="apvFirma-bg" checked style="accent-color:var(--primary);"> 🤖 Quitar fondo</label>
+                                    <label style="display:flex;align-items:center;gap:3px;cursor:pointer;"><input type="checkbox" id="apvFirma-trim" checked style="accent-color:var(--primary);"> ✂️ Auto-recortar</label>
+                                    <label style="display:flex;align-items:center;gap:3px;cursor:pointer;"><input type="checkbox" id="apvFirma-scale" checked style="accent-color:var(--primary);"> 📐 Escalar</label>
+                                </div>
+                                <button type="button" class="btn-primary" id="apvFirma-process" style="width:100%;padding:5px 0;font-size:.78rem;">⚙️ Procesar imagen</button>
+                            </div>
+                            <div id="apvFirma-edit-section" style="display:none;margin-top:.35rem;padding-top:.35rem;border-top:1px solid #f1f5f9;">
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.35rem;margin-bottom:.35rem;">
+                                    <div><p style="font-size:.67rem;color:#64748b;margin:0 0 2px;">Original</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:50px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="apvFirma-orig" style="max-width:100%;max-height:120px;object-fit:contain;"></div></div>
+                                    <div><p style="font-size:.67rem;color:#64748b;margin:0 0 2px;">Resultado</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:50px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="apvFirma-result" style="max-width:100%;max-height:120px;object-fit:contain;"></div></div>
+                                </div>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.25rem .6rem;font-size:.74rem;margin-bottom:.3rem;">
+                                    <div><label style="color:#64748b;">☀️ Brillo <span id="apvFirma-brval">100</span>%</label><input type="range" id="apvFirma-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
+                                    <div><label style="color:#64748b;">🎨 Contraste <span id="apvFirma-cnval">100</span>%</label><input type="range" id="apvFirma-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
+                                </div>
+                                <div style="display:flex;gap:.25rem;flex-wrap:wrap;margin-bottom:.3rem;">
+                                    <button type="button" class="btn-secondary" id="apvFirma-rotL" style="padding:2px 8px;font-size:.73rem;">↺90°</button>
+                                    <button type="button" class="btn-secondary" id="apvFirma-rotR" style="padding:2px 8px;font-size:.73rem;">↻90°</button>
+                                    <button type="button" class="btn-secondary" id="apvFirma-fH" style="padding:2px 8px;font-size:.73rem;">⟺H</button>
+                                    <button type="button" class="btn-secondary" id="apvFirma-fV" style="padding:2px 8px;font-size:.73rem;">⇅V</button>
+                                    <button type="button" class="btn-secondary" id="apvFirma-reset" style="padding:2px 8px;font-size:.73rem;margin-left:auto;">↩</button>
+                                </div>
+                                <button type="button" class="btn-primary" id="apvFirma-apply" style="width:100%;padding:5px 0;font-size:.78rem;background:#10b981;border-color:#10b981;">✅ Usar esta imagen</button>
+                            </div>
+                        </div>
+
+                        <!-- ── CARD: Logo del Médico ── -->
+                        <div style="border:1px solid #e2e8f0;border-radius:8px;padding:.6rem;">
+                            <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;">
+                                <div style="width:32px;height:32px;background:#f0fdf4;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0;">👤</div>
+                                <div style="flex:1;">
+                                    <p style="font-weight:600;font-size:.82rem;color:#166534;margin:0;">Logo del Médico</p>
+                                    <p style="font-size:.68rem;color:#64748b;margin:0;">Derecha del encabezado · 16×16 mm</p>
+                                </div>
+                                <span id="apvProf-status" style="font-size:.68rem;padding:2px 7px;border-radius:10px;background:#f1f5f9;color:#64748b;">Vacío</span>
+                            </div>
+                            <div id="apvProf-thumb-wrap" style="display:none;background:repeating-conic-gradient(#e0e0e0 0% 25%,#fff 0% 50%) 0 0/12px 12px;border-radius:5px;padding:5px;text-align:center;margin-bottom:.35rem;">
+                                <img id="apvProf-thumb" style="max-height:45px;max-width:100%;object-fit:contain;">
+                            </div>
+                            <div style="display:flex;gap:.35rem;flex-wrap:wrap;">
+                                <label class="btn-secondary" for="apvProf-file" style="padding:4px 10px;font-size:.76rem;cursor:pointer;">📂 Subir imagen</label>
+                                <input type="file" id="apvProf-file" accept="image/*" style="display:none;">
+                                <button type="button" class="btn-secondary" id="apvProf-clear" style="padding:4px 7px;font-size:.76rem;display:none;color:#ef4444;border-color:#fca5a5;" title="Quitar imagen">🗑️</button>
+                            </div>
+                            <div id="apvProf-proc-section" style="display:none;margin-top:.35rem;padding-top:.35rem;border-top:1px solid #f1f5f9;">
+                                <div style="display:flex;gap:.6rem;flex-wrap:wrap;font-size:.76rem;margin-bottom:.3rem;">
+                                    <label style="display:flex;align-items:center;gap:3px;cursor:pointer;"><input type="checkbox" id="apvProf-bg" checked style="accent-color:var(--primary);"> 🤖 Quitar fondo</label>
+                                    <label style="display:flex;align-items:center;gap:3px;cursor:pointer;"><input type="checkbox" id="apvProf-trim" checked style="accent-color:var(--primary);"> ✂️ Auto-recortar</label>
+                                    <label style="display:flex;align-items:center;gap:3px;cursor:pointer;"><input type="checkbox" id="apvProf-scale" checked style="accent-color:var(--primary);"> 📐 Escalar</label>
+                                </div>
+                                <button type="button" class="btn-primary" id="apvProf-process" style="width:100%;padding:5px 0;font-size:.78rem;">⚙️ Procesar imagen</button>
+                            </div>
+                            <div id="apvProf-edit-section" style="display:none;margin-top:.35rem;padding-top:.35rem;border-top:1px solid #f1f5f9;">
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.35rem;margin-bottom:.35rem;">
+                                    <div><p style="font-size:.67rem;color:#64748b;margin:0 0 2px;">Original</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:50px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="apvProf-orig" style="max-width:100%;max-height:120px;object-fit:contain;"></div></div>
+                                    <div><p style="font-size:.67rem;color:#64748b;margin:0 0 2px;">Resultado</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:50px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="apvProf-result" style="max-width:100%;max-height:120px;object-fit:contain;"></div></div>
+                                </div>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.25rem .6rem;font-size:.74rem;margin-bottom:.3rem;">
+                                    <div><label style="color:#64748b;">☀️ Brillo <span id="apvProf-brval">100</span>%</label><input type="range" id="apvProf-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
+                                    <div><label style="color:#64748b;">🎨 Contraste <span id="apvProf-cnval">100</span>%</label><input type="range" id="apvProf-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
+                                </div>
+                                <div style="display:flex;gap:.25rem;flex-wrap:wrap;margin-bottom:.3rem;">
+                                    <button type="button" class="btn-secondary" id="apvProf-rotL" style="padding:2px 8px;font-size:.73rem;">↺90°</button>
+                                    <button type="button" class="btn-secondary" id="apvProf-rotR" style="padding:2px 8px;font-size:.73rem;">↻90°</button>
+                                    <button type="button" class="btn-secondary" id="apvProf-fH" style="padding:2px 8px;font-size:.73rem;">⟺H</button>
+                                    <button type="button" class="btn-secondary" id="apvProf-fV" style="padding:2px 8px;font-size:.73rem;">⇅V</button>
+                                    <button type="button" class="btn-secondary" id="apvProf-reset" style="padding:2px 8px;font-size:.73rem;margin-left:auto;">↩</button>
+                                </div>
+                                <button type="button" class="btn-primary" id="apvProf-apply" style="width:100%;padding:5px 0;font-size:.78rem;background:#10b981;border-color:#10b981;">✅ Usar esta imagen</button>
                             </div>
                         </div>
                     </div>
@@ -7430,20 +7575,21 @@
             }
 
             // ── Quitar ──
+            function clearSection() {
+                state.origImg = null; state.resultB64 = null;
+                const tw = g('-thumb-wrap'); if (tw) tw.style.display = 'none';
+                const ps = g('-proc-section'); if (ps) ps.style.display = 'none';
+                const es = g('-edit-section'); if (es) es.style.display = 'none';
+                const cl = g('-clear'); if (cl) cl.style.display = 'none';
+                setStatus('Vacío', '');
+                cfg.saveResult && cfg.saveResult(null);
+                if (fileInput) fileInput.value = '';
+                _giftImagePreview[cfg.type] = null;
+                _updatePdfSim();
+            }
             const clearBtn = g('-clear');
             if (clearBtn) {
-                clearBtn.addEventListener('click', () => {
-                    state.origImg = null; state.resultB64 = null;
-                    const tw = g('-thumb-wrap'); if (tw) tw.style.display = 'none';
-                    const ps = g('-proc-section'); if (ps) ps.style.display = 'none';
-                    const es = g('-edit-section'); if (es) es.style.display = 'none';
-                    clearBtn.style.display = 'none';
-                    setStatus('Vacío', '');
-                    cfg.saveResult && cfg.saveResult(null);
-                    if (fileInput) fileInput.value = '';
-                    _giftImagePreview[cfg.type] = null;
-                    _updatePdfSim();
-                });
+                clearBtn.addEventListener('click', clearSection);
             }
 
             // ── Procesar ──
@@ -7523,6 +7669,9 @@
                     else alert('Imagen aplicada.');
                 });
             }
+
+            // ── API pública del editor ──
+            return { loadB64, getEditedB64, clear: clearSection };
         }
 
         function _updatePdfSim() {
@@ -7663,6 +7812,9 @@
                 }
             });
         }
+
+        // Exponer factory para reuso en modal de aprobación
+        window._makeImageSection = _makeImageSection;
 
         // Inicializar cuando el DOM esté listo
         if (document.readyState === 'loading') {
