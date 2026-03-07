@@ -5417,17 +5417,22 @@
             // Si las imágenes están en Drive (drive:FILE_ID), fetchear el base64 real
             const firmaRef = String(reg.Firma || '');
             const proLogoRef = String(reg.Pro_Logo || '');
-            const hasDriveImages = firmaRef.startsWith('drive:') || proLogoRef.startsWith('drive:');
+            const wpLogoRef = String(reg.Workplace_Logo || '');
+            const hasWpLogoDrive = _approveWpLogos[0] === 'drive' || wpLogoRef.startsWith('drive:');
+            const hasDriveImages = firmaRef.startsWith('drive:') || proLogoRef.startsWith('drive:') || wpLogoRef.startsWith('drive:');
 
             if (hasDriveImages) {
-                const driveRef = firmaRef.startsWith('drive:') ? firmaRef : proLogoRef;
+                // Usar cualquier drive ref disponible (todos apuntan al mismo archivo)
+                const driveRef = firmaRef.startsWith('drive:') ? firmaRef : proLogoRef.startsWith('drive:') ? proLogoRef : wpLogoRef;
                 const authStr = _getSessionAuthParams();
                 const url = `${CONFIG.scriptUrl}?action=admin_get_registration_images&driveRef=${encodeURIComponent(driveRef)}&${authStr}`;
                 // Mostrar indicador de carga
                 const _firmaStatus = document.getElementById('apvFirma-status');
                 const _profStatus = document.getElementById('apvProf-status');
+                const _instStatus = document.getElementById('apvInst-status');
                 if (_firmaStatus) { _firmaStatus.textContent = '⏳ Cargando...'; _firmaStatus.style.background = '#fef3c7'; _firmaStatus.style.color = '#92400e'; }
                 if (_profStatus) { _profStatus.textContent = '⏳ Cargando...'; _profStatus.style.background = '#fef3c7'; _profStatus.style.color = '#92400e'; }
+                if (_instStatus && hasWpLogoDrive) { _instStatus.textContent = '⏳ Cargando...'; _instStatus.style.background = '#fef3c7'; _instStatus.style.color = '#92400e'; }
 
                 fetch(url).then(r => r.json()).then(data => {
                     if (data.success && data.images) {
@@ -5435,15 +5440,26 @@
                         else if (_firmaStatus) { _firmaStatus.textContent = 'Sin firma'; _firmaStatus.style.background = '#f1f5f9'; _firmaStatus.style.color = '#64748b'; }
                         if (data.images.proLogo) _loadImgToEditor(_apvProfEditor, data.images.proLogo, 'proLogo');
                         else if (_profStatus) { _profStatus.textContent = 'Sin logo'; _profStatus.style.background = '#f1f5f9'; _profStatus.style.color = '#64748b'; }
+                        // Logo institucional del workplace principal
+                        if (data.images.instLogo) {
+                            _loadImgToEditor(_apvInstEditor, data.images.instLogo, 'instLogo');
+                            _approveWpLogos[0] = data.images.instLogo;
+                        } else if (_instStatus && hasWpLogoDrive) {
+                            _instStatus.textContent = 'Sin logo';
+                            _instStatus.style.background = '#f1f5f9';
+                            _instStatus.style.color = '#64748b';
+                        }
                     } else {
                         console.warn('Respuesta sin imágenes:', data);
                         if (_firmaStatus) { _firmaStatus.textContent = '⚠️ Error'; _firmaStatus.style.background = '#fee2e2'; _firmaStatus.style.color = '#991b1b'; }
                         if (_profStatus) { _profStatus.textContent = '⚠️ Error'; _profStatus.style.background = '#fee2e2'; _profStatus.style.color = '#991b1b'; }
+                        if (_instStatus && hasWpLogoDrive) { _instStatus.textContent = '⚠️ Error'; _instStatus.style.background = '#fee2e2'; _instStatus.style.color = '#991b1b'; }
                     }
                 }).catch(err => {
                     console.warn('Error cargando imágenes del registro:', err);
                     if (_firmaStatus) { _firmaStatus.textContent = '⚠️ Error de red'; _firmaStatus.style.background = '#fee2e2'; _firmaStatus.style.color = '#991b1b'; }
                     if (_profStatus) { _profStatus.textContent = '⚠️ Error de red'; _profStatus.style.background = '#fee2e2'; _profStatus.style.color = '#991b1b'; }
+                    if (_instStatus && hasWpLogoDrive) { _instStatus.textContent = '⚠️ Error de red'; _instStatus.style.background = '#fee2e2'; _instStatus.style.color = '#991b1b'; }
                     if (typeof dashAlert === 'function') dashAlert('No se pudieron cargar las imágenes del registro. Verificá que el Google Apps Script esté actualizado con el endpoint admin_get_registration_images.', '⚠️');
                 });
             } else {
@@ -5458,9 +5474,9 @@
                 }
             }
 
-            // Cargar logo institucional del primer workplace (siempre inline en Workplace_Data)
+            // Cargar logo institucional desde Workplace_Data (fallback para registros antiguos)
             const firstWpLogo = _approveWpLogos[0];
-            if (firstWpLogo && firstWpLogo !== 'null' && firstWpLogo !== 'no') {
+            if (firstWpLogo && firstWpLogo !== 'null' && firstWpLogo !== 'no' && firstWpLogo !== 'drive') {
                 const instSrc = firstWpLogo.startsWith('data:') ? firstWpLogo : 'data:image/png;base64,' + firstWpLogo;
                 _loadImgToEditor(_apvInstEditor, instSrc, 'instLogo');
             }

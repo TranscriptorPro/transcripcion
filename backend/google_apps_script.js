@@ -1140,29 +1140,53 @@ function doPost(e) {
       });
 
       const regId = 'REG_' + Date.now();
-      const workplaceData = JSON.stringify(payload.workplace || {});
       const especialidades = Array.isArray(payload.especialidades) ? payload.especialidades.join(', ') : '';
       const estudios = JSON.stringify(payload.estudios || []);
 
-      // Imágenes: firma y logo profesional se guardan en Drive (el base64 es
-      // demasiado largo para una celda de Sheets). Los logos de los lugares de
-      // trabajo quedan embebidos en Workplace_Data/Extra_Workplaces normalmente.
-      const wpLogo = payload.workplace && payload.workplace.logo ? 'yes' : '';
-      let firma   = '';
-      let proLogo = '';
-
+      // Imágenes: firma, logo profesional Y logos de workplaces se guardan en
+      // Drive (el base64 es demasiado largo para una celda de Sheets — 50 K chars).
       const imagesToSave = {};
       if (payload.firma)   imagesToSave.firma   = payload.firma;
       if (payload.proLogo) imagesToSave.proLogo = payload.proLogo;
 
+      // Extraer logo del workplace principal antes de serializar
+      var wpClean = payload.workplace ? JSON.parse(JSON.stringify(payload.workplace)) : {};
+      const wpLogo = wpClean.logo ? 'yes' : '';
+      if (wpClean.logo && typeof wpClean.logo === 'string' && wpClean.logo.length > 100) {
+        imagesToSave.instLogo = wpClean.logo;
+        wpClean.logo = 'drive'; // flag: guardado en Drive
+      }
+      const workplaceData = JSON.stringify(wpClean);
+
+      // Extraer logos de workplaces extra
+      var extraWpsClean = payload.extraWorkplaces || '';
+      if (extraWpsClean) {
+        try {
+          var extras = JSON.parse(extraWpsClean);
+          if (Array.isArray(extras)) {
+            extras.forEach(function(wp, i) {
+              if (wp.logo && typeof wp.logo === 'string' && wp.logo.length > 100) {
+                imagesToSave['extraLogo_' + i] = wp.logo;
+                wp.logo = 'drive';
+              }
+            });
+            extraWpsClean = JSON.stringify(extras);
+          }
+        } catch(_) { /* mantener original */ }
+      }
+
+      let firma   = '';
+      let proLogo = '';
+      var wpLogoRef = wpLogo; // 'yes' or ''
+
       if (Object.keys(imagesToSave).length > 0) {
         try {
           const driveFileId = _saveImagesToDrive(regId, imagesToSave);
-          // Guardar file ID con prefijo 'drive:' en la columna Firma del Sheet
           firma   = payload.firma   ? 'drive:' + driveFileId : '';
           proLogo = payload.proLogo ? 'drive:' + driveFileId : '';
+          // Guardar referencia Drive en Workplace_Logo si se guardó instLogo
+          if (imagesToSave.instLogo) wpLogoRef = 'drive:' + driveFileId;
         } catch(driveErr) {
-          // Fallback: si Drive falla, al menos dejamos constancia de presencia
           firma   = payload.firma   ? 'yes' : '';
           proLogo = payload.proLogo ? 'yes' : '';
           Logger.log('⚠️ Error guardando imágenes en Drive: ' + driveErr.message);
@@ -1179,8 +1203,8 @@ function doPost(e) {
         Especialidades:     especialidades,
         Estudios:           estudios,
         Workplace_Data:     workplaceData,
-        Workplace_Logo:     wpLogo,
-        Extra_Workplaces:   payload.extraWorkplaces || '',
+        Workplace_Logo:     wpLogoRef,
+        Extra_Workplaces:   extraWpsClean,
         Header_Color:       payload.headerColor || '#1a56a0',
         Footer_Text:        payload.footerText || '',
         Firma:              firma,
