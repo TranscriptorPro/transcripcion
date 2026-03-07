@@ -225,12 +225,13 @@ function doGet(e) {
     if (!userData.ID_Medico) return createResponse({ error: 'Falta ID_Medico' });
 
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    _ensureUsuariosHeaders(sheet);
     const headers = sheet.getDataRange().getValues()[0];
 
     // Verificar que el ID no exista ya
     const existing = sheet.getDataRange().getValues();
     for (let i = 1; i < existing.length; i++) {
-      if (String(existing[i][0]) === String(userData.ID_Medico)) {
+      if (String(existing[i][headers.indexOf('ID_Medico')]) === String(userData.ID_Medico)) {
         return createResponse({ error: 'ID_Medico ya existe: ' + userData.ID_Medico });
       }
     }
@@ -240,6 +241,38 @@ function doGet(e) {
     sheet.appendRow(row);
     appendAdminLog('admin', 'create_user', userData.ID_Medico, userData.Nombre || '');
     return createResponse({ success: true, userId: userData.ID_Medico });
+  }
+
+  // setup_sheets — inicializa (o repara) las cabeceras de todas las hojas
+  if (action === 'setup_sheets') {
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
+    const result = _setupAllSheets();
+    return createResponse({ success: true, result: result });
+  }
+
+  // admin_delete_test_users — elimina filas cuyos ID_Medico coincidan con los IDs de prueba
+  if (action === 'admin_delete_test_users') {
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
+
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const idCol = headers.indexOf('ID_Medico');
+    const testPrefixes = ['GIFTDR_TEST', 'NORMDR_TEST', 'PRODR_TEST', 'CLINICDR_TEST', 'TRIALDR_TEST'];
+
+    let deleted = 0;
+    // Recorrer en reversa para no afectar índices al borrar
+    for (let i = data.length - 1; i >= 1; i--) {
+      const id = String(data[i][idCol] || '');
+      if (!id || testPrefixes.some(p => id.startsWith(p))) {
+        sheet.deleteRow(i + 1);
+        deleted++;
+      }
+    }
+    appendAdminLog(auth.username, 'delete_test_users', 'bulk', 'Deleted: ' + deleted);
+    return createResponse({ success: true, deleted: deleted });
   }
 
   // admin_get_logs — lee la hoja Admin_Logs con filtros opcionales
@@ -862,15 +895,20 @@ function doPost(e) {
     const userData = payload.userData || {};
     if (!userData.ID_Medico) return createResponse({ error: 'Falta ID_Medico' });
 
+    _ensureUsuariosHeaders(sheet);
+    const freshHeaders = sheet.getDataRange().getValues()[0];
+
     // Verificar que el ID no exista ya
-    for (let i = 1; i < data.length; i++) {
-      if (String(data[i][0]) === String(userData.ID_Medico)) {
+    const freshData = sheet.getDataRange().getValues();
+    const idColPost = freshHeaders.indexOf('ID_Medico');
+    for (let i = 1; i < freshData.length; i++) {
+      if (String(freshData[i][idColPost]) === String(userData.ID_Medico)) {
         return createResponse({ error: 'ID_Medico ya existe: ' + userData.ID_Medico });
       }
     }
 
     // Construir fila siguiendo el orden de los headers
-    const row = headers.map(h => (userData[h] !== undefined ? userData[h] : ''));
+    const row = freshHeaders.map(h => (userData[h] !== undefined ? userData[h] : ''));
     sheet.appendRow(row);
     appendAdminLog(payload.sessionUser || 'admin', 'create_user', userData.ID_Medico, userData.Nombre || '');
     return createResponse({ success: true, userId: userData.ID_Medico });
@@ -1315,4 +1353,104 @@ function doOptions(e) {
   return ContentService
     .createTextOutput('')
     .setMimeType(ContentService.MimeType.TEXT);
+}
+
+// ── Helpers de inicialización de hojas ──────────────────────────────────────
+
+const USUARIOS_HEADERS = [
+  'ID_Medico','Nombre','Matricula','Email','Telefono','Especialidad',
+  'Plan','Estado','Fecha_Registro','Fecha_Vencimiento',
+  'API_Key','API_Key_B1','API_Key_B2',
+  'Devices_Max','Devices_Logged','Allowed_Templates',
+  'Usage_Count','Diagnostico_Pendiente','Notas_Admin','Registro_Datos'
+];
+
+/**
+ * Asegura que la hoja Usuarios tenga todos los headers requeridos.
+ * Si la primera fila está vacía o incompleta, la inicializa o agrega las columnas faltantes.
+ * @param {Sheet} sheet
+ */
+function _ensureUsuariosHeaders(sheet) {
+  const range = sheet.getDataRange();
+  const values = range.getValues();
+  const existing = values[0] || [];
+  const firstCell = String(existing[0] || '').trim();
+
+  if (!firstCell) {
+    // Sheet completamente vacío — escribir headers
+    sheet.clearContents();
+    sheet.appendRow(USUARIOS_HEADERS);
+    sheet.setFrozenRows(1);
+    return;
+  }
+
+  // Agregar columnas faltantes al final
+  USUARIOS_HEADERS.forEach(function(h) {
+    if (!existing.includes(h)) {
+      sheet.getRange(1, existing.length + 1).setValue(h);
+      existing.push(h);
+    }
+  });
+}
+
+/**
+ * Inicializa (o repara) los headers de todas las hojas del sistema.
+ * Ejecutar una vez después de hacer cambios en la estructura.
+ */
+function _setupAllSheets() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const result = [];
+
+  // Usuarios
+  const userSheet = ss.getSheetByName(SHEET_NAME);
+  if (userSheet) {
+    _ensureUsuariosHeaders(userSheet);
+    result.push('Usuarios: OK');
+  } else {
+    result.push('Usuarios: no encontrada');
+  }
+
+  // Metricas_Uso
+  const metSheet = ss.getSheetByName(SHEET_METRICAS);
+  if (!metSheet) {
+    const s = ss.insertSheet(SHEET_METRICAS);
+    s.appendRow(['ID_Metrica','ID_Medico','Fecha','Transcripciones_Realizadas','Palabras_Transcritas','Minutos_Audio','Device_ID','Timestamp']);
+    s.setFrozenRows(1);
+    result.push('Metricas_Uso: creada');
+  } else { result.push('Metricas_Uso: OK'); }
+
+  // Dispositivos
+  const devSheet = ss.getSheetByName(SHEET_DEVICES);
+  if (!devSheet) {
+    const s = ss.insertSheet(SHEET_DEVICES);
+    s.appendRow(['ID_Device','ID_Medico','Device_Name','Device_Type','OS_Version','Fecha_Registro','Ultima_Conexion','Estado']);
+    s.setFrozenRows(1);
+    result.push('Dispositivos: creada');
+  } else { result.push('Dispositivos: OK'); }
+
+  // Admin_Logs
+  const logSheet = ss.getSheetByName(SHEET_LOGS);
+  if (!logSheet) {
+    const s = ss.insertSheet(SHEET_LOGS);
+    s.appendRow(['ID_Log','Admin_User','Accion','Usuario_Afectado','Detalles','Timestamp']);
+    s.setFrozenRows(1);
+    result.push('Admin_Logs: creada');
+  } else { result.push('Admin_Logs: OK'); }
+
+  // Registros_Pendientes
+  const regSheet = ss.getSheetByName(SHEET_REGISTROS);
+  if (!regSheet) {
+    const s = ss.insertSheet(SHEET_REGISTROS);
+    s.appendRow([
+      'ID_Registro','Nombre','Matricula','Email','Telefono',
+      'Especialidades','Estudios','Workplace_Data','Workplace_Logo',
+      'Extra_Workplaces','Header_Color','Footer_Text','Firma','Pro_Logo',
+      'Notas','Fecha_Registro','Estado','Origen','ID_Medico_Asignado','Motivo_Rechazo',
+      'Plan_Solicitado','Addons_Cart'
+    ]);
+    s.setFrozenRows(1);
+    result.push('Registros_Pendientes: creada');
+  } else { result.push('Registros_Pendientes: OK'); }
+
+  return result;
 }

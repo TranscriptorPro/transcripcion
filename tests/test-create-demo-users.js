@@ -515,14 +515,24 @@ async function main() {
         process.exit(1);
     }
 
-    // ── 2. Verificar usuarios existentes para evitar duplicados ──────────────
+    // ── 2. Limpiar usuarios de prueba anteriores y verificar estado ──────────
     console.log(sec('2. Verificar datos existentes'));
     let existingIds = new Set();
     try {
         const listData = await apiGet(withAuth(session, { action: 'admin_list_users' }));
         test('admin_list_users responde', !listData.error, `${listData.users?.length || 0} usuarios en Sheet`);
-        (listData.users || []).forEach(u => existingIds.add(u.ID_Medico));
-        console.log(inf(`IDs existentes: ${existingIds.size}`));
+        const allUsers = listData.users || [];
+        // Detectar usuarios de prueba existentes (IDs con sufijo _TEST)
+        const testPrefixes = ['GIFTDR_TEST', 'NORMDR_TEST', 'PRODR_TEST', 'CLINICDR_TEST', 'TRIALDR_TEST'];
+        const hasTestUsers = allUsers.some(u => testPrefixes.some(p => String(u.ID_Medico || '').startsWith(p)));
+        if (hasTestUsers) {
+            console.log(warn('Usuarios de prueba previos detectados — limpiando antes de recrear...'));
+            const delRes = await apiGet(withAuth(session, { action: 'admin_delete_test_users' }));
+            test('Limpieza usuarios test previos', !delRes.error, `Eliminados: ${delRes.deleted || 0}`);
+        } else {
+            allUsers.forEach(u => { if (u.ID_Medico) existingIds.add(u.ID_Medico); });
+            console.log(inf(`IDs existentes (no test): ${existingIds.size}`));
+        }
     } catch(e) {
         test('admin_list_users', false, e.message);
     }
