@@ -980,10 +980,10 @@ function _showClientOnboarding() {
     if (displayNombre) displayNombre.textContent = profData.nombre || '(no configurado)';
     if (displayMatricula) displayMatricula.textContent = profData.matricula || '(no configurado)';
 
-    // K1: Mostrar campo API Key solo si NO hay key precargada por admin
+    // K1: API Key siempre oculta — el admin precargó la clave antes de entregar la app;
+    // el usuario final nunca debe interactuar con API keys.
     const apiStep = document.getElementById('onboardingApiKeyStep');
-    const hasPreloadedKey = !!localStorage.getItem('groq_api_key');
-    if (apiStep) apiStep.style.display = hasPreloadedKey ? 'none' : '';
+    if (apiStep) apiStep.style.display = 'none';
 
     // Crear partículas decorativas
     _createOnboardingParticles();
@@ -1029,21 +1029,6 @@ function _showClientOnboarding() {
 
     if (next1) next1.addEventListener('click', () => goToStep(2));
     if (next2) next2.addEventListener('click', () => {
-        // K1: validar API Key si el campo está visible (no precargada)
-        if (apiStep && apiStep.style.display !== 'none') {
-            const keyInput = document.getElementById('onboardingApiKey');
-            const keyVal = keyInput ? keyInput.value.trim() : '';
-            if (keyVal && !keyVal.startsWith('gsk_')) {
-                if (typeof showToast === 'function') showToast('❌ La API Key debe empezar con gsk_', 'error');
-                return;
-            }
-            // Guardar inmediatamente si fue ingresada
-            if (keyVal) {
-                if (typeof appDB !== 'undefined') appDB.set('groq_api_key', keyVal);
-                localStorage.setItem('groq_api_key', keyVal);
-                window.GROQ_API_KEY = keyVal;
-            }
-        }
         _initOnbStep3();
         goToStep(3);
     });

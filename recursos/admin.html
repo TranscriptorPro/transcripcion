@@ -4360,14 +4360,26 @@
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
         }
 
-        // Botón Email
+        // Botón Email — usa el modal de email propio de la app (NO abre Gmail ni Outlook)
         function handleCfEmail() {
-            const url = document.getElementById('cfLinkUrl').value;
-            const name = _cfCurrentUser?.Nombre || 'Doctor';
-            const email = _cfCurrentUser?.Email || '';
-            const subject = 'Tu app Transcriptor Médico Pro está lista';
-            const body = `Hola ${name},\n\nTu app de transcripción médica está lista para usar.\n\nHacé clic en el siguiente link para configurarla:\n${url}\n\nEl navegador te va a ofrecer instalarla como aplicación — aceptá para tenerla siempre accesible.\n\nSi tenés alguna duda, respondé este correo.\n\nSaludos`;
-            window.open(`mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+            if (!_cfCurrentUser) return;
+            const url   = document.getElementById('cfLinkUrl').value;
+            const name  = _cfCurrentUser.Nombre || 'Doctor';
+            const email = _cfCurrentUser.Email  || '';
+            if (!email) {
+                dashAlert('Este usuario no tiene email configurado.', '⚠️');
+                return;
+            }
+            // Reutilizar el modal de email directo con contenido pre-llenado
+            _deCurrentUser = _cfCurrentUser;
+            document.getElementById('deUserName').textContent  = name;
+            document.getElementById('deUserEmail').textContent = email;
+            document.getElementById('deSubject').value = 'Tu app Transcriptor Médico Pro está lista';
+            document.getElementById('deBody').value    = `Hola ${name},\n\nTu app de transcripción médica está lista para usar.\n\nHacé clic en el siguiente link para configurarla:\n${url}\n\nEl navegador te va a ofrecer instalarla como aplicación — aceptá para tenerla siempre accesible.\n\nSi tenés alguna duda, respondé este correo.\n\nSaludos`;
+            document.getElementById('deResult').style.display  = 'none';
+            document.getElementById('deBtnSend').disabled      = false;
+            document.getElementById('deBtnSend').textContent   = '📨 Enviar';
+            document.getElementById('directEmailModal').style.display = 'flex';
         }
 
         // ========== FIN FÁBRICA DE CLONES ==========
@@ -6062,7 +6074,7 @@
                 <div style="display:flex;flex-direction:column;gap:.8rem;margin-bottom:1rem;">
                     <div>
                         <label style="font-size:.83rem;color:#64748b;font-weight:600;">🔑 API Key de Groq <span id="cfApiKeyLabel">(para este usuario)</span></label>
-                        <input type="text" id="cfApiKey" placeholder="gsk_..." style="width:100%;margin-top:4px;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.85rem;font-family:monospace;">
+                        <input type="text" id="cfApiKey" placeholder="gsk_..." style="width:100%;margin-top:4px;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.85rem;font-family:monospace;" autocapitalize="none" autocorrect="off" spellcheck="false">
                         <small id="cfApiKeyHint" style="color:#9ca3af;font-size:.75rem;">Si lo dejás vacío, el usuario deberá ingresar su propia API Key</small>
                     </div>
                     <div id="cfApiKeyBackups" style="display:flex;flex-direction:column;gap:.6rem;">
@@ -6352,17 +6364,17 @@
 
             <div class="form-group" style="margin-bottom:.8rem;">
                 <label>🔑 API Key de Groq <span style="color:#6b7280;font-weight:400;">(principal)</span></label>
-                <input type="text" id="approveApiKey" placeholder="gsk_xxxxxxxxxxxxxxxx" style="font-family:monospace;">
+                <input type="text" id="approveApiKey" placeholder="gsk_xxxxxxxxxxxxxxxx" style="font-family:monospace;" autocapitalize="none" autocorrect="off" spellcheck="false">
                 <small style="color:#94a3b8;font-size:.73rem;">Pegá la API Key asignada a este profesional — será la clave principal</small>
             </div>
             <div class="form-group" style="margin-bottom:.8rem;">
                 <label>🔑 Backup Key 1 <span style="color:#9ca3af;font-weight:400;font-size:.78rem;">(opcional)</span></label>
-                <input type="text" id="approveApiKeyB1" placeholder="gsk_... segunda clave de respaldo" style="font-family:monospace;">
+                <input type="text" id="approveApiKeyB1" placeholder="gsk_... segunda clave de respaldo" style="font-family:monospace;" autocapitalize="none" autocorrect="off" spellcheck="false">
                 <small style="color:#94a3b8;font-size:.73rem;">Si la principal falla por límite de uso, la app intentará con esta</small>
             </div>
             <div class="form-group" style="margin-bottom:.8rem;">
                 <label>🔑 Backup Key 2 <span style="color:#9ca3af;font-weight:400;font-size:.78rem;">(opcional)</span></label>
-                <input type="text" id="approveApiKeyB2" placeholder="gsk_... tercera clave de respaldo" style="font-family:monospace;">
+                <input type="text" id="approveApiKeyB2" placeholder="gsk_... tercera clave de respaldo" style="font-family:monospace;" autocapitalize="none" autocorrect="off" spellcheck="false">
                 <small style="color:#94a3b8;font-size:.73rem;">Tercer nivel de respaldo — se usa si las dos anteriores fallan</small>
             </div>
 
