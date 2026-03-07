@@ -6193,16 +6193,16 @@
                             </div>
                             <div id="imgInst-edit-section" style="display:none;margin-top:.45rem;padding-top:.45rem;border-top:1px solid #f1f5f9;">
                                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-bottom:.4rem;">
-                                    <div><p style="font-size:.7rem;color:#64748b;margin:0 0 2px;">Original</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:60px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="imgInst-orig" style="max-width:100%;max-height:90px;object-fit:contain;"></div></div>
-                                    <div><p style="font-size:.7rem;color:#64748b;margin:0 0 2px;">Resultado</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:60px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="imgInst-result" style="max-width:100%;max-height:90px;object-fit:contain;"></div></div>
+                                    <div><p style="font-size:.7rem;color:#64748b;margin:0 0 2px;">Original</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:60px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="imgInst-orig" style="max-width:100%;max-height:150px;object-fit:contain;"></div></div>
+                                    <div><p style="font-size:.7rem;color:#64748b;margin:0 0 2px;">Resultado</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:60px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="imgInst-result" style="max-width:100%;max-height:150px;object-fit:contain;"></div></div>
                                 </div>
                                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem .7rem;font-size:.78rem;margin-bottom:.35rem;">
                                     <div><label style="color:#64748b;">☀️ Brillo <span id="imgInst-brval">100</span>%</label><input type="range" id="imgInst-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                     <div><label style="color:#64748b;">🎨 Contraste <span id="imgInst-cnval">100</span>%</label><input type="range" id="imgInst-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                 </div>
                                 <div style="font-size:.78rem;margin-bottom:.35rem;">
-                                    <label style="color:#64748b;">📏 Tamaño en PDF <span id="imgInst-szval">60</span>px</label>
-                                    <input type="range" id="imgInst-sz" min="30" max="120" value="60" style="width:100%;accent-color:var(--primary);" oninput="document.getElementById('imgInst-szval').textContent=this.value; _giftImageData.instLogoSize=parseInt(this.value); document.getElementById('imgInst-result').style.maxHeight=this.value+'px'; if(typeof _updatePdfSim==='function') _updatePdfSim();">
+                                    <label style="color:#64748b;">📏 Tamaño en PDF <span id="imgInst-szval">60</span>px <span id="imgInst-szdesc" style="color:#9ca3af;font-style:italic;font-size:.7rem;">(normal)</span></label>
+                                    <input type="range" id="imgInst-sz" min="30" max="120" value="60" style="width:100%;accent-color:var(--primary);">
                                 </div>
                                 <div style="display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:.35rem;">
                                     <button type="button" class="btn-secondary" id="imgInst-rotL" style="padding:3px 9px;font-size:.77rem;" title="Rotar izquierda">↺90°</button>
@@ -6244,16 +6244,16 @@
                             </div>
                             <div id="imgProf-edit-section" style="display:none;margin-top:.45rem;padding-top:.45rem;border-top:1px solid #f1f5f9;">
                                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-bottom:.4rem;">
-                                    <div><p style="font-size:.7rem;color:#64748b;margin:0 0 2px;">Original</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:60px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="imgProf-orig" style="max-width:100%;max-height:90px;object-fit:contain;"></div></div>
-                                    <div><p style="font-size:.7rem;color:#64748b;margin:0 0 2px;">Resultado</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:60px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="imgProf-result" style="max-width:100%;max-height:90px;object-fit:contain;"></div></div>
+                                    <div><p style="font-size:.7rem;color:#64748b;margin:0 0 2px;">Original</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:60px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="imgProf-orig" style="max-width:100%;max-height:150px;object-fit:contain;"></div></div>
+                                    <div><p style="font-size:.7rem;color:#64748b;margin:0 0 2px;">Resultado</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:60px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="imgProf-result" style="max-width:100%;max-height:150px;object-fit:contain;"></div></div>
                                 </div>
                                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem .7rem;font-size:.78rem;margin-bottom:.35rem;">
                                     <div><label style="color:#64748b;">☀️ Brillo <span id="imgProf-brval">100</span>%</label><input type="range" id="imgProf-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                     <div><label style="color:#64748b;">🎨 Contraste <span id="imgProf-cnval">100</span>%</label><input type="range" id="imgProf-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                 </div>
                                 <div style="font-size:.78rem;margin-bottom:.35rem;">
-                                    <label style="color:#64748b;">📏 Tamaño en PDF <span id="imgProf-szval">60</span>px</label>
-                                    <input type="range" id="imgProf-sz" min="30" max="120" value="60" style="width:100%;accent-color:var(--primary);" oninput="document.getElementById('imgProf-szval').textContent=this.value; _giftImageData.proLogoSize=parseInt(this.value); document.getElementById('imgProf-result').style.maxHeight=this.value+'px'; if(typeof _updatePdfSim==='function') _updatePdfSim();">
+                                    <label style="color:#64748b;">📏 Tamaño en PDF <span id="imgProf-szval">60</span>px <span id="imgProf-szdesc" style="color:#9ca3af;font-style:italic;font-size:.7rem;">(normal)</span></label>
+                                    <input type="range" id="imgProf-sz" min="30" max="120" value="60" style="width:100%;accent-color:var(--primary);">
                                 </div>
                                 <div style="display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:.35rem;">
                                     <button type="button" class="btn-secondary" id="imgProf-rotL" style="padding:3px 9px;font-size:.77rem;">↺90°</button>
@@ -6295,16 +6295,16 @@
                             </div>
                             <div id="imgFirma-edit-section" style="display:none;margin-top:.45rem;padding-top:.45rem;border-top:1px solid #f1f5f9;">
                                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-bottom:.4rem;">
-                                    <div><p style="font-size:.7rem;color:#64748b;margin:0 0 2px;">Original</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:60px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="imgFirma-orig" style="max-width:100%;max-height:90px;object-fit:contain;"></div></div>
-                                    <div><p style="font-size:.7rem;color:#64748b;margin:0 0 2px;">Resultado</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:60px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="imgFirma-result" style="max-width:100%;max-height:90px;object-fit:contain;"></div></div>
+                                    <div><p style="font-size:.7rem;color:#64748b;margin:0 0 2px;">Original</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:60px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="imgFirma-orig" style="max-width:100%;max-height:150px;object-fit:contain;"></div></div>
+                                    <div><p style="font-size:.7rem;color:#64748b;margin:0 0 2px;">Resultado</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:60px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="imgFirma-result" style="max-width:100%;max-height:150px;object-fit:contain;"></div></div>
                                 </div>
                                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem .7rem;font-size:.78rem;margin-bottom:.35rem;">
                                     <div><label style="color:#64748b;">☀️ Brillo <span id="imgFirma-brval">100</span>%</label><input type="range" id="imgFirma-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                     <div><label style="color:#64748b;">🎨 Contraste <span id="imgFirma-cnval">100</span>%</label><input type="range" id="imgFirma-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                 </div>
                                 <div style="font-size:.78rem;margin-bottom:.35rem;">
-                                    <label style="color:#64748b;">📏 Tamaño en PDF <span id="imgFirma-szval">60</span>px</label>
-                                    <input type="range" id="imgFirma-sz" min="30" max="120" value="60" style="width:100%;accent-color:var(--primary);" oninput="document.getElementById('imgFirma-szval').textContent=this.value; _giftImageData.firmaSize=parseInt(this.value); document.getElementById('imgFirma-result').style.maxHeight=this.value+'px'; if(typeof _updatePdfSim==='function') _updatePdfSim();">
+                                    <label style="color:#64748b;">📏 Tamaño en PDF <span id="imgFirma-szval">60</span>px <span id="imgFirma-szdesc" style="color:#9ca3af;font-style:italic;font-size:.7rem;">(normal)</span></label>
+                                    <input type="range" id="imgFirma-sz" min="30" max="120" value="60" style="width:100%;accent-color:var(--primary);">
                                 </div>
                                 <div style="display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:.35rem;">
                                     <button type="button" class="btn-secondary" id="imgFirma-rotL" style="padding:3px 9px;font-size:.77rem;">↺90°</button>
@@ -6830,6 +6830,9 @@
             firma: { w: 500, h: 200, label: 'Firma digital' }
         };
 
+        /* ── Preview temporal (antes de aplicar con "Usar esta imagen") ── */
+        const _giftImagePreview = { inst: null, prof: null, firma: null };
+
         /* ── Estado ── */
         let _originalImage = null;
         let _resultB64 = null;
@@ -7035,6 +7038,9 @@
                     const ri = g('-result'); if (ri) ri.src = edited;
                     // también actualizar thumb si ya estaba procesado
                     showThumb(edited);
+                    // Actualizar preview PDF en tiempo real
+                    _giftImagePreview[cfg.type] = edited;
+                    _updatePdfSim();
                 };
                 base.src = state.resultB64;
             }
@@ -7073,6 +7079,9 @@
                 const cn = g('-cn'); if (cn) { cn.value = '100'; }
                 const cnval = g('-cnval'); if (cnval) cnval.textContent = '100';
                 const cl = g('-clear'); if (cl) cl.style.display = 'inline-flex';
+                // Resetear preview PDF al cargar nueva imagen
+                _giftImagePreview[cfg.type] = null;
+                _updatePdfSim();
                 setStatus('Listo para procesar', '#3b82f6');
             }
 
@@ -7114,6 +7123,8 @@
                     setStatus('Vacío', '');
                     cfg.saveResult && cfg.saveResult(null);
                     if (fileInput) fileInput.value = '';
+                    _giftImagePreview[cfg.type] = null;
+                    _updatePdfSim();
                 });
             }
 
@@ -7142,7 +7153,8 @@
                         const ps = g('-proc-section'); if (ps) ps.style.display = 'none';
                         const es = g('-edit-section'); if (es) es.style.display = 'block';
                         setStatus('✅ Procesada', '#10b981');
-                        // Actualizar preview PDF
+                        // Actualizar preview PDF con imagen procesada
+                        _giftImagePreview[cfg.type] = state.resultB64;
                         _updatePdfSim();
                     } catch (err) {
                         alert('Error al procesar: ' + err.message);
@@ -7158,6 +7170,16 @@
             if (brSlider) brSlider.addEventListener('input', () => { state.br = parseInt(brSlider.value,10); if(brVal) brVal.textContent = state.br; renderResult(); });
             const cnSlider = g('-cn'), cnVal = g('-cnval');
             if (cnSlider) cnSlider.addEventListener('input', () => { state.cn = parseInt(cnSlider.value,10); if(cnVal) cnVal.textContent = state.cn; renderResult(); });
+            const szSlider = g('-sz'), szVal = g('-szval'), szDesc = g('-szdesc');
+            if (szSlider) szSlider.addEventListener('input', () => {
+                const sz = parseInt(szSlider.value, 10);
+                if (szVal) szVal.textContent = sz;
+                if (szDesc) szDesc.textContent = sz <= 45 ? '(pequeño)' : sz <= 80 ? '(normal)' : '(grande)';
+                if (cfg.type === 'inst') _giftImageData.instLogoSize = sz;
+                else if (cfg.type === 'prof') _giftImageData.proLogoSize = sz;
+                else _giftImageData.firmaSize = sz;
+                _updatePdfSim();
+            });
 
             const rotLBtn = g('-rotL'); if (rotLBtn) rotLBtn.addEventListener('click', () => { state.rot = (state.rot - 90 + 360) % 360; renderResult(); });
             const rotRBtn = g('-rotR'); if (rotRBtn) rotRBtn.addEventListener('click', () => { state.rot = (state.rot + 90) % 360; renderResult(); });
@@ -7205,7 +7227,7 @@
             const simBanner  = document.getElementById('imgprocSimBanner');
             const simLL      = document.getElementById('imgprocSimLogoLeft');
             const firstWpKey = Object.keys(_giftWpLogoData || {})[0];
-            const instB64    = firstWpKey ? _giftWpLogoData[firstWpKey] : null;
+            const instB64    = _giftImagePreview.inst || (firstWpKey ? _giftWpLogoData[firstWpKey] : null);
             const instSize   = _giftImageData.instLogoSize || 60;
 
             if (simBanner) {
@@ -7247,7 +7269,7 @@
 
             // Logo del médico
             const simLR  = document.getElementById('imgprocSimLogoRight');
-            const profB64 = _giftImageData && _giftImageData.proLogo;
+            const profB64 = _giftImagePreview.prof || (_giftImageData && _giftImageData.proLogo);
             const profSize = _giftImageData.proLogoSize || 60;
             if (simLR) {
                 simLR.innerHTML = '';
@@ -7265,7 +7287,7 @@
             const simFirma    = document.getElementById('imgprocSimFirma');
             const simFirmaImg = document.getElementById('imgprocSimFirmaImg');
             const simFirmaName = document.getElementById('imgprocSimFirmaName');
-            const firmaB64 = _giftImageData && _giftImageData.firma;
+            const firmaB64 = _giftImagePreview.firma || (_giftImageData && _giftImageData.firma);
             const firmaSize = _giftImageData.firmaSize || 60;
             if (simFirma && simFirmaImg) {
                 if (firmaB64) {
