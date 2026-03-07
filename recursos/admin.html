@@ -1834,6 +1834,40 @@
         }
         .approve-modal .btn-row { display: flex; gap: .5rem; justify-content: flex-end; margin-top: 1.2rem; }
 
+        /* ── Panel lateral fijo de vista previa PDF ── */
+        .pdf-preview-side-panel {
+            position: fixed;
+            top: 50%;
+            right: 16px;
+            transform: translateY(-50%);
+            width: 340px;
+            max-height: 80vh;
+            overflow-y: auto;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,.15);
+            padding: .7rem;
+            z-index: 10001;
+            display: none;
+            animation: slideInRight .25s ease;
+        }
+        @keyframes slideInRight { from { opacity: 0; transform: translateY(-50%) translateX(30px); } to { opacity: 1; transform: translateY(-50%) translateX(0); } }
+        .pdf-preview-side-panel .preview-title {
+            font-size: .8rem; font-weight: 600; color: #64748b; margin-bottom: 6px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .pdf-preview-side-panel .preview-close {
+            background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #94a3b8; padding: 0 2px; line-height: 1;
+        }
+        .pdf-preview-side-panel .preview-close:hover { color: #ef4444; }
+        @media (max-width: 1200px) {
+            .pdf-preview-side-panel { width: 280px; right: 8px; }
+        }
+        @media (max-width: 900px) {
+            .pdf-preview-side-panel { width: 260px; right: 4px; font-size: .9em; }
+        }
+
         /* ── Template selector en modal aprobación ── */
         .tpl-pack-item { transition: all .2s; }
         .tpl-pack-item:hover { border-color: #0ea5e9 !important; }
@@ -3768,6 +3802,9 @@
             document.getElementById('cfModeNormal').style.display = 'block';
             document.getElementById('cfModeGift').style.display = 'none';
             document.getElementById('cfApiKeyLabel').textContent = '(para este usuario)';
+            // Ocultar panel de preview lateral GIFT
+            const _gSim = document.getElementById('imgprocSimBox');
+            if (_gSim) _gSim.style.display = 'none';
 
             // Rellenar datos en el modal
             document.getElementById('cfUserId').textContent      = user.ID_Medico   || '—';
@@ -3930,6 +3967,11 @@
             if (step === 4) updateGiftFinalSummary();
             // Inicializar procesador de imágenes al entrar al paso 5
             if (step === 5 && typeof _imgprocInitStep5 === 'function') _imgprocInitStep5();
+            // Ocultar preview lateral si salimos del paso 5
+            if (step !== 5) {
+                const giftSim = document.getElementById('imgprocSimBox');
+                if (giftSim) giftSim.style.display = 'none';
+            }
         }
 
         function selectGiftColor(color, el) {
@@ -5519,6 +5561,8 @@
 
         function closeApproveModal() {
             document.getElementById('approveModalOverlay').classList.remove('show');
+            const apvSim = document.getElementById('apvSimBox');
+            if (apvSim) apvSim.style.display = 'none';
         }
 
         function _toggleApproveVerify() {
@@ -6762,45 +6806,6 @@
                             </div>
                         </div>
 
-                        <!-- Preview PDF contextual -->
-                        <div class="gw-card" id="imgprocSimBox" style="display:none;">
-                            <p style="font-size:.8rem;font-weight:600;color:#64748b;margin-bottom:6px;">👁️ Preview en contexto (encabezado PDF)</p>
-                            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;font-family:'Times New Roman',serif;color:#222;font-size:10px;">
-                                <!-- Banner del lugar de trabajo -->
-                                <div id="imgprocSimBanner" style="display:none;background:var(--sim-accent,#1a56a0);color:#fff;padding:8px 12px;align-items:center;gap:10px;">
-                                    <div id="imgprocSimLogoLeft" style="flex-shrink:0;"></div>
-                                    <div style="flex:1;text-align:right;">
-                                        <div id="imgprocSimWpName" style="font-weight:700;font-size:12px;"></div>
-                                        <div id="imgprocSimWpDetails" style="font-size:9px;opacity:.85;"></div>
-                                    </div>
-                                </div>
-                                <!-- Fila estudio -->
-                                <div id="imgprocSimStudyRow" style="display:flex;border-bottom:1px solid #e5e7eb;background:#f8fafc;font-size:9px;padding:4px 10px;gap:8px;">
-                                    <div style="flex:1;"><span style="color:#64748b;font-weight:600;text-transform:uppercase;">Estudio:</span> <span id="imgprocSimStudy">—</span></div>
-                                    <div style="flex:1;text-align:center;"><span style="color:#64748b;font-weight:600;text-transform:uppercase;">Informe Nº:</span> <span>0001</span></div>
-                                    <div style="flex:1;text-align:right;"><span style="color:#64748b;font-weight:600;text-transform:uppercase;">Fecha:</span> <span id="imgprocSimDate"></span></div>
-                                </div>
-                                <!-- Encabezado profesional -->
-                                <div style="padding:8px 12px;display:flex;align-items:center;gap:10px;border-bottom:2px solid var(--sim-accent,#1a56a0);">
-                                    <div style="flex:1;text-align:center;">
-                                        <div id="imgprocSimProfName" style="font-weight:700;font-size:11px;"></div>
-                                        <div id="imgprocSimProfSpec" style="font-size:9px;color:#64748b;"></div>
-                                    </div>
-                                    <div id="imgprocSimLogoRight" style="flex-shrink:0;"></div>
-                                </div>
-                                <!-- Contenido placeholder -->
-                                <div style="padding:8px 12px;">
-                                    <p style="font-size:9px;color:#aaa;margin:4px 0;">Contenido del informe...</p>
-                                </div>
-                                <!-- Firma -->
-                                <div id="imgprocSimFirma" style="display:none;text-align:center;padding:6px 12px 10px;font-size:9px;">
-                                    <div id="imgprocSimFirmaImg"></div>
-                                    <div style="border-top:1px solid #333;width:70px;margin:2px auto 0;"></div>
-                                    <small id="imgprocSimFirmaName">Dr. Nombre Ejemplo · Mat. MP-000</small>
-                                </div>
-                            </div>
-                        </div>
-
                         <div style="display:flex;justify-content:space-between;margin-top:.8rem;">
                             <button type="button" class="btn-secondary" onclick="giftGoStep(4)" style="padding:7px 16px;font-size:.84rem;">← Anterior</button>
                         </div>
@@ -7314,41 +7319,6 @@
                                 <button type="button" class="btn-primary" id="apvProf-apply" style="width:100%;padding:5px 0;font-size:.78rem;background:#10b981;border-color:#10b981;">✅ Usar esta imagen</button>
                             </div>
                         </div>
-
-                        <!-- Preview PDF contextual (Approve Modal) -->
-                        <div id="apvSimBox" style="display:none;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:.5rem;margin-top:.6rem;">
-                            <p style="font-size:.78rem;font-weight:600;color:#64748b;margin-bottom:6px;">👁️ Vista previa del informe PDF</p>
-                            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;font-family:'Times New Roman',serif;color:#222;font-size:10px;">
-                                <div id="apvSimBanner" style="display:none;background:#1a56a0;color:#fff;padding:8px 12px;align-items:center;gap:10px;">
-                                    <div id="apvSimLogoLeft" style="flex-shrink:0;"></div>
-                                    <div style="flex:1;text-align:right;">
-                                        <div id="apvSimWpName" style="font-weight:700;font-size:12px;"></div>
-                                        <div id="apvSimWpDetails" style="font-size:9px;opacity:.85;"></div>
-                                    </div>
-                                </div>
-                                <div style="display:flex;border-bottom:1px solid #e5e7eb;background:#f8fafc;font-size:9px;padding:4px 10px;gap:8px;">
-                                    <div style="flex:1;"><span style="color:#64748b;font-weight:600;text-transform:uppercase;">Estudio:</span> <span id="apvSimStudy">—</span></div>
-                                    <div style="flex:1;text-align:center;"><span style="color:#64748b;font-weight:600;text-transform:uppercase;">Informe Nº:</span> <span>0001</span></div>
-                                    <div style="flex:1;text-align:right;"><span style="color:#64748b;font-weight:600;text-transform:uppercase;">Fecha:</span> <span id="apvSimDate"></span></div>
-                                </div>
-                                <div style="padding:8px 12px;display:flex;align-items:center;gap:10px;border-bottom:2px solid #1a56a0;" id="apvSimProfBar">
-                                    <div style="flex:1;text-align:center;">
-                                        <div id="apvSimProfName" style="font-weight:700;font-size:11px;"></div>
-                                        <div id="apvSimProfSpec" style="font-size:9px;color:#64748b;"></div>
-                                    </div>
-                                    <div id="apvSimLogoRight" style="flex-shrink:0;"></div>
-                                </div>
-                                <div style="padding:8px 12px;">
-                                    <p style="font-size:9px;color:#aaa;margin:4px 0;">Contenido del informe médico...</p>
-                                    <p style="font-size:9px;color:#ccc;margin:4px 0;">Lorem ipsum dolor sit amet, consectetur adipiscing elit...</p>
-                                </div>
-                                <div id="apvSimFirma" style="display:none;text-align:center;padding:6px 12px 10px;font-size:9px;">
-                                    <div id="apvSimFirmaImg"></div>
-                                    <div style="border-top:1px solid #333;width:70px;margin:2px auto 0;"></div>
-                                    <small id="apvSimFirmaName">Dr. Nombre · Mat. MP-000</small>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -7766,15 +7736,28 @@
                     ctx.drawImage(base, -sw/2, -sh/2, sw, sh);
                     ctx.restore();
                     const q = state.cmp / 100;
-                    const edited = q < 1 ? c.toDataURL('image/jpeg', q) : c.toDataURL('image/png');
+                    // Siempre PNG para preservar transparencia (JPEG pone fondo negro)
+                    let edited;
+                    if (q < 1) {
+                        const c2 = document.createElement('canvas');
+                        const s = Math.max(q, 0.3);
+                        c2.width = Math.round(ow * s); c2.height = Math.round(oh * s);
+                        const ctx2 = c2.getContext('2d');
+                        ctx2.drawImage(c, 0, 0, c2.width, c2.height);
+                        edited = c2.toDataURL('image/png');
+                    } else {
+                        edited = c.toDataURL('image/png');
+                    }
                     const ri = g('-result'); if (ri) ri.src = edited;
                     showThumb(edited);
                     notifyPreview(edited);
                     // Show file size estimate
                     const cmpInfo = g('-cmpinfo');
                     if (cmpInfo) {
+                        const finalW = q < 1 ? Math.round(ow * Math.max(q, 0.3)) : ow;
+                        const finalH = q < 1 ? Math.round(oh * Math.max(q, 0.3)) : oh;
                         const kb = Math.round(edited.length * 0.75 / 1024);
-                        cmpInfo.textContent = `~${kb} KB · ${ow}×${oh}px` + (q < 1 ? ' · JPEG' : ' · PNG');
+                        cmpInfo.textContent = `~${kb} KB · ${finalW}×${finalH}px · PNG`;
                     }
                 };
                 base.src = state.resultB64;
@@ -7796,7 +7779,15 @@
                         ctx.scale(state.fH?-1:1,state.fV?-1:1);
                         ctx.drawImage(base,-sw/2,-sh/2,sw,sh); ctx.restore();
                         const q = state.cmp / 100;
-                        resolve(q < 1 ? c.toDataURL('image/jpeg', q) : c.toDataURL('image/png'));
+                        if (q < 1) {
+                            const c2 = document.createElement('canvas');
+                            const s = Math.max(q, 0.3);
+                            c2.width = Math.round(ow * s); c2.height = Math.round(oh * s);
+                            c2.getContext('2d').drawImage(c, 0, 0, c2.width, c2.height);
+                            resolve(c2.toDataURL('image/png'));
+                        } else {
+                            resolve(c.toDataURL('image/png'));
+                        }
                     };
                     base.src = state.resultB64;
                 });
@@ -8349,5 +8340,80 @@
         else initNuImageProcessor();
     })();
     </script>
+
+    <!-- ═══ Panel lateral fijo: Preview PDF (GIFT) ═══ -->
+    <div class="pdf-preview-side-panel" id="imgprocSimBox">
+        <div class="preview-title">
+            <span>👁️ Vista previa PDF</span>
+            <button class="preview-close" onclick="document.getElementById('imgprocSimBox').style.display='none'" title="Cerrar">&times;</button>
+        </div>
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;font-family:'Times New Roman',serif;color:#222;font-size:10px;">
+            <div id="imgprocSimBanner" style="display:none;background:var(--sim-accent,#1a56a0);color:#fff;padding:8px 12px;align-items:center;gap:10px;">
+                <div id="imgprocSimLogoLeft" style="flex-shrink:0;"></div>
+                <div style="flex:1;text-align:right;">
+                    <div id="imgprocSimWpName" style="font-weight:700;font-size:12px;"></div>
+                    <div id="imgprocSimWpDetails" style="font-size:9px;opacity:.85;"></div>
+                </div>
+            </div>
+            <div id="imgprocSimStudyRow" style="display:flex;border-bottom:1px solid #e5e7eb;background:#f8fafc;font-size:9px;padding:4px 10px;gap:8px;">
+                <div style="flex:1;"><span style="color:#64748b;font-weight:600;text-transform:uppercase;">Estudio:</span> <span id="imgprocSimStudy">—</span></div>
+                <div style="flex:1;text-align:center;"><span style="color:#64748b;font-weight:600;text-transform:uppercase;">Informe Nº:</span> <span>0001</span></div>
+                <div style="flex:1;text-align:right;"><span style="color:#64748b;font-weight:600;text-transform:uppercase;">Fecha:</span> <span id="imgprocSimDate"></span></div>
+            </div>
+            <div style="padding:8px 12px;display:flex;align-items:center;gap:10px;border-bottom:2px solid var(--sim-accent,#1a56a0);">
+                <div style="flex:1;text-align:center;">
+                    <div id="imgprocSimProfName" style="font-weight:700;font-size:11px;"></div>
+                    <div id="imgprocSimProfSpec" style="font-size:9px;color:#64748b;"></div>
+                </div>
+                <div id="imgprocSimLogoRight" style="flex-shrink:0;"></div>
+            </div>
+            <div style="padding:8px 12px;">
+                <p style="font-size:9px;color:#aaa;margin:4px 0;">Contenido del informe...</p>
+            </div>
+            <div id="imgprocSimFirma" style="display:none;text-align:center;padding:6px 12px 10px;font-size:9px;">
+                <div id="imgprocSimFirmaImg"></div>
+                <div style="border-top:1px solid #333;width:70px;margin:2px auto 0;"></div>
+                <small id="imgprocSimFirmaName">Dr. Nombre Ejemplo · Mat. MP-000</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Panel lateral fijo: Preview PDF (Approve) ═══ -->
+    <div class="pdf-preview-side-panel" id="apvSimBox">
+        <div class="preview-title">
+            <span>👁️ Vista previa del informe PDF</span>
+            <button class="preview-close" onclick="document.getElementById('apvSimBox').style.display='none'" title="Cerrar">&times;</button>
+        </div>
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;font-family:'Times New Roman',serif;color:#222;font-size:10px;">
+            <div id="apvSimBanner" style="display:none;background:#1a56a0;color:#fff;padding:8px 12px;align-items:center;gap:10px;">
+                <div id="apvSimLogoLeft" style="flex-shrink:0;"></div>
+                <div style="flex:1;text-align:right;">
+                    <div id="apvSimWpName" style="font-weight:700;font-size:12px;"></div>
+                    <div id="apvSimWpDetails" style="font-size:9px;opacity:.85;"></div>
+                </div>
+            </div>
+            <div style="display:flex;border-bottom:1px solid #e5e7eb;background:#f8fafc;font-size:9px;padding:4px 10px;gap:8px;">
+                <div style="flex:1;"><span style="color:#64748b;font-weight:600;text-transform:uppercase;">Estudio:</span> <span id="apvSimStudy">—</span></div>
+                <div style="flex:1;text-align:center;"><span style="color:#64748b;font-weight:600;text-transform:uppercase;">Informe Nº:</span> <span>0001</span></div>
+                <div style="flex:1;text-align:right;"><span style="color:#64748b;font-weight:600;text-transform:uppercase;">Fecha:</span> <span id="apvSimDate"></span></div>
+            </div>
+            <div style="padding:8px 12px;display:flex;align-items:center;gap:10px;border-bottom:2px solid #1a56a0;" id="apvSimProfBar">
+                <div style="flex:1;text-align:center;">
+                    <div id="apvSimProfName" style="font-weight:700;font-size:11px;"></div>
+                    <div id="apvSimProfSpec" style="font-size:9px;color:#64748b;"></div>
+                </div>
+                <div id="apvSimLogoRight" style="flex-shrink:0;"></div>
+            </div>
+            <div style="padding:8px 12px;">
+                <p style="font-size:9px;color:#aaa;margin:4px 0;">Contenido del informe médico...</p>
+                <p style="font-size:9px;color:#ccc;margin:4px 0;">Lorem ipsum dolor sit amet...</p>
+            </div>
+            <div id="apvSimFirma" style="display:none;text-align:center;padding:6px 12px 10px;font-size:9px;">
+                <div id="apvSimFirmaImg"></div>
+                <div style="border-top:1px solid #333;width:70px;margin:2px auto 0;"></div>
+                <small id="apvSimFirmaName">Dr. Nombre · Mat. MP-000</small>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
