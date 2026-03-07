@@ -3710,8 +3710,22 @@
             document.getElementById('cfPlan').textContent         = (user.Plan || 'trial').toUpperCase();
             document.getElementById('cfEmail').textContent        = user.Email       || '—';
 
-            // Reset estado
-            document.getElementById('cfApiKey').value = user.API_Key || '';
+            // Reset estado — API Key en modo lectura (ya configurada en la aprobación)
+            const cfApiKeyInput = document.getElementById('cfApiKey');
+            cfApiKeyInput.value = user.API_Key || '';
+            cfApiKeyInput.readOnly = true;
+            cfApiKeyInput.style.background = '#f8fafc';
+            cfApiKeyInput.style.opacity = '0.75';
+            cfApiKeyInput.style.cursor = 'default';
+            const cfHint = document.getElementById('cfApiKeyHint');
+            if (cfHint) cfHint.textContent = user.API_Key
+                ? '✅ Configurada durante la aprobación — solo lectura'
+                : '⚠️ Sin API Key configurada — el usuario deberá ingresarla manualmente';
+            // Backup keys (solo lectura en modo normal)
+            const cfB1 = document.getElementById('cfApiKeyB1');
+            const cfB2 = document.getElementById('cfApiKeyB2');
+            if (cfB1) { cfB1.value = user.API_Key_B1 || ''; cfB1.readOnly = true; cfB1.style.background = '#f8fafc'; cfB1.style.opacity = '0.75'; cfB1.style.cursor = 'default'; }
+            if (cfB2) { cfB2.value = user.API_Key_B2 || ''; cfB2.readOnly = true; cfB2.style.background = '#f8fafc'; cfB2.style.opacity = '0.75'; cfB2.style.cursor = 'default'; }
             document.getElementById('cfLinkResult').style.display = 'none';
 
             // Botón
@@ -3794,8 +3808,20 @@
                 sel.innerHTML += `<option value="${esp}">${esp}</option>`;
             });
 
-            // Reset estado
-            document.getElementById('cfApiKey').value = '';
+            // Reset estado — API Key editable para usuario regalo (nuevo usuario, sin aprobación previa)
+            const cfApiKeyInputGift = document.getElementById('cfApiKey');
+            cfApiKeyInputGift.value = '';
+            cfApiKeyInputGift.readOnly = false;
+            cfApiKeyInputGift.style.background = '';
+            cfApiKeyInputGift.style.opacity = '';
+            cfApiKeyInputGift.style.cursor = '';
+            const cfHintGift = document.getElementById('cfApiKeyHint');
+            if (cfHintGift) cfHintGift.textContent = 'Si lo dejás vacío, el usuario deberá ingresar su propia API Key';
+            // Backup keys editables en modo gift
+            const cfB1g = document.getElementById('cfApiKeyB1');
+            const cfB2g = document.getElementById('cfApiKeyB2');
+            if (cfB1g) { cfB1g.value = ''; cfB1g.readOnly = false; cfB1g.style.background = ''; cfB1g.style.opacity = ''; cfB1g.style.cursor = ''; }
+            if (cfB2g) { cfB2g.value = ''; cfB2g.readOnly = false; cfB2g.style.background = ''; cfB2g.style.opacity = ''; cfB2g.style.cursor = ''; }
             document.getElementById('cfLinkResult').style.display = 'none';
 
             // Botón con estilo gift
@@ -4084,7 +4110,9 @@
 
         // Botón Generar Link (Normal + Gift)
         async function handleCfGenerate() {
-            const apiKey = document.getElementById('cfApiKey').value.trim();
+            const apiKey   = document.getElementById('cfApiKey').value.trim();
+            const apiKeyB1 = (document.getElementById('cfApiKeyB1')?.value || '').trim();
+            const apiKeyB2 = (document.getElementById('cfApiKeyB2')?.value || '').trim();
             const btn = document.getElementById('cfBtnGenerate');
             btn.disabled = true;
             const originalText = btn.textContent;
@@ -4179,6 +4207,8 @@
                         instLogoSize: _giftImageData.instLogoSize || 60,
                         notas: notas,
                         apiKey: apiKey,
+                        apiKeyB1: apiKeyB1,
+                        apiKeyB2: apiKeyB2,
                         hasProMode: selectedProMode
                     };
 
@@ -4194,6 +4224,8 @@
                         Fecha_Registro: now,
                         Fecha_Vencimiento: fechaVenc,
                         API_Key: apiKey,
+                        API_Key_B1: apiKeyB1,
+                        API_Key_B2: apiKeyB2,
                         Devices_Max: selectedDevices,
                         Allowed_Templates: allTemplatesJson,
                         Usage_Count: 0,
@@ -4252,14 +4284,10 @@
                     userName = _cfCurrentUser.Nombre || 'Doctor';
                     userEmail = _cfCurrentUser.Email || '';
 
-                    // Si hay API Key, guardarla en el Sheet
-                    if (apiKey) {
-                        const updateUrl = `${CONFIG.scriptUrl}?action=admin_update_user&${_getSessionAuthParams()}&userId=${encodeURIComponent(userId)}&updates=${encodeURIComponent(JSON.stringify({ API_Key: apiKey }))}`;
-                        await fetch(updateUrl);
-                    }
+                    // API Key ya fue guardada en la aprobación — no se re-escribe desde aquí
 
                     // Log
-                    const logUrl = `${CONFIG.scriptUrl}?action=admin_log_action&${_getSessionAuthParams()}&adminUser=${encodeURIComponent('admin')}&logAction=generate_link&userId=${encodeURIComponent(userId)}&details=${encodeURIComponent('Link generado' + (apiKey ? ' con API Key' : ' sin API Key'))}`;
+                    const logUrl = `${CONFIG.scriptUrl}?action=admin_log_action&${_getSessionAuthParams()}&adminUser=${encodeURIComponent('admin')}&logAction=generate_link&userId=${encodeURIComponent(userId)}&details=${encodeURIComponent('Link generado')}`;
                     fetch(logUrl).catch(() => {});
                 }
 
@@ -5008,6 +5036,8 @@
                 `Aprobar a ${reg.Nombre || 'Sin nombre'} (${reg.Email || '—'}) — Matrícula: ${reg.Matricula || '—'}`;
             document.getElementById('approvePlan').value = 'NORMAL';
             document.getElementById('approveApiKey').value = '';
+            document.getElementById('approveApiKeyB1').value = '';
+            document.getElementById('approveApiKeyB2').value = '';
             document.getElementById('approveModalOverlay').classList.add('show');
             updateApproveTemplateUI();
         }
@@ -5213,7 +5243,9 @@
         async function confirmApproval() {
             const regId = document.getElementById('approveRegId').value;
             const plan = document.getElementById('approvePlan').value;
-            const apiKey = document.getElementById('approveApiKey').value.trim();
+            const apiKey  = document.getElementById('approveApiKey').value.trim();
+            const apiKeyB1 = document.getElementById('approveApiKeyB1').value.trim();
+            const apiKeyB2 = document.getElementById('approveApiKeyB2').value.trim();
             const maxDevices = DEVICES_POR_PLAN[plan] || 2;
 
             if (!apiKey) {
@@ -5267,7 +5299,7 @@
 
             try {
                 const authStr = _getSessionAuthParams();
-                const url = `${CONFIG.scriptUrl}?action=admin_approve_registration&regId=${encodeURIComponent(regId)}&plan=${encodeURIComponent(plan)}&apiKey=${encodeURIComponent(apiKey)}&maxDevices=${encodeURIComponent(maxDevices)}&allowedTemplates=${encodeURIComponent(templatesStr)}&${authStr}`;
+                const url = `${CONFIG.scriptUrl}?action=admin_approve_registration&regId=${encodeURIComponent(regId)}&plan=${encodeURIComponent(plan)}&apiKey=${encodeURIComponent(apiKey)}&apiKeyB1=${encodeURIComponent(apiKeyB1)}&apiKeyB2=${encodeURIComponent(apiKeyB2)}&maxDevices=${encodeURIComponent(maxDevices)}&allowedTemplates=${encodeURIComponent(templatesStr)}&${authStr}`;
 
                 const res = await fetch(url);
                 const data = await res.json();
@@ -6031,7 +6063,17 @@
                     <div>
                         <label style="font-size:.83rem;color:#64748b;font-weight:600;">🔑 API Key de Groq <span id="cfApiKeyLabel">(para este usuario)</span></label>
                         <input type="text" id="cfApiKey" placeholder="gsk_..." style="width:100%;margin-top:4px;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.85rem;font-family:monospace;">
-                        <small style="color:#9ca3af;font-size:.75rem;">Si lo dejás vacío, el usuario deberá ingresar su propia API Key</small>
+                        <small id="cfApiKeyHint" style="color:#9ca3af;font-size:.75rem;">Si lo dejás vacío, el usuario deberá ingresar su propia API Key</small>
+                    </div>
+                    <div id="cfApiKeyBackups" style="display:flex;flex-direction:column;gap:.6rem;">
+                        <div>
+                            <label style="font-size:.8rem;color:#64748b;font-weight:600;">🔑 Backup Key 1 <span style="color:#9ca3af;font-weight:400;">(opcional)</span></label>
+                            <input type="text" id="cfApiKeyB1" placeholder="gsk_... segunda clave de respaldo" style="width:100%;margin-top:3px;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.82rem;font-family:monospace;">
+                        </div>
+                        <div>
+                            <label style="font-size:.8rem;color:#64748b;font-weight:600;">🔑 Backup Key 2 <span style="color:#9ca3af;font-weight:400;">(opcional)</span></label>
+                            <input type="text" id="cfApiKeyB2" placeholder="gsk_... tercera clave de respaldo" style="width:100%;margin-top:3px;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.82rem;font-family:monospace;">
+                        </div>
                     </div>
                 </div>
 
@@ -6309,9 +6351,19 @@
             </div>
 
             <div class="form-group" style="margin-bottom:.8rem;">
-                <label>API Key de Groq</label>
-                <input type="text" id="approveApiKey" placeholder="gsk_xxxxxxxxxxxxxxxx">
-                <small style="color:#94a3b8;font-size:.73rem;">Pegá la API Key asignada a este profesional</small>
+                <label>🔑 API Key de Groq <span style="color:#6b7280;font-weight:400;">(principal)</span></label>
+                <input type="text" id="approveApiKey" placeholder="gsk_xxxxxxxxxxxxxxxx" style="font-family:monospace;">
+                <small style="color:#94a3b8;font-size:.73rem;">Pegá la API Key asignada a este profesional — será la clave principal</small>
+            </div>
+            <div class="form-group" style="margin-bottom:.8rem;">
+                <label>🔑 Backup Key 1 <span style="color:#9ca3af;font-weight:400;font-size:.78rem;">(opcional)</span></label>
+                <input type="text" id="approveApiKeyB1" placeholder="gsk_... segunda clave de respaldo" style="font-family:monospace;">
+                <small style="color:#94a3b8;font-size:.73rem;">Si la principal falla por límite de uso, la app intentará con esta</small>
+            </div>
+            <div class="form-group" style="margin-bottom:.8rem;">
+                <label>🔑 Backup Key 2 <span style="color:#9ca3af;font-weight:400;font-size:.78rem;">(opcional)</span></label>
+                <input type="text" id="approveApiKeyB2" placeholder="gsk_... tercera clave de respaldo" style="font-family:monospace;">
+                <small style="color:#94a3b8;font-size:.73rem;">Tercer nivel de respaldo — se usa si las dos anteriores fallan</small>
             </div>
 
             <!-- Sección dinámica de plantillas según plan -->

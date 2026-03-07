@@ -692,7 +692,9 @@ function doGet(e) {
 
     const regId = e.parameter.regId;
     const plan = e.parameter.plan || 'NORMAL';
-    const apiKey = decodeURIComponent(e.parameter.apiKey || '');
+    const apiKey   = decodeURIComponent(e.parameter.apiKey   || '');
+    const apiKeyB1 = decodeURIComponent(e.parameter.apiKeyB1 || '');
+    const apiKeyB2 = decodeURIComponent(e.parameter.apiKeyB2 || '');
     const maxDevices = Number(e.parameter.maxDevices) || 2;
     const allowedTemplates = decodeURIComponent(e.parameter.allowedTemplates || '');
 
@@ -751,6 +753,8 @@ function doGet(e) {
         Estado: 'active',
         Fecha_Registro: now,
         API_Key: apiKey,
+        API_Key_B1: apiKeyB1,
+        API_Key_B2: apiKeyB2,
         Devices_Max: maxDevices,
         Allowed_Templates: allowedTemplates || '',
         Usage_Count: 0,
@@ -765,7 +769,9 @@ function doGet(e) {
           firma:           driveImages.firma       || '',
           logo:            regData.Workplace_Logo  ? 'yes' : '',
           notas:           regData.Notas           || '',
-          estudios:        regData.Estudios        || ''
+          estudios:        regData.Estudios        || '',
+          apiKeyB1:        apiKeyB1,
+          apiKeyB2:        apiKeyB2
         })
       };
 

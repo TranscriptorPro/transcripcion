@@ -406,7 +406,7 @@ function checkStructurePrerequisites() {
     return true;
 }
 
-// ── 4-attempt retry wrapper con fallback inteligente de modelos ───────────
+// ── 4-attempt retry wrapper con fallback inteligente de modelos y backup keys ───
 async function structureWithRetry(text, templateKey) {
     const strategy = [
         { model: GROQ_MODELS[0], temperature: 0.1  },
@@ -441,7 +441,28 @@ async function structureWithRetry(text, templateKey) {
             console.warn(`Structure [${idx + 1}/${strategy.length}] [${model}] → ${type}:`, err.message);
 
             if (type === 'auth') {
-                // API Key inválida — no reintentar, el pre-flight debería haberlo evitado
+                // API Key principal inválida → intentar con claves de respaldo antes de rendirse
+                const backupKeys = [
+                    localStorage.getItem('groq_api_key_b1'),
+                    localStorage.getItem('groq_api_key_b2')
+                ].filter(k => k && k.startsWith('gsk_'));
+
+                for (let bi = 0; bi < backupKeys.length; bi++) {
+                    const prevKey = window.GROQ_API_KEY;
+                    window.GROQ_API_KEY = backupKeys[bi];
+                    if (typeof showToast === 'function') showToast(`🔑 Intentando con Backup Key ${bi + 1}...`, 'info');
+                    try {
+                        const resultBackup = await structureTranscription(text, templateKey, temperature, model);
+                        if (resultBackup.length < 80 && text.length > 300) throw new Error('Respuesta muy corta');
+                        // Backup funcionó — persistir como key activa temporalmente
+                        console.info(`[Structurer] Backup Key ${bi + 1} OK`);
+                        return resultBackup;
+                    } catch (backupErr) {
+                        window.GROQ_API_KEY = prevKey;
+                        console.warn(`[Structurer] Backup Key ${bi + 1} falló:`, backupErr.message);
+                    }
+                }
+                // Todos los backups fallaron
                 throw err;
             }
 
