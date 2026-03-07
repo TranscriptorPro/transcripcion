@@ -3965,6 +3965,7 @@
         let _giftWpLogoData = {};
         let _giftImageData = { firma: null, proLogo: null, proLogoSize: 60, firmaSize: 60, instLogoSize: 60 };
         let _giftActiveInstWp = 0;  // WP activo para el editor de logo institucional
+        const _giftImagePreview = { inst: null, prof: null, firma: null };
 
         // ── Gift Wizard: navegación de pasos ─────────────────────────────────
         function giftGoStep(step) {
@@ -3980,10 +3981,15 @@
             if (step === 4) updateGiftFinalSummary();
             // Inicializar procesador de imágenes al entrar al paso 5
             if (step === 5 && typeof _imgprocInitStep5 === 'function') _imgprocInitStep5();
-            // Ocultar preview lateral si salimos del paso 5
-            if (step !== 5) {
+            // Ocultar preview lateral si salimos de los pasos con editores
+            if (step !== 2 && step !== 5) {
                 const giftSim = document.getElementById('imgprocSimBox');
                 if (giftSim) giftSim.style.display = 'none';
+            }
+            // Mostrar preview lateral en paso 2 (workplaces con logos) y paso 5 (firma/logo prof)
+            if (step === 2 || step === 5) {
+                const giftSim = document.getElementById('imgprocSimBox');
+                if (giftSim) { giftSim.style.display = ''; _updatePdfSim(); }
             }
         }
 
@@ -7637,8 +7643,7 @@
             firma: { w: 500, h: 200, label: 'Firma digital' }
         };
 
-        /* ── Preview temporal (antes de aplicar con "Usar esta imagen") ── */
-        const _giftImagePreview = { inst: null, prof: null, firma: null };
+        /* ── Preview temporal — declaración movida al bloque GIFT state (arriba) ── */
 
         /* ── Estado ── */
         let _originalImage = null;
