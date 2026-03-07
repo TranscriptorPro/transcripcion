@@ -1836,23 +1836,21 @@
 
         /* ── Panel lateral fijo de vista previa PDF ── */
         .pdf-preview-side-panel {
-            position: fixed;
-            top: 50%;
-            right: 16px;
-            transform: translateY(-50%);
-            width: 340px;
-            max-height: 80vh;
+            width: 380px;
+            min-width: 320px;
+            max-height: 85vh;
             overflow-y: auto;
             background: #fff;
             border: 1px solid #e2e8f0;
             border-radius: 12px;
             box-shadow: 0 8px 32px rgba(0,0,0,.15);
             padding: .7rem;
-            z-index: 10001;
             display: none;
-            animation: slideInRight .25s ease;
+            flex-shrink: 0;
+            align-self: flex-start;
+            position: sticky;
+            top: 2vh;
         }
-        @keyframes slideInRight { from { opacity: 0; transform: translateY(-50%) translateX(30px); } to { opacity: 1; transform: translateY(-50%) translateX(0); } }
         .pdf-preview-side-panel .preview-title {
             font-size: .8rem; font-weight: 600; color: #64748b; margin-bottom: 6px;
             display: flex; align-items: center; justify-content: space-between;
@@ -1861,11 +1859,25 @@
             background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #94a3b8; padding: 0 2px; line-height: 1;
         }
         .pdf-preview-side-panel .preview-close:hover { color: #ef4444; }
+        /* Simulación del PDF A4 */
+        .pdf-sim-page {
+            background: #fff; border: 1px solid #d1d5db; border-radius: 4px;
+            box-shadow: 0 1px 4px rgba(0,0,0,.08);
+            font-family: 'Times New Roman', serif; color: #222; font-size: 10px;
+            aspect-ratio: 210 / 297; width: 100%; overflow: hidden;
+            display: flex; flex-direction: column;
+        }
+        .pdf-sim-banner { display: none; color: #fff; padding: 8px 14px; align-items: center; gap: 10px; }
+        .pdf-sim-header { padding: 10px 16px 6px; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid var(--sim-accent,#1a56a0); }
+        .pdf-sim-study-row { display: flex; border-bottom: 1px solid #e5e7eb; background: #f8fafc; font-size: 8px; padding: 4px 14px; gap: 6px; }
+        .pdf-sim-body { flex: 1; padding: 10px 16px; }
+        .pdf-sim-firma { text-align: right; padding: 8px 20px 12px; font-size: 9px; display: none; }
+        .pdf-sim-footer { font-size: 7px; color: #999; text-align: center; padding: 4px 14px 6px; border-top: 1px solid #e5e7eb; font-style: italic; }
         @media (max-width: 1200px) {
-            .pdf-preview-side-panel { width: 280px; right: 8px; }
+            .pdf-preview-side-panel { width: 320px; min-width: 280px; }
         }
         @media (max-width: 900px) {
-            .pdf-preview-side-panel { width: 260px; right: 4px; font-size: .9em; }
+            .pdf-preview-side-panel { width: 280px; min-width: 240px; font-size: .9em; }
         }
 
         /* ── Template selector en modal aprobación ── */
@@ -3952,6 +3964,7 @@
         let _giftWpCounter = 0;
         let _giftWpLogoData = {};
         let _giftImageData = { firma: null, proLogo: null, proLogoSize: 60, firmaSize: 60, instLogoSize: 60 };
+        let _giftActiveInstWp = 0;  // WP activo para el editor de logo institucional
 
         // ── Gift Wizard: navegación de pasos ─────────────────────────────────
         function giftGoStep(step) {
@@ -4126,6 +4139,59 @@
                             <input type="file" accept="image/png,image/jpeg,image/webp" onchange="previewGiftWpLogo(this, ${index})">
                         </div>
                         <div class="gw-upload-preview" id="gwWpLogoPreview${index}"></div>
+                        <!-- Herramientas de edición del logo institucional -->
+                        <div id="gwLogo${index}-editor-wrap" style="display:none;margin-top:.5rem;border:1px solid #e2e8f0;border-radius:8px;padding:.6rem;background:#fafbff;">
+                            <p style="font-size:.78rem;font-weight:600;color:#1e40af;margin:0 0 .4rem;">🖼️ Editor de Logo Institucional</p>
+                            <div id="gwLogo${index}-thumb-wrap" style="display:none;background:repeating-conic-gradient(#e0e0e0 0% 25%,#fff 0% 50%) 0 0/12px 12px;border-radius:6px;padding:6px;text-align:center;margin-bottom:.45rem;">
+                                <img id="gwLogo${index}-thumb" style="max-height:50px;max-width:100%;object-fit:contain;">
+                            </div>
+                            <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.4rem;">
+                                <label class="btn-secondary" for="gwLogo${index}-file" style="padding:4px 10px;font-size:.78rem;cursor:pointer;">📂 Cambiar imagen</label>
+                                <input type="file" id="gwLogo${index}-file" accept="image/*" style="display:none;">
+                                <button type="button" class="btn-secondary" id="gwLogo${index}-clear" style="padding:4px 7px;font-size:.78rem;display:none;color:#ef4444;border-color:#fca5a5;" title="Quitar imagen">🗑️</button>
+                                <span id="gwLogo${index}-status" style="font-size:.68rem;padding:2px 7px;border-radius:10px;background:#f1f5f9;color:#64748b;margin-left:auto;">Vacío</span>
+                            </div>
+                            <div id="gwLogo${index}-proc-section" style="display:none;margin-top:.35rem;padding-top:.35rem;border-top:1px solid #e2e8f0;">
+                                <div style="display:flex;gap:.6rem;flex-wrap:wrap;font-size:.78rem;margin-bottom:.3rem;">
+                                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="gwLogo${index}-bg" checked style="accent-color:var(--primary);"> 🤖 Quitar fondo</label>
+                                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="gwLogo${index}-trim" checked style="accent-color:var(--primary);"> ✂️ Auto-recortar</label>
+                                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="gwLogo${index}-scale" checked style="accent-color:var(--primary);"> 📐 Escalar</label>
+                                </div>
+                                <button type="button" class="btn-primary" id="gwLogo${index}-process" style="width:100%;padding:5px 0;font-size:.8rem;">⚙️ Procesar imagen</button>
+                            </div>
+                            <div id="gwLogo${index}-edit-section" style="display:none;margin-top:.35rem;padding-top:.35rem;border-top:1px solid #e2e8f0;">
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.35rem;margin-bottom:.35rem;">
+                                    <div><p style="font-size:.68rem;color:#64748b;margin:0 0 2px;">Original</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:50px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="gwLogo${index}-orig" style="max-width:100%;max-height:120px;object-fit:contain;"></div></div>
+                                    <div><p style="font-size:.68rem;color:#64748b;margin:0 0 2px;">Resultado</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:50px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="gwLogo${index}-result" style="max-width:100%;max-height:120px;object-fit:contain;"></div></div>
+                                </div>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.25rem .6rem;font-size:.76rem;margin-bottom:.3rem;">
+                                    <div><label style="color:#64748b;">☀️ Brillo <span id="gwLogo${index}-brval">100</span>%</label><input type="range" id="gwLogo${index}-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
+                                    <div><label style="color:#64748b;">🎨 Contraste <span id="gwLogo${index}-cnval">100</span>%</label><input type="range" id="gwLogo${index}-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
+                                </div>
+                                <div style="font-size:.76rem;margin-bottom:.3rem;">
+                                    <label style="color:#475569;font-weight:600;">📐 Escala <span id="gwLogo${index}-scaleval">100</span>% <span id="gwLogo${index}-rdims" style="font-size:.63rem;color:#94a3b8;font-weight:400;margin-left:4px;"></span></label>
+                                    <input type="range" id="gwLogo${index}-rscale" min="10" max="300" value="100" style="width:100%;accent-color:var(--primary);">
+                                </div>
+                                <div style="font-size:.76rem;margin-bottom:.3rem;">
+                                    <label style="color:#64748b;">🗜️ Compresión <span id="gwLogo${index}-cmpval">92</span>%</label>
+                                    <input type="range" id="gwLogo${index}-cmp" min="10" max="100" value="92" style="width:100%;accent-color:var(--primary);">
+                                    <p id="gwLogo${index}-cmpinfo" style="font-size:.63rem;color:#94a3b8;margin:2px 0 0;"></p>
+                                </div>
+                                <div style="font-size:.76rem;margin-bottom:.3rem;">
+                                    <label style="color:#64748b;">📏 Tamaño en PDF <span id="gwLogo${index}-szval">60</span>px <span id="gwLogo${index}-szdesc" style="color:#9ca3af;font-style:italic;font-size:.68rem;">(normal)</span></label>
+                                    <input type="range" id="gwLogo${index}-sz" min="30" max="120" value="60" style="width:100%;accent-color:var(--primary);">
+                                </div>
+                                <div style="display:flex;gap:.25rem;flex-wrap:wrap;margin-bottom:.3rem;">
+                                    <button type="button" class="btn-secondary" id="gwLogo${index}-rotL" style="padding:3px 8px;font-size:.75rem;" title="Rotar izquierda">↺90°</button>
+                                    <button type="button" class="btn-secondary" id="gwLogo${index}-rotR" style="padding:3px 8px;font-size:.75rem;" title="Rotar derecha">↻90°</button>
+                                    <button type="button" class="btn-secondary" id="gwLogo${index}-fH" style="padding:3px 8px;font-size:.75rem;" title="Voltear horizontal">⟺H</button>
+                                    <button type="button" class="btn-secondary" id="gwLogo${index}-fV" style="padding:3px 8px;font-size:.75rem;" title="Voltear vertical">⇅V</button>
+                                    <button type="button" class="btn-secondary" id="gwLogo${index}-crop" style="padding:3px 8px;font-size:.75rem;" title="Recortar imagen">✂️ Recortar</button>
+                                    <button type="button" class="btn-secondary" id="gwLogo${index}-reset" style="padding:3px 8px;font-size:.75rem;margin-left:auto;" title="Resetear">↩</button>
+                                </div>
+                                <button type="button" class="btn-primary" id="gwLogo${index}-apply" style="width:100%;padding:5px 0;font-size:.8rem;background:#10b981;border-color:#10b981;">✅ Usar este logo</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -4175,6 +4241,9 @@
             }
         }
 
+        // Store editors per workplace
+        const _giftWpLogoEditors = {};
+
         function previewGiftWpLogo(input, index) {
             const file = input.files[0];
             if (!file) return;
@@ -4185,10 +4254,46 @@
             }
             const reader = new FileReader();
             reader.onload = (e) => {
-                document.getElementById('gwWpLogoPreview' + index).innerHTML = '<img src="' + e.target.result + '" alt="Logo">';
-                _giftWpLogoData[index] = e.target.result;
+                const b64 = e.target.result;
+                document.getElementById('gwWpLogoPreview' + index).innerHTML = '<img src="' + b64 + '" alt="Logo">';
+                _giftWpLogoData[index] = b64;
+                // Show editor and initialize if needed
+                const editorWrap = document.getElementById('gwLogo' + index + '-editor-wrap');
+                if (editorWrap) {
+                    editorWrap.style.display = 'block';
+                    _initGiftWpLogoEditor(index, b64);
+                }
             };
             reader.readAsDataURL(file);
+        }
+
+        function _initGiftWpLogoEditor(index, b64) {
+            if (_giftWpLogoEditors[index]) {
+                // Editor already exists, just load the new image
+                _giftWpLogoEditors[index].loadB64(b64);
+                return;
+            }
+            if (!window._makeImageSection) return;
+            _giftWpLogoEditors[index] = window._makeImageSection({
+                type: 'inst', prefix: 'gwLogo' + index,
+                getFromPrev: null,
+                saveResult: (b64) => {
+                    _giftWpLogoData[index] = b64;
+                    const prev = document.getElementById('gwWpLogoPreview' + index);
+                    if (prev && b64) prev.innerHTML = '<img src="' + b64 + '" alt="Logo" style="max-height:50px;">';
+                    _giftImagePreview.inst = b64;
+                    _updatePdfSim();
+                },
+                onPreviewUpdate: (type, b64val) => {
+                    _giftImagePreview.inst = b64val;
+                    _updatePdfSim();
+                },
+                onSizeUpdate: (type, sz) => {
+                    _giftImageData.instLogoSize = sz;
+                    _updatePdfSim();
+                }
+            });
+            _giftWpLogoEditors[index].loadB64(b64);
         }
 
         // ── Gift Wizard: Firma/Logo preview ──────────────────────────────────
@@ -5165,28 +5270,34 @@
         let _approveImageSizes = { inst: 60, prof: 60, firma: 60 };
         let _apvFirmaEditor = null;
         let _apvProfEditor = null;
-        let _apvInstEditor = null;
+        let _approveActiveInstWp = 0;  // WP activo para preview
 
         function _updateApprovePreview() {
             const simBox = document.getElementById('apvSimBox');
             if (!simBox) return;
-            const nombre = (document.getElementById('approveEditNombre') || {}).value?.trim() || 'Dr. Nombre Ejemplo';
+            const nombre = (document.getElementById('approveEditNombre') || {}).value?.trim() || 'Dr. Nombre';
             const matricula = (document.getElementById('approveEditMatricula') || {}).value?.trim() || 'MP-000';
             const especialidad = (document.getElementById('approveEditEspecialidades') || {}).value?.trim() || '';
             const accent = (document.getElementById('approveEditHeaderColor') || {}).value || '#1a56a0';
-            const wpFields = document.querySelectorAll('.approve-wp-field[data-wp="0"]');
+            const wpIdx = _approveActiveInstWp;
+            const wpFields = document.querySelectorAll('.approve-wp-field[data-wp="' + wpIdx + '"]');
             let wpName = '', wpAddress = '', wpPhone = '';
             wpFields.forEach(f => {
                 if (f.dataset.field === 'name') wpName = f.value.trim();
                 if (f.dataset.field === 'address') wpAddress = f.value.trim();
                 if (f.dataset.field === 'phone') wpPhone = f.value.trim();
             });
-            const instB64 = _approveImagePreview.inst;
+            const instB64 = _approveImagePreview.inst || (_approveWpLogos[wpIdx] || null);
             const profB64 = _approveImagePreview.prof;
             const firmaB64 = _approveImagePreview.firma;
             const instSize = _approveImageSizes.inst || 60;
             const profSize = _approveImageSizes.prof || 60;
             const firmaSize = _approveImageSizes.firma || 60;
+
+            // Color de acento en la página
+            const simPage = simBox.querySelector('.pdf-sim-page');
+            if (simPage) simPage.style.setProperty('--sim-accent', accent);
+
             const simBanner = document.getElementById('apvSimBanner');
             const simLL = document.getElementById('apvSimLogoLeft');
             if (simBanner) {
@@ -5204,15 +5315,9 @@
                 }
                 const wpN = document.getElementById('apvSimWpName');
                 const wpD = document.getElementById('apvSimWpDetails');
-                if (wpN) wpN.textContent = wpName;
+                if (wpN) wpN.textContent = wpName ? wpName.toUpperCase() : '';
                 if (wpD) wpD.textContent = [wpAddress, wpPhone ? 'Tel: ' + wpPhone : ''].filter(Boolean).join(' · ');
             }
-            const profBar = document.getElementById('apvSimProfBar');
-            if (profBar) profBar.style.borderBottomColor = accent;
-            const simStudy = document.getElementById('apvSimStudy');
-            if (simStudy) simStudy.textContent = especialidad || 'Estudio';
-            const simDate = document.getElementById('apvSimDate');
-            if (simDate) simDate.textContent = new Date().toLocaleDateString('es-ES', {day:'2-digit',month:'2-digit',year:'numeric'});
             const simProfName = document.getElementById('apvSimProfName');
             const simProfSpec = document.getElementById('apvSimProfSpec');
             if (simProfName) simProfName.textContent = nombre;
@@ -5222,11 +5327,15 @@
                 simLR.innerHTML = '';
                 if (profB64) {
                     const i = document.createElement('img');
-                    i.src = profB64; i.style.height = Math.round(profSize * 0.6) + 'px';
+                    i.src = profB64; i.style.height = Math.round(profSize * 0.55) + 'px';
                     i.style.width = 'auto'; i.style.objectFit = 'contain';
                     simLR.appendChild(i);
                 }
             }
+            const simStudy = document.getElementById('apvSimStudy');
+            if (simStudy) simStudy.textContent = especialidad || 'Estudio';
+            const simDate = document.getElementById('apvSimDate');
+            if (simDate) simDate.textContent = new Date().toLocaleDateString('es-ES', {day:'2-digit',month:'2-digit',year:'numeric'});
             const simFirma = document.getElementById('apvSimFirma');
             const simFirmaImg = document.getElementById('apvSimFirmaImg');
             const simFirmaName = document.getElementById('apvSimFirmaName');
@@ -5235,8 +5344,8 @@
                     simFirma.style.display = 'block';
                     simFirmaImg.innerHTML = '';
                     const i = document.createElement('img');
-                    i.src = firmaB64; i.style.maxWidth = Math.round(firmaSize * 2) + 'px';
-                    i.style.maxHeight = Math.round(firmaSize * 0.8) + 'px'; i.style.objectFit = 'contain';
+                    i.src = firmaB64; i.style.maxWidth = Math.round(firmaSize * 1.5) + 'px';
+                    i.style.maxHeight = Math.round(firmaSize * 0.7) + 'px'; i.style.objectFit = 'contain';
                     simFirmaImg.appendChild(i);
                 } else { simFirma.style.display = 'none'; }
             }
@@ -5261,19 +5370,6 @@
                     type: 'prof', prefix: 'apvProf',
                     getFromPrev: null,
                     saveResult: (b64) => { _approveImageData.proLogo = b64; },
-                    onPreviewUpdate: _apvPreviewCb, onSizeUpdate: _apvSizeCb
-                });
-            }
-            if (!_apvInstEditor) {
-                _apvInstEditor = window._makeImageSection({
-                    type: 'inst', prefix: 'apvInst',
-                    getFromPrev: null,
-                    saveResult: (b64) => {
-                        _approveImageData.instLogo = b64;
-                        _approveWpLogos[0] = b64;
-                        const preview = document.getElementById('approveWp0-logo-preview');
-                        if (preview && b64) preview.innerHTML = '<img src="' + b64 + '" style="max-height:40px;max-width:100%;object-fit:contain;">';
-                    },
                     onPreviewUpdate: _apvPreviewCb, onSizeUpdate: _apvSizeCb
                 });
             }
@@ -5331,9 +5427,104 @@
                             <input type="file" id="${id}-logo-file" accept="image/*" style="display:none;" onchange="_approveWpLogoChange(${i}, this)">
                             <button type="button" class="btn-secondary" onclick="_approveWpLogoClear(${i})" style="padding:2px 7px;font-size:.72rem;color:#ef4444;border-color:#fca5a5;">🗑️</button>
                         </div>
+                        <!-- Editor de logo institucional inline -->
+                        <div id="apvWpLogo${i}-editor-wrap" style="display:${hasLogo ? 'block' : 'none'};margin-top:.4rem;border:1px solid #e2e8f0;border-radius:7px;padding:.5rem;background:#fafbff;">
+                            <p style="font-size:.74rem;font-weight:600;color:#1e40af;margin:0 0 .35rem;">🖼️ Editor de Logo</p>
+                            <div id="apvWpLogo${i}-thumb-wrap" style="display:none;background:repeating-conic-gradient(#e0e0e0 0% 25%,#fff 0% 50%) 0 0/12px 12px;border-radius:5px;padding:5px;text-align:center;margin-bottom:.35rem;">
+                                <img id="apvWpLogo${i}-thumb" style="max-height:45px;max-width:100%;object-fit:contain;">
+                            </div>
+                            <div style="display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:.35rem;">
+                                <label class="btn-secondary" for="apvWpLogo${i}-file" style="padding:3px 8px;font-size:.72rem;cursor:pointer;">📂 Cambiar</label>
+                                <input type="file" id="apvWpLogo${i}-file" accept="image/*" style="display:none;">
+                                <button type="button" class="btn-secondary" id="apvWpLogo${i}-clear" style="padding:3px 6px;font-size:.72rem;display:none;color:#ef4444;border-color:#fca5a5;">🗑️</button>
+                                <span id="apvWpLogo${i}-status" style="font-size:.65rem;padding:2px 6px;border-radius:10px;background:#f1f5f9;color:#64748b;margin-left:auto;">Vacío</span>
+                            </div>
+                            <div id="apvWpLogo${i}-proc-section" style="display:none;margin-top:.3rem;padding-top:.3rem;border-top:1px solid #e2e8f0;">
+                                <div style="display:flex;gap:.5rem;flex-wrap:wrap;font-size:.72rem;margin-bottom:.25rem;">
+                                    <label style="display:flex;align-items:center;gap:3px;cursor:pointer;"><input type="checkbox" id="apvWpLogo${i}-bg" checked style="accent-color:var(--primary);"> 🤖 Fondo</label>
+                                    <label style="display:flex;align-items:center;gap:3px;cursor:pointer;"><input type="checkbox" id="apvWpLogo${i}-trim" checked style="accent-color:var(--primary);"> ✂️ Recortar</label>
+                                    <label style="display:flex;align-items:center;gap:3px;cursor:pointer;"><input type="checkbox" id="apvWpLogo${i}-scale" checked style="accent-color:var(--primary);"> 📐 Escalar</label>
+                                </div>
+                                <button type="button" class="btn-primary" id="apvWpLogo${i}-process" style="width:100%;padding:4px 0;font-size:.74rem;">⚙️ Procesar</button>
+                            </div>
+                            <div id="apvWpLogo${i}-edit-section" style="display:none;margin-top:.3rem;padding-top:.3rem;border-top:1px solid #e2e8f0;">
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem;margin-bottom:.3rem;">
+                                    <div><p style="font-size:.64rem;color:#64748b;margin:0 0 2px;">Original</p><div class="imgproc-checkerboard" style="border-radius:4px;min-height:40px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="apvWpLogo${i}-orig" style="max-width:100%;max-height:100px;object-fit:contain;"></div></div>
+                                    <div><p style="font-size:.64rem;color:#64748b;margin:0 0 2px;">Resultado</p><div class="imgproc-checkerboard" style="border-radius:4px;min-height:40px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="apvWpLogo${i}-result" style="max-width:100%;max-height:100px;object-fit:contain;"></div></div>
+                                </div>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.2rem .5rem;font-size:.72rem;margin-bottom:.25rem;">
+                                    <div><label style="color:#64748b;">☀️ Brillo <span id="apvWpLogo${i}-brval">100</span>%</label><input type="range" id="apvWpLogo${i}-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
+                                    <div><label style="color:#64748b;">🎨 Contraste <span id="apvWpLogo${i}-cnval">100</span>%</label><input type="range" id="apvWpLogo${i}-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
+                                </div>
+                                <div style="font-size:.72rem;margin-bottom:.25rem;">
+                                    <label style="color:#475569;font-weight:600;">📐 Escala <span id="apvWpLogo${i}-scaleval">100</span>% <span id="apvWpLogo${i}-rdims" style="font-size:.6rem;color:#94a3b8;font-weight:400;margin-left:4px;"></span></label>
+                                    <input type="range" id="apvWpLogo${i}-rscale" min="10" max="300" value="100" style="width:100%;accent-color:var(--primary);">
+                                </div>
+                                <div style="font-size:.72rem;margin-bottom:.25rem;">
+                                    <label style="color:#64748b;">🗜️ Compresión <span id="apvWpLogo${i}-cmpval">92</span>%</label>
+                                    <input type="range" id="apvWpLogo${i}-cmp" min="10" max="100" value="92" style="width:100%;accent-color:var(--primary);">
+                                    <p id="apvWpLogo${i}-cmpinfo" style="font-size:.6rem;color:#94a3b8;margin:2px 0 0;"></p>
+                                </div>
+                                <div style="font-size:.72rem;margin-bottom:.25rem;">
+                                    <label style="color:#64748b;">📏 PDF <span id="apvWpLogo${i}-szval">60</span>px <span id="apvWpLogo${i}-szdesc" style="color:#9ca3af;font-style:italic;font-size:.64rem;">(normal)</span></label>
+                                    <input type="range" id="apvWpLogo${i}-sz" min="30" max="120" value="60" style="width:100%;accent-color:var(--primary);">
+                                </div>
+                                <div style="display:flex;gap:.2rem;flex-wrap:wrap;margin-bottom:.25rem;">
+                                    <button type="button" class="btn-secondary" id="apvWpLogo${i}-rotL" style="padding:2px 7px;font-size:.7rem;">↺90°</button>
+                                    <button type="button" class="btn-secondary" id="apvWpLogo${i}-rotR" style="padding:2px 7px;font-size:.7rem;">↻90°</button>
+                                    <button type="button" class="btn-secondary" id="apvWpLogo${i}-fH" style="padding:2px 7px;font-size:.7rem;">⟺H</button>
+                                    <button type="button" class="btn-secondary" id="apvWpLogo${i}-fV" style="padding:2px 7px;font-size:.7rem;">⇅V</button>
+                                    <button type="button" class="btn-secondary" id="apvWpLogo${i}-crop" style="padding:2px 7px;font-size:.7rem;" title="Recortar">✂️</button>
+                                    <button type="button" class="btn-secondary" id="apvWpLogo${i}-reset" style="padding:2px 7px;font-size:.7rem;margin-left:auto;">↩</button>
+                                </div>
+                                <button type="button" class="btn-primary" id="apvWpLogo${i}-apply" style="width:100%;padding:4px 0;font-size:.74rem;background:#10b981;border-color:#10b981;">✅ Usar este logo</button>
+                            </div>
+                        </div>
                     </div>
                 </details>`;
             }).join('');
+
+            // Initialize editors for WPs that already have logos
+            allWps.forEach((wp, i) => {
+                const hasLogo = wp.logo && wp.logo !== 'null' && wp.logo !== 'no';
+                if (hasLogo) {
+                    const logoB64 = wp.logo.startsWith('data:') ? wp.logo : 'data:image/png;base64,' + wp.logo;
+                    _approveWpLogos[i] = logoB64;
+                    setTimeout(() => _initApproveWpLogoEditor(i, logoB64), 50);
+                }
+            });
+        }
+
+        // Editors for approve workplace logos
+        const _approveWpLogoEditors = {};
+
+        function _initApproveWpLogoEditor(wpIndex, b64) {
+            if (_approveWpLogoEditors[wpIndex]) {
+                _approveWpLogoEditors[wpIndex].loadB64(b64);
+                return;
+            }
+            if (!window._makeImageSection) return;
+            _approveWpLogoEditors[wpIndex] = window._makeImageSection({
+                type: 'inst', prefix: 'apvWpLogo' + wpIndex,
+                getFromPrev: null,
+                saveResult: (b64) => {
+                    _approveWpLogos[wpIndex] = b64;
+                    _approveImageData.instLogo = b64;
+                    const preview = document.getElementById('approveWp' + wpIndex + '-logo-preview');
+                    if (preview && b64) preview.innerHTML = '<img src="' + b64 + '" style="max-height:40px;max-width:100%;object-fit:contain;">';
+                    _approveImagePreview.inst = b64;
+                    _updateApprovePreview();
+                },
+                onPreviewUpdate: (type, b64val) => {
+                    _approveImagePreview.inst = b64val;
+                    _updateApprovePreview();
+                },
+                onSizeUpdate: (type, sz) => {
+                    _approveImageSizes.inst = sz;
+                    _updateApprovePreview();
+                }
+            });
+            _approveWpLogoEditors[wpIndex].loadB64(b64);
         }
 
         // State for workplace logos
@@ -5346,6 +5537,12 @@
                 _approveWpLogos[wpIndex] = reader.result;
                 const preview = document.getElementById(`approveWp${wpIndex}-logo-preview`);
                 if (preview) preview.innerHTML = `<img src="${reader.result}" style="max-height:40px;max-width:100%;object-fit:contain;">`;
+                // Show editor and initialize
+                const editorWrap = document.getElementById('apvWpLogo' + wpIndex + '-editor-wrap');
+                if (editorWrap) {
+                    editorWrap.style.display = 'block';
+                    _initApproveWpLogoEditor(wpIndex, reader.result);
+                }
             };
             reader.readAsDataURL(file);
         }
@@ -5354,6 +5551,14 @@
             _approveWpLogos[wpIndex] = null;
             const preview = document.getElementById(`approveWp${wpIndex}-logo-preview`);
             if (preview) preview.innerHTML = '<span style="font-size:.72rem;color:#94a3b8;">Sin logo</span>';
+            const editorWrap = document.getElementById('apvWpLogo' + wpIndex + '-editor-wrap');
+            if (editorWrap) editorWrap.style.display = 'none';
+            if (_approveWpLogoEditors[wpIndex]) {
+                _approveWpLogoEditors[wpIndex].clear();
+                _approveWpLogoEditors[wpIndex] = null;
+            }
+            _approveImagePreview.inst = null;
+            _updateApprovePreview();
         }
 
         function _collectApproveWorkplaces() {
@@ -5423,9 +5628,11 @@
             });
 
             _renderApproveWorkplaces(mainWp, extraWps);
+            // Resetear WP activo y poblar selector
+            _approveActiveInstWp = 0;
             // Listeners en campos de workplace para actualizar preview
             setTimeout(() => {
-                document.querySelectorAll('.approve-wp-field[data-wp="0"]').forEach(f => {
+                document.querySelectorAll('.approve-wp-field').forEach(f => {
                     if (!f._apvListenerAdded) { f.addEventListener('input', _updateApprovePreview); f._apvListenerAdded = true; }
                 });
             }, 50);
@@ -5439,7 +5646,6 @@
             // Limpiar editores
             if (_apvFirmaEditor) _apvFirmaEditor.clear();
             if (_apvProfEditor) _apvProfEditor.clear();
-            if (_apvInstEditor) _apvInstEditor.clear();
 
             // Listeners para actualizar preview al editar campos del profesional
             ['approveEditNombre','approveEditMatricula','approveEditEspecialidades'].forEach(id => {
@@ -5484,13 +5690,26 @@
                         else if (_profStatus) { _profStatus.textContent = 'Sin logo'; _profStatus.style.background = '#f1f5f9'; _profStatus.style.color = '#64748b'; }
                         // Logo institucional del workplace principal
                         if (data.images.instLogo) {
-                            _loadImgToEditor(_apvInstEditor, data.images.instLogo, 'instLogo');
                             _approveWpLogos[0] = data.images.instLogo;
+                            const _wpPrev0 = document.getElementById('approveWp0-logo-preview');
+                            if (_wpPrev0) _wpPrev0.innerHTML = '<img src="' + data.images.instLogo + '" style="max-height:40px;max-width:100%;object-fit:contain;">';
+                            const _edWrap0 = document.getElementById('apvWpLogo0-editor-wrap');
+                            if (_edWrap0) { _edWrap0.style.display = 'block'; _initApproveWpLogoEditor(0, data.images.instLogo); }
                         } else if (_instStatus && hasWpLogoDrive) {
                             _instStatus.textContent = 'Sin logo';
                             _instStatus.style.background = '#f1f5f9';
                             _instStatus.style.color = '#64748b';
                         }
+                        // Logos de workplaces extra almacenados en Drive
+                        Object.keys(data.images).forEach(key => {
+                            const m = key.match(/^extraLogo_(\d+)$/);
+                            if (m) {
+                                const wpIdx = parseInt(m[1]) + 1; // extraLogo_0 → WP 1
+                                _approveWpLogos[wpIdx] = data.images[key];
+                                const prev = document.getElementById('approveWp' + wpIdx + '-logo-preview');
+                                if (prev) prev.innerHTML = '<img src="' + data.images[key] + '" style="max-height:40px;max-width:100%;object-fit:contain;">';
+                            }
+                        });
                     } else {
                         console.warn('Respuesta sin imágenes:', data);
                         if (_firmaStatus) { _firmaStatus.textContent = '⚠️ Error'; _firmaStatus.style.background = '#fee2e2'; _firmaStatus.style.color = '#991b1b'; }
@@ -5520,7 +5739,10 @@
             const firstWpLogo = _approveWpLogos[0];
             if (firstWpLogo && firstWpLogo !== 'null' && firstWpLogo !== 'no' && firstWpLogo !== 'drive') {
                 const instSrc = firstWpLogo.startsWith('data:') ? firstWpLogo : 'data:image/png;base64,' + firstWpLogo;
-                _loadImgToEditor(_apvInstEditor, instSrc, 'instLogo');
+                const _wpPrevFb = document.getElementById('approveWp0-logo-preview');
+                if (_wpPrevFb) _wpPrevFb.innerHTML = '<img src="' + instSrc + '" style="max-height:40px;max-width:100%;object-fit:contain;">';
+                const _edWrapFb = document.getElementById('apvWpLogo0-editor-wrap');
+                if (_edWrapFb) { _edWrapFb.style.display = 'block'; _initApproveWpLogoEditor(0, instSrc); }
             }
 
             // Expandir verificación por defecto
@@ -5978,9 +6200,9 @@
                 const fb = await _apvProfEditor.getEditedB64();
                 if (fb) _editProLogo = fb;
             }
-            // Logo institucional procesado → sincronizar con primer workplace antes de recopilar
-            if (!_approveWpLogos[0] && _apvInstEditor) {
-                const instB64 = await _apvInstEditor.getEditedB64();
+            // Logo institucional: sincronizar desde editor WP 0 si existe
+            if (!_approveWpLogos[0] && _approveWpLogoEditors[0]) {
+                const instB64 = await _approveWpLogoEditors[0].getEditedB64();
                 if (instB64) _approveWpLogos[0] = instB64;
             }
 
@@ -6304,8 +6526,8 @@
 
     <!-- Modal Nuevo Usuario -->
     <!-- ── Fábrica de Clones Modal ── -->
-    <div class="modal-overlay" id="cloneFactoryModal" style="display:none;">
-        <div class="modal" style="max-width:640px;max-height:90vh;display:flex;flex-direction:column;">
+    <div class="modal-overlay" id="cloneFactoryModal" style="display:none;gap:12px;">
+        <div class="modal" style="max-width:640px;max-height:90vh;display:flex;flex-direction:column;flex-shrink:0;">
             <div class="modal-header" style="flex-shrink:0;">
                 <h2 id="cfModalTitle">📦 Generar App para Usuario</h2>
                 <button class="modal-close" id="btnCloseCloneFactory">&times;</button>
@@ -6624,67 +6846,7 @@
                     <!-- ══════════════════════════════════════════════════════════ -->
                     <div id="giftStep5" style="display:none;">
                         <p class="gw-section-title">🖼️ Paso 5 — Imágenes del Informe</p>
-                        <p class="gw-section-sub">Subí y procesá cada imagen. La IA eliminará el fondo automáticamente. Todos los campos son opcionales.</p>
-
-                        <!-- ── CARD: Logo Institucional ── -->
-                        <div class="gw-card" style="margin-bottom:.6rem;">
-                            <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem;">
-                                <div style="width:38px;height:38px;background:#eff6ff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">🏥</div>
-                                <div style="flex:1;">
-                                    <p style="font-weight:600;font-size:.87rem;color:#1e40af;margin:0;">Logo Institucional</p>
-                                    <p style="font-size:.73rem;color:#64748b;margin:0;">Izquierda del encabezado · 28×18 mm</p>
-                                </div>
-                                <span id="imgInst-status" style="font-size:.7rem;padding:2px 8px;border-radius:10px;background:#f1f5f9;color:#64748b;">Vacío</span>
-                            </div>
-                            <div id="imgInst-thumb-wrap" style="display:none;background:repeating-conic-gradient(#e0e0e0 0% 25%,#fff 0% 50%) 0 0/12px 12px;border-radius:6px;padding:6px;text-align:center;margin-bottom:.45rem;">
-                                <img id="imgInst-thumb" style="max-height:50px;max-width:100%;object-fit:contain;">
-                            </div>
-                            <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
-                                <label class="btn-secondary" for="imgInst-file" style="padding:5px 11px;font-size:.8rem;cursor:pointer;">📂 Subir imagen</label>
-                                <input type="file" id="imgInst-file" accept="image/*" style="display:none;">
-                                <button type="button" class="btn-secondary" id="imgInst-from2" style="padding:5px 11px;font-size:.8rem;">📥 Del paso 2</button>
-                                <button type="button" class="btn-secondary" id="imgInst-clear" style="padding:5px 8px;font-size:.8rem;display:none;color:#ef4444;border-color:#fca5a5;" title="Quitar imagen">🗑️</button>
-                            </div>
-                            <div id="imgInst-proc-section" style="display:none;margin-top:.45rem;padding-top:.45rem;border-top:1px solid #f1f5f9;">
-                                <div style="display:flex;gap:.7rem;flex-wrap:wrap;font-size:.8rem;margin-bottom:.35rem;">
-                                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="imgInst-bg" checked style="accent-color:var(--primary);"> 🤖 Quitar fondo</label>
-                                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="imgInst-trim" checked style="accent-color:var(--primary);"> ✂️ Auto-recortar</label>
-                                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="imgInst-scale" checked style="accent-color:var(--primary);"> 📐 Escalar</label>
-                                </div>
-                                <button type="button" class="btn-primary" id="imgInst-process" style="width:100%;padding:6px 0;font-size:.82rem;">⚙️ Procesar imagen</button>
-                            </div>
-                            <div id="imgInst-edit-section" style="display:none;margin-top:.45rem;padding-top:.45rem;border-top:1px solid #f1f5f9;">
-                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-bottom:.4rem;">
-                                    <div><p style="font-size:.7rem;color:#64748b;margin:0 0 2px;">Original</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:60px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="imgInst-orig" style="max-width:100%;max-height:150px;object-fit:contain;"></div></div>
-                                    <div><p style="font-size:.7rem;color:#64748b;margin:0 0 2px;">Resultado</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:60px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="imgInst-result" style="max-width:100%;max-height:150px;object-fit:contain;"></div></div>
-                                </div>
-                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem .7rem;font-size:.78rem;margin-bottom:.35rem;">
-                                    <div><label style="color:#64748b;">☀️ Brillo <span id="imgInst-brval">100</span>%</label><input type="range" id="imgInst-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
-                                    <div><label style="color:#64748b;">🎨 Contraste <span id="imgInst-cnval">100</span>%</label><input type="range" id="imgInst-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
-                                </div>
-                                <div style="font-size:.78rem;margin-bottom:.35rem;">
-                                    <label style="color:#475569;font-weight:600;">📐 Escala <span id="imgInst-scaleval">100</span>% <span id="imgInst-rdims" style="font-size:.66rem;color:#94a3b8;font-weight:400;margin-left:4px;"></span></label>
-                                    <input type="range" id="imgInst-rscale" min="10" max="300" value="100" style="width:100%;accent-color:var(--primary);">
-                                </div>
-                                <div style="font-size:.78rem;margin-bottom:.35rem;">
-                                    <label style="color:#64748b;">🗜️ Compresión <span id="imgInst-cmpval">92</span>%</label>
-                                    <input type="range" id="imgInst-cmp" min="10" max="100" value="92" style="width:100%;accent-color:var(--primary);">
-                                    <p id="imgInst-cmpinfo" style="font-size:.66rem;color:#94a3b8;margin:2px 0 0;"></p>
-                                </div>
-                                <div style="font-size:.78rem;margin-bottom:.35rem;">
-                                    <label style="color:#64748b;">📏 Tamaño en PDF <span id="imgInst-szval">60</span>px <span id="imgInst-szdesc" style="color:#9ca3af;font-style:italic;font-size:.7rem;">(normal)</span></label>
-                                    <input type="range" id="imgInst-sz" min="30" max="120" value="60" style="width:100%;accent-color:var(--primary);">
-                                </div>
-                                <div style="display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:.35rem;">
-                                    <button type="button" class="btn-secondary" id="imgInst-rotL" style="padding:3px 9px;font-size:.77rem;" title="Rotar izquierda">↺90°</button>
-                                    <button type="button" class="btn-secondary" id="imgInst-rotR" style="padding:3px 9px;font-size:.77rem;" title="Rotar derecha">↻90°</button>
-                                    <button type="button" class="btn-secondary" id="imgInst-fH" style="padding:3px 9px;font-size:.77rem;" title="Voltear horizontal">⟺H</button>
-                                    <button type="button" class="btn-secondary" id="imgInst-fV" style="padding:3px 9px;font-size:.77rem;" title="Voltear vertical">⇅V</button>
-                                    <button type="button" class="btn-secondary" id="imgInst-reset" style="padding:3px 9px;font-size:.77rem;margin-left:auto;" title="Resetear">↩</button>
-                                </div>
-                                <button type="button" class="btn-primary" id="imgInst-apply" style="width:100%;padding:6px 0;font-size:.82rem;background:#10b981;border-color:#10b981;">✅ Usar esta imagen</button>
-                            </div>
-                        </div>
+                        <p class="gw-section-sub">Subí y procesá las imágenes del profesional. La IA eliminará el fondo automáticamente. El logo institucional se edita en la sección del lugar de trabajo (Paso 2).</p>
 
                         <!-- ── CARD: Logo del Médico ── -->
                         <div class="gw-card" style="margin-bottom:.6rem;">
@@ -6740,6 +6902,7 @@
                                     <button type="button" class="btn-secondary" id="imgProf-rotR" style="padding:3px 9px;font-size:.77rem;">↻90°</button>
                                     <button type="button" class="btn-secondary" id="imgProf-fH" style="padding:3px 9px;font-size:.77rem;">⟺H</button>
                                     <button type="button" class="btn-secondary" id="imgProf-fV" style="padding:3px 9px;font-size:.77rem;">⇅V</button>
+                                    <button type="button" class="btn-secondary" id="imgProf-crop" style="padding:3px 9px;font-size:.77rem;" title="Recortar imagen">✂️ Recortar</button>
                                     <button type="button" class="btn-secondary" id="imgProf-reset" style="padding:3px 9px;font-size:.77rem;margin-left:auto;">↩</button>
                                 </div>
                                 <button type="button" class="btn-primary" id="imgProf-apply" style="width:100%;padding:6px 0;font-size:.82rem;background:#10b981;border-color:#10b981;">✅ Usar esta imagen</button>
@@ -6800,6 +6963,7 @@
                                     <button type="button" class="btn-secondary" id="imgFirma-rotR" style="padding:3px 9px;font-size:.77rem;">↻90°</button>
                                     <button type="button" class="btn-secondary" id="imgFirma-fH" style="padding:3px 9px;font-size:.77rem;">⟺H</button>
                                     <button type="button" class="btn-secondary" id="imgFirma-fV" style="padding:3px 9px;font-size:.77rem;">⇅V</button>
+                                    <button type="button" class="btn-secondary" id="imgFirma-crop" style="padding:3px 9px;font-size:.77rem;" title="Recortar imagen">✂️ Recortar</button>
                                     <button type="button" class="btn-secondary" id="imgFirma-reset" style="padding:3px 9px;font-size:.77rem;margin-left:auto;">↩</button>
                                 </div>
                                 <button type="button" class="btn-primary" id="imgFirma-apply" style="width:100%;padding:6px 0;font-size:.82rem;background:#10b981;border-color:#10b981;">✅ Usar esta imagen</button>
@@ -6863,6 +7027,8 @@
                 <button class="btn-primary" id="cfBtnGenerate">🔗 Generar Link</button>
             </div>
         </div>
+        <!-- GIFT Preview se inserta aquí por JS -->
+        <div class="pdf-preview-side-panel" id="imgprocSimBox" style="display:none;"></div>
     </div>
 
     <div class="modal-overlay" id="newUserModal" style="display:none;">
@@ -7081,8 +7247,8 @@
     </div>
 
     <!-- ── Modal: Aprobar Registro ── -->
-    <div class="approve-modal-overlay" id="approveModalOverlay" onclick="if(event.target===this)closeApproveModal()">
-        <div class="approve-modal" style="max-width:640px;max-height:85vh;overflow-y:auto;">
+    <div class="approve-modal-overlay" id="approveModalOverlay" onclick="if(event.target===this)closeApproveModal()" style="gap:12px;">
+        <div class="approve-modal" style="max-width:640px;max-height:85vh;overflow-y:auto;flex-shrink:0;">
             <h3>✅ Aprobar Registro</h3>
             <p style="font-size:.78rem;color:#94a3b8;margin-bottom:.6rem;" id="approveModalInfo"></p>
 
@@ -7141,66 +7307,7 @@
                     <!-- ── Imágenes: Firma y Logo profesional (editor completo) ── -->
                     <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:.65rem;margin-bottom:.6rem;">
                         <p style="font-size:.82rem;font-weight:600;color:#475569;margin:0 0 .5rem;">🖼️ Procesador de Imágenes del profesional</p>
-                        <p style="font-size:.73rem;color:#94a3b8;margin:0 0 .6rem;">Subí y procesá cada imagen. La IA eliminará el fondo automáticamente.</p>
-
-                        <!-- ── CARD: Logo Institucional ── -->
-                        <div style="border:1px solid #e2e8f0;border-radius:8px;padding:.6rem;margin-bottom:.6rem;">
-                            <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;">
-                                <div style="width:32px;height:32px;background:#eff6ff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0;">🏥</div>
-                                <div style="flex:1;">
-                                    <p style="font-weight:600;font-size:.82rem;color:#1e40af;margin:0;">Logo Institucional</p>
-                                    <p style="font-size:.68rem;color:#64748b;margin:0;">Izquierda del encabezado · 28×18 mm</p>
-                                </div>
-                                <span id="apvInst-status" style="font-size:.68rem;padding:2px 7px;border-radius:10px;background:#f1f5f9;color:#64748b;">Vacío</span>
-                            </div>
-                            <div id="apvInst-thumb-wrap" style="display:none;background:repeating-conic-gradient(#e0e0e0 0% 25%,#fff 0% 50%) 0 0/12px 12px;border-radius:5px;padding:5px;text-align:center;margin-bottom:.35rem;">
-                                <img id="apvInst-thumb" style="max-height:45px;max-width:100%;object-fit:contain;">
-                            </div>
-                            <div style="display:flex;gap:.35rem;flex-wrap:wrap;">
-                                <label class="btn-secondary" for="apvInst-file" style="padding:4px 10px;font-size:.76rem;cursor:pointer;">📂 Subir imagen</label>
-                                <input type="file" id="apvInst-file" accept="image/*" style="display:none;">
-                                <button type="button" class="btn-secondary" id="apvInst-clear" style="padding:4px 7px;font-size:.76rem;display:none;color:#ef4444;border-color:#fca5a5;" title="Quitar imagen">🗑️</button>
-                            </div>
-                            <div id="apvInst-proc-section" style="display:none;margin-top:.35rem;padding-top:.35rem;border-top:1px solid #f1f5f9;">
-                                <div style="display:flex;gap:.6rem;flex-wrap:wrap;font-size:.76rem;margin-bottom:.3rem;">
-                                    <label style="display:flex;align-items:center;gap:3px;cursor:pointer;"><input type="checkbox" id="apvInst-bg" checked style="accent-color:var(--primary);"> 🤖 Quitar fondo</label>
-                                    <label style="display:flex;align-items:center;gap:3px;cursor:pointer;"><input type="checkbox" id="apvInst-trim" checked style="accent-color:var(--primary);"> ✂️ Auto-recortar</label>
-                                    <label style="display:flex;align-items:center;gap:3px;cursor:pointer;"><input type="checkbox" id="apvInst-scale" checked style="accent-color:var(--primary);"> 📐 Escalar</label>
-                                </div>
-                                <button type="button" class="btn-primary" id="apvInst-process" style="width:100%;padding:5px 0;font-size:.78rem;">⚙️ Procesar imagen</button>
-                            </div>
-                            <div id="apvInst-edit-section" style="display:none;margin-top:.35rem;padding-top:.35rem;border-top:1px solid #f1f5f9;">
-                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.35rem;margin-bottom:.35rem;">
-                                    <div><p style="font-size:.67rem;color:#64748b;margin:0 0 2px;">Original</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:50px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="apvInst-orig" style="max-width:100%;max-height:120px;object-fit:contain;"></div></div>
-                                    <div><p style="font-size:.67rem;color:#64748b;margin:0 0 2px;">Resultado</p><div class="imgproc-checkerboard" style="border-radius:5px;min-height:50px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img id="apvInst-result" style="max-width:100%;max-height:120px;object-fit:contain;"></div></div>
-                                </div>
-                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.25rem .6rem;font-size:.74rem;margin-bottom:.3rem;">
-                                    <div><label style="color:#64748b;">☀️ Brillo <span id="apvInst-brval">100</span>%</label><input type="range" id="apvInst-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
-                                    <div><label style="color:#64748b;">🎨 Contraste <span id="apvInst-cnval">100</span>%</label><input type="range" id="apvInst-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
-                                </div>
-                                <div style="font-size:.74rem;margin-bottom:.3rem;">
-                                    <label style="color:#475569;font-weight:600;">📐 Escala <span id="apvInst-scaleval">100</span>% <span id="apvInst-rdims" style="font-size:.63rem;color:#94a3b8;font-weight:400;margin-left:4px;"></span></label>
-                                    <input type="range" id="apvInst-rscale" min="10" max="300" value="100" style="width:100%;accent-color:var(--primary);">
-                                </div>
-                                <div style="font-size:.74rem;margin-bottom:.3rem;">
-                                    <label style="color:#64748b;">🗜️ Compresión <span id="apvInst-cmpval">92</span>%</label>
-                                    <input type="range" id="apvInst-cmp" min="10" max="100" value="92" style="width:100%;accent-color:var(--primary);">
-                                    <p id="apvInst-cmpinfo" style="font-size:.63rem;color:#94a3b8;margin:2px 0 0;"></p>
-                                </div>
-                                <div style="font-size:.74rem;margin-bottom:.3rem;">
-                                    <label style="color:#64748b;">📏 Tamaño en PDF <span id="apvInst-szval">60</span>px <span id="apvInst-szdesc" style="color:#9ca3af;font-style:italic;font-size:.66rem;">(normal)</span></label>
-                                    <input type="range" id="apvInst-sz" min="30" max="120" value="60" style="width:100%;accent-color:var(--primary);">
-                                </div>
-                                <div style="display:flex;gap:.25rem;flex-wrap:wrap;margin-bottom:.3rem;">
-                                    <button type="button" class="btn-secondary" id="apvInst-rotL" style="padding:2px 8px;font-size:.73rem;">↺90°</button>
-                                    <button type="button" class="btn-secondary" id="apvInst-rotR" style="padding:2px 8px;font-size:.73rem;">↻90°</button>
-                                    <button type="button" class="btn-secondary" id="apvInst-fH" style="padding:2px 8px;font-size:.73rem;">⟺H</button>
-                                    <button type="button" class="btn-secondary" id="apvInst-fV" style="padding:2px 8px;font-size:.73rem;">⇅V</button>
-                                    <button type="button" class="btn-secondary" id="apvInst-reset" style="padding:2px 8px;font-size:.73rem;margin-left:auto;">↩</button>
-                                </div>
-                                <button type="button" class="btn-primary" id="apvInst-apply" style="width:100%;padding:5px 0;font-size:.78rem;background:#10b981;border-color:#10b981;">✅ Usar esta imagen</button>
-                            </div>
-                        </div>
+                        <p style="font-size:.73rem;color:#94a3b8;margin:0 0 .6rem;">Subí y procesá las imágenes del profesional. El logo institucional se edita en la sección del lugar de trabajo.</p>
 
                         <!-- ── CARD: Firma Digital ── -->
                         <div style="border:1px solid #e2e8f0;border-radius:8px;padding:.6rem;margin-bottom:.6rem;">
@@ -7255,6 +7362,7 @@
                                     <button type="button" class="btn-secondary" id="apvFirma-rotR" style="padding:2px 8px;font-size:.73rem;">↻90°</button>
                                     <button type="button" class="btn-secondary" id="apvFirma-fH" style="padding:2px 8px;font-size:.73rem;">⟺H</button>
                                     <button type="button" class="btn-secondary" id="apvFirma-fV" style="padding:2px 8px;font-size:.73rem;">⇅V</button>
+                                    <button type="button" class="btn-secondary" id="apvFirma-crop" style="padding:2px 8px;font-size:.73rem;" title="Recortar imagen">✂️ Recortar</button>
                                     <button type="button" class="btn-secondary" id="apvFirma-reset" style="padding:2px 8px;font-size:.73rem;margin-left:auto;">↩</button>
                                 </div>
                                 <button type="button" class="btn-primary" id="apvFirma-apply" style="width:100%;padding:5px 0;font-size:.78rem;background:#10b981;border-color:#10b981;">✅ Usar esta imagen</button>
@@ -7314,6 +7422,7 @@
                                     <button type="button" class="btn-secondary" id="apvProf-rotR" style="padding:2px 8px;font-size:.73rem;">↻90°</button>
                                     <button type="button" class="btn-secondary" id="apvProf-fH" style="padding:2px 8px;font-size:.73rem;">⟺H</button>
                                     <button type="button" class="btn-secondary" id="apvProf-fV" style="padding:2px 8px;font-size:.73rem;">⇅V</button>
+                                    <button type="button" class="btn-secondary" id="apvProf-crop" style="padding:2px 8px;font-size:.73rem;" title="Recortar imagen">✂️ Recortar</button>
                                     <button type="button" class="btn-secondary" id="apvProf-reset" style="padding:2px 8px;font-size:.73rem;margin-left:auto;">↩</button>
                                 </div>
                                 <button type="button" class="btn-primary" id="apvProf-apply" style="width:100%;padding:5px 0;font-size:.78rem;background:#10b981;border-color:#10b981;">✅ Usar esta imagen</button>
@@ -7386,6 +7495,7 @@
                 <button class="btn-approve" onclick="confirmApproval()" id="btnConfirmApprove">✅ Aprobar y Crear Usuario</button>
             </div>
         </div>
+        <div class="pdf-preview-side-panel" id="apvSimBox" style="display:none;"></div>
     </div>
 
     <!-- ── Modal: Detalle Registro ── -->
@@ -7681,14 +7791,16 @@
             return result.toDataURL('image/png');
         }
 
-        /* ── Inicialización al entrar al Step 5 ─────────────────── */
-        window._imgprocInitStep5 = function() { /* estado persistente mientras el modal esté abierto */ };
+        /* ── Inicialización al entrar al Step 5 (logo institucional ya se edita en cada WP) ── */
+        window._imgprocInitStep5 = function() {
+            // No-op: el logo institucional ahora se edita en la sección del lugar de trabajo
+        };
 
         /* ── Factory: crea un procesador independiente por tipo de imagen ─── */
         function _makeImageSection(cfg) {
             // cfg: { type, prefix, getFromPrev, saveResult, target }
             const g = (id) => document.getElementById(cfg.prefix + id);
-            const state = { origImg: null, resultB64: null, rot: 0, fH: false, fV: false, br: 100, cn: 100, rw: 0, rh: 0, cmp: 92, ratioLock: true, aspectRatio: 1, baseW: 0, baseH: 0 };
+            const state = { origImg: null, resultB64: null, rot: 0, fH: false, fV: false, br: 100, cn: 100, rw: 0, rh: 0, cmp: 92, ratioLock: true, aspectRatio: 1, baseW: 0, baseH: 0, cropX: 0, cropY: 0, cropW: 0, cropH: 0 };
 
             function notifyPreview(b64) {
                 if (cfg.onPreviewUpdate) { cfg.onPreviewUpdate(cfg.type, b64); return; }
@@ -7721,7 +7833,13 @@
                 if (!state.resultB64) return;
                 const base = new Image();
                 base.onload = () => {
-                    let sw = base.naturalWidth, sh = base.naturalHeight;
+                    let srcX = 0, srcY = 0, srcW = base.naturalWidth, srcH = base.naturalHeight;
+                    // Apply crop first (in original image coordinates)
+                    if (state.cropW > 0 && state.cropH > 0) {
+                        srcX = state.cropX; srcY = state.cropY;
+                        srcW = state.cropW; srcH = state.cropH;
+                    }
+                    let sw = srcW, sh = srcH;
                     // Apply custom resize if set
                     if (state.rw > 0 && state.rh > 0) { sw = state.rw; sh = state.rh; }
                     const rot = state.rot, swapped = rot === 90 || rot === 270;
@@ -7733,7 +7851,7 @@
                     ctx.translate(ow/2, oh/2);
                     ctx.rotate(rot * Math.PI/180);
                     ctx.scale(state.fH ? -1 : 1, state.fV ? -1 : 1);
-                    ctx.drawImage(base, -sw/2, -sh/2, sw, sh);
+                    ctx.drawImage(base, srcX, srcY, srcW, srcH, -sw/2, -sh/2, sw, sh);
                     ctx.restore();
                     const q = state.cmp / 100;
                     // Siempre PNG para preservar transparencia (JPEG pone fondo negro)
@@ -7768,7 +7886,12 @@
                     if (!state.resultB64) { resolve(null); return; }
                     const base = new Image();
                     base.onload = () => {
-                        let sw = base.naturalWidth, sh = base.naturalHeight;
+                        let srcX = 0, srcY = 0, srcW = base.naturalWidth, srcH = base.naturalHeight;
+                        if (state.cropW > 0 && state.cropH > 0) {
+                            srcX = state.cropX; srcY = state.cropY;
+                            srcW = state.cropW; srcH = state.cropH;
+                        }
+                        let sw = srcW, sh = srcH;
                         if (state.rw > 0 && state.rh > 0) { sw = state.rw; sh = state.rh; }
                         const rot = state.rot, swapped = rot === 90 || rot === 270;
                         const ow = swapped ? sh : sw, oh = swapped ? sw : sh;
@@ -7777,7 +7900,7 @@
                         ctx.filter = `brightness(${state.br}%) contrast(${state.cn}%)`;
                         ctx.save(); ctx.translate(ow/2,oh/2); ctx.rotate(rot*Math.PI/180);
                         ctx.scale(state.fH?-1:1,state.fV?-1:1);
-                        ctx.drawImage(base,-sw/2,-sh/2,sw,sh); ctx.restore();
+                        ctx.drawImage(base, srcX, srcY, srcW, srcH, -sw/2,-sh/2,sw,sh); ctx.restore();
                         const q = state.cmp / 100;
                         if (q < 1) {
                             const c2 = document.createElement('canvas');
@@ -7803,6 +7926,7 @@
                 state.rot = 0; state.fH = false; state.fV = false;
                 state.br = 100; state.cn = 100;
                 state.rw = 0; state.rh = 0; state.cmp = 92; state.ratioLock = true;
+                state.cropX = 0; state.cropY = 0; state.cropW = 0; state.cropH = 0;
                 state.aspectRatio = (state.origImg.naturalWidth || 1) / (state.origImg.naturalHeight || 1);
                 const br = g('-br'); if (br) { br.value = '100'; }
                 const brval = g('-brval'); if (brval) brval.textContent = '100';
@@ -7948,16 +8072,131 @@
             const rotRBtn = g('-rotR'); if (rotRBtn) rotRBtn.addEventListener('click', () => { state.rot = (state.rot + 90) % 360; renderResult(); });
             const fHBtn   = g('-fH');   if (fHBtn)   fHBtn.addEventListener('click',   () => { state.fH = !state.fH; renderResult(); });
             const fVBtn   = g('-fV');   if (fVBtn)   fVBtn.addEventListener('click',   () => { state.fV = !state.fV; renderResult(); });
+
+            // ── Recortar (Crop) ──
+            const cropBtn = g('-crop');
+            if (cropBtn) cropBtn.addEventListener('click', () => {
+                if (!state.resultB64) return;
+                // Crear overlay de recorte
+                const overlay = document.createElement('div');
+                overlay.style.cssText = 'position:fixed;inset:0;z-index:90000;background:rgba(0,0,0,.7);display:flex;flex-direction:column;align-items:center;justify-content:center;';
+                const toolbar = document.createElement('div');
+                toolbar.style.cssText = 'display:flex;gap:8px;margin-bottom:10px;';
+                toolbar.innerHTML = '<span style="color:#fff;font-size:.9rem;margin-right:8px;">✂️ Arrastrá para seleccionar el área de recorte</span>'
+                    + '<button type="button" id="_cropConfirm" style="padding:5px 14px;background:#10b981;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:.85rem;">✅ Aplicar recorte</button>'
+                    + '<button type="button" id="_cropCancel" style="padding:5px 14px;background:#ef4444;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:.85rem;">✖ Cancelar</button>';
+                overlay.appendChild(toolbar);
+                const wrap = document.createElement('div');
+                wrap.style.cssText = 'position:relative;display:inline-block;max-width:90vw;max-height:75vh;';
+                const img = document.createElement('img');
+                img.src = state.resultB64;
+                img.style.cssText = 'max-width:90vw;max-height:75vh;display:block;user-select:none;-webkit-user-drag:none;';
+                img.draggable = false;
+                wrap.appendChild(img);
+                // Selection rectangle
+                const sel = document.createElement('div');
+                sel.style.cssText = 'position:absolute;border:2px dashed #10b981;background:rgba(16,185,129,.15);display:none;pointer-events:none;';
+                wrap.appendChild(sel);
+                overlay.appendChild(wrap);
+                document.body.appendChild(overlay);
+
+                let drawing = false, sx = 0, sy = 0, ex = 0, ey = 0;
+                const rect = () => wrap.getBoundingClientRect();
+
+                function updateSel() {
+                    const r = rect();
+                    const x1 = Math.max(0, Math.min(sx, ex));
+                    const y1 = Math.max(0, Math.min(sy, ey));
+                    const x2 = Math.min(r.width, Math.max(sx, ex));
+                    const y2 = Math.min(r.height, Math.max(sy, ey));
+                    sel.style.left = x1 + 'px'; sel.style.top = y1 + 'px';
+                    sel.style.width = (x2 - x1) + 'px'; sel.style.height = (y2 - y1) + 'px';
+                    sel.style.display = 'block';
+                }
+
+                wrap.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    const r = rect();
+                    sx = e.clientX - r.left; sy = e.clientY - r.top;
+                    ex = sx; ey = sy; drawing = true;
+                    updateSel();
+                });
+                wrap.addEventListener('mousemove', (e) => {
+                    if (!drawing) return;
+                    const r = rect();
+                    ex = e.clientX - r.left; ey = e.clientY - r.top;
+                    updateSel();
+                });
+                const stopDraw = () => { drawing = false; };
+                wrap.addEventListener('mouseup', stopDraw);
+                wrap.addEventListener('mouseleave', stopDraw);
+
+                // Touch support
+                wrap.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const t = e.touches[0], r = rect();
+                    sx = t.clientX - r.left; sy = t.clientY - r.top;
+                    ex = sx; ey = sy; drawing = true;
+                    updateSel();
+                }, { passive: false });
+                wrap.addEventListener('touchmove', (e) => {
+                    if (!drawing) return;
+                    e.preventDefault();
+                    const t = e.touches[0], r = rect();
+                    ex = t.clientX - r.left; ey = t.clientY - r.top;
+                    updateSel();
+                }, { passive: false });
+                wrap.addEventListener('touchend', stopDraw);
+
+                overlay.querySelector('#_cropCancel').addEventListener('click', () => overlay.remove());
+
+                overlay.querySelector('#_cropConfirm').addEventListener('click', () => {
+                    const r = rect();
+                    const imgW = img.naturalWidth, imgH = img.naturalHeight;
+                    const scaleX = imgW / r.width, scaleY = imgH / r.height;
+                    const x1 = Math.max(0, Math.min(sx, ex));
+                    const y1 = Math.max(0, Math.min(sy, ey));
+                    const x2 = Math.min(r.width, Math.max(sx, ex));
+                    const y2 = Math.min(r.height, Math.max(sy, ey));
+                    const cw = x2 - x1, ch = y2 - y1;
+                    if (cw < 5 || ch < 5) { overlay.remove(); return; }
+                    state.cropX = Math.round(x1 * scaleX);
+                    state.cropY = Math.round(y1 * scaleY);
+                    state.cropW = Math.round(cw * scaleX);
+                    state.cropH = Math.round(ch * scaleY);
+                    // Update base dimensions to match cropped size
+                    state.baseW = state.cropW;
+                    state.baseH = state.cropH;
+                    state.aspectRatio = state.cropW / state.cropH;
+                    // Reset scale to 100% of cropped size
+                    state.rw = 0; state.rh = 0;
+                    if (rscaleSlider) { rscaleSlider.value = '100'; if (rscaleVal) rscaleVal.textContent = '100'; }
+                    if (rdimsEl) rdimsEl.textContent = `${state.cropW}×${state.cropH}px`;
+                    overlay.remove();
+                    cropBtn.textContent = '✂️ Recortado';
+                    cropBtn.style.background = '#10b981'; cropBtn.style.color = '#fff';
+                    renderResult();
+                });
+            });
+
             const resetBtn = g('-reset');
             if (resetBtn) resetBtn.addEventListener('click', () => {
                 state.rot = 0; state.fH = false; state.fV = false; state.br = 100; state.cn = 100;
                 state.rw = 0; state.rh = 0; state.cmp = 92;
+                state.cropX = 0; state.cropY = 0; state.cropW = 0; state.cropH = 0;
+                // Restore original base dimensions
+                if (state.origImg) {
+                    state.baseW = state.origImg.naturalWidth;
+                    state.baseH = state.origImg.naturalHeight;
+                    state.aspectRatio = state.baseW / state.baseH;
+                }
                 if (brSlider) { brSlider.value = '100'; if(brVal) brVal.textContent = '100'; }
                 if (cnSlider) { cnSlider.value = '100'; if(cnVal) cnVal.textContent = '100'; }
                 if (rscaleSlider) { rscaleSlider.value = '100'; if(rscaleVal) rscaleVal.textContent = '100'; }
                 if (rdimsEl && state.baseW) rdimsEl.textContent = `${state.baseW}×${state.baseH}px`;
                 if (cmpSlider) { cmpSlider.value = '92'; if(cmpVal) cmpVal.textContent = '92'; }
                 const cmpInfo = g('-cmpinfo'); if (cmpInfo) cmpInfo.textContent = '';
+                if (cropBtn) { cropBtn.textContent = '✂️ Recortar'; cropBtn.style.background = ''; cropBtn.style.color = ''; }
                 renderResult();
             });
 
@@ -7983,29 +8222,29 @@
             if (!simBox) return;
 
             // Leer datos dinámicos del wizard
-            const nombre     = (document.getElementById('giftNombre') || {}).value?.trim() || 'Dr. Nombre Ejemplo';
+            const nombre     = (document.getElementById('giftNombre') || {}).value?.trim() || 'Dr. Nombre';
             const matricula  = (document.getElementById('giftMatricula') || {}).value?.trim() || 'MP-000';
             const especialidad = (document.getElementById('giftEspecialidad') || {}).value || '';
-            const wpName     = (document.getElementById('gwWpName0') || {}).value?.trim() || '';
-            const wpAddress  = (document.getElementById('gwWpAddress0') || {}).value?.trim() || '';
-            const wpPhone    = (document.getElementById('gwWpPhone0') || {}).value?.trim() || '';
+            const wpIdx      = _giftActiveInstWp;
+            const wpName     = (document.getElementById('gwWpName' + wpIdx) || {}).value?.trim() || '';
+            const wpAddress  = (document.getElementById('gwWpAddress' + wpIdx) || {}).value?.trim() || '';
+            const wpPhone    = (document.getElementById('gwWpPhone' + wpIdx) || {}).value?.trim() || '';
             const accent     = _giftSelectedColor || '#1a56a0';
 
-            // Aplicar color de acento al preview
-            simBox.style.setProperty('--sim-accent', accent);
+            // Aplicar color de acento al preview (en el .pdf-sim-page)
+            const simPage = simBox.querySelector('.pdf-sim-page');
+            if (simPage) simPage.style.setProperty('--sim-accent', accent);
 
             // ── Banner del lugar de trabajo ──
             const simBanner  = document.getElementById('imgprocSimBanner');
             const simLL      = document.getElementById('imgprocSimLogoLeft');
-            const firstWpKey = Object.keys(_giftWpLogoData || {})[0];
-            const instB64    = _giftImagePreview.inst || (firstWpKey ? _giftWpLogoData[firstWpKey] : null);
+            const instB64    = _giftImagePreview.inst || (_giftWpLogoData[wpIdx] || null);
             const instSize   = _giftImageData.instLogoSize || 60;
 
             if (simBanner) {
                 const hasWpData = wpName || wpAddress || wpPhone || instB64;
                 simBanner.style.display = hasWpData ? 'flex' : 'none';
                 simBanner.style.background = accent;
-                // Logo institucional en banner
                 if (simLL) {
                     simLL.innerHTML = '';
                     if (instB64) {
@@ -8019,18 +8258,12 @@
                 }
                 const simWpN = document.getElementById('imgprocSimWpName');
                 const simWpD = document.getElementById('imgprocSimWpDetails');
-                if (simWpN) simWpN.textContent = wpName || '';
+                if (simWpN) simWpN.textContent = wpName ? wpName.toUpperCase() : '';
                 if (simWpD) {
                     const parts = [wpAddress, wpPhone ? 'Tel: ' + wpPhone : ''].filter(Boolean);
-                    simWpD.textContent = parts.join(' • ');
+                    simWpD.textContent = parts.join(' · ');
                 }
             }
-
-            // ── Fila de estudio ──
-            const simStudy = document.getElementById('imgprocSimStudy');
-            if (simStudy) simStudy.textContent = especialidad || 'Estudio';
-            const simDate = document.getElementById('imgprocSimDate');
-            if (simDate) simDate.textContent = new Date().toLocaleDateString('es-ES', {day:'2-digit',month:'2-digit',year:'numeric'});
 
             // ── Encabezado profesional ──
             const simProfName = document.getElementById('imgprocSimProfName');
@@ -8047,12 +8280,18 @@
                 if (profB64) {
                     const i = document.createElement('img');
                     i.src = profB64;
-                    i.style.height = Math.round(profSize * 0.6) + 'px';
+                    i.style.height = Math.round(profSize * 0.55) + 'px';
                     i.style.width = 'auto';
                     i.style.objectFit = 'contain';
                     simLR.appendChild(i);
                 }
             }
+
+            // ── Fila de estudio ──
+            const simStudy = document.getElementById('imgprocSimStudy');
+            if (simStudy) simStudy.textContent = especialidad || 'Estudio';
+            const simDate = document.getElementById('imgprocSimDate');
+            if (simDate) simDate.textContent = new Date().toLocaleDateString('es-ES', {day:'2-digit',month:'2-digit',year:'numeric'});
 
             // ── Firma ──
             const simFirma    = document.getElementById('imgprocSimFirma');
@@ -8066,8 +8305,8 @@
                     simFirmaImg.innerHTML = '';
                     const i = document.createElement('img');
                     i.src = firmaB64;
-                    i.style.maxWidth = Math.round(firmaSize * 2) + 'px';
-                    i.style.maxHeight = Math.round(firmaSize * 0.8) + 'px';
+                    i.style.maxWidth = Math.round(firmaSize * 1.5) + 'px';
+                    i.style.maxHeight = Math.round(firmaSize * 0.7) + 'px';
                     i.style.objectFit = 'contain';
                     simFirmaImg.appendChild(i);
                 } else { simFirma.style.display = 'none'; }
@@ -8079,22 +8318,7 @@
         }
 
         function initImageProcessor() {
-            // Sección Logo Institucional
-            _makeImageSection({
-                type: 'inst', prefix: 'imgInst',
-                getFromPrev: () => {
-                    const firstKey = Object.keys(_giftWpLogoData || {})[0];
-                    return firstKey ? _giftWpLogoData[firstKey] : null;
-                },
-                saveResult: (b64) => {
-                    const firstKey = Object.keys(_giftWpLogoData || {});
-                    const key = firstKey.length > 0 ? firstKey[0] : '0';
-                    _giftWpLogoData[key] = b64;
-                    // Actualizar preview en paso 2
-                    const prev = document.getElementById('gwWpLogoPreview0');
-                    if (prev && b64) prev.innerHTML = '<img src="'+b64+'" alt="Logo" style="max-height:50px;">';
-                }
-            });
+            // Logo institucional se edita ahora en la sección de cada lugar de trabajo
             // Sección Logo del Médico
             _makeImageSection({
                 type: 'prof', prefix: 'imgProf',
@@ -8341,79 +8565,53 @@
     })();
     </script>
 
-    <!-- ═══ Panel lateral fijo: Preview PDF (GIFT) ═══ -->
-    <div class="pdf-preview-side-panel" id="imgprocSimBox">
+    <script>
+    // Poblar paneles de preview con HTML que replica el layout real del PDF (pdfMaker.js)
+    function _buildPdfSimHtml(prefix) {
+        return `
         <div class="preview-title">
-            <span>👁️ Vista previa PDF</span>
-            <button class="preview-close" onclick="document.getElementById('imgprocSimBox').style.display='none'" title="Cerrar">&times;</button>
+            <span>📄 Vista previa del informe PDF</span>
+            <button class="preview-close" onclick="document.getElementById('${prefix}SimBox').style.display='none'" title="Cerrar">&times;</button>
         </div>
-        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;font-family:'Times New Roman',serif;color:#222;font-size:10px;">
-            <div id="imgprocSimBanner" style="display:none;background:var(--sim-accent,#1a56a0);color:#fff;padding:8px 12px;align-items:center;gap:10px;">
-                <div id="imgprocSimLogoLeft" style="flex-shrink:0;"></div>
+        <div class="pdf-sim-page" style="--sim-accent:#1a56a0;">
+            <div id="${prefix}SimBanner" class="pdf-sim-banner" style="background:var(--sim-accent,#1a56a0);">
+                <div id="${prefix}SimLogoLeft" style="flex-shrink:0;"></div>
                 <div style="flex:1;text-align:right;">
-                    <div id="imgprocSimWpName" style="font-weight:700;font-size:12px;"></div>
-                    <div id="imgprocSimWpDetails" style="font-size:9px;opacity:.85;"></div>
+                    <div id="${prefix}SimWpName" style="font-weight:700;font-size:11px;text-transform:uppercase;"></div>
+                    <div id="${prefix}SimWpDetails" style="font-size:7.5px;opacity:.85;"></div>
                 </div>
             </div>
-            <div id="imgprocSimStudyRow" style="display:flex;border-bottom:1px solid #e5e7eb;background:#f8fafc;font-size:9px;padding:4px 10px;gap:8px;">
-                <div style="flex:1;"><span style="color:#64748b;font-weight:600;text-transform:uppercase;">Estudio:</span> <span id="imgprocSimStudy">—</span></div>
-                <div style="flex:1;text-align:center;"><span style="color:#64748b;font-weight:600;text-transform:uppercase;">Informe Nº:</span> <span>0001</span></div>
-                <div style="flex:1;text-align:right;"><span style="color:#64748b;font-weight:600;text-transform:uppercase;">Fecha:</span> <span id="imgprocSimDate"></span></div>
-            </div>
-            <div style="padding:8px 12px;display:flex;align-items:center;gap:10px;border-bottom:2px solid var(--sim-accent,#1a56a0);">
-                <div style="flex:1;text-align:center;">
-                    <div id="imgprocSimProfName" style="font-weight:700;font-size:11px;"></div>
-                    <div id="imgprocSimProfSpec" style="font-size:9px;color:#64748b;"></div>
-                </div>
-                <div id="imgprocSimLogoRight" style="flex-shrink:0;"></div>
-            </div>
-            <div style="padding:8px 12px;">
-                <p style="font-size:9px;color:#aaa;margin:4px 0;">Contenido del informe...</p>
-            </div>
-            <div id="imgprocSimFirma" style="display:none;text-align:center;padding:6px 12px 10px;font-size:9px;">
-                <div id="imgprocSimFirmaImg"></div>
-                <div style="border-top:1px solid #333;width:70px;margin:2px auto 0;"></div>
-                <small id="imgprocSimFirmaName">Dr. Nombre Ejemplo · Mat. MP-000</small>
-            </div>
-        </div>
-    </div>
-
-    <!-- ═══ Panel lateral fijo: Preview PDF (Approve) ═══ -->
-    <div class="pdf-preview-side-panel" id="apvSimBox">
-        <div class="preview-title">
-            <span>👁️ Vista previa del informe PDF</span>
-            <button class="preview-close" onclick="document.getElementById('apvSimBox').style.display='none'" title="Cerrar">&times;</button>
-        </div>
-        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;font-family:'Times New Roman',serif;color:#222;font-size:10px;">
-            <div id="apvSimBanner" style="display:none;background:#1a56a0;color:#fff;padding:8px 12px;align-items:center;gap:10px;">
-                <div id="apvSimLogoLeft" style="flex-shrink:0;"></div>
-                <div style="flex:1;text-align:right;">
-                    <div id="apvSimWpName" style="font-weight:700;font-size:12px;"></div>
-                    <div id="apvSimWpDetails" style="font-size:9px;opacity:.85;"></div>
+            <div class="pdf-sim-header" id="${prefix}SimProfBar" style="border-bottom-color:var(--sim-accent,#1a56a0);">
+                <div id="${prefix}SimLogoRight" style="flex-shrink:0;"></div>
+                <div style="flex:1;">
+                    <div style="font-size:11px;font-weight:700;color:var(--sim-accent,#1a56a0);">Estudio realizado por: <span id="${prefix}SimProfName"></span></div>
+                    <div id="${prefix}SimProfSpec" style="font-size:8px;color:#64748b;font-style:italic;margin-top:2px;"></div>
                 </div>
             </div>
-            <div style="display:flex;border-bottom:1px solid #e5e7eb;background:#f8fafc;font-size:9px;padding:4px 10px;gap:8px;">
-                <div style="flex:1;"><span style="color:#64748b;font-weight:600;text-transform:uppercase;">Estudio:</span> <span id="apvSimStudy">—</span></div>
-                <div style="flex:1;text-align:center;"><span style="color:#64748b;font-weight:600;text-transform:uppercase;">Informe Nº:</span> <span>0001</span></div>
-                <div style="flex:1;text-align:right;"><span style="color:#64748b;font-weight:600;text-transform:uppercase;">Fecha:</span> <span id="apvSimDate"></span></div>
+            <div class="pdf-sim-study-row">
+                <div style="flex:1;"><b style="color:#64748b;">Estudio:</b> <span id="${prefix}SimStudy">—</span></div>
+                <div style="flex:1;text-align:center;"><b style="color:#64748b;">Informe Nº:</b> 0001</div>
+                <div style="flex:1;text-align:right;"><b style="color:#64748b;">Fecha:</b> <span id="${prefix}SimDate"></span></div>
             </div>
-            <div style="padding:8px 12px;display:flex;align-items:center;gap:10px;border-bottom:2px solid #1a56a0;" id="apvSimProfBar">
-                <div style="flex:1;text-align:center;">
-                    <div id="apvSimProfName" style="font-weight:700;font-size:11px;"></div>
-                    <div id="apvSimProfSpec" style="font-size:9px;color:#64748b;"></div>
-                </div>
-                <div id="apvSimLogoRight" style="flex-shrink:0;"></div>
-            </div>
-            <div style="padding:8px 12px;">
+            <div class="pdf-sim-body">
+                <p style="font-size:9px;color:#64748b;margin:2px 0;"><b>Paciente:</b> Juan Pérez &nbsp; <b>DNI:</b> 12.345.678 &nbsp; <b>Edad:</b> 45 años</p>
+                <hr style="border:none;border-top:1px solid #ddd;margin:6px 0;">
                 <p style="font-size:9px;color:#aaa;margin:4px 0;">Contenido del informe médico...</p>
-                <p style="font-size:9px;color:#ccc;margin:4px 0;">Lorem ipsum dolor sit amet...</p>
+                <p style="font-size:8px;color:#ccc;margin:4px 0;">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+                <p style="font-size:8px;color:#ccc;margin:4px 0;">Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>
             </div>
-            <div id="apvSimFirma" style="display:none;text-align:center;padding:6px 12px 10px;font-size:9px;">
-                <div id="apvSimFirmaImg"></div>
-                <div style="border-top:1px solid #333;width:70px;margin:2px auto 0;"></div>
-                <small id="apvSimFirmaName">Dr. Nombre · Mat. MP-000</small>
+            <div id="${prefix}SimFirma" class="pdf-sim-firma">
+                <div id="${prefix}SimFirmaImg" style="margin-bottom:2px;"></div>
+                <div style="border-top:1px solid #333;width:80px;margin:2px 0 0 auto;"></div>
+                <div id="${prefix}SimFirmaName" style="font-size:8px;text-align:right;">Dr. Nombre · Mat. MP-000</div>
             </div>
-        </div>
-    </div>
+            <div class="pdf-sim-footer">
+                <span id="${prefix}SimFooter">© Transcriptor Médico Pro</span> &nbsp;•&nbsp; <span id="${prefix}SimPageNum">Página 1</span>
+            </div>
+        </div>`;
+    }
+    document.getElementById('imgprocSimBox').innerHTML = _buildPdfSimHtml('imgproc');
+    document.getElementById('apvSimBox').innerHTML = _buildPdfSimHtml('apv');
+    </script>
 </body>
 </html>
