@@ -730,6 +730,16 @@ function doGet(e) {
     const apiKeyB2 = decodeURIComponent(e.parameter.apiKeyB2 || '');
     const maxDevices = Number(e.parameter.maxDevices) || 2;
     const allowedTemplates = decodeURIComponent(e.parameter.allowedTemplates || '');
+    // Campos corregidos/editados por el admin en el modal de aprobación (anulan los del formulario)
+    const editedNombre      = e.parameter.editedNombre      ? decodeURIComponent(e.parameter.editedNombre)          : null;
+    const editedMatricula   = e.parameter.editedMatricula   ? decodeURIComponent(e.parameter.editedMatricula)       : null;
+    const editedEmail       = e.parameter.editedEmail       ? decodeURIComponent(e.parameter.editedEmail)           : null;
+    const editedTelefono    = e.parameter.editedTelefono    ? decodeURIComponent(e.parameter.editedTelefono)        : null;
+    const editedEsp         = e.parameter.editedEspecialidades ? decodeURIComponent(e.parameter.editedEspecialidades) : null;
+    const editedNotas       = e.parameter.editedNotas       ? decodeURIComponent(e.parameter.editedNotas)           : null;
+    const editedHeaderColor = e.parameter.editedHeaderColor ? decodeURIComponent(e.parameter.editedHeaderColor)     : null;
+    const editedFooterText  = e.parameter.editedFooterText  ? decodeURIComponent(e.parameter.editedFooterText)      : null;
+    const editedWorkplace   = e.parameter.editedWorkplace   ? decodeURIComponent(e.parameter.editedWorkplace)       : null;
 
     if (!regId) return createResponse({ error: 'Falta regId' });
 
@@ -777,11 +787,11 @@ function doGet(e) {
 
       const userData = {
         ID_Medico: medicoId,
-        Nombre: regData.Nombre || '',
-        Email: regData.Email || '',
-        Telefono: regData.Telefono || '',
-        Matricula: regData.Matricula || '',
-        Especialidad: regData.Especialidades || 'ALL',
+        Nombre:       (editedNombre     || regData.Nombre       || '').trim(),
+        Email:        (editedEmail      || regData.Email        || '').trim().toLowerCase(),
+        Telefono:     (editedTelefono   || regData.Telefono     || '').trim(),
+        Matricula:    (editedMatricula  || regData.Matricula    || '').trim(),
+        Especialidad: (editedEsp        || regData.Especialidades || 'ALL').trim(),
         Plan: plan,
         Estado: 'active',
         Fecha_Registro: now,
@@ -794,14 +804,14 @@ function doGet(e) {
         Devices_Logged: '[]',
         Diagnostico_Pendiente: 'false',
         Registro_Datos: JSON.stringify({
-          workplace:       regData.Workplace_Data  || '',
-          headerColor:     regData.Header_Color    || '#1a56a0',
-          footerText:      regData.Footer_Text     || '',
+          workplace:       editedWorkplace   || regData.Workplace_Data  || '',
+          headerColor:     editedHeaderColor || regData.Header_Color    || '#1a56a0',
+          footerText:      editedFooterText  || regData.Footer_Text     || '',
           extraWorkplaces: regData.Extra_Workplaces || '',
           proLogo:         driveImages.proLogo     || '',
           firma:           driveImages.firma       || '',
           logo:            regData.Workplace_Logo  ? 'yes' : '',
-          notas:           regData.Notas           || '',
+          notas:           editedNotas || regData.Notas || '',
           estudios:        regData.Estudios        || '',
           apiKeyB1:        apiKeyB1,
           apiKeyB2:        apiKeyB2

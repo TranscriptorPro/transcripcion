@@ -5127,7 +5127,31 @@
             document.getElementById('approveAddonsCart').value = reg.Addons_Cart || '';
 
             document.getElementById('approveModalInfo').textContent =
-                `Aprobar a ${reg.Nombre || 'Sin nombre'} (${reg.Email || '—'}) — Matrícula: ${reg.Matricula || '—'}`;
+                `Reg. ${reg.ID_Registro} · ${reg.Fecha_Registro ? new Date(reg.Fecha_Registro).toLocaleDateString('es-ES') : '—'} · Plan: ${planSolicitado || '(sin especificar)'}`;
+
+            // ── Poblar campos editables de verificación ──
+            document.getElementById('approveEditNombre').value         = reg.Nombre         || '';
+            document.getElementById('approveEditMatricula').value      = reg.Matricula      || '';
+            document.getElementById('approveEditEmail').value          = reg.Email          || '';
+            document.getElementById('approveEditTelefono').value       = reg.Telefono       || '';
+            document.getElementById('approveEditEspecialidades').value = reg.Especialidades || '';
+            document.getElementById('approveEditNotas').value          = reg.Notas          || '';
+            const _hc = reg.Header_Color || '#1a56a0';
+            document.getElementById('approveEditHeaderColor').value    = _hc;
+            document.getElementById('approveEditHeaderColorVal').textContent = _hc;
+            document.getElementById('approveEditFooterText').value     = reg.Footer_Text    || '';
+            try {
+                const _wp = JSON.parse(reg.Workplace_Data || '{}');
+                document.getElementById('approveEditWpName').value      = _wp.name      || _wp.nombre        || '';
+                document.getElementById('approveEditWpAddress').value   = _wp.address   || _wp.direccion     || '';
+                document.getElementById('approveEditWpPhone').value     = _wp.phone     || _wp.telefono      || '';
+                document.getElementById('approveEditWpSpecialty').value = _wp.specialty || _wp.especialidad  || '';
+            } catch(_) {}
+            // Expandir verificación por defecto
+            const _vb = document.getElementById('approveVerifyBody');
+            const _vi = document.getElementById('approveVerifyToggleIcon');
+            if (_vb) _vb.style.display = 'block';
+            if (_vi) _vi.textContent = '▲ colapsar';
 
             // Auto-detectar plan: primero del campo Plan_Solicitado, luego parseando Notas
             const planSolicitado = (reg.Plan_Solicitado || _parsePlanFromNotas(reg.Notas || '')).toUpperCase();
@@ -5164,6 +5188,15 @@
 
         function closeApproveModal() {
             document.getElementById('approveModalOverlay').classList.remove('show');
+        }
+
+        function _toggleApproveVerify() {
+            const body = document.getElementById('approveVerifyBody');
+            const icon = document.getElementById('approveVerifyToggleIcon');
+            if (!body) return;
+            const isOpen = body.style.display !== 'none';
+            body.style.display = isOpen ? 'none' : 'block';
+            if (icon) icon.textContent = isOpen ? '▼ expandir' : '▲ colapsar';
         }
 
         /** Parsea el plan desde el campo Notas o cualquier texto que lo contenga */
@@ -5550,6 +5583,22 @@
             const apiKeyB2 = document.getElementById('approveApiKeyB2').value.trim();
             const maxDevices = DEVICES_POR_PLAN[plan] || 2;
 
+            // Leer campos editados en la sección de verificación
+            const _editNombre      = (document.getElementById('approveEditNombre')?.value      || '').trim();
+            const _editMatricula   = (document.getElementById('approveEditMatricula')?.value   || '').trim();
+            const _editEmail       = (document.getElementById('approveEditEmail')?.value       || '').trim();
+            const _editTelefono    = (document.getElementById('approveEditTelefono')?.value    || '').trim();
+            const _editEsp         = (document.getElementById('approveEditEspecialidades')?.value || '').trim();
+            const _editNotas       = (document.getElementById('approveEditNotas')?.value       || '').trim();
+            const _editHeaderColor = document.getElementById('approveEditHeaderColor')?.value   || '#1a56a0';
+            const _editFooterText  = (document.getElementById('approveEditFooterText')?.value  || '').trim();
+            const _editWp = JSON.stringify({
+                name:      (document.getElementById('approveEditWpName')?.value      || '').trim(),
+                address:   (document.getElementById('approveEditWpAddress')?.value   || '').trim(),
+                phone:     (document.getElementById('approveEditWpPhone')?.value     || '').trim(),
+                specialty: (document.getElementById('approveEditWpSpecialty')?.value || '').trim()
+            });
+
             if (!apiKey) {
                 await dashAlert('Debés ingresar una API Key para este profesional. Usá el botón ⚙️ Ingresar para configurarla.', '🔑');
                 document.getElementById('approveKeysEditSection').style.display = 'block';
@@ -5603,7 +5652,7 @@
 
             try {
                 const authStr = _getSessionAuthParams();
-                const url = `${CONFIG.scriptUrl}?action=admin_approve_registration&regId=${encodeURIComponent(regId)}&plan=${encodeURIComponent(plan)}&apiKey=${encodeURIComponent(apiKey)}&apiKeyB1=${encodeURIComponent(apiKeyB1)}&apiKeyB2=${encodeURIComponent(apiKeyB2)}&maxDevices=${encodeURIComponent(maxDevices)}&allowedTemplates=${encodeURIComponent(templatesStr)}&${authStr}`;
+                const url = `${CONFIG.scriptUrl}?action=admin_approve_registration&regId=${encodeURIComponent(regId)}&plan=${encodeURIComponent(plan)}&apiKey=${encodeURIComponent(apiKey)}&apiKeyB1=${encodeURIComponent(apiKeyB1)}&apiKeyB2=${encodeURIComponent(apiKeyB2)}&maxDevices=${encodeURIComponent(maxDevices)}&allowedTemplates=${encodeURIComponent(templatesStr)}&editedNombre=${encodeURIComponent(_editNombre)}&editedMatricula=${encodeURIComponent(_editMatricula)}&editedEmail=${encodeURIComponent(_editEmail)}&editedTelefono=${encodeURIComponent(_editTelefono)}&editedEspecialidades=${encodeURIComponent(_editEsp)}&editedNotas=${encodeURIComponent(_editNotas)}&editedHeaderColor=${encodeURIComponent(_editHeaderColor)}&editedFooterText=${encodeURIComponent(_editFooterText)}&editedWorkplace=${encodeURIComponent(_editWp)}&${authStr}`;
 
                 const res = await fetch(url);
                 const data = await res.json();
@@ -6634,7 +6683,88 @@
     <div class="approve-modal-overlay" id="approveModalOverlay" onclick="if(event.target===this)closeApproveModal()">
         <div class="approve-modal" style="max-width:640px;max-height:85vh;overflow-y:auto;">
             <h3>✅ Aprobar Registro</h3>
-            <p style="font-size:.85rem;color:#64748b;margin-bottom:1rem;" id="approveModalInfo"></p>
+            <p style="font-size:.78rem;color:#94a3b8;margin-bottom:.6rem;" id="approveModalInfo"></p>
+
+            <!-- ══ Sección de verificación / edición de datos del profesional ══ -->
+            <div id="approveVerifySection" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:.8rem;margin-bottom:.9rem;">
+                <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="_toggleApproveVerify()">
+                    <span style="font-weight:600;font-size:.87rem;color:#334155;">📋 Verificar / editar datos del profesional</span>
+                    <span id="approveVerifyToggleIcon" style="font-size:.76rem;color:#94a3b8;white-space:nowrap;user-select:none;">▲ colapsar</span>
+                </div>
+                <div id="approveVerifyBody" style="margin-top:.7rem;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label style="font-size:.8rem;">👤 Nombre y Apellido *</label>
+                            <input type="text" id="approveEditNombre" style="font-size:.87rem;" placeholder="Dr./Dra. Nombre Apellido">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:.8rem;">📜 Matrícula</label>
+                            <input type="text" id="approveEditMatricula" style="font-size:.87rem;" placeholder="MN/MP XXXXX">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label style="font-size:.8rem;">📧 Email *</label>
+                            <input type="email" id="approveEditEmail" style="font-size:.87rem;">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:.8rem;">📱 Teléfono</label>
+                            <input type="tel" id="approveEditTelefono" style="font-size:.87rem;">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:.6rem;">
+                        <label style="font-size:.8rem;">🩺 Especialidades <span style="color:#94a3b8;font-weight:400;">(separadas por coma)</span></label>
+                        <input type="text" id="approveEditEspecialidades" style="font-size:.87rem;" placeholder="Cardiología, Clínica Médica">
+                    </div>
+                    <!-- Lugar de trabajo principal (colapsable con <details>) -->
+                    <details style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:.65rem;margin-bottom:.6rem;">
+                        <summary style="font-size:.8rem;font-weight:600;color:#475569;cursor:pointer;list-style:none;display:flex;align-items:center;gap:4px;">🏥 Lugar de trabajo principal ▾</summary>
+                        <div style="margin-top:.55rem;display:flex;flex-direction:column;gap:.45rem;">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label style="font-size:.78rem;">Nombre del lugar</label>
+                                    <input type="text" id="approveEditWpName" style="font-size:.84rem;" placeholder="Clínica / Hospital">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-size:.78rem;">Dirección</label>
+                                    <input type="text" id="approveEditWpAddress" style="font-size:.84rem;" placeholder="Calle 123, Ciudad">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label style="font-size:.78rem;">Teléfono del lugar</label>
+                                    <input type="tel" id="approveEditWpPhone" style="font-size:.84rem;">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-size:.78rem;">Especialidad del lugar</label>
+                                    <input type="text" id="approveEditWpSpecialty" style="font-size:.84rem;" placeholder="Cardiología">
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+                    <!-- Color de encabezado + pie -->
+                    <div class="form-row" style="margin-bottom:.55rem;">
+                        <div class="form-group" style="flex:0 1 200px;">
+                            <label style="font-size:.8rem;">🎨 Color de encabezado PDF</label>
+                            <div style="display:flex;align-items:center;gap:.5rem;">
+                                <input type="color" id="approveEditHeaderColor" value="#1a56a0"
+                                    oninput="document.getElementById('approveEditHeaderColorVal').textContent=this.value"
+                                    style="width:40px;height:32px;padding:2px;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;">
+                                <span id="approveEditHeaderColorVal" style="font-size:.8rem;font-family:monospace;color:#64748b;">#1a56a0</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:.8rem;">📄 Texto del pie del informe</label>
+                            <input type="text" id="approveEditFooterText" style="font-size:.84rem;" placeholder="(opcional)">
+                        </div>
+                    </div>
+                    <!-- Notas del registro -->
+                    <div class="form-group">
+                        <label style="font-size:.8rem;">📝 Notas del registro <span style="color:#94a3b8;font-weight:400;">(editables — se guardan en Registro_Datos)</span></label>
+                        <textarea id="approveEditNotas" rows="3" style="font-size:.82rem;line-height:1.5;resize:vertical;" placeholder="Sin notas"></textarea>
+                    </div>
+                </div>
+            </div>
 
             <div class="form-row">
                 <!-- Badge del plan solicitado (se muestra cuando el registro tiene plan) -->
