@@ -6487,6 +6487,23 @@
                                     <div><label style="color:#64748b;">☀️ Brillo <span id="imgInst-brval">100</span>%</label><input type="range" id="imgInst-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                     <div><label style="color:#64748b;">🎨 Contraste <span id="imgInst-cnval">100</span>%</label><input type="range" id="imgInst-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                 </div>
+                                <div style="font-size:.78rem;margin-bottom:.35rem;border:1px solid #e2e8f0;border-radius:6px;padding:.4rem;background:#f8fafc;">
+                                    <label style="color:#475569;font-weight:600;">📐 Redimensionar</label>
+                                    <div style="display:flex;align-items:center;gap:.3rem;margin-top:3px;">
+                                        <input type="number" id="imgInst-rw" min="10" max="2000" placeholder="Ancho" style="width:70px;padding:3px 5px;border:1px solid #cbd5e1;border-radius:4px;font-size:.76rem;text-align:center;">
+                                        <span style="color:#94a3b8;font-size:.8rem;">×</span>
+                                        <input type="number" id="imgInst-rh" min="10" max="2000" placeholder="Alto" style="width:70px;padding:3px 5px;border:1px solid #cbd5e1;border-radius:4px;font-size:.76rem;text-align:center;">
+                                        <span style="color:#94a3b8;font-size:.7rem;">px</span>
+                                        <button type="button" id="imgInst-rlock" style="padding:2px 6px;font-size:.8rem;border:1px solid #cbd5e1;border-radius:4px;background:#e0f2fe;cursor:pointer;" title="Mantener proporción">🔗</button>
+                                        <button type="button" id="imgInst-rapply" class="btn-primary" style="padding:2px 10px;font-size:.74rem;margin-left:auto;">Aplicar</button>
+                                    </div>
+                                    <p id="imgInst-rdims" style="font-size:.66rem;color:#94a3b8;margin:3px 0 0;"></p>
+                                </div>
+                                <div style="font-size:.78rem;margin-bottom:.35rem;">
+                                    <label style="color:#64748b;">🗜️ Compresión <span id="imgInst-cmpval">92</span>%</label>
+                                    <input type="range" id="imgInst-cmp" min="10" max="100" value="92" style="width:100%;accent-color:var(--primary);">
+                                    <p id="imgInst-cmpinfo" style="font-size:.66rem;color:#94a3b8;margin:2px 0 0;"></p>
+                                </div>
                                 <div style="font-size:.78rem;margin-bottom:.35rem;">
                                     <label style="color:#64748b;">📏 Tamaño en PDF <span id="imgInst-szval">60</span>px <span id="imgInst-szdesc" style="color:#9ca3af;font-style:italic;font-size:.7rem;">(normal)</span></label>
                                     <input type="range" id="imgInst-sz" min="30" max="120" value="60" style="width:100%;accent-color:var(--primary);">
@@ -6538,6 +6555,23 @@
                                     <div><label style="color:#64748b;">☀️ Brillo <span id="imgProf-brval">100</span>%</label><input type="range" id="imgProf-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                     <div><label style="color:#64748b;">🎨 Contraste <span id="imgProf-cnval">100</span>%</label><input type="range" id="imgProf-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                 </div>
+                                <div style="font-size:.78rem;margin-bottom:.35rem;border:1px solid #e2e8f0;border-radius:6px;padding:.4rem;background:#f8fafc;">
+                                    <label style="color:#475569;font-weight:600;">📐 Redimensionar</label>
+                                    <div style="display:flex;align-items:center;gap:.3rem;margin-top:3px;">
+                                        <input type="number" id="imgProf-rw" min="10" max="2000" placeholder="Ancho" style="width:70px;padding:3px 5px;border:1px solid #cbd5e1;border-radius:4px;font-size:.76rem;text-align:center;">
+                                        <span style="color:#94a3b8;font-size:.8rem;">×</span>
+                                        <input type="number" id="imgProf-rh" min="10" max="2000" placeholder="Alto" style="width:70px;padding:3px 5px;border:1px solid #cbd5e1;border-radius:4px;font-size:.76rem;text-align:center;">
+                                        <span style="color:#94a3b8;font-size:.7rem;">px</span>
+                                        <button type="button" id="imgProf-rlock" style="padding:2px 6px;font-size:.8rem;border:1px solid #cbd5e1;border-radius:4px;background:#e0f2fe;cursor:pointer;" title="Mantener proporción">🔗</button>
+                                        <button type="button" id="imgProf-rapply" class="btn-primary" style="padding:2px 10px;font-size:.74rem;margin-left:auto;">Aplicar</button>
+                                    </div>
+                                    <p id="imgProf-rdims" style="font-size:.66rem;color:#94a3b8;margin:3px 0 0;"></p>
+                                </div>
+                                <div style="font-size:.78rem;margin-bottom:.35rem;">
+                                    <label style="color:#64748b;">🗜️ Compresión <span id="imgProf-cmpval">92</span>%</label>
+                                    <input type="range" id="imgProf-cmp" min="10" max="100" value="92" style="width:100%;accent-color:var(--primary);">
+                                    <p id="imgProf-cmpinfo" style="font-size:.66rem;color:#94a3b8;margin:2px 0 0;"></p>
+                                </div>
                                 <div style="font-size:.78rem;margin-bottom:.35rem;">
                                     <label style="color:#64748b;">📏 Tamaño en PDF <span id="imgProf-szval">60</span>px <span id="imgProf-szdesc" style="color:#9ca3af;font-style:italic;font-size:.7rem;">(normal)</span></label>
                                     <input type="range" id="imgProf-sz" min="30" max="120" value="60" style="width:100%;accent-color:var(--primary);">
@@ -6588,6 +6622,23 @@
                                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem .7rem;font-size:.78rem;margin-bottom:.35rem;">
                                     <div><label style="color:#64748b;">☀️ Brillo <span id="imgFirma-brval">100</span>%</label><input type="range" id="imgFirma-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                     <div><label style="color:#64748b;">🎨 Contraste <span id="imgFirma-cnval">100</span>%</label><input type="range" id="imgFirma-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
+                                </div>
+                                <div style="font-size:.78rem;margin-bottom:.35rem;border:1px solid #e2e8f0;border-radius:6px;padding:.4rem;background:#f8fafc;">
+                                    <label style="color:#475569;font-weight:600;">📐 Redimensionar</label>
+                                    <div style="display:flex;align-items:center;gap:.3rem;margin-top:3px;">
+                                        <input type="number" id="imgFirma-rw" min="10" max="2000" placeholder="Ancho" style="width:70px;padding:3px 5px;border:1px solid #cbd5e1;border-radius:4px;font-size:.76rem;text-align:center;">
+                                        <span style="color:#94a3b8;font-size:.8rem;">×</span>
+                                        <input type="number" id="imgFirma-rh" min="10" max="2000" placeholder="Alto" style="width:70px;padding:3px 5px;border:1px solid #cbd5e1;border-radius:4px;font-size:.76rem;text-align:center;">
+                                        <span style="color:#94a3b8;font-size:.7rem;">px</span>
+                                        <button type="button" id="imgFirma-rlock" style="padding:2px 6px;font-size:.8rem;border:1px solid #cbd5e1;border-radius:4px;background:#e0f2fe;cursor:pointer;" title="Mantener proporción">🔗</button>
+                                        <button type="button" id="imgFirma-rapply" class="btn-primary" style="padding:2px 10px;font-size:.74rem;margin-left:auto;">Aplicar</button>
+                                    </div>
+                                    <p id="imgFirma-rdims" style="font-size:.66rem;color:#94a3b8;margin:3px 0 0;"></p>
+                                </div>
+                                <div style="font-size:.78rem;margin-bottom:.35rem;">
+                                    <label style="color:#64748b;">🗜️ Compresión <span id="imgFirma-cmpval">92</span>%</label>
+                                    <input type="range" id="imgFirma-cmp" min="10" max="100" value="92" style="width:100%;accent-color:var(--primary);">
+                                    <p id="imgFirma-cmpinfo" style="font-size:.66rem;color:#94a3b8;margin:2px 0 0;"></p>
                                 </div>
                                 <div style="font-size:.78rem;margin-bottom:.35rem;">
                                     <label style="color:#64748b;">📏 Tamaño en PDF <span id="imgFirma-szval">60</span>px <span id="imgFirma-szdesc" style="color:#9ca3af;font-style:italic;font-size:.7rem;">(normal)</span></label>
@@ -7015,6 +7066,23 @@
                                     <div><label style="color:#64748b;">☀️ Brillo <span id="apvInst-brval">100</span>%</label><input type="range" id="apvInst-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                     <div><label style="color:#64748b;">🎨 Contraste <span id="apvInst-cnval">100</span>%</label><input type="range" id="apvInst-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                 </div>
+                                <div style="font-size:.74rem;margin-bottom:.3rem;border:1px solid #e2e8f0;border-radius:6px;padding:.35rem;background:#f8fafc;">
+                                    <label style="color:#475569;font-weight:600;">📐 Redimensionar</label>
+                                    <div style="display:flex;align-items:center;gap:.25rem;margin-top:3px;">
+                                        <input type="number" id="apvInst-rw" min="10" max="2000" placeholder="Ancho" style="width:65px;padding:2px 4px;border:1px solid #cbd5e1;border-radius:4px;font-size:.72rem;text-align:center;">
+                                        <span style="color:#94a3b8;font-size:.76rem;">×</span>
+                                        <input type="number" id="apvInst-rh" min="10" max="2000" placeholder="Alto" style="width:65px;padding:2px 4px;border:1px solid #cbd5e1;border-radius:4px;font-size:.72rem;text-align:center;">
+                                        <span style="color:#94a3b8;font-size:.66rem;">px</span>
+                                        <button type="button" id="apvInst-rlock" style="padding:1px 5px;font-size:.76rem;border:1px solid #cbd5e1;border-radius:4px;background:#e0f2fe;cursor:pointer;" title="Mantener proporción">🔗</button>
+                                        <button type="button" id="apvInst-rapply" class="btn-primary" style="padding:1px 8px;font-size:.7rem;margin-left:auto;">Aplicar</button>
+                                    </div>
+                                    <p id="apvInst-rdims" style="font-size:.63rem;color:#94a3b8;margin:2px 0 0;"></p>
+                                </div>
+                                <div style="font-size:.74rem;margin-bottom:.3rem;">
+                                    <label style="color:#64748b;">🗜️ Compresión <span id="apvInst-cmpval">92</span>%</label>
+                                    <input type="range" id="apvInst-cmp" min="10" max="100" value="92" style="width:100%;accent-color:var(--primary);">
+                                    <p id="apvInst-cmpinfo" style="font-size:.63rem;color:#94a3b8;margin:2px 0 0;"></p>
+                                </div>
                                 <div style="display:flex;gap:.25rem;flex-wrap:wrap;margin-bottom:.3rem;">
                                     <button type="button" class="btn-secondary" id="apvInst-rotL" style="padding:2px 8px;font-size:.73rem;">↺90°</button>
                                     <button type="button" class="btn-secondary" id="apvInst-rotR" style="padding:2px 8px;font-size:.73rem;">↻90°</button>
@@ -7061,6 +7129,23 @@
                                     <div><label style="color:#64748b;">☀️ Brillo <span id="apvFirma-brval">100</span>%</label><input type="range" id="apvFirma-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                     <div><label style="color:#64748b;">🎨 Contraste <span id="apvFirma-cnval">100</span>%</label><input type="range" id="apvFirma-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                 </div>
+                                <div style="font-size:.74rem;margin-bottom:.3rem;border:1px solid #e2e8f0;border-radius:6px;padding:.35rem;background:#f8fafc;">
+                                    <label style="color:#475569;font-weight:600;">📐 Redimensionar</label>
+                                    <div style="display:flex;align-items:center;gap:.25rem;margin-top:3px;">
+                                        <input type="number" id="apvFirma-rw" min="10" max="2000" placeholder="Ancho" style="width:65px;padding:2px 4px;border:1px solid #cbd5e1;border-radius:4px;font-size:.72rem;text-align:center;">
+                                        <span style="color:#94a3b8;font-size:.76rem;">×</span>
+                                        <input type="number" id="apvFirma-rh" min="10" max="2000" placeholder="Alto" style="width:65px;padding:2px 4px;border:1px solid #cbd5e1;border-radius:4px;font-size:.72rem;text-align:center;">
+                                        <span style="color:#94a3b8;font-size:.66rem;">px</span>
+                                        <button type="button" id="apvFirma-rlock" style="padding:1px 5px;font-size:.76rem;border:1px solid #cbd5e1;border-radius:4px;background:#e0f2fe;cursor:pointer;" title="Mantener proporción">🔗</button>
+                                        <button type="button" id="apvFirma-rapply" class="btn-primary" style="padding:1px 8px;font-size:.7rem;margin-left:auto;">Aplicar</button>
+                                    </div>
+                                    <p id="apvFirma-rdims" style="font-size:.63rem;color:#94a3b8;margin:2px 0 0;"></p>
+                                </div>
+                                <div style="font-size:.74rem;margin-bottom:.3rem;">
+                                    <label style="color:#64748b;">🗜️ Compresión <span id="apvFirma-cmpval">92</span>%</label>
+                                    <input type="range" id="apvFirma-cmp" min="10" max="100" value="92" style="width:100%;accent-color:var(--primary);">
+                                    <p id="apvFirma-cmpinfo" style="font-size:.63rem;color:#94a3b8;margin:2px 0 0;"></p>
+                                </div>
                                 <div style="display:flex;gap:.25rem;flex-wrap:wrap;margin-bottom:.3rem;">
                                     <button type="button" class="btn-secondary" id="apvFirma-rotL" style="padding:2px 8px;font-size:.73rem;">↺90°</button>
                                     <button type="button" class="btn-secondary" id="apvFirma-rotR" style="padding:2px 8px;font-size:.73rem;">↻90°</button>
@@ -7106,6 +7191,23 @@
                                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:.25rem .6rem;font-size:.74rem;margin-bottom:.3rem;">
                                     <div><label style="color:#64748b;">☀️ Brillo <span id="apvProf-brval">100</span>%</label><input type="range" id="apvProf-br" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
                                     <div><label style="color:#64748b;">🎨 Contraste <span id="apvProf-cnval">100</span>%</label><input type="range" id="apvProf-cn" min="20" max="200" value="100" style="width:100%;accent-color:var(--primary);"></div>
+                                </div>
+                                <div style="font-size:.74rem;margin-bottom:.3rem;border:1px solid #e2e8f0;border-radius:6px;padding:.35rem;background:#f8fafc;">
+                                    <label style="color:#475569;font-weight:600;">📐 Redimensionar</label>
+                                    <div style="display:flex;align-items:center;gap:.25rem;margin-top:3px;">
+                                        <input type="number" id="apvProf-rw" min="10" max="2000" placeholder="Ancho" style="width:65px;padding:2px 4px;border:1px solid #cbd5e1;border-radius:4px;font-size:.72rem;text-align:center;">
+                                        <span style="color:#94a3b8;font-size:.76rem;">×</span>
+                                        <input type="number" id="apvProf-rh" min="10" max="2000" placeholder="Alto" style="width:65px;padding:2px 4px;border:1px solid #cbd5e1;border-radius:4px;font-size:.72rem;text-align:center;">
+                                        <span style="color:#94a3b8;font-size:.66rem;">px</span>
+                                        <button type="button" id="apvProf-rlock" style="padding:1px 5px;font-size:.76rem;border:1px solid #cbd5e1;border-radius:4px;background:#e0f2fe;cursor:pointer;" title="Mantener proporción">🔗</button>
+                                        <button type="button" id="apvProf-rapply" class="btn-primary" style="padding:1px 8px;font-size:.7rem;margin-left:auto;">Aplicar</button>
+                                    </div>
+                                    <p id="apvProf-rdims" style="font-size:.63rem;color:#94a3b8;margin:2px 0 0;"></p>
+                                </div>
+                                <div style="font-size:.74rem;margin-bottom:.3rem;">
+                                    <label style="color:#64748b;">🗜️ Compresión <span id="apvProf-cmpval">92</span>%</label>
+                                    <input type="range" id="apvProf-cmp" min="10" max="100" value="92" style="width:100%;accent-color:var(--primary);">
+                                    <p id="apvProf-cmpinfo" style="font-size:.63rem;color:#94a3b8;margin:2px 0 0;"></p>
                                 </div>
                                 <div style="display:flex;gap:.25rem;flex-wrap:wrap;margin-bottom:.3rem;">
                                     <button type="button" class="btn-secondary" id="apvProf-rotL" style="padding:2px 8px;font-size:.73rem;">↺90°</button>
@@ -7486,7 +7588,7 @@
         function _makeImageSection(cfg) {
             // cfg: { type, prefix, getFromPrev, saveResult, target }
             const g = (id) => document.getElementById(cfg.prefix + id);
-            const state = { origImg: null, resultB64: null, rot: 0, fH: false, fV: false, br: 100, cn: 100 };
+            const state = { origImg: null, resultB64: null, rot: 0, fH: false, fV: false, br: 100, cn: 100, rw: 0, rh: 0, cmp: 92, ratioLock: true, aspectRatio: 1 };
 
             function setStatus(text, color) {
                 const el = g('-status');
@@ -7504,10 +7606,11 @@
 
             function renderResult() {
                 if (!state.resultB64) return;
-                // Apply brightness/contrast via canvas
                 const base = new Image();
                 base.onload = () => {
-                    const sw = base.naturalWidth, sh = base.naturalHeight;
+                    let sw = base.naturalWidth, sh = base.naturalHeight;
+                    // Apply custom resize if set
+                    if (state.rw > 0 && state.rh > 0) { sw = state.rw; sh = state.rh; }
                     const rot = state.rot, swapped = rot === 90 || rot === 270;
                     const ow = swapped ? sh : sw, oh = swapped ? sw : sh;
                     const c = document.createElement('canvas'); c.width = ow; c.height = oh;
@@ -7517,15 +7620,20 @@
                     ctx.translate(ow/2, oh/2);
                     ctx.rotate(rot * Math.PI/180);
                     ctx.scale(state.fH ? -1 : 1, state.fV ? -1 : 1);
-                    ctx.drawImage(base, -sw/2, -sh/2);
+                    ctx.drawImage(base, -sw/2, -sh/2, sw, sh);
                     ctx.restore();
-                    const edited = c.toDataURL('image/png');
+                    const q = state.cmp / 100;
+                    const edited = q < 1 ? c.toDataURL('image/jpeg', q) : c.toDataURL('image/png');
                     const ri = g('-result'); if (ri) ri.src = edited;
-                    // también actualizar thumb si ya estaba procesado
                     showThumb(edited);
-                    // Actualizar preview PDF en tiempo real
                     _giftImagePreview[cfg.type] = edited;
                     _updatePdfSim();
+                    // Show file size estimate
+                    const cmpInfo = g('-cmpinfo');
+                    if (cmpInfo) {
+                        const kb = Math.round(edited.length * 0.75 / 1024);
+                        cmpInfo.textContent = `~${kb} KB · ${ow}×${oh}px` + (q < 1 ? ' · JPEG' : ' · PNG');
+                    }
                 };
                 base.src = state.resultB64;
             }
@@ -7535,7 +7643,8 @@
                     if (!state.resultB64) { resolve(null); return; }
                     const base = new Image();
                     base.onload = () => {
-                        const sw = base.naturalWidth, sh = base.naturalHeight;
+                        let sw = base.naturalWidth, sh = base.naturalHeight;
+                        if (state.rw > 0 && state.rh > 0) { sw = state.rw; sh = state.rh; }
                         const rot = state.rot, swapped = rot === 90 || rot === 270;
                         const ow = swapped ? sh : sw, oh = swapped ? sw : sh;
                         const c = document.createElement('canvas'); c.width = ow; c.height = oh;
@@ -7543,8 +7652,9 @@
                         ctx.filter = `brightness(${state.br}%) contrast(${state.cn}%)`;
                         ctx.save(); ctx.translate(ow/2,oh/2); ctx.rotate(rot*Math.PI/180);
                         ctx.scale(state.fH?-1:1,state.fV?-1:1);
-                        ctx.drawImage(base,-sw/2,-sh/2); ctx.restore();
-                        resolve(c.toDataURL('image/png'));
+                        ctx.drawImage(base,-sw/2,-sh/2,sw,sh); ctx.restore();
+                        const q = state.cmp / 100;
+                        resolve(q < 1 ? c.toDataURL('image/jpeg', q) : c.toDataURL('image/png'));
                     };
                     base.src = state.resultB64;
                 });
@@ -7559,12 +7669,20 @@
                 state.resultB64 = null;
                 state.rot = 0; state.fH = false; state.fV = false;
                 state.br = 100; state.cn = 100;
+                state.rw = 0; state.rh = 0; state.cmp = 92; state.ratioLock = true;
+                state.aspectRatio = (state.origImg.naturalWidth || 1) / (state.origImg.naturalHeight || 1);
                 const br = g('-br'); if (br) { br.value = '100'; }
                 const brval = g('-brval'); if (brval) brval.textContent = '100';
                 const cn = g('-cn'); if (cn) { cn.value = '100'; }
                 const cnval = g('-cnval'); if (cnval) cnval.textContent = '100';
+                const rw = g('-rw'); if (rw) rw.value = '';
+                const rh = g('-rh'); if (rh) rh.value = '';
+                const rdims = g('-rdims'); if (rdims) rdims.textContent = `Original: ${state.origImg.naturalWidth}×${state.origImg.naturalHeight}px`;
+                const cmpSlider = g('-cmp'); if (cmpSlider) cmpSlider.value = '92';
+                const cmpVal = g('-cmpval'); if (cmpVal) cmpVal.textContent = '92';
+                const cmpInfo = g('-cmpinfo'); if (cmpInfo) cmpInfo.textContent = '';
+                const rlock = g('-rlock'); if (rlock) rlock.style.background = '#e0f2fe';
                 const cl = g('-clear'); if (cl) cl.style.display = 'inline-flex';
-                // Resetear preview PDF al cargar nueva imagen
                 _giftImagePreview[cfg.type] = null;
                 _updatePdfSim();
                 setStatus('Listo para procesar', '#3b82f6');
@@ -7639,6 +7757,13 @@
                         const ps = g('-proc-section'); if (ps) ps.style.display = 'none';
                         const es = g('-edit-section'); if (es) es.style.display = 'block';
                         setStatus('✅ Procesada', '#10b981');
+                        // Mostrar dimensiones del resultado procesado
+                        const _procImg = new Image();
+                        _procImg.onload = () => {
+                            state.aspectRatio = _procImg.naturalWidth / _procImg.naturalHeight;
+                            const _rd = g('-rdims'); if (_rd) _rd.textContent = `Procesada: ${_procImg.naturalWidth}×${_procImg.naturalHeight}px`;
+                        };
+                        _procImg.src = state.resultB64;
                         // Actualizar preview PDF con imagen procesada
                         _giftImagePreview[cfg.type] = state.resultB64;
                         _updatePdfSim();
@@ -7656,6 +7781,43 @@
             if (brSlider) brSlider.addEventListener('input', () => { state.br = parseInt(brSlider.value,10); if(brVal) brVal.textContent = state.br; renderResult(); });
             const cnSlider = g('-cn'), cnVal = g('-cnval');
             if (cnSlider) cnSlider.addEventListener('input', () => { state.cn = parseInt(cnSlider.value,10); if(cnVal) cnVal.textContent = state.cn; renderResult(); });
+
+            // ── Redimensionar ──
+            const rwIn = g('-rw'), rhIn = g('-rh'), rlockBtn = g('-rlock'), rapplyBtn = g('-rapply'), rdimsEl = g('-rdims');
+            if (rlockBtn) rlockBtn.addEventListener('click', () => {
+                state.ratioLock = !state.ratioLock;
+                rlockBtn.style.background = state.ratioLock ? '#e0f2fe' : '#f1f5f9';
+                rlockBtn.title = state.ratioLock ? 'Proporción bloqueada' : 'Proporción libre';
+            });
+            if (rwIn && rhIn) {
+                rwIn.addEventListener('input', () => {
+                    if (!state.ratioLock || !state.aspectRatio) return;
+                    const w = parseInt(rwIn.value, 10);
+                    if (w > 0) rhIn.value = Math.round(w / state.aspectRatio);
+                });
+                rhIn.addEventListener('input', () => {
+                    if (!state.ratioLock || !state.aspectRatio) return;
+                    const h = parseInt(rhIn.value, 10);
+                    if (h > 0) rwIn.value = Math.round(h * state.aspectRatio);
+                });
+            }
+            if (rapplyBtn) rapplyBtn.addEventListener('click', () => {
+                const w = parseInt((rwIn||{}).value, 10), h = parseInt((rhIn||{}).value, 10);
+                if (!w || !h || w < 10 || h < 10) { alert('Ingresá ancho y alto válidos (mín 10px)'); return; }
+                if (w > 2000 || h > 2000) { alert('Máximo 2000px por lado'); return; }
+                state.rw = w; state.rh = h;
+                if (rdimsEl) rdimsEl.textContent = `Redimensionada: ${w}×${h}px`;
+                renderResult();
+            });
+
+            // ── Compresión ──
+            const cmpSlider = g('-cmp'), cmpVal = g('-cmpval');
+            if (cmpSlider) cmpSlider.addEventListener('input', () => {
+                state.cmp = parseInt(cmpSlider.value, 10);
+                if (cmpVal) cmpVal.textContent = state.cmp;
+                renderResult();
+            });
+
             const szSlider = g('-sz'), szVal = g('-szval'), szDesc = g('-szdesc');
             if (szSlider) szSlider.addEventListener('input', () => {
                 const sz = parseInt(szSlider.value, 10);
@@ -7674,8 +7836,14 @@
             const resetBtn = g('-reset');
             if (resetBtn) resetBtn.addEventListener('click', () => {
                 state.rot = 0; state.fH = false; state.fV = false; state.br = 100; state.cn = 100;
+                state.rw = 0; state.rh = 0; state.cmp = 92;
                 if (brSlider) { brSlider.value = '100'; if(brVal) brVal.textContent = '100'; }
                 if (cnSlider) { cnSlider.value = '100'; if(cnVal) cnVal.textContent = '100'; }
+                if (rwIn) rwIn.value = '';
+                if (rhIn) rhIn.value = '';
+                if (rdimsEl && state.origImg) rdimsEl.textContent = `Original: ${state.origImg.naturalWidth}×${state.origImg.naturalHeight}px`;
+                if (cmpSlider) { cmpSlider.value = '92'; if(cmpVal) cmpVal.textContent = '92'; }
+                const cmpInfo = g('-cmpinfo'); if (cmpInfo) cmpInfo.textContent = '';
                 renderResult();
             });
 
