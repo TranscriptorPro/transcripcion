@@ -3964,7 +3964,7 @@
         let _giftWpCounter = 0;
         let _giftWpLogoData = {};
         let _giftImageData = { firma: null, proLogo: null, proLogoSize: 60, firmaSize: 60, instLogoSize: 60 };
-        let _giftActiveInstWp = 0;  // WP activo para el editor de logo institucional
+        var _giftActiveInstWp = 0;  // WP activo para el editor de logo institucional (var para acceso desde inline handlers)
         const _giftImagePreview = { inst: null, prof: null, firma: null };
 
         // ── Gift Wizard: navegación de pasos ─────────────────────────────────
@@ -8352,8 +8352,9 @@
             });
         }
 
-        // Exponer factory para reuso en modal de aprobación
+        // Exponer factory y funciones para reuso desde inline handlers y modal de aprobación
         window._makeImageSection = _makeImageSection;
+        window._updatePdfSim = _updatePdfSim;
 
         // Inicializar cuando el DOM esté listo
         if (document.readyState === 'loading') {
