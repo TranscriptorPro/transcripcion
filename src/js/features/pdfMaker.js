@@ -55,6 +55,11 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const cfgShowPageNum = config.showPageNum !== false;
         const cfgShowDate    = config.showDate    === true;
 
+        // Datos del lugar de trabajo (con fallback al workplace activo)
+        const wpProfiles = (await appDB.get('workplace_profiles')) || [];
+        const wpIdx = config.activeWorkplaceIndex;
+        const activeWp = (wpIdx !== undefined && wpIdx !== null) ? wpProfiles[Number(wpIdx)] : wpProfiles[0];
+
         // Logo institucional: del workplace o fallback global pdf_logo
         const wpLogo = activeWp?.logo || '';
         const instLogoB64 = (wpLogo && wpLogo.startsWith('data:'))
@@ -79,11 +84,6 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             : (rawEsp || '');
         const institutionName = activePro?.institutionName || profData.institutionName || '';
         const accent       = _hexToRgb(activePro?.headerColor || profData.headerColor || '#1a56a0');
-
-        // Datos del lugar de trabajo (con fallback al workplace activo)
-        const wpProfiles = (await appDB.get('workplace_profiles')) || [];
-        const wpIdx = config.activeWorkplaceIndex;
-        const activeWp = (wpIdx !== undefined && wpIdx !== null) ? wpProfiles[Number(wpIdx)] : wpProfiles[0];
         const wpAddress = config.workplaceAddress || activeWp?.address || '';
         const wpPhone   = config.workplacePhone   || activeWp?.phone   || '';
         const wpName    = activeWp?.name || '';
