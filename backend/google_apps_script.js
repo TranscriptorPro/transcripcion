@@ -921,7 +921,8 @@ function doPost(e) {
           'ID_Registro', 'Nombre', 'Matricula', 'Email', 'Telefono',
           'Especialidades', 'Estudios', 'Workplace_Data', 'Workplace_Logo',
           'Extra_Workplaces', 'Header_Color', 'Footer_Text', 'Firma', 'Pro_Logo',
-          'Notas', 'Fecha_Registro', 'Estado', 'Origen', 'ID_Medico_Asignado', 'Motivo_Rechazo'
+          'Notas', 'Fecha_Registro', 'Estado', 'Origen', 'ID_Medico_Asignado', 'Motivo_Rechazo',
+          'Plan_Solicitado', 'Addons_Cart'
         ]);
         regSheet.setFrozenRows(1);
       }
@@ -944,6 +945,15 @@ function doPost(e) {
           }
         }
       }
+
+      // Agregar columnas Plan_Solicitado y Addons_Cart si no existen (sheets pre-existentes)
+      const workingHeaders = existingHeaders.slice();
+      ['Plan_Solicitado', 'Addons_Cart'].forEach(function(col) {
+        if (!workingHeaders.includes(col)) {
+          regSheet.getRange(1, workingHeaders.length + 1).setValue(col);
+          workingHeaders.push(col);
+        }
+      });
 
       const regId = 'REG_' + Date.now();
       const workplaceData = JSON.stringify(payload.workplace || {});
@@ -975,28 +985,32 @@ function doPost(e) {
         }
       }
 
-      const row = [
-        regId,
-        payload.nombre || '',
-        payload.matricula || '',
-        email,
-        payload.telefono || '',
-        especialidades,
-        estudios,
-        workplaceData,
-        wpLogo,
-        payload.extraWorkplaces || '',
-        payload.headerColor || '#1a56a0',
-        payload.footerText || '',
-        firma,
-        proLogo,
-        payload.notas || '',
-        payload.fechaRegistro || new Date().toISOString(),
-        'pendiente',
-        payload.origen || 'formulario_web',
-        '',  // ID_Medico_Asignado (se llena al aprobar)
-        ''   // Motivo_Rechazo
-      ];
+      // Construir fila mapeando por headers para compatibilidad con sheets existentes
+      const rowData = {
+        ID_Registro:        regId,
+        Nombre:             payload.nombre || '',
+        Matricula:          payload.matricula || '',
+        Email:              email,
+        Telefono:           payload.telefono || '',
+        Especialidades:     especialidades,
+        Estudios:           estudios,
+        Workplace_Data:     workplaceData,
+        Workplace_Logo:     wpLogo,
+        Extra_Workplaces:   payload.extraWorkplaces || '',
+        Header_Color:       payload.headerColor || '#1a56a0',
+        Footer_Text:        payload.footerText || '',
+        Firma:              firma,
+        Pro_Logo:           proLogo,
+        Notas:              payload.notas || '',
+        Fecha_Registro:     payload.fechaRegistro || new Date().toISOString(),
+        Estado:             'pendiente',
+        Origen:             payload.origen || 'formulario_web',
+        ID_Medico_Asignado: '',
+        Motivo_Rechazo:     '',
+        Plan_Solicitado:    payload.planSeleccionado || '',
+        Addons_Cart:        payload.addons || ''
+      };
+      const row = workingHeaders.map(function(h) { return rowData[h] !== undefined ? rowData[h] : ''; });
 
       regSheet.appendRow(row);
 

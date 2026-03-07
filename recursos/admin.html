@@ -4957,6 +4957,13 @@
                 workplace = wp.name || '—';
             } catch(_) { workplace = '—'; }
 
+            // Badge del plan solicitado
+            const PLANES_VALIDOS = ['NORMAL','PRO','CLINIC','GIFT','TRIAL'];
+            const planSol = (reg.Plan_Solicitado || _parsePlanFromNotas(reg.Notas || '')).toUpperCase();
+            const planBadgeHtml = (planSol && PLANES_VALIDOS.includes(planSol))
+                ? _renderPlanBadgeMini(planSol)
+                : '';
+
             const isPendiente = estado === 'pendiente';
             const actionsHtml = isPendiente ? `
                 <button class="btn-view-details" onclick="viewRegDetail('${reg.ID_Registro}')">📋 Detalle</button>
@@ -4974,7 +4981,10 @@
                             <h3>${escapeHtml(reg.Nombre || 'Sin nombre')}</h3>
                             <span class="reg-date">${fecha}</span>
                         </div>
-                        <span class="badge ${badgeClass}">${estadoLabel}</span>
+                        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+                            <span class="badge ${badgeClass}">${estadoLabel}</span>
+                            ${planBadgeHtml}
+                        </div>
                     </div>
                     <dl class="reg-card-info">
                         <dt>📧 Email</dt><dd>${escapeHtml(reg.Email || '—')}</dd>
@@ -5113,14 +5123,41 @@
             // Guardar especialidades del registro
             const espStr = reg.Especialidades || '';
             document.getElementById('approveRegEspecialidades').value = espStr;
+            // Guardar addons cart del registro
+            document.getElementById('approveAddonsCart').value = reg.Addons_Cart || '';
 
             document.getElementById('approveModalInfo').textContent =
                 `Aprobar a ${reg.Nombre || 'Sin nombre'} (${reg.Email || '—'}) — Matrícula: ${reg.Matricula || '—'}`;
-            document.getElementById('approvePlan').value = 'NORMAL';
-            // Auto-llenar con las keys guardadas en Mis Keys
-            document.getElementById('approveApiKey').value  = localStorage.getItem('admin_groq_key')    || '';
+
+            // Auto-detectar plan: primero del campo Plan_Solicitado, luego parseando Notas
+            const planSolicitado = (reg.Plan_Solicitado || _parsePlanFromNotas(reg.Notas || '')).toUpperCase();
+            const PLANES_VALIDOS = ['NORMAL','PRO','CLINIC','GIFT','TRIAL'];
+            const planBadgeRow  = document.getElementById('approvePlanBadgeRow');
+            const planSelectRow = document.getElementById('approvePlanSelectRow');
+
+            if (planSolicitado && PLANES_VALIDOS.includes(planSolicitado)) {
+                document.getElementById('approvePlan').value = planSolicitado;
+                document.getElementById('approvePlanBadge').innerHTML =
+                    _renderPlanBadge(planSolicitado) +
+                    ' <span style="font-size:.78rem;color:#64748b;margin-left:.4rem;">elegido por el usuario</span>';
+                planBadgeRow.style.display  = '';
+                planSelectRow.style.display = 'none';
+            } else {
+                document.getElementById('approvePlan').value = 'NORMAL';
+                planBadgeRow.style.display  = 'none';
+                planSelectRow.style.display = '';
+            }
+
+            // Auto-llenar keys desde Mis Keys (permanecen ocultas, colapsadas)
+            document.getElementById('approveApiKey').value   = localStorage.getItem('admin_groq_key')    || '';
             document.getElementById('approveApiKeyB1').value = localStorage.getItem('admin_groq_key_b1') || '';
             document.getElementById('approveApiKeyB2').value = localStorage.getItem('admin_groq_key_b2') || '';
+
+            // Colapsar edición de keys y actualizar estado
+            const keysEdit = document.getElementById('approveKeysEditSection');
+            if (keysEdit) keysEdit.style.display = 'none';
+            _updateApproveKeysStatus();
+
             document.getElementById('approveModalOverlay').classList.add('show');
             updateApproveTemplateUI();
         }
@@ -5129,7 +5166,85 @@
             document.getElementById('approveModalOverlay').classList.remove('show');
         }
 
-        // ── Mis API Keys (tab-keys) ─────────────────────────────────────────
+        /** Parsea el plan desde el campo Notas (ej: "Plan: PRO" o "Plan PRO") */
+        function _parsePlanFromNotas(notas) {
+            if (!notas) return '';
+            const m = String(notas).match(/Plan[:\s]+([A-Z]{2,10})/i);
+            return m ? m[1].toUpperCase() : '';
+        }
+
+        /** Genera el HTML del badge grande del plan (para el modal) */
+        function _renderPlanBadge(plan) {
+            const cfg = {
+                NORMAL: { color: '#1d4ed8', bg: '#dbeafe', icon: '📋' },
+                PRO:    { color: '#7c3aed', bg: '#ede9fe', icon: '⭐' },
+                CLINIC: { color: '#0f766e', bg: '#ccfbf1', icon: '🏥' },
+                GIFT:   { color: '#b45309', bg: '#fef3c7', icon: '🎁' },
+                TRIAL:  { color: '#9a3412', bg: '#fee2e2', icon: '🔬' }
+            };
+            const c = cfg[plan] || { color: '#475569', bg: '#f1f5f9', icon: '📄' };
+            return `<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 14px;background:${c.bg};color:${c.color};border-radius:20px;font-weight:700;font-size:.95rem;">${c.icon} ${plan}</span>`;
+        }
+
+        /** Genera el HTML del badge pequeño del plan (para las tarjetas) */
+        function _renderPlanBadgeMini(plan) {
+            const cfg = {
+                NORMAL: { color: '#1d4ed8', bg: '#dbeafe', icon: '📋' },
+                PRO:    { color: '#7c3aed', bg: '#ede9fe', icon: '⭐' },
+                CLINIC: { color: '#0f766e', bg: '#ccfbf1', icon: '🏥' },
+                GIFT:   { color: '#b45309', bg: '#fef3c7', icon: '🎁' },
+                TRIAL:  { color: '#9a3412', bg: '#fee2e2', icon: '🔬' }
+            };
+            const c = cfg[plan] || { color: '#475569', bg: '#f1f5f9', icon: '📄' };
+            return `<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;background:${c.bg};color:${c.color};border-radius:12px;font-weight:700;font-size:.74rem;">${c.icon} ${plan}</span>`;
+        }
+
+        /** Actualiza el bloque de estado de keys en el modal de aprobación */
+        function _updateApproveKeysStatus() {
+            const statusEl = document.getElementById('approveKeysStatus');
+            if (!statusEl) return;
+            const k  = (document.getElementById('approveApiKey')?.value  || '').trim();
+            const b1 = (document.getElementById('approveApiKeyB1')?.value || '').trim();
+            const b2 = (document.getElementById('approveApiKeyB2')?.value || '').trim();
+            const editBtn = `<button type="button" onclick="toggleApproveKeysEdit()" style="margin-left:.6rem;padding:2px 9px;font-size:.77rem;border:1px solid #cbd5e1;border-radius:6px;cursor:pointer;background:#f1f5f9;color:#334155;">✏️ Editar</button>`;
+            if (k) {
+                const bkParts = [b1 ? 'B1 ✓' : '', b2 ? 'B2 ✓' : ''].filter(Boolean).join(', ');
+                statusEl.innerHTML = `<span style="color:#15803d;font-weight:600;">✅ Keys configuradas</span>` +
+                    (bkParts ? ` <span style="color:#64748b;font-size:.78rem;">(respaldos: ${bkParts})</span>` : '') + editBtn;
+            } else {
+                statusEl.innerHTML = `<span style="color:#dc2626;font-weight:600;">⚠️ Sin keys — configurá las claves en la pestaña "🔑 Mis Keys"</span>` +
+                    `<button type="button" onclick="toggleApproveKeysEdit()" style="margin-left:.6rem;padding:2px 9px;font-size:.77rem;border:1px solid #fca5a5;border-radius:6px;cursor:pointer;background:#fef2f2;color:#b91c1c;">⚙️ Ingresar</button>`;
+            }
+        }
+
+        /** Muestra/oculta el panel de edición de keys */
+        function toggleApproveKeysEdit() {
+            const el = document.getElementById('approveKeysEditSection');
+            if (!el) return;
+            const hidden = el.style.display === 'none' || el.style.display === '';
+            el.style.display = hidden ? 'block' : 'none';
+        }
+
+        /** Guarda las keys editadas en localStorage y sincroniza con Mis Keys */
+        function _approveKeysSave() {
+            const k  = (document.getElementById('approveApiKey')?.value  || '').trim();
+            const b1 = (document.getElementById('approveApiKeyB1')?.value || '').trim();
+            const b2 = (document.getElementById('approveApiKeyB2')?.value || '').trim();
+            if (k) {
+                localStorage.setItem('admin_groq_key',    k);
+                localStorage.setItem('admin_groq_key_b1', b1);
+                localStorage.setItem('admin_groq_key_b2', b2);
+                // Sincronizar con el tab Mis Keys
+                const inp   = document.getElementById('adminKeyPrincipal');
+                const inpB1 = document.getElementById('adminKeyB1');
+                const inpB2 = document.getElementById('adminKeyB2');
+                if (inp)   inp.value   = k;
+                if (inpB1) inpB1.value = b1;
+                if (inpB2) inpB2.value = b2;
+            }
+            document.getElementById('approveKeysEditSection').style.display = 'none';
+            _updateApproveKeysStatus();
+        }
 
         /** Carga las keys guardadas en localStorage y las muestra en los inputs del tab */
         function loadAdminKeys() {
@@ -5239,6 +5354,20 @@
                 html += '</div>';
                 section.innerHTML = html;
                 onPackChange();
+                // Pre-seleccionar packs del formulario de registro
+                try {
+                    const cartStr = document.getElementById('approveAddonsCart')?.value;
+                    if (cartStr) {
+                        const cart = JSON.parse(cartStr);
+                        const preSelectedPacks = (cart.packs || []).map(p => p.category);
+                        if (preSelectedPacks.length > 0) {
+                            section.querySelectorAll('.approve-pack-cb').forEach(cb => {
+                                cb.checked = preSelectedPacks.includes(cb.value);
+                            });
+                            onPackChange();
+                        }
+                    }
+                } catch(_) {}
             } else if (plan === 'PRO') {
                 // PRO: todas las plantillas de sus especialidades (auto), + extras opcionales
                 const autoKeys = [];
@@ -5310,6 +5439,27 @@
                 html += '</div>';
                 section.innerHTML = html;
                 onTplChange(maxTpl);
+                // Pre-seleccionar plantillas del formulario de registro
+                try {
+                    const cartStr = document.getElementById('approveAddonsCart')?.value;
+                    if (cartStr) {
+                        const cart = JSON.parse(cartStr);
+                        const preSelectedKeys = (cart.templates || []).map(t => t.key);
+                        if (preSelectedKeys.length > 0) {
+                            section.querySelectorAll('.approve-tpl-cb').forEach(cb => { if (!cb.disabled) cb.checked = false; });
+                            preSelectedKeys.forEach(key => {
+                                const cb = section.querySelector(`.approve-tpl-cb[value="${key}"]`);
+                                if (cb) {
+                                    cb.disabled = false;
+                                    cb.checked = true;
+                                    const lbl = cb.closest('label');
+                                    if (lbl) { lbl.style.opacity = '1'; lbl.style.background = '#f0fdf4'; lbl.style.borderColor = '#86efac'; }
+                                }
+                            });
+                            onTplChange(maxTpl);
+                        }
+                    }
+                } catch(_) {}
             }
         }
 
@@ -5377,7 +5527,9 @@
             const maxDevices = DEVICES_POR_PLAN[plan] || 2;
 
             if (!apiKey) {
-                await dashAlert('Debés ingresar una API Key para este profesional', '🔑');
+                await dashAlert('Debés ingresar una API Key para este profesional. Usá el botón ⚙️ Ingresar para configurarla.', '🔑');
+                document.getElementById('approveKeysEditSection').style.display = 'block';
+                _updateApproveKeysStatus();
                 document.getElementById('approveApiKey').focus();
                 return;
             }
@@ -6461,7 +6613,17 @@
             <p style="font-size:.85rem;color:#64748b;margin-bottom:1rem;" id="approveModalInfo"></p>
 
             <div class="form-row">
-                <div class="form-group">
+                <!-- Badge del plan solicitado (se muestra cuando el registro tiene plan) -->
+                <div class="form-group" id="approvePlanBadgeRow" style="display:none;">
+                    <label>Plan solicitado</label>
+                    <div id="approvePlanBadge" style="padding:.3rem 0;"></div>
+                    <a href="#" style="font-size:.77rem;color:#94a3b8;text-decoration:none;"
+                        onclick="event.preventDefault();document.getElementById('approvePlanBadgeRow').style.display='none';document.getElementById('approvePlanSelectRow').style.display='';updateApproveTemplateUI();">
+                        ⚙️ Cambiar plan
+                    </a>
+                </div>
+                <!-- Select manual (visible si no se detectó plan o el admin quiere cambiarlo) -->
+                <div class="form-group" id="approvePlanSelectRow">
                     <label>Plan a asignar</label>
                     <select id="approvePlan" onchange="updateApproveTemplateUI()">
                         <option value="NORMAL">NORMAL</option>
@@ -6478,20 +6640,25 @@
                 </div>
             </div>
 
-            <div class="form-group" style="margin-bottom:.8rem;">
-                <label>🔑 API Key de Groq <span style="color:#6b7280;font-weight:400;">(principal)</span></label>
-                <input type="text" id="approveApiKey" placeholder="gsk_xxxxxxxxxxxxxxxx" style="font-family:monospace;" autocapitalize="none" autocorrect="off" spellcheck="false">
-                <small style="color:#94a3b8;font-size:.73rem;">Pegá la API Key asignada a este profesional — será la clave principal</small>
+            <!-- API Keys: resumen de estado → edición colapsable -->
+            <div class="form-group" style="margin-bottom:.5rem;">
+                <label>🔑 API Keys de Groq</label>
+                <div id="approveKeysStatus" style="padding:.4rem 0;font-size:.88rem;"></div>
             </div>
-            <div class="form-group" style="margin-bottom:.8rem;">
-                <label>🔑 Backup Key 1 <span style="color:#9ca3af;font-weight:400;font-size:.78rem;">(opcional)</span></label>
-                <input type="text" id="approveApiKeyB1" placeholder="gsk_... segunda clave de respaldo" style="font-family:monospace;" autocapitalize="none" autocorrect="off" spellcheck="false">
-                <small style="color:#94a3b8;font-size:.73rem;">Si la principal falla por límite de uso, la app intentará con esta</small>
-            </div>
-            <div class="form-group" style="margin-bottom:.8rem;">
-                <label>🔑 Backup Key 2 <span style="color:#9ca3af;font-weight:400;font-size:.78rem;">(opcional)</span></label>
-                <input type="text" id="approveApiKeyB2" placeholder="gsk_... tercera clave de respaldo" style="font-family:monospace;" autocapitalize="none" autocorrect="off" spellcheck="false">
-                <small style="color:#94a3b8;font-size:.73rem;">Tercer nivel de respaldo — se usa si las dos anteriores fallan</small>
+            <div id="approveKeysEditSection" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:.8rem;margin-bottom:.8rem;">
+                <div class="form-group" style="margin-bottom:.6rem;">
+                    <label style="font-size:.82rem;color:#64748b;">Principal</label>
+                    <input type="text" id="approveApiKey" placeholder="gsk_xxxxxxxxxxxxxxxx" style="font-family:monospace;" autocapitalize="none" autocorrect="off" spellcheck="false">
+                </div>
+                <div class="form-group" style="margin-bottom:.6rem;">
+                    <label style="font-size:.82rem;color:#64748b;">Backup 1 <span style="color:#9ca3af;">(opcional)</span></label>
+                    <input type="text" id="approveApiKeyB1" placeholder="gsk_... segunda clave" style="font-family:monospace;" autocapitalize="none" autocorrect="off" spellcheck="false">
+                </div>
+                <div class="form-group" style="margin-bottom:.4rem;">
+                    <label style="font-size:.82rem;color:#64748b;">Backup 2 <span style="color:#9ca3af;">(opcional)</span></label>
+                    <input type="text" id="approveApiKeyB2" placeholder="gsk_... tercera clave" style="font-family:monospace;" autocapitalize="none" autocorrect="off" spellcheck="false">
+                </div>
+                <button type="button" onclick="_approveKeysSave()" style="margin-top:.5rem;font-size:.8rem;padding:5px 12px;border:1px solid #0ea5e9;border-radius:6px;cursor:pointer;background:#f0f9ff;color:#0369a1;">💾 Guardar y cerrar</button>
             </div>
 
             <!-- Sección dinámica de plantillas según plan -->
@@ -6501,6 +6668,7 @@
 
             <input type="hidden" id="approveRegId">
             <input type="hidden" id="approveRegEspecialidades">
+            <input type="hidden" id="approveAddonsCart">
 
             <div class="btn-row">
                 <button class="btn-secondary" onclick="closeApproveModal()">Cancelar</button>
