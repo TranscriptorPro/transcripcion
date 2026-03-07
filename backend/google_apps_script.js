@@ -747,15 +747,23 @@ function doGet(e) {
         Usage_Count: 0,
         Devices_Logged: '[]',
         Diagnostico_Pendiente: 'false',
+        // Leer imágenes reales desde Drive (si fueron guardadas en el registro)
+        let driveImages = {};
+        const firmaVal = String(regData.Firma || '');
+        if (firmaVal.startsWith('drive:')) {
+          const fileId = firmaVal.replace('drive:', '');
+          driveImages = _getImagesFromDrive(fileId);
+        }
+
         Registro_Datos: JSON.stringify({
-          workplace: regData.Workplace_Data || '',
-          headerColor: regData.Header_Color || '#1a56a0',
-          footerText: regData.Footer_Text || '',
+          workplace:      regData.Workplace_Data || '',
+          headerColor:    regData.Header_Color   || '#1a56a0',
+          footerText:     regData.Footer_Text    || '',
           extraWorkplaces: regData.Extra_Workplaces || '',
-          proLogo: regData.Pro_Logo ? 'yes' : '',
-          firma: regData.Firma ? 'yes' : '',
-          logo: regData.Workplace_Logo ? 'yes' : '',
-          notas: regData.Notas || '',
+          proLogo: driveImages.proLogo || '',
+          firma:   driveImages.firma   || '',
+          logo:    regData.Workplace_Logo ? 'yes' : '',
+          notas:   regData.Notas  || '',
           estudios: regData.Estudios || ''
         })
       };
@@ -935,11 +943,30 @@ function doPost(e) {
       const especialidades = Array.isArray(payload.especialidades) ? payload.especialidades.join(', ') : '';
       const estudios = JSON.stringify(payload.estudios || []);
 
-      // Imágenes: guardar indicador (el base64 completo es muy largo para Sheets)
-      // Para logo/firma se guarda truncado o un flag "yes"
+      // Imágenes: firma y logo profesional se guardan en Drive (el base64 es
+      // demasiado largo para una celda de Sheets). Los logos de los lugares de
+      // trabajo quedan embebidos en Workplace_Data/Extra_Workplaces normalmente.
       const wpLogo = payload.workplace && payload.workplace.logo ? 'yes' : '';
-      const firma = payload.firma ? 'yes' : '';
-      const proLogo = payload.proLogo ? 'yes' : '';
+      let firma   = '';
+      let proLogo = '';
+
+      const imagesToSave = {};
+      if (payload.firma)   imagesToSave.firma   = payload.firma;
+      if (payload.proLogo) imagesToSave.proLogo = payload.proLogo;
+
+      if (Object.keys(imagesToSave).length > 0) {
+        try {
+          const driveFileId = _saveImagesToDrive(regId, imagesToSave);
+          // Guardar file ID con prefijo 'drive:' en la columna Firma del Sheet
+          firma   = payload.firma   ? 'drive:' + driveFileId : '';
+          proLogo = payload.proLogo ? 'drive:' + driveFileId : '';
+        } catch(driveErr) {
+          // Fallback: si Drive falla, al menos dejamos constancia de presencia
+          firma   = payload.firma   ? 'yes' : '';
+          proLogo = payload.proLogo ? 'yes' : '';
+          Logger.log('⚠️ Error guardando imágenes en Drive: ' + driveErr.message);
+        }
+      }
 
       const row = [
         regId,
@@ -1180,6 +1207,83 @@ function appendAdminLog(adminUser, accion, usuarioAfectado, detalles) {
     });
     logSheet.appendRow(row);
   } catch(e) { /* no interrumpir flujo principal si falla el log */ }
+}
+
+// ── Helpers de Google Drive ──────────────────────────────────────────────────
+
+/**
+ * Obtiene (o crea) la carpeta 'Datos_Transcriptor' en Mi Unidad de Drive.
+ * @returns {Folder}
+ */
+function _getDataFolder() {
+  const FOLDER_NAME = 'Datos_Transcriptor';
+  const found = DriveApp.getFoldersByName(FOLDER_NAME);
+  return found.hasNext() ? found.next() : DriveApp.createFolder(FOLDER_NAME);
+}
+
+/**
+ * Guarda las imágenes de un registro como un único archivo JSON en Drive.
+ * @param {string} regId  - ID del registro (nombre del archivo)
+ * @param {object} images - { firma, proLogo } con valores base64
+ * @returns {string} fileId de Drive
+ */
+function _saveImagesToDrive(regId, images) {
+  const folder   = _getDataFolder();
+  const filename = regId + '_images.json';
+  // Si ya existe un archivo previo del mismo registro, moverlo a la papelera
+  const existing = folder.getFilesByName(filename);
+  while (existing.hasNext()) existing.next().setTrashed(true);
+  const file = folder.createFile(filename, JSON.stringify(images), MimeType.PLAIN_TEXT);
+  return file.getId();
+}
+
+/**
+ * Lee el JSON de imágenes de un registro desde Drive.
+ * @param {string} fileId - ID del archivo de Drive
+ * @returns {object}     - { firma, proLogo, ... } o {} si no se puede leer
+ */
+function _getImagesFromDrive(fileId) {
+  try {
+    const file = DriveApp.getFileById(fileId);
+    return JSON.parse(file.getBlob().getDataAsString()) || {};
+  } catch(e) {
+    return {};
+  }
+}
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * FUNCIÓN DE CONFIGURACIÓN — ejecutar UNA sola vez desde el editor
+ * ════════════════════════════════════════════════════════════════════
+ * Crea la carpeta 'Datos_Transcriptor' en Mi Unidad y mueve el
+ * Spreadsheet activo a esa carpeta (el ID del Sheet NO cambia, la URL
+ * del script desplegado NO cambia — es una reorganización visual).
+ *
+ * Cómo usarla:
+ *   1. Abrí el editor de Apps Script (Extensiones → Apps Script)
+ *   2. En el desplegable de funciones, elegí 'setupDriveFolder'
+ *   3. Hacé clic en ▶ Ejecutar
+ *   4. Revisá el Log (Ver → Registros) para confirmar
+ */
+function setupDriveFolder() {
+  const folder     = _getDataFolder();
+  const folderId   = folder.getId();
+  const folderUrl  = folder.getUrl();
+  Logger.log('✅ Carpeta lista: ' + folderUrl);
+
+  // Mover el Spreadsheet — operación segura: no cambia el ID ni la URL del script
+  try {
+    const ss   = SpreadsheetApp.getActiveSpreadsheet();
+    const file = DriveApp.getFileById(ss.getId());
+    file.moveTo(folder);
+    Logger.log('✅ Spreadsheet movido a Datos_Transcriptor.');
+    Logger.log('   URL del Sheet: ' + ss.getUrl());
+  } catch(moveErr) {
+    Logger.log('⚠️  No se pudo mover el Sheet (puede que ya esté en la carpeta): ' + moveErr.message);
+  }
+
+  Logger.log('ID carpeta: ' + folderId);
+  return { success: true, folderId: folderId, folderUrl: folderUrl };
 }
 
 /**
