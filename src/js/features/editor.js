@@ -1277,18 +1277,37 @@ function _renderDynamicChips(fieldName) {
                     const result = document.getElementById('efRecordResult');
                     if (status) status.textContent = '⏳ Transcribiendo...';
                     try {
-                        const form = new FormData();
-                        form.append('file', file);
-                        form.append('model', 'whisper-large-v3-turbo');
-                        form.append('response_format', 'text');
-                        form.append('language', 'es');
-                        const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-                            method: 'POST',
-                            headers: { 'Authorization': `Bearer ${window.GROQ_API_KEY}` },
-                            body: form
-                        });
-                        if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
-                        const txt = await res.text();
+                        const MAX_RETRIES = 3;
+                        let txt = '';
+                        let lastErr = null;
+                        for (let _att = 1; _att <= MAX_RETRIES; _att++) {
+                            try {
+                                if (_att > 1) {
+                                    if (status) status.textContent = `🔄 Reintento ${_att}/${MAX_RETRIES}...`;
+                                    await new Promise(r => setTimeout(r, _att * 1500));
+                                }
+                                const form = new FormData();
+                                form.append('file', file);
+                                form.append('model', 'whisper-large-v3-turbo');
+                                form.append('response_format', 'text');
+                                form.append('language', 'es');
+                                const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+                                    method: 'POST',
+                                    headers: { 'Authorization': `Bearer ${window.GROQ_API_KEY}` },
+                                    body: form
+                                });
+                                if (!res.ok) {
+                                    if (res.status === 401) throw new Error('API Key inválida');
+                                    throw new Error(`Error HTTP ${res.status}`);
+                                }
+                                txt = await res.text();
+                                break;
+                            } catch (retryErr) {
+                                lastErr = retryErr;
+                                if (retryErr.message.includes('401') || retryErr.message.includes('API Key')) throw retryErr;
+                            }
+                        }
+                        if (!txt && lastErr) throw lastErr;
                         if (result) result.value = txt.trim();
                         if (status) status.textContent = '✅ Transcripción lista. Editá si es necesario y pulsá Aplicar.';
                     } catch(e) {

@@ -685,54 +685,50 @@ function _escHtml(s) {
 }
 
 // ============ GENERACIÓN DE PDF EN BASE64 PARA EMAIL ============
-window.generatePDFBase64 = async function () {
+let _pdfBase64Queue = Promise.resolve();
+window.generatePDFBase64 = function () {
+    // Serializar llamadas para evitar race condition en saveToDisk
+    _pdfBase64Queue = _pdfBase64Queue.then(() => _generatePDFBase64Impl()).catch(() => null);
+    return _pdfBase64Queue;
+};
+async function _generatePDFBase64Impl() {
     if (typeof jspdf === 'undefined') {
         await new Promise(r => setTimeout(r, 600));
     }
     try {
-        const { jsPDF } = window.jspdf;
-        const profData  = (await appDB.get('prof_data')) || {};
-        const config    = (await appDB.get('pdf_config')) || {};
         const editorEl  = window.editor || document.getElementById('editor');
         if (!editorEl || !editorEl.innerHTML.trim()) return null;
 
-        // Reutilizar downloadPDFWrapper internamente pero capturando el doc
-        // Método más simple: generar y capturar como base64
-        const pgSize = (config.pageSize || 'a4').toLowerCase();
-        const orient = (config.orientation || 'portrait').toLowerCase();
-
-        // Usar la misma función pero con output datauristring
-        // Para no duplicar código, simulamos la descarga y capturamos el blob
         return new Promise((resolve) => {
-            // Temporalmente sobrescribir saveToDisk para capturar el blob
             const origSave = window.saveToDisk;
+            let restored = false;
+            const restore = () => { if (!restored) { restored = true; window.saveToDisk = origSave; } };
+
             window.saveToDisk = async (blob, name) => {
-                window.saveToDisk = origSave; // restaurar
+                restore();
                 try {
                     const reader = new FileReader();
-                    reader.onload = () => {
-                        const base64 = reader.result.split(',')[1]; // quitar data:...;base64,
-                        resolve(base64);
-                    };
+                    reader.onload = () => resolve(reader.result.split(',')[1]);
                     reader.onerror = () => resolve(null);
                     reader.readAsDataURL(blob);
-                } catch(_) {
-                    resolve(null);
-                }
+                } catch(_) { resolve(null); }
             };
+
+            // Timeout de seguridad: si saveToDisk nunca es llamado, resolver null
+            const timeout = setTimeout(() => { restore(); resolve(null); }, 30000);
+
             const fName = 'informe';
             const fecha = new Date().toLocaleDateString('es-ES');
             const fDate = new Date().toISOString().split('T')[0];
-            downloadPDFWrapper(editorEl.innerHTML, fName, fecha, fDate).catch(() => {
-                window.saveToDisk = origSave;
-                resolve(null);
-            });
+            downloadPDFWrapper(editorEl.innerHTML, fName, fecha, fDate)
+                .then(() => { /* saveToDisk ya fue llamado */ })
+                .catch(() => { clearTimeout(timeout); restore(); resolve(null); });
         });
     } catch (e) {
         console.error('Error generando PDF base64:', e);
         return null;
     }
-};
+}
 
 // ============ INIT EMAIL SEND MODAL ============
 window.initEmailSendModal = function () {

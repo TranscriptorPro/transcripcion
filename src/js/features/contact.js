@@ -59,7 +59,24 @@ window.initContact = function () {
     btn.style.display = '';
 
     // Intentar reenviar contactos pendientes de sesiones anteriores
-    setTimeout(() => { if (typeof _retryPendingContacts === 'function') _retryPendingContacts(); }, 10000);
+    // Reintento inicial a los 10s, luego cada 5 minutos si quedaron pendientes
+    let _contactRetryTimer = null;
+    function _scheduleContactRetry(delay) {
+        if (_contactRetryTimer) clearTimeout(_contactRetryTimer);
+        _contactRetryTimer = setTimeout(async () => {
+            if (typeof _retryPendingContacts === 'function') await _retryPendingContacts();
+            // Si aún quedan pendientes, reintentar en 5 minutos
+            let pending;
+            try {
+                pending = (typeof appDB !== 'undefined' ? await appDB.get('pending_contacts') : null)
+                    || JSON.parse(localStorage.getItem('pending_contacts') || '[]');
+            } catch(_) { pending = []; }
+            if (pending && pending.length > 0) _scheduleContactRetry(5 * 60 * 1000);
+        }, delay);
+    }
+    _scheduleContactRetry(10000);
+    // Reintentar cuando vuelve la conexión
+    window.addEventListener('online', () => _scheduleContactRetry(3000));
 
     // El overlay es el contenedor completo (tiene clase .modal-overlay)
     const overlay  = document.getElementById('contactModalOverlay');
