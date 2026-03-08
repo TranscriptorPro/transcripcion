@@ -3467,6 +3467,9 @@
 
         /* ── Init ────────────────────────────────────────────────────────────── */
         document.addEventListener('DOMContentLoaded', async () => {
+            // Limpiar el buscador (el browser puede autocompletar con la última búsqueda)
+            document.getElementById('searchInput').value = '';
+
             // Set admin name in header
             try {
                 const session = JSON.parse(sessionStorage.getItem('adminSession') || '{}');
