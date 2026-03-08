@@ -589,6 +589,13 @@
             color: #0369a1;
         }
 
+        .specialty-cell {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3px;
+            max-width: 180px;
+        }
+
         .badge-plan { text-transform: uppercase; font-size: 0.7rem; font-weight: 700; }
         .badge-trial      { background: #fef3c7; color: #92400e; }
         .badge-pro        { background: #dcfce7; color: #166534; }
@@ -3133,7 +3140,7 @@
                 return `
                 <tr data-user-id="${id}" class="${isBanned ? 'row-banned' : ''}">
                     <td data-label="Nombre" class="user-name-cell"><div class="user-name-wrap"><span class="user-full-name"><strong>${escapeHtml(user.Nombre)}</strong>${isActiveToday ? '<span class="active-indicator" title="Activo hoy">🔥</span>' : ''}</span><span class="user-matricula">${escapeHtml(user.Matricula || '')}</span></div></td>
-                    <td data-label="Especialidad"><span class="badge badge-specialty">${escapeHtml(user.Especialidad)}</span></td>
+                    <td data-label="Especialidad"><div class="specialty-cell">${(user.Especialidad||'').split(',').map(s=>s.trim()).filter(Boolean).map(s=>`<span class="badge badge-specialty">${escapeHtml(s)}</span>`).join('')}</div></td>
                     <td data-label="Plan"><span class="badge badge-plan badge-${escapeHtml(plan)}">${escapeHtml(plan.toUpperCase())}</span></td>
                     <td data-label="Estado"><span class="status-badge status-${escapeHtml(user.Estado)}">${getStatusText(user.Estado)}</span></td>
                     <td data-label="Vencimiento" class="col-expiration">${formatDate(user.Fecha_Vencimiento)}</td>
