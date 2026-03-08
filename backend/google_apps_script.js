@@ -1071,6 +1071,7 @@ function doPost(e) {
   if (action === 'admin_create_user') {
     // Auth check: sessionToken, sessionUser, sessionNivel, sessionExpiry from payload
     const authParam = {
+      adminKey:      payload.adminKey      || '',
       sessionToken:  payload.sessionToken  || '',
       sessionUser:   payload.sessionUser   || '',
       sessionNivel:  payload.sessionNivel  || '',
