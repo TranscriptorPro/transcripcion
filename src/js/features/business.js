@@ -600,6 +600,30 @@ async function _handleFactorySetup(medicoId) {
                     if (typeof appDB !== 'undefined') appDB.set('workplace_profiles', workplaceProfiles);
                     localStorage.setItem('workplace_profiles', JSON.stringify(workplaceProfiles));
 
+                    // ── CLINIC mode: si vienen múltiples profesionales, poblar el primer workplace ──
+                    // regDatos.profesionales (de Registro_Datos) o doctor.Profesionales (campo top-level)
+                    let clinicProfs = [];
+                    try {
+                        clinicProfs = regDatos.profesionales || JSON.parse(doctor.Profesionales || '[]');
+                    } catch(_) {}
+                    if (Array.isArray(clinicProfs) && clinicProfs.length > 1) {
+                        workplaceProfiles[0].professionals = clinicProfs.map(function(p) {
+                            return {
+                                nombre:         p.nombre        || '',
+                                matricula:      p.matricula     || '',
+                                especialidades: p.especialidad  || p.especialidades || '',
+                                telefono:       p.telefono      || '',
+                                email:          p.email         || '',
+                                firma:          p.firma         || '',
+                                logo:           p.logo          || ''
+                            };
+                        });
+                        // Re-guardar con la lista completa de profesionales
+                        window._wpProfilesCache = workplaceProfiles;
+                        if (typeof appDB !== 'undefined') appDB.set('workplace_profiles', workplaceProfiles);
+                        localStorage.setItem('workplace_profiles', JSON.stringify(workplaceProfiles));
+                    }
+
                     // Actualizar prof_data con workplace
                     profData.workplace = wp.name || '';
                     window._profDataCache = profData;
