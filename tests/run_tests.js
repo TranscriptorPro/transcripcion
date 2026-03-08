@@ -5524,8 +5524,10 @@ test('G2 — addWorkplace respeta PRICING.workplaces', () => {
     assert(registroCode.includes('PRICING[selectedPlan].workplaces') || registroCode.includes('plan.workplaces'), 'addWorkplace debe consultar workplaces del plan');
 });
 
-test('G2 — _applyStep4PlanRestrictions oculta color si no pdfColor', () => {
-    assert(registroCode.includes("plan.pdfColor ? '' : 'none'"), 'Step4 debe ocultar color basado en pdfColor');
+test('G2 — _applyStep4PlanRestrictions color visible para todos los planes', () => {
+    // El color del encabezado es para todos los planes (no se oculta por pdfColor)
+    assert(!registroCode.includes("plan.pdfColor ? '' : 'none'"), 'El color NO debe ocultarse basado en pdfColor — aplica a todos los planes');
+    assert(registroCode.includes('step4ProLogoGroup'), 'Debe usar ID step4ProLogoGroup para controlar logo');
 });
 
 test('G2 — _applyStep4PlanRestrictions oculta logo si no pdfLogo', () => {

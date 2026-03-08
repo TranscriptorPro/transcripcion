@@ -1004,7 +1004,7 @@
                             <div class="upload-preview" id="firmaPreview"></div>
                         </div>
 
-                        <div class="field-group">
+                        <div class="field-group" id="step4ProLogoGroup">
                             <label>Logo Profesional</label>
                             <div class="upload-zone" id="proLogoDropZone">
                                 <div class="upload-icon">🩺</div>
@@ -1012,6 +1012,11 @@
                                 <input type="file" id="regProLogo" accept="image/png,image/jpeg,image/webp" onchange="previewImage(this, 'proLogoPreview')">
                             </div>
                             <div class="upload-preview" id="proLogoPreview"></div>
+                        </div>
+                        <div class="field-group" id="step4ProLogoHint" style="display:none;">
+                            <div style="background:#f8f9fa;border:1px dashed #ccc;border-radius:8px;padding:.8rem 1rem;text-align:center;color:#888;font-size:.82rem;">
+                                🔒 <b>Logo Profesional</b> disponible en plan <b>Pro</b> y <b>Clínica</b>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2522,12 +2527,13 @@
 
         function _applyStep4PlanRestrictions() {
             const plan = PRICING[selectedPlan] || {};
-            // Color: solo CLINIC
-            const colorSection = document.querySelector('#step4 .field-group');
-            if (colorSection) colorSection.style.display = plan.pdfColor ? '' : 'none';
-            // Logo profesional: ocultar en NORMAL
-            const proLogoZone = document.getElementById('proLogoDropZone')?.closest('.field-group');
-            if (proLogoZone) proLogoZone.style.display = plan.pdfLogo ? '' : 'none';
+            // Color del encabezado: disponible para TODOS los planes
+            // (no se oculta — siempre aplica al header del informe)
+            // Logo profesional: solo PRO y CLINIC
+            const proLogoGroup = document.getElementById('step4ProLogoGroup');
+            const proLogoHint  = document.getElementById('step4ProLogoHint');
+            if (proLogoGroup) proLogoGroup.style.display = plan.pdfLogo ? '' : 'none';
+            if (proLogoHint)  proLogoHint.style.display  = plan.pdfLogo ? 'none' : '';
         }
 
         function validateStep3() {
