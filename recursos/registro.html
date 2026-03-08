@@ -853,30 +853,30 @@
             <!-- ═══ PASO 1: DATOS PERSONALES ═══ -->
             <div class="form-step" id="step1">
                 <div class="card">
-                    <div class="section-title">👤 Datos del Profesional</div>
-                    <p class="section-subtitle">
+                    <div class="section-title" id="step1Title">👤 Datos del Profesional</div>
+                    <p class="section-subtitle" id="step1Subtitle">
                         Estos datos aparecerán en todos los informes que generés.
                         Los campos con <span style="color:var(--danger);">*</span> son obligatorios.
                     </p>
 
                     <div class="field-row">
                         <div class="field-group">
-                            <label>Nombre y Apellido <span class="req">*</span></label>
+                            <label id="labelNombre">Nombre y Apellido <span class="req">*</span></label>
                             <input type="text" id="regNombre" required placeholder="Dr. Juan Pérez">
                         </div>
                         <div class="field-group">
-                            <label>Matrícula <span class="req">*</span></label>
+                            <label id="labelMatricula">Matrícula <span class="req">*</span></label>
                             <input type="text" id="regMatricula" required placeholder="MN 12345">
                         </div>
                     </div>
 
                     <div class="field-row">
                         <div class="field-group">
-                            <label>Email <span class="req">*</span></label>
+                            <label id="labelEmail">Email <span class="req">*</span></label>
                             <input type="email" id="regEmail" required placeholder="doctor@ejemplo.com">
                         </div>
                         <div class="field-group">
-                            <label>Teléfono</label>
+                            <label id="labelTelefono">Teléfono</label>
                             <input type="tel" id="regTelefono" placeholder="+54 9 11 1234-5678">
                         </div>
                     </div>
@@ -891,8 +891,8 @@
             <!-- ═══ PASO 2: ESPECIALIDADES Y ESTUDIOS ═══ -->
             <div class="form-step" id="step2">
                 <div class="card">
-                    <div class="section-title">🩺 Especialidades</div>
-                    <p class="section-subtitle">Seleccioná las especialidades que ejercés. Esto determina qué plantillas de estudio tendrás disponibles.</p>
+                    <div class="section-title" id="step2TitleEsp">🩺 Especialidades</div>
+                    <p class="section-subtitle" id="step2SubtitleEsp">Seleccioná las especialidades que ejercés. Esto determina qué plantillas de estudio tendrás disponibles.</p>
 
                     <div class="checkbox-grid" id="especialidadesGrid">
                         <!-- Generado por JS -->
@@ -900,8 +900,8 @@
                 </div>
 
                 <div class="card">
-                    <div class="section-title">📋 Estudios que Realizás</div>
-                    <p class="section-subtitle">Basado en tus especialidades, seleccioná los estudios que realizás habitualmente.</p>
+                    <div class="section-title" id="step2TitleEstudios">📋 Estudios que Realizás</div>
+                    <p class="section-subtitle" id="step2SubtitleEstudios">Basado en tus especialidades, seleccioná los estudios que realizás habitualmente.</p>
 
                     <div id="estudiosGrid" style="color:var(--text-light);font-style:italic;font-size:.85rem;">
                         Seleccioná al menos una especialidad arriba ☝️
@@ -917,8 +917,8 @@
             <!-- ═══ PASO 3: LUGAR DE TRABAJO ═══ -->
             <div class="form-step" id="step3">
                 <div style="margin-bottom:.6rem;">
-                    <div class="section-title">🏥 Lugares de Trabajo</div>
-                    <p class="section-subtitle">Configurá tu/s lugar/es de trabajo. Estos datos aparecen en el encabezado de los informes.</p>
+                    <div class="section-title" id="step3Title">🏥 Lugares de Trabajo</div>
+                    <p class="section-subtitle" id="step3Subtitle">Configurá tu/s lugar/es de trabajo. Estos datos aparecen en el encabezado de los informes.</p>
                 </div>
 
                 <div id="workplacesContainer">
@@ -1587,6 +1587,84 @@
             const btn = document.getElementById('btnStep0Next');
             btn.disabled = false;
             btn.textContent = `Continuar con plan ${PRICING[plan].label} →`;
+            // Adaptar toda la UI al tipo de usuario
+            _applyClinicMode(plan === 'CLINIC');
+        }
+
+        // ── Clinic Mode: adaptar textos de pasos 1-3 según plan ──────────────
+        function _applyClinicMode(isClinic) {
+            // Stepper
+            const stepDatos   = document.querySelector('#stepsBar .step[data-step="1"]');
+            const stepTrabajo = document.querySelector('#stepsBar .step[data-step="3"]');
+            if (stepDatos)   stepDatos.innerHTML   = `<span class="step-num">2</span> ${isClinic ? 'Clínica' : 'Datos'}`;
+            if (stepTrabajo) stepTrabajo.innerHTML = `<span class="step-num">4</span> ${isClinic ? 'Sedes' : 'Trabajo'}`;
+
+            // ── Paso 1 ────────────────────────────────────────────────────────
+            const s1Title    = document.getElementById('step1Title');
+            const s1Subtitle = document.getElementById('step1Subtitle');
+            const lNombre    = document.getElementById('labelNombre');
+            const lMatricula = document.getElementById('labelMatricula');
+            const lEmail     = document.getElementById('labelEmail');
+            const lTelefono  = document.getElementById('labelTelefono');
+            const inNombre   = document.getElementById('regNombre');
+            const inMatricula= document.getElementById('regMatricula');
+            const inEmail    = document.getElementById('regEmail');
+            const inTelefono = document.getElementById('regTelefono');
+
+            if (isClinic) {
+                if (s1Title)    s1Title.textContent    = '🏥 Datos de la Clínica';
+                if (s1Subtitle) s1Subtitle.textContent = 'Ingresá los datos institucionales de la clínica. Aparecerán en el encabezado de todos los informes generados.';
+                if (lNombre)    lNombre.innerHTML      = 'Nombre de la Clínica <span class="req">*</span>';
+                if (lMatricula) lMatricula.innerHTML   = 'CUIT / Nro. Habilitación <span class="req">*</span>';
+                if (lEmail)     lEmail.innerHTML       = 'Email institucional <span class="req">*</span>';
+                if (lTelefono)  lTelefono.textContent  = 'Teléfono institucional';
+                if (inNombre)   inNombre.placeholder   = 'Ej: Clínica San Juan';
+                if (inMatricula)inMatricula.placeholder= 'Ej: 30-12345678-9';
+                if (inEmail)    inEmail.placeholder    = 'contacto@clinica.com';
+                if (inTelefono) inTelefono.placeholder = '+54 11 4321-5678';
+            } else {
+                if (s1Title)    s1Title.textContent    = '👤 Datos del Profesional';
+                if (s1Subtitle) s1Subtitle.innerHTML  = 'Estos datos aparecerán en todos los informes que generés. Los campos con <span style="color:var(--danger);">*</span> son obligatorios.';
+                if (lNombre)    lNombre.innerHTML      = 'Nombre y Apellido <span class="req">*</span>';
+                if (lMatricula) lMatricula.innerHTML   = 'Matrícula <span class="req">*</span>';
+                if (lEmail)     lEmail.innerHTML       = 'Email <span class="req">*</span>';
+                if (lTelefono)  lTelefono.textContent  = 'Teléfono';
+                if (inNombre)   inNombre.placeholder   = 'Dr. Juan Pérez';
+                if (inMatricula)inMatricula.placeholder= 'MN 12345';
+                if (inEmail)    inEmail.placeholder    = 'doctor@ejemplo.com';
+                if (inTelefono) inTelefono.placeholder = '+54 9 11 1234-5678';
+            }
+
+            // ── Paso 2 ────────────────────────────────────────────────────────
+            const s2TitleEsp  = document.getElementById('step2TitleEsp');
+            const s2SubEsp    = document.getElementById('step2SubtitleEsp');
+            const s2TitleEst  = document.getElementById('step2TitleEstudios');
+            const s2SubEst    = document.getElementById('step2SubtitleEstudios');
+            if (isClinic) {
+                if (s2TitleEsp) s2TitleEsp.textContent = '🩺 Especialidades de la Clínica';
+                if (s2SubEsp)   s2SubEsp.textContent   = 'Seleccioná las especialidades que atiende la clínica. Determinan las plantillas disponibles para cada profesional.';
+                if (s2TitleEst) s2TitleEst.textContent = '📋 Estudios que se realizan';
+                if (s2SubEst)   s2SubEst.textContent   = 'Seleccioná los estudios que se realizan en la clínica. Los profesionales elegirán su selección particular.';
+            } else {
+                if (s2TitleEsp) s2TitleEsp.textContent = '🩺 Especialidades';
+                if (s2SubEsp)   s2SubEsp.textContent   = 'Seleccioná las especialidades que ejercés. Esto determina qué plantillas de estudio tendrás disponibles.';
+                if (s2TitleEst) s2TitleEst.textContent = '📋 Estudios que Realizás';
+                if (s2SubEst)   s2SubEst.textContent   = 'Basado en tus especialidades, seleccioná los estudios que realizás habitualmente.';
+            }
+
+            // ── Paso 3 ────────────────────────────────────────────────────────
+            const s3Title    = document.getElementById('step3Title');
+            const s3Subtitle = document.getElementById('step3Subtitle');
+            const btnAddWp   = document.getElementById('btnAddWorkplace');
+            if (isClinic) {
+                if (s3Title)    s3Title.textContent    = '🏥 Sedes de la Clínica';
+                if (s3Subtitle) s3Subtitle.textContent = 'Configurá la/s sede/s de la clínica. Estos datos aparecen en el encabezado de los informes.';
+                if (btnAddWp)   btnAddWp.textContent   = '➕ Agregar otra sede';
+            } else {
+                if (s3Title)    s3Title.textContent    = '🏥 Lugares de Trabajo';
+                if (s3Subtitle) s3Subtitle.textContent = 'Configurá tu/s lugar/es de trabajo. Estos datos aparecen en el encabezado de los informes.';
+                if (btnAddWp)   btnAddWp.textContent   = '➕ Agregar otro lugar de trabajo';
+            }
         }
 
         function validateStep0() {
@@ -2414,11 +2492,12 @@
         }
 
         function validateStep1() {
+            const isClinic = selectedPlan === 'CLINIC';
             const nombre = document.getElementById('regNombre').value.trim();
             const matricula = document.getElementById('regMatricula').value.trim();
             const email = document.getElementById('regEmail').value.trim();
-            if (!nombre) { showAlert('Ingresá tu nombre y apellido', '👤'); document.getElementById('regNombre').focus(); return false; }
-            if (!matricula) { showAlert('Ingresá tu matrícula', '🪪'); document.getElementById('regMatricula').focus(); return false; }
+            if (!nombre)   { showAlert(isClinic ? 'Ingresá el nombre de la clínica' : 'Ingresá tu nombre y apellido', isClinic ? '🏥' : '👤'); document.getElementById('regNombre').focus(); return false; }
+            if (!matricula){ showAlert(isClinic ? 'Ingresá el CUIT o número de habilitación' : 'Ingresá tu matrícula', '🪪'); document.getElementById('regMatricula').focus(); return false; }
             if (!email || !email.includes('@')) { showAlert('Ingresá un email válido', '📧'); document.getElementById('regEmail').focus(); return false; }
             return true;
         }
@@ -2452,8 +2531,14 @@
         }
 
         function validateStep3() {
+            const isClinic = selectedPlan === 'CLINIC';
             const wpName = (document.getElementById('regWpName0') || {}).value || '';
-            if (!wpName.trim()) { showAlert('Ingresá el nombre de tu lugar de trabajo principal', '🏥'); const el = document.getElementById('regWpName0'); if (el) el.focus(); return false; }
+            if (!wpName.trim()) {
+                showAlert(isClinic ? 'Ingresá el nombre de la sede principal' : 'Ingresá el nombre de tu lugar de trabajo principal', '🏥');
+                const el = document.getElementById('regWpName0');
+                if (el) el.focus();
+                return false;
+            }
             return true;
         }
 
