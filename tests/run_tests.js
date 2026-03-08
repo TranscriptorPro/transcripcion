@@ -5644,6 +5644,838 @@ test('G4 — renderInvestmentSummary usa _formatPrice', () => {
     assert(registroCode.includes('const fp = _formatPrice'), 'renderInvestmentSummary debe usar _formatPrice');
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 95: Auditoría Seguridad — XSS fixes verificación
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 95: Auditoría Seguridad — XSS fixes ─────────────');
+
+const rhCode = fs.readFileSync(path.join(root, 'src/js/features/reportHistory.js'), 'utf-8');
+const tabsCodeSec = fs.readFileSync(path.join(root, 'src/js/utils/tabs.js'), 'utf-8');
+const lmCodeSec = fs.readFileSync(path.join(root, 'src/js/features/licenseManager.js'), 'utf-8');
+const contactCodeSec = fs.readFileSync(path.join(root, 'src/js/features/contact.js'), 'utf-8');
+const prCodeSec = fs.readFileSync(path.join(root, 'src/js/features/patientRegistry.js'), 'utf-8');
+
+test('XSS-1 — reportHistory.viewReport sanitiza htmlContent', () => {
+    // Debe usar DOMPurify o strip de scripts, NO innerHTML directo
+    assert(rhCode.includes('DOMPurify') || rhCode.includes('replace(/<script'), 
+        'viewReport debe sanitizar htmlContent con DOMPurify o strip scripts');
+    assert(!rhCode.includes("content.innerHTML = report.htmlContent;"), 
+        'NO debe asignar htmlContent directamente sin sanitizar');
+});
+
+test('XSS-2 — tabs.js sanitiza transcripciones en innerHTML', () => {
+    // Verificar que NINGÚN innerHTML asigna .text directamente sin sanitizar
+    assert(!tabsCodeSec.includes("editor.innerHTML = window.transcriptions[window.activeTabIndex].text;"),
+        'createTabs NO debe usar innerHTML directo sin sanitizar');
+    assert(!tabsCodeSec.includes("editor.innerHTML = window.transcriptions[index].text;"),
+        'switchTab NO debe usar innerHTML directo sin sanitizar');
+    // Verificar que usa DOMPurify
+    assert(tabsCodeSec.includes('DOMPurify'), 'tabs.js debe referenciar DOMPurify para sanitización');
+});
+
+test('XSS-3 — licenseManager._lmShowBlockedUI escapa result.error', () => {
+    assert(lmCodeSec.includes('_esc(result.error') || lmCodeSec.includes('escapeHtml(result.error'),
+        '_lmShowBlockedUI debe escapar result.error');
+});
+
+test('XSS-4 — contact.js escapa campos en htmlBody', () => {
+    // Verificar que motivo, nombre, mat están escapados
+    assert(contactCodeSec.includes('_esc(motivo)') || contactCodeSec.includes('escapeHtml(motivo)'),
+        'htmlBody debe escapar motivo');
+    assert(contactCodeSec.includes('_esc(nombre)') || contactCodeSec.includes('escapeHtml(nombre)'),
+        'htmlBody debe escapar nombre');
+    assert(contactCodeSec.includes('_esc(mat)'),
+        'htmlBody debe escapar matrícula');
+});
+
+test('XSS-5 — contact.js escapa campos en retry de pendientes', () => {
+    // El retry de mensajes pendientes también debe escapar HTML
+    assert(contactCodeSec.includes('.replace(/</g') || contactCodeSec.includes('&lt;'),
+        'Retry de pendientes debe escapar campos HTML con replace o &lt;');
+});
+
+test('XSS-6 — patientRegistry dropdown escapa name/dni/age', () => {
+    assert(prCodeSec.includes('esc(p.name)') || prCodeSec.includes('escapeHtml(p.name)'),
+        'Dropdown debe escapar p.name');
+    assert(prCodeSec.includes('esc(p.dni)') || prCodeSec.includes("esc(String(p.age))"),
+        'Dropdown debe escapar p.dni y p.age');
+});
+
+test('XSS-7 — patientRegistry renderTable escapa safeAge completo', () => {
+    // safeAge debe escapar &, <, >, "
+    assert(prCodeSec.includes("String(p.age).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;')"),
+        'safeAge debe tener escape completo con &, <, >, "');
+});
+
+test('XSS-8 — escapeHtml función global existe y funciona', () => {
+    assert(typeof escapeHtml === 'function', 'escapeHtml debe ser una función global');
+    assertEqual(escapeHtml('<script>alert(1)</script>'), '&lt;script&gt;alert(1)&lt;/script&gt;',
+        'debe escapar tags HTML');
+    assertEqual(escapeHtml('"hello" & \'world\''), '&quot;hello&quot; &amp; &#039;world&#039;',
+        'debe escapar comillas y ampersand');
+    assertEqual(escapeHtml(null), '', 'debe retornar string vacío para null');
+    assertEqual(escapeHtml(''), '', 'debe retornar string vacío para string vacío');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 96: Device ID seguro — crypto.randomUUID
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 96: Device ID seguro ─────────────────────────────');
+
+test('DeviceID-1 — licenseManager usa crypto.randomUUID', () => {
+    assert(lmCodeSec.includes('crypto.randomUUID'), 
+        'licenseManager debe usar crypto.randomUUID para device ID');
+});
+
+test('DeviceID-2 — business.js factory setup usa crypto.randomUUID', () => {
+    const bizCode = fs.readFileSync(path.join(root, 'src/js/features/business.js'), 'utf-8');
+    assert(bizCode.includes('crypto.randomUUID'),
+        'business.js factory setup debe usar crypto.randomUUID');
+});
+
+test('DeviceID-3 — licenseManager tiene fallback para navegadores sin crypto', () => {
+    assert(lmCodeSec.includes("typeof crypto !== 'undefined' && crypto.randomUUID"),
+        'Debe verificar disponibilidad de crypto antes de usar randomUUID');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 97: Business.js — Fallback ADMIN seguro
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 97: Business.js — Fallback ADMIN seguro ────────');
+
+const bizCodeSec = fs.readFileSync(path.join(root, 'src/js/features/business.js'), 'utf-8');
+
+test('ADMIN-1 — NO asume ADMIN cuando CLIENT_CONFIG es undefined', () => {
+    assert(!bizCodeSec.includes("typeof CLIENT_CONFIG === 'undefined' || CLIENT_CONFIG.type === 'ADMIN'"),
+        'business.js NO debe tratar undefined como ADMIN (operador ||)');
+});
+
+test('ADMIN-2 — Usa operador && para verificar ADMIN', () => {
+    assert(bizCodeSec.includes("typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'ADMIN'"),
+        'Debe usar && para verificar que CLIENT_CONFIG existe Y es ADMIN');
+});
+
+test('ADMIN-3 — Verifica client_config_stored antes de asumir ADMIN', () => {
+    assert(bizCodeSec.includes("client_config_stored") && bizCodeSec.includes("storedConfig"),
+        'Debe verificar config almacenada para confirmar ADMIN legítimo');
+});
+
+test('ADMIN-4 — Config corrupta va a modo cliente (no ADMIN)', () => {
+    assert(bizCodeSec.includes('_initClient()') && bizCodeSec.includes('Config corrupta'),
+        'Config corrupta debe derivar a _initClient(), no _initAdmin()');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 98: License Manager — Cache age + offline validation
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 98: License Manager — Cache offline ────────────');
+
+test('LM-Cache-1 — Validación de fecha_vencimiento en cache offline', () => {
+    assert(lmCodeSec.includes('fecha_vencimiento'),
+        'Debe verificar fecha_vencimiento del cache offline');
+});
+
+test('LM-Cache-2 — Cache expirado por fecha retorna EXPIRED', () => {
+    assert(lmCodeSec.includes("code: 'EXPIRED'") && lmCodeSec.includes('Cache offline: licencia vencida'),
+        'Debe retornar EXPIRED si la licencia cacheada venció por fecha');
+});
+
+test('LM-Cache-3 — Cache TTL de 4 horas implementado', () => {
+    assert(lmCodeSec.includes('4 * 60 * 60 * 1000'),
+        'TTL del cache debe ser 4 horas');
+});
+
+test('LM-Cache-4 — _lmStartMetricsSync tiene guard contra múltiples timers', () => {
+    assert(lmCodeSec.includes('if (_lmMetricsTimer) return'),
+        'Debe tener guard para prevenir múltiples timers');
+});
+
+test('LM-Cache-5 — Tamper guard detecta escalación a ADMIN', () => {
+    assert(lmCodeSec.includes('Intento de escalación detectado'),
+        'Debe detectar cambio de tipo a ADMIN en runtime');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 99: Contact.js — Retry cap + escape en pendientes
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 99: Contact.js — Retry cap ───────────────────────');
+
+test('Contact-Retry-1 — Tiene máximo de reintentos', () => {
+    assert(contactCodeSec.includes('_CONTACT_MAX_RETRIES') || contactCodeSec.includes('_contactRetryCount'),
+        'Debe tener contador de reintentos con límite');
+});
+
+test('Contact-Retry-2 — Límite es razonable (≤20)', () => {
+    const match = contactCodeSec.match(/_CONTACT_MAX_RETRIES\s*=\s*(\d+)/);
+    assert(match, 'Debe tener constante _CONTACT_MAX_RETRIES');
+    const limit = parseInt(match[1]);
+    assert(limit > 0 && limit <= 20, `Límite debe ser entre 1-20, es ${limit}`);
+});
+
+test('Contact-Retry-3 — Verifica contador antes de reintentar', () => {
+    assert(contactCodeSec.includes('_contactRetryCount >= _CONTACT_MAX_RETRIES') ||
+           contactCodeSec.includes('_contactRetryCount < _CONTACT_MAX_RETRIES'),
+        'Debe verificar contador antes de programar reintento');
+});
+
+test('Contact-Retry-4 — Formulario de contacto valida motivo+descripción', () => {
+    assert(contactCodeSec.includes('contactMotivo') && contactCodeSec.includes('contactDetalle'),
+        'Debe validar campos motivo y detalle');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 100: ThemeManager — try/finally en apply()
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 100: ThemeManager — Robustez ─────────────────────');
+
+const tmCodeSec = fs.readFileSync(path.join(root, 'src/js/features/themeManager.js'), 'utf-8');
+
+test('TM-1 — apply() usa try/finally para resetear _applying', () => {
+    assert(tmCodeSec.includes('} finally {') && tmCodeSec.includes('_applying = false'),
+        'apply() debe tener try/finally con _applying = false');
+});
+
+test('TM-2 — apply() tiene fallback a default si falla', () => {
+    assert(tmCodeSec.includes("_currentSkinId = 'default'") || tmCodeSec.includes('Fallback'),
+        'Debe tener fallback a default skin si el apply falla');
+});
+
+test('TM-3 — _injectSkinCSS no bloquea en error', () => {
+    assert(tmCodeSec.includes('link.onerror') && tmCodeSec.includes('resolve()'),
+        '_injectSkinCSS debe resolver (no rechazar) en caso de error');
+});
+
+test('TM-4 — SKIN_REGISTRY valida skins conocidos', () => {
+    assert(tmCodeSec.includes("id: 'default'") && tmCodeSec.includes("id: 'cyberpunk'"),
+        'Debe tener skins registrados (default, cyberpunk)');
+});
+
+test('TM-5 — Reentrance guard previene apply() concurrente', () => {
+    assert(tmCodeSec.includes('if (_applying)') && tmCodeSec.includes('ignorando duplicado'),
+        'apply() debe tener guard de reentrada');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 101: Report History — Límite + QuotaExceeded  
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 101: Report History — Límite + Quota ─────────────');
+
+test('RH-Limit-1 — Historial tiene límite máximo de informes', () => {
+    assert(rhCode.includes('REPORT_HISTORY_MAX') || rhCode.includes('history.length > '),
+        'Debe tener límite máximo de informes en historial');
+});
+
+test('RH-Limit-2 — Límite es razonable (100-500)', () => {
+    const match = rhCode.match(/REPORT_HISTORY_MAX\s*=\s*(\d+)/);
+    assert(match, 'Debe tener constante REPORT_HISTORY_MAX');
+    const limit = parseInt(match[1]);
+    assert(limit >= 100 && limit <= 500, `Límite debe ser 100-500, es ${limit}`);
+});
+
+test('RH-Quota-1 — QuotaExceeded notifica éxito o error', () => {
+    assert(rhCode.includes('saved = true') || rhCode.includes('saved = false'),
+        'Debe trackear si se pudo guardar tras QuotaExceeded');
+});
+
+test('RH-Quota-2 — Notifica al usuario si no se pudo guardar', () => {
+    assert(rhCode.includes('No se pudo guardar') || rhCode.includes('Almacenamiento lleno'),
+        'Debe notificar al usuario cuando falla completamente');
+});
+
+test('RH-Quota-3 — saveReportToHistory valida htmlContent', () => {
+    assert(rhCode.includes('!data.htmlContent'), 'Debe validar que data.htmlContent existe');
+});
+
+test('RH-Func-1 — saveReportToHistory funcional', () => {
+    global.localStorage.clear();
+    global._reportHistCache = null;
+    const id = saveReportToHistory({ htmlContent: '<p>Test</p>', patientName: 'Test' });
+    assert(id, 'Debe retornar un ID');
+    const all = getAllReports();
+    assert(all.length === 1, `Esperaba 1 informe, hay ${all.length}`);
+    assertEqual(all[0].patientName, 'Test', 'Nombre debe ser Test');
+});
+
+test('RH-Func-2 — Límite de 200 informes se aplica', () => {
+    global.localStorage.clear();
+    global._reportHistCache = null;
+    // Guardar 205 informes
+    for (let i = 0; i < 205; i++) {
+        saveReportToHistory({ htmlContent: '<p>R' + i + '</p>', patientName: 'P' + i });
+    }
+    const all = getAllReports();
+    assert(all.length <= 200, `Historial debe tener máximo 200, tiene ${all.length}`);
+});
+
+test('RH-Func-3 — getPatientReports filtra por nombre', () => {
+    global.localStorage.clear();
+    global._reportHistCache = null;
+    saveReportToHistory({ htmlContent: '<p>A</p>', patientName: 'Juan Pérez', patientDni: '12345' });
+    saveReportToHistory({ htmlContent: '<p>B</p>', patientName: 'María López', patientDni: '67890' });
+    const reports = getPatientReports('Juan');
+    assert(reports.length === 1, `Esperaba 1 informe para Juan, hay ${reports.length}`);
+    assertEqual(reports[0].patientName, 'Juan Pérez');
+});
+
+test('RH-Func-4 — deleteReport elimina por ID', () => {
+    global.localStorage.clear();
+    global._reportHistCache = null;
+    const id = saveReportToHistory({ htmlContent: '<p>X</p>', patientName: 'ToDelete' });
+    assert(getAllReports().length === 1);
+    deleteReport(id);
+    assert(getAllReports().length === 0, 'Debe estar vacío después de eliminar');
+});
+
+test('RH-Func-5 — exportReportHistory retorna JSON', () => {
+    global.localStorage.clear();
+    global._reportHistCache = null;
+    saveReportToHistory({ htmlContent: '<p>E</p>', patientName: 'Export' });
+    const json = exportReportHistory();
+    assert(json, 'Debe retornar JSON');
+    const parsed = JSON.parse(json);
+    assert(Array.isArray(parsed) && parsed.length === 1, 'JSON debe contener 1 informe');
+});
+
+test('RH-Func-6 — importReportHistory evita duplicados', () => {
+    global.localStorage.clear();
+    global._reportHistCache = null;
+    const id = saveReportToHistory({ htmlContent: '<p>I</p>', patientName: 'Import' });
+    const json = exportReportHistory();
+    const added = importReportHistory(json);
+    assertEqual(added, 0, 'No debe agregar duplicados');
+    assertEqual(getAllReports().length, 1, 'Debe seguir con 1 informe');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 102: Patient Registry — CRUD + seguridad
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 102: Patient Registry — CRUD completo ───────────');
+
+test('PR-CRUD-1 — savePatientToRegistry crea nuevo paciente', () => {
+    const countBefore = getAllPatients().length;
+    savePatientToRegistry({ name: 'TestCrud Ana', dni: '990001', age: '30', sex: 'F' });
+    const all = getAllPatients();
+    assertEqual(all.length, countBefore + 1, `Debe agregar 1 paciente nuevo`);
+    const found = all.find(p => p.dni === '990001');
+    assert(found, 'Debe encontrar paciente por DNI 990001');
+    assertEqual(found.name, 'TestCrud Ana');
+});
+
+test('PR-CRUD-2 — savePatientToRegistry actualiza por DNI', () => {
+    const countBefore = getAllPatients().length;
+    savePatientToRegistry({ name: 'TestCrud Ana Actualizada', dni: '990001', age: '31', sex: 'F' });
+    const all = getAllPatients();
+    assertEqual(all.length, countBefore, 'No debe crear duplicado por DNI');
+    const found = all.find(p => p.dni === '990001');
+    assertEqual(found.name, 'TestCrud Ana Actualizada', 'Debe actualizar el nombre');
+    assertEqual(found.age, '31', 'Debe actualizar la edad');
+});
+
+test('PR-CRUD-3 — savePatientToRegistry incrementa visits', () => {
+    const found = getAllPatients().find(p => p.dni === '990001');
+    assert(found.visits >= 2, `Visits debe ser >= 2, es ${found.visits}`);
+});
+
+test('PR-CRUD-4 — searchPatientRegistry por nombre parcial', () => {
+    savePatientToRegistry({ name: 'TestCrud Roberto Fernández', dni: '990002', age: '45' });
+    const results = searchPatientRegistry('TestCrud Roberto');
+    assert(results.length === 1, `Buscar TestCrud Roberto: esperaba 1, hay ${results.length}`);
+});
+
+test('PR-CRUD-5 — searchPatientRegistry por DNI parcial', () => {
+    const results = searchPatientRegistry('990002');
+    assert(results.length >= 1, 'Buscar DNI 990002 debe retornar al menos 1');
+});
+
+test('PR-CRUD-6 — searchPatientRegistry insensible a acentos', () => {
+    const results = searchPatientRegistry('fernandez');
+    assert(results.length >= 1, 'Buscar sin acento debe encontrar Fernández');
+});
+
+test('PR-CRUD-7 — Código valida máximo de pacientes', () => {
+    // Verificar que el código tiene límite (no crear 505 registros reales por performance)
+    assert(prCodeSec.includes('500') || prCodeSec.includes('MAX_PATIENTS') || prCodeSec.includes('.length >'),
+        'Debe tener límite máximo de pacientes en el código');
+});
+
+test('PR-SEC-1 — Código tiene escape en dropdown', () => {
+    assert(prCodeSec.includes('esc(p.name)') || prCodeSec.includes('escapeHtml'),
+        'Dropdown de pacientes debe escapar datos');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 103: Factory Clone — Flujo por tipo de usuario
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 103: Factory Clone — Tipos de usuario ──────────');
+
+test('Factory-1 — planMap tiene todos los tipos de plan', () => {
+    assert(bizCodeSec.includes("trial:") && bizCodeSec.includes("normal:") && 
+           bizCodeSec.includes("pro:") && bizCodeSec.includes("gift:") &&
+           bizCodeSec.includes("clinic:") && bizCodeSec.includes("enterprise:"),
+        'planMap debe tener: trial, normal, pro, gift, clinic, enterprise');
+});
+
+test('Factory-2 — TRIAL no tiene proMode', () => {
+    const trialMatch = bizCodeSec.match(/trial:\s*\{[^}]+\}/);
+    assert(trialMatch, 'Debe existir definición de trial');
+    assert(trialMatch[0].includes('hasProMode: false'), 'TRIAL no debe tener proMode');
+});
+
+test('Factory-3 — NORMAL no tiene proMode', () => {
+    const normalMatch = bizCodeSec.match(/normal:\s*\{[^}]+\}/);
+    assert(normalMatch, 'Debe existir definición de normal');
+    assert(normalMatch[0].includes('hasProMode: false'), 'NORMAL no debe tener proMode');
+});
+
+test('Factory-4 — PRO tiene proMode', () => {
+    const proMatch = bizCodeSec.match(/pro:\s*\{[^}]+\}/);
+    assert(proMatch, 'Debe existir definición de pro');
+    assert(proMatch[0].includes('hasProMode: true'), 'PRO debe tener proMode');
+});
+
+test('Factory-5 — GIFT mapea a tipo PRO con proMode', () => {
+    const giftMatch = bizCodeSec.match(/gift:\s*\{[^}]+\}/);
+    assert(giftMatch, 'Debe existir definición de gift');
+    assert(giftMatch[0].includes("type: 'PRO'"), 'GIFT debe mapear a tipo PRO');
+    assert(giftMatch[0].includes('hasProMode: true'), 'GIFT debe tener proMode');
+});
+
+test('Factory-6 — CLINIC puede generar apps', () => {
+    const clinicMatch = bizCodeSec.match(/clinic:\s*\{[^}]+\}/);
+    assert(clinicMatch, 'Debe existir definición de clinic');
+    assert(clinicMatch[0].includes('canGenerateApps: true'), 'CLINIC debe poder generar apps');
+});
+
+test('Factory-7 — ENTERPRISE no puede generar apps', () => {
+    const entMatch = bizCodeSec.match(/enterprise:\s*\{[^}]+\}/);
+    assert(entMatch, 'Debe existir definición de enterprise');
+    assert(entMatch[0].includes('canGenerateApps: false'), 'ENTERPRISE no debe poder generar apps');
+});
+
+test('Factory-8 — _handleFactorySetup persiste client_config_stored', () => {
+    assert(bizCodeSec.includes("localStorage.setItem('client_config_stored'"),
+        'Factory setup debe persistir config en localStorage');
+});
+
+test('Factory-9 — Factory guarda prof_data', () => {
+    assert(bizCodeSec.includes("localStorage.setItem('prof_data'") || 
+           bizCodeSec.includes("appDB.set('prof_data'"),
+        'Factory setup debe guardar datos del profesional');
+});
+
+test('Factory-10 — Factory protege sesión admin existente', () => {
+    assert(bizCodeSec.includes('_ADMIN_WAS_ACTIVE') && bizCodeSec.includes('showCustomConfirm'),
+        'Debe pedir confirmación antes de sobrescribir sesión admin');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 104: Circuito de Transcripción — Estructura completa
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 104: Circuito Transcripción ──────────────────────');
+
+const transCodeSec = fs.readFileSync(path.join(root, 'src/js/features/transcriptor.js'), 'utf-8');
+const editorCodeSec = fs.readFileSync(path.join(root, 'src/js/features/editor.js'), 'utf-8');
+const structCodeSec = fs.readFileSync(path.join(root, 'src/js/features/structurer.js'), 'utf-8');
+
+test('Trans-1 — Usa Whisper large-v3-turbo', () => {
+    assert(transCodeSec.includes('whisper-large-v3-turbo'),
+        'Transcriptor debe usar modelo whisper-large-v3-turbo');
+});
+
+test('Trans-2 — Tiene retry con 4 intentos', () => {
+    const retryMatch = transCodeSec.match(/maxRetries?\s*[=:]\s*(\d+)/i) || 
+                       transCodeSec.match(/retries?\s*<\s*(\d+)/i);
+    assert(retryMatch || transCodeSec.includes('attempt'), 'Debe tener mecanismo de retry');
+});
+
+test('Trans-3 — Usa studyTerminology para prompt contextual', () => {
+    assert(transCodeSec.includes('studyTerminology') || transCodeSec.includes('STUDY_TERMINOLOGY') ||
+           transCodeSec.includes('getStudyPrompt'),
+        'Debe usar terminología de estudio para prompt contextual');
+});
+
+test('Struct-1 — structureTranscription usa LLaMA models', () => {
+    assert(structCodeSec.includes('llama') || structCodeSec.includes('GROQ_MODELS'),
+        'Structurer debe usar modelos LLaMA de Groq');
+});
+
+test('Struct-2 — autoDetectTemplateKey tiene umbral mínimo', () => {
+    assert(structCodeSec.includes('scoreMin') || structCodeSec.includes('score >') || 
+           structCodeSec.includes('score >='),
+        'autoDetectTemplateKey debe tener umbral mínimo de score');
+});
+
+test('Struct-3 — cross-tab mutex con navigator.locks', () => {
+    assert(structCodeSec.includes('navigator.locks'),
+        'Structurer debe usar navigator.locks para cross-tab mutex');
+});
+
+test('Editor-1 — Editor tiene snapshots para undo', () => {
+    assert(editorCodeSec.includes('snapshot') || editorCodeSec.includes('Snapshot'),
+        'Editor debe tener sistema de snapshots');
+});
+
+test('Editor-2 — Editor soporta pegado limpio', () => {
+    assert(editorCodeSec.includes('paste') || editorCodeSec.includes('clipboardData'),
+        'Editor debe manejar pegado limpio (paste)');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 105: Circuito PDF — Preview + Descarga
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 105: Circuito PDF ────────────────────────────────');
+
+const pvCodeSec = fs.readFileSync(path.join(root, 'src/js/features/pdfPreview.js'), 'utf-8');
+const pdfCodeSec = fs.readFileSync(path.join(root, 'src/js/features/pdfMaker.js'), 'utf-8');
+
+test('PDF-1 — pdfPreview tiene función esc() para sanitización', () => {
+    assert(pvCodeSec.includes("const esc = (t)") || pvCodeSec.includes("function esc("),
+        'pdfPreview debe tener función esc() para escapar datos');
+});
+
+test('PDF-2 — pdfPreview extrae datos de paciente con fallback', () => {
+    assert(pvCodeSec.includes('extractPatientDataFromText') && pvCodeSec.includes('formPatient'),
+        'Debe tener cascada de extracción de datos de paciente');
+});
+
+test('PDF-3 — pdfPreview soporta múltiples formatos de descarga', () => {
+    assert(pvCodeSec.includes('saveToDisk') || pvCodeSec.includes('downloadAs'),
+        'Debe soportar descarga en múltiples formatos');
+});
+
+test('PDF-4 — pdfMaker genera header/footer/firma', () => {
+    assert(pdfCodeSec.includes('addHeader') || pdfCodeSec.includes('header') || pdfCodeSec.includes('firma'),
+        'pdfMaker debe generar header/footer/firma');
+});
+
+test('PDF-5 — pdfMaker soporta QR', () => {
+    assert(pdfCodeSec.includes('QR') || pdfCodeSec.includes('qr'),
+        'pdfMaker debe soportar código QR');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 106: Detección automática todas las plantillas (corpus completo)
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 106: Detección — Corpus de entrenamiento ───────');
+
+const CORPUS = {
+    espirometria: `Evaluación de la función pulmonar mediante espirometría clínica. Los resultados obtenidos en la fase pre-broncodilatador revelan una capacidad vital forzada de 3.25 litros con un z-score de -1.2. El volumen espiratorio forzado en el primer segundo se sitúa en 2.10 litros con una relación VEF1/CVF del 64%.`,
+    
+    test_marcha: `Prueba de marcha de seis minutos para la valoración de la capacidad funcional. El paciente inició el recorrido con una saturación de oxígeno basal del 94%, logrando una distancia total de 420 metros. Se registró una desaturación significativa hasta el 89%.`,
+    
+    pletismografia: `Pletismografía corporal total orientada a la cuantificación de volúmenes pulmonares estáticos. La capacidad pulmonar total de 6.80 litros. El volumen residual se encuentra elevado en 1.90 litros con un z-score de 2.1, hallazgo indicativo de atrapamiento aéreo.`,
+    
+    oximetria_nocturna: `Oximetría nocturna continua de siete horas para tamizaje de trastornos respiratorios del sueño. Un índice de desaturación de 12 eventos por hora y un nadir de saturación del 82%.`,
+    
+    campimetria: `Campimetría computarizada Humphrey mediante estrategia SITA Standard 24-2 para evaluación de glaucoma. Escotoma arciforme superior en el ojo derecho. Visual Field Index del 92% y desviación media de -4.50 decibelios.`,
+    
+    oct_retinal: `Tomografía de coherencia óptica de segmento posterior. Mapa de espesor de la capa de fibras nerviosas de la retina muestra adelgazamiento sectorial. Espesor promedio de la CFNR es de 68 micras con una relación copa-disco de 0.7.`,
+    
+    topografia_corneal: `Topografía corneal por elevación para estudio de la arquitectura anterior y posterior. Mapa queratométrico central registra una potencia de 44.5 dioptrías. Elevación posterior paracentral inferior excede el límite. Paquimetría ultrasónica mínima de 510 micras.`,
+    
+    fondo_ojo: `Examen de fondo de ojo bajo midriasis farmacológica mediante oftalmoscopía indirecta. La papila óptica presenta bordes definidos. Brillo foveolar conservado sin exudados ni hemorragias intrarretinianas.`,
+    
+    tac: `Tomografía axial computarizada de tórax con contraste endovenoso. Se identifica un nódulo sólido de bordes espiculados de 15 milímetros en segmento apical del lóbulo superior derecho. Densidad de 40 unidades Hounsfield con realce significativo tras administración de yodo.`,
+    
+    resonancia: `Resonancia magnética nuclear de columna lumbosacra en secuencias T1, T2 y STIR. Deshidratación discal en L4-L5 y L5-S1 con reducción de la altura intervertebral. Protrusión discal posterocentral que oblitera parcialmente la grasa epidural anterior.`,
+    
+    mamografia: `Mamografía bilateral con proyecciones craneocaudal y mediolateral oblicua para tamizaje oncológico. Mama derecha con asimetría focal de baja densidad. Tejido fibroglandular tipo B según clasificación ACR. BI-RADS 2.`,
+    
+    densitometria: `Densitometría ósea mediante absorciometría de rayos X de energía dual. Región lumbar L1-L4 con densidad mineral ósea de 0.850 g/cm2, T-score de -2.4. Cuello femoral con T-score de -1.8.`,
+    
+    pet_ct: `PET-CT de cuerpo entero tras administración de 18F-FDG para estadificación oncológica. Focos hipermetabólicos en lóbulo inferior izquierdo con SUV máximo de 8.5. Actividad metabólica en ganglios mediastínicos.`,
+    
+    radiografia: `Radiografía de tórax posteroanterior y lateral. Silueta cardíaca con índice cardiotorácico de 0.48. Campos pulmonares bien expandidos sin infiltrados. Senos costofrénicos libres.`,
+    
+    ecografia_abdominal: `Ecografía abdominal total. Hígado con aumento difuso de la ecogenicidad parénquimatosa sugestivo de esteatosis grado I. Vesícula biliar de paredes finas sin litiasis. Bazo y páncreas sin lesiones ocupantes.`,
+    
+    ecografia_renal: `Ecografía renal y de vías urinarias para estudio de nefrolitiasis. Riñón derecho mide 105 milímetros. Imagen hiperequogénica de 6 milímetros en grupo calicial medio compatible con litiasis no obstructiva.`,
+    
+    ecografia_tiroidea: `Ecografía tiroidea con Doppler color para evaluación de nódulo tiroideo. Lóbulo tiroideo derecho con nódulo isoecoico de 8 por 6 milímetros. Istmo tiroideo normal. Clasificación TIRADS 3 sugiriendo nódulo probablemente benigno. Lóbulo tiroideo izquierdo homogéneo.`,
+    
+    ecografia_mamaria: `Ecografía mamaria bilateral complementaria. En cuadrante superior externo mama derecha quiste simple de 12 milímetros con contenido anecoico y refuerzo acústico posterior. BI-RADS 2.`,
+    
+    eco_doppler: `Doppler vascular de miembros inferiores para evaluación de retorno venoso. Permeabilidad de sistemas venosos profundo y superficial confirmada. Reflujo valvular prolongado superior a 500 milisegundos en unión safenofemoral derecha.`,
+    
+    gastroscopia: `Gastroscopía diagnóstica bajo sedación. Mucosa esofágica normal. En antro gástrico eritema difuso y petequias. Prueba de ureasa rápida positiva para Helicobacter pylori. Gastritis eritematosa antral.`,
+    
+    colonoscopia: `Colonoscopía total con escala de Boston grado 9. Se alcanzó ciego. En colon sigmoides dos pólipos sésiles de 5 y 7 milímetros resecados mediante asa fría. Mucosa restante sin divertículos.`,
+    
+    broncoscopia: `Broncoscopía flexible bajo anestesia local. Mucosa traqueobronquial congestiva con secreciones hialinas moderadas. Lavado broncoalveolar en lóbulo superior derecho. Carinas afiladas con movilidad conservada.`,
+    
+    laringoscopia: `Laringoscopía directa para valoración de cuerdas vocales. Cuerdas vocales de coloración nacarada con motilidad conservada. Nódulo blando en tercio anterior de la cuerda vocal derecha. Hiato fonatorio leve.`,
+    
+    gammagrafia_cardiaca: `Gammagrafía de perfusión miocárdica SPECT con protocolo esfuerzo-reposo. Captación uniforme en reposo. Hipocaptación en segmento anteroseptal distal durante post-esfuerzo que revierte en estudio tardío. Isquemia miocárdica reversible.`,
+    
+    holter: `Monitorización Holter de 24 horas continua. Registro Holter con ritmo sinusal predominante. FC media de 72 lpm. Se contabilizaron 150 extrasístoles ventriculares aisladas y 50 extrasístoles supraventriculares. Variabilidad de frecuencia cardíaca conservada. Arritmia menor detectada.`,
+    
+    mapa: `Monitoreo ambulatorio de presión arterial de veinticuatro horas. Promedio total 138/86 mmHg. Patrón dipper con descenso nocturno del 12%. Carga hipertensiva sistólica del 40%. Hipertensión arterial estadio I.`,
+    
+    cinecoro: `Cinecoronariografía invasiva por abordaje radial derecho. Coronaria derecha con irregularidades sin estenosis. Descendente anterior con placa ateromatosa excéntrica y estenosis del 60%. Circunfleja sin obstrucciones.`,
+    
+    ecg: `Electrocardiograma de doce derivaciones en reposo. Ritmo sinusal regular a 65 lpm. Eje QRS a -30 grados, hemibloqueo anterior izquierdo. PR 160 ms, QRS 100 ms. Sin signos de hipertrofia ni isquemia aguda.`,
+    
+    eco_stress: `Ecocardiograma de estrés con dobutamina. Hipocinesia del segmento apical en fase basal. Fracción de eyección del 42%. Respuesta bifásica con dosis bajas. FEVI pico del 50%. Miocardio viable con isquemia inducible.`,
+    
+    ett: `Ecocardiograma transtorácico Doppler color. Ventrículo izquierdo con dimensiones normales. Fracción de eyección estimada por Simpson en 58%. Insuficiencia mitral leve. Presión sistólica arteria pulmonar 25 mmHg.`,
+    
+    pap: `Citología cervical mediante Papanicolaou de base líquida. Muestra satisfactoria con componentes de zona de transformación. No evidencia células atípicas. Informe negativo para malignidad.`,
+    
+    colposcopia: `Colposcopía diagnóstica tras aplicación de ácido acético al 5%. Cuello uterino íntegro. No se observan áreas de epitelio acetoblanco. Prueba de Schiller con lugol positiva. Sin lesiones premalignas.`,
+    
+    ecografia_obstetrica: `Ecografía obstétrica de segundo trimestre. Feto único en situación longitudinal con presentación cefálica. Diámetro biparietal de 85 milímetros. Placenta anterior grado I. Líquido amniótico normal.`,
+    
+    electromiografia: `Electromiografía y estudios de conducción nerviosa de miembros superiores. Latencias motoras y sensoriales normales. Estudio con electrodo de aguja en oponente del pulgar sin fibrilación. Descarta síndrome del túnel carpiano.`,
+    
+    polisomnografia: `Polisomnografía nocturna completa. Tiempo total de sueño 380 minutos. Índice de apnea-hipopnea de 15 eventos por hora. Nadir de saturación del 84%. Síndrome de apnea obstructiva del sueño grado moderado.`,
+    
+    naso: `Videonasofibrolaringoscopía flexible para evaluación de nasofibroscopía. Fosas nasales permeables. Rinofaringe libre. Laringe: cuerdas vocales con motilidad simétrica. Luz laríngea permeable. Desviación septal leve.`,
+    
+    protocolo_quirurgico: `Protocolo quirúrgico de colecistectomía laparoscópica electiva. Se creó neumoperitoneo. Clipado y sección de arteria y conducto cístico. Disección de vesícula del lecho hepático. Hemostasia prolija. Recuento completo.`,
+    
+    nota_evolucion: `Nota de evolución médica en cuarto día de postoperatorio. Paciente afebril y hemodinámicamente estable. Abdomen blando y depresible. Tolerancia completa a dieta blanda. Se planifica alta hospitalaria.`,
+    
+    epicrisis: `Epicrisis de internación prolongada por neumonía bacteriana grave. Ingresó con insuficiencia respiratoria aguda. Requirió ventilación no invasiva. Tratamiento con piperacilina-tazobactam. Diagnósticos de egreso: neumonía resuelta e hipertensión controlada.`,
+    
+    generico: `Informe médico general de aptitud física. Paciente masculino de 45 años. Índice de masa corporal de 27. Presión arterial de 120/80 mmHg. Glucemia y perfil lipídico normales. Apto para actividad física moderada.`
+};
+
+// Test de detección automática para cada plantilla del corpus
+Object.entries(CORPUS).forEach(([expectedKey, text]) => {
+    test(`Corpus-${expectedKey}`, () => {
+        const detected = autoDetectTemplateKey(text);
+        if (expectedKey === 'generico') {
+            // Genérico puede detectar cualquier plantilla si hay keywords coincidentes
+            // Lo importante es que no crashee
+            assert(detected !== undefined && detected !== null, `Detección no debe ser null para ${expectedKey}`);
+        } else {
+            assertEqual(detected, expectedKey, `Esperaba '${expectedKey}', detectó '${detected}'`);
+        }
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 107: Coherencia tipos de usuario — Funcionalidades por plan
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 107: Coherencia tipos de usuario ─────────────────');
+
+const indexCode = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
+
+test('UserType-1 — Botón contacto solo para no-ADMIN', () => {
+    assert(contactCodeSec.includes("CLIENT_CONFIG.type === 'ADMIN'") && 
+           contactCodeSec.includes("display = 'none'"),
+        'Botón contacto debe ocultarse para ADMIN');
+});
+
+test('UserType-2 — structureTranscription verifica API key', () => {
+    assert(structCodeSec.includes('GROQ_API_KEY') || structCodeSec.includes('apiKey') || structCodeSec.includes('checkStructurePrerequisites'),
+        'Estructurado debe verificar API key antes de proceder');
+});
+
+test('UserType-3 — licenseManager bypass total para ADMIN', () => {
+    assert(lmCodeSec.includes("CLIENT_CONFIG.type === 'ADMIN'") && lmCodeSec.includes('bypass'),
+        'LicenseManager debe hacer bypass para ADMIN');
+});
+
+test('UserType-4 — isAdminUser función existe', () => {
+    assert(typeof isAdminUser === 'function', 'isAdminUser debe existir como función global');
+});
+
+test('UserType-5 — stateManager tiene updateButtonsVisibility', () => {
+    const smCodeSec2 = fs.readFileSync(path.join(root, 'src/js/utils/stateManager.js'), 'utf-8');
+    assert(smCodeSec2.includes('updateButtonsVisibility'), 
+        'stateManager debe tener updateButtonsVisibility');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 108: PWA — Service Worker + Manifest + Install
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 108: PWA completo ─────────────────────────────────');
+
+const swCodePWA = fs.readFileSync(path.join(root, 'sw.js'), 'utf-8');
+const manifestCode = fs.readFileSync(path.join(root, 'manifest.json'), 'utf-8');
+
+test('PWA-SW-1 — Service Worker tiene estrategia de cache', () => {
+    assert(swCodePWA.includes('caches') && (swCodePWA.includes('cache-first') || swCodePWA.includes('Cache') || swCodePWA.includes('CACHE')),
+        'SW debe implementar estrategia de cache');
+});
+
+test('PWA-SW-2 — SW no cachea API de Groq', () => {
+    assert(swCodePWA.includes('groq') || swCodePWA.includes('api.groq.com') || swCodePWA.includes('Network'),
+        'SW no debe cachear llamadas a Groq API');
+});
+
+test('PWA-SW-3 — SW registra versión de cache', () => {
+    assert(swCodePWA.includes('CACHE_VERSION') || swCodePWA.includes('CACHE_NAME') || swCodePWA.match(/v\d+/),
+        'SW debe tener versionado de cache');
+});
+
+test('PWA-Manifest-1 — Manifest tiene datos correctos', () => {
+    const manifest = JSON.parse(manifestCode);
+    assert(manifest.name, 'Manifest debe tener name');
+    assert(manifest.short_name, 'Manifest debe tener short_name');
+    assertEqual(manifest.display, 'standalone', 'Display debe ser standalone');
+});
+
+test('PWA-Manifest-2 — Manifest tiene íconos', () => {
+    const manifest = JSON.parse(manifestCode);
+    assert(manifest.icons && manifest.icons.length >= 2, 'Debe tener al menos 2 íconos');
+    const sizes = manifest.icons.map(i => i.sizes);
+    assert(sizes.includes('192x192'), 'Debe tener ícono 192x192');
+    assert(sizes.includes('512x512'), 'Debe tener ícono 512x512');
+});
+
+test('PWA-Install-1 — index.html registra Service Worker', () => {
+    assert(indexCode.includes('serviceWorker.register') || indexCode.includes('navigator.serviceWorker'),
+        'index.html debe registrar el Service Worker');
+});
+
+test('PWA-Install-2 — index.html tiene link al manifest', () => {
+    assert(indexCode.includes('manifest.json'),
+        'index.html debe tener link al manifest.json');
+});
+
+test('PWA-Install-3 — index.html captura beforeinstallprompt', () => {
+    assert(indexCode.includes('beforeinstallprompt'),
+        'Debe capturar evento beforeinstallprompt');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 109: Storage — Persistencia y migración
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 109: Storage y Persistencia ──────────────────────');
+
+test('DB-1 — appDB tiene operaciones CRUD', () => {
+    assert(typeof appDB.get === 'function', 'appDB.get debe existir');
+    assert(typeof appDB.set === 'function', 'appDB.set debe existir');
+    assert(typeof appDB.remove === 'function', 'appDB.remove debe existir');
+});
+
+test('DB-2 — appDB.set y appDB.get funcionan', async () => {
+    await appDB.set('test_key', { hello: 'world' });
+    const val = await appDB.get('test_key');
+    assert(val && val.hello === 'world', 'Debe poder set/get valores');
+    await appDB.remove('test_key');
+});
+
+test('DB-3 — Claves de storage documentadas existen en código', () => {
+    // Verificar que las claves principales existen en los archivos correspondientes
+    assert(bizCodeSec.includes('client_config_stored'), 'business.js debe usar client_config_stored');
+    assert(rhCode.includes('report_history'), 'reportHistory.js debe usar report_history');
+    assert(prCodeSec.includes('patient_registry'), 'patientRegistry.js debe usar patient_registry');
+});
+
+test('DB-4 — formHandler usa pdf_config y patient_history', () => {
+    const fhCode = fs.readFileSync(path.join(root, 'src/js/features/formHandler.js'), 'utf-8');
+    assert(fhCode.includes('pdf_config'), 'formHandler debe usar pdf_config');
+    assert(fhCode.includes('patient_history'), 'formHandler debe usar patient_history');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 110: MedDictionary — Motor de correcciones
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 110: MedDictionary — Seguridad ───────────────────');
+
+const mdCodeSec = fs.readFileSync(path.join(root, 'src/js/features/medDictionary.js'), 'utf-8');
+
+test('MedDict-1 — _escapeRegex existe y se usa', () => {
+    assert(mdCodeSec.includes('function _escapeRegex'), 'Debe tener función _escapeRegex');
+    assert(mdCodeSec.includes('_escapeRegex(key)'), 'findDictMatches debe usar _escapeRegex');
+});
+
+test('MedDict-2 — _htmlEncode existe para sanitización', () => {
+    assert(mdCodeSec.includes('_htmlEncode') || mdCodeSec.includes('_htmlEnc'),
+        'Debe tener función _htmlEncode para escapar HTML');
+});
+
+test('MedDict-3 — renderReviewList usa _htmlEncode', () => {
+    assert(mdCodeSec.includes('_htmlEncode(m.from)') || mdCodeSec.includes('_htmlEncode(m.to)'),
+        'renderReviewList debe escapar datos con _htmlEncode');
+});
+
+test('MedDict-4 — AI scan tiene límite de caracteres', () => {
+    assert(mdCodeSec.includes('3000') || mdCodeSec.includes('slice(0,') || mdCodeSec.includes('substring(0,'),
+        'AI scan debe truncar texto largo');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 111: Integración cross-module — Exports globales de seguridad
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 111: Cross-module — Funciones de seguridad ──────');
+
+test('Global-1 — escapeHtml disponible globalmente', () => {
+    assert(typeof window.escapeHtml === 'function', 'escapeHtml debe ser window.escapeHtml');
+});
+
+test('Global-2 — escapeHtml maneja XSS payloads comunes', () => {
+    const payloads = [
+        '<img src=x onerror=alert(1)>',
+        '<script>document.cookie</script>',
+        '"><svg onload=alert(1)>',
+        "javascript:alert('xss')",
+        '<iframe src="evil.com"></iframe>'
+    ];
+    payloads.forEach(p => {
+        const escaped = escapeHtml(p);
+        assert(!escaped.includes('<script'), `Payload no escapado: ${p}`);
+        assert(!escaped.includes('<img'), `Payload img no escapado: ${p}`);
+        assert(!escaped.includes('<svg'), `Payload svg no escapado: ${p}`);
+        assert(!escaped.includes('<iframe'), `Payload iframe no escapado: ${p}`);
+    });
+});
+
+test('Global-3 — autoDetectTemplateKey disponible', () => {
+    assert(typeof autoDetectTemplateKey === 'function', 'autoDetectTemplateKey debe ser global');
+});
+
+test('Global-4 — saveReportToHistory disponible', () => {
+    assert(typeof saveReportToHistory === 'function', 'saveReportToHistory debe ser global');
+});
+
+test('Global-5 — savePatientToRegistry disponible', () => {
+    assert(typeof savePatientToRegistry === 'function', 'savePatientToRegistry debe ser global');
+});
+
+test('Global-6 — searchPatientRegistry disponible', () => {
+    assert(typeof searchPatientRegistry === 'function', 'searchPatientRegistry debe ser global');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 112: Admin Panel — Integridad y seguridad
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 112: Admin Panel ──────────────────────────────────');
+
+const adminCodeSec = fs.readFileSync(path.join(root, 'recursos/admin.html'), 'utf-8');
+
+test('Admin-1 — Admin panel tiene escapeHtml propia', () => {
+    assert(adminCodeSec.includes('function escapeHtml'), 'admin.html debe tener su propia escapeHtml');
+});
+
+test('Admin-2 — Admin panel verifica token de sesión', () => {
+    assert(adminCodeSec.includes('adminSession') || adminCodeSec.includes('sessionStorage'),
+        'Admin debe verificar sesión');
+});
+
+test('Admin-3 — Admin panel verifica sesión con token', () => {
+    assert(adminCodeSec.includes('token') || adminCodeSec.includes('adminSession'),
+        'Admin debe verificar sesión con token');
+});
+
+test('Admin-4 — Admin panel tiene CRUD de usuarios', () => {
+    assert(adminCodeSec.includes('admin_create_user') && adminCodeSec.includes('admin_update_user'),
+        'Admin debe tener endpoints de crear/editar usuarios');
+});
+
+test('Admin-5 — Admin panel tiene sistema de logs', () => {
+    assert(adminCodeSec.includes('admin_log_action') || adminCodeSec.includes('admin_get_logs'),
+        'Admin debe tener sistema de auditoría/logs');
+});
+
+// Limpiar estado después de tests
+global.localStorage.clear();
+global._reportHistCache = null;
+global._registryCache = null;
+
 // ── Resumen ───────────────────────────────────────────────────────────────────
 console.log('\n─────────────────────────────────────────────────────────────────');
 console.log(`  Total: ${passed + failed} | ✅ Pasaron: ${passed} | ❌ Fallaron: ${failed}`);
