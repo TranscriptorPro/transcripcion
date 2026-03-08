@@ -1894,7 +1894,8 @@
 
             grid.appendChild(checkboxGrid);
 
-            // Botón "Seleccionar todos"
+            // Botón "Seleccionar todos" — solo para planes sin límite de plantillas
+            if (selectedPlan === 'NORMAL') return; // NORMAL solo puede elegir 3
             const btnAll = document.createElement('button');
             btnAll.type = 'button';
             btnAll.className = 'btn btn-secondary';
