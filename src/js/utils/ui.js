@@ -521,6 +521,8 @@ window.initModals = function () {
             previewDownloadDropdown.style.top = 'auto';
             previewDownloadDropdown.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
             previewDownloadDropdown.style.left = rect.left + 'px';
+            previewDownloadDropdown.style.right = 'auto';
+            previewDownloadDropdown.style.width = 'max-content';
             previewDownloadDropdown.style.display = 'block';
         });
         previewDownloadDropdown.querySelectorAll('button[data-format]').forEach(btn => {
