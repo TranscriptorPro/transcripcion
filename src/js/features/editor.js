@@ -1200,9 +1200,10 @@ function _renderDynamicChips(fieldName) {
         // Tab Escribir: estilo simple
         tabWrite.style.background  = isWrite ? 'var(--primary)' : 'var(--bg-card)';
         tabWrite.style.color       = isWrite ? '#fff' : 'var(--text-primary)';
-        // Tab Grabar: en modo Normal → siempre locked; en Pro → Gemini animado o activo
-        const isNormal = window.currentMode !== 'pro';
-        if (isNormal) {
+        // Tab Grabar: en modo Normal → siempre locked; en Pro/Gift/Clinic → habilitado
+        const _isProCtx = window.currentMode === 'pro'
+            || (typeof CLIENT_CONFIG !== 'undefined' && (CLIENT_CONFIG.type === 'PRO' || CLIENT_CONFIG.type === 'ADMIN'));
+        if (!_isProCtx) {
             // Modo Normal: deshabilitado con candado
             tabRecord.classList.remove('btn-pro-animated');
             tabRecord.style.background = 'var(--bg-card)';
@@ -1229,8 +1230,10 @@ function _renderDynamicChips(fieldName) {
 
     document.getElementById('efTabWrite')?.addEventListener('click', () => _switchTab('write'));
     document.getElementById('efTabRecord')?.addEventListener('click', () => {
-        // Modo Normal → siempre bloqueado
-        if (window.currentMode !== 'pro') {
+        // Modo Normal → siempre bloqueado (salvo que CLIENT_CONFIG sea PRO/ADMIN)
+        const _isProClick = window.currentMode === 'pro'
+            || (typeof CLIENT_CONFIG !== 'undefined' && (CLIENT_CONFIG.type === 'PRO' || CLIENT_CONFIG.type === 'ADMIN'));
+        if (!_isProClick) {
             showToast('🔒 Función disponible solo en Modo Pro', 'info');
             return;
         }

@@ -202,10 +202,9 @@ function initializeMode() {
         }
     } else {
         setMode('normal');
+        // NORMAL users: toggle habilitado para probar Modo Pro temporalmente
         if (proModeToggle) {
-            proModeToggle.disabled = true;
-            const sw = proModeToggle.closest('.pro-toggle-switch');
-            if (sw) { sw.style.opacity = '0.5'; sw.style.cursor = 'not-allowed'; }
+            proModeToggle.disabled = false;
         }
     }
 }
