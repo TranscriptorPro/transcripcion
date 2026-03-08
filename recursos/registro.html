@@ -760,11 +760,12 @@
                             <li><span class="feat-icon">❌</span> <span style="opacity:.6;">Grabar sobre texto editado</span></li>
                             <li><span class="feat-icon">📄</span> 3 plantillas a elección</li>
                             <li><span class="feat-icon">✍️</span> PDF con firma</li>
-                            <li><span class="feat-icon">📂</span> Historial: últimos 20 informes</li>
+                            <li><span class="feat-icon">📂</span> Historial: últimos 10 informes</li>
                             <li><span class="feat-icon">❌</span> <span style="opacity:.6;">Asistente de sesión IA</span></li>
-                            <li><span class="feat-icon">📖</span> Diccionario médico (lectura)</li>
-                            <li><span class="feat-icon">💻</span> 2 dispositivos</li>
+                            <li><span class="feat-icon">📖</span> Diccionario médico personalizable</li>
+                            <li><span class="feat-icon">💻</span> 1 dispositivo</li>
                             <li><span class="feat-icon">1️⃣</span> 1 perfil de salida</li>
+                            <li><span class="feat-icon">🏥</span> 1 lugar de trabajo</li>
                         </ul>
                         <button type="button" class="pricing-select-btn" onclick="selectPlan('NORMAL')">Elegir Normal</button>
                     </div>
@@ -781,12 +782,13 @@
                             <li><span class="feat-icon">🤖</span> <b>Estructuración automática con IA</b></li>
                             <li><span class="feat-icon">✅</span> <b>Grabar sobre texto editado</b></li>
                             <li><span class="feat-icon">📄</span> <b>Todas las plantillas de tu especialidad</b></li>
-                            <li><span class="feat-icon">🎨</span> PDF con logo + firma + color</li>
-                            <li><span class="feat-icon">♾️</span> <b>Historial ilimitado</b></li>
+                            <li><span class="feat-icon">✍️</span> PDF con logo + firma</li>
+                            <li><span class="feat-icon">📂</span> <b>Historial: últimos 30 informes</b></li>
                             <li><span class="feat-icon">🧠</span> <b>Asistente de sesión IA</b></li>
                             <li><span class="feat-icon">📖</span> Diccionario personalizable</li>
-                            <li><span class="feat-icon">💻</span> 5 dispositivos</li>
-                            <li><span class="feat-icon">🔀</span> Múltiples perfiles de salida</li>
+                            <li><span class="feat-icon">💻</span> 3 dispositivos</li>
+                            <li><span class="feat-icon">🔀</span> Hasta 3 perfiles de salida</li>
+                            <li><span class="feat-icon">🏥</span> 2 lugares de trabajo</li>
                         </ul>
                         <button type="button" class="pricing-select-btn" onclick="selectPlan('PRO')">Elegir Pro</button>
                     </div>
@@ -801,9 +803,10 @@
                         <ul class="pricing-features">
                             <li><span class="feat-icon">✅</span> Todo lo de Pro, más:</li>
                             <li><span class="feat-icon">📦</span> <b>3 packs completos de especialidad</b></li>
-                            <li><span class="feat-icon">♾️</span> <b>Dispositivos ilimitados</b></li>
-                            <li><span class="feat-icon">👥</span> <b>Multi-profesional</b></li>
-                            <li><span class="feat-icon">🏢</span> Múltiples sedes</li>
+                            <li><span class="feat-icon">🎨</span> <b>PDF con logo + firma + color</b></li>
+                            <li><span class="feat-icon">👥</span> <b>Hasta 5 profesionales</b></li>
+                            <li><span class="feat-icon">💻</span> 5 dispositivos</li>
+                            <li><span class="feat-icon">♾️</span> <b>Historial ilimitado</b></li>
                             <li><span class="feat-icon">🤖</span> Estructuración automática con IA</li>
                             <li><span class="feat-icon">✅</span> Grabar sobre texto editado</li>
                             <li><span class="feat-icon">🧠</span> Asistente de sesión IA</li>
@@ -1132,9 +1135,9 @@
 
         // ── Pricing ────────────────────────────────────────────────────────────
         const PRICING = {
-            NORMAL: { license: 102.99, monthly: 10, annual: 100, devices: 2, templates: 3, label: 'Normal' },
-            PRO:    { license: 152.99, monthly: 15, annual: 150, devices: 5, templates: 'all_specialty', label: 'Pro' },
-            CLINIC: { license: 352.99, monthly: 30, annual: 300, devices: 999, templates: '3_packs', label: 'Clínica' }
+            NORMAL: { license: 102.99, monthly: 10, annual: 100, devices: 1, templates: 3, historial: 10, workplaces: 1, outputProfiles: 1, pdfLogo: false, pdfColor: false, label: 'Normal' },
+            PRO:    { license: 152.99, monthly: 15, annual: 150, devices: 3, templates: 'all_specialty', historial: 30, workplaces: 2, outputProfiles: 3, pdfLogo: true, pdfColor: false, label: 'Pro' },
+            CLINIC: { license: 352.99, monthly: 30, annual: 300, devices: 5, templates: '3_packs', historial: Infinity, workplaces: 1, outputProfiles: Infinity, pdfLogo: true, pdfColor: true, maxProfessionals: 5, label: 'Clínica' }
         };
 
         const ADDON_PRICES = {

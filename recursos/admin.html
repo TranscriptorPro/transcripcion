@@ -7545,10 +7545,10 @@
     (function() {
         'use strict';
         const DEFAULT_PLANS = {
-            trial:  { label: 'Trial',    icon: '🧪', price: 'Gratis',   period: '15 días', features: ['Transcripción básica','Todas las plantillas','Exportar TXT'], hasProMode: false, maxDevices: 1, durationDays: 15 },
-            normal: { label: 'Normal',   icon: '📝', price: '$15',      period: 'USD/mes', features: ['Transcripción ilimitada','Plantillas estáticas','Exportar TXT y PDF básico','Diccionario médico'], hasProMode: false, maxDevices: 2, durationDays: 30 },
-            pro:    { label: 'Pro',      icon: '⚡', price: '$25',      period: 'USD/mes', features: ['Todo de Normal','Modo Pro: estructurado IA','Todas las plantillas médicas','PDF profesional con firma','Historial de informes','Soporte prioritario'], hasProMode: true, maxDevices: 3, durationDays: 30 },
-            clinic: { label: 'Clínica',  icon: '🏥', price: 'Consultar',period: '',        features: ['Todo de Pro','Multi-profesional','Multi-dispositivo','Generación de apps GIFT','Dashboard de métricas','Soporte dedicado'], hasProMode: true, maxDevices: 10, durationDays: 365 }
+            trial:  { label: 'Trial',    icon: '🧪', price: 'Gratis',   period: '15 días', features: ['Todo de Pro por 15 días','Estructuración automática con IA','Todas las plantillas','PDF con logo + firma','Historial: 30 informes','Asistente de sesión IA'], hasProMode: true, maxDevices: 3, durationDays: 15, historial: 30, workplaces: 2, outputProfiles: 3 },
+            normal: { label: 'Normal',   icon: '📝', price: '$102.99',  period: 'pago único + $10/mes', features: ['Transcripción de audio','Estructuración manual','3 plantillas a elección','PDF con firma','Historial: 10 informes','Diccionario personalizable','1 dispositivo','1 perfil de salida','1 lugar de trabajo'], hasProMode: false, maxDevices: 1, durationDays: 30, historial: 10, workplaces: 1, outputProfiles: 1 },
+            pro:    { label: 'Pro',      icon: '⚡', price: '$152.99',  period: 'pago único + $15/mes', features: ['Estructuración automática con IA','Grabar sobre texto editado','Todas las plantillas de especialidad','PDF con logo + firma','Historial: 30 informes','Asistente de sesión IA','Diccionario personalizable','3 dispositivos','Hasta 3 perfiles de salida','2 lugares de trabajo'], hasProMode: true, maxDevices: 3, durationDays: 30, historial: 30, workplaces: 2, outputProfiles: 3 },
+            clinic: { label: 'Clínica',  icon: '🏥', price: '$352.99',  period: 'pago único + $30/mes', features: ['Todo de Pro más:','3 packs de especialidad','PDF con logo + firma + color','Hasta 5 profesionales','5 dispositivos','Historial ilimitado','Múltiples perfiles de salida','Diccionario personalizable'], hasProMode: true, maxDevices: 5, durationDays: 365, historial: -1, workplaces: 1, outputProfiles: -1, maxProfessionals: 5 }
         };
         let _plansInitialized = false;
 
