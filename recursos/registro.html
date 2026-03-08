@@ -1021,6 +1021,44 @@
                         </div>
                     </div>
 
+                    <!-- Add-ons: Lugares de trabajo extra -->
+                    <div class="cart-section" id="cartWorkplacesSection">
+                        <div class="cart-section-title">🏥 Lugares de trabajo extra</div>
+                        <div class="cart-item">
+                            <span class="cart-item-name">+1 lugar de trabajo adicional</span>
+                            <span class="cart-item-price">$12.99</span>
+                            <div style="display:flex;align-items:center;gap:6px;">
+                                <button type="button" class="cart-add-btn" onclick="changeExtraWorkplaces(-1)" style="padding:4px 8px;">−</button>
+                                <span id="extraWorkplacesCount" style="font-weight:700;min-width:20px;text-align:center;">0</span>
+                                <button type="button" class="cart-add-btn" onclick="changeExtraWorkplaces(1)" style="padding:4px 8px;">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add-ons: Profesionales extra (solo CLINIC) -->
+                    <div class="cart-section" id="cartProfessionalsSection" style="display:none;">
+                        <div class="cart-section-title">👥 Profesionales extra</div>
+                        <div class="cart-item">
+                            <span class="cart-item-name">+1 profesional adicional</span>
+                            <span class="cart-item-price">$19.99</span>
+                            <div style="display:flex;align-items:center;gap:6px;">
+                                <button type="button" class="cart-add-btn" onclick="changeExtraProfessionals(-1)" style="padding:4px 8px;">−</button>
+                                <span id="extraProfessionalsCount" style="font-weight:700;min-width:20px;text-align:center;">0</span>
+                                <button type="button" class="cart-add-btn" onclick="changeExtraProfessionals(1)" style="padding:4px 8px;">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add-ons: Branding (logo+color) -->
+                    <div class="cart-section" id="cartBrandingSection" style="display:none;">
+                        <div class="cart-section-title">🎨 Pack Branding</div>
+                        <div class="cart-item" id="cartBrandingItem">
+                            <span class="cart-item-name" id="cartBrandingName">Logo + color en PDF</span>
+                            <span class="cart-item-price" id="cartBrandingPrice">$14.99</span>
+                            <button type="button" class="cart-add-btn" id="cartBrandingBtn" onclick="toggleBranding()">+ Agregar</button>
+                        </div>
+                    </div>
+
                     <!-- Mini cart summary -->
                     <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:.8rem 1rem;margin-top:1rem;">
                         <div style="font-weight:700;font-size:.85rem;margin-bottom:.4rem;">🛒 Tu carrito</div>
@@ -1169,8 +1207,24 @@
             template_individual: 3,
             pack_small: 7,    // 3-5 plantillas
             pack_large: 12,   // 6+ plantillas
-            device_extra: 8.99
+            device_extra: 8.99,
+            workplace_extra: 12.99,
+            professional_extra: 19.99,
+            branding_normal: 14.99,  // logo + color para NORMAL
+            branding_pro: 9.99       // color para PRO (ya tiene logo)
         };
+
+        // ── Sync with admin_addons_config (D3) ──
+        (function _syncAdminAddonsConfig() {
+            try {
+                const raw = localStorage.getItem('admin_addons_config');
+                if (!raw) return;
+                const cfg = JSON.parse(raw);
+                for (const key of Object.keys(ADDON_PRICES)) {
+                    if (cfg[key] && cfg[key].price != null) ADDON_PRICES[key] = cfg[key].price;
+                }
+            } catch(_) {}
+        })();
 
         // ── Template map (same as admin.html) ──
         const TEMPLATE_MAP = {
@@ -1399,7 +1453,10 @@
         let cartAddons = {
             templates: [],   // { key, name, category, price }
             packs: [],       // { category, templates: [...], price }
-            extraDevices: 0
+            extraDevices: 0,
+            extraWorkplaces: 0,
+            extraProfessionals: 0,
+            branding: false
         };
 
         // ── Plan Selection ──────────────────────────────────────────────────────
@@ -1460,8 +1517,28 @@
             // Template add-ons
             renderCartTemplates();
 
-            // Devices section (hide for CLINIC)
+            // Devices section (hide for CLINIC — already has 5)
             document.getElementById('cartDevicesSection').style.display = selectedPlan === 'CLINIC' ? 'none' : 'block';
+
+            // Workplaces section (show for PRO only — NORMAL=1 fixed, CLINIC=1 fixed)
+            document.getElementById('cartWorkplacesSection').style.display = selectedPlan === 'PRO' ? 'block' : 'none';
+
+            // Professionals section (CLINIC only)
+            document.getElementById('cartProfessionalsSection').style.display = selectedPlan === 'CLINIC' ? 'block' : 'none';
+
+            // Branding section (NORMAL gets logo+color, PRO gets color only, CLINIC already has both)
+            const brandingSection = document.getElementById('cartBrandingSection');
+            if (selectedPlan === 'NORMAL') {
+                brandingSection.style.display = 'block';
+                document.getElementById('cartBrandingName').textContent = 'Logo + color personalizado en PDF';
+                document.getElementById('cartBrandingPrice').textContent = '$' + ADDON_PRICES.branding_normal.toFixed(2);
+            } else if (selectedPlan === 'PRO') {
+                brandingSection.style.display = 'block';
+                document.getElementById('cartBrandingName').textContent = 'Color personalizado en PDF';
+                document.getElementById('cartBrandingPrice').textContent = '$' + ADDON_PRICES.branding_pro.toFixed(2);
+            } else {
+                brandingSection.style.display = 'none';
+            }
 
             updateCartSummary();
         }
@@ -1586,11 +1663,42 @@
             updateCartSummary();
         }
 
+        function changeExtraWorkplaces(delta) {
+            cartAddons.extraWorkplaces = Math.max(0, Math.min(5, cartAddons.extraWorkplaces + delta));
+            document.getElementById('extraWorkplacesCount').textContent = cartAddons.extraWorkplaces;
+            updateCartSummary();
+        }
+
+        function changeExtraProfessionals(delta) {
+            cartAddons.extraProfessionals = Math.max(0, Math.min(10, cartAddons.extraProfessionals + delta));
+            document.getElementById('extraProfessionalsCount').textContent = cartAddons.extraProfessionals;
+            updateCartSummary();
+        }
+
+        function toggleBranding() {
+            cartAddons.branding = !cartAddons.branding;
+            const btn = document.getElementById('cartBrandingBtn');
+            if (btn) {
+                btn.textContent = cartAddons.branding ? '✕ Quitar' : '+ Agregar';
+                btn.classList.toggle('added', cartAddons.branding);
+            }
+            updateCartSummary();
+        }
+
+        function _getBrandingPrice() {
+            if (selectedPlan === 'NORMAL') return ADDON_PRICES.branding_normal;
+            if (selectedPlan === 'PRO') return ADDON_PRICES.branding_pro;
+            return 0;
+        }
+
         function getCartAddonTotal() {
             let total = 0;
             cartAddons.templates.forEach(t => total += t.price);
             cartAddons.packs.forEach(p => total += p.price);
             total += cartAddons.extraDevices * ADDON_PRICES.device_extra;
+            total += cartAddons.extraWorkplaces * ADDON_PRICES.workplace_extra;
+            total += cartAddons.extraProfessionals * ADDON_PRICES.professional_extra;
+            if (cartAddons.branding) total += _getBrandingPrice();
             return total;
         }
 
@@ -1600,6 +1708,15 @@
             cartAddons.packs.forEach(p => items.push(`📦 Pack ${p.category} — $${p.price}`));
             if (cartAddons.extraDevices > 0) {
                 items.push(`+${cartAddons.extraDevices} dispositivo(s) — $${(cartAddons.extraDevices * ADDON_PRICES.device_extra).toFixed(2)}`);
+            }
+            if (cartAddons.extraWorkplaces > 0) {
+                items.push(`+${cartAddons.extraWorkplaces} lugar(es) de trabajo — $${(cartAddons.extraWorkplaces * ADDON_PRICES.workplace_extra).toFixed(2)}`);
+            }
+            if (cartAddons.extraProfessionals > 0) {
+                items.push(`+${cartAddons.extraProfessionals} profesional(es) — $${(cartAddons.extraProfessionals * ADDON_PRICES.professional_extra).toFixed(2)}`);
+            }
+            if (cartAddons.branding) {
+                items.push(`🎨 Pack Branding — $${_getBrandingPrice().toFixed(2)}`);
             }
 
             const summaryEl = document.getElementById('cartSummaryItems');
@@ -1637,6 +1754,18 @@
             if (cartAddons.extraDevices > 0) {
                 const devCost = (cartAddons.extraDevices * ADDON_PRICES.device_extra).toFixed(2);
                 oneTimeHtml += `<div class="invest-line"><span>💻 +${cartAddons.extraDevices} dispositivo(s)</span><span>$${devCost}</span></div>`;
+            }
+            if (cartAddons.extraWorkplaces > 0) {
+                const wpCost = (cartAddons.extraWorkplaces * ADDON_PRICES.workplace_extra).toFixed(2);
+                oneTimeHtml += `<div class="invest-line"><span>🏥 +${cartAddons.extraWorkplaces} lugar(es) de trabajo</span><span>$${wpCost}</span></div>`;
+            }
+            if (cartAddons.extraProfessionals > 0) {
+                const proCost = (cartAddons.extraProfessionals * ADDON_PRICES.professional_extra).toFixed(2);
+                oneTimeHtml += `<div class="invest-line"><span>👨‍⚕️ +${cartAddons.extraProfessionals} profesional(es)</span><span>$${proCost}</span></div>`;
+            }
+            if (cartAddons.branding) {
+                const brandCost = _getBrandingPrice().toFixed(2);
+                oneTimeHtml += `<div class="invest-line"><span>🎨 Branding personalizado</span><span>$${brandCost}</span></div>`;
             }
             oneTimeEl.innerHTML = oneTimeHtml;
 
