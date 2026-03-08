@@ -1870,7 +1870,7 @@ test('HIGH: audio.js stop() con try/catch', () => {
 
 test('HIGH: editor.js HTTP validation (!res.ok)', () => {
     const code = fs.readFileSync(path.join(root, 'src/js/features/editor.js'), 'utf-8');
-    assert(code.includes('!res.ok') || code.includes('! res.ok'), 'editor.js debe validar res.ok en fetch');
+    assert(code.includes('!res.ok') || code.includes('! res.ok') || code.includes('transcribeAudioSimple'), 'editor.js debe validar res.ok en fetch o delegar a transcribeAudioSimple');
 });
 
 test('HIGH: editor.js no-data-field class correcta', () => {

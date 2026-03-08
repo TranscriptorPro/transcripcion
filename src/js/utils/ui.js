@@ -1032,45 +1032,10 @@ window.initModals = function () {
                     const blob = new Blob(_appendChunks, { type: realMime });
                     const file = new File([blob], `append_audio.${ext}`, { type: realMime });
 
-                    // Transcribe with Groq (with retry)
+                    // Transcribe with shared function (retry + timeout + prompt médico)
                     if (typeof showToast === 'function') showToast('⏳ Transcribiendo audio adicional...', 'info', 3000);
                     try {
-                        const apiKey = window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '';
-                        if (!apiKey) {
-                            showToast('❌ No hay API key configurada', 'error');
-                            return;
-                        }
-                        const MAX_RETRIES = 3;
-                        let newText = '';
-                        let lastErr = null;
-                        for (let _attempt = 1; _attempt <= MAX_RETRIES; _attempt++) {
-                            try {
-                                if (_attempt > 1) {
-                                    showToast(`🔄 Reintento ${_attempt}/${MAX_RETRIES}...`, 'info', 2000);
-                                    await new Promise(r => setTimeout(r, _attempt * 1500));
-                                }
-                                const form = new FormData();
-                                form.append('file', file);
-                                form.append('model', 'whisper-large-v3-turbo');
-                                form.append('language', 'es');
-                                form.append('response_format', 'text');
-                                const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-                                    method: 'POST',
-                                    headers: { 'Authorization': 'Bearer ' + apiKey },
-                                    body: form
-                                });
-                                if (!res.ok) {
-                                    if (res.status === 401) throw new Error('API Key inválida');
-                                    throw new Error('Error ' + res.status);
-                                }
-                                newText = (await res.text()).trim();
-                                break;
-                            } catch (retryErr) {
-                                lastErr = retryErr;
-                                if (retryErr.message.includes('401') || retryErr.message.includes('API Key')) throw retryErr;
-                            }
-                        }
-                        if (!newText && lastErr) throw lastErr;
+                        const newText = await window.transcribeAudioSimple(file);
 
                         if (newText) {
                             const editor = document.getElementById('editor');

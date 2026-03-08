@@ -1,0 +1,4 @@
+── Bloque 9: G2 — patientHistory → patientRegistry unificado ──
+── Bloque 33: Restaurar sesión + Modal confirm + Append record ──
+  ❌  HIGH: editor.js HTTP validation (!res.ok)
+        → editor.js debe validar res.ok en fetch

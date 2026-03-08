@@ -845,3 +845,44 @@ async function isAudioSilent(file, threshold = 0.01) {
 }
 
 // testGroqConnection — removida (dead code, nunca se invocaba)
+
+// ── Shared: función simple de transcripción para uso en ui.js y editor.js ──
+// Retry 3x, timeout 120s, prompt médico contextual, manejo de errores
+window.transcribeAudioSimple = async function(file) {
+    const apiKey = window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '';
+    if (!apiKey) throw new Error('No hay API key configurada');
+    const MAX_RETRIES = 3;
+    let lastErr = null;
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 1500));
+            const form = new FormData();
+            form.append('file', file);
+            form.append('model', 'whisper-large-v3-turbo');
+            form.append('language', 'es');
+            form.append('response_format', 'text');
+            form.append('temperature', '0');
+            try {
+                const prompt = await buildWhisperPrompt();
+                if (prompt) form.append('prompt', prompt);
+            } catch(_) {}
+            const res = await fetchWithTimeout(GROQ_API_URL, {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + apiKey },
+                body: form
+            }, 120000);
+            if (!res.ok) {
+                if (res.status === 401) throw new Error('API Key inválida');
+                if (res.status === 429) throw new Error('Límite de requests excedido');
+                throw new Error('Error ' + res.status);
+            }
+            const text = (await res.text()).trim();
+            if (window.apiUsageTracker) window.apiUsageTracker.trackTranscription();
+            return text;
+        } catch (err) {
+            lastErr = err;
+            if (err.message.includes('401') || err.message.includes('API Key')) throw err;
+        }
+    }
+    throw lastErr;
+};
