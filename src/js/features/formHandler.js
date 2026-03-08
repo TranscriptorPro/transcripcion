@@ -115,14 +115,22 @@ window.extractPatientDataFromText = function (text) {
 }
 
 // ---- Report numbering ----
+// D3: En CLINIC, prefija con ID del profesional para contadores separados
 window.generateReportNumber = function () {
     const year = new Date().getFullYear();
-    const key = 'report_counter_' + year;
+    var profPrefix = '';
+    try {
+        var cfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        if (cfg.activeProfessional && cfg.activeProfessional.nombre) {
+            profPrefix = cfg.activeProfessional.nombre.replace(/[^a-zA-Z]/g, '').substring(0, 4).toUpperCase() + '_';
+        }
+    } catch(_) {}
+    const key = 'report_counter_' + profPrefix + year;
     let counter = parseInt(localStorage.getItem(key) || '0');
     counter++;
     if (typeof appDB !== 'undefined') appDB.set(key, counter);
     localStorage.setItem(key, counter);
-    return `${year}-${String(counter).padStart(4, '0')}`;
+    return `${year}-${profPrefix}${String(counter).padStart(4, '0')}`;
 }
 
 // ---- Image upload handlers ----

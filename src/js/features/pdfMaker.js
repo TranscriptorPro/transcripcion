@@ -181,7 +181,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             // Logo institucional
             if (instLogoB64) {
                 try {
-                    const instSizePx = parseInt(localStorage.getItem('inst_logo_size_px') || '60');
+                    const instSizePx = parseInt(config.instLogoSizePx || localStorage.getItem('inst_logo_size_px') || '60');
                     const instScale = instSizePx / 60;
                     const imgW = Math.round(12 * instScale), imgH = Math.round(10 * instScale);
                     const imgType = instLogoB64.includes('data:image/png') ? 'PNG' : 'JPEG';

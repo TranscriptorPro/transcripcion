@@ -674,10 +674,15 @@ async function _handleFactorySetup(medicoId) {
             } catch(_) {}
         }
 
-        // Tamaño del logo institucional en PDF
+        // Tamaño del logo institucional en PDF → guardar en pdf_config
         if (regDatos.instLogoSize) {
             try {
-                if (typeof appDB !== 'undefined') appDB.set('inst_logo_size_px', regDatos.instLogoSize);
+                var existCfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+                existCfg.instLogoSizePx = parseInt(regDatos.instLogoSize);
+                if (typeof appDB !== 'undefined') appDB.set('pdf_config', existCfg);
+                localStorage.setItem('pdf_config', JSON.stringify(existCfg));
+                window._pdfConfigCache = existCfg;
+                // Compatibilidad: mantener localStorage legacy
                 localStorage.setItem('inst_logo_size_px', String(regDatos.instLogoSize));
             } catch(_) {}
         }
