@@ -148,14 +148,63 @@
         const profData = window._profDataCache || JSON.parse(localStorage.getItem('prof_data') || '{}');
         const el = (id) => document.getElementById(id);
 
-        if (el('settingsProfName')) el('settingsProfName').textContent = profData.nombre || '—';
-        if (el('settingsProfMatricula')) el('settingsProfMatricula').textContent = profData.matricula || '—';
-        if (el('settingsProfEspecialidad')) el('settingsProfEspecialidad').textContent = profData.especialidad || '—';
+        // B2: En modo clínica, mostrar profesional activo con dropdown para cambiar
+        const isClinic = typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.canGenerateApps;
+        if (isClinic) {
+            _populateClinicAccountSelector(el, profData);
+        } else {
+            if (el('settingsProfName')) el('settingsProfName').textContent = profData.nombre || '—';
+            if (el('settingsProfMatricula')) el('settingsProfMatricula').textContent = profData.matricula || '—';
+            if (el('settingsProfEspecialidad')) el('settingsProfEspecialidad').textContent = profData.especialidad || '—';
+        }
 
         const planEl = el('settingsProfPlan');
         if (planEl && typeof CLIENT_CONFIG !== 'undefined') {
             const planNames = { ADMIN: 'Administrador', PRO: 'Profesional PRO', TRIAL: 'Prueba', NORMAL: 'Básico' };
             planEl.textContent = planNames[CLIENT_CONFIG.type] || CLIENT_CONFIG.type || '—';
+        }
+    }
+
+    // B2: Selector de profesional activo para modo CLINIC
+    function _populateClinicAccountSelector(el, profData) {
+        var wpProfiles = [];
+        try { wpProfiles = JSON.parse(localStorage.getItem('workplace_profiles') || '[]'); } catch(_) {}
+        var pdfCfg = {};
+        try { pdfCfg = JSON.parse(localStorage.getItem('pdf_config') || '{}'); } catch(_) {}
+        var wpIdx = pdfCfg.activeWorkplaceIndex || 0;
+        var wp = wpProfiles[Number(wpIdx)];
+        var profs = (wp && wp.professionals) ? wp.professionals : [];
+        var activeProfIdx = pdfCfg.activeProfessionalIndex || 0;
+        var activeProf = profs[activeProfIdx] || {};
+
+        if (el('settingsProfName')) el('settingsProfName').textContent = activeProf.nombre || profData.nombre || '—';
+        if (el('settingsProfMatricula')) el('settingsProfMatricula').textContent = activeProf.matricula || profData.matricula || '—';
+        var espRaw = activeProf.especialidades || profData.especialidad || '';
+        if (el('settingsProfEspecialidad')) el('settingsProfEspecialidad').textContent = Array.isArray(espRaw) ? espRaw.filter(function(e){return e&&e!=='Todas';}).join(' / ') : (espRaw || '—');
+
+        // Inyectar dropdown si hay >1 profesional
+        if (profs.length > 1) {
+            var container = el('settingsProfName');
+            if (container && !document.getElementById('settingsClinicProfSelect')) {
+                var select = document.createElement('select');
+                select.id = 'settingsClinicProfSelect';
+                select.style.cssText = 'margin-left:8px;padding:2px 4px;font-size:0.85rem;border-radius:4px;border:1px solid var(--border-color);';
+                profs.forEach(function(p, i) {
+                    var opt = document.createElement('option');
+                    opt.value = i;
+                    opt.textContent = p.nombre || ('Profesional ' + (i + 1));
+                    if (i === activeProfIdx) opt.selected = true;
+                    select.appendChild(opt);
+                });
+                select.addEventListener('change', function() {
+                    var idx = parseInt(select.value);
+                    if (typeof loadProfessionalProfile === 'function') {
+                        loadProfessionalProfile(wpIdx, idx);
+                    }
+                    populateSettingsModal();
+                });
+                container.parentNode.appendChild(select);
+            }
         }
     }
 
