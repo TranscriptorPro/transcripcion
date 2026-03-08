@@ -15,7 +15,8 @@ const SHEET_DEVICES      = 'Dispositivos';
 const SHEET_LOGS         = 'Admin_Logs';
 const SHEET_DIAGNOSTICOS = 'Diagnosticos';
 const SHEET_ADMIN_USERS  = 'Admin_Users';
-const SHEET_REGISTROS    = 'Registros_Pendientes';
+const SHEET_REGISTROS       = 'Registros_Pendientes';
+const SHEET_PROFESIONALES   = 'Profesionales_Clinica';
 
 // SECURITY: Read from Apps Script Script Properties (not hardcoded).
 // In Apps Script editor: File > Project Properties > Script Properties > Add: ADMIN_KEY = <your-secret>
@@ -832,6 +833,10 @@ function doGet(e) {
         regSheet.getRange(regRow, medicoIdCol + 1).setValue(medicoId);
       }
 
+      // Actualizar profesionales de clínica (si aplica)
+      try { _approveProfesionalesClinica(regId, medicoId, regData.Profesionales || ''); }
+      catch(profErr) { Logger.log('⚠️ Error actualizando profesionales: ' + profErr.message); }
+
       appendAdminLog(auth.username, 'approve_registration', medicoId, 'Reg: ' + regId + ' Plan: ' + plan);
 
       return createResponse({
@@ -890,6 +895,36 @@ function doGet(e) {
       return createResponse({ error: 'Registro no encontrado: ' + regId });
     } catch(err) {
       return createResponse({ error: 'Error rechazando registro: ' + err.message });
+    }
+  }
+
+  // ── admin_get_clinic_professionals — lista profesionales de una clínica ──
+  if (action === 'admin_get_clinic_professionals') {
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
+
+    const medicoId = e.parameter.medicoId || '';
+    const regId    = e.parameter.regId    || '';
+    if (!medicoId && !regId) return createResponse({ error: 'Falta medicoId o regId' });
+
+    try {
+      const profSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_PROFESIONALES);
+      if (!profSheet) return createResponse({ success: true, profesionales: [] });
+
+      const data = profSheet.getDataRange().getValues();
+      const headers = data[0];
+      var result = [];
+
+      for (var i = 1; i < data.length; i++) {
+        var row = {};
+        headers.forEach(function(h, idx) { row[h] = data[i][idx]; });
+        if (medicoId && String(row.ID_Medico) === String(medicoId)) result.push(row);
+        else if (regId && String(row.ID_Registro) === String(regId)) result.push(row);
+      }
+
+      return createResponse({ success: true, profesionales: result });
+    } catch(err) {
+      return createResponse({ error: 'Error consultando profesionales: ' + err.message });
     }
   }
 
@@ -1015,6 +1050,10 @@ function doPost(e) {
       if (estadoCol !== -1) regSheet.getRange(regRow, estadoCol + 1).setValue('aprobado');
       const medicoIdCol = regHeaders.indexOf('ID_Medico_Asignado');
       if (medicoIdCol !== -1) regSheet.getRange(regRow, medicoIdCol + 1).setValue(medicoId);
+
+      // Actualizar profesionales de clínica (si aplica)
+      try { _approveProfesionalesClinica(regId, medicoId, regData.Profesionales || ''); }
+      catch(profErr) { Logger.log('⚠️ Error actualizando profesionales: ' + profErr.message); }
 
       appendAdminLog(auth.username, 'approve_registration', regId, medicoId + ' / ' + plan);
 
@@ -1224,6 +1263,12 @@ function doPost(e) {
       const row = workingHeaders.map(function(h) { return rowData[h] !== undefined ? rowData[h] : ''; });
 
       regSheet.appendRow(row);
+
+      // Si es plan CLINIC con profesionales, guardarlos en hoja separada
+      if (payload.profesionales) {
+        try { _saveProfesionalesClinica(regId, payload.profesionales, ''); }
+        catch(profErr) { Logger.log('⚠️ Error guardando profesionales: ' + profErr.message); }
+      }
 
       // Notificar al admin por email (opcional, no bloquea)
       try {
@@ -1451,6 +1496,87 @@ function _getDataFolder() {
   const FOLDER_NAME = 'Datos_Transcriptor';
   const found = DriveApp.getFoldersByName(FOLDER_NAME);
   return found.hasNext() ? found.next() : DriveApp.createFolder(FOLDER_NAME);
+}
+
+/**
+ * Guarda los profesionales de una clínica en la hoja Profesionales_Clinica.
+ * @param {string} regId         - ID del registro de clínica
+ * @param {string} profesionales - JSON array string con los profesionales
+ * @param {string} medicoId      - (opcional) ID_Medico asignado al aprobar
+ */
+function _saveProfesionalesClinica(regId, profesionales, medicoId) {
+  if (!profesionales) return;
+  var profs;
+  try { profs = JSON.parse(profesionales); } catch(_) { return; }
+  if (!Array.isArray(profs) || profs.length === 0) return;
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var profSheet = ss.getSheetByName(SHEET_PROFESIONALES);
+
+  // Auto-crear la hoja si no existe
+  if (!profSheet) {
+    profSheet = ss.insertSheet(SHEET_PROFESIONALES);
+    profSheet.appendRow([
+      'ID_Prof', 'ID_Registro', 'ID_Medico', 'Nombre', 'Matricula',
+      'Especialidad', 'Email', 'Firma', 'Activo', 'Fecha_Alta', 'Estado'
+    ]);
+    profSheet.setFrozenRows(1);
+  }
+
+  var now = new Date().toISOString();
+  profs.forEach(function(p, i) {
+    profSheet.appendRow([
+      regId + '_P' + (i + 1),                   // ID_Prof
+      regId,                                      // ID_Registro
+      medicoId || '',                             // ID_Medico (vacío hasta aprobar)
+      p.nombre    || '',                          // Nombre
+      p.matricula || '',                          // Matricula
+      p.especialidad || '',                       // Especialidad
+      p.email     || '',                          // Email
+      p.firma     ? 'yes' : '',                   // Firma (indicador)
+      p.activo !== false ? 'si' : 'no',           // Activo
+      now,                                        // Fecha_Alta
+      medicoId ? 'activo' : 'pendiente'           // Estado
+    ]);
+  });
+}
+
+/**
+ * Al aprobar una clínica, actualiza ID_Medico y Estado en las filas de Profesionales_Clinica
+ * que correspondan al registro aprobado.
+ * @param {string} regId    - ID del registro
+ * @param {string} medicoId - ID_Medico asignado
+ * @param {string} profesionales - JSON string (fallback: escribe filas si no existían)
+ */
+function _approveProfesionalesClinica(regId, medicoId, profesionales) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var profSheet = ss.getSheetByName(SHEET_PROFESIONALES);
+
+  // Si la hoja no existe y hay profesionales, crearla con los datos
+  if (!profSheet) {
+    if (profesionales) _saveProfesionalesClinica(regId, profesionales, medicoId);
+    return;
+  }
+
+  var data = profSheet.getDataRange().getValues();
+  var headers = data[0];
+  var regCol = headers.indexOf('ID_Registro');
+  var medCol = headers.indexOf('ID_Medico');
+  var estCol = headers.indexOf('Estado');
+  var updated = false;
+
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][regCol]) === String(regId)) {
+      if (medCol !== -1) profSheet.getRange(i + 1, medCol + 1).setValue(medicoId);
+      if (estCol !== -1) profSheet.getRange(i + 1, estCol + 1).setValue('activo');
+      updated = true;
+    }
+  }
+
+  // Si no había filas (registro antiguo), crearlas ahora
+  if (!updated && profesionales) {
+    _saveProfesionalesClinica(regId, profesionales, medicoId);
+  }
 }
 
 /**

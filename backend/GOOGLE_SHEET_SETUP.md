@@ -118,6 +118,24 @@
 
 > **NOTA:** La hoja `Registros_Pendientes` se crea automáticamente cuando el primer profesional se registra desde el formulario público (`registro.html`).
 
+### 8. `Profesionales_Clinica` — Profesionales asociados a planes Clínica (NUEVA)
+
+| Columna | Tipo | Descripción | Ejemplo |
+|---------|------|-------------|---------|
+| `ID_Prof` | Texto | ID único del profesional | `REG_123_P1` |
+| `ID_Registro` | Texto | FK a Registros_Pendientes | `REG_1234567890` |
+| `ID_Medico` | Texto | FK a Usuarios (se llena al aprobar) | `MED_ABC123` |
+| `Nombre` | Texto | Nombre del profesional | `Dra. Ana López` |
+| `Matricula` | Texto | Matrícula médica | `MN 67890` |
+| `Especialidad` | Texto | Especialidad del profesional | `Cardiología` |
+| `Email` | Texto | Email del profesional | `ana@clinica.com` |
+| `Firma` | Texto | Indicador de firma cargada | `yes` o vacío |
+| `Activo` | Texto | Si el profesional está activo | `si`, `no` |
+| `Fecha_Alta` | Texto | ISO timestamp de creación | `2026-03-08T15:30:00Z` |
+| `Estado` | Texto | Estado según el registro | `pendiente`, `activo` |
+
+> **NOTA:** La hoja `Profesionales_Clinica` se crea automáticamente cuando una clínica (plan CLINIC) se registra con profesionales. Al aprobar el registro, las filas se actualizan con el `ID_Medico` asignado y el estado cambia a `activo`.
+
 ## Configuración de Apps Script
 
 1. En la hoja de cálculo, ir a **Extensiones → Apps Script**.
@@ -174,6 +192,7 @@
 | `?action=admin_list_registrations` | GET | Listar registros pendientes |
 | `?action=admin_approve_registration` | GET | Aprobar registro y crear usuario |
 | `?action=admin_reject_registration` | GET | Rechazar un registro |
+| `?action=admin_get_clinic_professionals` | GET | Listar profesionales de una clínica |
 
 ## Datos de Ejemplo
 
