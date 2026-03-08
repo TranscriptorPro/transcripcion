@@ -4097,15 +4097,7 @@
         }
 
         function updateGiftSummaryBadge() {
-            const plan = document.getElementById('giftPlan')?.value || 'GIFT';
-            const dev = document.getElementById('giftDevices')?.value || '10';
-            const dur = document.getElementById('giftDuration')?.value || '365';
-            const durMap = { '7': '7 días', '15': '15 días', '30': '1 mes', '90': '3 meses', '180': '6 meses', '365': '1 año', '0': 'Sin vencimiento' };
-            const allTpl = document.getElementById('giftAllTemplates')?.checked !== false;
-            document.getElementById('giftSummaryPlan').textContent = plan;
-            document.getElementById('giftSummaryDevices').textContent = dev === '999' ? '∞' : dev;
-            document.getElementById('giftSummaryDuration').textContent = durMap[dur] || dur + ' días';
-            document.getElementById('giftSummaryTemplates').textContent = allTpl ? 'TODAS' : 'Seleccionadas';
+            // badge eliminado — los elementos ya no existen en el DOM
         }
 
         function toggleGiftAllTemplates(checked) {
@@ -6667,7 +6659,6 @@
                     <div style="background:linear-gradient(135deg,#fef3c7,#fde68a);border:2px solid #f59e0b;border-radius:12px;padding:.6rem 1rem;margin-bottom:.8rem;text-align:center;">
                         <span style="font-size:1.5rem;">🎁</span>
                         <h3 style="margin:.2rem 0 .1rem;color:#92400e;font-size:.95rem;">Crear Usuario Regalo</h3>
-                        <p style="margin:0;font-size:.72rem;color:#a16207;">TODAS las plantillas · 10 dispositivos · Plan GIFT · 1 año</p>
                     </div>
 
                     <!-- Stepper visual (5 pasos) -->
@@ -6816,15 +6807,6 @@
                             </div>
                         </div>
 
-                        <!-- Resumen plan (dinámico) -->
-                        <div id="giftPlanSummary" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.5rem .8rem;margin-bottom:.6rem;">
-                            <div style="display:flex;gap:.8rem;font-size:.73rem;color:#166534;flex-wrap:wrap;">
-                                <span>🏷️ Plan: <strong id="giftSummaryPlan">GIFT</strong></span>
-                                <span>📄 <strong id="giftSummaryTemplates">TODAS</strong> las plantillas</span>
-                                <span>📱 <strong id="giftSummaryDevices">10</strong> dispositivos</span>
-                                <span>📅 <strong id="giftSummaryDuration">1 año</strong></span>
-                            </div>
-                        </div>
                         <div style="display:flex;justify-content:space-between;">
                             <button type="button" class="btn-secondary" onclick="giftGoStep(2)" style="padding:7px 16px;font-size:.84rem;">← Anterior</button>
                             <button type="button" class="btn-primary" onclick="giftGoStep(4)" style="padding:7px 20px;font-size:.84rem;">Siguiente →</button>
