@@ -112,12 +112,26 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const wpName    = activeWp?.name || '';
         const wpEmail   = activeWp?.email || config.workplaceEmail || '';
 
-        const pName      = config.patientName      || '';
-        const pDni       = config.patientDni       || '';
-        const pAge       = config.patientAge       ? `${config.patientAge} años` : '';
-        const pSex       = config.patientSex       || '';
-        const pInsurance = config.patientInsurance || '';
-        const pAffiliateNum = config.patientAffiliateNum || '';
+        // ── Extraer datos del paciente del contenido del editor como fallback ──
+        let _extracted = {};
+        if (typeof extractPatientDataFromText === 'function' && htmlContent) {
+            try {
+                const _tmpDiv = document.createElement('div');
+                _tmpDiv.innerHTML = htmlContent;
+                _extracted = extractPatientDataFromText(_tmpDiv.innerText || _tmpDiv.textContent || '') || {};
+            } catch(_) {}
+        }
+        // Datos del formulario de paciente (DOM) como segundo fallback
+        const _reqVal = (id) => { try { return document.getElementById(id)?.value?.trim() || ''; } catch(_) { return ''; } };
+
+        const pName      = config.patientName      || _extracted.name || _reqVal('pdfPatientName') || _reqVal('reqPatientName') || '';
+        const pDni       = config.patientDni       || _extracted.dni  || _reqVal('pdfPatientDni')  || _reqVal('reqPatientDni')  || '';
+        const _rawAge    = config.patientAge       || _extracted.age  || _reqVal('pdfPatientAge')  || _reqVal('reqPatientAge')  || '';
+        const pAge       = _rawAge ? `${_rawAge} años` : '';
+        const _rawSex    = config.patientSex       || _extracted.sex  || _reqVal('pdfPatientSex')  || _reqVal('reqPatientSex')  || '';
+        const pSex       = _rawSex === 'M' ? 'Masculino' : _rawSex === 'F' ? 'Femenino' : _rawSex;
+        const pInsurance = config.patientInsurance || _reqVal('pdfPatientInsurance') || _reqVal('reqPatientInsurance') || '';
+        const pAffiliateNum = config.patientAffiliateNum || _reqVal('pdfPatientAffiliateNum') || _reqVal('reqPatientAffiliateNum') || '';
         const rawDate    = config.studyDate        || '';
         const pDate      = rawDate
             ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES')

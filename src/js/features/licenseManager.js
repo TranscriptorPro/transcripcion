@@ -229,23 +229,28 @@ function _lmShowBlockedUI(result) {
     const _esc = typeof escapeHtml === 'function' ? escapeHtml : (s => (s||"").toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"));
     let message = _esc(result.error || 'No se pudo verificar la licencia.');
     let showContact = true;
+    let _contactMotivo = '';
 
     switch (code) {
         case 'EXPIRED':
             title = '⏰ Licencia expirada';
             message = `Su ${result.plan === 'trial' ? 'período de prueba' : 'licencia'} ha vencido. Contacte al administrador para renovar.`;
+            _contactMotivo = 'Licencia expirada o cuenta bloqueada';
             break;
         case 'BANNED':
             title = '🚫 Cuenta suspendida';
             message = 'Su cuenta ha sido suspendida. Contacte al administrador.';
+            _contactMotivo = 'Licencia expirada o cuenta bloqueada';
             break;
         case 'INACTIVE':
             title = '⏸️ Cuenta desactivada';
             message = 'Su cuenta está desactivada. Contacte al administrador para reactivarla.';
+            _contactMotivo = 'Licencia expirada o cuenta bloqueada';
             break;
         case 'DEVICE_LIMIT':
             title = '📱 Límite de dispositivos';
             message = `Ha alcanzado el máximo de ${result.devices_max} dispositivo(s) permitido(s). Contacte al administrador para liberar dispositivos.`;
+            _contactMotivo = 'Límite de dispositivos alcanzado';
             break;
         case 'NOT_FOUND':
             title = '❓ Usuario no encontrado';
@@ -273,7 +278,7 @@ function _lmShowBlockedUI(result) {
             <h2 style="font-size: 1.5rem; margin-bottom: 1rem; color: #0f172a;">${title}</h2>
             <p style="color: #475569; line-height: 1.6; margin-bottom: 1.5rem;">${message}</p>
             ${showContact ? `
-                <button onclick="if(typeof window.openContactModal==='function'){document.getElementById('licenseBlockOverlay').remove();window.openContactModal();}else{window.location.href='mailto:soporte@transcriptorpro.com?subject=Problema+de+licencia';}" 
+                <button onclick="if(typeof window.openContactModal==='function'){document.getElementById('licenseBlockOverlay').remove();window.openContactModal('${_contactMotivo}');}else{window.location.href='mailto:soporte@transcriptorpro.com?subject=Problema+de+licencia';}" 
                     style="background: linear-gradient(135deg, #0f766e, #14b8a6); color: white; border: none; padding: 0.75rem 2rem; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer;">
                     Contactar soporte
                 </button>

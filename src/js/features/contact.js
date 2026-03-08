@@ -124,8 +124,15 @@ window.initContact = function () {
     });
 
     // Abrir desde código externo (ej: licenseManager, settingsPanel)
-    window.openContactModal = function () {
+    window.openContactModal = function (defaultMotivo) {
         if (btn) btn.click();
+        if (defaultMotivo) {
+            const motivoEl = document.getElementById('contactMotivo');
+            if (motivoEl) {
+                motivoEl.value = defaultMotivo;
+                motivoEl.dispatchEvent(new Event('change'));
+            }
+        }
     };
 
     // Cerrar
