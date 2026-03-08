@@ -1284,9 +1284,14 @@ function _renderDynamicChips(fieldName) {
                     const result = document.getElementById('efRecordResult');
                     if (status) status.textContent = '⏳ Transcribiendo...';
                     try {
-                        const txt = await window.transcribeAudioSimple(file);
+                        let txt = await window.transcribeAudioSimple(file);
+                        if (typeof window.cleanTranscriptionText === 'function') {
+                            txt = window.cleanTranscriptionText(txt);
+                        }
                         if (result) result.value = txt.trim();
-                        if (status) status.textContent = '✅ Transcripción lista. Editá si es necesario y pulsá Aplicar.';
+                        if (status) status.textContent = txt
+                            ? '✅ Transcripción lista. Editá si es necesario y pulsá Aplicar.'
+                            : '🔇 No se detectó dictado claro. Intentá de nuevo.';
                     } catch(e) {
                         if (status) status.textContent = '❌ Error al transcribir. Intentá de nuevo.';
                     }

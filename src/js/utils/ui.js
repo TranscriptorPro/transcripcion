@@ -1052,7 +1052,12 @@ window.initModals = function () {
                     // Transcribe with shared function (retry + timeout + prompt médico)
                     if (typeof showToast === 'function') showToast('⏳ Transcribiendo audio adicional...', 'info', 3000);
                     try {
-                        const newText = await window.transcribeAudioSimple(file);
+                        let newText = await window.transcribeAudioSimple(file);
+
+                        // Filtrar alucinaciones y audio vacío/ambiente
+                        if (typeof window.cleanTranscriptionText === 'function') {
+                            newText = window.cleanTranscriptionText(newText);
+                        }
 
                         if (newText) {
                             const editor = document.getElementById('editor');
@@ -1083,6 +1088,8 @@ window.initModals = function () {
                                     window._lastStructuredHTML = clone.innerHTML;
                                 }
                             }
+                        } else {
+                            showToast('🔇 No se detectó dictado claro. No se agregó texto.', 'info', 4000);
                         }
                     } catch (err) {
                         if (typeof showToast === 'function') showToast('❌ Error al transcribir: ' + err.message, 'error');

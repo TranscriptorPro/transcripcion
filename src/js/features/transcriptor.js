@@ -546,6 +546,7 @@ var MEDICAL_REJOIN_RULES = [
     { rx: /\b(peri|mio|endo)\s+(cardio|carditis|metrio|metritis)/gi, to: '$1$2' },
 ];
 
+window.cleanTranscriptionText = cleanTranscriptionText;
 function cleanTranscriptionText(text) {
     if (!text) return "";
     let cleaned = text.trim();
