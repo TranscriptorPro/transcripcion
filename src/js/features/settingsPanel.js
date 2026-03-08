@@ -62,6 +62,7 @@
 
     // ─── Populate: call every time modal opens ───────────────────────
     window.populateSettingsModal = function () {
+        _applyPlanVisibility();
         _populateAccountData();
         _populateApiKeyStatus();
         _populateWorkplace();
@@ -119,6 +120,27 @@
                 if (e.key === 'Escape') closeModal();
             });
         }
+    }
+
+    // ─── Plan-based visibility for accordion sections ────────────────
+    function _applyPlanVisibility() {
+        const type = (typeof CLIENT_CONFIG !== 'undefined') ? CLIENT_CONFIG.type : 'ADMIN';
+        const isAdmin = type === 'ADMIN';
+        const isClinic = typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.canGenerateApps;
+
+        function _toggleAccordion(stgKey, visible) {
+            var el = document.querySelector('.stg-accordion[data-stg="' + stgKey + '"]');
+            if (el) el.style.display = visible ? '' : 'none';
+        }
+
+        // API Key: solo admin
+        _toggleAccordion('apikey', isAdmin);
+
+        // Perfiles rápidos: ocultar para clínica
+        if (isClinic) _toggleAccordion('profiles', false);
+
+        // Backup: ocultar para clínica
+        if (isClinic) _toggleAccordion('backup', false);
     }
 
     // ─── 1. Account data (read-only) ─────────────────────────────────

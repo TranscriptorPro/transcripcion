@@ -65,11 +65,18 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const instLogoB64 = (wpLogo && wpLogo.startsWith('data:'))
             ? wpLogo : ((await appDB.get('pdf_logo')) || '');
         // Logo del profesional: del profesional activo
-        const profLogoB64 = (activePro?.logo && activePro.logo.startsWith('data:'))
+        let profLogoB64 = (activePro?.logo && activePro.logo.startsWith('data:'))
             ? activePro.logo : '';
         // Firma del profesional
-        const sigB64  = (activePro?.firma && activePro.firma.startsWith('data:'))
+        let sigB64  = (activePro?.firma && activePro.firma.startsWith('data:'))
             ? activePro.firma : ((await appDB.get('pdf_signature')) || '');
+
+        // A3: Plan NORMAL/TRIAL no incluye logo profesional ni firma digital
+        const isPro = typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.hasProMode;
+        if (typeof CLIENT_CONFIG !== 'undefined' && !isPro) {
+            profLogoB64 = '';
+            sigB64 = '';
+        }
 
         // Compatibilidad: si no hay logo institucional pero sí logo genérico, usarlo
         const logoB64 = instLogoB64 || profLogoB64;

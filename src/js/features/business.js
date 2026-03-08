@@ -1004,10 +1004,13 @@ function _showClientOnboarding() {
     if (displayNombre) displayNombre.textContent = profData.nombre || '(no configurado)';
     if (displayMatricula) displayMatricula.textContent = profData.matricula || '(no configurado)';
 
-    // K1: API Key siempre oculta — el admin precargó la clave antes de entregar la app;
-    // el usuario final nunca debe interactuar con API keys.
+    // K1: Si la API key ya fue precargada por el admin → ocultar el paso;
+    // si NO hay key disponible → mostrar el paso para que el cliente la ingrese.
     const apiStep = document.getElementById('onboardingApiKeyStep');
-    if (apiStep) apiStep.style.display = 'none';
+    if (apiStep) {
+        const hasKey = !!(localStorage.getItem('groq_api_key'));
+        apiStep.style.display = hasKey ? 'none' : '';
+    }
 
     // Crear partículas decorativas
     _createOnboardingParticles();
