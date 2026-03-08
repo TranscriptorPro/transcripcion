@@ -2025,7 +2025,6 @@
                 <table class="users-table" id="usersTable">
                     <thead>
                         <tr>
-                            <th>ID</th>
                             <th>Nombre</th>
                             <th>Especialidad</th>
                             <th>Plan</th>
@@ -2038,7 +2037,7 @@
                     </thead>
                     <tbody id="tableBody">
                         <tr class="loading-row">
-                            <td colspan="9" class="text-center">⏳ Cargando usuarios...</td>
+                            <td colspan="8" class="text-center">⏳ Cargando usuarios...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -3111,7 +3110,7 @@
         function renderTable(users) {
             const tbody = document.getElementById('tableBody');
             if (!users || users.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" class="text-center">No hay usuarios registrados</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center">No hay usuarios registrados</td></tr>';
                 return;
             }
 
@@ -3133,7 +3132,6 @@
                 const activityDisplay = lastActivity ? formatDate(lastActivity.split('T')[0]) : '—';
                 return `
                 <tr data-user-id="${id}" class="${isBanned ? 'row-banned' : ''}">
-                    <td data-label="ID"><span class="user-id">${id}</span></td>
                     <td data-label="Nombre" class="user-name-cell"><div class="user-name-wrap"><span class="user-full-name"><strong>${escapeHtml(user.Nombre)}</strong>${isActiveToday ? '<span class="active-indicator" title="Activo hoy">🔥</span>' : ''}</span><span class="user-matricula">${escapeHtml(user.Matricula || '')}</span></div></td>
                     <td data-label="Especialidad"><span class="badge badge-specialty">${escapeHtml(user.Especialidad)}</span></td>
                     <td data-label="Plan"><span class="badge badge-plan badge-${escapeHtml(plan)}">${escapeHtml(plan.toUpperCase())}</span></td>
@@ -3418,7 +3416,7 @@
         async function loadDashboard(silent = false) {
             if (!silent) {
                 document.getElementById('tableBody').innerHTML =
-                    '<tr><td colspan="9" class="text-center">⏳ Cargando datos...</td></tr>';
+                    '<tr><td colspan="8" class="text-center">⏳ Cargando datos...</td></tr>';
             }
 
             try {
@@ -3431,7 +3429,7 @@
                 }
             } catch (error) {
                 document.getElementById('tableBody').innerHTML =
-                    `<tr><td colspan="9" class="text-center">❌ Error al cargar datos: ${escapeHtml(error.message)}</td></tr>`;
+                    `<tr><td colspan="8" class="text-center">❌ Error al cargar datos: ${escapeHtml(error.message)}</td></tr>`;
             }
         }
 
