@@ -4293,7 +4293,7 @@
                     </div>
                     <div class="gw-field-group" style="margin-top:.4rem;">
                         <label>Texto del pie de página</label>
-                        <input type="text" id="gwWpFooter${index}" placeholder="Consultorio médico — Tel: (011) 4567-8901">
+                        <input type="text" id="gwWpFooter${index}" placeholder="Consultorio médico — Tel: (011) 4567-8901" oninput="_giftActiveInstWp=${index}; _updatePdfSim();" onfocus="_giftActiveInstWp=${index}; _updatePdfSim();">
                         <small style="font-size:.68rem;color:#94a3b8;">Aparece en los informes PDF de este lugar</small>
                     </div>
                     <div class="gw-field-group" style="margin-top:.4rem;">
@@ -5632,6 +5632,14 @@
                 } else { simFirma.style.display = 'none'; }
             }
             if (simFirmaName) simFirmaName.textContent = nombre + ' · Mat. ' + matricula;
+
+            // ── Nota de pie de página del lugar activo ──
+            let wpFooter = '';
+            wpFields.forEach(f => { if (f.dataset.field === 'footer') wpFooter = f.value.trim(); });
+            if (!wpFooter) wpFooter = (document.getElementById('approveEditFooterText')?.value || '').trim();
+            const simFooterApv = document.getElementById('apvSimFooter');
+            if (simFooterApv) simFooterApv.textContent = wpFooter || '© Transcriptor Médico Pro';
+
             simBox.style.display = (instB64 || profB64 || firmaB64) ? 'block' : 'none';
         }
 
@@ -5697,7 +5705,7 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label style="font-size:.78rem;">📄 Pie de página del lugar</label>
-                                <input type="text" class="approve-wp-field" data-wp="${i}" data-field="footer" value="${escapeHtml(wp.footer || '')}" style="font-size:.84rem;" placeholder="Texto al pie del informe">
+                                <input type="text" class="approve-wp-field" data-wp="${i}" data-field="footer" value="${escapeHtml(wp.footer || '')}" style="font-size:.84rem;" placeholder="Texto al pie del informe" oninput="_approveActiveInstWp=${i}; _updateApprovePreview();">
                             </div>
                         </div>
                         <div style="display:flex;align-items:center;gap:.5rem;margin-top:.2rem;">
@@ -7678,7 +7686,7 @@
                         </div>
                         <div class="form-group">
                             <label style="font-size:.8rem;">📄 Texto pie de informe (global)</label>
-                            <input type="text" id="approveEditFooterText" style="font-size:.84rem;" placeholder="(opcional — aplica si el lugar no tiene pie propio)">
+                            <input type="text" id="approveEditFooterText" style="font-size:.84rem;" placeholder="(opcional — aplica si el lugar no tiene pie propio)" oninput="_updateApprovePreview()">
                         </div>
                     </div>
                     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:.6rem .75rem;margin-bottom:.6rem;">
@@ -8793,6 +8801,11 @@
                 } else { simFirma.style.display = 'none'; }
             }
             if (simFirmaName) simFirmaName.textContent = nombre + ' · Mat. ' + matricula;
+
+            // ── Nota de pie de página del lugar activo ──
+            const wpFooter = (document.getElementById('gwWpFooter' + wpIdx) || {}).value?.trim() || '';
+            const simFooter = document.getElementById('imgprocSimFooter');
+            if (simFooter) simFooter.textContent = wpFooter || '© Transcriptor Médico Pro';
 
             const hasAny = instB64 || profB64 || firmaB64;
             simBox.style.display = hasAny ? 'block' : 'none';
