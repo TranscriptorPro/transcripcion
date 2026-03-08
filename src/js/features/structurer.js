@@ -670,8 +670,9 @@ window.triggerPatientDataCheck = function(rawText) {
 function insertPatientPlaceholder() {
     const editor = document.getElementById('editor');
     if (!editor) return;
-    // No duplicar si ya existe
+    // No duplicar si ya existe, ni insertar si ya hay datos del paciente
     if (editor.querySelector('.patient-placeholder-banner')) return;
+    if (editor.querySelector('.patient-data-header')) return;
     const banner = document.createElement('div');
     banner.className = 'patient-placeholder-banner';
     banner.setAttribute('contenteditable', 'false');
@@ -734,7 +735,10 @@ async function _doAutoStructure(options) {
         if (typeof showToast === 'function') showToast('No hay texto para estructurar', 'error');
         return false;
     }
-    const rawText = editor.innerText;
+    // Obtener texto limpio sin elementos UI (placeholder, header paciente, botón inline)
+    const _clone = editor.cloneNode(true);
+    _clone.querySelectorAll('.patient-placeholder-banner, .patient-data-header, .btn-append-inline, .original-text-banner').forEach(el => el.remove());
+    const rawText = _clone.innerText;
     const savedHTML = editor.innerHTML;
     if (!checkStructurePrerequisites()) return false;
 
@@ -825,7 +829,10 @@ window.initStructurer = function () {
             const editor = document.getElementById('editor');
             if (!editor || !editor.innerText.trim()) return showToast('No hay texto para estructurar', 'error');
 
-            const rawText = editor.innerText;
+            // Obtener texto limpio sin elementos UI
+            const _clone2 = editor.cloneNode(true);
+            _clone2.querySelectorAll('.patient-placeholder-banner, .patient-data-header, .btn-append-inline, .original-text-banner').forEach(el => el.remove());
+            const rawText = _clone2.innerText;
             const savedHTML = editor.innerHTML;
             window._lastRawTranscription = rawText;
             if (!checkStructurePrerequisites()) return;

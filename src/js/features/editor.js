@@ -915,7 +915,11 @@ async function applyNormalTemplate(templateKey) {
     const template = MEDICAL_TEMPLATES[templateKey];
     const templateName = template ? template.name : 'General';
 
-    window._lastRawTranscription = rawText;
+    // Limpiar rawText de elementos UI antes de guardar
+    const _tclone = document.createElement('div');
+    _tclone.innerHTML = editorEl.innerHTML;
+    _tclone.querySelectorAll('.patient-placeholder-banner, .patient-data-header, .btn-append-inline, .original-text-banner').forEach(el => el.remove());
+    window._lastRawTranscription = _tclone.innerText;
 
     const hasKey = window.GROQ_API_KEY;
     const canUseAI = hasKey && typeof structureTranscription === 'function';
