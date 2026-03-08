@@ -259,81 +259,167 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                 } catch (e) { /* imagen inválida */ }
             }
 
-            // "Estudio realizado por: Dr. Nombre"
+            // Dr./Dra. + Nombre (sincronizar con pdfPreview.js)
+            const _titleM = profName.match(/^(Dra?\.?\s*)/i);
+            const _hdrTitle = _titleM
+                ? (_titleM[1].trim().toLowerCase().startsWith('dra') ? 'Dra.' : 'Dr.')
+                : 'Dr.';
+            const _hdrName = profName.replace(/^(Dra?\.?\s*)/i, '').trim() || profName;
+
             let iy = cy + 5;
             if (profName) {
-                doc.setFontSize(13);
+                doc.setFontSize(14);
                 doc.setFont(mainFont, 'bold');
                 setAccent();
-                doc.text('Estudio realizado por: ' + profName, infoX, iy);
-                iy += 5;
+                doc.text('Estudio realizado por: ' + _hdrTitle + ' ' + _hdrName, infoX, iy);
+                iy += 6;
             }
             // Especialidad • Mat. XXXX
             const specMatParts = [];
             if (especialidad) specMatParts.push(especialidad);
             if (matricula) specMatParts.push('Mat. ' + matricula);
             if (specMatParts.length) {
-                doc.setFontSize(9);
+                doc.setFontSize(10);
                 doc.setFont(mainFont, 'italic');
                 setGray(70);
                 doc.text(specMatParts.join(' • '), infoX, iy);
                 iy += 4;
             }
+            // Nombre de institución
+            if (institutionName) {
+                doc.setFontSize(9.5);
+                doc.setFont(mainFont, 'italic');
+                setGray(50);
+                doc.text(institutionName, infoX, iy);
+                iy += 4;
+            }
 
             cy = Math.max(iy, profLogoB64 ? cy + 20 : iy) + 2;
-            accentLine(cy);
-            cy += 4;
+            // Línea accent bajo el encabezado (2px ≈ 0.7mm para coincidir con preview)
+            doc.setDrawColor(accent.r, accent.g, accent.b);
+            doc.setLineWidth(0.7);
+            doc.line(ML, cy, PAGE_W - MR, cy);
+            doc.setDrawColor(0);
+            cy += 5;
             headerH = cy;
             setBlack();
         }
 
-        // ── Datos del estudio ────────────────────────────────────────
+        // ── Datos del estudio (grilla como en pdfPreview) ─────────────
         function drawStudyInfo() {
-            const items = [];
-            if (studyType)   items.push(`Estudio: ${studyType}`);
-            if (reportNum)   items.push(`Informe Nº: ${reportNum}`);
-            items.push(`Fecha: ${pDate}${studyTime ? ' ' + studyTime : ''}`);
-            if (refDoctor)   items.push(`Solicitante: ${refDoctor}`);
-            if (studyReason) items.push(`Motivo: ${studyReason}`);
-            if (!items.length) return;
+            const row1 = [];
+            row1.push(['ESTUDIO:', studyType || '—']);
+            row1.push(['INFORME Nº:', reportNum || '—']);
+            row1.push(['FECHA:', pDate + (studyTime ? ' ' + studyTime : '')]);
+            const row2 = [];
+            if (refDoctor)   row2.push(['SOLICITANTE:', refDoctor]);
+            if (studyReason) row2.push(['MOTIVO:', studyReason]);
 
-            doc.setFontSize(8.5);
-            doc.setFont('helvetica', 'italic');
-            setGray(60);
-            const line = doc.splitTextToSize(items.join('  |  '), CW);
-            doc.text(line, ML, cy);
-            cy += line.length * 4.5 + 3;
+            const totalRows = 1 + (row2.length ? 1 : 0);
+            const rowH = 9;
+            const gridH = totalRows * rowH;
+            ensureSpace(gridH + 6);
+
+            // Fondo y borde
+            doc.setFillColor(244, 247, 251);
+            doc.setDrawColor(227, 232, 239);
+            doc.setLineWidth(0.3);
+            doc.roundedRect(ML, cy, CW, gridH, 1.5, 1.5, 'FD');
+
+            // Separador punteado entre filas
+            if (row2.length) {
+                doc.setDrawColor(221, 227, 238);
+                doc.setLineWidth(0.2);
+                const dashY = cy + rowH;
+                for (let dx = ML + 2; dx < ML + CW - 2; dx += 4) {
+                    doc.line(dx, dashY, Math.min(dx + 2, ML + CW - 2), dashY);
+                }
+            }
+
+            // Fila 1: 3 columnas
+            const col3W = CW / 3;
+            doc.setDrawColor(227, 232, 239);
+            doc.setLineWidth(0.15);
+            doc.line(ML + col3W, cy, ML + col3W, cy + rowH);
+            doc.line(ML + 2 * col3W, cy, ML + 2 * col3W, cy + rowH);
+
+            const centerY1 = cy + rowH / 2 + 1;
+            for (let i = 0; i < row1.length; i++) {
+                const [label, value] = row1[i];
+                const cellX = ML + i * col3W + 3;
+                doc.setFontSize(6.5);
+                doc.setFont(mainFont, 'bold');
+                doc.setTextColor(accent.r, accent.g, accent.b);
+                doc.text(label, cellX, centerY1);
+                const labelW = doc.getTextWidth(label);
+                doc.setFontSize(9);
+                doc.setFont(mainFont, 'bold');
+                setBlack();
+                doc.text(value, cellX + labelW + 2, centerY1);
+            }
+
+            // Fila 2: 2 columnas
+            if (row2.length) {
+                const col2W = CW / 2;
+                doc.setDrawColor(227, 232, 239);
+                doc.setLineWidth(0.15);
+                if (row2.length > 1) {
+                    doc.line(ML + col2W, cy + rowH, ML + col2W, cy + 2 * rowH);
+                }
+                const centerY2 = cy + rowH + rowH / 2 + 1;
+                for (let i = 0; i < row2.length; i++) {
+                    const [label, value] = row2[i];
+                    const cellX = ML + i * col2W + 3;
+                    doc.setFontSize(6.5);
+                    doc.setFont(mainFont, 'bold');
+                    doc.setTextColor(accent.r, accent.g, accent.b);
+                    doc.text(label, cellX, centerY2);
+                    const labelW = doc.getTextWidth(label);
+                    doc.setFontSize(9);
+                    doc.setFont(mainFont, 'bold');
+                    setBlack();
+                    doc.text(value, cellX + labelW + 2, centerY2);
+                }
+            }
+
+            cy += gridH + 4;
+            doc.setDrawColor(0);
             setBlack();
         }
 
-        // ── Datos del paciente ───────────────────────────────────────
+        // ── Datos del paciente (grilla como en pdfPreview) ─────────────
         function drawPatientBlock() {
             const cells = [];
-            if (pName)     cells.push(['Paciente', pName]);
+            if (pName)     cells.push(['PACIENTE', pName]);
             if (pDni)      cells.push(['DNI', pDni]);
-            if (pAge)      cells.push(['Edad', pAge]);
-            if (pSex)      cells.push(['Sexo', pSex]);
-            if (pInsurance)cells.push(['OS/Prepaga', pInsurance]);
-            if (pAffiliateNum) cells.push(['Nº Afiliado', pAffiliateNum]);
+            if (pAge)      cells.push(['EDAD', pAge]);
+            if (pSex)      cells.push(['SEXO', pSex]);
+            if (pInsurance)cells.push(['COBERTURA', pInsurance]);
+            if (pAffiliateNum) cells.push(['Nº AFILIADO', pAffiliateNum]);
             if (!cells.length) return;
 
             // Layout horizontal tipo grid (como la vista previa)
             const colCount = Math.min(cells.length, 3);
             const colW = CW / colCount;
-            const cellH = 9;
+            const cellH = 10;
             const rows = Math.ceil(cells.length / colCount);
 
             ensureSpace(rows * cellH + 6);
 
             // Fondo suave para la tabla de paciente
             const tableH = rows * cellH;
-            doc.setFillColor(248, 250, 252);
-            doc.setDrawColor(226, 232, 240);
+            doc.setFillColor(250, 251, 252);
+            doc.setDrawColor(208, 215, 222);
             doc.setLineWidth(0.3);
             doc.roundedRect(ML, cy, CW, tableH, 1.5, 1.5, 'FD');
 
+            // Borde izquierdo accent (4px ≈ 1mm) como en preview
+            doc.setDrawColor(accent.r, accent.g, accent.b);
+            doc.setLineWidth(1);
+            doc.line(ML, cy + 1.5, ML, cy + tableH - 1.5);
+
             // Líneas internas de la grid
-            doc.setDrawColor(226, 232, 240);
+            doc.setDrawColor(208, 215, 222);
             doc.setLineWidth(0.2);
             for (let c = 1; c < colCount; c++) {
                 doc.line(ML + c * colW, cy, ML + c * colW, cy + tableH);
@@ -347,18 +433,20 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                 const [label, value] = cells[i];
                 const col = i % colCount;
                 const row = Math.floor(i / colCount);
-                const cellX = ML + col * colW + 2;
+                const cellX = ML + col * colW + 3;
                 const cellY = cy + row * cellH;
 
-                doc.setFontSize(7);
-                doc.setFont(mainFont, 'normal');
-                setGray(120);
+                // Label: accent color, uppercase, 6.5pt (como preview pvp-lbl)
+                doc.setFontSize(6.5);
+                doc.setFont(mainFont, 'bold');
+                doc.setTextColor(accent.r, accent.g, accent.b);
                 doc.text(label, cellX, cellY + 3.5);
 
-                doc.setFontSize(9);
-                doc.setFont(mainFont, i === 0 ? 'bold' : 'normal');
+                // Value: bold, 10pt, negro (como preview pvp-val)
+                doc.setFontSize(10);
+                doc.setFont(mainFont, 'bold');
                 setBlack();
-                doc.text(value, cellX, cellY + 7.5);
+                doc.text(value, cellX, cellY + 8);
             }
 
             cy += tableH + 4;
