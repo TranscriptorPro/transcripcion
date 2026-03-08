@@ -2152,9 +2152,9 @@
         }
 
         function addWorkplace() {
-            // Contar workplaces actuales
-            const currentCount = document.querySelectorAll('.wp-accordion').length;
-            const maxWp = selectedPlan ? (PRICING[selectedPlan].workplaces || 1) : 1;
+            // Contar workplaces actuales (solo dentro del contenedor de workplaces, no profesionales)
+            const currentCount = document.querySelectorAll('#workplacesContainer .wp-accordion').length;
+            const maxWp = selectedPlan ? (PRICING[selectedPlan].workplaces || 1) + (cartAddons.extraWorkplaces || 0) : 1;
             if (currentCount >= maxWp) {
                 showAlert(`Tu plan ${PRICING[selectedPlan]?.label || ''} permite máximo ${maxWp} lugar${maxWp > 1 ? 'es' : ''} de trabajo`, '🏥');
                 return;
