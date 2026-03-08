@@ -3133,6 +3133,7 @@
                         <button class="btn-action" data-action="metrics" data-user-id="${id}" title="Ver Métricas">📊</button>
                         <button class="btn-action" data-action="clone" data-user-id="${id}" title="Crear App para este usuario">📦</button>
                         <button class="btn-action" data-action="mail" data-user-id="${id}" title="Enviar email a ${escapeHtml(user.Nombre || user.Email)}">📧</button>
+                        ${isTrial ? `<button class="btn-action" data-action="extendtrial" data-user-id="${id}" title="Extender Trial +15 días">⏳</button>` : ''}
                         ${isTrial || isExpired ? `<button class="btn-action" data-action="activate" data-user-id="${id}" title="Activar PRO">✅</button>` : ''}
                         <button class="btn-action" data-action="diag" data-user-id="${id}" title="Ver último diagnóstico">🔍</button>
                         <button class="btn-action" data-action="reqdiag" data-user-id="${id}" title="Solicitar diagnóstico remoto">📡</button>
@@ -3354,6 +3355,43 @@
             }
         }
 
+        /* ── Extend Trial ─────────────────────────────────────────────────── */
+        async function extendTrial(userId) {
+            const user = allUsers.find(u => String(u.ID_Medico) === String(userId));
+            if (!user) return;
+
+            const days = await dashPrompt(`¿Cuántos días extender el trial de <b>${escapeHtml(user.Nombre)}</b>?`, '15', '⏳');
+            if (!days || isNaN(Number(days)) || Number(days) <= 0) return;
+
+            const daysNum = Math.round(Number(days));
+            const currentExp = user.Fecha_Vencimiento ? new Date(user.Fecha_Vencimiento) : new Date();
+            if (isNaN(currentExp.getTime())) currentExp.setTime(Date.now());
+            currentExp.setDate(currentExp.getDate() + daysNum);
+            const formattedDate = currentExp.toISOString().split('T')[0];
+
+            const updates = {
+                Fecha_Vencimiento: formattedDate,
+                Estado:            'trial',
+                Notas_Admin:       `Trial extendido +${daysNum}d el ${new Date().toISOString().split('T')[0]}`
+            };
+
+            try {
+                if (CONFIG.scriptUrl === 'PASTE_APPS_SCRIPT_URL_HERE') {
+                    const idx = allUsers.findIndex(u => String(u.ID_Medico) === String(userId));
+                    if (idx !== -1) allUsers[idx] = { ...allUsers[idx], ...updates };
+                    updateStats(allUsers);
+                    applyFilters();
+                } else {
+                    await API.updateUser(userId, updates);
+                    await loadDashboard(true);
+                }
+                await logAdminAction('extend_trial', userId, `Trial extendido +${daysNum}d hasta ${formattedDate}`);
+                showNotification(`⏳ Trial de ${user.Nombre} extendido +${daysNum} días (hasta ${formattedDate})`, 'success');
+            } catch (error) {
+                showNotification('Error al extender trial', 'error');
+            }
+        }
+
         /* ── Load Data ───────────────────────────────────────────────────────── */
         async function loadUsers() {
             await loadDashboard();
@@ -3410,6 +3448,7 @@
             else if (btn.dataset.action === 'clone') openCloneFactory(userId);
             else if (btn.dataset.action === 'ban') quickBan(userId);
             else if (btn.dataset.action === 'activate') activateUser(userId);
+            else if (btn.dataset.action === 'extendtrial') extendTrial(userId);
             else if (btn.dataset.action === 'diag') openDiagModal(userId);
             else if (btn.dataset.action === 'reqdiag') requestDiagFromAdmin(userId);
             else if (btn.dataset.action === 'mail') {

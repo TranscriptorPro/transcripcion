@@ -901,7 +901,7 @@
                     <!-- Rendered by JS (renderWorkplace) -->
                 </div>
 
-                <button type="button" class="btn-add-wp" onclick="addWorkplace()">
+                <button type="button" class="btn-add-wp" id="btnAddWorkplace" onclick="addWorkplace()">
                     ➕ Agregar otro lugar de trabajo
                 </button>
 
@@ -1761,6 +1761,13 @@
         }
 
         function addWorkplace() {
+            // Contar workplaces actuales
+            const currentCount = document.querySelectorAll('.wp-accordion').length;
+            const maxWp = selectedPlan ? (PRICING[selectedPlan].workplaces || 1) : 1;
+            if (currentCount >= maxWp) {
+                showAlert(`Tu plan ${PRICING[selectedPlan]?.label || ''} permite máximo ${maxWp} lugar${maxWp > 1 ? 'es' : ''} de trabajo`, '🏥');
+                return;
+            }
             document.querySelectorAll('.wp-accordion').forEach(a => a.classList.add('collapsed'));
             wpCounter++;
             renderWorkplace(wpCounter, false);
@@ -1897,6 +1904,18 @@
 
             grid.appendChild(checkboxGrid);
 
+            // Contador de estudios para NORMAL
+            let counter = document.getElementById('estudioCounter');
+            if (!counter) {
+                counter = document.createElement('div');
+                counter.id = 'estudioCounter';
+                counter.style.cssText = 'font-size:.82rem;margin-top:.5rem;font-weight:500;';
+                grid.appendChild(counter);
+            } else {
+                grid.appendChild(counter);
+            }
+            _updateEstudioCounter();
+
             // Botón "Seleccionar todos" — solo para planes sin límite de plantillas
             if (selectedPlan === 'NORMAL') return; // NORMAL solo puede elegir 3
             const btnAll = document.createElement('button');
@@ -1919,11 +1938,33 @@
 
         function toggleEstudio(nombre, esp, checked) {
             if (checked) {
+                // Limitar a 3 estudios en plan NORMAL
+                if (selectedPlan === 'NORMAL' && selectedEstudios.length >= 3) {
+                    showAlert('Tu plan Normal permite máximo 3 estudios. Podés ampliar con un plan superior.', '📄');
+                    // Desmarcar el checkbox que se acaba de clickear
+                    const cb = document.querySelector(`input[type="checkbox"][value="${CSS.escape(nombre)}"]`);
+                    if (cb) cb.checked = false;
+                    return;
+                }
                 if (!selectedEstudios.some(s => s.nombre === nombre)) {
                     selectedEstudios.push({ nombre, especialidad: esp });
                 }
             } else {
                 selectedEstudios = selectedEstudios.filter(s => s.nombre !== nombre);
+            }
+            // Actualizar contador en NORMAL
+            _updateEstudioCounter();
+        }
+
+        function _updateEstudioCounter() {
+            const counter = document.getElementById('estudioCounter');
+            if (!counter) return;
+            if (selectedPlan === 'NORMAL') {
+                counter.textContent = `${selectedEstudios.length}/3 estudios seleccionados`;
+                counter.style.color = selectedEstudios.length >= 3 ? '#ef4444' : 'var(--text-light)';
+                counter.style.display = '';
+            } else {
+                counter.style.display = 'none';
             }
         }
 
@@ -1940,6 +1981,8 @@
             }
 
             // Render dynamic steps when entering them
+            if (n === 3) _applyStep3PlanRestrictions();
+            if (n === 4) _applyStep4PlanRestrictions();
             if (n === 5) renderCartStep();
             if (n === 6) renderInvestmentSummary();
 
@@ -1973,6 +2016,23 @@
         function validateStep2() {
             if (selectedEspecialidades.length === 0) { showAlert('Seleccioná al menos una especialidad', '🩺'); return false; }
             return true;
+        }
+
+        // ── Plan-based restrictions for steps ─────────────────────────────────
+        function _applyStep3PlanRestrictions() {
+            const maxWp = selectedPlan ? (PRICING[selectedPlan].workplaces || 1) : 1;
+            const btn = document.getElementById('btnAddWorkplace');
+            if (btn) btn.style.display = maxWp <= 1 ? 'none' : '';
+        }
+
+        function _applyStep4PlanRestrictions() {
+            const plan = PRICING[selectedPlan] || {};
+            // Color: solo CLINIC
+            const colorSection = document.querySelector('#step4 .field-group');
+            if (colorSection) colorSection.style.display = plan.pdfColor ? '' : 'none';
+            // Logo profesional: ocultar en NORMAL
+            const proLogoZone = document.getElementById('proLogoDropZone')?.closest('.field-group');
+            if (proLogoZone) proLogoZone.style.display = plan.pdfLogo ? '' : 'none';
         }
 
         function validateStep3() {
