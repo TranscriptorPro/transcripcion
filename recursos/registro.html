@@ -929,6 +929,19 @@
                     ➕ Agregar otro lugar de trabajo
                 </button>
 
+                <!-- Sección Profesionales — solo visible para CLINIC (F1) -->
+                <div id="clinicProfessionalsSection" style="display:none;margin-top:1.5rem;">
+                    <div style="margin-bottom:.6rem;">
+                        <div class="section-title">👨‍⚕️ Profesionales del equipo</div>
+                        <p class="section-subtitle">Agregá los profesionales que usarán la app. Cada uno tendrá su firma y datos en los informes.</p>
+                    </div>
+                    <div id="professionalsContainer"></div>
+                    <button type="button" class="btn-add-wp" id="btnAddProfessional" onclick="addProfessional()">
+                        ➕ Agregar profesional
+                    </button>
+                    <div id="profCounter" style="font-size:.82rem;margin-top:.4rem;color:var(--text-secondary);"></div>
+                </div>
+
                 <div class="btn-row">
                     <button type="button" class="btn btn-secondary" onclick="goStep(2)">← Anterior</button>
                     <button type="button" class="btn btn-primary" onclick="goStep(4)">Siguiente →</button>
@@ -2074,6 +2087,141 @@
             reader.readAsDataURL(file);
         }
 
+        // ── Professionals (F1-F2, solo CLINIC) ──────────────────────────────────
+        let profCounter = 0;
+        let profFirmaData = {}; // { index: base64 }
+
+        function renderProfessional(index) {
+            const container = document.getElementById('professionalsContainer');
+            const div = document.createElement('div');
+            div.className = 'wp-accordion';
+            div.id = 'prof-' + index;
+            div.innerHTML = `
+                <div class="wp-header" onclick="toggleProfessional(${index})">
+                    <span id="profNameDisplay${index}">👨‍⚕️ Profesional ${index + 1}</span>
+                    <div style="display:flex;gap:.5rem;align-items:center;">
+                        ${index > 0 ? '<button type="button" class="btn-remove-wp" onclick="event.stopPropagation();removeProfessional(' + index + ')" title="Eliminar">🗑️</button>' : ''}
+                        <span class="wp-toggle">▼</span>
+                    </div>
+                </div>
+                <div class="wp-body">
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label>Nombre completo *</label>
+                            <input type="text" id="regProfName${index}" placeholder="Dr. Juan Pérez" oninput="updateProfName(${index})">
+                        </div>
+                        <div class="field-group">
+                            <label>Matrícula *</label>
+                            <input type="text" id="regProfMatricula${index}" placeholder="MN 12345">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label>Especialidad *</label>
+                            <input type="text" id="regProfEspecialidad${index}" placeholder="Cardiología">
+                        </div>
+                        <div class="field-group">
+                            <label>Email</label>
+                            <input type="email" id="regProfEmail${index}" placeholder="doctor@clinica.com">
+                        </div>
+                    </div>
+                    <div class="field-group" style="margin-top:.5rem;">
+                        <label>Firma digital</label>
+                        <input type="file" accept="image/*" onchange="previewProfFirma(this, ${index})">
+                        <div class="upload-preview" id="profFirmaPreview${index}"></div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function toggleProfessional(index) {
+            const acc = document.getElementById('prof-' + index);
+            if (!acc) return;
+            const wasCollapsed = acc.classList.contains('collapsed');
+            if (wasCollapsed) {
+                document.querySelectorAll('#professionalsContainer .wp-accordion').forEach(a => a.classList.add('collapsed'));
+                acc.classList.remove('collapsed');
+            } else {
+                acc.classList.add('collapsed');
+            }
+        }
+
+        function addProfessional() {
+            const currentCount = document.querySelectorAll('#professionalsContainer .wp-accordion').length;
+            const maxProf = PRICING[selectedPlan]?.maxProfessionals || 5;
+            if (currentCount >= maxProf) {
+                showAlert(`Tu plan permite máximo ${maxProf} profesionales`, '👨‍⚕️');
+                return;
+            }
+            document.querySelectorAll('#professionalsContainer .wp-accordion').forEach(a => a.classList.add('collapsed'));
+            profCounter++;
+            renderProfessional(profCounter);
+            _updateProfCounter();
+            const el = document.getElementById('prof-' + profCounter);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        async function removeProfessional(index) {
+            const ok = await showConfirm('¿Eliminar este profesional?', '🗑️');
+            if (!ok) return;
+            const el = document.getElementById('prof-' + index);
+            if (el) {
+                el.style.opacity = '0';
+                el.style.transform = 'scale(.95)';
+                el.style.transition = 'all .2s ease';
+                setTimeout(() => el.remove(), 200);
+            }
+            delete profFirmaData[index];
+            _updateProfCounter();
+        }
+
+        function updateProfName(index) {
+            const input = document.getElementById('regProfName' + index);
+            const display = document.getElementById('profNameDisplay' + index);
+            if (input && display) {
+                display.textContent = input.value.trim() || ('👨‍⚕️ Profesional ' + (index + 1));
+            }
+        }
+
+        function previewProfFirma(input, index) {
+            const file = input.files[0];
+            if (!file) return;
+            if (file.size > 2 * 1024 * 1024) {
+                showAlert('La imagen no puede superar 2 MB', '📷');
+                input.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('profFirmaPreview' + index).innerHTML = '<img src="' + e.target.result + '" alt="Firma">';
+                profFirmaData[index] = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function _updateProfCounter() {
+            const count = document.querySelectorAll('#professionalsContainer .wp-accordion').length;
+            const max = PRICING[selectedPlan]?.maxProfessionals || 5;
+            const el = document.getElementById('profCounter');
+            if (el) el.textContent = `${count} de ${max} profesionales`;
+        }
+
+        function _collectProfessionals() {
+            const profs = [];
+            document.querySelectorAll('#professionalsContainer .wp-accordion').forEach(acc => {
+                const idx = parseInt(acc.id.replace('prof-', ''));
+                const name = (document.getElementById('regProfName' + idx) || {}).value || '';
+                const matricula = (document.getElementById('regProfMatricula' + idx) || {}).value || '';
+                const especialidad = (document.getElementById('regProfEspecialidad' + idx) || {}).value || '';
+                const email = (document.getElementById('regProfEmail' + idx) || {}).value || '';
+                if (name.trim()) {
+                    profs.push({ nombre: name.trim(), matricula: matricula.trim(), especialidad: especialidad.trim(), email: email.trim(), firma: profFirmaData[idx] || null });
+                }
+            });
+            return profs;
+        }
+
         // ── Color selection ──────────────────────────────────────────────────────
         function selectHeaderColor(color, el) {
             selectedHeaderColor = color;
@@ -2086,6 +2234,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             renderEspecialidades();
             renderWorkplace(0, false);
+            renderProfessional(0); // Primer profesional (visible solo en CLINIC)
 
             // Delegated drag & drop for all upload zones (present and future)
             document.addEventListener('dragover', (e) => {
@@ -2284,6 +2433,12 @@
             const maxWp = selectedPlan ? (PRICING[selectedPlan].workplaces || 1) : 1;
             const btn = document.getElementById('btnAddWorkplace');
             if (btn) btn.style.display = maxWp <= 1 ? 'none' : '';
+            // CLINIC: mostrar sección de profesionales
+            const profSection = document.getElementById('clinicProfessionalsSection');
+            if (profSection) {
+                profSection.style.display = selectedPlan === 'CLINIC' ? '' : 'none';
+                if (selectedPlan === 'CLINIC') _updateProfCounter();
+            }
         }
 
         function _applyStep4PlanRestrictions() {
@@ -2378,7 +2533,8 @@
                 subscriptionCycle: billingCycle,
                 totalHoy: todayTotal,
                 fechaRegistro: new Date().toISOString(),
-                origen: 'formulario_web'
+                origen: 'formulario_web',
+                profesionales: selectedPlan === 'CLINIC' ? JSON.stringify(_collectProfessionals()) : null
             };
 
             try {

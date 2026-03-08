@@ -813,6 +813,7 @@ function doGet(e) {
           logo:            regData.Workplace_Logo  ? 'yes' : '',
           notas:           editedNotas || regData.Notas || '',
           estudios:        regData.Estudios        || '',
+          profesionales:   regData.Profesionales   || '',
           apiKeyB1:        apiKeyB1,
           apiKeyB2:        apiKeyB2
         })
@@ -1002,6 +1003,7 @@ function doPost(e) {
           logo:            regData.Workplace_Logo ? 'yes' : '',
           notas:           editedNotas || regData.Notas || '',
           estudios:        regData.Estudios        || '',
+          profesionales:   regData.Profesionales   || '',
           apiKeyB1:        apiKeyB1,
           apiKeyB2:        apiKeyB2
         })
@@ -1106,7 +1108,7 @@ function doPost(e) {
           'Especialidades', 'Estudios', 'Workplace_Data', 'Workplace_Logo',
           'Extra_Workplaces', 'Header_Color', 'Footer_Text', 'Firma', 'Pro_Logo',
           'Notas', 'Fecha_Registro', 'Estado', 'Origen', 'ID_Medico_Asignado', 'Motivo_Rechazo',
-          'Plan_Solicitado', 'Addons_Cart'
+          'Plan_Solicitado', 'Addons_Cart', 'Profesionales'
         ]);
         regSheet.setFrozenRows(1);
       }
@@ -1130,9 +1132,9 @@ function doPost(e) {
         }
       }
 
-      // Agregar columnas Plan_Solicitado y Addons_Cart si no existen (sheets pre-existentes)
+      // Agregar columnas Plan_Solicitado, Addons_Cart y Profesionales si no existen (sheets pre-existentes)
       const workingHeaders = existingHeaders.slice();
-      ['Plan_Solicitado', 'Addons_Cart'].forEach(function(col) {
+      ['Plan_Solicitado', 'Addons_Cart', 'Profesionales'].forEach(function(col) {
         if (!workingHeaders.includes(col)) {
           regSheet.getRange(1, workingHeaders.length + 1).setValue(col);
           workingHeaders.push(col);
@@ -1216,7 +1218,8 @@ function doPost(e) {
         ID_Medico_Asignado: '',
         Motivo_Rechazo:     '',
         Plan_Solicitado:    payload.planSeleccionado || '',
-        Addons_Cart:        payload.addons || ''
+        Addons_Cart:        payload.addons || '',
+        Profesionales:      payload.profesionales || ''
       };
       const row = workingHeaders.map(function(h) { return rowData[h] !== undefined ? rowData[h] : ''; });
 
