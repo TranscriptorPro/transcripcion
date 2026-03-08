@@ -75,9 +75,26 @@ window.initWorkplaceManagement = function () {
         const profile = workplaceProfiles[wpIndex];
         const profs = (profile && profile.professionals) ? profile.professionals : [];
 
+        // Limpiar badge previo si existe
+        var oldBadge = document.getElementById('activeProfBadge');
+        if (oldBadge) oldBadge.remove();
+
         if (profs.length === 0) {
             group.style.display = 'none';
             sel.innerHTML = '<option value="">Seleccionar profesional...</option>';
+            return;
+        }
+
+        // C5: 1 profesional → ocultar dropdown, mostrar badge con nombre
+        if (profs.length === 1) {
+            group.style.display = 'none';
+            sel.innerHTML = '<option value="0">' + (profs[0].nombre || 'Profesional') + '</option>';
+            sel.value = '0';
+            var badge = document.createElement('span');
+            badge.id = 'activeProfBadge';
+            badge.textContent = '👤 ' + (profs[0].nombre || 'Profesional');
+            badge.style.cssText = 'display:inline-block;padding:3px 10px;background:var(--primary-light,#e0f2fe);color:var(--primary,#0f766e);border-radius:12px;font-size:0.82rem;font-weight:600;margin-top:4px;';
+            group.parentNode.insertBefore(badge, group.nextSibling);
             return;
         }
 

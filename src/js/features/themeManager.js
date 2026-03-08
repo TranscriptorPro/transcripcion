@@ -193,10 +193,31 @@
         const container = document.getElementById('skinSelectorContainer');
         if (!container) return;
 
+        // C1: Restricción de skins por plan (NORMAL/TRIAL solo default)
+        const isRestricted = typeof CLIENT_CONFIG !== 'undefined' &&
+            (CLIENT_CONFIG.type === 'NORMAL' || CLIENT_CONFIG.type === 'TRIAL');
+
         // Attach click handlers (idempotent via data attribute)
         container.querySelectorAll('.skin-option').forEach(card => {
             if (card.dataset.skinBound) return; // already bound
             card.dataset.skinBound = '1';
+
+            var skinId = card.dataset.skin;
+
+            // C1: Para planes restringidos, desactivar skins no-default y añadir badge PRO
+            if (isRestricted && skinId !== 'default') {
+                card.style.opacity = '0.6';
+                card.style.pointerEvents = 'none';
+                if (!card.querySelector('.skin-pro-badge')) {
+                    var badge = document.createElement('span');
+                    badge.className = 'skin-pro-badge';
+                    badge.textContent = 'PRO';
+                    badge.style.cssText = 'position:absolute;top:6px;right:6px;background:#f59e0b;color:#fff;font-size:0.65rem;font-weight:700;padding:1px 6px;border-radius:8px;z-index:2;';
+                    card.appendChild(badge);
+                }
+                return;
+            }
+
             card.addEventListener('click', () => {
                 const skinId = card.dataset.skin;
                 apply(skinId);

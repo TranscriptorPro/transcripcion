@@ -50,13 +50,15 @@ window.savePatientToRegistry = function(patient) {
         sex:          patient.sex  || '',
         insurance:    patient.insurance    || '',
         affiliateNum: patient.affiliateNum || '',
-        visits:       patient.visits || 1,
         lastSeen:     new Date().toISOString()
     };
 
     if (idx >= 0) {
+        // C4: Incrementar visits al re-guardar paciente existente
+        entry.visits = (reg[idx].visits || 0) + 1;
         reg[idx] = { ...reg[idx], ...entry };
     } else {
+        entry.visits = 1;
         reg.unshift(entry);
         if (reg.length > REGISTRY_MAX) reg.pop();
     }

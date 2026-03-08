@@ -899,10 +899,22 @@
     // ─── 9. Stats ────────────────────────────────────────────────────
     function _populateStats() {
         const el = (id) => document.getElementById(id);
+        const isClinic = typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.canGenerateApps;
+        let activeProfName = '';
+        if (isClinic) {
+            try {
+                var cfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+                activeProfName = (cfg.activeProfessional && cfg.activeProfessional.nombre) || '';
+            } catch(_) {}
+        }
 
         // Reports
         try {
-            const reports = (window._reportHistCache !== undefined ? window._reportHistCache : null) || JSON.parse(localStorage.getItem('report_history') || '[]');
+            let reports = (window._reportHistCache !== undefined ? window._reportHistCache : null) || JSON.parse(localStorage.getItem('report_history') || '[]');
+            // C2: filtrar por profesional activo en CLINIC
+            if (isClinic && activeProfName) {
+                reports = reports.filter(function(r) { return !r.professionalName || r.professionalName === activeProfName; });
+            }
             if (el('statTotalReports')) el('statTotalReports').textContent = reports.length;
         } catch (_) {
             if (el('statTotalReports')) el('statTotalReports').textContent = '0';

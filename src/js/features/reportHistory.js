@@ -46,6 +46,7 @@ window.saveReportToHistory = function (data) {
         templateKey:  templateKey,
         templateName: templateName,
         date:         new Date().toISOString(),
+        professionalName: data.professionalName || (pdfConfig.activeProfessional && pdfConfig.activeProfessional.nombre) || '',
         htmlContent:  data.htmlContent,
         fileName:     data.fileName || 'informe',
         patientData: {

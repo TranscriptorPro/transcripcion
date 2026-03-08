@@ -391,15 +391,29 @@ function classifyStructError(err) {
 function checkStructurePrerequisites() {
     const key = window.GROQ_API_KEY || '';
     if (!key || !key.startsWith('gsk_')) {
-        if (typeof showToastWithAction === 'function') {
-            showToastWithAction('🔑 API Key no configurada.', 'error', '⚙️ Configurar', () => {
-                const card = document.getElementById('adminApiKeyCard');
-                if (card) card.scrollIntoView({ behavior: 'smooth' });
-                const input = document.getElementById('apiKeyInput');
-                if (input) { input.type = 'text'; input.focus(); input.select(); }
-            }, 7000);
-        } else if (typeof showToast === 'function') {
-            showToast('🔑 API Key no configurada. Ir a Configuración.', 'error');
+        // C7: Admin → abrir settings; Cliente → contactar soporte
+        const isAdmin = typeof CLIENT_CONFIG === 'undefined' || CLIENT_CONFIG.type === 'ADMIN';
+        if (isAdmin) {
+            if (typeof showToastWithAction === 'function') {
+                showToastWithAction('🔑 API Key no configurada.', 'error', '⚙️ Configurar', function() {
+                    var overlay = document.getElementById('settingsModalOverlay');
+                    if (overlay) {
+                        if (typeof populateSettingsModal === 'function') populateSettingsModal();
+                        overlay.classList.add('active');
+                    }
+                }, 7000);
+            } else if (typeof showToast === 'function') {
+                showToast('🔑 API Key no configurada. Ir a Configuración.', 'error');
+            }
+        } else {
+            if (typeof showToastWithAction === 'function') {
+                showToastWithAction('🔑 Error de conexión con IA. Contacta a soporte.', 'error', '📧 Contactar', function() {
+                    var btnContacto = document.getElementById('btnContacto');
+                    if (btnContacto) btnContacto.click();
+                }, 7000);
+            } else if (typeof showToast === 'function') {
+                showToast('🔑 Error de conexión con IA. Contacta a soporte.', 'error');
+            }
         }
         return false;
     }

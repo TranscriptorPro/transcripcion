@@ -28,19 +28,51 @@ if (typeof window.populatePatientDatalist === 'undefined') {
 
 // Initial binding for patient search — usa searchPatientRegistry (registro unificado)
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('patientSearch')?.addEventListener('input', (e) => {
-        const val = e.target.value;
-        if (!val || val.length < 2) return;
-        const results = typeof searchPatientRegistry === 'function' ? searchPatientRegistry(val) : [];
-        const selected = results[0];
-        if (selected) {
-            const set = (id, v) => { const el = document.getElementById(id); if (el && v != null && v !== '') el.value = v; };
-            set('pdfPatientName', selected.name);
-            set('pdfPatientDni', selected.dni);
-            set('pdfPatientAge', selected.age);
-            set('pdfPatientSex', selected.sex);
-            set('pdfPatientInsurance', selected.insurance);
-            set('pdfPatientPhone', selected.phone);
+    const searchInput = document.getElementById('patientSearch');
+    if (!searchInput) return;
+
+    // C3: Dropdown de resultados múltiples
+    var dropdown = document.createElement('div');
+    dropdown.id = 'patientSearchDropdown';
+    dropdown.style.cssText = 'position:absolute;z-index:100;background:var(--bg-card,#fff);border:1px solid var(--border-color,#ccc);border-radius:6px;max-height:180px;overflow-y:auto;display:none;width:100%;box-shadow:0 4px 12px rgba(0,0,0,.15);';
+    searchInput.parentNode.style.position = 'relative';
+    searchInput.parentNode.appendChild(dropdown);
+
+    function fillPatient(p) {
+        var set = function(id, v) { var el = document.getElementById(id); if (el && v != null && v !== '') el.value = v; };
+        set('pdfPatientName', p.name);
+        set('pdfPatientDni', p.dni);
+        set('pdfPatientAge', p.age);
+        set('pdfPatientSex', p.sex);
+        set('pdfPatientInsurance', p.insurance);
+        set('pdfPatientPhone', p.phone);
+        dropdown.style.display = 'none';
+    }
+
+    searchInput.addEventListener('input', function(e) {
+        var val = e.target.value;
+        if (!val || val.length < 2) { dropdown.style.display = 'none'; return; }
+        var results = typeof searchPatientRegistry === 'function' ? searchPatientRegistry(val) : [];
+        if (results.length === 0) { dropdown.style.display = 'none'; return; }
+        if (results.length === 1) { fillPatient(results[0]); return; }
+
+        dropdown.innerHTML = '';
+        results.slice(0, 10).forEach(function(p) {
+            var item = document.createElement('div');
+            item.textContent = p.name + (p.dni ? ' — DNI: ' + p.dni : '');
+            item.style.cssText = 'padding:6px 10px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid var(--border-color,#eee);';
+            item.addEventListener('mouseenter', function() { item.style.background = 'var(--primary-light,#e0f2fe)'; });
+            item.addEventListener('mouseleave', function() { item.style.background = ''; });
+            item.addEventListener('click', function() { fillPatient(p); searchInput.value = p.name; });
+            dropdown.appendChild(item);
+        });
+        dropdown.style.display = 'block';
+    });
+
+    // Cerrar dropdown al hacer click fuera
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = 'none';
         }
     });
 
