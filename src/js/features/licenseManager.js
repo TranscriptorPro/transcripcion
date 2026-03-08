@@ -141,6 +141,34 @@ window.validateLicense = async function () {
     const result = await _lmCallValidate();
 
     if (result.error) {
+        // Degradación trial→normal: si es trial expirado, no bloquear sino degradar
+        if (result.code === 'EXPIRED' && result.plan === 'trial') {
+            _lmValidated = true;
+            _lmLicenseData = result;
+            // Degradar CLIENT_CONFIG a NORMAL
+            if (typeof CLIENT_CONFIG !== 'undefined') {
+                CLIENT_CONFIG.type = 'NORMAL';
+                CLIENT_CONFIG.hasProMode = false;
+                CLIENT_CONFIG.maxDevices = 1;
+                // Persistir la degradación
+                try {
+                    const stored = localStorage.getItem('client_config_stored');
+                    if (stored) {
+                        const cfg = JSON.parse(stored);
+                        cfg.type = 'NORMAL';
+                        cfg.hasProMode = false;
+                        cfg.maxDevices = 1;
+                        localStorage.setItem('client_config_stored', JSON.stringify(cfg));
+                    }
+                } catch(_) {}
+            }
+            // Notificar al usuario
+            if (typeof showToast === 'function') {
+                showToast('⏰ Tu período de prueba finalizó. Ahora usás el plan Normal. Contactá al administrador para actualizar.', 'warning', 8000);
+            }
+            console.info('[licenseManager] Trial expirado → degradado a NORMAL');
+            return result;
+        }
         _lmValidated = false;
         _lmLicenseData = result;
         _lmShowBlockedUI(result);

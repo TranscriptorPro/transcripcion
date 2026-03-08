@@ -7640,6 +7640,24 @@
                         <label style="font-size:.85rem;color:var(--text-secondary);">Duración (días)
                             <input type="number" data-plan="${key}" data-field="durationDays" value="${plan.durationDays}" min="1" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-main,#0f172a);color:var(--text-primary);margin-top:4px;">
                         </label>
+                        <label style="font-size:.85rem;color:var(--text-secondary);">Historial (informes, -1=ilimitado)
+                            <input type="number" data-plan="${key}" data-field="historial" value="${plan.historial}" min="-1" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-main,#0f172a);color:var(--text-primary);margin-top:4px;">
+                        </label>
+                        <label style="font-size:.85rem;color:var(--text-secondary);">Lugares de trabajo
+                            <input type="number" data-plan="${key}" data-field="workplaces" value="${plan.workplaces}" min="1" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-main,#0f172a);color:var(--text-primary);margin-top:4px;">
+                        </label>
+                        <label style="font-size:.85rem;color:var(--text-secondary);">Perfiles de salida (-1=ilimitados)
+                            <input type="number" data-plan="${key}" data-field="outputProfiles" value="${plan.outputProfiles}" min="-1" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-main,#0f172a);color:var(--text-primary);margin-top:4px;">
+                        </label>
+                        ${key === 'clinic' ? `<label style="font-size:.85rem;color:var(--text-secondary);">Máx profesionales
+                            <input type="number" data-plan="${key}" data-field="maxProfessionals" value="${plan.maxProfessionals || 5}" min="1" max="20" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-main,#0f172a);color:var(--text-primary);margin-top:4px;">
+                        </label>` : ''}
+                        <label style="font-size:.85rem;color:var(--text-secondary);display:flex;align-items:center;gap:6px;">
+                            <input type="checkbox" data-plan="${key}" data-field="pdfLogo" ${plan.pdfLogo !== false ? 'checked' : ''}> PDF con logo
+                        </label>
+                        <label style="font-size:.85rem;color:var(--text-secondary);display:flex;align-items:center;gap:6px;">
+                            <input type="checkbox" data-plan="${key}" data-field="pdfColor" ${plan.pdfColor ? 'checked' : ''}> PDF con color personalizado
+                        </label>
                         <label style="font-size:.85rem;color:var(--text-secondary);display:flex;align-items:center;gap:6px;">
                             <input type="checkbox" data-plan="${key}" data-field="hasProMode" ${plan.hasProMode ? 'checked' : ''}> Incluye Modo Pro
                         </label>
@@ -7667,6 +7685,18 @@
                 if (durEl) plans[key].durationDays = parseInt(durEl.value) || 30;
                 if (proEl) plans[key].hasProMode = proEl.checked;
                 if (featEl) plans[key].features = featEl.value.split('\n').map(s => s.trim()).filter(Boolean);
+                const histEl = document.querySelector(`[data-plan="${key}"][data-field="historial"]`);
+                const wpEl = document.querySelector(`[data-plan="${key}"][data-field="workplaces"]`);
+                const opEl = document.querySelector(`[data-plan="${key}"][data-field="outputProfiles"]`);
+                const logoEl = document.querySelector(`[data-plan="${key}"][data-field="pdfLogo"]`);
+                const colorEl = document.querySelector(`[data-plan="${key}"][data-field="pdfColor"]`);
+                const profEl = document.querySelector(`[data-plan="${key}"][data-field="maxProfessionals"]`);
+                if (histEl) plans[key].historial = parseInt(histEl.value);
+                if (wpEl) plans[key].workplaces = parseInt(wpEl.value) || 1;
+                if (opEl) plans[key].outputProfiles = parseInt(opEl.value);
+                if (logoEl) plans[key].pdfLogo = logoEl.checked;
+                if (colorEl) plans[key].pdfColor = colorEl.checked;
+                if (profEl) plans[key].maxProfessionals = parseInt(profEl.value) || 5;
             }
             return plans;
         }

@@ -1140,6 +1140,31 @@
             CLINIC: { license: 352.99, monthly: 30, annual: 300, devices: 5, templates: '3_packs', historial: Infinity, workplaces: 1, outputProfiles: Infinity, pdfLogo: true, pdfColor: true, maxProfessionals: 5, label: 'Clínica' }
         };
 
+        // ── Sincronizar con config del admin (mismo dominio → mismo localStorage) ──
+        (function _syncAdminPlanConfig() {
+            try {
+                const stored = localStorage.getItem('admin_plans_config');
+                if (!stored) return;
+                const adminPlans = JSON.parse(stored);
+                const map = { normal: 'NORMAL', pro: 'PRO', clinic: 'CLINIC' };
+                for (const [adminKey, pricingKey] of Object.entries(map)) {
+                    const ap = adminPlans[adminKey];
+                    if (!ap || !PRICING[pricingKey]) continue;
+                    if (ap.price) {
+                        const num = parseFloat(ap.price.replace(/[^0-9.]/g, ''));
+                        if (!isNaN(num)) PRICING[pricingKey].license = num;
+                    }
+                    if (ap.maxDevices != null) PRICING[pricingKey].devices = ap.maxDevices;
+                    if (ap.historial != null) PRICING[pricingKey].historial = ap.historial === -1 ? Infinity : ap.historial;
+                    if (ap.workplaces != null) PRICING[pricingKey].workplaces = ap.workplaces;
+                    if (ap.outputProfiles != null) PRICING[pricingKey].outputProfiles = ap.outputProfiles === -1 ? Infinity : ap.outputProfiles;
+                    if (ap.pdfLogo != null) PRICING[pricingKey].pdfLogo = ap.pdfLogo;
+                    if (ap.pdfColor != null) PRICING[pricingKey].pdfColor = ap.pdfColor;
+                    if (ap.maxProfessionals != null) PRICING[pricingKey].maxProfessionals = ap.maxProfessionals;
+                }
+            } catch(_) {}
+        })();
+
         const ADDON_PRICES = {
             template_individual: 3,
             pack_small: 7,    // 3-5 plantillas
