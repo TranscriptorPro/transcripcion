@@ -14,6 +14,16 @@ function _hexToRgb(hex) {
     };
 }
 
+// Helper: obtener dimensiones reales de imagen desde base64 para preservar aspect ratio
+function _getImageDims(b64) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+        img.onerror = () => resolve({ w: 1, h: 1 });
+        img.src = b64;
+    });
+}
+
 async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
     if (typeof jspdf === 'undefined') {
         showToast('Cargando motor PDF...', 'info');
@@ -91,6 +101,12 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             : (rawEsp || '');
         const institutionName = activePro?.institutionName || profData.institutionName || '';
         const accent       = _hexToRgb(activePro?.headerColor || profData.headerColor || '#1a56a0');
+
+        // Tamaños configurables (sincronizar con pdfPreview.js)
+        const profLogoSizePx = config.logoSizePx || parseInt(localStorage.getItem('prof_logo_size_px') || '60');
+        const firmaSizePx    = config.firmaSizePx || parseInt(localStorage.getItem('firma_size_px') || '60');
+        const instLogoSizePx = config.instLogoSizePx || parseInt(localStorage.getItem('inst_logo_size_px') || '60');
+
         const wpAddress = config.workplaceAddress || activeWp?.address || '';
         const wpPhone   = config.workplacePhone   || activeWp?.phone   || '';
         const wpName    = activeWp?.name || '';
@@ -178,14 +194,17 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             doc.rect(0, 0, PAGE_W, bannerH, 'F');
 
             let contentX = ML;
-            // Logo institucional
+            // Logo institucional — preservar aspect ratio
             if (instLogoB64) {
                 try {
-                    const instSizePx = parseInt(config.instLogoSizePx || localStorage.getItem('inst_logo_size_px') || '60');
-                    const instScale = instSizePx / 60;
-                    const imgW = Math.round(12 * instScale), imgH = Math.round(10 * instScale);
+                    const instTargetH = instLogoSizePx * 0.264583; // px a mm
+                    const instTargetHClamped = Math.min(instTargetH, bannerH - 2); // no exceder banner
                     const imgType = instLogoB64.includes('data:image/png') ? 'PNG' : 'JPEG';
                     const b64data = instLogoB64.includes(',') ? instLogoB64.split(',')[1] : instLogoB64;
+                    const instProps = doc.getImageProperties(b64data);
+                    const instAR = instProps.width / instProps.height;
+                    const imgH = instTargetHClamped;
+                    const imgW = imgH * instAR;
                     doc.addImage(b64data, imgType, ML, (bannerH - imgH) / 2, imgW, imgH);
                     contentX = ML + imgW + 4;
                 } catch (e) { /* imagen inválida */ }
@@ -284,38 +303,53 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             if (pAffiliateNum) cells.push(['Nº Afiliado', pAffiliateNum]);
             if (!cells.length) return;
 
-            // Usamos rectángulo de fondo suave si caben datos
-            if (typeof doc.autoTable === 'function') {
-                doc.autoTable({
-                    startY: cy,
-                    body: cells.map(([k, v]) => ({ k, v })),
-                    columns: [
-                        { dataKey: 'k', header: '' },
-                        { dataKey: 'v', header: '' }
-                    ],
-                    theme: 'plain',
-                    styles: { fontSize: 9, cellPadding: { top: 1, bottom: 1, left: 1, right: 1 } },
-                    columnStyles: {
-                        k: { fontStyle: 'bold', textColor: [80, 80, 80], cellWidth: 28 },
-                        v: { textColor: [0, 0, 0] }
-                    },
-                    tableWidth: CW,
-                    margin: { left: ML },
-                    showHead: 'never'
-                });
-                cy = doc.lastAutoTable.finalY + 3;
-            } else {
-                doc.setFontSize(9);
-                cells.forEach(([k, v]) => {
-                    doc.setFont('helvetica', 'bold');
-                    doc.text(k + ': ', ML, cy);
-                    doc.setFont('helvetica', 'normal');
-                    doc.text(v, ML + doc.getTextWidth(k + ': '), cy);
-                    cy += 5;
-                });
+            // Layout horizontal tipo grid (como la vista previa)
+            const colCount = Math.min(cells.length, 3);
+            const colW = CW / colCount;
+            const cellH = 9;
+            const rows = Math.ceil(cells.length / colCount);
+
+            ensureSpace(rows * cellH + 6);
+
+            // Fondo suave para la tabla de paciente
+            const tableH = rows * cellH;
+            doc.setFillColor(248, 250, 252);
+            doc.setDrawColor(226, 232, 240);
+            doc.setLineWidth(0.3);
+            doc.roundedRect(ML, cy, CW, tableH, 1.5, 1.5, 'FD');
+
+            // Líneas internas de la grid
+            doc.setDrawColor(226, 232, 240);
+            doc.setLineWidth(0.2);
+            for (let c = 1; c < colCount; c++) {
+                doc.line(ML + c * colW, cy, ML + c * colW, cy + tableH);
             }
-            grayLine(cy);
-            cy += 5;
+            for (let r = 1; r < rows; r++) {
+                doc.line(ML, cy + r * cellH, ML + CW, cy + r * cellH);
+            }
+
+            // Contenido de cada celda
+            for (let i = 0; i < cells.length; i++) {
+                const [label, value] = cells[i];
+                const col = i % colCount;
+                const row = Math.floor(i / colCount);
+                const cellX = ML + col * colW + 2;
+                const cellY = cy + row * cellH;
+
+                doc.setFontSize(7);
+                doc.setFont(mainFont, 'normal');
+                setGray(120);
+                doc.text(label, cellX, cellY + 3.5);
+
+                doc.setFontSize(9);
+                doc.setFont(mainFont, i === 0 ? 'bold' : 'normal');
+                setBlack();
+                doc.text(value, cellX, cellY + 7.5);
+            }
+
+            cy += tableH + 4;
+            doc.setDrawColor(0);
+            setBlack();
         }
 
         // ── Renderizado del contenido HTML ───────────────────────────
@@ -607,8 +641,17 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                 try {
                     const imgType = sigB64.includes('data:image/png') ? 'PNG' : 'JPEG';
                     const b64data = sigB64.includes(',') ? sigB64.split(',')[1] : sigB64;
-                    doc.addImage(b64data, imgType, sigStartX, cy, 50, 20);
-                    cy += 22;
+                    // Preservar aspect ratio: usar firmaSizePx como altura de referencia
+                    const sigTargetH = firmaSizePx * 0.264583; // px a mm
+                    const sigTargetHClamped = Math.min(sigTargetH, 25); // max 25mm
+                    const sigProps = doc.getImageProperties(b64data);
+                    const sigAR = sigProps.width / sigProps.height;
+                    const sigImgH = sigTargetHClamped;
+                    const sigImgW = Math.min(sigImgH * sigAR, sigLineW); // no exceder el ancho de la línea
+                    // Centrar la imagen sobre la línea de firma
+                    const sigImgX = sigCenterX - sigImgW / 2;
+                    doc.addImage(b64data, imgType, sigImgX, cy, sigImgW, sigImgH);
+                    cy += sigImgH + 2;
                 } catch (e) { /* imagen inválida */ }
             }
             if (showSignLine) {
