@@ -4162,12 +4162,49 @@
             const nombre = document.getElementById('giftNombre')?.value || '—';
             const matricula = document.getElementById('giftMatricula')?.value || '—';
             const email = document.getElementById('giftEmail')?.value || '—';
-            // Datos del paso 2 (primer workplace)
-            const wpName = document.querySelector('#gw-wp-0 .gw-wp-name-input')?.value ||
-                           document.querySelector('[id^="giftWpNombre"]')?.value || '—';
-            // Imágenes paso 5
-            const hasProLogo = document.getElementById('imgProf-status')?.textContent?.includes('✅');
-            const hasFirma   = document.getElementById('imgFirma-status')?.textContent?.includes('✅');
+            const telefono = document.getElementById('giftTelefono')?.value || '';
+
+            // Datos del paso 2: TODOS los workplaces
+            const wpAccordions = document.querySelectorAll('.gw-wp-accordion');
+            let wpSummaryHtml = '';
+            if (wpAccordions.length === 0) {
+                wpSummaryHtml = '<span style="color:#94a3b8;">Ninguno configurado</span>';
+            } else {
+                const wpNames = [];
+                wpAccordions.forEach(acc => {
+                    const idx = acc.dataset.wpIndex;
+                    const n = (document.getElementById('gwWpName' + idx) || {}).value?.trim();
+                    const addr = (document.getElementById('gwWpAddress' + idx) || {}).value?.trim();
+                    if (n) wpNames.push('<strong>' + n + '</strong>' + (addr ? ' <span style="color:#94a3b8;font-size:.72rem;">(' + addr + ')</span>' : ''));
+                });
+                wpSummaryHtml = wpNames.length > 0 ? wpNames.join('<br>') : '<span style="color:#94a3b8;">Sin nombre</span>';
+            }
+
+            // Imágenes paso 3/5 — consultar _giftImageData directamente
+            const hasProLogo = !!(_giftImageData && _giftImageData.proLogo);
+            const hasFirma   = !!(_giftImageData && _giftImageData.firma);
+            // También chequear los status badges como fallback
+            const hasProLogoAlt = document.getElementById('imgProf-status')?.textContent?.includes('✅');
+            const hasFirmaAlt   = document.getElementById('imgFirma-status')?.textContent?.includes('✅');
+            const logoOk = hasProLogo || hasProLogoAlt;
+            const firmaOk = hasFirma || hasFirmaAlt;
+
+            // Logo institucional: al menos uno cargado
+            let hasInstLogo = false;
+            for (const k in _giftWpLogoData) {
+                if (_giftWpLogoData[k]) { hasInstLogo = true; break; }
+            }
+
+            // Contacto en informes
+            const showPhone  = document.getElementById('giftShowPhone')?.checked;
+            const showEmail  = document.getElementById('giftShowEmail')?.checked;
+            const showSocial = document.getElementById('giftShowSocial')?.checked;
+            let contactItems = [];
+            if (showPhone)  contactItems.push('📞 Tel');
+            if (showEmail)  contactItems.push('📧 Email');
+            if (showSocial) contactItems.push('🌐 Redes');
+            const contactSummary = contactItems.length > 0 ? contactItems.join(' · ') : '<span style="color:#94a3b8;">Ninguno</span>';
+
             // API Key
             const apiKey = document.getElementById('cfApiKey')?.value || '';
             const apiKeyDisplay = apiKey ? '•••' + apiKey.slice(-6) : '<span style="color:#ef4444;">No configurada</span>';
@@ -4179,11 +4216,11 @@
                 <div style="background:#f8fafc;border-radius:6px;padding:.5rem .7rem;">
                   <div style="font-size:.7rem;color:#94a3b8;font-weight:600;text-transform:uppercase;margin-bottom:.3rem;">👤 Profesional</div>
                   <div><strong>${nombre}</strong></div>
-                  <div style="color:#64748b;font-size:.75rem;">${matricula} · ${email}</div>
+                  <div style="color:#64748b;font-size:.75rem;">${matricula} · ${email}${telefono ? ' · ' + telefono : ''}</div>
                 </div>
                 <div style="background:#f8fafc;border-radius:6px;padding:.5rem .7rem;">
-                  <div style="font-size:.7rem;color:#94a3b8;font-weight:600;text-transform:uppercase;margin-bottom:.3rem;">🏥 Lugar de trabajo</div>
-                  <div><strong>${wpName}</strong></div>
+                  <div style="font-size:.7rem;color:#94a3b8;font-weight:600;text-transform:uppercase;margin-bottom:.3rem;">🏥 Lugar/es de trabajo</div>
+                  <div style="font-size:.78rem;">${wpSummaryHtml}</div>
                 </div>
                 <div style="background:#f8fafc;border-radius:6px;padding:.5rem .7rem;">
                   <div style="font-size:.7rem;color:#94a3b8;font-weight:600;text-transform:uppercase;margin-bottom:.3rem;">🏷️ Licencia</div>
@@ -4197,11 +4234,17 @@
                 </div>
                 <div style="background:#f8fafc;border-radius:6px;padding:.5rem .7rem;">
                   <div style="font-size:.7rem;color:#94a3b8;font-weight:600;text-transform:uppercase;margin-bottom:.3rem;">🖼️ Imágenes</div>
-                  <div style="font-size:.78rem;">Logo: ${hasProLogo ? '<span style="color:#10b981;">✅ Cargado</span>' : '<span style="color:#94a3b8;">—</span>'} · Firma: ${hasFirma ? '<span style="color:#10b981;">✅ Cargada</span>' : '<span style="color:#94a3b8;">—</span>'}</div>
+                  <div style="font-size:.78rem;">Logo prof: ${logoOk ? '<span style="color:#10b981;">✅ Cargado</span>' : '<span style="color:#94a3b8;">No</span>'}</div>
+                  <div style="font-size:.78rem;">Firma: ${firmaOk ? '<span style="color:#10b981;">✅ Cargada</span>' : '<span style="color:#94a3b8;">No</span>'}</div>
+                  <div style="font-size:.78rem;">Logo inst: ${hasInstLogo ? '<span style="color:#10b981;">✅ Cargado</span>' : '<span style="color:#94a3b8;">No</span>'}</div>
                 </div>
                 <div style="background:#f8fafc;border-radius:6px;padding:.5rem .7rem;">
                   <div style="font-size:.7rem;color:#94a3b8;font-weight:600;text-transform:uppercase;margin-bottom:.3rem;">🔑 API Key</div>
                   <div style="font-family:monospace;font-size:.78rem;">${apiKeyDisplay}</div>
+                </div>
+                <div style="background:#f8fafc;border-radius:6px;padding:.5rem .7rem;grid-column:1/-1;">
+                  <div style="font-size:.7rem;color:#94a3b8;font-weight:600;text-transform:uppercase;margin-bottom:.3rem;">📋 Contacto en informes</div>
+                  <div style="font-size:.78rem;">${contactSummary}</div>
                 </div>
               </div>
             `;
@@ -4586,7 +4629,7 @@
                         Devices_Logged: '[]',
                         Diagnostico_Pendiente: 'false',
                         Registro_Datos: JSON.stringify(registroDatos),
-                        Notas_Admin: '🎁 Usuario regalo — creado desde Fábrica de Clones' + (notas ? ' | ' + notas : '')
+                        Notas_Admin: '🎁 Usuario regalo — creado desde Fábrica de Clones'
                     };
 
                     // Mostrar barra de progreso
