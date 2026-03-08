@@ -3956,7 +3956,6 @@
             // Reset campos gift — Paso 3 (Apariencia + Firma + Logo)
             _giftSelectedColor = '#1a56a0';
             _giftImageData = { firma: null, proLogo: null, proLogoSize: 60, firmaSize: 60, instLogoSize: 60 };
-            document.getElementById('giftFooterText').value = '';
             document.getElementById('giftColorPreview').style.background = '#1a56a0';
             document.querySelectorAll('#giftColorPalette .gift-color-swatch').forEach(s => {
                 s.style.border = '3px solid transparent';
@@ -3972,8 +3971,6 @@
             if (firmaInput) firmaInput.value = '';
             const proLogoInput = document.getElementById('giftProLogo');
             if (proLogoInput) proLogoInput.value = '';
-            const notasEl = document.getElementById('giftNotas');
-            if (notasEl) notasEl.value = '';
 
             // Reset campos gift — Paso 4 (Licencia y Permisos)
             document.getElementById('giftPlan').value = 'GIFT';
@@ -4245,6 +4242,11 @@
                         </div>
                     </div>
                     <div class="gw-field-group" style="margin-top:.4rem;">
+                        <label>Texto del pie de página</label>
+                        <input type="text" id="gwWpFooter${index}" placeholder="Consultorio médico — Tel: (011) 4567-8901">
+                        <small style="font-size:.68rem;color:#94a3b8;">Aparece en los informes PDF de este lugar</small>
+                    </div>
+                    <div class="gw-field-group" style="margin-top:.4rem;">
                         <label>Logo del Lugar / Institución</label>
                         <div class="gw-upload-zone">
                             <div class="gw-upload-icon">🖼️</div>
@@ -4477,20 +4479,17 @@
                             address: (document.getElementById('gwWpAddress' + idx) || {}).value?.trim() || '',
                             phone:   (document.getElementById('gwWpPhone' + idx) || {}).value?.trim() || '',
                             email:   (document.getElementById('gwWpEmail' + idx) || {}).value?.trim() || '',
+                            footer:  (document.getElementById('gwWpFooter' + idx) || {}).value?.trim() || '',
                             logo:    _giftWpLogoData[idx] || null
                         });
                     });
 
                     // Apariencia PDF
                     const headerColor = _giftSelectedColor || '#1a56a0';
-                    const footerText = document.getElementById('giftFooterText').value.trim();
 
                     // Firma y Logo profesional
                     const firma = _giftImageData.firma || null;
                     const proLogo = _giftImageData.proLogo || null;
-
-                    // Notas
-                    const notas = (document.getElementById('giftNotas') || {}).value?.trim() || '';
 
                     if (!nombre) {
                         dashAlert('Ingresá el nombre del usuario', '⚠️');
@@ -4532,13 +4531,12 @@
                         workplace: allWorkplaces[0] || {},
                         extraWorkplaces: allWorkplaces.slice(1),
                         headerColor: headerColor,
-                        footerText: footerText,
+                        footerText: allWorkplaces[0]?.footer || '',
                         firma: firma,
                         proLogo: proLogo,
                         proLogoSize: _giftImageData.proLogoSize || 60,
                         firmaSize: _giftImageData.firmaSize || 60,
                         instLogoSize: _giftImageData.instLogoSize || 60,
-                        notas: notas,
                         apiKey: apiKey,
                         apiKeyB1: apiKeyB1,
                         apiKeyB2: apiKeyB2,
@@ -6924,11 +6922,6 @@
                                 <div id="giftColorPreview" style="height:6px;border-radius:3px;background:#1a56a0;transition:background .3s;"></div>
                                 <small style="font-size:.68rem;color:#94a3b8;">Se aplica al banner superior de cada página del informe</small>
                             </div>
-                            <div class="gw-field-group" style="margin-top:.5rem;">
-                                <label>Texto del pie de página</label>
-                                <input type="text" id="giftFooterText" placeholder="Consultorio médico — Tel: (011) 4567-8901">
-                                <small style="font-size:.68rem;color:#94a3b8;">Aparece en todas las páginas, abajo</small>
-                            </div>
                         </div>
 
                         <!-- Firma -->
@@ -6958,13 +6951,6 @@
                         </div>
 
                         <!-- Notas -->
-                        <div class="gw-card">
-                            <p class="gw-section-title">📝 Notas adicionales</p>
-                            <div class="gw-field-group">
-                                <textarea id="giftNotas" rows="2" placeholder="Algún dato extra que quieras comunicar..."></textarea>
-                            </div>
-                        </div>
-
                         <div style="display:flex;justify-content:space-between;">
                             <button type="button" class="btn-secondary" onclick="giftGoStep(2)" style="padding:7px 16px;font-size:.84rem;">← Anterior</button>
                             <button type="button" class="btn-primary" onclick="giftGoStep(4)" style="padding:7px 20px;font-size:.84rem;">Siguiente →</button>
