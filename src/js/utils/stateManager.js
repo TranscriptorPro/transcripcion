@@ -1,5 +1,16 @@
 // ============ MODE SELECTOR (PRO/NORMAL) & STATE MANAGER ============
 
+/**
+ * Detecta si el HTML del editor parece un informe ya estructurado.
+ * Criterio: contiene encabezados (h1-h4) o al menos 2 secciones con <strong>.
+ */
+window.detectEditorState = function (html) {
+    if (!html || html.trim().length < 50) return 'IDLE';
+    const hasHeadings = /<h[1-4]\b/i.test(html);
+    const strongCount = (html.match(/<strong\b/gi) || []).length;
+    return (hasHeadings || strongCount >= 2) ? 'STRUCTURED' : 'TRANSCRIBED';
+};
+
 window.updateButtonsVisibility = function (state) {
     window.appState = state;
 
@@ -314,7 +325,8 @@ if (resetBtn) {
                     else localStorage.setItem('editor_autosave_meta', savedAutosaveMeta);
                 }
                 if (typeof updateWordCount === 'function') updateWordCount();
-                if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
+                const undoState = typeof detectEditorState === 'function' ? detectEditorState(editorContent) : 'TRANSCRIBED';
+                if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility(undoState);
                 if (typeof showToast !== 'undefined') showToast('↩ Sesión restaurada', 'success');
             }, 7000);
         } else {

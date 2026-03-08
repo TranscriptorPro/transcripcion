@@ -307,10 +307,10 @@ if (insertTableBtn && editor) {
         ed.dispatchEvent(new Event('input', { bubbles: true }));
         if (typeof window.updateWordCount === 'function') window.updateWordCount();
 
-        // Establecer estado correcto: si el snapshot era de estructurado → STRUCTURED
+        // Establecer estado correcto según el contenido restaurado
         if (typeof updateButtonsVisibility === 'function') {
-            const isStructured = snap.source === 'structuring' || (snap.label && /estructurad|structured/i.test(snap.label));
-            updateButtonsVisibility(isStructured ? 'STRUCTURED' : 'TRANSCRIBED');
+            const state = typeof detectEditorState === 'function' ? detectEditorState(snap.html) : 'TRANSCRIBED';
+            updateButtonsVisibility(state);
         }
 
         if (typeof showToast === 'function') {

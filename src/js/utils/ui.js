@@ -1486,7 +1486,8 @@ document.addEventListener('keydown', (e) => {
             restoreBtn.onclick = () => {
                 editor.innerHTML = saved;
                 if (typeof updateWordCount === 'function') updateWordCount();
-                if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
+                const restoredState = typeof detectEditorState === 'function' ? detectEditorState(saved) : 'TRANSCRIBED';
+                if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility(restoredState);
                 if (typeof showToast === 'function') showToast('✅ Borrador restaurado', 'success', 2000);
                 restoreBtn.style.display = 'none';
             };
