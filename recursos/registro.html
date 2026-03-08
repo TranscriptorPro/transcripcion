@@ -779,7 +779,7 @@
                             <li><span class="feat-icon">📂</span> Historial: últimos 10 informes</li>
                             <li><span class="feat-icon">❌</span> <span style="opacity:.6;">Asistente de sesión IA</span></li>
                             <li><span class="feat-icon">📖</span> Diccionario médico personalizable</li>
-                            <li><span class="feat-icon">💻</span> 1 dispositivo</li>
+                            <li id="pricingNormalDevices"><span class="feat-icon">💻</span> 1 dispositivo</li>
                             <li><span class="feat-icon">1️⃣</span> 1 perfil de salida</li>
                             <li><span class="feat-icon">🏥</span> 1 lugar de trabajo</li>
                         </ul>
@@ -802,7 +802,7 @@
                             <li><span class="feat-icon">📂</span> <b>Historial: últimos 30 informes</b></li>
                             <li><span class="feat-icon">🧠</span> <b>Asistente de sesión IA</b></li>
                             <li><span class="feat-icon">📖</span> Diccionario personalizable</li>
-                            <li><span class="feat-icon">💻</span> 3 dispositivos</li>
+                            <li id="pricingProDevices"><span class="feat-icon">💻</span> 3 dispositivos</li>
                             <li><span class="feat-icon">🔀</span> Hasta 3 perfiles de salida</li>
                             <li><span class="feat-icon">🏥</span> 2 lugares de trabajo</li>
                         </ul>
@@ -821,7 +821,7 @@
                             <li><span class="feat-icon">📦</span> <b>3 packs completos de especialidad</b></li>
                             <li><span class="feat-icon">🎨</span> <b>PDF con logo + firma + color</b></li>
                             <li><span class="feat-icon">👥</span> <b>Hasta 5 profesionales</b></li>
-                            <li><span class="feat-icon">💻</span> 5 dispositivos</li>
+                            <li id="pricingClinicDevices"><span class="feat-icon">💻</span> 5 dispositivos</li>
                             <li><span class="feat-icon">♾️</span> <b>Historial ilimitado</b></li>
                             <li><span class="feat-icon">🤖</span> Estructuración automática con IA</li>
                             <li><span class="feat-icon">✅</span> Grabar sobre texto editado</li>
@@ -1581,6 +1581,13 @@
                     }
                 }
             }
+            // Actualizar features dinámicas (dispositivos) según PRICING
+            const devMap = { NORMAL: 'pricingNormalDevices', PRO: 'pricingProDevices', CLINIC: 'pricingClinicDevices' };
+            for (const [key, id] of Object.entries(devMap)) {
+                const el = document.getElementById(id);
+                const d = PRICING[key]?.devices;
+                if (el && d != null) el.innerHTML = `<span class="feat-icon">💻</span> ${d} dispositivo${d > 1 ? 's' : ''}`;
+            }
         }
 
         // ── Plan Selection ──────────────────────────────────────────────────────
@@ -1708,11 +1715,11 @@
             // Plan includes
             const includes = [];
             if (selectedPlan === 'NORMAL') {
-                includes.push('✅ Transcripción de audio', '✋ Estructuración manual', '📄 3 plantillas a elección', '💻 2 dispositivos');
+                includes.push('✅ Transcripción de audio', '✋ Estructuración manual', `📄 ${plan.templates} plantillas a elección`, `💻 ${plan.devices} dispositivo${plan.devices > 1 ? 's' : ''}`);
             } else if (selectedPlan === 'PRO') {
-                includes.push('✅ Transcripción + IA', '🤖 Estructuración automática', '📄 Todas las plantillas de tu especialidad', '💻 5 dispositivos', '🧠 Asistente IA');
+                includes.push('✅ Transcripción + IA', '🤖 Estructuración automática', '📄 Todas las plantillas de tu especialidad', `💻 ${plan.devices} dispositivos`, '🧠 Asistente IA');
             } else {
-                includes.push('✅ Todo lo de Pro', '📦 3 packs de especialidad', '♾️ Dispositivos ilimitados', '👥 Multi-profesional');
+                includes.push('✅ Todo lo de Pro', '📦 3 packs de especialidad', `💻 ${plan.devices} dispositivos`, '👥 Multi-profesional');
             }
             document.getElementById('cartPlanIncludes').innerHTML = includes.join(' · ');
 
