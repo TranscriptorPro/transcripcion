@@ -657,8 +657,9 @@ window.triggerPatientDataCheck = function(rawText) {
         else localStorage.setItem('pdf_config', JSON.stringify(savedConfig));
         if (typeof showToast === 'function')
             showToast(`👤 Paciente detectado: ${extracted.name}`, 'success');
-        // Quitar placeholder si existía
+        // Quitar placeholder si existía e insertar header con datos extraídos
         removePatientPlaceholder();
+        if (typeof window._refreshPatientHeader === 'function') window._refreshPatientHeader();
     } else {
         // Sin datos en el audio → insertar placeholder clickeable (NO abrir modal)
         insertPatientPlaceholder();

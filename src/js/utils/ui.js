@@ -874,6 +874,21 @@ window.initModals = function () {
             compStructured.querySelectorAll('.btn-append-inline').forEach(el => el.remove());
         }
 
+        // Insertar datos del paciente en ambos paneles de comparación
+        const cfg = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        if (cfg.patientName) {
+            const lines = [];
+            if (cfg.patientName) lines.push(`<strong>Paciente:</strong> ${cfg.patientName}`);
+            if (cfg.patientDni)  lines.push(`<strong>DNI:</strong> ${cfg.patientDni}`);
+            if (cfg.patientAge)  lines.push(`<strong>Edad:</strong> ${cfg.patientAge} años`);
+            if (cfg.patientSex)  lines.push(`<strong>Sexo:</strong> ${cfg.patientSex}`);
+            if (cfg.patientInsurance) lines.push(`<strong>Obra Social:</strong> ${cfg.patientInsurance}`);
+            if (cfg.patientAffiliateNum) lines.push(`<strong>Nº Afiliado:</strong> ${cfg.patientAffiliateNum}`);
+            const headerHTML = `<div class="patient-data-header" contenteditable="false"><div class="patient-data-content">${lines.join(' &nbsp;·&nbsp; ')}</div></div>`;
+            if (compOriginal) compOriginal.insertAdjacentHTML('afterbegin', headerHTML);
+            if (compStructured) compStructured.insertAdjacentHTML('afterbegin', headerHTML);
+        }
+
         // Show comparison, hide editor
         if (editorForCompare) editorForCompare.style.display = 'none';
         if (comparisonContainer) comparisonContainer.style.display = 'flex';
