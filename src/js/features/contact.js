@@ -198,6 +198,22 @@ window.initContact = function () {
                     const data = await response.json();
 
                     if (data.success) {
+                        // Registrar solicitud en hoja de soporte para que aparezca en el panel admin
+                        try {
+                            await fetch(backendUrl, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    action: 'log_support_request',
+                                    medicoId: medicoId,
+                                    nombre: nombre,
+                                    motivo: motivo,
+                                    detalle: detalle,
+                                    deviceId: deviceId
+                                })
+                            });
+                        } catch(_) { /* no bloquear si falla el log */ }
+
                         if (form)       form.style.display       = 'none';
                         if (successMsg) successMsg.style.display = 'block';
                         if (typeof showToast === 'function') showToast('✅ Mensaje enviado correctamente', 'success');

@@ -1951,6 +1951,7 @@
             <button class="tab-btn" data-tab="logs">🚨 Logs</button>
             <button class="tab-btn" data-tab="planes">💰 Planes</button>
             <button class="tab-btn" data-tab="extras">🛒 Extras</button>
+            <button class="tab-btn" data-tab="soporte">📩 Soporte <span id="soporteBadge" class="badge" style="display:none;">0</span></button>
             <button class="tab-btn" data-tab="keys">🔑 Mis Keys</button>
         </div>
     </nav>
@@ -2209,6 +2210,32 @@
         </div>
     </section>
     </div><!-- /#tab-extras -->
+
+    <!-- ── Tab: Soporte ── -->
+    <div id="tab-soporte" class="tab-content">
+    <section class="registros-section">
+        <div class="container">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                <h2 style="font-size:1.2rem;">📩 Solicitudes de Soporte</h2>
+                <div style="display:flex;gap:.5rem;">
+                    <select id="soporteFilter" class="filter-select" onchange="loadSupportRequests()">
+                        <option value="pendiente">⏳ Pendientes</option>
+                        <option value="resuelto">✅ Resueltas</option>
+                        <option value="todos">Todas</option>
+                    </select>
+                    <button class="btn-primary" onclick="loadSupportRequests()">🔄 Actualizar</button>
+                </div>
+            </div>
+
+            <div id="soporteEmpty" style="text-align:center;padding:3rem;display:none;">
+                <div style="font-size:3rem;margin-bottom:.5rem;">📭</div>
+                <p style="color:#64748b;">No hay solicitudes de soporte</p>
+            </div>
+
+            <div id="soporteCards" class="reg-cards-grid"></div>
+        </div>
+    </section>
+    </div><!-- /#tab-soporte -->
 
     <!-- ── Tab: Keys ── -->
     <div id="tab-keys" class="tab-content">
@@ -2601,6 +2628,18 @@
 
             async deleteUser(userId) {
                 return await this.call(`?action=admin_delete_user&userId=${encodeURIComponent(userId)}`);
+            },
+
+            async listSupport(status) {
+                return await this.call(`?action=admin_list_support&status=${encodeURIComponent(status || 'pendiente')}`);
+            },
+
+            async resolveSupport(requestId, nota) {
+                return await this.call(`?action=admin_resolve_support&requestId=${encodeURIComponent(requestId)}&nota=${encodeURIComponent(nota || '')}`);
+            },
+
+            async releaseDevices(userId) {
+                return await this.call(`?action=admin_release_devices&userId=${encodeURIComponent(userId)}`);
             }
         };
 
@@ -2612,6 +2651,7 @@
         let metricsLoaded = false;
         let logsLoaded = false;
         let registrosLoaded = false;
+        let soporteLoaded = false;
         let allRegistrations = [];
 
         /* ── API ─────────────────────────────────────────────────────────────── */
@@ -2825,6 +2865,9 @@
                 _initPlansEditor();
             } else if (tabName === 'extras') {
                 _initExtrasEditor();
+            } else if (tabName === 'soporte' && !soporteLoaded) {
+                loadSupportRequests();
+                soporteLoaded = true;
             }
         }
 
@@ -2832,6 +2875,7 @@
         async function openUserMetrics(userId) {
             const user = allUsers.find(u => String(u.ID_Medico) === String(userId));
             const modal = document.getElementById('userMetricsModal');
+            modal.dataset.userId = userId;
             const title = document.getElementById('userMetricsTitle');
             if (user) title.textContent = `📊 Métricas — ${user.Nombre}`;
             modal.style.display = 'flex';
@@ -2871,6 +2915,7 @@
 
         function renderUserMetrics(data) {
             const fmtNum = v => (v != null ? Number(v).toLocaleString() : '—');
+            const _metricsUserId = document.getElementById('userMetricsModal')?.dataset.userId || '';
             document.getElementById('umTranscriptions').textContent = fmtNum(data.transcripciones);
             document.getElementById('umWords').textContent = fmtNum(data.palabras);
             document.getElementById('umMinutes').textContent = fmtNum(data.minutos);
@@ -2884,7 +2929,9 @@
             } else {
                 devList.innerHTML = devices.map(d =>
                     `<li>📱 <strong>${escapeHtml(d.nombre || d.id || 'Dispositivo')}</strong><small style="margin-left:auto;color:var(--text-secondary)">${escapeHtml(d.fecha || '')}</small></li>`
-                ).join('');
+                ).join('') + `<li style="border-top:1px solid #e2e8f0;padding-top:8px;margin-top:4px;">
+                    <button class="btn-outline" style="font-size:.78rem;padding:4px 12px;width:100%;" onclick="releaseDevicesFromMetrics('${escapeHtml(_metricsUserId)}')">🔓 Liberar todos los dispositivos</button>
+                </li>`;
             }
 
             // 7-day bar chart
@@ -2903,6 +2950,123 @@
 
         function closeUserMetrics() {
             document.getElementById('userMetricsModal').style.display = 'none';
+        }
+
+        /* ── Soporte: cargar, renderizar, resolver ───────────────────────── */
+        async function loadSupportRequests() {
+            const status = document.getElementById('soporteFilter')?.value || 'pendiente';
+            const cardsEl = document.getElementById('soporteCards');
+            const emptyEl = document.getElementById('soporteEmpty');
+            cardsEl.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:2rem;">⏳ Cargando...</p>';
+            emptyEl.style.display = 'none';
+            try {
+                const data = await API.listSupport(status);
+                const reqs = data.requests || [];
+                if (reqs.length === 0) {
+                    cardsEl.innerHTML = '';
+                    emptyEl.style.display = 'block';
+                } else {
+                    emptyEl.style.display = 'none';
+                    cardsEl.innerHTML = reqs.map(r => renderSupportCard(r)).join('');
+                }
+                // Actualizar badge
+                if (status === 'pendiente' || status === 'todos') {
+                    const pending = reqs.filter(r => (r.estado || '').toLowerCase() === 'pendiente').length;
+                    updateSoporteBadge(status === 'pendiente' ? reqs.length : pending);
+                }
+            } catch (err) {
+                cardsEl.innerHTML = `<p style="color:#ef4444;text-align:center;padding:2rem;">Error: ${escapeHtml(err.message)}</p>`;
+            }
+        }
+
+        function renderSupportCard(r) {
+            const isPending = (r.estado || '').toLowerCase() === 'pendiente';
+            const statusBadge = isPending
+                ? '<span style="background:#f59e0b;color:#fff;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:20px;">⏳ Pendiente</span>'
+                : '<span style="background:#22c55e;color:#fff;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:20px;">✅ Resuelto</span>';
+            const fecha = r.fecha ? new Date(r.fecha).toLocaleString('es-AR', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+            const resolveBtn = isPending
+                ? `<div style="display:flex;gap:.5rem;margin-top:.8rem;">
+                     <button class="btn-primary" style="font-size:.8rem;padding:6px 14px;" onclick="resolveRequest('${escapeHtml(r.id)}','${escapeHtml(r.medicoId)}')">✅ Marcar como resuelto</button>
+                     <button class="btn-outline" style="font-size:.8rem;padding:6px 14px;" onclick="releaseDevicesFromSupport('${escapeHtml(r.medicoId)}','${escapeHtml(r.id)}')">🔓 Liberar dispositivos</button>
+                   </div>`
+                : '';
+            return `<div style="background:var(--bg-secondary,#f8fafc);border:1px solid #e2e8f0;border-radius:12px;padding:1.2rem;margin-bottom:.8rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem;">
+                    <div>
+                        <strong style="font-size:.95rem;">${escapeHtml(r.nombre || 'Sin nombre')}</strong>
+                        <span style="color:#64748b;font-size:.82rem;margin-left:.5rem;">ID: ${escapeHtml(r.medicoId || '—')}</span>
+                    </div>
+                    ${statusBadge}
+                </div>
+                <div style="font-size:.85rem;color:#0f766e;font-weight:600;margin-bottom:.3rem;">📌 ${escapeHtml(r.motivo || 'Sin motivo')}</div>
+                <div style="font-size:.85rem;color:var(--text-primary);line-height:1.5;white-space:pre-wrap;">${escapeHtml(r.detalle || '—')}</div>
+                <div style="font-size:.78rem;color:#94a3b8;margin-top:.5rem;">📅 ${fecha} · 📱 Device: ${escapeHtml(r.deviceId || '—')}</div>
+                ${resolveBtn}
+            </div>`;
+        }
+
+        async function resolveRequest(requestId, medicoId) {
+            const nota = prompt('Nota de resolución (opcional):') ?? '';
+            try {
+                await API.resolveSupport(requestId, nota);
+                showNotification('✅ Solicitud marcada como resuelta', 'success');
+                await API.logAction('resolve_support', medicoId || requestId, nota || 'Resuelto');
+                loadSupportRequests();
+            } catch (err) {
+                showNotification('Error: ' + err.message, 'error');
+            }
+        }
+
+        async function releaseDevicesFromSupport(userId, requestId) {
+            if (!userId || userId === '—') {
+                showNotification('No se puede identificar al usuario', 'error');
+                return;
+            }
+            if (!confirm(`¿Liberar TODOS los dispositivos del usuario ${userId}? Podrá iniciar sesión desde un nuevo dispositivo.`)) return;
+            try {
+                await API.releaseDevices(userId);
+                showNotification('🔓 Dispositivos liberados para ' + userId, 'success');
+                if (requestId) {
+                    await API.resolveSupport(requestId, 'Dispositivos liberados');
+                    loadSupportRequests();
+                }
+            } catch (err) {
+                showNotification('Error: ' + err.message, 'error');
+            }
+        }
+
+        function updateSoporteBadge(count) {
+            const badge = document.getElementById('soporteBadge');
+            if (!badge) return;
+            if (count > 0) {
+                badge.textContent = count;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        // Cargar badge de soporte al iniciar sesión
+        async function _checkSupportBadge() {
+            try {
+                const data = await API.listSupport('pendiente');
+                updateSoporteBadge((data.requests || []).length);
+            } catch(_) {}
+        }
+
+        // Liberar dispositivos desde el modal de métricas de usuario
+        async function releaseDevicesFromMetrics(userId) {
+            if (!userId) { showNotification('No se pudo identificar al usuario', 'error'); return; }
+            if (!confirm(`¿Liberar TODOS los dispositivos de ${userId}?`)) return;
+            try {
+                await API.releaseDevices(userId);
+                showNotification('🔓 Dispositivos liberados para ' + userId, 'success');
+                closeUserMetrics();
+                await loadDashboard(true);
+            } catch (err) {
+                showNotification('Error: ' + err.message, 'error');
+            }
         }
 
         /* ── Diagnóstico Remoto ──────────────────────────────────────────── */
@@ -3579,6 +3743,9 @@
 
             // Load registration badge count (non-blocking)
             loadRegBadgeCount();
+
+            // Load support badge count (non-blocking)
+            _checkSupportBadge();
 
             // Setup new user modal close buttons (modal HTML is after the script block)
             document.getElementById('btnCloseNewUser')?.addEventListener('click', () => closeNewUserModal());

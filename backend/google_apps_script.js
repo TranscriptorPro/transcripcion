@@ -17,6 +17,7 @@ const SHEET_DIAGNOSTICOS = 'Diagnosticos';
 const SHEET_ADMIN_USERS  = 'Admin_Users';
 const SHEET_REGISTROS       = 'Registros_Pendientes';
 const SHEET_PROFESIONALES   = 'Profesionales_Clinica';
+const SHEET_SOPORTE         = 'Solicitudes_Soporte';
 
 // SECURITY: Read from Apps Script Script Properties (not hardcoded).
 // In Apps Script editor: File > Project Properties > Script Properties > Add: ADMIN_KEY = <your-secret>
@@ -355,6 +356,91 @@ function doGet(e) {
 
     appendAdminLog(adminUser, logAction, userId, details);
     return createResponse({ success: true });
+  }
+
+  // admin_list_support — listar solicitudes de soporte para el panel admin
+  if (action === 'admin_list_support') {
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
+    try {
+      const sSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_SOPORTE);
+      if (!sSheet) return createResponse({ requests: [], message: 'Hoja Solicitudes_Soporte no encontrada. Ejecute setup_sheets.' });
+      const data = sSheet.getDataRange().getValues();
+      if (data.length <= 1) return createResponse({ requests: [] });
+      const headers = data[0];
+      const filterStatus = (e.parameter.status || '').toLowerCase();
+      const requests = [];
+      for (let i = data.length - 1; i >= 1; i--) {
+        const row = {};
+        headers.forEach((h, idx) => { row[h] = data[i][idx]; });
+        const estado = String(row['Estado'] || 'pendiente').toLowerCase();
+        if (filterStatus && filterStatus !== 'todos' && estado !== filterStatus) continue;
+        requests.push({
+          id: row['ID_Solicitud'] || '',
+          medicoId: row['ID_Medico'] || '',
+          nombre: row['Nombre'] || '',
+          motivo: row['Motivo'] || '',
+          detalle: row['Detalle'] || '',
+          deviceId: row['Device_ID'] || '',
+          fecha: row['Fecha'] || '',
+          estado: row['Estado'] || 'pendiente',
+          rowIndex: i + 1
+        });
+        if (requests.length >= 100) break;
+      }
+      return createResponse({ requests: requests });
+    } catch(err) {
+      return createResponse({ error: 'Error leyendo soporte: ' + err.message });
+    }
+  }
+
+  // admin_resolve_support — marcar solicitud de soporte como resuelta
+  if (action === 'admin_resolve_support') {
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
+    try {
+      const sSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_SOPORTE);
+      if (!sSheet) return createResponse({ error: 'Hoja no encontrada' });
+      const reqId = e.parameter.requestId;
+      const nota = decodeURIComponent(e.parameter.nota || '');
+      const data = sSheet.getDataRange().getValues();
+      const headers = data[0];
+      const idCol = headers.indexOf('ID_Solicitud');
+      const estadoCol = headers.indexOf('Estado');
+      const notaCol = headers.indexOf('Nota_Admin');
+      for (let i = 1; i < data.length; i++) {
+        if (String(data[i][idCol]) === String(reqId)) {
+          if (estadoCol !== -1) sSheet.getRange(i + 1, estadoCol + 1).setValue('resuelto');
+          if (notaCol !== -1 && nota) sSheet.getRange(i + 1, notaCol + 1).setValue(nota);
+          appendAdminLog(auth.username, 'resolve_support', reqId, nota || 'Resuelto');
+          return createResponse({ success: true });
+        }
+      }
+      return createResponse({ error: 'Solicitud no encontrada' });
+    } catch(err) {
+      return createResponse({ error: err.message });
+    }
+  }
+
+  // admin_release_devices — liberar todos los dispositivos de un usuario
+  if (action === 'admin_release_devices') {
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
+    const userId = e.parameter.userId;
+    if (!userId) return createResponse({ error: 'Falta userId' });
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const idCol = headers.indexOf('ID_Medico');
+    const devCol = headers.indexOf('Devices_Logged');
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][idCol]) === String(userId)) {
+        if (devCol !== -1) sheet.getRange(i + 1, devCol + 1).setValue('[]');
+        appendAdminLog(auth.username, 'release_devices', userId, 'Dispositivos liberados');
+        return createResponse({ success: true, message: 'Dispositivos liberados para ' + userId });
+      }
+    }
+    return createResponse({ error: 'Usuario no encontrado' });
   }
 
   // admin_get_metrics — métricas de un usuario específico desde Metricas_Uso
@@ -1359,6 +1445,34 @@ function doPost(e) {
     return createResponse({ success: true });
   }
 
+  // log_support_request — registrar solicitud de soporte en la hoja (sin auth, lo llama el usuario)
+  if (action === 'log_support_request') {
+    try {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      let sSheet = ss.getSheetByName(SHEET_SOPORTE);
+      if (!sSheet) {
+        sSheet = ss.insertSheet(SHEET_SOPORTE);
+        sSheet.appendRow(['ID_Solicitud','ID_Medico','Nombre','Motivo','Detalle','Device_ID','Fecha','Estado','Nota_Admin']);
+        sSheet.setFrozenRows(1);
+      }
+      const reqId = 'SUP_' + Date.now();
+      sSheet.appendRow([
+        reqId,
+        payload.medicoId || '',
+        payload.nombre || '',
+        payload.motivo || '',
+        payload.detalle || '',
+        payload.deviceId || '',
+        new Date().toISOString(),
+        'pendiente',
+        ''
+      ]);
+      return createResponse({ success: true, requestId: reqId });
+    } catch(err) {
+      return createResponse({ error: 'Error registrando solicitud: ' + err.message });
+    }
+  }
+
   // send_email — Enviar email (con o sin PDF adjunto)
   if (action === 'send_email') {
     try {
@@ -1774,6 +1888,15 @@ function _setupAllSheets() {
     s.setFrozenRows(1);
     result.push('Registros_Pendientes: creada');
   } else { result.push('Registros_Pendientes: OK'); }
+
+  // Solicitudes_Soporte
+  const supSheet = ss.getSheetByName(SHEET_SOPORTE);
+  if (!supSheet) {
+    const s = ss.insertSheet(SHEET_SOPORTE);
+    s.appendRow(['ID_Solicitud','ID_Medico','Nombre','Motivo','Detalle','Device_ID','Fecha','Estado','Nota_Admin']);
+    s.setFrozenRows(1);
+    result.push('Solicitudes_Soporte: creada');
+  } else { result.push('Solicitudes_Soporte: OK'); }
 
   return result;
 }
