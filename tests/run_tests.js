@@ -5465,6 +5465,134 @@ test('Global — generateReportNumber existe', () => {
     assert(typeof generateReportNumber === 'function');
 });
 
+// ══════════════════════════════════════════════════════════════════════════════
+// Bloque 91: G1 — Tests PRICING defaults (A1-A3)
+// ══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 91: G1 — PRICING defaults ────────────────────────');
+
+const registroCode = fs.readFileSync(path.join(root, 'recursos/registro.html'), 'utf-8');
+const adminCode = fs.readFileSync(path.join(root, 'recursos/admin.html'), 'utf-8');
+
+test('G1 — PRICING NORMAL devices = 1', () => {
+    assert(registroCode.includes("NORMAL: { license: 102.99, monthly: 10, annual: 100, devices: 1"), 'NORMAL debe tener devices: 1');
+});
+
+test('G1 — PRICING PRO devices = 3', () => {
+    assert(registroCode.includes("devices: 3, templates: 'all_specialty', historial: 30"), 'PRO debe tener devices: 3, historial: 30');
+});
+
+test('G1 — PRICING CLINIC devices = 5', () => {
+    assert(registroCode.includes("CLINIC: { license: 352.99, monthly: 30, annual: 300, devices: 5"), 'CLINIC debe tener devices: 5');
+});
+
+test('G1 — PRICING NORMAL historial = 10', () => {
+    assert(registroCode.includes("historial: 10, workplaces: 1, outputProfiles: 1"), 'NORMAL: historial 10, workplaces 1, outputProfiles 1');
+});
+
+test('G1 — PRICING PRO workplaces = 2', () => {
+    assert(registroCode.includes("workplaces: 2, outputProfiles: 3, pdfLogo: true"), 'PRO: workplaces 2, outputProfiles 3, pdfLogo true');
+});
+
+test('G1 — PRICING CLINIC pdfColor = true', () => {
+    assert(registroCode.includes("pdfLogo: true, pdfColor: true, maxProfessionals: 5"), 'CLINIC: pdfLogo true, pdfColor true, maxProfessionals 5');
+});
+
+test('G1 — DEFAULT_PLANS en admin tiene trial', () => {
+    assert(adminCode.includes("trial:  { label: 'Trial'"), 'admin DEFAULT_PLANS debe tener trial');
+});
+
+test('G1 — DEFAULT_PLANS normal maxDevices=1', () => {
+    assert(adminCode.includes("hasProMode: false, maxDevices: 1"), 'admin normal: hasProMode false, maxDevices 1');
+});
+
+test('G1 — DEFAULT_PLANS pro maxDevices=3', () => {
+    const match = adminCode.match(/pro:\s*\{[^}]*maxDevices:\s*3/);
+    assert(match, 'admin pro debe tener maxDevices: 3');
+});
+
+test('G1 — DEFAULT_PLANS clinic maxDevices=5', () => {
+    const match = adminCode.match(/clinic:\s*\{[^}]*maxDevices:\s*5/);
+    assert(match, 'admin clinic debe tener maxDevices: 5');
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Bloque 92: G2 — Tests límites por plan (B1-B4)
+// ══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 92: G2 — Límites por plan ────────────────────────');
+
+test('G2 — addWorkplace respeta PRICING.workplaces', () => {
+    assert(registroCode.includes('PRICING[selectedPlan].workplaces') || registroCode.includes('plan.workplaces'), 'addWorkplace debe consultar workplaces del plan');
+});
+
+test('G2 — _applyStep4PlanRestrictions oculta color si no pdfColor', () => {
+    assert(registroCode.includes("plan.pdfColor ? '' : 'none'"), 'Step4 debe ocultar color basado en pdfColor');
+});
+
+test('G2 — _applyStep4PlanRestrictions oculta logo si no pdfLogo', () => {
+    assert(registroCode.includes("plan.pdfLogo ? '' : 'none'"), 'Step4 debe ocultar logo basado en pdfLogo');
+});
+
+test('G2 — Estudios limitados a 3 en NORMAL', () => {
+    assert(registroCode.includes("selectedPlan === 'NORMAL' && selectedEstudios.length >= 3"), 'toggleEstudio debe limitar a 3 en NORMAL');
+});
+
+test('G2 — _applyStep3PlanRestrictions existe y usa workplaces', () => {
+    assert(registroCode.includes('function _applyStep3PlanRestrictions'), 'Debe existir _applyStep3PlanRestrictions');
+    assert(registroCode.includes('PRICING[selectedPlan].workplaces'), 'Debe consultar workplaces');
+});
+
+test('G2 — Contador de estudios existe para NORMAL', () => {
+    assert(registroCode.includes("estudioCounter"), 'Debe existir contador de estudios');
+});
+
+test('G2 — NORMAL no muestra botón Seleccionar todos', () => {
+    assert(registroCode.includes("if (selectedPlan === 'NORMAL') return;"), 'NORMAL no debe tener botón seleccionar todos');
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Bloque 93: G3 — Tests degradación trial→normal (C3)
+// ══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 93: G3 — Degradación trial→normal ────────────────');
+
+const licenseCode = fs.readFileSync(path.join(root, 'src/js/features/licenseManager.js'), 'utf-8');
+
+test('G3 — licenseManager detecta EXPIRED + trial', () => {
+    assert(licenseCode.includes("result.code === 'EXPIRED' && result.plan === 'trial'"), 'Debe detectar trial expirado');
+});
+
+test('G3 — Degrada CLIENT_CONFIG.type a NORMAL', () => {
+    assert(licenseCode.includes("CLIENT_CONFIG.type = 'NORMAL'"), 'Debe degradar type a NORMAL');
+});
+
+test('G3 — Degrada hasProMode a false', () => {
+    assert(licenseCode.includes("CLIENT_CONFIG.hasProMode = false"), 'Debe desactivar hasProMode');
+});
+
+test('G3 — Degrada maxDevices a 1', () => {
+    assert(licenseCode.includes("CLIENT_CONFIG.maxDevices = 1"), 'Debe limitar maxDevices a 1');
+});
+
+test('G3 — Persiste degradación en localStorage', () => {
+    assert(licenseCode.includes("localStorage.setItem('client_config_stored'"), 'Debe persistir en localStorage');
+});
+
+test('G3 — Muestra toast de degradación', () => {
+    assert(licenseCode.includes("Tu período de prueba finalizó"), 'Debe mostrar toast informativo');
+});
+
+test('G3 — No bloquea UI (retorna _lmValidated = true)', () => {
+    const match = licenseCode.match(/plan === 'trial'\)\s*\{[\s\S]*?_lmValidated = true/);
+    assert(match, 'Debe setear _lmValidated = true para no bloquear');
+});
+
+test('G3 — Sync admin_plans_config existe en registro', () => {
+    assert(registroCode.includes('_syncAdminPlanConfig'), 'registro.html debe tener sync de planes del admin');
+});
+
+test('G3 — Sync admin_addons_config existe en registro', () => {
+    assert(registroCode.includes('_syncAdminAddonsConfig'), 'registro.html debe tener sync de addons del admin');
+});
+
 // ── Resumen ───────────────────────────────────────────────────────────────────
 console.log('\n─────────────────────────────────────────────────────────────────');
 console.log(`  Total: ${passed + failed} | ✅ Pasaron: ${passed} | ❌ Fallaron: ${failed}`);
