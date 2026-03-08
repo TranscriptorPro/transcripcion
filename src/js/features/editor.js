@@ -306,6 +306,13 @@ if (insertTableBtn && editor) {
         ed.innerHTML = snap.html;
         ed.dispatchEvent(new Event('input', { bubbles: true }));
         if (typeof window.updateWordCount === 'function') window.updateWordCount();
+
+        // Establecer estado correcto: si el snapshot era de estructurado → STRUCTURED
+        if (typeof updateButtonsVisibility === 'function') {
+            const isStructured = snap.source === 'structuring' || (snap.label && /estructurad|structured/i.test(snap.label));
+            updateButtonsVisibility(isStructured ? 'STRUCTURED' : 'TRANSCRIBED');
+        }
+
         if (typeof showToast === 'function') {
             const date = new Date(snap.ts);
             const timeStr = date.toLocaleString('es-AR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
