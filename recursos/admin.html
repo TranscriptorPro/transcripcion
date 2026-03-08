@@ -2521,7 +2521,7 @@
                 Estado: 'trial',
                 Fecha_Registro: '2026-02-15',
                 Fecha_Vencimiento: '2026-02-22',
-                Devices_Max: 2,
+                Devices_Max: 3,
                 Usage_Count: 5,
                 Notas_Admin: 'Usuario de prueba - trial activo'
             },
@@ -2535,7 +2535,7 @@
                 Estado: 'active',
                 Fecha_Registro: '2026-01-10',
                 Fecha_Vencimiento: '2026-12-31',
-                Devices_Max: 5,
+                Devices_Max: 3,
                 Usage_Count: 127,
                 Notas_Admin: 'Cliente pagado - plan anual'
             },
@@ -2549,7 +2549,7 @@
                 Estado: 'expired',
                 Fecha_Registro: '2026-01-20',
                 Fecha_Vencimiento: '2026-01-27',
-                Devices_Max: 2,
+                Devices_Max: 3,
                 Usage_Count: 23,
                 Notas_Admin: 'Trial expirado - seguimiento pendiente'
             }
@@ -3551,7 +3551,7 @@
                 Plan:              'pro',
                 Estado:            'active',
                 Fecha_Vencimiento: formattedDate,
-                Devices_Max:       5,
+                Devices_Max:       3,
                 Notas_Admin:       `Activado manualmente el ${new Date().toISOString().split('T')[0]}`
             };
 
@@ -3909,7 +3909,7 @@
         };
 
         // ── Dispositivos por plan ──
-        const DEVICES_POR_PLAN = { NORMAL: 2, PRO: 5, CLINIC: 999, TRIAL: 2, GIFT: 10 };
+        const DEVICES_POR_PLAN = { NORMAL: 1, PRO: 3, CLINIC: 5, TRIAL: 3, GIFT: 10 };
 
         // ========== EDITAR USUARIO ==========
 
@@ -4296,11 +4296,11 @@
             const proSel = document.getElementById('giftProMode');
             const durSel = document.getElementById('giftDuration');
             const defaults = {
-                TRIAL:  { devices: '2',  pro: 'true',  duration: '15' },
-                NORMAL: { devices: '2',  pro: 'false', duration: '365' },
-                PRO:    { devices: '5',  pro: 'true',  duration: '365' },
+                TRIAL:  { devices: '3',  pro: 'true',  duration: '15' },
+                NORMAL: { devices: '1',  pro: 'false', duration: '365' },
+                PRO:    { devices: '3',  pro: 'true',  duration: '365' },
                 GIFT:   { devices: '10', pro: 'true',  duration: '365' },
-                CLINIC: { devices: '999', pro: 'true', duration: '365' }
+                CLINIC: { devices: '5',  pro: 'true', duration: '365' }
             };
             const d = defaults[plan] || defaults.GIFT;
             devSel.value = d.devices;
@@ -5733,6 +5733,11 @@
                 <div style="margin:.5rem 0;">${estudiosHtml || '<span style="color:#94a3b8;">Ninguno seleccionado</span>'}</div>
 
                 ${reg.Notas ? `<h4 style="font-size:.9rem;margin-top:1rem;">💬 Notas</h4><p style="font-size:.85rem;background:#fff7ed;padding:.6rem;border-radius:8px;border:1px solid #fed7aa;">${escapeHtml(reg.Notas)}</p>` : ''}
+
+                ${_renderSocialSection(reg)}
+
+                ${_renderFinancialSection(reg)}
+
                 <p style="font-size:.73rem;color:#94a3b8;margin-top:1.2rem;border-top:1px solid #e2e8f0;padding-top:.5rem;">🆔 ${escapeHtml(reg.ID_Registro)} — Origen: ${escapeHtml(reg.Origen || '—')}</p>
             `;
 
@@ -5751,6 +5756,49 @@
         let _apvFirmaEditor = null;
         let _apvProfEditor = null;
         let _approveActiveInstWp = 0;  // WP activo para preview
+
+        function _renderSocialSection(reg) {
+            let sm = {};
+            try { sm = JSON.parse(reg.Social_Media || '{}'); } catch(_) {}
+            const entries = Object.entries(sm).filter(([,v]) => v);
+            if (!entries.length) return '';
+            const icons = { facebook: '📘', instagram: '📷', youtube: '🎬', x: '𝕏', whatsapp: '📱' };
+            const rows = entries.map(([k, v]) => `<dt>${icons[k] || '🌐'} ${escapeHtml(k)}</dt><dd>${escapeHtml(v)}</dd>`).join('');
+            const showPhone = reg.Show_Phone === 'true' ? '✅' : '❌';
+            const showEmail = reg.Show_Email === 'true' ? '✅' : '❌';
+            const showSocial = reg.Show_Social === 'true' ? '✅' : '❌';
+            return `<h4 style="font-size:.9rem;margin-top:1rem;">🌐 Redes Sociales</h4>
+                <dl class="reg-card-info" style="margin:.5rem 0;">${rows}</dl>
+                <div style="font-size:.8rem;color:#64748b;display:flex;gap:12px;flex-wrap:wrap;">
+                    <span>${showPhone} Mostrar teléfono</span>
+                    <span>${showEmail} Mostrar email</span>
+                    <span>${showSocial} Mostrar redes</span>
+                </div>`;
+        }
+
+        function _renderFinancialSection(reg) {
+            if (!reg.Plan_Solicitado && !reg.License_Amount) return '';
+            const cycle = reg.Billing_Cycle === 'annual' ? 'Anual' : 'Mensual';
+            let addonsHtml = '';
+            try {
+                const addons = JSON.parse(reg.Addons_Cart || '{}');
+                const items = [];
+                if (addons.templates?.length) items.push(`${addons.templates.length} plantilla(s) extra`);
+                if (addons.packs?.length) items.push(`${addons.packs.length} pack(s)`);
+                if (addons.extraDevices) items.push(`+${addons.extraDevices} dispositivo(s)`);
+                if (addons.extraWorkplaces) items.push(`+${addons.extraWorkplaces} lugar(es)`);
+                if (items.length) addonsHtml = `<dt>🛒 Add-ons</dt><dd>${escapeHtml(items.join(', '))}</dd>`;
+            } catch(_) {}
+            return `<h4 style="font-size:.9rem;margin-top:1rem;">💰 Datos Financieros</h4>
+                <dl class="reg-card-info" style="margin:.5rem 0;">
+                    <dt>📋 Plan</dt><dd>${escapeHtml(reg.Plan_Solicitado || '—')}</dd>
+                    <dt>🔄 Ciclo</dt><dd>${escapeHtml(cycle)}</dd>
+                    <dt>💳 Licencia</dt><dd>$${escapeHtml(String(reg.License_Amount || '—'))}</dd>
+                    <dt>📅 Suscripción</dt><dd>$${escapeHtml(String(reg.Subscription_Amount || '—'))}</dd>
+                    <dt>💵 Total hoy</dt><dd><strong>$${escapeHtml(String(reg.Total_Hoy || '—'))}</strong></dd>
+                    ${addonsHtml}
+                </dl>`;
+        }
 
         function _updateApprovePreview() {
             const simBox = document.getElementById('apvSimBox');

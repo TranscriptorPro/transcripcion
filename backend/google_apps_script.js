@@ -1256,6 +1256,8 @@ function doPost(e) {
           'ID_Registro', 'Nombre', 'Matricula', 'Email', 'Telefono',
           'Especialidades', 'Estudios', 'Workplace_Data', 'Workplace_Logo',
           'Extra_Workplaces', 'Header_Color', 'Footer_Text', 'Firma', 'Pro_Logo',
+          'Social_Media', 'Show_Phone', 'Show_Email', 'Show_Social',
+          'Billing_Cycle', 'License_Amount', 'Subscription_Amount', 'Total_Hoy',
           'Notas', 'Fecha_Registro', 'Estado', 'Origen', 'ID_Medico_Asignado', 'Motivo_Rechazo',
           'Plan_Solicitado', 'Addons_Cart', 'Profesionales'
         ]);
@@ -1281,9 +1283,9 @@ function doPost(e) {
         }
       }
 
-      // Agregar columnas Plan_Solicitado, Addons_Cart y Profesionales si no existen (sheets pre-existentes)
+      // Agregar columnas nuevas si no existen (sheets pre-existentes)
       const workingHeaders = existingHeaders.slice();
-      ['Plan_Solicitado', 'Addons_Cart', 'Profesionales'].forEach(function(col) {
+      ['Social_Media','Show_Phone','Show_Email','Show_Social','Billing_Cycle','License_Amount','Subscription_Amount','Total_Hoy','Plan_Solicitado','Addons_Cart','Profesionales'].forEach(function(col) {
         if (!workingHeaders.includes(col)) {
           regSheet.getRange(1, workingHeaders.length + 1).setValue(col);
           workingHeaders.push(col);
@@ -1357,9 +1359,17 @@ function doPost(e) {
         Workplace_Logo:     wpLogoRef,
         Extra_Workplaces:   extraWpsClean,
         Header_Color:       payload.headerColor || '#1a56a0',
-        Footer_Text:        payload.footerText || '',
+        Footer_Text:        payload.footerText || wpClean.footer || '',
         Firma:              firma,
         Pro_Logo:           proLogo,
+        Social_Media:       JSON.stringify(payload.socialMedia || {}),
+        Show_Phone:         payload.showPhone === true || payload.showPhone === 'true' ? 'true' : 'false',
+        Show_Email:         payload.showEmail === true || payload.showEmail === 'true' ? 'true' : 'false',
+        Show_Social:        payload.showSocial === true || payload.showSocial === 'true' ? 'true' : 'false',
+        Billing_Cycle:      payload.billingCycle || '',
+        License_Amount:     payload.licenseAmount || '',
+        Subscription_Amount: payload.subscriptionAmount || '',
+        Total_Hoy:          payload.totalHoy || '',
         Notas:              payload.notas || '',
         Fecha_Registro:     payload.fechaRegistro || new Date().toISOString(),
         Estado:             'pendiente',

@@ -2648,9 +2648,9 @@
             btn.disabled = true;
             btn.textContent = '⏳ Enviando...';
 
-            // Collect all workplaces from accordion
+            // Collect all workplaces from accordion (only from workplacesContainer)
             const allWorkplaces = [];
-            document.querySelectorAll('.wp-accordion').forEach(acc => {
+            document.querySelectorAll('#workplacesContainer .wp-accordion').forEach(acc => {
                 const idx = acc.dataset.wpIndex;
                 allWorkplaces.push({
                     name:    (document.getElementById('regWpName' + idx) || {}).value || '',
@@ -2700,6 +2700,9 @@
                     templates: cartAddons.templates.map(t => ({ key: t.key, name: t.name, price: t.price })),
                     packs: cartAddons.packs.map(p => ({ category: p.category, price: p.price })),
                     extraDevices: cartAddons.extraDevices,
+                    extraWorkplaces: cartAddons.extraWorkplaces,
+                    extraProfessionals: cartAddons.extraProfessionals,
+                    branding: cartAddons.branding,
                     addonTotal: addonTotal
                 }),
                 licenseAmount: plan.license,
