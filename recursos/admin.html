@@ -3605,14 +3605,16 @@
         // ========== NUEVO USUARIO ==========
 
         const ESPECIALIDADES = [
+            'Cardiología',
             'Neumología',
             'Oftalmología',
             'Imágenes',
             'Endoscopía',
-            'Cardiología',
+            'Neurología',
+            'ORL',
             'Ginecología',
-            'General',
-            'Quirúrgico'
+            'Quirúrgico',
+            'General'
         ];
 
         const ESTUDIOS_POR_ESPECIALIDAD = {
@@ -3909,6 +3911,10 @@
             if (cfB2) { cfB2.value = user.API_Key_B2 || ''; cfB2.readOnly = true; cfB2.style.background = '#f8fafc'; cfB2.style.opacity = '0.75'; cfB2.style.cursor = 'default'; }
             document.getElementById('cfLinkResult').style.display = 'none';
 
+            // Mostrar sección de API keys (visible en modo normal)
+            const cfApiKeySectionNormal = document.getElementById('cfApiKeySection');
+            if (cfApiKeySectionNormal) cfApiKeySectionNormal.style.display = 'flex';
+
             // Botón
             const btn = document.getElementById('cfBtnGenerate');
             btn.textContent = '🔗 Generar Link';
@@ -3998,6 +4004,9 @@
             cfApiKeyInputGift.style.background = '';
             cfApiKeyInputGift.style.opacity = '';
             cfApiKeyInputGift.style.cursor = '';
+            // Ocultar sección de API keys — se agregan automáticamente al generar el link
+            const cfApiKeySection = document.getElementById('cfApiKeySection');
+            if (cfApiKeySection) cfApiKeySection.style.display = 'none';
             const cfHintGift = document.getElementById('cfApiKeyHint');
             if (cfHintGift) cfHintGift.textContent = cfApiKeyInputGift.value
                 ? '✅ Pre-llenada desde Mis Keys — podés cambiarla si necesitás'
@@ -7197,7 +7206,7 @@
                 </div>
 
                 <!-- ═══ SECCIÓN COMÚN: API Key ═══ -->
-                <div style="display:flex;flex-direction:column;gap:.8rem;margin-bottom:1rem;">
+                <div id="cfApiKeySection" style="display:flex;flex-direction:column;gap:.8rem;margin-bottom:1rem;">
                     <div>
                         <label style="font-size:.83rem;color:#64748b;font-weight:600;">🔑 API Key de Groq <span id="cfApiKeyLabel">(para este usuario)</span></label>
                         <input type="text" id="cfApiKey" placeholder="gsk_..." style="width:100%;margin-top:4px;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.85rem;font-family:monospace;" autocapitalize="none" autocorrect="off" spellcheck="false">
