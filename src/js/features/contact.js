@@ -29,7 +29,7 @@ window._retryPendingContacts = async function () {
                     action: 'send_email',
                     to: 'soporte@transcriptorpro.com',
                     subject: `[Contacto pendiente] ${msg.motivo}`,
-                    htmlBody: `<p><b>Motivo:</b> ${msg.motivo}</p><p>${msg.detalle}</p><p><small>${msg.nombre} — Mat. ${msg.mat} — ${msg.date}</small></p>`,
+                    htmlBody: `<p><b>Motivo:</b> ${(msg.motivo||"").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</p><p>${(msg.detalle||"").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</p><p><small>${(msg.nombre||"").replace(/</g,"&lt;")} — Mat. ${(msg.mat||"").replace(/</g,"&lt;")} — ${msg.date}</small></p>`,
                     senderName: `TranscriptorPro — ${msg.nombre}`
                 })
             });
@@ -59,19 +59,28 @@ window.initContact = function () {
     btn.style.display = '';
 
     // Intentar reenviar contactos pendientes de sesiones anteriores
-    // Reintento inicial a los 10s, luego cada 5 minutos si quedaron pendientes
+    // Reintento inicial a los 10s, luego cada 5 minutos si quedaron pendientes (máximo 10 reintentos)
     let _contactRetryTimer = null;
+    let _contactRetryCount = 0;
+    const _CONTACT_MAX_RETRIES = 10;
     function _scheduleContactRetry(delay) {
         if (_contactRetryTimer) clearTimeout(_contactRetryTimer);
+        if (_contactRetryCount >= _CONTACT_MAX_RETRIES) {
+            console.info('[Contact] Máximo de reintentos alcanzado (' + _CONTACT_MAX_RETRIES + ')');
+            return;
+        }
         _contactRetryTimer = setTimeout(async () => {
             if (typeof _retryPendingContacts === 'function') await _retryPendingContacts();
+            _contactRetryCount++;
             // Si aún quedan pendientes, reintentar en 5 minutos
             let pending;
             try {
                 pending = (typeof appDB !== 'undefined' ? await appDB.get('pending_contacts') : null)
                     || JSON.parse(localStorage.getItem('pending_contacts') || '[]');
             } catch(_) { pending = []; }
-            if (pending && pending.length > 0) _scheduleContactRetry(5 * 60 * 1000);
+            if (pending && pending.length > 0 && _contactRetryCount < _CONTACT_MAX_RETRIES) {
+                _scheduleContactRetry(5 * 60 * 1000);
+            }
         }, delay);
     }
     _scheduleContactRetry(10000);
@@ -150,19 +159,21 @@ window.initContact = function () {
             if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = '⏳ Enviando...'; }
 
             const subject = `[TranscriptorPro] ${motivo}`;
+            const _esc = typeof escapeHtml === 'function' ? escapeHtml : (s => (s||"").toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"));
+            const safeDetalle = detalle.split('\n').map(l => l.trim() === '' ? '<br>' : `<p style="margin:0 0 8px;line-height:1.5;color:#1e293b;">${_esc(l)}</p>`).join('');
             const htmlBody = `
                 <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
                     <div style="background:#0f766e;color:white;padding:16px 20px;border-radius:10px 10px 0 0;">
                         <h2 style="margin:0;font-size:1.1rem;">📧 Contacto desde TranscriptorPro</h2>
                     </div>
                     <div style="padding:20px;background:#ffffff;border:1px solid #e2e8f0;border-top:none;">
-                        <p style="margin:0 0 4px;font-size:.85rem;color:#64748b;"><strong>Motivo:</strong> ${motivo}</p>
+                        <p style="margin:0 0 4px;font-size:.85rem;color:#64748b;"><strong>Motivo:</strong> ${_esc(motivo)}</p>
                         <hr style="border:none;border-top:1px solid #e2e8f0;margin:10px 0;">
-                        ${detalle.split('\n').map(l => l.trim() === '' ? '<br>' : `<p style="margin:0 0 8px;line-height:1.5;color:#1e293b;">${l}</p>`).join('')}
+                        ${safeDetalle}
                     </div>
                     <div style="padding:12px 20px;background:#f8fafc;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;font-size:.78rem;color:#64748b;">
-                        <strong>Dr./Dra. ${nombre}</strong> | Mat. ${mat}<br>
-                        ID: ${medicoId} | Plan: ${plan} | Device: ${deviceId}
+                        <strong>Dr./Dra. ${_esc(nombre)}</strong> | Mat. ${_esc(mat)}<br>
+                        ID: ${_esc(medicoId)} | Plan: ${_esc(plan)} | Device: ${_esc(deviceId)}
                     </div>
                 </div>`;
 

@@ -448,10 +448,25 @@ window.initBusinessSuite = async function () {
         return; // la inicialización se completa dentro del handler async
     }
 
-    const isAdmin = (typeof CLIENT_CONFIG === 'undefined' || CLIENT_CONFIG.type === 'ADMIN');
+    const isAdmin = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'ADMIN');
 
     if (isAdmin) {
-        _initAdmin();
+        // Verificar que realmente hay config almacenada para confirmar que es ADMIN legítimo
+        const storedConfig = localStorage.getItem('client_config_stored');
+        if (!storedConfig && typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'ADMIN') {
+            // CLIENT_CONFIG es ADMIN por defecto (no hay config guardada) — es el admin legítimo
+            _initAdmin();
+        } else if (storedConfig) {
+            try {
+                const cfg = JSON.parse(storedConfig);
+                if (cfg.type === 'ADMIN') _initAdmin();
+                else _initClient();
+            } catch (_) {
+                _initClient(); // Config corrupta → modo cliente seguro
+            }
+        } else {
+            _initAdmin();
+        }
     } else {
         _initClient();
     }
@@ -480,7 +495,7 @@ async function _handleFactorySetup(medicoId) {
         // Generar device_id si no existe
         let deviceId = localStorage.getItem('device_id');
         if (!deviceId) {
-            deviceId = 'dev_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
+            deviceId = 'dev_' + (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now() + '_' + Math.random().toString(36).slice(2, 10));
             if (typeof appDB !== 'undefined') appDB.set('device_id', deviceId);
             localStorage.setItem('device_id', deviceId);
         }

@@ -132,32 +132,41 @@
             return;
         }
 
-        // 1. Clear previous skin
-        _clearSkinClasses();
-        _removeOldSkinCSS();
+        try {
+            // 1. Clear previous skin
+            _clearSkinClasses();
+            _removeOldSkinCSS();
 
-        // 2. Apply new body class (skip for default)
-        if (skin.id !== 'default') {
-            document.body.classList.add('skin-' + skin.id);
+            // 2. Apply new body class (skip for default)
+            if (skin.id !== 'default') {
+                document.body.classList.add('skin-' + skin.id);
+            }
+
+            // 3. Inject CSS
+            await _injectSkinCSS(skin);
+
+            // 4. Persist
+            _currentSkinId = skin.id;
+            if (save) {
+                try { localStorage.setItem(LS_KEY, skin.id); } catch (_) {}
+            }
+
+            // 5. Update selector UI if present
+            _updateSelectorUI(skin.id);
+
+            // 6. Dispatch custom event for other modules
+            document.dispatchEvent(new CustomEvent('skinChanged', { detail: { skinId: skin.id, skin } }));
+
+            console.log('[ThemeManager] Skin aplicado:', skin.name);
+        } catch (err) {
+            console.error('[ThemeManager] Error aplicando skin:', err);
+            // Fallback a default si falla
+            _clearSkinClasses();
+            _removeOldSkinCSS();
+            _currentSkinId = 'default';
+        } finally {
+            _applying = false;
         }
-
-        // 3. Inject CSS
-        await _injectSkinCSS(skin);
-
-        // 4. Persist
-        _currentSkinId = skin.id;
-        if (save) {
-            try { localStorage.setItem(LS_KEY, skin.id); } catch (_) {}
-        }
-
-        // 5. Update selector UI if present
-        _updateSelectorUI(skin.id);
-
-        // 6. Dispatch custom event for other modules
-        document.dispatchEvent(new CustomEvent('skinChanged', { detail: { skinId: skin.id, skin } }));
-
-        console.log('[ThemeManager] Skin aplicado:', skin.name);
-        _applying = false;
     }
 
     /** Get current skin id */

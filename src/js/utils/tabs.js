@@ -23,8 +23,9 @@ window.createTabs = function () {
 
     if (window.transcriptions.length > 0) {
         const editor = document.getElementById('editor');
-        if (editor) {
-            editor.innerHTML = window.transcriptions[window.activeTabIndex].text;
+        if (editor && window.transcriptions[window.activeTabIndex]) {
+            const rawText = window.transcriptions[window.activeTabIndex].text || '';
+            editor.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(rawText) : rawText;
             if (typeof updateWordCount === 'function') updateWordCount();
         }
     }
@@ -68,7 +69,8 @@ window.switchTab = function (index) {
         }
 
         window.activeTabIndex = index;
-        editor.innerHTML = window.transcriptions[index].text;
+        const rawText = window.transcriptions[index].text || '';
+        editor.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(rawText) : rawText;
 
         if (typeof updateWordCount === 'function') updateWordCount();
         createTabs(); // force re-render tabs UI
@@ -119,7 +121,8 @@ window.closeTab = function (index) {
         // Force the text update of the new active tab
         const editor = document.getElementById('editor');
         if (editor && window.transcriptions[window.activeTabIndex]) {
-            editor.innerHTML = window.transcriptions[window.activeTabIndex].text;
+            const rawText = window.transcriptions[window.activeTabIndex].text || '';
+            editor.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(rawText) : rawText;
         }
     }
 

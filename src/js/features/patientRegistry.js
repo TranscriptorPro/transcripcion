@@ -136,8 +136,9 @@ window.initPatientRegistrySearch = function() {
 
     function showResults(results) {
         if (!results.length) { hideDropdown(); return; }
+        const esc = typeof escapeHtml === 'function' ? escapeHtml : (s => (s||"").toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"));
         dropdown.innerHTML = results.map((p, i) => {
-            const label = p.name + (p.dni ? ` — DNI ${p.dni}` : '') + (p.age ? `, ${p.age}a` : '');
+            const label = esc(p.name) + (p.dni ? ` — DNI ${esc(p.dni)}` : '') + (p.age ? `, ${esc(String(p.age))}a` : '');
             return `<div data-idx="${i}" style="padding:0.5rem 0.85rem;cursor:pointer;font-size:0.82rem;border-bottom:1px solid var(--border);"
                 onmouseenter="this.style.background='var(--bg-hover,#2a2a2a)'"
                 onmouseleave="this.style.background=''">${label}</div>`;
@@ -226,7 +227,7 @@ window.initPatientRegistryPanel = function () {
         tbody.innerHTML = reg.map((p, i) => {
             const safeName = (p.name || '—').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
             const safeDni  = (p.dni  || '—').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-            const safeAge  = p.age ? String(p.age).replace(/&/g,'&amp;').replace(/</g,'&lt;') + ' años' : '—';
+            const safeAge  = p.age ? String(p.age).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') + ' años' : '—';
             // Contar informes del paciente en el historial
             const reportCount = (typeof getPatientReports === 'function')
                 ? getPatientReports(p.dni || p.name).length : 0;

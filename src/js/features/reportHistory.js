@@ -62,20 +62,29 @@ window.saveReportToHistory = function (data) {
     const history = _getReportHistory();
     history.unshift(entry);
 
+    // Limitar historial a máximo 200 informes para evitar crecimiento indefinido
+    const REPORT_HISTORY_MAX = 200;
+    while (history.length > REPORT_HISTORY_MAX) history.pop();
+
     // Intentar guardar; si localStorage está lleno, eliminar los más antiguos
     try {
         _setReportHistory(history);
     } catch (e) {
         // QuotaExceededError — ir eliminando los más viejos hasta que quepa
         let trimmed = history;
+        let saved = false;
         while (trimmed.length > 1) {
             trimmed.pop();
             try {
                 _setReportHistory(trimmed);
                 if (typeof showToast === 'function')
                     showToast('⚠️ Almacenamiento lleno. Se eliminaron informes antiguos.', 'warning');
+                saved = true;
                 break;
             } catch (_) { /* sigue eliminando */ }
+        }
+        if (!saved && typeof showToast === 'function') {
+            showToast('❌ No se pudo guardar el informe: almacenamiento lleno.', 'error');
         }
     }
     return entry.id;
@@ -242,7 +251,10 @@ window.viewReport = function (reportId) {
 
     title.textContent = `${report.patientName || 'Sin nombre'} — ${report.templateName || report.templateKey}`;
     meta.textContent  = `${dateStr} · ${report.fileName}`;
-    content.innerHTML = report.htmlContent;
+    // Sanitizar HTML del informe para prevenir XSS
+    content.innerHTML = typeof DOMPurify !== 'undefined'
+        ? DOMPurify.sanitize(report.htmlContent)
+        : report.htmlContent.replace(/<script[\s\S]*?<\/script>/gi, '');
 
     // Botón re-exportar PDF
     const btnReExport = document.getElementById('btnReExportPdf');

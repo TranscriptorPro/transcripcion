@@ -51,7 +51,7 @@ function _lmGetDeviceId() {
     if (_lmDeviceCache) return _lmDeviceCache;
     let id = localStorage.getItem('device_id') || null;
     if (!id) {
-        id = 'dev_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
+        id = 'dev_' + (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now() + '_' + Math.random().toString(36).slice(2, 10));
         _lmDeviceCache = id;
         if (typeof appDB !== 'undefined') appDB.set('device_id', id);
         else localStorage.setItem('device_id', id);
@@ -119,6 +119,14 @@ async function _lmCallValidate() {
         // Si no hay conexión, usar cache si existe
         const cached = _lmGetCache();
         if (cached) {
+            // Validar si la licencia cacheada ya expiró por fecha
+            if (cached.fecha_vencimiento) {
+                const expDate = new Date(cached.fecha_vencimiento);
+                if (!isNaN(expDate) && expDate < new Date()) {
+                    console.warn('[licenseManager] Cache offline: licencia vencida por fecha');
+                    return { error: 'Licencia expirada (offline)', code: 'EXPIRED', plan: cached.plan || 'unknown' };
+                }
+            }
             console.info('[licenseManager] Usando cache offline');
             return cached;
         }
@@ -218,7 +226,8 @@ window.getLicenseData = function () {
 function _lmShowBlockedUI(result) {
     const code = result.code || 'UNKNOWN';
     let title = '⚠️ Licencia no válida';
-    let message = result.error || 'No se pudo verificar la licencia.';
+    const _esc = typeof escapeHtml === 'function' ? escapeHtml : (s => (s||"").toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"));
+    let message = _esc(result.error || 'No se pudo verificar la licencia.');
     let showContact = true;
 
     switch (code) {
