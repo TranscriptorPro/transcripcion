@@ -697,6 +697,22 @@
             margin-left: 4px;
             font-weight: 700;
         }
+        .curr-btn {
+            padding: 5px 14px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: var(--card);
+            cursor: pointer;
+            font-size: .82rem;
+            font-family: inherit;
+            transition: all .2s;
+            margin: 0 2px;
+        }
+        .curr-btn.active {
+            border-color: var(--primary);
+            background: #f0fdfa;
+            font-weight: 600;
+        }
 
         /* ── Mobile ── */
         @media (max-width: 600px) {
@@ -819,6 +835,14 @@
 
                 <div style="text-align:center;margin-top:1rem;">
                     <small style="color:var(--text-light);">💡 Todos los planes incluyen actualizaciones gratuitas de por vida. La suscripción cubre: acceso a IA, soporte técnico y almacenamiento.</small>
+                </div>
+
+                <!-- Selector de moneda -->
+                <div style="text-align:center;margin-top:.8rem;" id="currencySelector">
+                    <span style="font-size:.85rem;color:var(--text-secondary);margin-right:.5rem;">Moneda:</span>
+                    <button type="button" class="curr-btn active" data-curr="USD" onclick="setCurrency('USD')">🇺🇸 USD</button>
+                    <button type="button" class="curr-btn" data-curr="ARS" onclick="setCurrency('ARS')">🇦🇷 ARS</button>
+                    <span id="arsRateLabel" style="font-size:.75rem;color:var(--text-light);margin-left:.6rem;display:none;"></span>
                 </div>
 
                 <div class="btn-row" style="justify-content:center;">
@@ -1450,6 +1474,8 @@
         // ── Plan & Cart State ──
         let selectedPlan = null;
         let billingCycle = 'monthly'; // 'monthly' or 'annual'
+        let selectedCurrency = 'USD';
+        let arsRate = null; // tipo de cambio ARS/USD (blue venta)
         let cartAddons = {
             templates: [],   // { key, name, category, price }
             packs: [],       // { category, templates: [...], price }
@@ -1458,6 +1484,86 @@
             extraProfessionals: 0,
             branding: false
         };
+
+        // ── Currency (E1-E3) ────────────────────────────────────────────────────
+        async function _fetchArsRate() {
+            try {
+                const res = await fetch('https://api.bluelytics.com.ar/v2/latest');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                arsRate = data.blue?.value_sell || data.blue?.value_avg || null;
+                if (arsRate) {
+                    const label = document.getElementById('arsRateLabel');
+                    if (label) { label.textContent = `(1 USD ≈ ${arsRate} ARS)`; label.style.display = ''; }
+                }
+            } catch(e) {
+                console.warn('[registro] No se pudo obtener tipo de cambio ARS:', e.message);
+                arsRate = null;
+            }
+        }
+
+        function _formatPrice(usdAmount) {
+            if (selectedCurrency === 'ARS' && arsRate) {
+                const ars = (usdAmount * arsRate);
+                return 'AR$' + ars.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            }
+            return '$' + usdAmount.toFixed(2);
+        }
+
+        function _formatPriceSub(usdAmount, period) {
+            if (selectedCurrency === 'ARS' && arsRate) {
+                const ars = (usdAmount * arsRate);
+                return 'AR$' + ars.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + period;
+            }
+            return '$' + usdAmount + period;
+        }
+
+        function setCurrency(curr) {
+            selectedCurrency = curr;
+            document.querySelectorAll('.curr-btn').forEach(b => b.classList.toggle('active', b.dataset.curr === curr));
+            if (curr === 'ARS' && !arsRate) {
+                _fetchArsRate().then(_refreshAllPrices);
+            } else {
+                _refreshAllPrices();
+            }
+        }
+
+        function _refreshAllPrices() {
+            // Tarjetas paso 0
+            _updatePricingCards();
+            // Carrito paso 5
+            if (typeof updateCartSummary === 'function') updateCartSummary();
+            // Resumen paso 6
+            if (typeof renderInvestmentSummary === 'function' && selectedPlan) renderInvestmentSummary();
+        }
+
+        function _updatePricingCards() {
+            const cards = { NORMAL: PRICING.NORMAL, PRO: PRICING.PRO, CLINIC: PRICING.CLINIC };
+            for (const [key, plan] of Object.entries(cards)) {
+                const card = document.querySelector(`.pricing-card[data-plan="${key}"]`);
+                if (!card) continue;
+                const priceEl = card.querySelector('.pricing-price');
+                if (priceEl) {
+                    if (selectedCurrency === 'ARS' && arsRate) {
+                        const ars = Math.round(plan.license * arsRate);
+                        priceEl.innerHTML = `AR$${ars.toLocaleString('es-AR')}`;
+                    } else {
+                        const int = Math.floor(plan.license);
+                        const dec = ((plan.license % 1) * 100).toFixed(0).padStart(2, '0');
+                        priceEl.innerHTML = `$${int}<small>.${dec}</small>`;
+                    }
+                }
+                const subEl = card.querySelector('.pricing-sub');
+                if (subEl) {
+                    if (selectedCurrency === 'ARS' && arsRate) {
+                        const mo = Math.round(plan.monthly * arsRate).toLocaleString('es-AR');
+                        subEl.textContent = `pago único + AR$${mo}/mes`;
+                    } else {
+                        subEl.textContent = `pago único + $${plan.monthly}/mes`;
+                    }
+                }
+            }
+        }
 
         // ── Plan Selection ──────────────────────────────────────────────────────
         function selectPlan(plan) {
@@ -1704,19 +1810,20 @@
 
         function updateCartSummary() {
             const items = [];
-            cartAddons.templates.forEach(t => items.push(`${t.name} — $${t.price}`));
-            cartAddons.packs.forEach(p => items.push(`📦 Pack ${p.category} — $${p.price}`));
+            const fp = _formatPrice;
+            cartAddons.templates.forEach(t => items.push(`${t.name} — ${fp(t.price)}`));
+            cartAddons.packs.forEach(p => items.push(`📦 Pack ${p.category} — ${fp(p.price)}`));
             if (cartAddons.extraDevices > 0) {
-                items.push(`+${cartAddons.extraDevices} dispositivo(s) — $${(cartAddons.extraDevices * ADDON_PRICES.device_extra).toFixed(2)}`);
+                items.push(`+${cartAddons.extraDevices} dispositivo(s) — ${fp(cartAddons.extraDevices * ADDON_PRICES.device_extra)}`);
             }
             if (cartAddons.extraWorkplaces > 0) {
-                items.push(`+${cartAddons.extraWorkplaces} lugar(es) de trabajo — $${(cartAddons.extraWorkplaces * ADDON_PRICES.workplace_extra).toFixed(2)}`);
+                items.push(`+${cartAddons.extraWorkplaces} lugar(es) de trabajo — ${fp(cartAddons.extraWorkplaces * ADDON_PRICES.workplace_extra)}`);
             }
             if (cartAddons.extraProfessionals > 0) {
-                items.push(`+${cartAddons.extraProfessionals} profesional(es) — $${(cartAddons.extraProfessionals * ADDON_PRICES.professional_extra).toFixed(2)}`);
+                items.push(`+${cartAddons.extraProfessionals} profesional(es) — ${fp(cartAddons.extraProfessionals * ADDON_PRICES.professional_extra)}`);
             }
             if (cartAddons.branding) {
-                items.push(`🎨 Pack Branding — $${_getBrandingPrice().toFixed(2)}`);
+                items.push(`🎨 Pack Branding — ${fp(_getBrandingPrice())}`);
             }
 
             const summaryEl = document.getElementById('cartSummaryItems');
@@ -1725,7 +1832,7 @@
             } else {
                 summaryEl.innerHTML = items.map(i => `<div style="padding:2px 0;">• ${i}</div>`).join('');
             }
-            document.getElementById('cartTotalAddons').textContent = '$' + getCartAddonTotal().toFixed(2);
+            document.getElementById('cartTotalAddons').textContent = fp(getCartAddonTotal());
         }
 
         // ── Investment Summary ──────────────────────────────────────────────────
@@ -1740,60 +1847,60 @@
         function renderInvestmentSummary() {
             if (!selectedPlan) return;
             const plan = PRICING[selectedPlan];
+            const fp = _formatPrice;
 
             // One-time items
             const oneTimeEl = document.getElementById('investOneTimeItems');
-            let oneTimeHtml = `<div class="invest-line"><span>Licencia Plan ${plan.label}</span><span>$${plan.license}</span></div>`;
+            let oneTimeHtml = `<div class="invest-line"><span>Licencia Plan ${plan.label}</span><span>${fp(plan.license)}</span></div>`;
 
             cartAddons.templates.forEach(t => {
-                oneTimeHtml += `<div class="invest-line"><span>📄 ${t.name}</span><span>$${t.price}</span></div>`;
+                oneTimeHtml += `<div class="invest-line"><span>📄 ${t.name}</span><span>${fp(t.price)}</span></div>`;
             });
             cartAddons.packs.forEach(p => {
-                oneTimeHtml += `<div class="invest-line"><span>📦 Pack ${p.category}</span><span>$${p.price}</span></div>`;
+                oneTimeHtml += `<div class="invest-line"><span>📦 Pack ${p.category}</span><span>${fp(p.price)}</span></div>`;
             });
             if (cartAddons.extraDevices > 0) {
-                const devCost = (cartAddons.extraDevices * ADDON_PRICES.device_extra).toFixed(2);
-                oneTimeHtml += `<div class="invest-line"><span>💻 +${cartAddons.extraDevices} dispositivo(s)</span><span>$${devCost}</span></div>`;
+                const devCost = cartAddons.extraDevices * ADDON_PRICES.device_extra;
+                oneTimeHtml += `<div class="invest-line"><span>💻 +${cartAddons.extraDevices} dispositivo(s)</span><span>${fp(devCost)}</span></div>`;
             }
             if (cartAddons.extraWorkplaces > 0) {
-                const wpCost = (cartAddons.extraWorkplaces * ADDON_PRICES.workplace_extra).toFixed(2);
-                oneTimeHtml += `<div class="invest-line"><span>🏥 +${cartAddons.extraWorkplaces} lugar(es) de trabajo</span><span>$${wpCost}</span></div>`;
+                const wpCost = cartAddons.extraWorkplaces * ADDON_PRICES.workplace_extra;
+                oneTimeHtml += `<div class="invest-line"><span>🏥 +${cartAddons.extraWorkplaces} lugar(es) de trabajo</span><span>${fp(wpCost)}</span></div>`;
             }
             if (cartAddons.extraProfessionals > 0) {
-                const proCost = (cartAddons.extraProfessionals * ADDON_PRICES.professional_extra).toFixed(2);
-                oneTimeHtml += `<div class="invest-line"><span>👨‍⚕️ +${cartAddons.extraProfessionals} profesional(es)</span><span>$${proCost}</span></div>`;
+                const proCost = cartAddons.extraProfessionals * ADDON_PRICES.professional_extra;
+                oneTimeHtml += `<div class="invest-line"><span>👨‍⚕️ +${cartAddons.extraProfessionals} profesional(es)</span><span>${fp(proCost)}</span></div>`;
             }
             if (cartAddons.branding) {
-                const brandCost = _getBrandingPrice().toFixed(2);
-                oneTimeHtml += `<div class="invest-line"><span>🎨 Branding personalizado</span><span>$${brandCost}</span></div>`;
+                oneTimeHtml += `<div class="invest-line"><span>🎨 Branding personalizado</span><span>${fp(_getBrandingPrice())}</span></div>`;
             }
             oneTimeEl.innerHTML = oneTimeHtml;
 
             const totalOneTime = plan.license + getCartAddonTotal();
-            document.getElementById('investOneTimeTotal').textContent = '$' + totalOneTime.toFixed(2);
+            document.getElementById('investOneTimeTotal').textContent = fp(totalOneTime);
 
             // Subscription
             const subEl = document.getElementById('investSubItems');
             if (billingCycle === 'monthly') {
-                subEl.innerHTML = `<div class="invest-line"><span>Plan ${plan.label} (mensual)</span><span>$${plan.monthly}/mes</span></div>`;
+                subEl.innerHTML = `<div class="invest-line"><span>Plan ${plan.label} (mensual)</span><span>${_formatPriceSub(plan.monthly, '/mes')}</span></div>`;
                 document.getElementById('investSubLabel').textContent = 'Total mensual';
-                document.getElementById('investSubTotal').textContent = '$' + plan.monthly + '/mes';
+                document.getElementById('investSubTotal').textContent = _formatPriceSub(plan.monthly, '/mes');
             } else {
                 const saved = (plan.monthly * 12) - plan.annual;
-                subEl.innerHTML = `<div class="invest-line"><span>Plan ${plan.label} (anual)</span><span>$${plan.annual}/año</span></div>
-                    <div class="invest-line" style="color:var(--success);font-size:.8rem;"><span>Ahorro vs mensual</span><span>-$${saved}</span></div>`;
+                subEl.innerHTML = `<div class="invest-line"><span>Plan ${plan.label} (anual)</span><span>${_formatPriceSub(plan.annual, '/año')}</span></div>
+                    <div class="invest-line" style="color:var(--success);font-size:.8rem;"><span>Ahorro vs mensual</span><span>-${fp(saved)}</span></div>`;
                 document.getElementById('investSubLabel').textContent = 'Total anual';
-                document.getElementById('investSubTotal').textContent = '$' + plan.annual + '/año';
+                document.getElementById('investSubTotal').textContent = _formatPriceSub(plan.annual, '/año');
             }
 
             // Today total
             const firstPeriod = billingCycle === 'monthly' ? plan.monthly : plan.annual;
             const todayTotal = totalOneTime + firstPeriod;
-            document.getElementById('investTodayTotal').textContent = '$' + todayTotal.toFixed(2);
+            document.getElementById('investTodayTotal').textContent = fp(todayTotal);
 
             const renewalText = billingCycle === 'monthly'
-                ? `📅 Luego: $${plan.monthly}/mes (renovación automática)`
-                : `📅 Luego: $${plan.annual}/año (renovación anual)`;
+                ? `📅 Luego: ${_formatPriceSub(plan.monthly, '/mes')} (renovación automática)`
+                : `📅 Luego: ${_formatPriceSub(plan.annual, '/año')} (renovación anual)`;
             document.getElementById('investRenewalNote').textContent = renewalText;
 
             // Success step summary
@@ -1801,12 +1908,12 @@
             if (successSummary) {
                 let sHtml = `<div style="font-weight:700;margin-bottom:.4rem;">📋 Detalle de tu registro:</div>`;
                 sHtml += `<div>• Plan: <b>${plan.label}</b></div>`;
-                sHtml += `<div>• Licencia: <b>$${plan.license}</b></div>`;
+                sHtml += `<div>• Licencia: <b>${fp(plan.license)}</b></div>`;
                 if (cartAddons.templates.length || cartAddons.packs.length || cartAddons.extraDevices) {
-                    sHtml += `<div>• Extras: <b>$${getCartAddonTotal().toFixed(2)}</b></div>`;
+                    sHtml += `<div>• Extras: <b>${fp(getCartAddonTotal())}</b></div>`;
                 }
-                sHtml += `<div>• Suscripción: <b>${billingCycle === 'monthly' ? '$' + plan.monthly + '/mes' : '$' + plan.annual + '/año'}</b></div>`;
-                sHtml += `<div style="margin-top:.5rem;font-weight:700;color:var(--primary-dark);">💳 Total hoy: $${todayTotal.toFixed(2)}</div>`;
+                sHtml += `<div>• Suscripción: <b>${billingCycle === 'monthly' ? _formatPriceSub(plan.monthly, '/mes') : _formatPriceSub(plan.annual, '/año')}</b></div>`;
+                sHtml += `<div style="margin-top:.5rem;font-weight:700;color:var(--primary-dark);">💳 Total hoy: ${fp(todayTotal)}</div>`;
                 successSummary.innerHTML = sHtml;
             }
         }
@@ -2258,6 +2365,8 @@
                 // Plan & pricing data
                 planSeleccionado: selectedPlan,
                 billingCycle: billingCycle,
+                currency: selectedCurrency,
+                arsRate: arsRate || null,
                 addons: JSON.stringify({
                     templates: cartAddons.templates.map(t => ({ key: t.key, name: t.name, price: t.price })),
                     packs: cartAddons.packs.map(p => ({ category: p.category, price: p.price })),

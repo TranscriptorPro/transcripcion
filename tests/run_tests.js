@@ -5593,6 +5593,55 @@ test('G3 — Sync admin_addons_config existe en registro', () => {
     assert(registroCode.includes('_syncAdminAddonsConfig'), 'registro.html debe tener sync de addons del admin');
 });
 
+// ══════════════════════════════════════════════════════════════════════════════
+// Bloque 94: G4 — Tests conversión de moneda (E1-E3)
+// ══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 94: G4 — Conversión de moneda ────────────────────');
+
+test('G4 — Variable selectedCurrency existe', () => {
+    assert(registroCode.includes("let selectedCurrency = 'USD'"), 'Debe existir selectedCurrency con default USD');
+});
+
+test('G4 — Variable arsRate existe', () => {
+    assert(registroCode.includes('let arsRate = null'), 'Debe existir arsRate inicializada en null');
+});
+
+test('G4 — Función _fetchArsRate usa bluelytics API', () => {
+    assert(registroCode.includes('api.bluelytics.com.ar/v2/latest'), 'Debe usar la API de bluelytics');
+});
+
+test('G4 — Función _formatPrice maneja USD y ARS', () => {
+    assert(registroCode.includes('function _formatPrice(usdAmount)'), 'Debe existir _formatPrice');
+    assert(registroCode.includes("selectedCurrency === 'ARS' && arsRate"), '_formatPrice debe verificar ARS + arsRate');
+});
+
+test('G4 — Función setCurrency existe', () => {
+    assert(registroCode.includes('function setCurrency(curr)'), 'Debe existir setCurrency');
+});
+
+test('G4 — setCurrency dispara _refreshAllPrices', () => {
+    assert(registroCode.includes('_refreshAllPrices'), 'setCurrency debe llamar _refreshAllPrices');
+});
+
+test('G4 — Selector de moneda en HTML (curr-btn)', () => {
+    assert(registroCode.includes('curr-btn'), 'Debe existir botón de moneda con clase curr-btn');
+    assert(registroCode.includes("data-curr=\"USD\""), 'Debe tener botón USD');
+    assert(registroCode.includes("data-curr=\"ARS\""), 'Debe tener botón ARS');
+});
+
+test('G4 — _updatePricingCards actualiza precios en tarjetas', () => {
+    assert(registroCode.includes('function _updatePricingCards'), 'Debe existir _updatePricingCards');
+});
+
+test('G4 — Formulario envía currency y arsRate', () => {
+    assert(registroCode.includes('currency: selectedCurrency'), 'Debe enviar currency');
+    assert(registroCode.includes('arsRate: arsRate'), 'Debe enviar arsRate');
+});
+
+test('G4 — renderInvestmentSummary usa _formatPrice', () => {
+    assert(registroCode.includes('const fp = _formatPrice'), 'renderInvestmentSummary debe usar _formatPrice');
+});
+
 // ── Resumen ───────────────────────────────────────────────────────────────────
 console.log('\n─────────────────────────────────────────────────────────────────');
 console.log(`  Total: ${passed + failed} | ✅ Pasaron: ${passed} | ❌ Fallaron: ${failed}`);
