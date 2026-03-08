@@ -2428,17 +2428,17 @@
 
         <!-- K3: Modal Contacto -->
         <div class="modal-overlay" id="contactModalOverlay">
-            <div class="modal" id="contactModal" style="max-width:460px;">
-                <div class="modal-header">
-                    <h3 style="margin:0;">&#x2709;&#xfe0f; Contactar soporte</h3>
-                    <button class="btn-icon" id="btnCloseContactModal" title="Cerrar">&times;</button>
+            <div class="modal" id="contactModal" style="max-width:520px;width:100%;border-radius:16px;overflow:hidden;">
+                <div class="modal-header" style="background:linear-gradient(135deg,#0f766e 0%,#0d9488 100%);padding:1.1rem 1.5rem;">
+                    <h3 style="margin:0;font-size:1.1rem;display:flex;align-items:center;gap:.5rem;color:#fff;">&#x1f4ac; Contactar soporte</h3>
+                    <button class="modal-close" id="btnCloseContactModal" title="Cerrar">&times;</button>
                 </div>
-                <div class="modal-body">
-                    <form id="contactForm" style="display:flex;flex-direction:column;gap:.85rem;">
+                <div class="modal-body" style="padding:1.5rem;">
+                    <form id="contactForm" style="display:flex;flex-direction:column;gap:1.1rem;">
                         <div>
-                            <label class="sidebar-label">Motivo <span style="color:var(--error)">*</span></label>
-                            <select id="contactMotivo" class="toolbar-input" style="width:100%;">
-                                <option value="">Selecion&#225; un motivo...</option>
+                            <label style="display:block;font-size:.82rem;font-weight:600;color:#475569;margin-bottom:6px;">Motivo <span style="color:#ef4444;">*</span></label>
+                            <select id="contactMotivo" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:.9rem;background:#f8fafc;color:#1e293b;cursor:pointer;appearance:auto;transition:border-color .2s;">
+                                <option value="">Seleccion&#225; un motivo...</option>
                                 <option value="L&#237;mite de dispositivos alcanzado">L&#237;mite de dispositivos alcanzado</option>
                                 <option value="Problema con la API Key">Problema con la API Key</option>
                                 <option value="La app no carga o se queda en blanco">La app no carga o se queda en blanco</option>
@@ -2454,19 +2454,22 @@
                             </select>
                         </div>
                         <div>
-                            <label class="sidebar-label">Descripci&#243;n <span style="color:var(--error)">*</span></label>
-                            <textarea id="contactDetalle" class="toolbar-input" rows="4"
+                            <label style="display:block;font-size:.82rem;font-weight:600;color:#475569;margin-bottom:6px;">Descripci&#243;n <span style="color:#ef4444;">*</span></label>
+                            <textarea id="contactDetalle" rows="5"
                                 placeholder="Describ&#237; el problema o consulta en detalle..."
-                                style="width:100%;resize:vertical;"></textarea>
+                                style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:.9rem;background:#f8fafc;color:#1e293b;resize:vertical;font-family:inherit;line-height:1.5;transition:border-color .2s;box-sizing:border-box;"></textarea>
                         </div>
-                        <button type="submit" id="btnSendContact" class="btn btn-primary" disabled>
-                            &#x2709; Enviar mensaje
+                        <button type="submit" id="btnSendContact" class="btn" disabled
+                            style="padding:12px 20px;background:linear-gradient(135deg,#0f766e,#0d9488);color:#fff;border:none;border-radius:10px;font-size:.92rem;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.5rem;box-shadow:0 4px 12px rgba(15,118,110,.25);">
+                            &#x1f4e8; Enviar mensaje
                         </button>
                     </form>
-                    <div id="contactSuccess" style="display:none;text-align:center;padding:1.5rem 0;">
-                        <p style="font-size:1.4rem;">&#x2705;</p>
-                        <p style="color:var(--success);font-weight:600;">&#161;Mensaje enviado!</p>
-                        <p style="font-size:.85rem;color:var(--text-secondary);margin-top:.4rem;">Se abri&#243; tu cliente de correo. Si no se abri&#243;, contact&#225;nos a <strong>soporte@transcriptorpro.app</strong>.</p>
+                    <div id="contactSuccess" style="display:none;text-align:center;padding:2rem 1rem;">
+                        <div style="width:56px;height:56px;background:#f0fdf4;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:.8rem;">
+                            <span style="font-size:1.6rem;">&#x2705;</span>
+                        </div>
+                        <p style="color:#16a34a;font-weight:700;font-size:1.05rem;margin:0 0 .4rem;">&#161;Mensaje enviado!</p>
+                        <p style="font-size:.85rem;color:#64748b;margin:0;">Responderemos a la brevedad. Si no recib&#237;s respuesta, escribinos a <strong>soporte@transcriptorpro.app</strong>.</p>
                     </div>
                 </div>
             </div>

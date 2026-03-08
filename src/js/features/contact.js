@@ -231,9 +231,21 @@ window.initContact = function () {
                     }
                 } catch (err) {
                     console.error('[Contact] Error enviando via backend:', err);
-                    // Fallback: mostrar error y permitir reintentar
-                    if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = '📨 Reintentar'; }
-                    if (typeof showToast === 'function') showToast('⚠️ No se pudo enviar. Intentá de nuevo.', 'error');
+                    // Guardar localmente para reintento automático
+                    try {
+                        const pending = (typeof appDB !== 'undefined' ? await appDB.get('pending_contacts') : null)
+                            || JSON.parse(localStorage.getItem('pending_contacts') || '[]');
+                        pending.push({ motivo, detalle, nombre, mat, date: new Date().toISOString() });
+                        if (typeof appDB !== 'undefined') await appDB.set('pending_contacts', pending);
+                        else localStorage.setItem('pending_contacts', JSON.stringify(pending));
+                    } catch (_) {}
+                    // Fallback: abrir mailto para que el usuario pueda enviar directamente
+                    const mailtoFallback = `mailto:${contactEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(`Motivo: ${motivo}\n\n${detalle}\n\n---\nDr./Dra. ${nombre} | Mat. ${mat}`)}`;
+                    window.open(mailtoFallback, '_blank');
+                    if (form)       form.style.display       = 'none';
+                    if (successMsg) successMsg.style.display = 'block';
+                    if (typeof showToast === 'function') showToast('📩 Se abrió tu cliente de correo como alternativa.', 'info');
+                    setTimeout(closeModal, 3000);
                     return;
                 }
             }
