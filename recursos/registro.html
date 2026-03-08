@@ -880,6 +880,16 @@
                             <input type="tel" id="regTelefono" placeholder="+54 9 11 1234-5678">
                         </div>
                     </div>
+                    <div class="field-group" style="margin-top:.7rem;">
+                        <label>🌐 Redes Sociales <small style="font-weight:400;color:#94a3b8;">(dejá vacío las que no querés publicar en informes)</small></label>
+                        <div style="display:flex;flex-direction:column;gap:5px;margin-top:5px;">
+                            <div style="display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;border-radius:6px;background:#1877f2;color:#fff;font-size:.72rem;font-weight:900;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">f</span><input type="url" id="regSocialFb" placeholder="facebook.com/tu-perfil" style="flex:1;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;font-family:inherit;"></div>
+                            <div style="display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;border-radius:6px;background:radial-gradient(circle at 30% 107%,#fdf497 0%,#fd5949 45%,#d6249f 60%,#285AEB 90%);color:#fff;font-size:.8rem;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">📸</span><input type="text" id="regSocialIg" placeholder="@tu_usuario (Instagram)" style="flex:1;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;font-family:inherit;"></div>
+                            <div style="display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;border-radius:6px;background:#ff0000;color:#fff;font-size:.85rem;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">▶</span><input type="url" id="regSocialYt" placeholder="youtube.com/@tu-canal" style="flex:1;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;font-family:inherit;"></div>
+                            <div style="display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;border-radius:6px;background:#000;color:#fff;font-size:.75rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">𝕏</span><input type="text" id="regSocialX" placeholder="@tu_usuario (X / Twitter)" style="flex:1;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;font-family:inherit;"></div>
+                            <div style="display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;border-radius:6px;background:#25d366;color:#fff;font-size:.8rem;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">💬</span><input type="tel" id="regSocialWa" placeholder="+54 9 11 1234-5678 (WhatsApp)" style="flex:1;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;font-family:inherit;"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="btn-row">
@@ -1018,6 +1028,23 @@
                                 🔒 <b>Logo Profesional</b> disponible en plan <b>Pro</b> y <b>Clínica</b>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <div class="card" id="step4ContactCard">
+                    <div class="section-title">📋 Contacto en los Informes</div>
+                    <p class="section-subtitle">Elegí qué datos tuyos aparecen impresos en cada informe PDF.</p>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.3rem;">
+                        <label style="display:flex;align-items:center;gap:.4rem;font-size:.84rem;cursor:pointer;">
+                            <input type="checkbox" id="regShowPhone" checked style="accent-color:var(--primary);width:15px;height:15px;"> 📞 Mostrar teléfono
+                        </label>
+                        <label style="display:flex;align-items:center;gap:.4rem;font-size:.84rem;cursor:pointer;">
+                            <input type="checkbox" id="regShowEmail" checked style="accent-color:var(--primary);width:15px;height:15px;"> 📧 Mostrar email
+                        </label>
+                        <label style="display:flex;align-items:center;gap:.4rem;font-size:.84rem;cursor:pointer;" id="regShowSocialLabel">
+                            <input type="checkbox" id="regShowSocial" style="accent-color:var(--primary);width:15px;height:15px;"> 🌐 Mostrar redes sociales
+                        </label>
+                        <div id="regShowSocialHint" style="display:none;font-size:.75rem;color:#94a3b8;align-self:center;">🔒 Redes: solo plan PRO y Clínica</div>
                     </div>
                 </div>
 
@@ -2211,8 +2238,30 @@
                             <input type="text" id="regProfEspecialidad${index}" placeholder="Cardiología">
                         </div>
                         <div class="field-group">
-                            <label>Email</label>
-                            <input type="email" id="regProfEmail${index}" placeholder="doctor@clinica.com">
+                            <label>Teléfono</label>
+                            <input type="tel" id="regProfTelefono${index}" placeholder="+54 9 11 1234-5678">
+                        </div>
+                    </div>
+                    <div class="field-group" style="margin-top:.4rem;">
+                        <label>Email</label>
+                        <input type="email" id="regProfEmail${index}" placeholder="doctor@clinica.com">
+                    </div>
+                    <div class="field-group" style="margin-top:.5rem;">
+                        <label>🌐 Redes Sociales <small style="font-weight:400;color:#94a3b8;">(vacío = no mostrar)</small></label>
+                        <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px;">
+                            <div style="display:flex;align-items:center;gap:6px;"><span style="width:22px;height:22px;border-radius:5px;background:#1877f2;color:#fff;font-size:.7rem;font-weight:900;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">f</span><input type="url" id="regProfSocialFb${index}" placeholder="facebook.com/perfil" style="flex:1;padding:4px 7px;border:1px solid #d1d5db;border-radius:6px;font-size:.78rem;"></div>
+                            <div style="display:flex;align-items:center;gap:6px;"><span style="width:22px;height:22px;border-radius:5px;background:radial-gradient(circle at 30% 107%,#fdf497 0%,#fd5949 45%,#d6249f 60%,#285AEB 90%);color:#fff;font-size:.76rem;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">📸</span><input type="text" id="regProfSocialIg${index}" placeholder="@usuario Instagram" style="flex:1;padding:4px 7px;border:1px solid #d1d5db;border-radius:6px;font-size:.78rem;"></div>
+                            <div style="display:flex;align-items:center;gap:6px;"><span style="width:22px;height:22px;border-radius:5px;background:#ff0000;color:#fff;font-size:.8rem;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">▶</span><input type="url" id="regProfSocialYt${index}" placeholder="youtube.com/@canal" style="flex:1;padding:4px 7px;border:1px solid #d1d5db;border-radius:6px;font-size:.78rem;"></div>
+                            <div style="display:flex;align-items:center;gap:6px;"><span style="width:22px;height:22px;border-radius:5px;background:#000;color:#fff;font-size:.72rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">𝕏</span><input type="text" id="regProfSocialX${index}" placeholder="@usuario X/Twitter" style="flex:1;padding:4px 7px;border:1px solid #d1d5db;border-radius:6px;font-size:.78rem;"></div>
+                            <div style="display:flex;align-items:center;gap:6px;"><span style="width:22px;height:22px;border-radius:5px;background:#25d366;color:#fff;font-size:.76rem;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">💬</span><input type="tel" id="regProfSocialWa${index}" placeholder="+54 9 11... (WhatsApp)" style="flex:1;padding:4px 7px;border:1px solid #d1d5db;border-radius:6px;font-size:.78rem;"></div>
+                        </div>
+                    </div>
+                    <div class="field-group" style="margin-top:.5rem;">
+                        <label>📋 Incluir en informes</label>
+                        <div style="display:flex;flex-wrap:wrap;gap:.4rem .8rem;margin-top:.3rem;">
+                            <label style="display:flex;align-items:center;gap:.3rem;font-size:.82rem;cursor:pointer;"><input type="checkbox" id="regProfShowPhone${index}" checked style="accent-color:var(--primary);"> 📞 Teléfono</label>
+                            <label style="display:flex;align-items:center;gap:.3rem;font-size:.82rem;cursor:pointer;"><input type="checkbox" id="regProfShowEmail${index}" checked style="accent-color:var(--primary);"> 📧 Email</label>
+                            <label style="display:flex;align-items:center;gap:.3rem;font-size:.82rem;cursor:pointer;"><input type="checkbox" id="regProfShowSocial${index}" checked style="accent-color:var(--primary);"> 🌐 Redes</label>
                         </div>
                     </div>
                     <div class="field-group" style="margin-top:.5rem;">
@@ -2301,12 +2350,23 @@
             const profs = [];
             document.querySelectorAll('#professionalsContainer .wp-accordion').forEach(acc => {
                 const idx = parseInt(acc.id.replace('prof-', ''));
-                const name = (document.getElementById('regProfName' + idx) || {}).value || '';
-                const matricula = (document.getElementById('regProfMatricula' + idx) || {}).value || '';
-                const especialidad = (document.getElementById('regProfEspecialidad' + idx) || {}).value || '';
-                const email = (document.getElementById('regProfEmail' + idx) || {}).value || '';
+                const name        = (document.getElementById('regProfName'        + idx) || {}).value || '';
+                const matricula   = (document.getElementById('regProfMatricula'   + idx) || {}).value || '';
+                const especialidad= (document.getElementById('regProfEspecialidad'+ idx) || {}).value || '';
+                const telefono    = (document.getElementById('regProfTelefono'    + idx) || {}).value || '';
+                const email       = (document.getElementById('regProfEmail'       + idx) || {}).value || '';
+                const socialMedia = {
+                    facebook:  (document.getElementById('regProfSocialFb' + idx) || {}).value?.trim() || '',
+                    instagram: (document.getElementById('regProfSocialIg' + idx) || {}).value?.trim() || '',
+                    youtube:   (document.getElementById('regProfSocialYt' + idx) || {}).value?.trim() || '',
+                    x:         (document.getElementById('regProfSocialX'  + idx) || {}).value?.trim() || '',
+                    whatsapp:  (document.getElementById('regProfSocialWa' + idx) || {}).value?.trim() || ''
+                };
+                const showPhone  = document.getElementById('regProfShowPhone'  + idx)?.checked ?? true;
+                const showEmail  = document.getElementById('regProfShowEmail'  + idx)?.checked ?? true;
+                const showSocial = document.getElementById('regProfShowSocial' + idx)?.checked ?? true;
                 if (name.trim()) {
-                    profs.push({ nombre: name.trim(), matricula: matricula.trim(), especialidad: especialidad.trim(), email: email.trim(), firma: profFirmaData[idx] || null });
+                    profs.push({ nombre: name.trim(), matricula: matricula.trim(), especialidad: especialidad.trim(), telefono: telefono.trim(), email: email.trim(), firma: profFirmaData[idx] || null, socialMedia, showPhone, showEmail, showSocial });
                 }
             });
             return profs;
@@ -2535,12 +2595,18 @@
         function _applyStep4PlanRestrictions() {
             const plan = PRICING[selectedPlan] || {};
             // Color del encabezado: disponible para TODOS los planes
-            // (no se oculta — siempre aplica al header del informe)
             // Logo profesional: solo PRO y CLINIC
             const proLogoGroup = document.getElementById('step4ProLogoGroup');
             const proLogoHint  = document.getElementById('step4ProLogoHint');
             if (proLogoGroup) proLogoGroup.style.display = plan.pdfLogo ? '' : 'none';
             if (proLogoHint)  proLogoHint.style.display  = plan.pdfLogo ? 'none' : '';
+            // Redes sociales: solo PRO y CLINIC (pdfLogo === true en ambos)
+            const showSocialLabel = document.getElementById('regShowSocialLabel');
+            const showSocialHint  = document.getElementById('regShowSocialHint');
+            const showSocialChk   = document.getElementById('regShowSocial');
+            if (showSocialLabel) showSocialLabel.style.display = plan.pdfLogo ? '' : 'none';
+            if (showSocialHint)  showSocialHint.style.display  = plan.pdfLogo ? 'none' : '';
+            if (showSocialChk)  { showSocialChk.disabled = !plan.pdfLogo; if (!plan.pdfLogo) showSocialChk.checked = false; }
         }
 
         function validateStep3() {
@@ -2615,6 +2681,16 @@
                 headerColor: selectedHeaderColor,
                 firma: imageData.firma || null,
                 proLogo: imageData.proLogo || null,
+                socialMedia: {
+                    facebook:  document.getElementById('regSocialFb')?.value?.trim() || '',
+                    instagram: document.getElementById('regSocialIg')?.value?.trim() || '',
+                    youtube:   document.getElementById('regSocialYt')?.value?.trim() || '',
+                    x:         document.getElementById('regSocialX')?.value?.trim()  || '',
+                    whatsapp:  document.getElementById('regSocialWa')?.value?.trim() || ''
+                },
+                showPhone:  document.getElementById('regShowPhone')?.checked  ?? true,
+                showEmail:  document.getElementById('regShowEmail')?.checked  ?? true,
+                showSocial: document.getElementById('regShowSocial')?.checked ?? false,
                 // Plan & pricing data
                 planSeleccionado: selectedPlan,
                 billingCycle: billingCycle,

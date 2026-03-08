@@ -594,7 +594,11 @@ async function _handleFactorySetup(medicoId) {
                         telefono:        doctor.Telefono  || '',
                         email:           doctor.Email     || '',
                         firma:           regDatos.firma   || '',
-                        logo:            regDatos.proLogo || ''
+                        logo:            regDatos.proLogo || '',
+                        socialMedia:     regDatos.socialMedia || null,
+                        showPhone:       regDatos.showPhone  !== false,
+                        showEmail:       regDatos.showEmail  !== false,
+                        showSocial:      regDatos.showSocial === true
                     });
 
                     const workplaceProfiles = [{
@@ -647,7 +651,11 @@ async function _handleFactorySetup(medicoId) {
                                 telefono:       p.telefono      || '',
                                 email:          p.email         || '',
                                 firma:          p.firma         || '',
-                                logo:           p.logo          || ''
+                                logo:           p.logo          || '',
+                                socialMedia:    p.socialMedia   || null,
+                                showPhone:      p.showPhone     !== false,
+                                showEmail:      p.showEmail     !== false,
+                                showSocial:     p.showSocial    === true
                             };
                         });
                         // Re-guardar con la lista completa de profesionales
@@ -699,6 +707,29 @@ async function _handleFactorySetup(medicoId) {
                 window._pdfConfigCache = existCfg;
                 // Compatibilidad: mantener localStorage legacy
                 localStorage.setItem('inst_logo_size_px', String(regDatos.instLogoSize));
+            } catch(_) {}
+        }
+
+        // Visibilidad de contacto en PDF (teléfono, email, redes)
+        if (regDatos.showPhone !== undefined || regDatos.showEmail !== undefined || regDatos.showSocial !== undefined) {
+            try {
+                const cfgContact = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+                if (regDatos.showPhone  !== undefined) cfgContact.showPhone  = regDatos.showPhone  !== false;
+                if (regDatos.showEmail  !== undefined) cfgContact.showEmail  = regDatos.showEmail  !== false;
+                if (regDatos.showSocial !== undefined) cfgContact.showSocial = regDatos.showSocial === true;
+                if (typeof appDB !== 'undefined') appDB.set('pdf_config', cfgContact);
+                localStorage.setItem('pdf_config', JSON.stringify(cfgContact));
+                window._pdfConfigCache = cfgContact;
+            } catch(_) {}
+        }
+
+        // Redes sociales del profesional → guardar en prof_data
+        if (regDatos.socialMedia) {
+            try {
+                profData.socialMedia = regDatos.socialMedia;
+                window._profDataCache = profData;
+                if (typeof appDB !== 'undefined') appDB.set('prof_data', profData);
+                localStorage.setItem('prof_data', JSON.stringify(profData));
             } catch(_) {}
         }
 
@@ -1155,8 +1186,22 @@ function _showClientOnboarding() {
                 if (note) note.textContent = 'Solo disponible en plan PRO';
             }
         }
+        // Gate redes sociales: solo PRO
+        const socialToggle = document.getElementById('onbToggleSocial');
+        const socialBadge  = document.getElementById('onbSocialBadge');
+        if (socialToggle) {
+            if (_isProUser) {
+                socialToggle.checked = false; // empieza des-tildado; el usuario elige
+            } else {
+                socialToggle.checked  = false;
+                socialToggle.disabled = true;
+                const socialNote = document.getElementById('onbSocialNote');
+                if (socialNote) socialNote.textContent = 'Solo disponible en plan PRO';
+            }
+            if (socialBadge) socialBadge.style.display = _isProUser ? 'none' : '';
+        }
         // Listeners para actualizar vista previa en vivo
-        ['onbToggleFirma','onbToggleLogoProf','onbToggleLogoInst','onbToggleQR'].forEach(id => {
+        ['onbToggleFirma','onbToggleLogoProf','onbToggleLogoInst','onbToggleQR','onbTogglePhone','onbToggleEmail','onbToggleSocial'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.addEventListener('change', () => _updateOnbPreview());
         });
@@ -1251,6 +1296,9 @@ function _showClientOnboarding() {
         pdfCfg.showHeader    = document.getElementById('onbToggleLogoInst')?.checked ?? true;
         pdfCfg.showLogoProfessional = document.getElementById('onbToggleLogoProf')?.checked ?? true;
         pdfCfg.showQR        = document.getElementById('onbToggleQR')?.checked ?? false;
+        pdfCfg.showPhone     = document.getElementById('onbTogglePhone')?.checked  ?? true;
+        pdfCfg.showEmail     = document.getElementById('onbToggleEmail')?.checked  ?? true;
+        pdfCfg.showSocial    = document.getElementById('onbToggleSocial')?.checked ?? false;
         const activeMarginBtn = document.querySelector('.onb-margin-btn.active');
         if (activeMarginBtn) pdfCfg.margins = activeMarginBtn.dataset.margin;
         localStorage.setItem('pdf_config', JSON.stringify(pdfCfg));

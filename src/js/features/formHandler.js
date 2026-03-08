@@ -262,6 +262,9 @@ window.loadPdfConfiguration = async function () {
     setChk('pdfShowSignName', config.showSignName, true);
     setChk('pdfShowSignMatricula', config.showSignMatricula, true);
     setChk('pdfShowSignImage', config.showSignImage, true);
+    setChk('pdfShowPhone',     config.showPhone,  true);
+    setChk('pdfShowEmail',     config.showEmail,  true);
+    setChk('pdfShowSocial',    config.showSocial, false);
     // Sliders de tamaño
     const logoSlider = document.getElementById('pdfLogoSize');
     const firmaSlider = document.getElementById('pdfFirmaSize');
