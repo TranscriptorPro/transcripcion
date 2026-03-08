@@ -4818,10 +4818,112 @@
 
         // Abrir modal
         document.getElementById('btnNewUser')?.addEventListener('click', () => {
+            openNewUserChooser();
+        });
+
+        function openNewUserChooser() {
+            // Poblar el select con registros pendientes
+            const select = document.getElementById('chooserPendingSelect');
+            const pendingSection = document.getElementById('chooserPendingSection');
+            const loadBtn = document.getElementById('btnChooserLoadPending');
+
+            // Ocultar sección pendientes (vuelve al estado inicial)
+            pendingSection.style.display = 'none';
+            if (loadBtn) loadBtn.disabled = true;
+
+            // Actualizar opciones del select
+            select.innerHTML = '<option value="">— Seleccioná un registro —</option>';
+            const pendientes = (allRegistrations || []).filter(r => String(r.Estado || '').toLowerCase() === 'pendiente');
+            pendientes.forEach(r => {
+                const fecha = r.Fecha_Registro ? new Date(r.Fecha_Registro).toLocaleDateString('es-AR', { day:'2-digit', month:'short' }) : '—';
+                const opt = document.createElement('option');
+                opt.value = r.ID_Registro;
+                opt.textContent = `${escapeHtml(r.Nombre || '(sin nombre)')} · ${escapeHtml(r.Plan_Solicitado || '?')} · ${fecha}`;
+                select.appendChild(opt);
+            });
+
+            // Botón A: desde cero
+            document.getElementById('btnChooserFromScratch').onclick = () => {
+                document.getElementById('newUserChooserModal').style.display = 'none';
+                _openNewUserModalEmpty();
+            };
+
+            // Botón B: mostrar selector de pendientes
+            document.getElementById('btnChooserFromPending').onclick = () => {
+                if (pendientes.length === 0) {
+                    pendingSection.style.display = 'block';
+                    select.innerHTML = '<option value="">Sin registros pendientes</option>';
+                    if (loadBtn) loadBtn.disabled = true;
+                } else {
+                    pendingSection.style.display = 'block';
+                }
+            };
+
+            // Habilitar botón Cargar cuando hay selección
+            select.onchange = () => {
+                if (loadBtn) loadBtn.disabled = !select.value;
+            };
+
+            // Botón Cargar
+            if (loadBtn) {
+                loadBtn.onclick = () => {
+                    const regId = select.value;
+                    if (!regId) return;
+                    document.getElementById('newUserChooserModal').style.display = 'none';
+                    _openNewUserModalFromPending(regId);
+                };
+            }
+
+            document.getElementById('newUserChooserModal').style.display = 'flex';
+        }
+
+        function _openNewUserModalEmpty() {
             document.getElementById('newUserModal').style.display = 'flex';
             initEspecialidadesGrid();
             setDefaultExpirationDate();
-        });
+        }
+
+        function _openNewUserModalFromPending(regId) {
+            const reg = allRegistrations.find(r => r.ID_Registro === regId);
+            if (!reg) return _openNewUserModalEmpty();
+
+            document.getElementById('newUserModal').style.display = 'flex';
+            initEspecialidadesGrid();
+            setDefaultExpirationDate();
+
+            // Prefill campos del profesional
+            const setVal = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+            setVal('newNombre',    reg.Nombre);
+            setVal('newMatricula', reg.Matricula);
+            setVal('newEmail',     reg.Email);
+            setVal('newTelefono',  reg.Telefono);
+
+            // Plan
+            const planSol = (reg.Plan_Solicitado || _parsePlanFromNotas(reg.Notas || '')).toUpperCase();
+            if (planSol) setVal('newPlan', planSol);
+
+            // Lugar de trabajo principal
+            try {
+                const wp = JSON.parse(reg.Workplace_Data || '{}');
+                if (wp.name) setVal('newLugaresTrabajo', wp.name + (wp.address ? '\n' + wp.address : ''));
+            } catch(_) {}
+
+            // Notas: adjuntar referencia al reg ID
+            const notasEl = document.getElementById('newNotas');
+            if (notasEl) notasEl.value = `Cargado desde registro pendiente ${reg.ID_Registro}. ${reg.Notas || ''}`.trim();
+
+            // Marcar el campo de nombre con indicador visual
+            const nombreEl = document.getElementById('newNombre');
+            if (nombreEl) {
+                nombreEl.style.borderColor = 'var(--primary)';
+                setTimeout(() => { nombreEl.style.borderColor = ''; }, 3000);
+            }
+
+            // Mostrar toast informativo
+            if (typeof showToast === 'function') {
+                showToast(`📋 Formulario precargado desde registro ${reg.ID_Registro}`, 'info');
+            }
+        }
 
         function closeNewUserModal() {
             document.getElementById('newUserModal').style.display = 'none';
@@ -7142,6 +7244,46 @@
         </div>
         <!-- GIFT Preview se inserta aquí por JS -->
         <div class="pdf-preview-side-panel" id="imgprocSimBox" style="display:none;"></div>
+    </div>
+
+    <!-- Modal selector: Nuevo Usuario (desde cero o desde pendiente) -->
+    <div class="modal-overlay" id="newUserChooserModal" style="display:none;">
+        <div class="modal" style="max-width:480px;width:100%;">
+            <div class="modal-header">
+                <h2>➕ Nuevo Usuario</h2>
+                <button class="modal-close" onclick="document.getElementById('newUserChooserModal').style.display='none'">&times;</button>
+            </div>
+            <div class="modal-body" style="padding:1.5rem;">
+                <p style="color:var(--text-secondary);font-size:.9rem;margin-bottom:1.5rem;">¿Cómo querés crear el usuario?</p>
+
+                <!-- Opción A: desde cero -->
+                <button type="button" id="btnChooserFromScratch" style="width:100%;display:flex;align-items:center;gap:1rem;padding:1rem 1.2rem;border:2px solid var(--border);border-radius:12px;background:var(--surface);cursor:pointer;text-align:left;margin-bottom:.75rem;transition:border-color .2s,background .2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <span style="font-size:1.8rem;">📝</span>
+                    <div>
+                        <div style="font-weight:700;font-size:.95rem;color:var(--text);">Crear desde cero</div>
+                        <div style="font-size:.8rem;color:var(--text-secondary);">Rellenar el formulario manualmente</div>
+                    </div>
+                </button>
+
+                <!-- Opción B: cargar desde pendiente -->
+                <button type="button" id="btnChooserFromPending" style="width:100%;display:flex;align-items:center;gap:1rem;padding:1rem 1.2rem;border:2px solid var(--border);border-radius:12px;background:var(--surface);cursor:pointer;text-align:left;transition:border-color .2s,background .2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <span style="font-size:1.8rem;">📋</span>
+                    <div>
+                        <div style="font-weight:700;font-size:.95rem;color:var(--text);">Cargar formulario pendiente</div>
+                        <div style="font-size:.8rem;color:var(--text-secondary);">Prefill desde un registro enviado</div>
+                    </div>
+                </button>
+
+                <!-- Select de pendientes (oculto hasta elegir opción B) -->
+                <div id="chooserPendingSection" style="display:none;margin-top:1.2rem;">
+                    <label style="font-size:.85rem;font-weight:600;color:var(--text);display:block;margin-bottom:.4rem;">Registro pendiente:</label>
+                    <select id="chooserPendingSelect" style="width:100%;padding:.6rem .8rem;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:.88rem;">
+                        <option value="">— Seleccioná un registro —</option>
+                    </select>
+                    <button type="button" id="btnChooserLoadPending" class="btn-primary" style="width:100%;margin-top:.8rem;" disabled>Cargar formulario →</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="modal-overlay" id="newUserModal" style="display:none;">
