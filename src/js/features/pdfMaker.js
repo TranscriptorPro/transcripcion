@@ -14,16 +14,6 @@ function _hexToRgb(hex) {
     };
 }
 
-// Helper: obtener dimensiones reales de imagen desde base64 para preservar aspect ratio
-function _getImageDims(b64) {
-    return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
-        img.onerror = () => resolve({ w: 1, h: 1 });
-        img.src = b64;
-    });
-}
-
 async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
     if (typeof jspdf === 'undefined') {
         showToast('Cargando motor PDF...', 'info');
@@ -101,37 +91,17 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             : (rawEsp || '');
         const institutionName = activePro?.institutionName || profData.institutionName || '';
         const accent       = _hexToRgb(activePro?.headerColor || profData.headerColor || '#1a56a0');
-
-        // Tamaños configurables (sincronizar con pdfPreview.js)
-        const profLogoSizePx = config.logoSizePx || parseInt(localStorage.getItem('prof_logo_size_px') || '60');
-        const firmaSizePx    = config.firmaSizePx || parseInt(localStorage.getItem('firma_size_px') || '60');
-        const instLogoSizePx = config.instLogoSizePx || parseInt(localStorage.getItem('inst_logo_size_px') || '60');
-
         const wpAddress = config.workplaceAddress || activeWp?.address || '';
         const wpPhone   = config.workplacePhone   || activeWp?.phone   || '';
         const wpName    = activeWp?.name || '';
         const wpEmail   = activeWp?.email || config.workplaceEmail || '';
 
-        // ── Extraer datos del paciente del contenido del editor como fallback ──
-        let _extracted = {};
-        if (typeof extractPatientDataFromText === 'function' && htmlContent) {
-            try {
-                const _tmpDiv = document.createElement('div');
-                _tmpDiv.innerHTML = htmlContent;
-                _extracted = extractPatientDataFromText(_tmpDiv.innerText || _tmpDiv.textContent || '') || {};
-            } catch(_) {}
-        }
-        // Datos del formulario de paciente (DOM) como segundo fallback
-        const _reqVal = (id) => { try { return document.getElementById(id)?.value?.trim() || ''; } catch(_) { return ''; } };
-
-        const pName      = config.patientName      || _extracted.name || _reqVal('pdfPatientName') || _reqVal('reqPatientName') || '';
-        const pDni       = config.patientDni       || _extracted.dni  || _reqVal('pdfPatientDni')  || _reqVal('reqPatientDni')  || '';
-        const _rawAge    = config.patientAge       || _extracted.age  || _reqVal('pdfPatientAge')  || _reqVal('reqPatientAge')  || '';
-        const pAge       = _rawAge ? `${_rawAge} años` : '';
-        const _rawSex    = config.patientSex       || _extracted.sex  || _reqVal('pdfPatientSex')  || _reqVal('reqPatientSex')  || '';
-        const pSex       = _rawSex === 'M' ? 'Masculino' : _rawSex === 'F' ? 'Femenino' : _rawSex;
-        const pInsurance = config.patientInsurance || _reqVal('pdfPatientInsurance') || _reqVal('reqPatientInsurance') || '';
-        const pAffiliateNum = config.patientAffiliateNum || _reqVal('pdfPatientAffiliateNum') || _reqVal('reqPatientAffiliateNum') || '';
+        const pName      = config.patientName      || '';
+        const pDni       = config.patientDni       || '';
+        const pAge       = config.patientAge       ? `${config.patientAge} años` : '';
+        const pSex       = config.patientSex       || '';
+        const pInsurance = config.patientInsurance || '';
+        const pAffiliateNum = config.patientAffiliateNum || '';
         const rawDate    = config.studyDate        || '';
         const pDate      = rawDate
             ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES')
@@ -208,17 +178,14 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             doc.rect(0, 0, PAGE_W, bannerH, 'F');
 
             let contentX = ML;
-            // Logo institucional — preservar aspect ratio
+            // Logo institucional
             if (instLogoB64) {
                 try {
-                    const instTargetH = instLogoSizePx * 0.264583; // px a mm
-                    const instTargetHClamped = Math.min(instTargetH, bannerH - 2); // no exceder banner
+                    const instSizePx = parseInt(config.instLogoSizePx || localStorage.getItem('inst_logo_size_px') || '60');
+                    const instScale = instSizePx / 60;
+                    const imgW = Math.round(12 * instScale), imgH = Math.round(10 * instScale);
                     const imgType = instLogoB64.includes('data:image/png') ? 'PNG' : 'JPEG';
                     const b64data = instLogoB64.includes(',') ? instLogoB64.split(',')[1] : instLogoB64;
-                    const instProps = doc.getImageProperties(b64data);
-                    const instAR = instProps.width / instProps.height;
-                    const imgH = instTargetHClamped;
-                    const imgW = imgH * instAR;
                     doc.addImage(b64data, imgType, ML, (bannerH - imgH) / 2, imgW, imgH);
                     contentX = ML + imgW + 4;
                 } catch (e) { /* imagen inválida */ }
@@ -259,199 +226,96 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                 } catch (e) { /* imagen inválida */ }
             }
 
-            // Dr./Dra. + Nombre (sincronizar con pdfPreview.js)
-            const _titleM = profName.match(/^(Dra?\.?\s*)/i);
-            const _hdrTitle = _titleM
-                ? (_titleM[1].trim().toLowerCase().startsWith('dra') ? 'Dra.' : 'Dr.')
-                : 'Dr.';
-            const _hdrName = profName.replace(/^(Dra?\.?\s*)/i, '').trim() || profName;
-
+            // "Estudio realizado por: Dr. Nombre"
             let iy = cy + 5;
             if (profName) {
-                doc.setFontSize(14);
+                doc.setFontSize(13);
                 doc.setFont(mainFont, 'bold');
                 setAccent();
-                doc.text('Estudio realizado por: ' + _hdrTitle + ' ' + _hdrName, infoX, iy);
-                iy += 6;
+                doc.text('Estudio realizado por: ' + profName, infoX, iy);
+                iy += 5;
             }
             // Especialidad • Mat. XXXX
             const specMatParts = [];
             if (especialidad) specMatParts.push(especialidad);
             if (matricula) specMatParts.push('Mat. ' + matricula);
             if (specMatParts.length) {
-                doc.setFontSize(10);
+                doc.setFontSize(9);
                 doc.setFont(mainFont, 'italic');
                 setGray(70);
                 doc.text(specMatParts.join(' • '), infoX, iy);
                 iy += 4;
             }
-            // Nombre de institución
-            if (institutionName) {
-                doc.setFontSize(9.5);
-                doc.setFont(mainFont, 'italic');
-                setGray(50);
-                doc.text(institutionName, infoX, iy);
-                iy += 4;
-            }
 
             cy = Math.max(iy, profLogoB64 ? cy + 20 : iy) + 2;
-            // Línea accent bajo el encabezado (2px ≈ 0.7mm para coincidir con preview)
-            doc.setDrawColor(accent.r, accent.g, accent.b);
-            doc.setLineWidth(0.7);
-            doc.line(ML, cy, PAGE_W - MR, cy);
-            doc.setDrawColor(0);
-            cy += 5;
+            accentLine(cy);
+            cy += 4;
             headerH = cy;
             setBlack();
         }
 
-        // ── Datos del estudio (grilla como en pdfPreview) ─────────────
+        // ── Datos del estudio ────────────────────────────────────────
         function drawStudyInfo() {
-            const row1 = [];
-            row1.push(['ESTUDIO:', studyType || '—']);
-            row1.push(['INFORME Nº:', reportNum || '—']);
-            row1.push(['FECHA:', pDate + (studyTime ? ' ' + studyTime : '')]);
-            const row2 = [];
-            if (refDoctor)   row2.push(['SOLICITANTE:', refDoctor]);
-            if (studyReason) row2.push(['MOTIVO:', studyReason]);
+            const items = [];
+            if (studyType)   items.push(`Estudio: ${studyType}`);
+            if (reportNum)   items.push(`Informe Nº: ${reportNum}`);
+            items.push(`Fecha: ${pDate}${studyTime ? ' ' + studyTime : ''}`);
+            if (refDoctor)   items.push(`Solicitante: ${refDoctor}`);
+            if (studyReason) items.push(`Motivo: ${studyReason}`);
+            if (!items.length) return;
 
-            const totalRows = 1 + (row2.length ? 1 : 0);
-            const rowH = 9;
-            const gridH = totalRows * rowH;
-            ensureSpace(gridH + 6);
-
-            // Fondo y borde
-            doc.setFillColor(244, 247, 251);
-            doc.setDrawColor(227, 232, 239);
-            doc.setLineWidth(0.3);
-            doc.roundedRect(ML, cy, CW, gridH, 1.5, 1.5, 'FD');
-
-            // Separador punteado entre filas
-            if (row2.length) {
-                doc.setDrawColor(221, 227, 238);
-                doc.setLineWidth(0.2);
-                const dashY = cy + rowH;
-                for (let dx = ML + 2; dx < ML + CW - 2; dx += 4) {
-                    doc.line(dx, dashY, Math.min(dx + 2, ML + CW - 2), dashY);
-                }
-            }
-
-            // Fila 1: 3 columnas
-            const col3W = CW / 3;
-            doc.setDrawColor(227, 232, 239);
-            doc.setLineWidth(0.15);
-            doc.line(ML + col3W, cy, ML + col3W, cy + rowH);
-            doc.line(ML + 2 * col3W, cy, ML + 2 * col3W, cy + rowH);
-
-            const centerY1 = cy + rowH / 2 + 1;
-            for (let i = 0; i < row1.length; i++) {
-                const [label, value] = row1[i];
-                const cellX = ML + i * col3W + 3;
-                doc.setFontSize(6.5);
-                doc.setFont(mainFont, 'bold');
-                doc.setTextColor(accent.r, accent.g, accent.b);
-                doc.text(label, cellX, centerY1);
-                const labelW = doc.getTextWidth(label);
-                doc.setFontSize(9);
-                doc.setFont(mainFont, 'bold');
-                setBlack();
-                doc.text(value, cellX + labelW + 2, centerY1);
-            }
-
-            // Fila 2: 2 columnas
-            if (row2.length) {
-                const col2W = CW / 2;
-                doc.setDrawColor(227, 232, 239);
-                doc.setLineWidth(0.15);
-                if (row2.length > 1) {
-                    doc.line(ML + col2W, cy + rowH, ML + col2W, cy + 2 * rowH);
-                }
-                const centerY2 = cy + rowH + rowH / 2 + 1;
-                for (let i = 0; i < row2.length; i++) {
-                    const [label, value] = row2[i];
-                    const cellX = ML + i * col2W + 3;
-                    doc.setFontSize(6.5);
-                    doc.setFont(mainFont, 'bold');
-                    doc.setTextColor(accent.r, accent.g, accent.b);
-                    doc.text(label, cellX, centerY2);
-                    const labelW = doc.getTextWidth(label);
-                    doc.setFontSize(9);
-                    doc.setFont(mainFont, 'bold');
-                    setBlack();
-                    doc.text(value, cellX + labelW + 2, centerY2);
-                }
-            }
-
-            cy += gridH + 4;
-            doc.setDrawColor(0);
+            doc.setFontSize(8.5);
+            doc.setFont('helvetica', 'italic');
+            setGray(60);
+            const line = doc.splitTextToSize(items.join('  |  '), CW);
+            doc.text(line, ML, cy);
+            cy += line.length * 4.5 + 3;
             setBlack();
         }
 
-        // ── Datos del paciente (grilla como en pdfPreview) ─────────────
+        // ── Datos del paciente ───────────────────────────────────────
         function drawPatientBlock() {
             const cells = [];
-            if (pName)     cells.push(['PACIENTE', pName]);
+            if (pName)     cells.push(['Paciente', pName]);
             if (pDni)      cells.push(['DNI', pDni]);
-            if (pAge)      cells.push(['EDAD', pAge]);
-            if (pSex)      cells.push(['SEXO', pSex]);
-            if (pInsurance)cells.push(['COBERTURA', pInsurance]);
-            if (pAffiliateNum) cells.push(['Nº AFILIADO', pAffiliateNum]);
+            if (pAge)      cells.push(['Edad', pAge]);
+            if (pSex)      cells.push(['Sexo', pSex]);
+            if (pInsurance)cells.push(['OS/Prepaga', pInsurance]);
+            if (pAffiliateNum) cells.push(['Nº Afiliado', pAffiliateNum]);
             if (!cells.length) return;
 
-            // Layout horizontal tipo grid (como la vista previa)
-            const colCount = Math.min(cells.length, 3);
-            const colW = CW / colCount;
-            const cellH = 10;
-            const rows = Math.ceil(cells.length / colCount);
-
-            ensureSpace(rows * cellH + 6);
-
-            // Fondo suave para la tabla de paciente
-            const tableH = rows * cellH;
-            doc.setFillColor(250, 251, 252);
-            doc.setDrawColor(208, 215, 222);
-            doc.setLineWidth(0.3);
-            doc.roundedRect(ML, cy, CW, tableH, 1.5, 1.5, 'FD');
-
-            // Borde izquierdo accent (4px ≈ 1mm) como en preview
-            doc.setDrawColor(accent.r, accent.g, accent.b);
-            doc.setLineWidth(1);
-            doc.line(ML, cy + 1.5, ML, cy + tableH - 1.5);
-
-            // Líneas internas de la grid
-            doc.setDrawColor(208, 215, 222);
-            doc.setLineWidth(0.2);
-            for (let c = 1; c < colCount; c++) {
-                doc.line(ML + c * colW, cy, ML + c * colW, cy + tableH);
+            // Usamos rectángulo de fondo suave si caben datos
+            if (typeof doc.autoTable === 'function') {
+                doc.autoTable({
+                    startY: cy,
+                    body: cells.map(([k, v]) => ({ k, v })),
+                    columns: [
+                        { dataKey: 'k', header: '' },
+                        { dataKey: 'v', header: '' }
+                    ],
+                    theme: 'plain',
+                    styles: { fontSize: 9, cellPadding: { top: 1, bottom: 1, left: 1, right: 1 } },
+                    columnStyles: {
+                        k: { fontStyle: 'bold', textColor: [80, 80, 80], cellWidth: 28 },
+                        v: { textColor: [0, 0, 0] }
+                    },
+                    tableWidth: CW,
+                    margin: { left: ML },
+                    showHead: 'never'
+                });
+                cy = doc.lastAutoTable.finalY + 3;
+            } else {
+                doc.setFontSize(9);
+                cells.forEach(([k, v]) => {
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(k + ': ', ML, cy);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(v, ML + doc.getTextWidth(k + ': '), cy);
+                    cy += 5;
+                });
             }
-            for (let r = 1; r < rows; r++) {
-                doc.line(ML, cy + r * cellH, ML + CW, cy + r * cellH);
-            }
-
-            // Contenido de cada celda
-            for (let i = 0; i < cells.length; i++) {
-                const [label, value] = cells[i];
-                const col = i % colCount;
-                const row = Math.floor(i / colCount);
-                const cellX = ML + col * colW + 3;
-                const cellY = cy + row * cellH;
-
-                // Label: accent color, uppercase, 6.5pt (como preview pvp-lbl)
-                doc.setFontSize(6.5);
-                doc.setFont(mainFont, 'bold');
-                doc.setTextColor(accent.r, accent.g, accent.b);
-                doc.text(label, cellX, cellY + 3.5);
-
-                // Value: bold, 10pt, negro (como preview pvp-val)
-                doc.setFontSize(10);
-                doc.setFont(mainFont, 'bold');
-                setBlack();
-                doc.text(value, cellX, cellY + 8);
-            }
-
-            cy += tableH + 4;
-            doc.setDrawColor(0);
-            setBlack();
+            grayLine(cy);
+            cy += 5;
         }
 
         // ── Renderizado del contenido HTML ───────────────────────────
@@ -743,17 +607,8 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                 try {
                     const imgType = sigB64.includes('data:image/png') ? 'PNG' : 'JPEG';
                     const b64data = sigB64.includes(',') ? sigB64.split(',')[1] : sigB64;
-                    // Preservar aspect ratio: usar firmaSizePx como altura de referencia
-                    const sigTargetH = firmaSizePx * 0.264583; // px a mm
-                    const sigTargetHClamped = Math.min(sigTargetH, 25); // max 25mm
-                    const sigProps = doc.getImageProperties(b64data);
-                    const sigAR = sigProps.width / sigProps.height;
-                    const sigImgH = sigTargetHClamped;
-                    const sigImgW = Math.min(sigImgH * sigAR, sigLineW); // no exceder el ancho de la línea
-                    // Centrar la imagen sobre la línea de firma
-                    const sigImgX = sigCenterX - sigImgW / 2;
-                    doc.addImage(b64data, imgType, sigImgX, cy, sigImgW, sigImgH);
-                    cy += sigImgH + 2;
+                    doc.addImage(b64data, imgType, sigStartX, cy, 50, 20);
+                    cy += 22;
                 } catch (e) { /* imagen inválida */ }
             }
             if (showSignLine) {
