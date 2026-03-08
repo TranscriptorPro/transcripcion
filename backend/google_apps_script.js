@@ -252,6 +252,29 @@ function doGet(e) {
     return createResponse({ success: true, result: result });
   }
 
+  // admin_delete_user — elimina un usuario específico por ID_Medico
+  if (action === 'admin_delete_user') {
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
+
+    const userId = e.parameter.userId;
+    if (!userId) return createResponse({ error: 'userId requerido' });
+
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const idCol = headers.indexOf('ID_Medico');
+
+    for (let i = data.length - 1; i >= 1; i--) {
+      if (String(data[i][idCol]) === String(userId)) {
+        sheet.deleteRow(i + 1);
+        appendAdminLog(auth.username, 'delete_user', userId, 'Eliminado permanentemente');
+        return createResponse({ success: true, deleted: userId });
+      }
+    }
+    return createResponse({ error: 'Usuario no encontrado' });
+  }
+
   // admin_delete_test_users — elimina filas cuyos ID_Medico coincidan con los IDs de prueba
   if (action === 'admin_delete_test_users') {
     const auth = _verifyAdminAuth(e.parameter);
