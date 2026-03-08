@@ -3908,6 +3908,7 @@
             const btn = document.getElementById('cfBtnGenerate');
             btn.textContent = '🔗 Generar Link';
             btn.style.background = '';
+            btn.style.display = '';
 
             document.getElementById('cloneFactoryModal').style.display = 'flex';
         }
@@ -4003,10 +4004,11 @@
             if (cfB2g) { cfB2g.value = localStorage.getItem('admin_groq_key_b2') || ''; cfB2g.readOnly = false; cfB2g.style.background = ''; cfB2g.style.opacity = ''; cfB2g.style.cursor = ''; }
             document.getElementById('cfLinkResult').style.display = 'none';
 
-            // Botón con estilo gift
+            // Botón con estilo gift — ocultar del footer (el paso 6 tiene su propio botón)
             const btn = document.getElementById('cfBtnGenerate');
             btn.textContent = '🎁 Crear y Generar Link';
             btn.style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
+            btn.style.display = 'none';
 
             document.getElementById('cloneFactoryModal').style.display = 'flex';
         }
@@ -4015,6 +4017,9 @@
             document.getElementById('cloneFactoryModal').style.display = 'none';
             _cfCurrentUser = null;
             _cfMode = 'normal';
+            // Restaurar botón del footer para el modo normal
+            const btnRestore = document.getElementById('cfBtnGenerate');
+            if (btnRestore) { btnRestore.style.display = ''; btnRestore.textContent = '🔗 Generar Link'; btnRestore.style.background = ''; }
             // Reset gift wizard to step 1
             giftGoStep(1);
         }
@@ -4029,7 +4034,7 @@
 
         // ── Gift Wizard: navegación de pasos ─────────────────────────────────
         function giftGoStep(step) {
-            for (let i = 1; i <= 5; i++) {
+            for (let i = 1; i <= 6; i++) {
                 const el = document.getElementById('giftStep' + i);
                 if (el) el.style.display = (i === step) ? 'block' : 'none';
             }
@@ -4037,8 +4042,8 @@
                 const s = parseInt(dot.dataset.step);
                 dot.style.background = s <= step ? '#f59e0b' : '#e5e7eb';
             });
-            // Actualizar resumen si entramos al paso 4
-            if (step === 4) updateGiftFinalSummary();
+            // Actualizar resumen al entrar al paso 6
+            if (step === 6) updateGiftFinalSummary();
             // Inicializar procesador de imágenes al entrar al paso 5
             if (step === 5 && typeof _imgprocInitStep5 === 'function') _imgprocInitStep5();
             // Ocultar preview lateral si salimos de los pasos con editores
@@ -4135,17 +4140,53 @@
             const tplCount = allTpl ? _getAllTemplateKeys().length : document.querySelectorAll('.giftTplCheck:checked').length;
             const durMap = { '7': '7 días', '15': '15 días', '30': '1 mes', '90': '3 meses', '180': '6 meses', '365': '1 año', '0': 'Sin vencimiento' };
 
+            // Datos del paso 1
+            const nombre = document.getElementById('giftNombre')?.value || '—';
+            const matricula = document.getElementById('giftMatricula')?.value || '—';
+            const email = document.getElementById('giftEmail')?.value || '—';
+            // Datos del paso 2 (primer workplace)
+            const wpName = document.querySelector('#gw-wp-0 .gw-wp-name-input')?.value ||
+                           document.querySelector('[id^="giftWpNombre"]')?.value || '—';
+            // Imágenes paso 5
+            const hasProLogo = document.getElementById('imgProf-status')?.textContent?.includes('✅');
+            const hasFirma   = document.getElementById('imgFirma-status')?.textContent?.includes('✅');
+            // API Key
+            const apiKey = document.getElementById('cfApiKey')?.value || '';
+            const apiKeyDisplay = apiKey ? '•••' + apiKey.slice(-6) : '<span style="color:#ef4444;">No configurada</span>';
+
             const el = document.getElementById('giftFinalSummaryContent');
+            if (!el) return;
             el.innerHTML = `
-                <span>🏷️ Plan: <strong>${plan}</strong></span>
-                <span>📱 <strong>${dev === '999' ? 'Ilimitados' : dev}</strong> disp.</span>
-                <span>📅 <strong>${durMap[dur] || dur + ' días'}</strong></span>
-                <span>⭐ Pro Mode: <strong>${pro ? 'Sí' : 'No'}</strong></span>
-                <span>📄 <strong>${allTpl ? 'Todas' : tplCount}</strong> plantillas</span>
-                <span>🎨 Color: <span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:${_giftSelectedColor};vertical-align:middle;border:1px solid rgba(0,0,0,.2);"></span></span>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem .8rem;font-size:.8rem;">
+                <div style="background:#f8fafc;border-radius:6px;padding:.5rem .7rem;">
+                  <div style="font-size:.7rem;color:#94a3b8;font-weight:600;text-transform:uppercase;margin-bottom:.3rem;">👤 Profesional</div>
+                  <div><strong>${nombre}</strong></div>
+                  <div style="color:#64748b;font-size:.75rem;">${matricula} · ${email}</div>
+                </div>
+                <div style="background:#f8fafc;border-radius:6px;padding:.5rem .7rem;">
+                  <div style="font-size:.7rem;color:#94a3b8;font-weight:600;text-transform:uppercase;margin-bottom:.3rem;">🏥 Lugar de trabajo</div>
+                  <div><strong>${wpName}</strong></div>
+                </div>
+                <div style="background:#f8fafc;border-radius:6px;padding:.5rem .7rem;">
+                  <div style="font-size:.7rem;color:#94a3b8;font-weight:600;text-transform:uppercase;margin-bottom:.3rem;">🏷️ Licencia</div>
+                  <div><strong>${plan}</strong> · ${durMap[dur] || dur + ' días'}</div>
+                  <div style="color:#64748b;font-size:.75rem;">${dev === '999' ? 'Ilimitados' : dev} disp. · Pro Mode: ${pro ? 'Sí' : 'No'}</div>
+                </div>
+                <div style="background:#f8fafc;border-radius:6px;padding:.5rem .7rem;">
+                  <div style="font-size:.7rem;color:#94a3b8;font-weight:600;text-transform:uppercase;margin-bottom:.3rem;">📄 Plantillas y estilo</div>
+                  <div><strong>${allTpl ? 'Todas (' + tplCount + ')' : tplCount + ' seleccionadas'}</strong></div>
+                  <div style="display:flex;align-items:center;gap:.3rem;font-size:.75rem;color:#64748b;">Color: <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${_giftSelectedColor};vertical-align:middle;border:1px solid rgba(0,0,0,.15);"></span></div>
+                </div>
+                <div style="background:#f8fafc;border-radius:6px;padding:.5rem .7rem;">
+                  <div style="font-size:.7rem;color:#94a3b8;font-weight:600;text-transform:uppercase;margin-bottom:.3rem;">🖼️ Imágenes</div>
+                  <div style="font-size:.78rem;">Logo: ${hasProLogo ? '<span style="color:#10b981;">✅ Cargado</span>' : '<span style="color:#94a3b8;">—</span>'} · Firma: ${hasFirma ? '<span style="color:#10b981;">✅ Cargada</span>' : '<span style="color:#94a3b8;">—</span>'}</div>
+                </div>
+                <div style="background:#f8fafc;border-radius:6px;padding:.5rem .7rem;">
+                  <div style="font-size:.7rem;color:#94a3b8;font-weight:600;text-transform:uppercase;margin-bottom:.3rem;">🔑 API Key</div>
+                  <div style="font-family:monospace;font-size:.78rem;">${apiKeyDisplay}</div>
+                </div>
+              </div>
             `;
-            // También actualizar badge del paso 3
-            updateGiftSummaryBadge();
         }
 
         // ── Gift Wizard: Workplace Accordion ─────────────────────────────────
@@ -6663,11 +6704,12 @@
 
                     <!-- Stepper visual (5 pasos) -->
                     <div id="giftStepper" style="display:flex;justify-content:center;gap:.3rem;margin-bottom:.8rem;">
-                        <div class="gift-step-dot active" data-step="1" style="width:28px;height:4px;border-radius:3px;background:#f59e0b;transition:all .3s;cursor:pointer;" onclick="giftGoStep(1)"></div>
-                        <div class="gift-step-dot" data-step="2" style="width:28px;height:4px;border-radius:3px;background:#e5e7eb;transition:all .3s;cursor:pointer;" onclick="giftGoStep(2)"></div>
-                        <div class="gift-step-dot" data-step="3" style="width:28px;height:4px;border-radius:3px;background:#e5e7eb;transition:all .3s;cursor:pointer;" onclick="giftGoStep(3)"></div>
-                        <div class="gift-step-dot" data-step="4" style="width:28px;height:4px;border-radius:3px;background:#e5e7eb;transition:all .3s;cursor:pointer;" onclick="giftGoStep(4)"></div>
-                        <div class="gift-step-dot" data-step="5" style="width:28px;height:4px;border-radius:3px;background:#e5e7eb;transition:all .3s;cursor:pointer;" onclick="giftGoStep(5)"></div>
+                        <div class="gift-step-dot active" data-step="1" style="width:24px;height:4px;border-radius:3px;background:#f59e0b;transition:all .3s;cursor:pointer;" onclick="giftGoStep(1)"></div>
+                        <div class="gift-step-dot" data-step="2" style="width:24px;height:4px;border-radius:3px;background:#e5e7eb;transition:all .3s;cursor:pointer;" onclick="giftGoStep(2)"></div>
+                        <div class="gift-step-dot" data-step="3" style="width:24px;height:4px;border-radius:3px;background:#e5e7eb;transition:all .3s;cursor:pointer;" onclick="giftGoStep(3)"></div>
+                        <div class="gift-step-dot" data-step="4" style="width:24px;height:4px;border-radius:3px;background:#e5e7eb;transition:all .3s;cursor:pointer;" onclick="giftGoStep(4)"></div>
+                        <div class="gift-step-dot" data-step="5" style="width:24px;height:4px;border-radius:3px;background:#e5e7eb;transition:all .3s;cursor:pointer;" onclick="giftGoStep(5)"></div>
+                        <div class="gift-step-dot" data-step="6" style="width:24px;height:4px;border-radius:3px;background:#e5e7eb;transition:all .3s;cursor:pointer;" onclick="giftGoStep(6)"></div>
                     </div>
 
                     <!-- ══════════════════════════════════════════════════════════ -->
@@ -6887,12 +6929,6 @@
                             </div>
                         </div>
 
-                        <!-- Resumen final -->
-                        <div id="giftFinalSummary" style="background:linear-gradient(135deg,#fef3c7,#fff7ed);border:1px solid #f59e0b;border-radius:8px;padding:.6rem .8rem;margin-bottom:.6rem;">
-                            <p style="font-size:.78rem;font-weight:700;color:#92400e;margin:0 0 .3rem;">📋 Resumen de la licencia:</p>
-                            <div id="giftFinalSummaryContent" style="display:flex;gap:.8rem;font-size:.73rem;color:#78350f;flex-wrap:wrap;"></div>
-                        </div>
-
                         <div style="display:flex;justify-content:space-between;">
                             <button type="button" class="btn-secondary" onclick="giftGoStep(3)" style="padding:7px 16px;font-size:.84rem;">← Anterior</button>
                             <button type="button" class="btn-primary" onclick="giftGoStep(5)" style="padding:7px 20px;font-size:.84rem;">Siguiente →</button>
@@ -7030,6 +7066,25 @@
 
                         <div style="display:flex;justify-content:space-between;margin-top:.8rem;">
                             <button type="button" class="btn-secondary" onclick="giftGoStep(4)" style="padding:7px 16px;font-size:.84rem;">← Anterior</button>
+                            <button type="button" class="btn-primary" onclick="giftGoStep(6)" style="padding:7px 20px;font-size:.84rem;">Revisar y Crear →</button>
+                        </div>
+                    </div>
+
+                    <!-- ══════════════════════════════════════════════════════════ -->
+                    <!-- ── PASO 6: Resumen Final ── -->
+                    <!-- ══════════════════════════════════════════════════════════ -->
+                    <div id="giftStep6" style="display:none;">
+                        <p class="gw-section-title">✅ Paso 6 — Revisar y Confirmar</p>
+                        <p class="gw-section-sub">Verificá que todo esté correcto antes de crear el usuario.</p>
+
+                        <div id="giftFinalSummary" style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid #6ee7b7;border-radius:10px;padding:.8rem 1rem;margin-bottom:.8rem;">
+                            <p style="font-size:.8rem;font-weight:700;color:#065f46;margin:0 0 .5rem;">📋 Resumen del usuario a crear</p>
+                            <div id="giftFinalSummaryContent"></div>
+                        </div>
+
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.6rem;">
+                            <button type="button" class="btn-secondary" onclick="giftGoStep(5)" style="padding:7px 16px;font-size:.84rem;">← Anterior</button>
+                            <button type="button" class="btn-primary" onclick="document.getElementById('cfBtnGenerate').click()" style="padding:9px 22px;font-size:.9rem;font-weight:700;background:linear-gradient(135deg,#f59e0b,#d97706);border-color:#d97706;">🎁 Crear y Generar Link</button>
                         </div>
                     </div>
                 </div>
