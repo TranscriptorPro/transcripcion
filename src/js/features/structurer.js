@@ -687,11 +687,31 @@ window.checkMedicalTerminology = function() {
 // ── Función reutilizable de auto-estructuración ──────────────────
 // Usada por btnStructureAI (click manual) y por el auto-pipeline (post-transcripción)
 window.autoStructure = async function (options = {}) {
-    // Mutex: evitar invocaciones concurrentes
+    // Mutex: evitar invocaciones concurrentes (misma tab)
     if (window._structuring) {
         if (typeof showToast === 'function') showToast('⏳ Ya hay un estructurado en curso', 'warning');
         return false;
     }
+
+    // B5: Mutex cross-tab con Web Locks API
+    if (navigator.locks) {
+        try {
+            return await navigator.locks.request('transcriptor_structuring', { ifAvailable: true }, async function(lock) {
+                if (!lock) {
+                    if (typeof showToast === 'function') showToast('⏳ Ya hay un estructurado en curso en otra pestaña', 'warning');
+                    return false;
+                }
+                return await _doAutoStructure(options);
+            });
+        } catch(_) {
+            return await _doAutoStructure(options);
+        }
+    }
+    return await _doAutoStructure(options);
+};
+
+async function _doAutoStructure(options) {
+    if (window._structuring) return false;
     window._structuring = true;
 
     const editor = document.getElementById('editor');
@@ -773,7 +793,7 @@ window.autoStructure = async function (options = {}) {
         }
         hideProgress();
     }
-};
+}
 
 window.initStructurer = function () {
     const btnStructureAIEl = document.getElementById('btnStructureAI');

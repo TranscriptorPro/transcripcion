@@ -156,11 +156,18 @@ window.initSessionAssistant = function () {
         const profData = window._profDataCache || JSON.parse(localStorage.getItem('prof_data') || '{}');
         const cfg      = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
         const profiles = _getWpProfiles();
+
+        // B4: Validar que haya datos de workplace antes de renderizar
+        if (!profiles || profiles.length === 0) {
+            console.warn('SessionAssistant: no hay workplace_profiles');
+            if (typeof showToast === 'function') {
+                showToast('⚠️ No hay lugares de trabajo configurados. Configuralos en ⚙️ Configurar Informe.', 'warning');
+            }
+            return;
+        }
+
         const clinic   = isClinicMode();
         const pro      = isProUser();
-
-        // Si no hay lugares configurados → skip silencioso (no molestar al usuario con modal vacío)
-        if (profiles.length === 0) return;
 
         // Saludo
         if (greetingEl) greetingEl.textContent = getGreeting(profData.nombre, clinic);
