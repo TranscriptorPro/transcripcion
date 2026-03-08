@@ -157,10 +157,7 @@ window.sendManualDiagnostic = async function (silent = false) {
  * Solo visible para usuarios NO-ADMIN (TRIAL, NORMAL, PRO).
  */
 window.initDiagnostic = function () {
-    const isAdmin = (typeof CLIENT_CONFIG === 'undefined' || CLIENT_CONFIG.type === 'ADMIN');
-    const btn = document.getElementById('btnSendDiagnostic');
-    if (!btn) return;
-    if (isAdmin) { btn.style.display = 'none'; return; }
-    btn.style.display = '';
-    btn.addEventListener('click', () => window.sendManualDiagnostic(false));
+    // Botón de diagnóstico removido del header — el envío se hace
+    // solo de forma automática o desde el admin. initDiagnostic
+    // sigue existiendo para no romper llamadas externas.
 };
