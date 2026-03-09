@@ -871,127 +871,30 @@ document.addEventListener('DOMContentLoaded', () => {
 // ============ IMPRIMIR DESDE VISTA PREVIA ============
 // Inyecta el contenido A4 en un iframe oculto con estructura table para
 // que el navegador repita encabezado y pie en cada página impresa.
-window.printFromPreview = function () {
+window.printFromPreview = async function () {
     const page = document.getElementById('previewPage');
     if (!page) { window.print(); return; }
 
-    // Recopilar todas las reglas CSS del documento principal
-    // FILTRAR reglas @media print que ocultan el body (son para el documento principal, no para el iframe)
-    let allStyles = '';
-    try {
-        Array.from(document.styleSheets).forEach(ss => {
-            try {
-                Array.from(ss.cssRules).forEach(r => {
-                    // Saltar reglas @media print que contengan #printPreviewOverlay (son del doc principal)
-                    if (r.cssText && r.cssText.includes('#printPreviewOverlay')) return;
-                    if (r.cssText && r.cssText.includes('body > *:not(')) return;
-                    allStyles += r.cssText + '\n';
-                });
-            } catch (_) { /* cross-origin stylesheet, skip */ }
-        });
-    } catch (_) {}
-
-    // Leer el color de acento aplicado en la página
-    const accentColor = page.style.getPropertyValue('--pa') || '#1a56a0';
-    const fontFamily = page.style.fontFamily || "'Times New Roman', Times, serif";
-    const fontSize = page.style.fontSize || '10pt';
-
-    // Extraer secciones del preview para armar estructura con thead/tfoot
-    const wpHtml      = document.getElementById('previewWorkplace')?.outerHTML || '';
-    const headerHtml  = document.getElementById('previewHeader')?.outerHTML || '';
-    const patientHtml = document.getElementById('previewPatient')?.outerHTML || '';
-    const studyHtml   = document.getElementById('previewStudy')?.outerHTML || '';
-    // Contenido sin los marcadores de salto de página
-    const contentEl   = document.getElementById('previewContent');
-    let contentHtml   = '';
-    if (contentEl) {
-        const clone = contentEl.cloneNode(true);
-        clone.querySelectorAll('.pv-pagebreak-marker').forEach(m => m.remove());
-        contentHtml = clone.outerHTML;
+    // Generar HTML standalone idéntico a la vista previa (usa createHTML del editor)
+    // Esto garantiza 100% de fidelidad: lo que se ve en preview = lo que se imprime
+    let htmlDoc;
+    if (typeof createHTML === 'function') {
+        htmlDoc = await createHTML();
+    } else if (typeof window.createHTML === 'function') {
+        htmlDoc = await window.createHTML();
+    } else {
+        // Fallback: imprimir directo
+        window.print();
+        return;
     }
-    const sigHtml     = document.getElementById('previewSignature')?.outerHTML || '';
-    const qrHtml      = document.getElementById('previewQR')?.outerHTML || '';
-    const footerHtml  = document.getElementById('previewFooter')?.outerHTML || '';
 
     const iframe = document.createElement('iframe');
-    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:21cm;height:29.7cm;opacity:0;border:none;';
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:210mm;height:297mm;opacity:0;border:none;';
     document.body.appendChild(iframe);
 
     const iDoc = iframe.contentDocument || iframe.contentWindow.document;
     iDoc.open();
-    iDoc.write(`<!DOCTYPE html><html><head>
-        <meta charset="UTF-8">
-        <title>Imprimir Informe</title>
-        <style>${allStyles}</style>
-        <style>
-            :root { --pa: ${accentColor}; }
-            html, body { margin: 0; padding: 0; background: white; font-family: ${fontFamily}; font-size: ${fontSize}; }
-
-            /* Tabla de layout para repetir encabezado/pie */
-            .print-table { width: 100%; border-collapse: collapse; }
-            .print-table td { padding: 0; vertical-align: top; }
-            .print-thead-cell { border-bottom: none; }
-            .print-tfoot-cell { border-top: none; }
-
-            /* Anular estilos de .a4-page ya que usamos la tabla */
-            .a4-page {
-                box-shadow: none !important;
-                margin: 0 !important;
-                border-radius: 0 !important;
-                width: 100% !important;
-                min-height: auto !important;
-                padding: 0 !important;
-                border-top: none !important;
-            }
-
-            .no-print, .ai-note-panel, .pv-pagebreak-marker { display: none !important; }
-
-            @media print {
-                html, body { margin: 0; padding: 0; }
-                @page { margin: 12mm 15mm; }
-
-                /* Borde superior de acento en cada página */
-                .print-thead-cell {
-                    border-top: 5px solid var(--pa, #1a56a0);
-                    padding-top: 2mm;
-                }
-
-                /* Nunca cortar justo después de un título */
-                h1, h2, h3,
-                .report-h1, .report-h2, .report-h3 {
-                    break-after: avoid;
-                    page-break-after: avoid;
-                    break-inside: avoid;
-                    page-break-inside: avoid;
-                }
-                /* Nunca dejar la firma sola en una página */
-                .preview-signature, .pvsig-block {
-                    break-inside: avoid;
-                    page-break-inside: avoid;
-                }
-                /* Evitar viudas/huérfanas */
-                p { orphans: 3; widows: 3; }
-                .no-print, .ai-note-panel, .pv-pagebreak-marker { display: none !important; }
-            }
-        </style>
-    </head><body>
-        <table class="print-table">
-            <thead><tr><td class="print-thead-cell">
-                ${wpHtml}
-            </td></tr></thead>
-            <tfoot><tr><td class="print-tfoot-cell">
-                ${footerHtml}
-            </td></tr></tfoot>
-            <tbody><tr><td>
-                ${headerHtml}
-                ${studyHtml}
-                ${patientHtml}
-                ${contentHtml}
-                ${sigHtml}
-                ${qrHtml}
-            </td></tr></tbody>
-        </table>
-    </body></html>`);
+    iDoc.write(htmlDoc);
     iDoc.close();
 
     iframe.onload = function () {
@@ -1000,8 +903,8 @@ window.printFromPreview = function () {
             iframe.contentWindow.print();
             setTimeout(() => {
                 if (document.body.contains(iframe)) document.body.removeChild(iframe);
-            }, 2000);
-        }, 400);
+            }, 3000);
+        }, 500);
     };
 };
 

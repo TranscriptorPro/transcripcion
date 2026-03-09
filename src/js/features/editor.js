@@ -868,6 +868,7 @@ window.downloadRTF = () => downloadFile('rtf');
 window.downloadTXT = () => downloadFile('txt');
 window.downloadHTML = () => downloadFile('html');
 window.downloadPDF = () => downloadFile('pdf');
+window.createHTML = createHTML;
 
 function createRTF(text, fecha) {
     // Limpiar emojis y caracteres no imprimibles antes de procesar
