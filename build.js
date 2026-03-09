@@ -53,6 +53,7 @@ const CSS_FILES = [
     'src/css/base.css',
     'src/css/layout.css',
     'src/css/components.css',
+    'src/css/preview-print.css',
     'src/css/animations.css',
 ];
 
