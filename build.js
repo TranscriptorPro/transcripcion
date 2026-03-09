@@ -35,6 +35,7 @@ const JS_FILES = [
     'src/js/core/state.js',
     'src/js/core/audio.js',
     'src/js/features/editor.js',
+    'src/js/features/editorSnapshotsUtils.js',
     'src/js/features/transcriptor.js',
     'src/js/features/structurer.js',
     'src/js/features/medDictionary.js',
