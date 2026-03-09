@@ -198,18 +198,11 @@
     };
 
     // ─── 7. Tools links ──────────────────────────────────────────────
-    // A2: Helper — observa cuándo un modal pierde .active y ejecuta callback
     function _watchForClose(element, callback) {
-        const obs = new MutationObserver((mutations) => {
-            for (const m of mutations) {
-                if (m.attributeName === 'class' && !element.classList.contains('active')) {
-                    obs.disconnect();
-                    callback();
-                    break;
-                }
-            }
-        });
-        obs.observe(element, { attributes: true, attributeFilter: ['class'] });
+        const watchUtils = window.SettingsModalWatchUtils || {};
+        if (typeof watchUtils.watchForClose === 'function') {
+            watchUtils.watchForClose(element, callback);
+        }
     }
 
     function _initToolsLinks() {
@@ -255,55 +248,9 @@
 
     // ─── 10. Backup / Restore ────────────────────────────────────────
     function _initBackupSection() {
-        const exportBtn = document.getElementById('settingsExportBackup');
-        const importInput = document.getElementById('settingsImportBackup');
-        const clearBtn = document.getElementById('settingsClearData');
-        const _backupUtils = window.SettingsBackupUtils || {};
-        const _exportBackup = _backupUtils.exportBackup;
-        const _importBackup = _backupUtils.importBackup;
-
-        if (exportBtn) {
-            exportBtn.addEventListener('click', () => {
-                if (typeof _exportBackup === 'function') {
-                    _exportBackup();
-                }
-            });
-        }
-        if (importInput) {
-            importInput.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                if (typeof _importBackup === 'function') {
-                    _importBackup(file);
-                }
-            });
-        }
-        if (clearBtn) {
-            clearBtn.addEventListener('click', async () => {
-                const ok1 = typeof window.showCustomConfirm === 'function'
-                    ? await window.showCustomConfirm('⚠️ Borrar datos', '¿Estás seguro? Esto borrará TODOS tus datos locales (historial, configuración, diccionario, etc.). Esta acción NO se puede deshacer.')
-                    : confirm('⚠️ ¿Estás seguro? Esto borrará TODOS tus datos locales?');
-                if (!ok1) return;
-                const ok2 = typeof window.showCustomConfirm === 'function'
-                    ? await window.showCustomConfirm('🔴 Última confirmación', 'Se borrarán todos los datos. ¿Continuar?')
-                    : confirm('🔴 Última confirmación: se borrarán todos los datos. ¿Continuar?');
-                if (!ok2) return;
-
-                // Keep only essential keys
-                const keepKeys = ['groq_api_key', 'prof_data', 'workplace_profiles', 'CLIENT_CONFIG', 'device_id', 'onboarding_accepted'];
-                const saved = {};
-                keepKeys.forEach(k => {
-                    const v = localStorage.getItem(k);
-                    if (v) saved[k] = v;
-                });
-
-                localStorage.clear();
-
-                Object.entries(saved).forEach(([k, v]) => localStorage.setItem(k, v));
-
-                if (typeof showToast === 'function') showToast('🗑️ Datos locales eliminados. Recargando...', 'success');
-                setTimeout(() => location.reload(), 1200);
-            });
+        const utils = window.SettingsBackupActionsUtils || {};
+        if (typeof utils.initBackupSection === 'function') {
+            utils.initBackupSection();
         }
     }
 
