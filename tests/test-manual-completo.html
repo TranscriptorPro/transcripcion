@@ -775,7 +775,7 @@ async function runSection4() {
     if (typeof window.autoDetectTemplateKey !== 'function') {
         logWarn(sid, 'autoDetectTemplateKey no disponible — cargando módulos...');
         // Try to source the scripts
-        const scripts = ['src/js/config/templates.js', 'src/js/features/structurer.js'];
+        const scripts = ['src/js/config/templatesCatalog.js', 'src/js/config/templates.js', 'src/js/features/structurer.js'];
         for (const src of scripts) {
             try {
                 await loadScript(src);
