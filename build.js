@@ -25,6 +25,7 @@ const JS_FILES = [
     'src/js/utils/ui.js',
     'src/js/utils/uiComparisonUtils.js',
     'src/js/utils/uiPreviewDownloadUtils.js',
+    'src/js/utils/uiPatientDataUtils.js',
     'src/js/utils/uiThemeUtils.js',
     'src/js/utils/uiKeyboardShortcuts.js',
     'src/js/utils/uiAutosaveUtils.js',
