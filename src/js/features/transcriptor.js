@@ -298,7 +298,7 @@ if (transcribeBtn) {
     });
 }
 
-async function transcribeWithGroqParams(file, { language = 'es', model = 'whisper-large-v3' } = {}) {
+async function transcribeWithGroqParams(file, { language = 'es', model = 'whisper-large-v3-turbo' } = {}) {
     const form = new FormData();
     form.append('file', file);
     form.append('model', model);
