@@ -256,6 +256,7 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
       <input id="rawFile" type="file" accept=".txt">
       <button id="btnStruct">Estructurar con Groq</button>
       <button id="btnRender" class="secondary">Renderizar manual</button>
+      <button id="btnClearAssets" class="secondary">Limpiar logos/firma</button>
     </div>
 
     <div class="field" style="margin-top:8px;">
@@ -319,7 +320,8 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
     sign: '',
     htmlDoc: '',
     txtDoc: '',
-    rtfDoc: ''
+    rtfDoc: '',
+    frameReady: false
   };
 
   $('rawText').value = 'Paciente masculino de 58 anos. Ecocardiograma transtoracico: ventriculo izquierdo no dilatado, FEVI 62%, sin trastornos segmentarios. Valvula mitral con insuficiencia leve. Aorta no dilatada. Sin derrame pericardico. Conclusion: funcion sistolica conservada.';
@@ -457,14 +459,29 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
     return rtf;
   }
 
+  function renderIntoFrame(html) {
+    const fr = $('previewFrame');
+    if (!fr) return;
+    try {
+      const doc = fr.contentWindow && fr.contentWindow.document ? fr.contentWindow.document : null;
+      if (!doc) throw new Error('No se pudo acceder al documento del iframe.');
+      doc.open();
+      doc.write(html);
+      doc.close();
+      state.frameReady = true;
+    } catch (e) {
+      state.frameReady = false;
+      setStatus('Error renderizando en iframe: ' + (e.message || e), true);
+    }
+  }
+
   function renderAll() {
     const html = generateHtmlDoc();
     const txt = generateTxt();
     const rtf = toRtf(txt);
     $('htmlOut').textContent = html;
     $('txtOut').textContent = txt + '\n\n----- RTF -----\n' + rtf.slice(0, 2000) + (rtf.length > 2000 ? '\n...[truncado para vista]...' : '');
-    const fr = $('previewFrame');
-    fr.srcdoc = html;
+    renderIntoFrame(html);
     setStatus('Render completo.');
   }
 
@@ -473,8 +490,11 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
     status.style.color = err ? '#b42318' : '#385377';
   }
 
-  async function fileToDataUrl(file) {
+  async function fileToDataUrl(file, label) {
     if (!file) return '';
+    if (!String(file.type || '').startsWith('image/')) {
+      throw new Error(label + ': el archivo no es una imagen valida.');
+    }
     return new Promise((resolve, reject) => {
       const r = new FileReader();
       r.onload = () => resolve(r.result);
@@ -537,16 +557,42 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
   });
 
   $('instLogo').addEventListener('change', async (e) => {
-    state.instLogo = await fileToDataUrl(e.target.files[0]);
-    renderAll();
+    try {
+      state.instLogo = await fileToDataUrl(e.target.files[0], 'Logo institucion');
+      renderAll();
+      setStatus('Logo institucion cargado correctamente.');
+    } catch (err) {
+      setStatus(err.message || 'No se pudo cargar logo de institucion.', true);
+    }
   });
   $('proLogo').addEventListener('change', async (e) => {
-    state.proLogo = await fileToDataUrl(e.target.files[0]);
-    renderAll();
+    try {
+      state.proLogo = await fileToDataUrl(e.target.files[0], 'Logo profesional');
+      renderAll();
+      setStatus('Logo profesional cargado correctamente.');
+    } catch (err) {
+      setStatus(err.message || 'No se pudo cargar logo profesional.', true);
+    }
   });
   $('proSign').addEventListener('change', async (e) => {
-    state.sign = await fileToDataUrl(e.target.files[0]);
+    try {
+      state.sign = await fileToDataUrl(e.target.files[0], 'Firma');
+      renderAll();
+      setStatus('Firma cargada correctamente.');
+    } catch (err) {
+      setStatus(err.message || 'No se pudo cargar firma.', true);
+    }
+  });
+
+  $('btnClearAssets').addEventListener('click', () => {
+    state.instLogo = '';
+    state.proLogo = '';
+    state.sign = '';
+    $('instLogo').value = '';
+    $('proLogo').value = '';
+    $('proSign').value = '';
     renderAll();
+    setStatus('Logos y firma limpiados.');
   });
 
   $('btnStruct').addEventListener('click', async () => {
