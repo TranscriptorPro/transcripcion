@@ -21,6 +21,7 @@ const JS_FILES = [
     'src/js/config/studyTerminology.js',
     'src/js/utils/dom.js',
     'src/js/utils/toast.js',
+    'src/js/utils/uiModalFocusUtils.js',
     'src/js/utils/ui.js',
     'src/js/utils/uiKeyboardShortcuts.js',
     'src/js/utils/uiAutosaveUtils.js',
