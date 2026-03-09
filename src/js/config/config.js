@@ -129,6 +129,10 @@ window.getResolvedEmailSenderName = function () {
 (function _loadDynamicConfig() {
     try {
         const params = new URLSearchParams(window.location.search);
+        const setupId = params.get('id');
+        const host = String(window.location.hostname || '').toLowerCase();
+        const path = String(window.location.pathname || '').replace(/\/+$/, '') || '/';
+        const isOfficialAdminBase = (host === 'transcriptorpro.github.io' && path === '/transcripcion');
 
         // 0) Escape hatch: ?admin → forzar modo ADMIN (borrar config de cliente)
         if (params.has('admin')) {
@@ -143,7 +147,42 @@ window.getResolvedEmailSenderName = function () {
             return;
         }
 
-        // 1) Si ya existe configuración de cliente guardada → usarla
+        // 0.5) URL oficial del panel admin: SIEMPRE abrir como ADMIN
+        // (salvo links de fabrica con ?id= que deben configurar clones)
+        if (isOfficialAdminBase && !setupId) {
+            localStorage.removeItem('client_config_stored');
+            sessionStorage.removeItem('pending_setup_id');
+            if (typeof appDB !== 'undefined' && appDB.remove) {
+                try { appDB.remove('client_config_stored'); } catch(_) {}
+            }
+            return;
+        }
+
+        // 1) Detectar link de la fábrica: ?id=MED001 (tiene prioridad)
+        if (setupId) {
+            // ── Protección: si ya era ADMIN, no sobreescribir por accidente ──
+            // Solo marcar como "admin activo" si EXISTE una config almacenada de tipo ADMIN.
+            // Si stored es null (usuario nuevo), NO es admin — es un gift user legítimo.
+            const storedForAdminFlag = localStorage.getItem('client_config_stored');
+            const wasAdmin = storedForAdminFlag && (function() {
+                try {
+                    const parsed = JSON.parse(storedForAdminFlag);
+                    return parsed.type === 'ADMIN' || !parsed.type;
+                } catch(_) {
+                    return true;
+                }
+            })();
+            window._PENDING_SETUP_ID = setupId;
+            if (wasAdmin) {
+                window._ADMIN_WAS_ACTIVE = true; // flag para que business.js pregunte
+            }
+            try { sessionStorage.setItem('pending_setup_id', setupId); } catch(_) {}
+            // Limpiar URL inmediatamente (sin recargar)
+            history.replaceState({}, document.title, window.location.pathname);
+            return;
+        }
+
+        // 2) Si ya existe configuración de cliente guardada → usarla
         const stored = localStorage.getItem('client_config_stored');
         if (stored) {
             try {
@@ -155,32 +194,14 @@ window.getResolvedEmailSenderName = function () {
             } catch (_) { /* fallback a ADMIN */ }
         }
 
-        // 2) Detectar link de la fábrica: ?id=MED001
-        const setupId = params.get('id');
-        if (setupId) {
-            // ── Protección: si ya era ADMIN, no sobreescribir por accidente ──
-            // Solo marcar como "admin activo" si EXISTE una config almacenada de tipo ADMIN.
-            // Si stored es null (usuario nuevo), NO es admin — es un gift user legítimo.
-            const wasAdmin = stored && (function() {
-                try { return JSON.parse(stored).type === 'ADMIN' || !JSON.parse(stored).type; } catch(_) { return true; }
-            })();
-            window._PENDING_SETUP_ID = setupId;
-            if (wasAdmin) {
-                window._ADMIN_WAS_ACTIVE = true; // flag para que business.js pregunte
+        // 3) Recuperar de sessionStorage si existe (retry tras recarga)
+        try {
+            const saved = sessionStorage.getItem('pending_setup_id');
+            if (saved) {
+                window._PENDING_SETUP_ID = saved;
+                sessionStorage.removeItem('pending_setup_id');
             }
-            try { sessionStorage.setItem('pending_setup_id', setupId); } catch(_) {}
-            // Limpiar URL inmediatamente (sin recargar)
-            history.replaceState({}, document.title, window.location.pathname);
-        } else {
-            // Recuperar de sessionStorage si existe (retry tras recarga)
-            try {
-                const saved = sessionStorage.getItem('pending_setup_id');
-                if (saved) {
-                    window._PENDING_SETUP_ID = saved;
-                    sessionStorage.removeItem('pending_setup_id');
-                }
-            } catch(_) {}
-        }
+        } catch(_) {}
     } catch (_) { /* navegadores antiguos sin URLSearchParams */ }
 })();
 
