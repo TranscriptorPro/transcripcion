@@ -38,6 +38,15 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 .codebox { background: #0f172a; color: #d2e3ff; border-radius: 8px; padding: 8px; font-family: Consolas, monospace; font-size: 12px; white-space: pre-wrap; min-height: 160px; max-height: 300px; overflow: auto; }
 #previewFrame { width: 100%; min-height: 700px; border: 1px solid #c8d6ea; border-radius: 8px; background: #fff; }
 .status { font-size: 12px; color: #385377; min-height: 18px; }
+.pill-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.pill {
+  border: 1px solid #c8d7ec;
+  background: #f6f9ff;
+  color: #365274;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 11px;
+}
 .asset-preview {
   margin-top: 6px;
   border: 1px dashed #b8c8df;
@@ -58,6 +67,19 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 .asset-empty { font-size: 11px; color: #6f87aa; }
 .asset-actions { margin-top: 5px; display: flex; justify-content: flex-end; }
 .asset-actions button { padding: 4px 8px; font-size: 11px; }
+.asset-meta { font-size: 11px; color: #58739a; margin-top: 4px; }
+.asset-meta.bad { color: #b42318; }
+.asset-meta.good { color: #16703a; }
+.qa-box {
+  border: 1px solid #d5e0ef;
+  border-radius: 8px;
+  background: #fbfdff;
+  padding: 8px;
+}
+.qa-title { font-size: 12px; color: #27486e; font-weight: 600; margin-bottom: 6px; }
+.qa-item { font-size: 12px; margin: 3px 0; }
+.qa-ok { color: #16703a; }
+.qa-bad { color: #b42318; }
 @media (max-width: 1100px) {
   .layout { grid-template-columns: 1fr; }
   .row, .checks, .output-grid { grid-template-columns: 1fr; }
@@ -78,6 +100,23 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
       <label>API Key Groq</label>
       <input id="groqKey" type="password" placeholder="gsk_...">
       <div class="hint">No se guarda en servidor. Solo se usa en este navegador para llamar a Groq.</div>
+    </div>
+
+    <div class="field">
+      <label>Presets de prueba</label>
+      <div class="row">
+        <select id="presetSelect"></select>
+        <div class="pill-row">
+          <button type="button" id="btnSavePreset" class="secondary">Guardar</button>
+          <button type="button" id="btnLoadPreset" class="secondary">Cargar</button>
+          <button type="button" id="btnDeletePreset" class="secondary">Borrar</button>
+        </div>
+      </div>
+      <div class="actions" style="margin-top:4px;">
+        <button type="button" id="btnExportPreset" class="secondary">Exportar preset JSON</button>
+        <button type="button" id="btnImportPreset" class="secondary">Importar preset JSON</button>
+        <input id="presetImportFile" type="file" accept="application/json" style="display:none;">
+      </div>
     </div>
 
     <div class="row">
@@ -231,6 +270,11 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
       <div class="field">
         <label>Informe Nro</label>
         <input id="reportNum" type="text" value="ET-00001-090326">
+        <div class="actions" style="margin-top:4px;">
+          <button type="button" id="btnAutoReportNum" class="secondary">Auto Nro</button>
+          <button type="button" id="btnResetReportCounter" class="secondary">Reset contador</button>
+          <label class="hint" style="display:flex;align-items:center;gap:4px;"><input id="autoReportNum" type="checkbox" checked> Auto por plantilla</label>
+        </div>
       </div>
       <div class="field">
         <label>Motivo estudio</label>
@@ -243,12 +287,14 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
         <label>Logo institucion</label>
         <input id="instLogo" type="file" accept="image/*">
         <div id="instLogoPreview" class="asset-preview"><span class="asset-empty">Sin archivo</span></div>
+        <div id="instLogoMeta" class="asset-meta"></div>
         <div class="asset-actions"><button type="button" class="secondary" id="btnClearInstLogo">Limpiar</button></div>
       </div>
       <div class="field">
         <label>Logo profesional</label>
         <input id="proLogo" type="file" accept="image/*">
         <div id="proLogoPreview" class="asset-preview"><span class="asset-empty">Sin archivo</span></div>
+        <div id="proLogoMeta" class="asset-meta"></div>
         <div class="asset-actions"><button type="button" class="secondary" id="btnClearProLogo">Limpiar</button></div>
       </div>
     </div>
@@ -257,6 +303,7 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
       <label>Firma profesional (PNG/JPG)</label>
       <input id="proSign" type="file" accept="image/*">
       <div id="proSignPreview" class="asset-preview"><span class="asset-empty">Sin archivo</span></div>
+      <div id="proSignMeta" class="asset-meta"></div>
       <div class="asset-actions"><button type="button" class="secondary" id="btnClearSign">Limpiar</button></div>
     </div>
 
@@ -291,6 +338,10 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
     </div>
 
     <div class="status" id="status"></div>
+    <div class="qa-box" style="margin-top:6px;">
+      <div class="qa-title">Checklist QA rapido <span id="qaScore" class="pill">0/0</span></div>
+      <div id="qaList"></div>
+    </div>
   </section>
 
   <section class="preview-wrap">
@@ -347,7 +398,30 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
     htmlDoc: '',
     txtDoc: '',
     rtfDoc: '',
-    frameReady: false
+    frameReady: false,
+    instLogoMeta: null,
+    proLogoMeta: null,
+    signMeta: null
+  };
+
+  const SANDBOX_PRESET_KEY = 'sandbox_report_presets_v1';
+  const REPORT_COUNTER_KEY_PREFIX = 'sandbox_report_counter_';
+  const REPORT_ABBREVS = {
+    espirometria: 'ES', holter: 'HL', test_marcha: 'TM', mapa: 'MP', pletismografia: 'PL',
+    cinecoro: 'CI', oximetria_nocturna: 'OX', ecg: 'EG', campimetria: 'CM', eco_stress: 'EC',
+    oct_retinal: 'OC', pap: 'PP', topografia_corneal: 'TC', colposcopia: 'CP', fondo_ojo: 'FO',
+    electromiografia: 'EM', tac: 'TA', polisomnografia: 'PS', naso: 'NL', resonancia: 'RM',
+    mamografia: 'MG', endoscopia_otologica: 'EO', densitometria: 'DX', protocolo_quirurgico: 'PQ',
+    pet_ct: 'PT', ett: 'ET', radiografia: 'RX', ecografia_renal: 'ER', ecografia_abdominal: 'EA',
+    ecografia_tiroidea: 'TI', gastroscopia: 'GS', ecografia_mamaria: 'MM', colonoscopia: 'CO',
+    ecografia_obstetrica: 'OB', broncoscopia: 'BR', eco_doppler: 'ED', laringoscopia: 'LA',
+    nota_evolucion: 'NE', gammagrafia_cardiaca: 'GC', epicrisis: 'EP', generico: 'IG'
+  };
+
+  const ASSET_RECOMMENDED = {
+    instLogo: { minW: 220, minH: 60, maxKB: 1800, ratio: 2.6, label: 'Logo institucion' },
+    proLogo:  { minW: 180, minH: 60, maxKB: 1200, ratio: 2.4, label: 'Logo profesional' },
+    sign:     { minW: 380, minH: 100, maxKB: 1200, ratio: 3.2, label: 'Firma' }
   };
 
   $('rawText').value = 'Paciente masculino de 58 anos. Ecocardiograma transtoracico: ventriculo izquierdo no dilatado, FEVI 62%, sin trastornos segmentarios. Valvula mitral con insuficiencia leve. Aorta no dilatada. Sin derrame pericardico. Conclusion: funcion sistolica conservada.';
@@ -516,6 +590,90 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
     status.style.color = err ? '#b42318' : '#385377';
   }
 
+  function readPresets() {
+    try {
+      return JSON.parse(localStorage.getItem(SANDBOX_PRESET_KEY) || '{}');
+    } catch (_) {
+      return {};
+    }
+  }
+
+  function writePresets(obj) {
+    localStorage.setItem(SANDBOX_PRESET_KEY, JSON.stringify(obj || {}));
+  }
+
+  function refreshPresetSelect() {
+    const sel = $('presetSelect');
+    if (!sel) return;
+    const presets = readPresets();
+    const names = Object.keys(presets).sort((a, b) => a.localeCompare(b, 'es'));
+    sel.innerHTML = '<option value="">(seleccionar preset)</option>' + names.map((n) => '<option value="' + esc(n) + '">' + esc(n) + '</option>').join('');
+  }
+
+  function collectConfig() {
+    const ids = [
+      'groqKey','templateSelect','accentColor','wpName','wpEmail','wpAddr','wpPhone','proName','proSexo','proMat','proSpecs',
+      'proTel','proEmail','proInstagram','proFacebook','proX','proYoutube','proWa','refDoctor','patientName','patientDni','patientAge',
+      'patientSex','patientIns','patientAff','studyDate','studyTime','reportNum','studyReason','rawText','structuredText'
+    ];
+    const checks = ['showWp','showHeader','showPatient','showStudy','showSignImage','showSignLine','showSignName','showSignMat','showFooterDate','showFooterPage','autoReportNum'];
+    const cfg = { values: {}, checks: {}, assets: {} };
+    ids.forEach((id) => { const el = $(id); if (el) cfg.values[id] = el.value; });
+    checks.forEach((id) => { const el = $(id); if (el) cfg.checks[id] = !!el.checked; });
+    cfg.assets.instLogo = state.instLogo || '';
+    cfg.assets.proLogo = state.proLogo || '';
+    cfg.assets.sign = state.sign || '';
+    return cfg;
+  }
+
+  function applyConfig(cfg) {
+    if (!cfg) return;
+    Object.keys(cfg.values || {}).forEach((id) => { const el = $(id); if (el) el.value = cfg.values[id]; });
+    Object.keys(cfg.checks || {}).forEach((id) => { const el = $(id); if (el) el.checked = !!cfg.checks[id]; });
+
+    state.instLogo = (cfg.assets && cfg.assets.instLogo) || '';
+    state.proLogo = (cfg.assets && cfg.assets.proLogo) || '';
+    state.sign = (cfg.assets && cfg.assets.sign) || '';
+    state.instLogoMeta = null;
+    state.proLogoMeta = null;
+    state.signMeta = null;
+
+    $('instLogo').value = '';
+    $('proLogo').value = '';
+    $('proSign').value = '';
+
+    paintAssetPreview('instLogoPreview', state.instLogo);
+    paintAssetPreview('proLogoPreview', state.proLogo);
+    paintAssetPreview('proSignPreview', state.sign);
+    paintAssetMeta('instLogoMeta', state.instLogoMeta, ASSET_RECOMMENDED.instLogo);
+    paintAssetMeta('proLogoMeta', state.proLogoMeta, ASSET_RECOMMENDED.proLogo);
+    paintAssetMeta('proSignMeta', state.signMeta, ASSET_RECOMMENDED.sign);
+    renderAll();
+  }
+
+  function inferReportAbbrev() {
+    const key = $('templateSelect').value || 'generico';
+    return REPORT_ABBREVS[key] || 'IG';
+  }
+
+  function nextReportNumber(abbrev, reset) {
+    const key = REPORT_COUNTER_KEY_PREFIX + abbrev;
+    let n = parseInt(localStorage.getItem(key) || '0', 10);
+    if (reset) n = 0;
+    n += 1;
+    localStorage.setItem(key, String(n));
+    const dt = new Date($('studyDate').value || new Date().toISOString().slice(0, 10) + 'T12:00');
+    const dd = String(dt.getDate()).padStart(2, '0');
+    const mm = String(dt.getMonth() + 1).padStart(2, '0');
+    const aa = String(dt.getFullYear()).slice(-2);
+    return abbrev + '-' + String(n).padStart(5, '0') + '-' + dd + mm + aa;
+  }
+
+  function autoFillReportNumber(resetCounter) {
+    const ab = inferReportAbbrev();
+    $('reportNum').value = nextReportNumber(ab, !!resetCounter);
+  }
+
   function paintAssetPreview(previewId, dataUrl) {
     const el = $(previewId);
     if (!el) return;
@@ -526,14 +684,70 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
     el.innerHTML = '<img src="' + dataUrl + '" alt="preview">';
   }
 
-  async function fileToDataUrl(file, label) {
+  function paintAssetMeta(metaId, meta, rec) {
+    const el = $(metaId);
+    if (!el) return;
+    if (!meta) {
+      el.textContent = 'Recomendado: >= ' + rec.minW + 'x' + rec.minH + ' px, <= ' + rec.maxKB + ' KB';
+      el.className = 'asset-meta';
+      return;
+    }
+    const ratio = meta.height ? (meta.width / meta.height) : 0;
+    const ratioDiff = Math.abs(ratio - rec.ratio);
+    const okSize = meta.kb <= rec.maxKB;
+    const okDims = meta.width >= rec.minW && meta.height >= rec.minH;
+    const okRatio = ratioDiff < 1.1;
+    const allOk = okSize && okDims && okRatio;
+    const notes = [];
+    if (!okDims) notes.push('resolucion baja');
+    if (!okSize) notes.push('archivo pesado');
+    if (!okRatio) notes.push('proporcion inusual');
+    el.textContent = meta.width + 'x' + meta.height + ' px, ' + meta.kb + ' KB' + (notes.length ? ' - ' + notes.join(', ') : ' - OK');
+    el.className = 'asset-meta ' + (allOk ? 'good' : 'bad');
+  }
+
+  function runQuickQA() {
+    const checks = [];
+    const structured = ($('structuredText').value || '').trim();
+    const reportNum = $('reportNum').value.trim();
+
+    checks.push({ ok: $('showWp').checked ? !!$('wpName').value.trim() : true, label: 'Bloque lugar tiene nombre si esta habilitado' });
+    checks.push({ ok: $('showHeader').checked ? !!$('proName').value.trim() : true, label: 'Encabezado tiene profesional si esta habilitado' });
+    checks.push({ ok: $('showSignImage').checked ? !!state.sign : true, label: 'Firma imagen presente cuando esta habilitada' });
+    checks.push({ ok: /^[A-Z]{2}-\d{5}-\d{6}$/.test(reportNum), label: 'Formato informe XX-NNNNN-ddmmaa' });
+    checks.push({ ok: /conclusion|conclusiones/i.test(structured), label: 'Texto estructurado contiene conclusion' });
+    checks.push({ ok: !!$('patientName').value.trim(), label: 'Paciente cargado' });
+    checks.push({ ok: !!$('templateSelect').value, label: 'Plantilla seleccionada' });
+
+    const qaList = $('qaList');
+    const okCount = checks.filter((c) => c.ok).length;
+    $('qaScore').textContent = okCount + '/' + checks.length;
+    if (qaList) {
+      qaList.innerHTML = checks.map((c) => '<div class="qa-item ' + (c.ok ? 'qa-ok' : 'qa-bad') + '">' + (c.ok ? 'OK' : 'FALTA') + ' - ' + esc(c.label) + '</div>').join('');
+    }
+  }
+
+  async function fileToDataUrl(file, label, rec) {
     if (!file) return '';
     if (!String(file.type || '').startsWith('image/')) {
       throw new Error(label + ': el archivo no es una imagen valida.');
     }
     return new Promise((resolve, reject) => {
       const r = new FileReader();
-      r.onload = () => resolve(r.result);
+      r.onload = () => {
+        const dataUrl = r.result;
+        const img = new Image();
+        img.onload = () => {
+          const meta = {
+            width: img.naturalWidth || 0,
+            height: img.naturalHeight || 0,
+            kb: Math.round((file.size || 0) / 1024)
+          };
+          resolve({ dataUrl, meta, recommended: rec });
+        };
+        img.onerror = () => reject(new Error(label + ': no se pudo leer la imagen.'));
+        img.src = dataUrl;
+      };
       r.onerror = reject;
       r.readAsDataURL(file);
     });
@@ -594,8 +808,11 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 
   $('instLogo').addEventListener('change', async (e) => {
     try {
-      state.instLogo = await fileToDataUrl(e.target.files[0], 'Logo institucion');
+      const parsed = await fileToDataUrl(e.target.files[0], 'Logo institucion', ASSET_RECOMMENDED.instLogo);
+      state.instLogo = parsed.dataUrl;
+      state.instLogoMeta = parsed.meta;
       paintAssetPreview('instLogoPreview', state.instLogo);
+      paintAssetMeta('instLogoMeta', state.instLogoMeta, ASSET_RECOMMENDED.instLogo);
       renderAll();
       setStatus('Logo institucion cargado correctamente.');
     } catch (err) {
@@ -604,8 +821,11 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
   });
   $('proLogo').addEventListener('change', async (e) => {
     try {
-      state.proLogo = await fileToDataUrl(e.target.files[0], 'Logo profesional');
+      const parsed = await fileToDataUrl(e.target.files[0], 'Logo profesional', ASSET_RECOMMENDED.proLogo);
+      state.proLogo = parsed.dataUrl;
+      state.proLogoMeta = parsed.meta;
       paintAssetPreview('proLogoPreview', state.proLogo);
+      paintAssetMeta('proLogoMeta', state.proLogoMeta, ASSET_RECOMMENDED.proLogo);
       renderAll();
       setStatus('Logo profesional cargado correctamente.');
     } catch (err) {
@@ -614,8 +834,11 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
   });
   $('proSign').addEventListener('change', async (e) => {
     try {
-      state.sign = await fileToDataUrl(e.target.files[0], 'Firma');
+      const parsed = await fileToDataUrl(e.target.files[0], 'Firma', ASSET_RECOMMENDED.sign);
+      state.sign = parsed.dataUrl;
+      state.signMeta = parsed.meta;
       paintAssetPreview('proSignPreview', state.sign);
+      paintAssetMeta('proSignMeta', state.signMeta, ASSET_RECOMMENDED.sign);
       renderAll();
       setStatus('Firma cargada correctamente.');
     } catch (err) {
@@ -625,24 +848,30 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 
   $('btnClearInstLogo').addEventListener('click', () => {
     state.instLogo = '';
+    state.instLogoMeta = null;
     $('instLogo').value = '';
     paintAssetPreview('instLogoPreview', '');
+    paintAssetMeta('instLogoMeta', state.instLogoMeta, ASSET_RECOMMENDED.instLogo);
     renderAll();
     setStatus('Logo institucion limpiado.');
   });
 
   $('btnClearProLogo').addEventListener('click', () => {
     state.proLogo = '';
+    state.proLogoMeta = null;
     $('proLogo').value = '';
     paintAssetPreview('proLogoPreview', '');
+    paintAssetMeta('proLogoMeta', state.proLogoMeta, ASSET_RECOMMENDED.proLogo);
     renderAll();
     setStatus('Logo profesional limpiado.');
   });
 
   $('btnClearSign').addEventListener('click', () => {
     state.sign = '';
+    state.signMeta = null;
     $('proSign').value = '';
     paintAssetPreview('proSignPreview', '');
+    paintAssetMeta('proSignMeta', state.signMeta, ASSET_RECOMMENDED.sign);
     renderAll();
     setStatus('Firma limpiada.');
   });
@@ -651,14 +880,83 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
     state.instLogo = '';
     state.proLogo = '';
     state.sign = '';
+    state.instLogoMeta = null;
+    state.proLogoMeta = null;
+    state.signMeta = null;
     $('instLogo').value = '';
     $('proLogo').value = '';
     $('proSign').value = '';
     paintAssetPreview('instLogoPreview', '');
     paintAssetPreview('proLogoPreview', '');
     paintAssetPreview('proSignPreview', '');
+    paintAssetMeta('instLogoMeta', state.instLogoMeta, ASSET_RECOMMENDED.instLogo);
+    paintAssetMeta('proLogoMeta', state.proLogoMeta, ASSET_RECOMMENDED.proLogo);
+    paintAssetMeta('proSignMeta', state.signMeta, ASSET_RECOMMENDED.sign);
     renderAll();
     setStatus('Logos y firma limpiados.');
+  });
+
+  $('btnAutoReportNum').addEventListener('click', () => {
+    autoFillReportNumber(false);
+    renderAll();
+    setStatus('Numero de informe generado automaticamente.');
+  });
+
+  $('btnResetReportCounter').addEventListener('click', () => {
+    autoFillReportNumber(true);
+    renderAll();
+    setStatus('Contador reiniciado para la plantilla actual.');
+  });
+
+  $('btnSavePreset').addEventListener('click', () => {
+    const name = (window.prompt('Nombre del preset:', $('presetSelect').value || 'mi_preset') || '').trim();
+    if (!name) return;
+    const presets = readPresets();
+    presets[name] = collectConfig();
+    writePresets(presets);
+    refreshPresetSelect();
+    $('presetSelect').value = name;
+    setStatus('Preset guardado: ' + name);
+  });
+
+  $('btnLoadPreset').addEventListener('click', () => {
+    const name = $('presetSelect').value;
+    if (!name) return setStatus('Selecciona un preset para cargar.', true);
+    const presets = readPresets();
+    if (!presets[name]) return setStatus('Preset inexistente.', true);
+    applyConfig(presets[name]);
+    setStatus('Preset cargado: ' + name);
+  });
+
+  $('btnDeletePreset').addEventListener('click', () => {
+    const name = $('presetSelect').value;
+    if (!name) return setStatus('Selecciona un preset para borrar.', true);
+    const presets = readPresets();
+    delete presets[name];
+    writePresets(presets);
+    refreshPresetSelect();
+    setStatus('Preset borrado: ' + name);
+  });
+
+  $('btnExportPreset').addEventListener('click', () => {
+    const cfg = collectConfig();
+    const txt = JSON.stringify(cfg, null, 2);
+    downloadFile('sandbox_preset.json', txt, 'application/json');
+    setStatus('Preset exportado a JSON.');
+  });
+
+  $('btnImportPreset').addEventListener('click', () => $('presetImportFile').click());
+  $('presetImportFile').addEventListener('change', async (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    try {
+      const txt = await f.text();
+      const cfg = JSON.parse(txt);
+      applyConfig(cfg);
+      setStatus('Preset importado correctamente.');
+    } catch (err) {
+      setStatus('No se pudo importar preset JSON.', true);
+    }
   });
 
   $('btnStruct').addEventListener('click', async () => {
@@ -682,6 +980,17 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
   });
 
   $('btnRender').addEventListener('click', renderAll);
+
+  $('templateSelect').addEventListener('change', () => {
+    if ($('autoReportNum').checked) {
+      autoFillReportNumber(false);
+    }
+  });
+  $('studyDate').addEventListener('change', () => {
+    if ($('autoReportNum').checked) {
+      autoFillReportNumber(false);
+    }
+  });
 
   $('btnPrint').addEventListener('click', () => {
     if (!state.htmlDoc) renderAll();
@@ -717,9 +1026,20 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
     'showWp','showHeader','showPatient','showStudy','showSignImage','showSignLine','showSignName','showSignMat','showFooterDate','showFooterPage','structuredText'
   ].forEach((id) => $(id).addEventListener('input', renderAll));
 
+  const originalRenderAll = renderAll;
+  renderAll = function() {
+    originalRenderAll();
+    runQuickQA();
+  };
+
+  refreshPresetSelect();
+  if ($('autoReportNum').checked) autoFillReportNumber(false);
   paintAssetPreview('instLogoPreview', '');
   paintAssetPreview('proLogoPreview', '');
   paintAssetPreview('proSignPreview', '');
+  paintAssetMeta('instLogoMeta', state.instLogoMeta, ASSET_RECOMMENDED.instLogo);
+  paintAssetMeta('proLogoMeta', state.proLogoMeta, ASSET_RECOMMENDED.proLogo);
+  paintAssetMeta('proSignMeta', state.signMeta, ASSET_RECOMMENDED.sign);
   renderAll();
 })();
 </script>
