@@ -449,14 +449,23 @@ function autoApplyDictCorrections(text) {
 }
 
 function classifyTranscriptionError(errMsg) {
+    const isAdmin = (typeof _isAdminTranscriptorContext === 'function')
+        ? _isAdminTranscriptorContext()
+        : false;
     const status = (typeof errMsg === 'object' && errMsg !== null) ? errMsg.status : null;
     const msg = String((typeof errMsg === 'object' && errMsg !== null) ? (errMsg.message || errMsg.status || '') : (errMsg || '')).toLowerCase();
     if (status === 413 || msg.includes('413') || msg.includes('payload') || msg.includes('entity too large')) {
-        return { type: 'file_too_large', userMsg: 'El archivo supera el límite de tamaño permitido por la API.',
-            suggestions: ['Dividir el audio en partes más cortas', 'Comprimir el archivo antes de subirlo'] };
+        return {
+            type: 'file_too_large',
+            userMsg: isAdmin
+                ? 'El archivo supera el límite de tamaño permitido por la API.'
+                : 'El audio es demasiado pesado para procesarlo de una vez.',
+            suggestions: isAdmin
+                ? ['Dividir el audio en partes más cortas', 'Comprimir el archivo antes de subirlo']
+                : ['Recortar el audio en partes cortas', 'Intentar nuevamente con un archivo más liviano']
+        };
     }
     if (msg.includes('api key') || msg.includes('401') || msg.includes('inválida o expirada') || status === 401) {
-        const isAdmin = _isAdminTranscriptorContext();
         return {
             type: 'auth',
             userMsg: isAdmin
@@ -468,23 +477,58 @@ function classifyTranscriptionError(errMsg) {
         };
     }
     if (msg.includes('formato') || msg.includes('inválido') || msg.includes('corrupto') || msg.includes('400')) {
-        return { type: 'format', userMsg: 'El archivo de audio no es compatible o está dañado.',
-            suggestions: ['Usar las herramientas de reparación de abajo', 'Convertir a MP3 o WAV', 'Verificar que el archivo reproduzca correctamente'] };
+        return {
+            type: 'format',
+            userMsg: isAdmin
+                ? 'El archivo de audio no es compatible o está dañado.'
+                : 'No pudimos leer bien este audio.',
+            suggestions: isAdmin
+                ? ['Usar las herramientas de reparación de abajo', 'Convertir a MP3 o WAV', 'Verificar que el archivo reproduzca correctamente']
+                : ['Probar con otro audio', 'Convertir a MP3 o WAV', 'Si persiste, contactar soporte']
+        };
     }
     if (msg.includes('25mb') || msg.includes('grande')) {
-        return { type: 'size', userMsg: 'El archivo supera el límite de 25 MB de la API.',
-            suggestions: ['Dividir el audio en partes más cortas', 'Comprimir el archivo antes de subirlo'] };
+        return {
+            type: 'size',
+            userMsg: isAdmin
+                ? 'El archivo supera el límite de 25 MB de la API.'
+                : 'El audio supera el tamaño permitido.',
+            suggestions: isAdmin
+                ? ['Dividir el audio en partes más cortas', 'Comprimir el archivo antes de subirlo']
+                : ['Recortar el audio en partes', 'Intentar con una grabación más corta']
+        };
     }
     if (msg.includes('429') || msg.includes('límite')) {
-        return { type: 'ratelimit', userMsg: 'Límite de requests de Groq excedido.',
-            suggestions: ['Esperar unos minutos y reintentar', 'Verificar los límites del plan en console.groq.com'] };
+        return {
+            type: 'ratelimit',
+            userMsg: isAdmin
+                ? 'Límite de requests de Groq excedido.'
+                : 'Hay mucha demanda en este momento y no pudimos transcribir ahora.',
+            suggestions: isAdmin
+                ? ['Esperar unos minutos y reintentar', 'Verificar los límites del plan en console.groq.com']
+                : ['Esperar un momento y volver a intentar', 'Si continúa, contactar soporte']
+        };
     }
     if (msg.includes('503') || msg.includes('no disponible')) {
-        return { type: 'network', userMsg: 'Servicio de Groq temporalmente no disponible.',
-            suggestions: ['Verificar conexión a Internet', 'Intentar en unos minutos', 'Ver status.groq.com'] };
+        return {
+            type: 'network',
+            userMsg: isAdmin
+                ? 'Servicio de Groq temporalmente no disponible.'
+                : 'El servicio de transcripción está temporalmente no disponible.',
+            suggestions: isAdmin
+                ? ['Verificar conexión a Internet', 'Intentar en unos minutos', 'Ver status.groq.com']
+                : ['Reintentar en unos minutos', 'Verificar conexión a Internet', 'Si persiste, contactar soporte']
+        };
     }
-    return { type: 'unknown', userMsg: errMsg || 'Error desconocido al procesar el audio.',
-        suggestions: ['Verificar que el archivo sea un audio válido', 'Intentar con otro formato de archivo', 'Verificar API Key y conexión a Internet'] };
+    return {
+        type: 'unknown',
+        userMsg: isAdmin
+            ? (errMsg || 'Error desconocido al procesar el audio.')
+            : 'No pudimos completar la transcripción en este intento.',
+        suggestions: isAdmin
+            ? ['Verificar que el archivo sea un audio válido', 'Intentar con otro formato de archivo', 'Verificar API Key y conexión a Internet']
+            : ['Intentar nuevamente', 'Probar con otro audio', 'Si continúa, contactar soporte']
+    };
 }
 
 async function repairAudioFile(file, { doNormalize = true, doNoise = true, doMono = false } = {}) {
