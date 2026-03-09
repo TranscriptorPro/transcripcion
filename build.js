@@ -25,6 +25,8 @@ const JS_FILES = [
     'src/js/utils/uiKeyboardShortcuts.js',
     'src/js/utils/uiAutosaveUtils.js',
     'src/js/utils/uiMultiTabUtils.js',
+    'src/js/utils/uiApiManagementUtils.js',
+    'src/js/utils/uiProfessionalUtils.js',
     'src/js/utils/tabsIndexUtils.js',
     'src/js/utils/tabs.js',
     'src/js/utils/stateManager.js',
