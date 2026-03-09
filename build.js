@@ -54,6 +54,8 @@ const JS_FILES = [
     'src/js/features/transcriptor.js',
     'src/js/features/structurerCoreUtils.js',
     'src/js/features/structurer.js',
+    'src/js/features/proSidebarSourceMode.js',
+    'src/js/features/fixedTooltips.js',
     'src/js/features/medDictionary.js',
     'src/js/features/contact.js',
     'src/js/features/diagnostic.js',
