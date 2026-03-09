@@ -1494,9 +1494,14 @@ function doPost(e) {
 
       if (!to) return createResponse({ error: 'Falta campo obligatorio: to' });
 
+      const requestedName = String(payload.senderName || '').trim();
+      const safeSenderName = requestedName
+        ? requestedName.replace(/[\r\n<>]/g, '').slice(0, 80)
+        : 'Equipo Transcriptor Pro';
+
       const emailOptions = {
         htmlBody: htmlBody || '<p>Mensaje de Transcriptor Médico Pro.</p>',
-        name: payload.senderName || 'Transcriptor Médico Pro'
+        name: safeSenderName
       };
 
       // Solo adjuntar PDF si se proporcionó

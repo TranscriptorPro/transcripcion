@@ -230,10 +230,9 @@ window.initEmailSendModal = function () {
             sendBtn.textContent = '📨 Enviando...';
             if (statusEl) statusEl.textContent = '📨 Enviando email...';
 
-            const config = (await _pdfPreviewSafeGet('pdf_config', {})) || {};
-            const profData = (await _pdfPreviewSafeGet('prof_data', {})) || {};
-            const activePro = config.activeProfessional || null;
-            const senderName = activePro?.nombre || profData.nombre || 'Transcriptor Médico Pro';
+            const senderName = (typeof window.getResolvedEmailSenderName === 'function')
+                ? window.getResolvedEmailSenderName()
+                : 'Equipo Transcriptor Pro';
 
             const fileDate = new Date().toISOString().split('T')[0];
             const fileName = `Informe_${(data.studyType || 'Medico').replace(/\s+/g, '_')}_${fileDate}.pdf`;

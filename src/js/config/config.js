@@ -29,6 +29,7 @@ window.CLIENT_CONFIG = {
 
 // URL backend por defecto (Apps Script productivo).
 const DEFAULT_BACKEND_URL = 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec';
+const DEFAULT_EMAIL_SENDER_NAME = 'Equipo Transcriptor Pro';
 
 function _isValidBackendUrl(url) {
     return /^https?:\/\//i.test(String(url || '').trim());
@@ -80,6 +81,46 @@ window.getResolvedBackendUrl = function () {
     const url = _pickBestBackendUrl();
     _persistBackendUrlEverywhere(url);
     return url;
+};
+
+function _readStoredSenderName() {
+    try {
+        const fromCfg = _readStoredClientConfig().emailSenderName;
+        if (fromCfg && String(fromCfg).trim()) return String(fromCfg).trim();
+    } catch (_) {}
+
+    try {
+        const fromLs = localStorage.getItem('email_sender_name');
+        if (fromLs && String(fromLs).trim()) return String(fromLs).trim();
+    } catch (_) {}
+
+    return '';
+}
+
+function _persistSenderNameEverywhere(name) {
+    const safeName = String(name || '').trim();
+    if (!safeName) return;
+
+    if (window.CLIENT_CONFIG) window.CLIENT_CONFIG.emailSenderName = safeName;
+
+    try {
+        const storedCfg = _readStoredClientConfig();
+        storedCfg.emailSenderName = safeName;
+        localStorage.setItem('client_config_stored', JSON.stringify(storedCfg));
+    } catch (_) {}
+
+    try { localStorage.setItem('email_sender_name', safeName); } catch (_) {}
+
+    if (typeof appDB !== 'undefined') {
+        try { appDB.set('email_sender_name', safeName); } catch (_) {}
+    }
+}
+
+window.getResolvedEmailSenderName = function () {
+    const runtime = window.CLIENT_CONFIG && window.CLIENT_CONFIG.emailSenderName;
+    const sender = String(runtime || _readStoredSenderName() || DEFAULT_EMAIL_SENDER_NAME).trim();
+    _persistSenderNameEverywhere(sender);
+    return sender;
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -147,6 +188,12 @@ window.getResolvedBackendUrl = function () {
 (function _hydrateBackendUrlAtBoot() {
     try {
         window.getResolvedBackendUrl();
+    } catch (_) {}
+})();
+
+(function _hydrateSenderNameAtBoot() {
+    try {
+        window.getResolvedEmailSenderName();
     } catch (_) {}
 })();
 
