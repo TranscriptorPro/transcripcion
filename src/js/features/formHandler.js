@@ -13,6 +13,17 @@
             localStorage.removeItem('patient_history');
         }
     } catch (_) { /* ignorar errores de migración */ }
+
+    // En instalaciones antiguas, la clave legacy puede existir en appDB.
+    if (typeof appDB !== 'undefined' && typeof appDB.get === 'function') {
+        appDB.get('patient_history').then(function(oldDb) {
+            try {
+                if (!Array.isArray(oldDb) || !oldDb.length || typeof savePatientToRegistry !== 'function') return;
+                oldDb.forEach(function(p) { if (p && p.name) savePatientToRegistry(p); });
+                if (typeof appDB.remove === 'function') appDB.remove('patient_history');
+            } catch (_) { /* ignorar errores de migración desde appDB */ }
+        }).catch(function() {});
+    }
 })();
 
 window.savePatientToHistory = function (patient) {
