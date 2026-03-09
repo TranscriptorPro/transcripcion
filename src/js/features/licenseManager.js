@@ -74,17 +74,23 @@ function _lmGetCache() {
     try {
         const cached = _lmCacheCache || JSON.parse(localStorage.getItem(_LM_CACHE_KEY) || 'null');
         if (!cached) return null;
+        if (!Number.isFinite(Number(cached.timestamp))) {
+            _lmCacheCache = null;
+            localStorage.removeItem(_LM_CACHE_KEY);
+            if (typeof appDB !== 'undefined') appDB.remove(_LM_CACHE_KEY);
+            return null;
+        }
         if (Date.now() - cached.timestamp > _LM_CACHE_TTL) {
             _lmCacheCache = null;
+            localStorage.removeItem(_LM_CACHE_KEY);
             if (typeof appDB !== 'undefined') appDB.remove(_LM_CACHE_KEY);
-            else localStorage.removeItem(_LM_CACHE_KEY);
             return null;
         }
         const cacheUtils = window.LicenseCacheUtils || {};
         if (typeof cacheUtils.isExpiredByDate === 'function' && cacheUtils.isExpiredByDate(cached.data)) {
             _lmCacheCache = null;
+            localStorage.removeItem(_LM_CACHE_KEY);
             if (typeof appDB !== 'undefined') appDB.remove(_LM_CACHE_KEY);
-            else localStorage.removeItem(_LM_CACHE_KEY);
             return null;
         }
         return cached.data;
@@ -97,8 +103,12 @@ function _lmGetCache() {
 function _lmSetCache(data) {
     const entry = { data: data, timestamp: Date.now() };
     _lmCacheCache = entry;
-    if (typeof appDB !== 'undefined') appDB.set(_LM_CACHE_KEY, entry);
-    else localStorage.setItem(_LM_CACHE_KEY, JSON.stringify(entry));
+    // Persist in localStorage for deterministic offline fallback across reloads.
+    localStorage.setItem(_LM_CACHE_KEY, JSON.stringify(entry));
+    // Mirror into appDB as best-effort.
+    if (typeof appDB !== 'undefined') {
+        try { appDB.set(_LM_CACHE_KEY, entry); } catch (_) { /* mirror best-effort */ }
+    }
 }
 
 /* ── Validación de Licencia ───────────────────────────────────────────────── */
