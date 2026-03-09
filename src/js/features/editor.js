@@ -864,18 +864,37 @@ window.downloadHTML = () => downloadFile('html');
 window.downloadPDF = () => downloadFile('pdf');
 
 function createRTF(text, fecha) {
-    const lines = text.split('\n');
+    // Limpiar emojis y caracteres no imprimibles antes de procesar
+    const cleaned = text
+        .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')   // emojis suplementarios
+        .replace(/[\u{2600}-\u{27BF}]/gu, '')       // misc symbols
+        .replace(/[\u{FE00}-\u{FE0F}]/gu, '')       // variation selectors
+        .replace(/[\u{200B}-\u{200D}\u{FEFF}]/gu, '') // zero-width chars
+        .replace(/✏️?/g, '');                         // lapicito específico
+
+    const lines = cleaned.split('\n');
     let body = '';
     for (const line of lines) {
-        const escaped = line
-            .replace(/\\/g, '\\\\').replace(/\{/g, '\\{').replace(/\}/g, '\\}')
-            .replace(/[áàäâ]/g, "\\'e1").replace(/[éèëê]/g, "\\'e9").replace(/[íìïî]/g, "\\'ed")
-            .replace(/[óòöô]/g, "\\'f3").replace(/[úùüû]/g, "\\'fa").replace(/ñ/g, "\\'f1")
-            .replace(/Ñ/g, "\\'d1").replace(/[ÁÀÄÂ]/g, "\\'c1").replace(/[ÉÈËÊ]/g, "\\'c9")
-            .replace(/[ÍÌÏÎ]/g, "\\'cd").replace(/[ÓÒÖÔ]/g, "\\'d3").replace(/[ÚÙÜÛ]/g, "\\'da");
+        // Primero escapar backslash, llaves
+        let escaped = line
+            .replace(/\\/g, '\\\\')
+            .replace(/\{/g, '\\{')
+            .replace(/\}/g, '\\}');
+        // Escapar TODO caracter fuera del rango ASCII imprimible (32-126)
+        // usando la notación RTF \'XX para Latin-1 o \u##### para Unicode
+        escaped = escaped.replace(/[^\x20-\x7E]/g, (ch) => {
+            const code = ch.charCodeAt(0);
+            if (code <= 255) {
+                // Latin-1: usar \'XX
+                return "\\'" + code.toString(16).padStart(2, '0');
+            }
+            // Unicode: usar \uN? (N = signed 16-bit, ? = placeholder)
+            const signed = code > 32767 ? code - 65536 : code;
+            return '\\u' + signed + '?';
+        });
         body += escaped + '\\par\n';
     }
-    return `{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 Arial;}}\\paperw12240\\paperh15840\\margl1440\\margr1440\\margt1440\\margb1440\\qc\\f0\\fs36\\b INFORME M\\'c9DICO\\b0\\par\\fs24\\i Fecha: ${fecha}\\i0\\par\\par\\ql\\fs24${body}}`;
+    return `{\\rtf1\\ansi\\ansicpg1252\\deff0{\\fonttbl{\\f0 Arial;}}\\paperw12240\\paperh15840\\margl1440\\margr1440\\margt1440\\margb1440\\qc\\f0\\fs36\\b INFORME M\\'c9DICO\\b0\\par\\fs24\\i Fecha: ${fecha}\\i0\\par\\par\\ql\\fs24${body}}`;
 }
 
 function createHTML(text, fecha) {
