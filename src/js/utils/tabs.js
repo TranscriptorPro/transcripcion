@@ -1,5 +1,15 @@
 // ============ TABS SYSTEM ============
 
+function _normalizeActiveTabIndex(length) {
+    const size = Number(length) || 0;
+    if (size <= 0) return 0;
+    const raw = Number(window.activeTabIndex);
+    const idx = Number.isFinite(raw) ? Math.trunc(raw) : 0;
+    if (idx < 0) return 0;
+    if (idx >= size) return size - 1;
+    return idx;
+}
+
 window.createTabs = function () {
     const tabsContainer = document.getElementById('tabsContainer');
     if (!tabsContainer || !window.transcriptions) return;
@@ -16,6 +26,7 @@ window.createTabs = function () {
 
     // Safety check - force index to be within bounds
     if (window.transcriptions.length > 0) {
+        window.activeTabIndex = _normalizeActiveTabIndex(window.transcriptions.length);
         if (typeof idxUtils.clampIndex === 'function') {
             window.activeTabIndex = idxUtils.clampIndex(window.activeTabIndex, window.transcriptions.length);
         } else {
@@ -64,9 +75,11 @@ window.createTabs = function () {
 window.switchTab = function (index) {
     const idxUtils = window.TabsIndexUtils || {};
     if (!window.transcriptions || !Array.isArray(window.transcriptions) || window.transcriptions.length === 0) return;
-    if (typeof idxUtils.isValidIndex === 'function' && !idxUtils.isValidIndex(index, window.transcriptions.length)) return;
-    if (index < 0 || index >= window.transcriptions.length) return;
-    if (window.activeTabIndex === index) return;
+    window.activeTabIndex = _normalizeActiveTabIndex(window.transcriptions.length);
+    const safeIndex = Number.isFinite(Number(index)) ? Math.trunc(Number(index)) : -1;
+    if (typeof idxUtils.isValidIndex === 'function' && !idxUtils.isValidIndex(safeIndex, window.transcriptions.length)) return;
+    if (safeIndex < 0 || safeIndex >= window.transcriptions.length) return;
+    if (window.activeTabIndex === safeIndex) return;
 
     const editor = document.getElementById('editor');
     if (editor) {
@@ -75,8 +88,8 @@ window.switchTab = function (index) {
             window.transcriptions[window.activeTabIndex].text = editor.innerHTML;
         }
 
-        window.activeTabIndex = index;
-        const rawText = window.transcriptions[index].text || '';
+        window.activeTabIndex = safeIndex;
+        const rawText = window.transcriptions[safeIndex].text || '';
         editor.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(rawText) : rawText;
 
         if (typeof updateWordCount === 'function') updateWordCount();
@@ -87,8 +100,10 @@ window.switchTab = function (index) {
 window.closeTab = function (index) {
     const idxUtils = window.TabsIndexUtils || {};
     if (!window.transcriptions || !Array.isArray(window.transcriptions) || window.transcriptions.length === 0) return;
-    if (typeof idxUtils.isValidIndex === 'function' && !idxUtils.isValidIndex(index, window.transcriptions.length)) return;
-    if (index < 0 || index >= window.transcriptions.length) return;
+    window.activeTabIndex = _normalizeActiveTabIndex(window.transcriptions.length);
+    const safeIndex = Number.isFinite(Number(index)) ? Math.trunc(Number(index)) : -1;
+    if (typeof idxUtils.isValidIndex === 'function' && !idxUtils.isValidIndex(safeIndex, window.transcriptions.length)) return;
+    if (safeIndex < 0 || safeIndex >= window.transcriptions.length) return;
 
     // Guardar contenido actual del editor antes de cerrar
     const editor = document.getElementById('editor');
@@ -96,7 +111,7 @@ window.closeTab = function (index) {
         window.transcriptions[window.activeTabIndex].text = editor.innerHTML;
     }
 
-    window.transcriptions.splice(index, 1);
+    window.transcriptions.splice(safeIndex, 1);
 
     if (window.transcriptions.length === 0) {
         const editor = document.getElementById('editor');
@@ -124,7 +139,7 @@ window.closeTab = function (index) {
         const tAndSTabs = document.getElementById('transcribeAndStructureBtn');
         if (tAndSTabs) tAndSTabs.disabled = transcribeBtn ? transcribeBtn.disabled : true;
     } else {
-        if (index <= window.activeTabIndex && window.activeTabIndex > 0) {
+        if (safeIndex <= window.activeTabIndex && window.activeTabIndex > 0) {
             window.activeTabIndex--;
         }
         if (typeof idxUtils.clampIndex === 'function') {
