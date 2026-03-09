@@ -6468,6 +6468,40 @@ test('Admin-5 — Admin panel tiene sistema de logs', () => {
         'Admin debe tener sistema de auditoría/logs');
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 113: Admin Base URL + Tooltips fijos — anti-regresión crítica
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 113: Admin Base URL + Tooltips fijos ─────────────────');
+
+const configCodeSec = fs.readFileSync(path.join(root, 'src/js/config/config.js'), 'utf-8');
+const businessCodeSec = fs.readFileSync(path.join(root, 'src/js/features/business.js'), 'utf-8');
+const indexCodeSec = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
+
+test('AdminBase-1 — config.js detecta URL oficial /transcripcion', () => {
+    assert(configCodeSec.includes("/transcripcion") && configCodeSec.includes('isOfficialAdminBase'),
+        'config.js debe detectar la URL base oficial para forzar ADMIN');
+});
+
+test('AdminBase-2 — config.js prioriza ?id= para links de fábrica', () => {
+    assert(configCodeSec.includes("params.get('id')") || configCodeSec.includes('setupId'),
+        'config.js debe conservar soporte para ?id en links de fábrica');
+});
+
+test('AdminBase-3 — business.js tiene guardia dura para ADMIN base', () => {
+    assert(businessCodeSec.includes('isOfficialAdminBase') && businessCodeSec.includes('_initAdmin()'),
+        'business.js debe forzar _initAdmin() en la URL oficial base');
+});
+
+test('Tooltips-1 — app principal carga fixedTooltips.js', () => {
+    assert(indexCodeSec.includes('src/js/features/fixedTooltips.js'),
+        'index.html debe cargar fixedTooltips.js');
+});
+
+test('Tooltips-2 — admin panel carga fixedTooltips.js', () => {
+    assert(adminCodeSec.includes('../src/js/features/fixedTooltips.js'),
+        'recursos/admin.html debe cargar fixedTooltips.js');
+});
+
 // Limpiar estado después de tests
 global.localStorage.clear();
 global._reportHistCache = null;
