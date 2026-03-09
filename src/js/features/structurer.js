@@ -133,6 +133,51 @@ function classifyStructError(err) {
     return { type: 'unknown', wait: 2000, switchModel: false };
 }
 
+function _isStructurerAdmin() {
+    return typeof CLIENT_CONFIG === 'undefined' || CLIENT_CONFIG.type === 'ADMIN';
+}
+
+function _openStructurerSupport() {
+    if (typeof window.openContactModal === 'function') {
+        window.openContactModal('Problema con la API Key');
+        return;
+    }
+    var btnContacto = document.getElementById('btnContacto');
+    if (btnContacto) btnContacto.click();
+}
+
+function _showStructurerFailureToast(err) {
+    const isAdmin = _isStructurerAdmin();
+    const saved = !!(err && err.savedToPending);
+
+    if (!isAdmin && typeof showToastWithAction === 'function') {
+        if (saved) {
+            showToastWithAction(
+                '📋 No pudimos procesar con IA ahora. Tu texto quedó guardado y reintentaremos luego.',
+                'warning',
+                '📧 Contactar',
+                function () { _openStructurerSupport(); },
+                7000
+            );
+            return;
+        }
+        showToastWithAction(
+            '⚠️ No pudimos estructurar en este momento. Tu texto original se mantuvo intacto.',
+            'warning',
+            '📧 Contactar',
+            function () { _openStructurerSupport(); },
+            7000
+        );
+        return;
+    }
+
+    const msg = saved
+        ? '📋 Sin conexión con la IA. El texto fue guardado para procesar más tarde.'
+        : '❌ No se pudo estructurar. El texto original fue restaurado.';
+    const type = saved ? 'warning' : 'error';
+    if (typeof showToast === 'function') showToast(msg, type);
+}
+
 // ── Pre-flight: verificar requisitos antes de estructurar ──────────────────
 function checkStructurePrerequisites() {
     const key = window.GROQ_API_KEY || '';
@@ -153,12 +198,11 @@ function checkStructurePrerequisites() {
             }
         } else {
             if (typeof showToastWithAction === 'function') {
-                showToastWithAction('🔑 Error de conexión con IA. Contacta a soporte.', 'error', '📧 Contactar', function() {
-                    var btnContacto = document.getElementById('btnContacto');
-                    if (btnContacto) btnContacto.click();
+                showToastWithAction('🔑 No pudimos validar la IA. Te ayudamos desde soporte.', 'warning', '📧 Contactar', function() {
+                    _openStructurerSupport();
                 }, 7000);
             } else if (typeof showToast === 'function') {
-                showToast('🔑 Error de conexión con IA. Contacta a soporte.', 'error');
+                showToast('🔑 No pudimos validar la IA. Contactá a soporte.', 'warning');
             }
         }
         return false;
@@ -181,10 +225,14 @@ async function structureWithRetry(text, templateKey) {
         const { model, temperature } = strategy[idx];
         try {
             if (idx > 0 && typeof showToast === 'function') {
-                const isModelChange = model !== strategy[idx - 1].model;
-                const shortName = model.split('-').slice(0, 3).join('-');
-                const label = isModelChange ? ` — modelo: ${shortName}` : '';
-                showToast(`⏳ Reintentando${label} (${idx + 1}/${strategy.length})...`, 'info');
+                if (_isStructurerAdmin()) {
+                    const isModelChange = model !== strategy[idx - 1].model;
+                    const shortName = model.split('-').slice(0, 3).join('-');
+                    const label = isModelChange ? ` — modelo: ${shortName}` : '';
+                    showToast(`⏳ Reintentando${label} (${idx + 1}/${strategy.length})...`, 'info');
+                } else {
+                    showToast('⏳ Reintentando estructuración...', 'info');
+                }
             }
             const result = await structureTranscription(text, templateKey, temperature, model);
             if (result.length < 80 && text.length > 300) {
@@ -192,7 +240,9 @@ async function structureWithRetry(text, templateKey) {
             }
             // RB-5: Advertir si se usó el modelo rápido 8b como fallback
             if (model === GROQ_MODELS[2] && idx > 0 && typeof showToast === 'function') {
-                showToast('⚠️ Se usó el modelo rápido (8b). Verificá el resultado — puede ser menos preciso.', 'warning', 6000);
+                if (_isStructurerAdmin()) {
+                    showToast('⚠️ Se usó el modelo rápido (8b). Verificá el resultado — puede ser menos preciso.', 'warning', 6000);
+                }
             }
             return result;
         } catch (err) {
@@ -210,7 +260,7 @@ async function structureWithRetry(text, templateKey) {
                 for (let bi = 0; bi < backupKeys.length; bi++) {
                     const prevKey = window.GROQ_API_KEY;
                     window.GROQ_API_KEY = backupKeys[bi];
-                    if (typeof showToast === 'function') showToast(`🔑 Intentando con Backup Key ${bi + 1}...`, 'info');
+                    if (typeof showToast === 'function' && _isStructurerAdmin()) showToast(`🔑 Intentando con Backup Key ${bi + 1}...`, 'info');
                     try {
                         const resultBackup = await structureTranscription(text, templateKey, temperature, model);
                         if (resultBackup.length < 80 && text.length > 300) throw new Error('Respuesta muy corta');
@@ -350,7 +400,7 @@ window.processPendingItem = async function(id) {
             if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURED');
             if (typeof triggerPatientDataCheck === 'function') triggerPatientDataCheck(entry.text);
         } catch (err) {
-            if (typeof showToast === 'function') showToast('❌ No se pudo estructurar. Se mantiene en la cola.', 'error');
+            _showStructurerFailureToast({ savedToPending: true, message: err?.message || '' });
         }
     }
 };
@@ -543,11 +593,7 @@ async function _doAutoStructure(options) {
         return true;
     } catch (error) {
         editor.innerHTML = savedHTML;
-        const msg = error.savedToPending
-            ? '📋 Sin conexión con la IA. El texto fue guardado para procesar más tarde.'
-            : '❌ No se pudo estructurar. El texto original fue restaurado.';
-        const type = error.savedToPending ? 'warning' : 'error';
-        if (typeof showToast === 'function') showToast(msg, type);
+        _showStructurerFailureToast(error);
         if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
         return false;
     } finally {
@@ -609,11 +655,7 @@ window.initStructurer = function () {
                 triggerPatientDataCheck(rawText);
             } catch (e) {
                 editor.innerHTML = savedHTML;
-                const msg2 = e.savedToPending
-                    ? '📋 Sin conexión con la IA. El texto fue guardado para procesar más tarde.'
-                    : '❌ No se pudo estructurar. El texto original fue restaurado. (El problema es del servicio de IA, no de la app.)';
-                const type2 = e.savedToPending ? 'warning' : 'error';
-                if (typeof showToast === 'function') showToast(msg2, type2);
+                _showStructurerFailureToast(e);
                 if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
             } finally {
                 btnApplyStructure.disabled = false;
