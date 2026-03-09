@@ -79,68 +79,30 @@
 
     // ─── Accordion toggle logic ──────────────────────────────────────
     function _initAccordions() {
-        document.querySelectorAll('.stg-accordion-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const acc = btn.closest('.stg-accordion');
-                if (!acc) return;
-                acc.classList.toggle('open');
-            });
-        });
+        const utils = window.SettingsModalShellUtils || {};
+        if (typeof utils.initAccordions === 'function') {
+            utils.initAccordions();
+        }
     }
 
     // ─── Modal open/close ────────────────────────────────────────────
     function _initModalControls() {
-        const overlay = document.getElementById('settingsModalOverlay');
-        const closeBtn = document.getElementById('closeSettings');
-        const btnSettings = document.getElementById('btnSettings');
-
-        const openModal = () => {
-            if (overlay) {
-                // A1: Colapsar todos los acordeones al reabrir
-                document.querySelectorAll('.stg-accordion').forEach(a => a.classList.remove('open'));
-                populateSettingsModal();
-                overlay.classList.add('active');
-            }
-        };
-        const closeModal = () => {
-            if (overlay) overlay.classList.remove('active');
-        };
-
-        if (btnSettings) {
-            btnSettings.addEventListener('click', openModal);
-        }
-        if (closeBtn) {
-            closeBtn.addEventListener('click', closeModal);
-        }
-        if (overlay) {
-            overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) closeModal();
-            });
-            overlay.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') closeModal();
+        const utils = window.SettingsModalShellUtils || {};
+        if (typeof utils.initModalControls === 'function') {
+            utils.initModalControls({
+                onOpen: () => {
+                    populateSettingsModal();
+                }
             });
         }
     }
 
     // ─── Plan-based visibility for accordion sections ────────────────
     function _applyPlanVisibility() {
-        const type = (typeof CLIENT_CONFIG !== 'undefined') ? CLIENT_CONFIG.type : 'ADMIN';
-        const isAdmin = type === 'ADMIN';
-        const isClinic = typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.canGenerateApps;
-
-        function _toggleAccordion(stgKey, visible) {
-            var el = document.querySelector('.stg-accordion[data-stg="' + stgKey + '"]');
-            if (el) el.style.display = visible ? '' : 'none';
+        const utils = window.SettingsModalShellUtils || {};
+        if (typeof utils.applyPlanVisibility === 'function') {
+            utils.applyPlanVisibility();
         }
-
-        // API Key: solo admin
-        _toggleAccordion('apikey', isAdmin);
-
-        // Perfiles rápidos: ocultar para clínica
-        if (isClinic) _toggleAccordion('profiles', false);
-
-        // Backup: ocultar para clínica
-        if (isClinic) _toggleAccordion('backup', false);
     }
 
     // ─── 1. Account data (read-only) ─────────────────────────────────
