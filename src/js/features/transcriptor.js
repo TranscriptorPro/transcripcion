@@ -221,11 +221,6 @@ if (transcribeBtn) {
                         const toolbarDropdown = document.getElementById('templateDropdownMain');
                         if (toolbarDropdown) toolbarDropdown.value = detection.type;
                         if (typeof templateSelect !== 'undefined' && templateSelect) templateSelect.value = detection.type;
-
-                        if (typeof MEDICAL_TEMPLATES !== 'undefined') {
-                            const templateName = MEDICAL_TEMPLATES[detection.type]?.name || detection.type;
-                            showToast(`🤖 Plantilla detectada: ${templateName} — Estructurando...`, 'success');
-                        }
                     }
                 }
 

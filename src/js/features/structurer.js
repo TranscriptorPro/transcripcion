@@ -558,12 +558,8 @@ async function _doAutoStructure(options) {
         if (!currentTemplate || currentTemplate === 'generico') {
             const detected = autoDetectTemplateKey(rawText);
             if (detected !== 'generico') {
-                // En auto-pipeline silencioso, usar la plantilla detectada sin prompt
-                if (options.silent) {
-                    currentTemplate = detected;
-                } else {
-                    currentTemplate = await promptTemplateSelection(detected);
-                }
+                // Siempre usar la plantilla detectada en el flujo IA (sin toast/prompt).
+                currentTemplate = detected;
             } else {
                 currentTemplate = 'generico';
             }
