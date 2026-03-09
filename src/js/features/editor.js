@@ -708,8 +708,14 @@ document.querySelectorAll('.dropdown-item').forEach(item => {
 
 async function downloadFile(format) {
     if (!editor) return;
-    const text = editor.innerText || '';
-    if (!text.trim()) return showToast('No hay texto para descargar', 'error');
+
+    // Clonar editor y limpiar elementos de UI antes de extraer texto
+    const _clone = editor.cloneNode(true);
+    _clone.querySelectorAll('.patient-data-header, .patient-placeholder-banner, .btn-append-inline, .original-text-banner, .no-print, .ai-note-panel, .no-data-edit-btn, .no-data-field, #aiNotePanel').forEach(el => el.remove());
+    const rawText = _clone.innerText || '';
+    // Colapsar 3+ líneas vacías consecutivas en 2
+    const text = rawText.replace(/\n{3,}/g, '\n\n').trim();
+    if (!text) return showToast('No hay texto para descargar', 'error');
 
     // Validación de datos profesionales (solo bloquea si la app está totalmente sin configurar)
     if (typeof validateBeforeDownload === 'function' && !validateBeforeDownload(format)) return;
