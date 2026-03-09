@@ -210,6 +210,23 @@ function checkStructurePrerequisites() {
     return true;
 }
 
+function _prepareStructuringInput(text) {
+    const src = String(text || '');
+    if (!src.trim()) return src;
+
+    return src
+        // Une palabras cortadas por salto de línea típico de OCR/PDF.
+        .replace(/([A-Za-zÁÉÍÓÚáéíóúÑñ])\s*-\s*\n\s*([A-Za-zÁÉÍÓÚáéíóúÑñ])/g, '$1$2')
+        // Quita guiones suaves y caracteres de control frecuentes en texto escaneado.
+        .replace(/\u00AD/g, '')
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        // Une saltos simples dentro del mismo párrafo.
+        .replace(/([^\n])\n(?!\n)([^#\-\*\d\n])/g, '$1 $2')
+        // Normaliza espacios.
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+}
+
 // ── 4-attempt retry wrapper con fallback inteligente de modelos y backup keys ───
 async function structureWithRetry(text, templateKey) {
     const strategy = [
@@ -535,6 +552,7 @@ async function _doAutoStructure(options) {
     const _clone = editor.cloneNode(true);
     _clone.querySelectorAll('.patient-placeholder-banner, .patient-data-header, .btn-append-inline, .original-text-banner').forEach(el => el.remove());
     const rawText = _clone.innerText;
+    const structInput = _prepareStructuringInput(rawText);
     const savedHTML = editor.innerHTML;
     if (!checkStructurePrerequisites()) return false;
 
@@ -556,7 +574,7 @@ async function _doAutoStructure(options) {
     try {
         let currentTemplate = typeof selectedTemplate !== 'undefined' ? selectedTemplate : 'generico';
         if (!currentTemplate || currentTemplate === 'generico') {
-            const detected = autoDetectTemplateKey(rawText);
+            const detected = autoDetectTemplateKey(structInput);
             if (detected !== 'generico') {
                 // Siempre usar la plantilla detectada en el flujo IA (sin toast/prompt).
                 currentTemplate = detected;
@@ -564,7 +582,7 @@ async function _doAutoStructure(options) {
                 currentTemplate = 'generico';
             }
         }
-        const rawMarkdown = await structureWithRetry(rawText, currentTemplate);
+        const rawMarkdown = await structureWithRetry(structInput, currentTemplate);
         const { body, note } = parseAIResponse(rawMarkdown);
         editor.innerHTML = body;
         window._lastStructuredHTML = body;
@@ -621,6 +639,7 @@ window.initStructurer = function () {
             const _clone2 = editor.cloneNode(true);
             _clone2.querySelectorAll('.patient-placeholder-banner, .patient-data-header, .btn-append-inline, .original-text-banner').forEach(el => el.remove());
             const rawText = _clone2.innerText;
+            const structInput = _prepareStructuringInput(rawText);
             const savedHTML = editor.innerHTML;
             window._lastRawTranscription = rawText;
             if (!checkStructurePrerequisites()) return;
@@ -631,7 +650,7 @@ window.initStructurer = function () {
             try {
                 const templateSelect = document.getElementById('templateSelect');
                 const templateKey = templateSelect ? templateSelect.value : 'generico';
-                const rawMarkdown = await structureWithRetry(editor.innerText, templateKey);
+                const rawMarkdown = await structureWithRetry(structInput, templateKey);
                 const { body, note } = parseAIResponse(rawMarkdown);
                 editor.innerHTML = body;
                 window._lastStructuredHTML = body;
