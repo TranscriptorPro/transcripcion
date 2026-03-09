@@ -83,6 +83,7 @@ const JS_FILES = [
     'src/js/features/outputProfiles.js',
     'src/js/features/pdfDataAccessUtils.js',
     'src/js/features/pdfPreview.js',
+    'src/js/features/pdfPreviewActions.js',
     'src/js/features/pdfMaker.js',
     'src/js/features/reportHistoryPolicyUtils.js',
     'src/js/features/reportHistory.js',
