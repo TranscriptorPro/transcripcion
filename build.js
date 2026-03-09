@@ -37,6 +37,8 @@ const JS_FILES = [
     'src/js/features/formHandler.js',
     'src/js/features/themeManager.js',
     'src/js/features/settingsThemeUtils.js',
+    'src/js/features/settingsWorkplaceUtils.js',
+    'src/js/features/settingsEditorPrefsUtils.js',
     'src/js/features/settingsBackupUtils.js',
     'src/js/features/settingsModalPopulateUtils.js',
     'src/js/features/settingsModalActionsUtils.js',

@@ -289,22 +289,17 @@
 
     // ─── 3. Workplace ────────────────────────────────────────────────
     function _initWorkplaceSection() {
-        const btn = document.getElementById('settingsChangeWorkplace');
-        if (btn) {
-            btn.addEventListener('click', () => {
-                // Close settings, open Session Assistant
-                const overlay = document.getElementById('settingsModalOverlay');
-                if (overlay) overlay.classList.remove('active');
-                if (typeof openSessionAssistant === 'function') openSessionAssistant();
-            });
+        const utils = window.SettingsWorkplaceUtils || {};
+        if (typeof utils.initWorkplaceSection === 'function') {
+            utils.initWorkplaceSection();
         }
     }
 
     function _populateWorkplace() {
-        const el = document.getElementById('settingsCurrentWorkplace');
-        if (!el) return;
-        const wpName = localStorage.getItem('current_workplace_name');
-        el.textContent = wpName || 'No seleccionado';
+        const utils = window.SettingsWorkplaceUtils || {};
+        if (typeof utils.populateWorkplace === 'function') {
+            utils.populateWorkplace();
+        }
     }
 
     // ─── 4. Quick Profiles ───────────────────────────────────────────
@@ -405,113 +400,42 @@
 
     // ─── 5. PDF Config link ──────────────────────────────────────────
     function _initPdfConfigLink() {
-        const btn = document.getElementById('settingsOpenPdfConfig');
-        if (btn) {
-            btn.addEventListener('click', () => {
-                const overlay = document.getElementById('settingsModalOverlay');
-                if (overlay) overlay.classList.remove('active');
-                const pdfOverlay = document.getElementById('pdfModalOverlay');
-                if (pdfOverlay) pdfOverlay.classList.add('active');
-            });
+        const utils = window.SettingsWorkplaceUtils || {};
+        if (typeof utils.initPdfConfigLink === 'function') {
+            utils.initPdfConfigLink();
         }
     }
 
     // ─── 6. Editor preferences ───────────────────────────────────────
     function _initEditorPrefs() {
-        const fontSize = document.getElementById('settingsEditorFontSize');
-        const autosave = document.getElementById('settingsAutosave');
-        const undoHistory = document.getElementById('settingsUndoHistory');
-
-        if (fontSize) {
-            fontSize.addEventListener('change', () => {
-                const prefs = _getPrefs();
-                prefs.editorFontSize = fontSize.value;
-                _savePrefs(prefs);
-                _applyEditorPrefs(prefs);
-                if (typeof showToast === 'function') showToast('Tamaño de texto actualizado', 'success');
-            });
-        }
-        if (autosave) {
-            autosave.addEventListener('change', () => {
-                const prefs = _getPrefs();
-                prefs.autosave = autosave.checked;
-                _savePrefs(prefs);
-                _applyEditorPrefs(prefs);
-            });
-        }
-        if (undoHistory) {
-            undoHistory.addEventListener('change', () => {
-                const prefs = _getPrefs();
-                prefs.undoHistory = undoHistory.checked;
-                _savePrefs(prefs);
+        const utils = window.SettingsEditorPrefsUtils || {};
+        if (typeof utils.initEditorPrefs === 'function') {
+            utils.initEditorPrefs({
+                getPrefs: _getPrefs,
+                savePrefs: _savePrefs
             });
         }
     }
 
     function _populateEditorPrefs() {
-        const prefs = _getPrefs();
-        const fontSize = document.getElementById('settingsEditorFontSize');
-        const autosave = document.getElementById('settingsAutosave');
-        const undoHistory = document.getElementById('settingsUndoHistory');
-        if (fontSize) fontSize.value = prefs.editorFontSize;
-        if (autosave) autosave.checked = prefs.autosave;
-        if (undoHistory) undoHistory.checked = prefs.undoHistory;
+        const utils = window.SettingsEditorPrefsUtils || {};
+        if (typeof utils.populateEditorPrefs === 'function') {
+            utils.populateEditorPrefs(_getPrefs);
+        }
     }
 
     function _applyEditorPrefs(prefs) {
-        // Font size
-        const editor = document.getElementById('mainEditor') || document.getElementById('editor');
-        if (editor) {
-            const sizes = { small: '0.82rem', medium: '0.95rem', large: '1.1rem' };
-            editor.style.fontSize = sizes[prefs.editorFontSize] || sizes.medium;
-        }
-
-        // Autosave
-        if (prefs.autosave) {
-            _startAutosave();
-        } else {
-            _stopAutosave();
-        }
-    }
-
-    // ─── Autosave logic ──────────────────────────────────────────────
-    let _autosaveTimer = null;
-    function _startAutosave() {
-        if (_autosaveTimer) return;
-        _autosaveTimer = setInterval(() => {
-            const editor = document.getElementById('mainEditor') || document.getElementById('editor');
-            if (editor && editor.innerHTML && editor.innerHTML.length > 10) {
-                if (typeof appDB !== 'undefined') appDB.set('autosave_draft', editor.innerHTML);
-                localStorage.setItem('autosave_draft', editor.innerHTML);
-                const _ts = Date.now().toString();
-                if (typeof appDB !== 'undefined') appDB.set('autosave_ts', _ts);
-                localStorage.setItem('autosave_ts', _ts);
-            }
-        }, 30000); // every 30s
-    }
-    function _stopAutosave() {
-        if (_autosaveTimer) {
-            clearInterval(_autosaveTimer);
-            _autosaveTimer = null;
+        const utils = window.SettingsEditorPrefsUtils || {};
+        if (typeof utils.applyEditorPrefs === 'function') {
+            utils.applyEditorPrefs(prefs);
         }
     }
 
     // Restore draft on load if available
     window.restoreAutosaveDraft = function () {
-        const draft = localStorage.getItem('autosave_draft');
-        const ts = localStorage.getItem('autosave_ts');
-        if (!draft || !ts) return false;
-
-        const age = Date.now() - parseInt(ts);
-        if (age > 24 * 60 * 60 * 1000) return false; // older than 24h, skip
-
-        const editor = document.getElementById('mainEditor') || document.getElementById('editor');
-        if (editor && (!editor.innerHTML || editor.innerHTML.length < 20)) {
-            editor.innerHTML = draft;
-            if (typeof showToast === 'function') {
-                showToast('📝 Borrador restaurado automáticamente', 'info');
-            }
-            return true;
+        const utils = window.SettingsEditorPrefsUtils || {};
+        if (typeof utils.restoreAutosaveDraft === 'function') {
+            return utils.restoreAutosaveDraft();
         }
         return false;
     };
