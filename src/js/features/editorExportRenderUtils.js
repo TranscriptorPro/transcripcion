@@ -159,7 +159,8 @@
         let row2 = '';
         if (refDoctor) row2 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">SOLICITANTE:</span><span class="pvs-val">${refDoctor}</span></div>`;
         if (studyReason) row2 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">MOTIVO:</span><span class="pvs-val">${studyReason}</span></div>`;
-        const studySection = `<div class="preview-study"><div class="pvs-grid pvs-3col">${row1}</div>` + (row2 ? `<div class="pvs-grid pvs-2col">${row2}</div>` : '') + `</div>`;
+        const studyTitle = (studyType && String(studyType).trim()) ? `INFORME DE ${studyType}` : 'INFORME MEDICO';
+        const studySection = `<div class="preview-study"><div class="report-h1">${studyTitle}</div><div class="pvs-grid pvs-3col">${row1}</div>` + (row2 ? `<div class="pvs-grid pvs-2col">${row2}</div>` : '') + `</div>`;
 
         let sigSection = '';
         if (!isAdminNoProf && profName) {

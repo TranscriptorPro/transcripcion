@@ -1,5 +1,17 @@
 // ============ PDF PREVIEW ACTIONS (EMAIL / PRINT / WORKPLACE) ============
 
+async function _queuePendingEmail(payload) {
+    try {
+        const pending = (typeof appDB !== 'undefined' ? await appDB.get('pending_outbound_emails') : null)
+            || JSON.parse(localStorage.getItem('pending_outbound_emails') || '[]');
+        pending.push({ ...payload, queuedAt: new Date().toISOString() });
+        if (typeof appDB !== 'undefined') await appDB.set('pending_outbound_emails', pending);
+        else localStorage.setItem('pending_outbound_emails', JSON.stringify(pending));
+    } catch (_) {
+        // No bloquear la UX si falla la persistencia local.
+    }
+}
+
 // ============ ENVIAR POR EMAIL DESDE VISTA PREVIA ============
 window.emailFromPreview = async function () {
     const config   = (await _pdfPreviewSafeGet('pdf_config', {})) || {};
@@ -70,10 +82,9 @@ window.emailFromPreview = async function () {
     const statusEl    = document.getElementById('emailSendStatus');
 
     if (!overlay) {
-        // Fallback: mailto
-        const mailSubject = encodeURIComponent(subject);
-        const mailBody = encodeURIComponent(`Se adjunta el informe de ${studyType} realizado con fecha ${studyDate}.\n\nAtte., ${profName.toUpperCase()}`);
-        window.open(`mailto:?subject=${mailSubject}&body=${mailBody}`, '_blank');
+        if (typeof showToast === 'function') {
+            showToast('No se pudo abrir el modal de envio. Reintenta desde la vista previa.', 'error');
+        }
         return;
     }
 
@@ -179,19 +190,25 @@ window.initEmailSendModal = function () {
         const hasBackend = /^https?:\/\//i.test(backendUrl);
 
         if (!hasBackend) {
-            // Fallback: mailto
+            await _queuePendingEmail({
+                to,
+                subject: data.subject,
+                htmlBody: data.htmlBody,
+                studyType: data.studyType,
+                studyDate: data.studyDate,
+                profName: data.profName,
+                reason: 'backend_not_configured'
+            });
             if (statusEl) {
                 statusEl.style.display = 'block';
                 statusEl.style.background = '#fef3c7';
                 statusEl.style.color = '#92400e';
-                statusEl.innerHTML = '⚠️ Backend de email no configurado (URL inválida o ausente). Abriendo cliente de correo...';
+                statusEl.textContent = '⚠️ Backend de email no configurado. El envio fue guardado en cola interna (sin abrir Gmail).';
             }
-            setTimeout(() => {
-                const mailSubject = encodeURIComponent(data.subject);
-                const mailBody = encodeURIComponent(`Se adjunta el informe de ${data.studyType} realizado con fecha ${data.studyDate}.\n\nDescargue el PDF desde la vista previa y adjúntelo manualmente.\n\nAtte., ${data.profName.toUpperCase()}`);
-                window.open(`mailto:${to}?subject=${mailSubject}&body=${mailBody}`, '_blank');
-                closeModal();
-            }, 1500);
+            if (typeof showToast === 'function') {
+                showToast('📩 Envio en cola interna. Configura backend para envio directo.', 'info');
+            }
+            setTimeout(closeModal, 1600);
             return;
         }
 
@@ -250,17 +267,22 @@ window.initEmailSendModal = function () {
             }
         } catch (err) {
             console.error('Error enviando email:', err);
+            await _queuePendingEmail({
+                to,
+                subject: data.subject,
+                htmlBody: data.htmlBody,
+                studyType: data.studyType,
+                studyDate: data.studyDate,
+                profName: data.profName,
+                reason: 'send_failed',
+                error: String(err?.message || err || 'unknown')
+            });
             if (statusEl) {
                 statusEl.style.background = '#fef3c7';
                 statusEl.style.color = '#92400e';
-                statusEl.innerHTML = `⚠️ No se pudo enviar directamente. <a href="#" id="emailFallbackLink" style="color:#1e40af;text-decoration:underline;">Abrir cliente de correo</a><br><span style="font-size:0.75rem;">Error: ${err.message}</span>`;
-                document.getElementById('emailFallbackLink')?.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const mailSubject = encodeURIComponent(data.subject);
-                    const mailBody = encodeURIComponent(`Se adjunta el informe de ${data.studyType} realizado con fecha ${data.studyDate}.\n\nAtte., ${data.profName.toUpperCase()}`);
-                    window.open(`mailto:${to}?subject=${mailSubject}&body=${mailBody}`, '_blank');
-                });
+                statusEl.innerHTML = `⚠️ No se pudo enviar por backend. Se guardó en cola interna para reintento desde la app.<br><span style="font-size:0.75rem;">Error: ${_escHtml(err.message || 'desconocido')}</span>`;
             }
+            if (typeof showToast === 'function') showToast('⚠️ Error de backend. Envio guardado en cola interna.', 'warning');
         } finally {
             sendBtn.disabled = false;
             sendBtn.textContent = '📨 Enviar ahora';

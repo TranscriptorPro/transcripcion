@@ -1483,8 +1483,8 @@ function doPost(e) {
     }
   }
 
-  // send_email — Enviar email (con o sin PDF adjunto)
-  if (action === 'send_email') {
+  // send_email / send_direct_email — Enviar email directamente desde la app (con o sin PDF adjunto)
+  if (action === 'send_email' || action === 'send_direct_email') {
     try {
       const to          = payload.to;         // email destinatario
       const subject     = payload.subject;    // asunto

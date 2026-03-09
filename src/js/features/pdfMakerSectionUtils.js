@@ -17,9 +17,21 @@ window.PdfMakerSectionUtils.drawStudyInfoSection = function(ctx) {
     const innerW = CW - 2 * padX;
     let boxH = padY * 2 + rowH;
     if (row2.length) boxH += 1 + rowH;
+    const hasStudyTitle = !!(studyType && String(studyType).trim());
+    const titleText = hasStudyTitle ? `INFORME DE ${String(studyType).toUpperCase()}` : 'INFORME MEDICO';
+    const titleBlockH = 10;
 
     let cy = cyStart;
-    cy = ensureSpace(cy, boxH + 4);
+    cy = ensureSpace(cy, boxH + 4 + titleBlockH);
+
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(accent.r, accent.g, accent.b);
+    doc.text(titleText, ML + (CW / 2), cy + 4.5, { align: 'center' });
+    doc.setDrawColor(accent.r, accent.g, accent.b);
+    doc.setLineWidth(0.5);
+    doc.line(ML, cy + 6.5, ML + CW, cy + 6.5);
+    cy += titleBlockH;
 
     doc.setFillColor(244, 247, 251);
     doc.setDrawColor(227, 232, 239);

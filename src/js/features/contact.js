@@ -239,20 +239,15 @@ window.initContact = function () {
                         if (typeof appDB !== 'undefined') await appDB.set('pending_contacts', pending);
                         else localStorage.setItem('pending_contacts', JSON.stringify(pending));
                     } catch (_) {}
-                    // Fallback: abrir mailto para que el usuario pueda enviar directamente
-                    const mailtoFallback = `mailto:${contactEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(`Motivo: ${motivo}\n\n${detalle}\n\n---\nDr./Dra. ${nombre} | Mat. ${mat}`)}`;
-                    window.open(mailtoFallback, '_blank');
                     if (form)       form.style.display       = 'none';
                     if (successMsg) successMsg.style.display = 'block';
-                    if (typeof showToast === 'function') showToast('📩 Se abrió tu cliente de correo como alternativa.', 'info');
+                    if (typeof showToast === 'function') showToast('📩 Mensaje guardado. Se reintentará automáticamente desde la app.', 'info');
                     setTimeout(closeModal, 3000);
                     return;
                 }
             }
 
-            // Fallback si no hay backend configurado: guardar localmente + mailto
-            // mailto como último recurso para no perder el mensaje
-            const mailtoFallback = `mailto:${contactEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(detalle)}`;
+            // Fallback si no hay backend configurado: guardar localmente para reintento interno
             try {
                 const pending = (typeof appDB !== 'undefined' ? await appDB.get('pending_contacts') : null)
                     || JSON.parse(localStorage.getItem('pending_contacts') || '[]');
@@ -263,7 +258,7 @@ window.initContact = function () {
 
             if (form)       form.style.display       = 'none';
             if (successMsg) successMsg.style.display = 'block';
-            if (typeof showToast === 'function') showToast('📩 Mensaje guardado. Se enviará cuando haya conexión.', 'info');
+            if (typeof showToast === 'function') showToast('📩 Mensaje guardado. Se enviará automáticamente cuando haya backend/conexión.', 'info');
             setTimeout(closeModal, 2500);
         });
     }

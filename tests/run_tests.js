@@ -4526,8 +4526,8 @@ test('contact — código maneja pending_contacts en localStorage', () => {
     assertIncludes(contactCode, 'pending_contacts', 'Debe manejar cola de pendientes');
 });
 
-test('contact — código tiene mailto como fallback', () => {
-    assertIncludes(contactCode, 'mailto', 'Debe tener mailto como fallback');
+test('contact — código NO usa mailto (envío directo desde app)', () => {
+    assert(!contactCode.includes('mailto'), 'No debe abrir cliente externo de correo');
 });
 
 test('contact — código envía al backend', () => {
