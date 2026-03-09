@@ -797,10 +797,44 @@ async function _doDownload(format, text) {
     const date = new Date().toLocaleDateString('es-ES');
     const fileDate = new Date().toISOString().split('T')[0];
 
-    if (format === 'pdf' && typeof downloadPDFWrapper !== 'undefined') {
-        // Pasamos innerHTML para preservar H1/H2/H3/tablas/negritas del editor
-        const htmlContent = editor.innerHTML || text;
-        await downloadPDFWrapper(htmlContent, fileName, date, fileDate);
+    if (format === 'pdf') {
+        // Fuente única de verdad: mismo HTML/CSS que la vista previa e impresión.
+        // Para máxima fidelidad, se abre diálogo de impresión del navegador
+        // y el usuario elige "Guardar como PDF".
+        const htmlDoc = (typeof createHTML === 'function') ? await createHTML() : null;
+        if (!htmlDoc) {
+            // Fallback de compatibilidad si createHTML no está disponible.
+            if (typeof downloadPDFWrapper !== 'undefined') {
+                const htmlContent = editor.innerHTML || text;
+                await downloadPDFWrapper(htmlContent, fileName, date, fileDate);
+                return;
+            }
+            if (typeof showToast === 'function') showToast('No se pudo generar PDF', 'error');
+            return;
+        }
+
+        const printWin = window.open('', '_blank');
+        if (!printWin) {
+            if (typeof showToast === 'function') {
+                showToast('El navegador bloqueó la ventana de impresión. Permití popups para exportar PDF exacto.', 'error');
+            }
+            return;
+        }
+
+        printWin.document.open();
+        printWin.document.write(htmlDoc);
+        printWin.document.close();
+
+        setTimeout(() => {
+            try {
+                printWin.focus();
+                printWin.print();
+            } catch (_) {}
+        }, 300);
+
+        if (typeof showToast === 'function') {
+            showToast('Vista de impresión exacta abierta. Elegí "Guardar como PDF".', 'info');
+        }
         return;
     }
 

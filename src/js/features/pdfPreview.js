@@ -779,15 +779,27 @@ window.initEmailSendModal = function () {
         const data = window._emailPendingData;
         if (!data) return;
 
-        // Obtener URL del backend
-        const backendUrl = (await appDB.get('backend_url')) || '';
-        if (!backendUrl) {
+        // Obtener URL del backend (mismo criterio que contacto)
+        let backendUrl = '';
+        try {
+            backendUrl =
+                (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.backendUrl)
+                || (typeof appDB !== 'undefined' ? await appDB.get('backend_url') : '')
+                || localStorage.getItem('backend_url')
+                || '';
+        } catch (_) {
+            backendUrl = localStorage.getItem('backend_url') || '';
+        }
+        backendUrl = String(backendUrl || '').trim();
+        const hasBackend = /^https?:\/\//i.test(backendUrl);
+
+        if (!hasBackend) {
             // Fallback: mailto
             if (statusEl) {
                 statusEl.style.display = 'block';
                 statusEl.style.background = '#fef3c7';
                 statusEl.style.color = '#92400e';
-                statusEl.innerHTML = '⚠️ Backend no configurado. Abriendo cliente de correo...';
+                statusEl.innerHTML = '⚠️ Backend de email no configurado (URL inválida o ausente). Abriendo cliente de correo...';
             }
             setTimeout(() => {
                 const mailSubject = encodeURIComponent(data.subject);
