@@ -22,11 +22,19 @@ function _getReportHistory() {
 
 function _setReportHistory(arr) {
     _reportHistCache = arr;
+    // Persist first in localStorage so QuotaExceeded can be handled synchronously.
+    localStorage.setItem(REPORT_HISTORY_KEY, JSON.stringify(arr));
+    // Keep appDB as best-effort mirror (do not block save path).
     if (typeof appDB !== 'undefined') {
-        appDB.set(REPORT_HISTORY_KEY, arr);
-    } else {
-        localStorage.setItem(REPORT_HISTORY_KEY, JSON.stringify(arr));
+        try { appDB.set(REPORT_HISTORY_KEY, arr); } catch (_) { /* mirror best-effort */ }
     }
+}
+
+function _isQuotaExceededError(e) {
+    if (!e) return false;
+    const name = String(e.name || '').toLowerCase();
+    const msg = String(e.message || '').toLowerCase();
+    return name.includes('quotaexceeded') || msg.includes('quota') || msg.includes('storage');
 }
 
 function _getReportHistoryMax() {
@@ -77,27 +85,35 @@ window.saveReportToHistory = function (data) {
     while (history.length > reportHistoryMax) history.pop();
 
     // Intentar guardar; si localStorage está lleno, eliminar los más antiguos
+    let persisted = false;
     try {
         _setReportHistory(history);
+        persisted = true;
     } catch (e) {
-        // QuotaExceededError — ir eliminando los más viejos hasta que quepa
-        let trimmed = history;
-        let saved = false;
-        while (trimmed.length > 1) {
-            trimmed.pop();
-            try {
-                _setReportHistory(trimmed);
-                if (typeof showToast === 'function')
-                    showToast('⚠️ Almacenamiento lleno. Se eliminaron informes antiguos.', 'warning');
-                saved = true;
-                break;
-            } catch (_) { /* sigue eliminando */ }
-        }
-        if (!saved && typeof showToast === 'function') {
-            showToast('❌ No se pudo guardar el informe: almacenamiento lleno.', 'error');
+        if (_isQuotaExceededError(e)) {
+            // QuotaExceededError: remove oldest entries until it fits.
+            let trimmed = history;
+            let saved = false;
+            while (trimmed.length > 1) {
+                trimmed.pop();
+                try {
+                    _setReportHistory(trimmed);
+                    if (typeof showToast === 'function') {
+                        showToast('⚠️ Almacenamiento lleno. Se eliminaron informes antiguos.', 'warning');
+                    }
+                    saved = true;
+                    persisted = true;
+                    break;
+                } catch (_) { /* keep trimming */ }
+            }
+            if (!saved && typeof showToast === 'function') {
+                showToast('❌ No se pudo guardar el informe: almacenamiento lleno.', 'error');
+            }
+        } else if (typeof showToast === 'function') {
+            showToast('❌ No se pudo guardar el informe: error de almacenamiento.', 'error');
         }
     }
-    return entry.id;
+    return persisted ? entry.id : null;
 };
 
 // ---- Obtener todos los informes ----
