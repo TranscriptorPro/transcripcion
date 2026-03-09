@@ -26,6 +26,26 @@ window.updatePdfModalByMode = function () {
     });
 }
 
+async function _pdfPreviewSafeGet(key, fallback) {
+    const dataUtils = window.PdfDataAccessUtils || {};
+    if (typeof dataUtils.safeGet === 'function') {
+        return dataUtils.safeGet(key, fallback);
+    }
+    try {
+        if (typeof appDB !== 'undefined' && appDB && typeof appDB.get === 'function') {
+            const v = await appDB.get(key);
+            return v == null ? fallback : v;
+        }
+    } catch (_) { /* fallback below */ }
+    try {
+        const raw = localStorage.getItem(key);
+        if (raw == null) return fallback;
+        return JSON.parse(raw);
+    } catch (_) {
+        return fallback;
+    }
+}
+
 window.openPdfConfigModal = async function () {
     if (typeof loadPdfConfiguration === 'function') loadPdfConfiguration();
     const dataUtils = window.PdfDataAccessUtils || {};
@@ -626,8 +646,8 @@ window.openPrintPreview = async function () {
 
 // ============ ENVIAR POR EMAIL DESDE VISTA PREVIA ============
 window.emailFromPreview = async function () {
-    const config   = (await appDB.get('pdf_config')) || {};
-    const profData = (await appDB.get('prof_data')) || {};
+    const config   = (await _pdfPreviewSafeGet('pdf_config', {})) || {};
+    const profData = (await _pdfPreviewSafeGet('prof_data', {})) || {};
     const activePro = config.activeProfessional || null;
     const profName  = activePro?.nombre || profData.nombre || 'Profesional';
     const patientName = config.patientName || '';
@@ -642,7 +662,7 @@ window.emailFromPreview = async function () {
     const subject = `Informe de ${studyType}${patientName ? ' — ' + patientName : ''} — Fecha: ${studyDate}`;
 
     // Cuerpo HTML del email
-    const wpProfiles = (await appDB.get('workplace_profiles')) || [];
+    const wpProfiles = (await _pdfPreviewSafeGet('workplace_profiles', [])) || [];
     const wpIdx = config.activeWorkplaceIndex;
     const activeWp = (wpIdx !== undefined && wpIdx !== null) ? wpProfiles[Number(wpIdx)] : wpProfiles[0];
     const wpName = activeWp?.name || '';
@@ -832,8 +852,8 @@ window.initEmailSendModal = function () {
             sendBtn.textContent = '📨 Enviando...';
             if (statusEl) statusEl.textContent = '📨 Enviando email...';
 
-            const config = (await appDB.get('pdf_config')) || {};
-            const profData = (await appDB.get('prof_data')) || {};
+            const config = (await _pdfPreviewSafeGet('pdf_config', {})) || {};
+            const profData = (await _pdfPreviewSafeGet('prof_data', {})) || {};
             const activePro = config.activeProfessional || null;
             const senderName = activePro?.nombre || profData.nombre || 'Transcriptor Médico Pro';
 
@@ -887,7 +907,7 @@ window.initEmailSendModal = function () {
     });
 };
 window.workplaceProfiles = [];
-appDB.get('workplace_profiles').then(function(v) { window.workplaceProfiles = v || []; }).catch(function() {});
+_pdfPreviewSafeGet('workplace_profiles', []).then(function(v) { window.workplaceProfiles = v || []; }).catch(function() {});
 
 window.populateWorkplaceDropdown = function () {
     const dropdown = document.getElementById('pdfWorkplace');
