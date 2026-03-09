@@ -36,6 +36,7 @@ const JS_FILES = [
     'src/js/features/patientRegistry.js',
     'src/js/features/formHandler.js',
     'src/js/features/themeManager.js',
+    'src/js/features/settingsThemeUtils.js',
     'src/js/features/settingsPanel.js',
     'src/js/features/pricingCart.js',
     'src/js/features/business.js',
