@@ -1,13 +1,9 @@
-// ============================================================
 //  REVISOR MÉDICO — Diccionario + Modal de correcciones
 //  medDictionary.js
-// ============================================================
 
-// ─── 1. DICCIONARIO BASE predefinido ────────────────────────
 // Formato: { "texto_incorrecto": "corrección" }
 // Las claves se comparan en minúsculas sin tildes.
 var MEDICAL_DICT_BASE = {
-    // ── ORL / Cabeza y cuello ─────────────────────────────
     "larinx":                   "laringe",
     "larincs":                  "laringe",
     "larinco":                  "laringe",
@@ -47,7 +43,6 @@ var MEDICAL_DICT_BASE = {
     "tonsilas":                 "tonsilas palatinas",
     "roncopatía":               "roncopatía",
 
-    // ── Cardiología ───────────────────────────────────────
     "extrasistoles":            "extrasístoles",
     "extrasistole":             "extrasístole",
     "taquicardia sinusal":      "taquicardia sinusal",
@@ -75,7 +70,6 @@ var MEDICAL_DICT_BASE = {
     "arteria coronaria":        "arteria coronaria",
     "ateroesclerosis":          "aterosclerosis",
 
-    // ── Neurología ────────────────────────────────────────
     "polisomnografía":          "polisomnografía",
     "electromiografia":         "electromiografía",
     "electromiografía":         "electromiografía",
@@ -87,12 +81,10 @@ var MEDICAL_DICT_BASE = {
     "convulsiones febriles":    "convulsiones febriles",
     "hiperecogenicidad":        "hiperecogenicidad",
 
-    // ── Gastroenterología ─────────────────────────────────
     "gastroesofagico":          "gastroesofágico",
     "anastomosis término":      "anastomosis término-terminal",
     "colitis ulcerosa":         "colitis ulcerosa",
 
-    // ── Ortopedia ─────────────────────────────────────────
     "artrosis":                 "artrosis",
     "artritis reumatoide":      "artritis reumatoide",
     "espondilolistesis":        "espondilolistesis",
@@ -100,7 +92,6 @@ var MEDICAL_DICT_BASE = {
     "discal":                   "discal",
     "disco intervertebral":     "disco intervertebral",
 
-    // ── Términos generales ────────────────────────────────
     "hipertension":             "hipertensión",
     "hipertensión arterial":    "hipertensión arterial",
     "diabetes mellitus":        "diabetes mellitus",
@@ -132,7 +123,6 @@ var MEDICAL_DICT_BASE = {
     "glicemia":                 "glucemia",
     "glucosa en sangre":        "glucemia",
 
-    // ── Whisper ASR corrections — Neumología ──────────────
     "espiro metría":            "espirometría",
     "vef uno":                  "VEF1",
     "fe b uno":                 "FEV1",
@@ -141,7 +131,6 @@ var MEDICAL_DICT_BASE = {
     "cabina pletismo gráfica":  "cabina pletismográfica",
     "oxi metría":               "oximetría",
 
-    // ── Whisper ASR corrections — Oftalmología ────────────
     "campi metría":             "campimetría",
     "janfri":                   "Humphrey",
     "humfrei":                  "Humphrey",
@@ -155,7 +144,6 @@ var MEDICAL_DICT_BASE = {
     "micro aneurismas":         "microaneurismas",
     "retino grafía":            "retinografía",
 
-    // ── Whisper ASR corrections — Imágenes ────────────────
     "tacar":                    "TACAR",
     "multislais":               "multislice",
     "mamo grafía":              "mamografía",
@@ -171,7 +159,6 @@ var MEDICAL_DICT_BASE = {
     "placa de torax":           "placa de tórax",
     "liti asis":                "litiasis",
 
-    // ── Whisper ASR corrections — Endoscopía ──────────────
     "gastro copía":             "gastroscopía",
     "colono copía":             "colonoscopía",
     "fibro broncoscopia":       "fibrobroncoscopía",
@@ -185,7 +172,6 @@ var MEDICAL_DICT_BASE = {
     "artro copía":              "artroscopía",
     "dermato copía":            "dermatoscopía",
 
-    // ── Whisper ASR corrections — Cardiología ─────────────
     "jolter":                   "Holter",
     "presuro metría":           "presurometría",
     "cine coronario grafía":    "cinecoronariografía",
@@ -196,7 +182,6 @@ var MEDICAL_DICT_BASE = {
     "pesap":                    "PSAP",
     "ergo metría":              "ergometría",
 
-    // ── Whisper ASR corrections — Ginecología / Obstetricia ─
     "papa nicolau":             "Papanicolaou",
     "betesda":                  "Bethesda",
     "eco te ve":                "eco TV",
@@ -205,13 +190,11 @@ var MEDICAL_DICT_BASE = {
     "liquido amniotico":        "líquido amniótico",
     "cardio toco grafía":       "cardiotocografía",
 
-    // ── Whisper ASR corrections — Neurología ──────────────
     "electro mio grafía":       "electromiografía",
     "poli somnografía":         "polisomnografía",
     "electro encefalograma":    "electroencefalograma",
     "potenciales hevocados":    "potenciales evocados",
 
-    // ── Whisper ASR corrections — Vascular / ORL / Urología
     "supra aórticos":           "supraaórticos",
     "video naso laringoscopia": "videonasolaringoscopía",
     "colestea toma":            "colesteatoma",
@@ -220,7 +203,6 @@ var MEDICAL_DICT_BASE = {
     "gamma grafía":             "gammagrafía",
     "espect":                   "SPECT",
 
-    // ── Whisper ASR corrections — Anatomía Patológica ─────
     "ponch":                    "punch",
     "te ene eme":               "TNM",
     "cito logía":               "citología",
@@ -229,7 +211,6 @@ var MEDICAL_DICT_BASE = {
     "informe medico":           "informe médico",
     "subjetivo objetivo":       "SOAP",
 
-    // ── Whisper ASR — Errores frecuentes de split/join ─────────
     "o dinofagia":              "odinofagia",
     "odin ofagia":              "odinofagia",
     "dis fagia":                "disfagia",
@@ -251,7 +232,6 @@ var MEDICAL_DICT_BASE = {
     "eco cardio grama":         "ecocardiograma",
     "eco cardiograma":          "ecocardiograma",
 
-    // ── Whisper ASR — Anglicismos / idioma cruzado ────────────
     "laryngoscopy":             "laringoscopía",
     "laryngoscopía":            "laringoscopía",
     "laryngo":                  "laringo",
@@ -268,7 +248,6 @@ var MEDICAL_DICT_BASE = {
     "spirometry":               "espirometría",
     "plethysmography":          "pletismografía",
 
-    // ── Whisper ASR — Fonemas confundidos (b/v, s/z/c, j/g) ──
     "bujales":                  "bucales",
     "bujal":                    "bucal",
     "vocales afectados":        "vocales afectadas",
@@ -290,14 +269,12 @@ var MEDICAL_DICT_BASE = {
     "comisura posterior":       "comisura posterior",
     "bandas ventriculares":     "bandas ventriculares",
 
-    // ── Whisper ASR — Concordancia género/número ──────────────
     "afectados" :               "afectadas",   // cuerdas vocales afectadas
     "engrosados":               "engrosadas",  // cuerdas engrosadas
     "congestivos":              "congestivas", // mucosas congestivas
     "edematosos":               "edematosas",  // cuerdas edematosas
     "eritematosos":             "eritematosas",
 
-    // ── Whisper ASR — Términos anatómicos frecuentes ──────────
     "ventriculo":               "ventrículo",
     "auricula":                 "aurícula",
     "esofago":                  "esófago",
@@ -321,7 +298,6 @@ var MEDICAL_DICT_BASE = {
     "retroperitoneo":           "retroperitoneo",
 };
 
-// ─── 2. Diccionario PERSONALIZADO (appDB / write-through cache) ────────────
 var CUSTOM_DICT_KEY = 'med_dict_custom';
 
 var _customDictCache = null;
@@ -362,7 +338,6 @@ function getFullDict() {
     return { ...MEDICAL_DICT_BASE, ...getMedCustomDict() };
 }
 
-// ─── 3. Motor de búsqueda de coincidencias ──────────────────
 // Devuelve [{from, to, count, isBase}] encontradas en plainText
 function findDictMatches(plainText) {
     const dict = getFullDict();
@@ -397,7 +372,6 @@ function _escapeRegex(s) {
     return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// ─── 4. Aplicar correcciones a nodos de texto ───────────────
 // accepted: [{from, to}]
 function applyDictCorrections(editorEl, accepted) {
     if (!editorEl || !accepted.length) return;
@@ -432,7 +406,6 @@ function applyDictCorrections(editorEl, accepted) {
     }
 }
 
-// ─── 5. Scan con IA para sugerencias adicionales ────────────
 async function scanWithAI(plainText) {
     const key = window.GROQ_API_KEY || (typeof appDB !== 'undefined' ? await appDB.get('groq_api_key') : null);
     if (!key) return [];
@@ -477,11 +450,9 @@ No corrijas estilo, comas, signos de puntuación ni redacción. Solo errores de 
     }
 }
 
-// ─── 6. Estado del modal ────────────────────────────────────
 let _dictModalMatches  = [];   // [{from, to, key, count, isBase, isAI, checked}]
 let _dictModalAILoaded = false;
 
-// ─── 7. Renderizado de la pestaña REVISIÓN ──────────────────
 function renderReviewList() {
     const container = document.getElementById('medDictReviewList');
     const empty     = document.getElementById('medDictReviewEmpty');
@@ -536,7 +507,6 @@ function renderReviewList() {
     });
 }
 
-// ─── 8. Renderizado de la pestaña DICCIONARIO ───────────────
 function renderDictList() {
     const container = document.getElementById('medDictListContainer');
     if (!container) return;
@@ -576,7 +546,6 @@ function renderDictList() {
     container.innerHTML = html;
 }
 
-// ─── 9. Abrir modal ─────────────────────────────────────────
 // options: { skipEditorCheck: bool, defaultTab: 'review'|'dictionary' }
 window.openMedDictModal = function (options = {}) {
     const editor = document.getElementById('editor');
@@ -623,7 +592,6 @@ function _htmlEncode(str) {
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ─── 10. Init (wiring de botones del modal) ─────────────────
 window.initMedDictModal = function () {
     // Cerrar
     ['closeMedDictModal','btnMedDictClose'].forEach(id => {
