@@ -59,6 +59,14 @@
             const isAdminPage = /\/recursos\/admin\.html$/i.test((window.location && window.location.pathname) || '');
             if (isAdminPage) return 'ADMIN';
 
+            const host = String(window.location.hostname || '').toLowerCase();
+            const path = String(window.location.pathname || '').replace(/\/+$/, '') || '/';
+            const isOfficialAdminBase = (
+                host === 'transcriptorpro.github.io'
+                && (path === '/transcripcion' || path === '/transcripcion/index.html')
+            );
+            if (isOfficialAdminBase) return 'ADMIN';
+
             if (window.CLIENT_CONFIG && window.CLIENT_CONFIG.type) {
                 return String(window.CLIENT_CONFIG.type).toUpperCase();
             }
@@ -83,7 +91,7 @@
         if (type === 'TRIAL') {
             return { type, maxTips: 70, levels: new Set(['high', 'medium']) };
         }
-        return { type, maxTips: 38, levels: new Set(['high']) };
+        return { type, maxTips: 60, levels: new Set(['high', 'medium']) };
     }
 
     function ensureStyles() {
@@ -203,12 +211,22 @@
         return target.parentElement || target;
     }
 
+    function hasOwnTipButton(anchor) {
+        if (!anchor) return false;
+        const children = anchor.children || [];
+        for (let i = 0; i < children.length; i += 1) {
+            const child = children[i];
+            if (child && child.classList && child.classList.contains('fixed-tip-btn')) return true;
+        }
+        return false;
+    }
+
     function attachTip(target, tipText) {
         if (!target || !tipText) return false;
         if (target.matches(SKIP_SELECTOR) || target.closest(SKIP_SELECTOR)) return false;
 
         const anchor = resolveAnchor(target);
-        if (!anchor || anchor.querySelector(':scope > .fixed-tip-btn')) return false;
+        if (!anchor || hasOwnTipButton(anchor)) return false;
 
         anchor.classList.add('fixed-tip-anchor');
         const btn = document.createElement('button');
@@ -271,6 +289,34 @@
         });
     }
 
+    function forceAttachFallback() {
+        const fallbackIds = [
+            'recordBtn',
+            'dropZone',
+            'transcribeBtn',
+            'btnStructureAI',
+            'btnConfigPdfMain',
+            'btnDownloadFromPreview',
+            'btnNewUser',
+            'btnGiftUser',
+            'btnRefresh',
+            'btnRefreshLogs',
+            'btnSavePlans',
+            'btnSaveExtras'
+        ];
+
+        fallbackIds.forEach((id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const tipText = deriveLabelText(el);
+            if (!tipText) return;
+            if (attachTip(el, tipText)) {
+                el.dataset.fixedTipBound = '1';
+                boundCount += 1;
+            }
+        });
+    }
+
     function startObserver() {
         if (observer) return;
         observer = new MutationObserver((mutations) => {
@@ -300,7 +346,16 @@
     function boot() {
         ensureStyles();
         bindAll();
+        forceAttachFallback();
         startObserver();
+
+        // Reintentos suaves por si hay contenido que termina de renderizar tarde.
+        setTimeout(queueBind, 250);
+        setTimeout(queueBind, 900);
+        setTimeout(() => {
+            queueBind();
+            forceAttachFallback();
+        }, 1800);
     }
 
     if (document.readyState === 'loading') {
