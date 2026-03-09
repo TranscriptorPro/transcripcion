@@ -1,5 +1,17 @@
 {
+  "name": "transcriptor-pro",
+  "version": "2.0.0",
+  "description": "Transcriptor Médico Pro — Audio → Informe profesional con IA",
+  "private": true,
+  "scripts": {
+    "build": "node build.js",
+    "test": "node tests/run_tests.js",
+    "test:e2e:full": "node tests/e2e-full-qa-playwright.js"
+  },
   "dependencies": {
     "playwright": "^1.58.2"
+  },
+  "devDependencies": {
+    "terser": "^5.46.0"
   }
 }

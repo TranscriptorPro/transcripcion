@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧪 Test E2E — Estructuración + PDF + Preview + Multi-formato</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { 
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+    background: #0f172a; color: #e2e8f0; padding: 20px; 
+    min-height: 100vh;
+}
+h1 { text-align: center; margin-bottom: 6px; font-size: 1.5rem; }
+.subtitle { text-align: center; color: #94a3b8; margin-bottom: 20px; font-size: 0.85rem; }
+
+/* API Key section */
+.api-section {
+    max-width: 700px; margin: 0 auto 20px; padding: 18px;
+    background: #1e293b; border-radius: 12px; border: 1px solid #334155;
+}
+.api-section label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.9rem; }
+.api-section input {
+    width: 100%; padding: 10px 14px; border-radius: 8px;
+    border: 1px solid #475569; background: #0f172a; color: #e2e8f0;
+    font-size: 0.9rem; margin-bottom: 10px;
+}
+.api-section input:focus { outline: none; border-color: #3b82f6; }
+
+/* Buttons row */
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn-run {
+    flex: 1; min-width: 200px; padding: 12px; border: none; border-radius: 10px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white;
+    font-size: 1rem; font-weight: 700; cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn-run:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(59,130,246,0.4); }
+.btn-run:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn-individual {
+    padding: 10px 16px; border: 1px solid #475569; border-radius: 8px;
+    background: #1e293b; color: #e2e8f0; cursor: pointer; font-size: 0.85rem;
+    transition: all 0.2s;
+}
+.btn-individual:hover { background: #253347; border-color: #3b82f6; }
+.btn-individual:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-individual.running { border-color: #f59e0b; color: #fcd34d; }
+.btn-individual.pass { border-color: #059669; color: #6ee7b7; }
+.btn-individual.fail { border-color: #dc2626; color: #fca5a5; }
+
+/* Progress */
+.progress-bar { 
+    max-width: 700px; margin: 16px auto; height: 5px; 
+    background: #1e293b; border-radius: 3px; overflow: hidden; display: none;
+}
+.progress-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); width: 0%; transition: width 0.3s; }
+.status-text { text-align: center; color: #94a3b8; margin-bottom: 12px; font-size: 0.82rem; }
+
+/* Summary */
+.summary {
+    max-width: 700px; margin: 0 auto 20px; display: none;
+    padding: 14px 18px; border-radius: 10px; font-size: 1rem; font-weight: 600;
+    text-align: center;
+}
+.summary.pass { background: #064e3b; border: 1px solid #059669; color: #6ee7b7; }
+.summary.fail { background: #450a0a; border: 1px solid #dc2626; color: #fca5a5; }
+.summary.mixed { background: #451a03; border: 1px solid #d97706; color: #fcd34d; }
+
+/* Results */
+.results { max-width: 900px; margin: 0 auto; }
+.section-block { 
+    margin-bottom: 14px; background: #1e293b; border-radius: 10px; 
+    border: 1px solid #334155; overflow: hidden;
+}
+.section-header {
+    padding: 10px 14px; background: #253347; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+    user-select: none;
+}
+.section-header:hover { background: #2d3f56; }
+.section-title { font-weight: 600; font-size: 0.9rem; }
+.section-badge {
+    font-size: 0.72rem; padding: 2px 8px; border-radius: 16px; font-weight: 700;
+}
+.section-badge.all-pass { background: #065f46; color: #6ee7b7; }
+.section-badge.has-fail { background: #7f1d1d; color: #fca5a5; }
+.section-badge.pending { background: #44403c; color: #a8a29e; }
+.section-body { display: none; padding: 8px 14px 10px; }
+.section-block.open .section-body { display: block; }
+.test-row {
+    padding: 5px 0; display: flex; align-items: flex-start; gap: 6px;
+    border-bottom: 1px solid #1e293b; font-size: 0.82rem;
+}
+.test-row:last-child { border-bottom: none; }
+.test-icon { flex-shrink: 0; font-size: 0.95rem; line-height: 1.3; }
+.test-label { color: #cbd5e1; flex: 1; }
+.test-detail { color: #f87171; font-size: 0.78rem; padding-left: 24px; margin-top: 2px; word-break: break-all; }
+.test-output { 
+    color: #94a3b8; font-size: 0.75rem; padding: 6px 24px; margin-top: 2px;
+    background: #0f172a; border-radius: 6px; max-height: 200px; overflow-y: auto;
+    white-space: pre-wrap; word-break: break-word;
+}
+
+/* Timing */
+.timing { font-size: 0.7rem; color: #64748b; margin-left: 8px; }
+
+/* Iframe */
+#appFrame { 
+    position: fixed; top: -9999px; left: -9999px; 
+    width: 1280px; height: 900px; border: none;
+}
+</style>
+</head>
+<body>
+
+<h1>🧪 Test E2E — Estructuración, PDF, Preview, Descargas</h1>
+<p class="subtitle">
+    Prueba integral con API real: 15 textos médicos crudos → estructuración IA → renderizado HTML → Vista Previa → PDF<br>
+    Incluye verificación de header en todas las páginas, dropdown multi-formato, detección de plantillas y más
+</p>
+
+<div class="api-section">
+    <label>🔑 API Key de Groq</label>
+    <input type="password" id="apiKeyInput" placeholder="gsk_xxxxxxxxxxxxxxx..." autocomplete="off">
+    <div class="btn-row">
+        <button class="btn-run" id="btnRunAll" onclick="runAllTests()">▶ Ejecutar TODAS las pruebas</button>
+    </div>
+    <div class="btn-row" style="margin-top:8px;" id="individualButtons"></div>
+</div>
+
+<div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+<div class="status-text" id="statusText"></div>
+<div class="summary" id="summary"></div>
+<div class="results" id="results"></div>
+
+<iframe id="appFrame"></iframe>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  RAW MEDICAL TEXTS (inventados, realistas)
+// ═══════════════════════════════════════════════════
+
+const RAW_TEXTS = {
+    espirometria: {
+        label: 'Espirometría',
+        text: `Paciente masculino 52 años, peso 78 kilos, talla 1.72. Se realiza espirometría basal y post broncodilatador. Valores pre broncodilatador: CVF 3.8 litros, 92% del predicho, z-score menos 0.6. VEF1 2.9 litros, 85% del predicho, z-score menos 1.1. Relación VEF1/CVF 76%. FEF 25-75 2.1 litros por segundo, 68% del predicho. Se administra salbutamol 400 microgramos con aerocámara. Post broncodilatador: CVF 3.9 litros, VEF1 3.1, cambio del 7%, variación 200 ml. Calidad del examen grado B, buen esfuerzo. Conclusión: patrón funcional normal, sin respuesta significativa al broncodilatador.`
+    },
+    colonoscopia: {
+        label: 'Colonoscopía',
+        text: `Video colonoscopía total bajo sedación con propofol, asistida por anestesiólogo. Preparación colónica buena, Boston 7 puntos. Se introduce colonoscopio hasta ciego confirmado por visualización de válvula ileocecal y apéndice. Recto: mucosa normal, plexo hemorroidal interno grado 1. Sigmoide: presencia de múltiples divertículos de boca ancha, no complicados, sin signos inflamatorios. Descendente sin alteraciones. Transverso: mucosa normal, se observa pólipo sésil de 4mm en ángulo hepático que se reseca con pinza fría, se envía a anatomía patológica. Ascendente normal. Ciego: mucosa normal, apéndice visible sin alteraciones. No se exploró íleon terminal. Conclusión: diverticulosis sigmoidea no complicada, pólipo sésil de colon transverso resecado.`
+    },
+    ecografia_abdominal: {
+        label: 'Ecografía Abdominal',
+        text: `Ecografía abdominal completa con transductor convex de 3.5 megahertz. Hígado de tamaño normal, 14cm en línea medioclavicular, ecoestructura homogénea, sin lesiones focales, bordes regulares, ecogenicidad normal. Vena porta 11mm. Vesícula biliar distendida, de paredes finas, con imagen hiperecogénica de 14mm con sombra acústica posterior compatible con litiasis. Vía biliar intrahepática no dilatada, colédoco 5mm, sin cálculos. Páncreas visualización parcial por interposición gaseosa, sector visible sin alteraciones. Bazo homogéneo, 10.5cm, sin lesiones focales. Riñón derecho 10.2cm, buena diferenciación corticomedular, sin dilatación pielocalicial, sin litiasis. Riñón izquierdo 10.8cm, se observa imagen quística simple de 22mm en polo inferior, cortical conservada. Aorta abdominal de calibre normal. Vejiga distendida, paredes regulares, sin vegetaciones.`
+    },
+    gastroscopia: {
+        label: 'Gastroscopía / EDA',
+        text: `Endoscopía digestiva alta con videoendoscopio Olympus. Sedación consciente con midazolam 3mg. Esófago: mucosa de aspecto normal en toda su extensión, sin varices, no se observan erosiones ni úlceras. Unión gastroesofágica a 39cm de arcada dentaria, línea Z regular, sin signos de esofagitis. Estómago: fondo gástrico con lago mucoso claro, sin lesiones. Cuerpo gástrico con pliegues normales, gastropatía eritematosa leve en curvatura menor. Antro con mucosa eritematosa, se observan 3 erosiones planas cubiertas de fibrina. Píloro permeable, paso al duodeno sin dificultad. Duodeno: bulbo duodenal sin alteraciones, segunda porción con mucosa normal. Se toman 2 biopsias de antro gástrico para test de ureasa y Helicobacter pylori. Test de ureasa: positivo.`
+    },
+    holter: {
+        label: 'Holter ECG 24h',
+        text: `Holter ECG de 24 horas, registro de buena calidad, 22 horas analizables. Ritmo sinusal predominante durante todo el registro. Frecuencia cardíaca media 74 latidos por minuto, máxima 132 lpm a las 15:30 durante actividad física referida, mínima 48 lpm a las 03:45 durante sueño. Variabilidad de la frecuencia cardíaca conservada. Ectopía ventricular: total 312 extrasístoles ventriculares monomorfas aisladas, sin pares, sin tripletes, sin episodios de taquicardia ventricular. Carga ectópica ventricular 0.3%. Ectopía supraventricular: 156 extrasístoles supraventriculares aisladas, 1 episodio de taquicardia supraventricular no sostenida de 4 latidos. No se registró fibrilación auricular ni flutter. Segmento ST sin cambios significativos durante el registro. No se registraron pausas mayores a 2.5 segundos. El paciente refirió palpitaciones a las 20:00 sin correlato arrítmico significativo.`
+    },
+    cinecoro: {
+        label: 'Cinecoronariografía',
+        text: `Cinecoronariografía diagnóstica por acceso radial derecho 6 French. Tronco de coronaria izquierda: sin lesiones angiográficamente significativas, buena bifurcación. Arteria descendente anterior: lesión significativa del 75% en tercio medio, flujo TIMI 3 distal, vaso de buen calibre 3mm. Arteria diagonal primera sin lesiones. Arteria circunfleja: sin lesiones significativas, marginal obtusa dominante sin estenosis. Coronaria derecha: dominante, lesión del 50% en tercio proximal, sin trombos, flujo TIMI 3. Arteria descendente posterior sin lesiones. Ventriculografía izquierda: FEVI estimada en 58%, hipoquinesia anteroapical leve, volúmenes conservados. Presión de fin de diástole 14 mmHg. No se realizó intervencionismo. Se sugiere valoración por Heart Team para eventual revascularización de la descendente anterior.`
+    },
+    mamografia: {
+        label: 'Mamografía Digital',
+        text: `Mamografía digital bilateral con tomosíntesis, dos proyecciones por mama (CC y MLO). Composición mamaria: patrón de densidad tipo C según ACR, heterogéneamente densa, lo cual puede disminuir la sensibilidad del estudio. Mama derecha: se identifica nódulo oval de márgenes circunscritos en cuadrante superoexterno de 9mm, sin calcificaciones, de probable naturaleza benigna. No se observan distorsiones arquitecturales. Mama izquierda: parénquima sin hallazgos significativos. No se identifican nódulos, asimetrías focales ni microcalcificaciones sospechosas. Regiones axilares: ganglios de aspecto reactivo bilateral, hilio graso conservado. Clasificación: mama derecha BI-RADS 3, probablemente benigno. Mama izquierda BI-RADS 1, negativo. Recomendación: control mamográfico de mama derecha en 6 meses.`
+    },
+    densitometria: {
+        label: 'Densitometría Ósea DXA',
+        text: `Densitometría ósea por método DXA, equipo Lunar Prodigy. Paciente femenina 62 años, postmenopáusica. Columna lumbar L1 a L4: densidad mineral ósea 0.855 gramos por cm2, T-score menos 1.7, Z-score menos 0.8. Cadera total derecha: DMO 0.785 g/cm2, T-score menos 2.0, Z-score menos 1.1. Cuello femoral derecho: DMO 0.725 g/cm2, T-score menos 2.3, Z-score menos 1.4. Antebrazo distal: no evaluado. Clasificación según OMS: osteopenia en columna lumbar, osteoporosis en cuello femoral. Riesgo de fractura incrementado según criterios FRAX. Se recomienda evaluación metabólica y considerar tratamiento farmacológico.`
+    },
+    laringoscopia: {
+        label: 'Videonasofibrolaringoscopía',
+        text: `Videonasofibrolaringoscopía flexible. Fosa nasal derecha: septum con espolón óseo contactando cornete inferior sin obstrucción total, cornete inferior con hipertrofia leve, mucosa rosada, meato medio libre. Fosa nasal izquierda: septum sin desviación, cornetes normales, mucosa rosada, meato medio libre. Rinofaringe: coanas amplias, sin vegetaciones adenoideas, ostium tubáricos visibles. Orofaringe: paladar blando móvil, amígdalas palatinas grado II simétricas, pared posterior sin lesiones. Hipofaringe: base de lengua con amígdala lingual prominente, valéculas y senos piriformes libres. Epiglotis omega, móvil. Laringe: cuerdas vocales blancas, bordes libres regulares, motilidad conservada bilateral. Comisura anterior sin lesiones. Subglotis visible sin estenosis. Fonación con cierre glótico completo, buena vibración mucosa.`
+    },
+    tac: {
+        label: 'TAC de Tórax',
+        text: `TAC de tórax sin y con contraste endovenoso iodado. Técnica: adquisición volumétrica en inspiración, cortes axiales de 2mm, reconstrucciones coronal y sagital. Parénquima pulmonar: opacidad en vidrio esmerilado en segmento basal posterior del lóbulo inferior derecho de 28mm de diámetro mayor, sin broncograma aéreo, sin cavitación. Nódulo pulmonar sólido de 4mm en lóbulo superior derecho, inespecífico. Resto del parénquima sin consolidaciones. Vías aéreas: tráquea y bronquios principales de calibre normal, permeables. Mediastino: sin adenopatías significativas, mayor ganglio subcarinal de 8mm en eje corto. Aorta torácica de calibre normal. Silueta cardíaca sin cardiomegalia. Estructuras óseas sin lesiones líticas ni blásticas. Derrame pleural laminar bilateral, predominio derecho, espesor máximo 12mm. Tejido blando de pared torácica sin alteraciones.`
+    },
+    ett: {
+        label: 'Ecocardiograma Transtorácico',
+        text: `Ecocardiograma transtorácico bidimensional con Doppler color y espectral. Ventrículo izquierdo no dilatado, diámetro diastólico 47mm, sistólico 30mm. Septum interventricular 10mm, pared posterior 9mm. FEVI 64% por método de Simpson biplano. Motilidad global y segmentaria conservada. Función diastólica: patrón de relajación alterada, relación E/A 0.8, e' septal 7 cm/s, E/e' 10. Raíz aórtica 33mm, aorta ascendente 35mm. Aurícula izquierda levemente dilatada 42mm, volumen indexado 30 ml/m2. Válvula mitral con insuficiencia leve central. Válvula aórtica trivalva con apertura conservada, sin estenosis, insuficiencia trivial. Válvula tricúspide con insuficiencia leve, gradiente VD-AD estimado 25mmHg. Presión sistólica pulmonar estimada 30mmHg. Ventrículo derecho no dilatado, TAPSE 24mm, onda S' 14 cm/s. Pericardio sin derrame. Vena cava inferior 18mm con colapso inspiratorio mayor al 50%.`
+    },
+    eco_doppler: {
+        label: 'Eco Doppler Venoso',
+        text: `Eco Doppler venoso de miembros inferiores bilateral con transductor lineal de alta frecuencia. Miembro inferior derecho: cayado de safena interna competente, sin reflujo. Vena femoral común permeable, compresible, sin trombos, con flujo fásico respiratorio. Vena femoral superficial permeable en todo su trayecto. Vena poplítea permeable, compresible. Venas tibiales posteriores permeables. Safena interna sin dilatación ni reflujo. Safena externa competente. Miembro inferior izquierdo: cayado de safena interna con reflujo de 5 segundos tras maniobra de Valsalva, diámetro del cayado 9mm. Safena interna dilatada con reflujo desde cayado hasta tercio medio de pierna, diámetro máximo 7mm en muslo. Vena femoral común permeable, sin trombos. Femoral superficial permeable. Poplítea permeable, sin reflujo. Perforante insuficiente en cara interna de pierna a 25cm del maléolo. Sistemas venosos profundos competentes y permeables bilateralmente.`
+    },
+    nota_evolucion: {
+        label: 'Nota de Evolución',
+        text: `Nota de evolución, día 4 de internación. Paciente femenina 68 años internada por neumonía adquirida en la comunidad con criterio de internación CURB-65 2 puntos. Antecedentes: hipertensión arterial, diabetes mellitus tipo 2, ex tabaquista. Hoy: afebril por segundo día consecutivo, temperatura axilar 36.4. Mejoría subjetiva, refiere menor disnea y mejor tolerancia al decúbito. Examen físico: vigil, orientada, hemodinámicamente estable, TA 128/76, FC 78, FR 18, saturación 96% al aire ambiente. Auscultación pulmonar con estertores crepitantes bibasales en franca disminución respecto al ingreso. Ritmo cardíaco regular sin soplos. Abdomen blando indoloro. Miembros inferiores sin edemas. Tolerando alimentación por vía oral. Laboratorio de hoy: leucocitos 9200, neutrófilos 68%, PCR 38 en descenso progresivo, glucemia 145. Radiografía de control con infiltrado bibasal en resolución. Continúa tratamiento con ampicilina sulbactam 1.5g EV cada 6 horas, cuarto día. Plan: si mantiene evolución favorable, rotar a amoxicilina clavulánico vía oral mañana y evaluar alta en 48 horas.`
+    },
+    epicrisis: {
+        label: 'Epicrisis',
+        text: `Epicrisis de internación. Paciente María González, 68 años, HC 45892. Fecha de ingreso: 10 de febrero de 2026. Fecha de egreso: 15 de febrero de 2026. Total 5 días de internación. Motivo de ingreso: fiebre, tos productiva y disnea de 3 días de evolución. Diagnósticos: 1) Neumonía adquirida en la comunidad, CURB-65 2 puntos. 2) Hipertensión arterial en tratamiento. 3) Diabetes mellitus tipo 2. Estudios realizados: radiografía de tórax con infiltrado bibasal predominio derecho. Hemocultivos x2 negativos. Laboratorio de ingreso: leucocitos 15800, PCR 120, glucemia 180. Tratamiento: ampicilina sulbactam 1.5g EV cada 6 horas por 4 días, luego rotación a amoxicilina ácido clavulánico 875/125 mg cada 12 horas vía oral. Insulina correctiva según glucemias. Evolución: afebril desde el día 3, mejoría clínica progresiva, normalización de parámetros inflamatorios. Condición al egreso: compensada, afebril, saturación 97% aire ambiente. Indicaciones al alta: completar esquema antibiótico hasta completar 10 días totales, continuar medicación habitual, control por consultorio en 10 días con nueva radiografía.`
+    },
+    resonancia: {
+        label: 'RMN de Cerebro',
+        text: `Resonancia magnética de cerebro con y sin gadolinio. Secuencias T1, T2, FLAIR, difusión ponderada y post contraste. Parénquima cerebral supratentorial de señal y volumen normales para la edad del paciente. Sustancia blanca periventricular con escasas hiperintensidades puntiformes en T2 y FLAIR, de origen microangiopático, grado Fazekas 1. Ganglios basales y tálamos simétricos sin alteraciones de señal. Sistema ventricular supratentorial de tamaño y configuración normal, sin signos de hidrocefalia. Línea media centrada, sin desplazamientos. Fosa posterior: cerebelo y tronco encefálico sin alteraciones. Cuarto ventrículo de morfología normal. Ángulos pontocerebelosos libres. Se identifica formación quística extraaxial en fosa temporal izquierda de 14mm de diámetro mayor, con señal de LCR en todas las secuencias, compatible con quiste aracnoideo, sin efecto de masa ni realce post contraste. No se observan áreas de restricción en difusión. No se identifican realces patológicos post gadolinio. Silla turca y región selar sin alteraciones. Órbitas sin particularidades.`,
+    },
+    protocolo_quirurgico: {
+        label: 'Protocolo Quirúrgico',
+        text: `Protocolo operatorio de colecistectomía laparoscópica. Fecha: 20 de febrero de 2026. Cirujano: Dr. García. Ayudante: Dr. López. Anestesia general orotraqueal. Paciente en decúbito dorsal, antisepsia y campos estériles. Incisión infraumbilical de 12mm, acceso abierto, inserción de trocar de 12mm, se establece neumoperitoneo con CO2 a 12mmHg de presión. Bajo visión laparoscópica se colocan tres trócares adicionales de 5mm: subxifoideo, flanco derecho y línea medioclavicular derecha. Hallazgos: hígado de aspecto normal, vesícula biliar de paredes engrosadas con adherencias laxas al epiplón mayor que se liberan con disección roma. Disección cuidadosa del triángulo de Calot con técnica de visión crítica de seguridad, identificación positiva de conducto cístico y arteria cística. Se aplican 3 clips metálicos en conducto cístico proximal y 2 en arteria cística, sección de ambos. Disección retrógrada de la vesícula del lecho hepático con electrocauterio monopolar. Hemostasia del lecho correcta. Vesícula extraída en bolsa por puerto umbilical, se envía a anatomía patológica. Revisión de hemostasia: satisfactoria. Lavado de lecho quirúrgico con 500cc de solución fisiológica tibia. Recuento de gasas: correcto. Desuflación. Cierre de aponeurosis umbilical con Vicryl 0, cierre de piel con puntos separados de nylon 4-0. Tiempo operatorio total: 55 minutos. Sangrado estimado: mínimo, menos de 50ml. Sin complicaciones intraoperatorias.`
+    }
+};
+
+// ═══════════════════════════════════════════════════
+//  TEST SECTIONS
+// ═══════════════════════════════════════════════════
+
+const ALL_TESTS = [];
+function section(name, tests) { ALL_TESTS.push({ name, tests }); }
+
+// Helper para acceso al iframe
+function $(id) { return appFrame.contentDocument?.getElementById(id); }
+function $$(sel) { return appFrame.contentDocument?.querySelectorAll(sel) || []; }
+function win() { return appFrame.contentWindow; }
+function doc() { return appFrame.contentDocument; }
+
+// ── SECCIÓN 1: Detección de plantillas (sin API) ──────────────────────────────
+section('1. Detección de plantillas (autoDetectTemplateKey)', (() => {
+    const tests = [];
+    for (const [key, data] of Object.entries(RAW_TEXTS)) {
+        tests.push({
+            name: `Detecta "${data.label}" (${key})`,
+            test: () => {
+                const fn = win().autoDetectTemplateKey;
+                if (!fn) throw 'autoDetectTemplateKey no disponible';
+                const detected = fn(data.text);
+                if (detected !== key) throw `Esperado "${key}", detectó "${detected}"`;
+                return true;
+            }
+        });
+    }
+    return tests;
+})());
+
+// ── SECCIÓN 2: markdownToHtml (sin API) ──────────────────────────────────────
+section('2. markdownToHtml — renderizado de markdown a HTML', [
+    {
+        name: 'H1 + H2 + párrafo se renderizan',
+        test: () => {
+            const fn = win().markdownToHtml;
+            if (!fn) throw 'markdownToHtml no disponible';
+            const html = fn('# INFORME\n\n## HALLAZGOS\n\nParénquima normal.');
+            if (!html.includes('<h1')) throw 'Falta H1';
+            if (!html.includes('<h2')) throw 'Falta H2';
+            if (!html.includes('normal')) throw 'Falta contenido';
+            return true;
+        }
+    },
+    {
+        name: 'Lista con bullets',
+        test: () => {
+            const html = win().markdownToHtml('## LISTA\n\n- Item 1\n- Item 2\n- Item 3');
+            if (!html.includes('<ul')) throw 'Falta UL';
+            if (!html.includes('<li>')) throw 'Falta LI';
+            return true;
+        }
+    },
+    {
+        name: '[No especificado] → campo editable',
+        test: () => {
+            const html = win().markdownToHtml('## PÁNCREAS\n\n[No especificado]');
+            if (!html.includes('no-data-field')) throw 'No tiene clase no-data-field';
+            return true;
+        }
+    },
+    {
+        name: 'Negritas **texto** → <strong>',
+        test: () => {
+            const html = win().markdownToHtml('**Importante** dato.');
+            if (!html.includes('<strong>Importante</strong>')) throw 'Falta strong';
+            return true;
+        }
+    },
+    {
+        name: 'Lista numerada 1. 2. 3.',
+        test: () => {
+            const html = win().markdownToHtml('## DIAG\n\n1. Neumonía\n2. HTA\n3. DBT');
+            if (!html.includes('<ol')) throw 'Falta OL';
+            return true;
+        }
+    },
+]);
+
+// ── SECCIÓN 3: Estructuración con API real ────────────────────────────────────
+section('3. Estructuración con API (Groq LLaMA)', (() => {
+    const tests = [];
+    // Elegir un subset representativo para no gastar demasiados tokens
+    const SUBSET = ['ecografia_abdominal', 'colonoscopia', 'holter', 'ett', 'laringoscopia', 'epicrisis'];
+    
+    for (const key of SUBSET) {
+        const data = RAW_TEXTS[key];
+        tests.push({
+            name: `Estructurar "${data.label}" → resultado válido`,
+            test: async () => {
+                const structFn = win().structureTranscription;
+                if (!structFn) throw 'structureTranscription no disponible';
+                const apiKey = document.getElementById('apiKeyInput').value.trim();
+                win().GROQ_API_KEY = apiKey;
+                
+                const t0 = performance.now();
+                const rawMd = await structFn(data.text, key, 0.1);
+                const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
+                
+                if (!rawMd || rawMd.length < 100) throw `Respuesta muy corta: ${rawMd?.length || 0} chars (${elapsed}s)`;
+                if (!rawMd.includes('#')) throw `Sin encabezados markdown (${elapsed}s)`;
+                
+                // Verificar que no perdió datos clave del texto original
+                const checkWords = {
+                    ecografia_abdominal: ['hígado', 'vesícula', 'riñón'],
+                    colonoscopia: ['recto', 'sigmoide', 'pólipo'],
+                    holter: ['frecuencia', 'extrasístoles', 'ventricular'],
+                    ett: ['ventrículo', 'FEVI', 'válvula'],
+                    laringoscopia: ['cuerdas vocales', 'epiglotis', 'fonación'],
+                    epicrisis: ['internación', 'diagnóstico', 'alta']
+                };
+                
+                const words = checkWords[key] || [];
+                const lower = rawMd.toLowerCase();
+                const missing = words.filter(w => !lower.includes(w.toLowerCase()));
+                if (missing.length > 0) throw `Faltan datos clave: ${missing.join(', ')} (${elapsed}s)`;
+                
+                // Guardar resultado para tests posteriores
+                window._structuredResults = window._structuredResults || {};
+                window._structuredResults[key] = rawMd;
+                
+                return { detail: `✓ ${rawMd.length} chars, ${elapsed}s`, pass: true };
+            }
+        });
+    }
+    return tests;
+})());
+
+// ── SECCIÓN 4: parseAIResponse — resultados reales ────────────────────────────
+section('4. parseAIResponse — convertir resultados a HTML', [
+    {
+        name: 'Resultados de API se convierten a HTML válido',
+        test: () => {
+            const results = window._structuredResults || {};
+            const fn = win().parseAIResponse;
+            if (!fn) throw 'parseAIResponse no disponible';
+            
+            let tested = 0;
+            for (const [key, md] of Object.entries(results)) {
+                const { body, note } = fn(md);
+                if (!body || body.length < 50) throw `${key}: body muy corto (${body?.length})`;
+                if (!body.includes('<h')) throw `${key}: sin encabezados HTML`;
+                tested++;
+            }
+            if (tested === 0) throw 'No hay resultados de API para testear (ejecutar sección 3 primero)';
+            return { detail: `${tested} respuestas convertidas OK`, pass: true };
+        }
+    },
+    {
+        name: 'HTML no contiene markdown residual (## o **)',
+        test: () => {
+            const results = window._structuredResults || {};
+            const fn = win().parseAIResponse;
+            if (!fn) throw 'parseAIResponse no disponible';
+            
+            for (const [key, md] of Object.entries(results)) {
+                const { body } = fn(md);
+                if (body.includes('## ')) throw `${key}: tiene "## " sin convertir`;
+                if (body.includes('**')) throw `${key}: tiene "**" sin convertir`;
+            }
+            return true;
+        }
+    },
+]);
+
+// ── SECCIÓN 5: Vista Previa (Print Preview) ─────────────────────────────────
+section('5. Vista Previa — renderizado y controles', [
+    {
+        name: 'Modal printPreviewOverlay existe',
+        test: () => { if (!$('printPreviewOverlay')) throw 'No encontrado'; return true; }
+    },
+    {
+        name: 'Workplace banner (#previewWorkplace) existe',
+        test: () => { if (!$('previewWorkplace')) throw 'No encontrado'; return true; }
+    },
+    {
+        name: 'Header profesional (#previewHeader) existe',
+        test: () => { if (!$('previewHeader')) throw 'No encontrado'; return true; }
+    },
+    {
+        name: 'Sección paciente (#previewPatient) existe',
+        test: () => { if (!$('previewPatient')) throw 'No encontrado'; return true; }
+    },
+    {
+        name: 'Contenido body (#previewContent) existe',
+        test: () => { if (!$('previewContent')) throw 'No encontrado'; return true; }
+    },
+    {
+        name: 'Sección firma (#previewSignature) existe',
+        test: () => { if (!$('previewSignature')) throw 'No encontrado'; return true; }
+    },
+    {
+        name: 'Footer (#previewFooter) existe',
+        test: () => { if (!$('previewFooter')) throw 'No encontrado'; return true; }
+    },
+    {
+        name: 'Botón Descargar PDF (#btnDownloadFromPreview)',
+        test: () => { if (!$('btnDownloadFromPreview')) throw 'No encontrado'; return true; }
+    },
+    {
+        name: 'Botón Más formatos (#btnDownloadPreviewMore)',
+        test: () => { if (!$('btnDownloadPreviewMore')) throw 'No encontrado'; return true; }
+    },
+    {
+        name: 'Dropdown multi-formato (#previewDownloadDropdown)',
+        test: () => { if (!$('previewDownloadDropdown')) throw 'No encontrado'; return true; }
+    },
+    {
+        name: 'Dropdown tiene 4 botones de formato',
+        test: () => {
+            const dd = $('previewDownloadDropdown');
+            if (!dd) throw 'Dropdown no encontrado';
+            const btns = dd.querySelectorAll('button[data-format]');
+            if (btns.length !== 4) throw `${btns.length} botones, esperados 4`;
+            const fmts = [...btns].map(b => b.dataset.format).sort();
+            if (fmts.join(',') !== 'html,pdf,rtf,txt') throw `Formatos: ${fmts.join(',')}`;
+            return true;
+        }
+    },
+    {
+        name: 'Dropdown toggle funciona (click abre/cierra)',
+        test: () => {
+            const btn = $('btnDownloadPreviewMore');
+            const dd = $('previewDownloadDropdown');
+            if (!btn || !dd) throw 'Elementos no encontrados';
+            
+            // Inicialmente oculto
+            const before = dd.style.display;
+            btn.click();
+            const afterOpen = dd.style.display;
+            btn.click();
+            const afterClose = dd.style.display;
+            
+            if (afterOpen !== 'block') throw `Después de abrir: display="${afterOpen}"`;
+            if (afterClose !== 'none') throw `Después de cerrar: display="${afterClose}"`;
+            return true;
+        }
+    },
+    {
+        name: 'Botón Imprimir existe',
+        test: () => { if (!$('btnPrintFromPreview')) throw 'No encontrado'; return true; }
+    },
+    {
+        name: 'Botón Email existe',
+        test: () => { if (!$('btnEmailFromPreview')) throw 'No encontrado'; return true; }
+    },
+    {
+        name: 'Botón Cerrar existe',
+        test: () => { if (!$('btnClosePrintPreviewFooter')) throw 'No encontrado'; return true; }
+    },
+    {
+        name: 'openPrintPreview abre el modal con contenido',
+        test: () => {
+            // Poner contenido en el editor
+            const editor = $('editor');
+            if (!editor) throw 'Editor no encontrado';
+            const results = window._structuredResults || {};
+            const firstResult = Object.values(results)[0];
+            if (firstResult) {
+                const { body } = win().parseAIResponse(firstResult);
+                editor.innerHTML = body;
+            } else {
+                editor.innerHTML = '<h1>INFORME TEST</h1><h2>HALLAZGOS</h2><p>Texto de prueba.</p>';
+            }
+            
+            // Configurar datos mínimos
+            const profData = { nombre: 'Dr. Test García', matricula: 'MP 12345', specialties: ['Cardiología'] };
+            win().localStorage.setItem('prof_data', JSON.stringify(profData));
+            win().localStorage.setItem('pdf_config', JSON.stringify({
+                showHeader: true, showFooter: true, showPageNum: true,
+                workplaceAddress: 'Av. Siempre Viva 742', workplacePhone: '011-5555-1234',
+                patientName: 'Juan Pérez', patientDni: '28456789', patientAge: '55', patientSex: 'M'
+            }));
+            
+            if (typeof win().openPrintPreview === 'function') {
+                win().openPrintPreview();
+            }
+            
+            const overlay = $('printPreviewOverlay');
+            if (!overlay) throw 'Overlay no encontrado';
+            if (!overlay.classList.contains('active')) throw 'Modal no se abrió';
+            
+            const content = $('previewContent');
+            if (!content || content.innerHTML.trim().length < 20) throw 'Contenido del preview vacío';
+            
+            return { detail: `Preview con ${content.innerHTML.length} chars de contenido`, pass: true };
+        }
+    },
+    {
+        name: 'Header profesional muestra nombre del doctor',
+        test: () => {
+            const header = $('previewHeader');
+            if (!header) throw 'No encontrado';
+            if (!header.innerHTML.includes('Test García')) throw 'Nombre no aparece en header';
+            return true;
+        }
+    },
+    {
+        name: 'Datos del paciente visibles en preview',
+        test: () => {
+            const patient = $('previewPatient');
+            if (!patient) throw 'No encontrado';
+            if (!patient.innerHTML.includes('Pérez')) throw 'Nombre del paciente no aparece';
+            return true;
+        }
+    },
+    {
+        name: 'Cerrar preview funciona',
+        test: () => {
+            const closeBtn = $('btnClosePrintPreviewFooter');
+            if (!closeBtn) throw 'Botón cerrar no encontrado';
+            closeBtn.click();
+            const overlay = $('printPreviewOverlay');
+            if (overlay && overlay.classList.contains('active')) throw 'Modal no se cerró';
+            return true;
+        }
+    },
+]);
+
+// ── SECCIÓN 6: PDF Maker — verificaciones de código ──────────────────────────
+section('6. PDF Maker — drawHeader en todas las páginas', [
+    {
+        name: 'downloadPDFWrapper existe como función',
+        test: () => {
+            if (typeof win().downloadPDFWrapper !== 'function') throw 'No es función global';
+            return true;
+        }
+    },
+    {
+        name: 'jsPDF está cargado',
+        test: () => {
+            const jspdf = win().jspdf;
+            if (!jspdf || !jspdf.jsPDF) throw 'jsPDF no disponible';
+            return true;
+        }
+    },
+    {
+        name: 'Source code de pdfMaker: ensureSpace llama drawWorkplaceBanner()',
+        test: async () => {
+            const resp = await fetch('../src/js/features/pdfMaker.js?_t=' + Date.now());
+            const code = await resp.text();
+            const match = code.match(/function ensureSpace[\s\S]*?\n\s*\}/m);
+            if (!match) throw 'ensureSpace no encontrada';
+            if (!match[0].includes('drawWorkplaceBanner()')) throw 'ensureSpace NO llama drawWorkplaceBanner()';
+            if (match[0].includes('cy = MT')) throw 'ensureSpace todav\u00eda usa cy=MT';
+            return true;
+        }
+    },
+]);
+
+// ── SECCIÓN 7: Estado de la app y botones ─────────────────────────────────────
+section('7. Estado y visibilidad de botones', [
+    {
+        name: 'updateButtonsVisibility existe',
+        test: () => {
+            if (typeof win().updateButtonsVisibility !== 'function') throw 'No es función';
+            return true;
+        }
+    },
+    {
+        name: 'Estado IDLE: editor vacío, botones ocultos',
+        test: () => {
+            win().updateButtonsVisibility('IDLE');
+            const copy = $('copyBtn');
+            if (copy && getComputedStyle(copy).display !== 'none') throw 'copyBtn visible en IDLE';
+            return true;
+        }
+    },
+    {
+        name: 'Estado STRUCTURED: botones de acción visibles',
+        test: () => {
+            win().updateButtonsVisibility('STRUCTURED');
+            const orig = $('btnRestoreOriginal');
+            const compare = $('btnCompareView');
+            if (orig && getComputedStyle(orig).display === 'none') throw 'btnRestoreOriginal oculto';
+            if (compare && getComputedStyle(compare).display === 'none') throw 'btnCompareView oculto';
+            return true;
+        }
+    },
+]);
+
+// ── SECCIÓN 8: Configuración y multi-formato ─────────────────────────────────
+section('8. Configuración, formatos de descarga y sesión', [
+    {
+        name: 'downloadRTF existe como función global',
+        test: () => {
+            if (typeof win().downloadRTF !== 'function') throw 'downloadRTF no disponible';
+            return true;
+        }
+    },
+    {
+        name: 'downloadTXT existe como función global',
+        test: () => {
+            if (typeof win().downloadTXT !== 'function') throw 'downloadTXT no disponible';
+            return true;
+        }
+    },
+    {
+        name: 'downloadHTML existe como función global',
+        test: () => {
+            if (typeof win().downloadHTML !== 'function') throw 'downloadHTML no disponible';
+            return true;
+        }
+    },
+    {
+        name: 'saveToDisk usa File System Access API',
+        test: () => {
+            if (typeof win().saveToDisk !== 'function') throw 'saveToDisk no disponible';
+            return true;
+        }
+    },
+    {
+        name: 'evaluateConfigCompleteness existe y funciona',
+        test: () => {
+            const fn = win().evaluateConfigCompleteness;
+            if (typeof fn !== 'function') throw 'No es función';
+            const result = fn();
+            if (!result || !result.level) throw 'Resultado sin level';
+            if (!['red','yellow','green'].includes(result.level)) throw `Level inválido: ${result.level}`;
+            return true;
+        }
+    },
+    {
+        name: 'validateBeforeDownload existe',
+        test: () => {
+            if (typeof win().validateBeforeDownload !== 'function') throw 'No es función';
+            return true;
+        }
+    },
+]);
+
+// ── SECCIÓN 9: API Key y conexión con Groq ──────────────────────────────────
+section('9. API Key y conexión con Groq', [
+    {
+        name: 'API Key formato válido (gsk_...)',
+        test: () => {
+            const key = document.getElementById('apiKeyInput').value.trim();
+            if (!key.startsWith('gsk_')) throw 'Key no empieza con gsk_';
+            if (key.length < 20) throw 'Key muy corta';
+            return true;
+        }
+    },
+    {
+        name: 'Groq API responde (models list)',
+        test: async () => {
+            const key = document.getElementById('apiKeyInput').value.trim();
+            const resp = await fetch('https://api.groq.com/openai/v1/models', {
+                headers: { 'Authorization': `Bearer ${key}` }
+            });
+            if (!resp.ok) throw `API respondió ${resp.status}`;
+            const data = await resp.json();
+            if (!data.data || data.data.length === 0) throw 'Sin modelos disponibles';
+            return { detail: `${data.data.length} modelos disponibles`, pass: true };
+        }
+    },
+    {
+        name: 'Modelo llama-3.3-70b-versatile disponible',
+        test: async () => {
+            const key = document.getElementById('apiKeyInput').value.trim();
+            const resp = await fetch('https://api.groq.com/openai/v1/models', {
+                headers: { 'Authorization': `Bearer ${key}` }
+            });
+            const data = await resp.json();
+            const hasModel = data.data?.some(m => m.id === 'llama-3.3-70b-versatile');
+            if (!hasModel) throw 'Modelo llama-3.3-70b-versatile no disponible';
+            return true;
+        }
+    },
+]);
+
+// ── SECCIÓN 10: Templates coverage ───────────────────────────────────────────
+section('10. Templates — cobertura completa', [
+    {
+        name: 'MEDICAL_TEMPLATES tiene 37 plantillas',
+        test: () => {
+            const tmpl = win().MEDICAL_TEMPLATES;
+            if (!tmpl) throw 'MEDICAL_TEMPLATES no disponible';
+            const keys = Object.keys(tmpl);
+            if (keys.length !== 37) throw `${keys.length} plantillas, esperadas 37`;
+            return true;
+        }
+    },
+    {
+        name: 'Todas las plantillas tienen name y prompt',
+        test: () => {
+            const tmpl = win().MEDICAL_TEMPLATES;
+            for (const [key, val] of Object.entries(tmpl)) {
+                if (!val.name) throw `${key}: falta name`;
+                if (!val.prompt) throw `${key}: falta prompt`;
+            }
+            return true;
+        }
+    },
+    {
+        name: 'Todas las plantillas (excepto genérico) tienen keywords',
+        test: () => {
+            const tmpl = win().MEDICAL_TEMPLATES;
+            for (const [key, val] of Object.entries(tmpl)) {
+                if (key === 'generico') continue;
+                if (!Array.isArray(val.keywords) || val.keywords.length === 0) throw `${key}: sin keywords`;
+            }
+            return true;
+        }
+    },
+    {
+        name: 'MEDICAL_SPECIALTIES existe y tiene categorías',
+        test: () => {
+            const spec = win().MEDICAL_SPECIALTIES;
+            if (!spec) throw 'MEDICAL_SPECIALTIES no disponible';
+            if (Object.keys(spec).length < 5) throw 'Pocas especialidades';
+            return true;
+        }
+    },
+]);
+
+// ═══════════════════════════════════════════════════
+//  RENDER INDIVIDUAL BUTTONS
+// ═══════════════════════════════════════════════════
+
+const btnContainer = document.getElementById('individualButtons');
+ALL_TESTS.forEach((sec, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'btn-individual';
+    btn.textContent = sec.name.split('.')[0] + '. ' + sec.name.split('. ').slice(1).join(' ').substring(0, 20);
+    btn.title = sec.name;
+    btn.onclick = () => runSection(i, btn);
+    btnContainer.appendChild(btn);
+});
+
+// ═══════════════════════════════════════════════════
+//  TEST RUNNER
+// ═══════════════════════════════════════════════════
+
+const appFrame = document.getElementById('appFrame');
+let appLoaded = false;
+
+async function ensureAppLoaded() {
+    if (appLoaded) return;
+    
+    const apiKey = document.getElementById('apiKeyInput').value.trim();
+    if (!apiKey || !apiKey.startsWith('gsk_')) {
+        alert('Ingresá una API key válida (empieza con gsk_)');
+        throw new Error('API key inválida');
+    }
+    
+    document.getElementById('statusText').textContent = '⏳ Cargando app...';
+    
+    // Cargar app en iframe — simple y directo
+    await new Promise((resolve) => {
+        appFrame.onload = () => setTimeout(resolve, 3000);
+        appFrame.src = '../index.html?nocache=' + Date.now();
+    });
+    
+    // Inyectar API key
+    try {
+        win().GROQ_API_KEY = apiKey;
+        win().localStorage.setItem('groq_api_key', apiKey);
+    } catch(e) {}
+    
+    appLoaded = true;
+    document.getElementById('statusText').textContent = '✅ App cargada';
+}
+
+async function runSection(sectionIndex, btnEl) {
+    try {
+        await ensureAppLoaded();
+    } catch(e) { return; }
+    
+    if (btnEl) { btnEl.className = 'btn-individual running'; btnEl.disabled = true; }
+    
+    const sec = ALL_TESTS[sectionIndex];
+    const sRes = { name: sec.name, tests: [] };
+    let passed = 0, failed = 0;
+    
+    for (const t of sec.tests) {
+        document.getElementById('statusText').textContent = `${sec.name}: ${t.name}`;
+        try {
+            const result = t.test();
+            let detail = '';
+            if (result && typeof result.then === 'function') {
+                const resolved = await result;
+                if (resolved && resolved.detail) detail = resolved.detail;
+            } else if (result && result.detail) {
+                detail = result.detail;
+            }
+            sRes.tests.push({ name: t.name, pass: true, detail });
+            passed++;
+        } catch(err) {
+            sRes.tests.push({ name: t.name, pass: false, error: String(err) });
+            failed++;
+        }
+        await new Promise(r => setTimeout(r, 30));
+    }
+    
+    // Render result
+    renderSectionResult(sRes);
+    
+    if (btnEl) {
+        btnEl.className = `btn-individual ${failed > 0 ? 'fail' : 'pass'}`;
+        btnEl.disabled = false;
+    }
+    
+    document.getElementById('statusText').textContent = 
+        `${sec.name}: ✅ ${passed} · ❌ ${failed}`;
+    
+    return { passed, failed };
+}
+
+async function runAllTests() {
+    const btnRun = document.getElementById('btnRunAll');
+    btnRun.disabled = true;
+    btnRun.textContent = '⏳ Preparando...';
+    
+    try {
+        await ensureAppLoaded();
+    } catch(e) { 
+        btnRun.disabled = false;
+        btnRun.textContent = '▶ Ejecutar TODAS las pruebas';
+        return; 
+    }
+    
+    const progressBar = document.getElementById('progressBar');
+    const progressFill = document.getElementById('progressFill');
+    const summaryDiv = document.getElementById('summary');
+    const resultsDiv = document.getElementById('results');
+    
+    progressBar.style.display = 'block';
+    summaryDiv.style.display = 'none';
+    resultsDiv.innerHTML = '';
+    
+    let totalPassed = 0, totalFailed = 0;
+    const totalTests = ALL_TESTS.reduce((a, s) => a + s.tests.length, 0);
+    let tested = 0;
+    
+    const indBtns = document.querySelectorAll('.btn-individual');
+    
+    for (let i = 0; i < ALL_TESTS.length; i++) {
+        indBtns[i].className = 'btn-individual running';
+        
+        const sec = ALL_TESTS[i];
+        const sRes = { name: sec.name, tests: [] };
+        
+        for (const t of sec.tests) {
+            tested++;
+            document.getElementById('statusText').textContent = `${tested}/${totalTests}: ${t.name}`;
+            progressFill.style.width = `${(tested / totalTests) * 100}%`;
+            
+            try {
+                const result = t.test();
+                let detail = '';
+                if (result && typeof result.then === 'function') {
+                    const resolved = await result;
+                    if (resolved && resolved.detail) detail = resolved.detail;
+                } else if (result && result.detail) {
+                    detail = result.detail;
+                }
+                sRes.tests.push({ name: t.name, pass: true, detail });
+                totalPassed++;
+            } catch(err) {
+                sRes.tests.push({ name: t.name, pass: false, error: String(err) });
+                totalFailed++;
+            }
+            await new Promise(r => setTimeout(r, 30));
+        }
+        
+        const secFailed = sRes.tests.filter(t => !t.pass).length;
+        indBtns[i].className = `btn-individual ${secFailed > 0 ? 'fail' : 'pass'}`;
+        renderSectionResult(sRes);
+    }
+    
+    // Summary
+    progressFill.style.width = '100%';
+    document.getElementById('statusText').textContent = 
+        `✅ ${totalPassed} pasaron · ❌ ${totalFailed} fallaron · Total: ${totalTests}`;
+    
+    summaryDiv.style.display = 'block';
+    if (totalFailed === 0) {
+        summaryDiv.className = 'summary pass';
+        summaryDiv.innerHTML = `🎉 ¡TODAS LAS PRUEBAS PASARON! ${totalPassed}/${totalTests}`;
+    } else if (totalPassed === 0) {
+        summaryDiv.className = 'summary fail';
+        summaryDiv.innerHTML = `💥 TODAS FALLARON: ${totalFailed}/${totalTests}`;
+    } else {
+        summaryDiv.className = 'summary mixed';
+        summaryDiv.innerHTML = `⚠️ ${totalPassed} OK · ${totalFailed} FALLARON de ${totalTests}`;
+    }
+    
+    btnRun.disabled = false;
+    btnRun.textContent = '🔄 Ejecutar de nuevo';
+}
+
+function renderSectionResult(sRes) {
+    const resultsDiv = document.getElementById('results');
+    
+    // Remove existing block for this section if re-running
+    const existing = resultsDiv.querySelector(`[data-section="${sRes.name}"]`);
+    if (existing) existing.remove();
+    
+    const allPass = sRes.tests.every(t => t.pass);
+    const failCount = sRes.tests.filter(t => !t.pass).length;
+    
+    const block = document.createElement('div');
+    block.className = 'section-block' + (failCount > 0 ? ' open' : '');
+    block.setAttribute('data-section', sRes.name);
+    
+    const header = document.createElement('div');
+    header.className = 'section-header';
+    header.innerHTML = `
+        <span class="section-title">${sRes.name}</span>
+        <span class="section-badge ${allPass ? 'all-pass' : 'has-fail'}">
+            ${allPass ? `✅ ${sRes.tests.length}/${sRes.tests.length}` : `❌ ${failCount} falla${failCount>1?'s':''}`}
+        </span>
+    `;
+    header.onclick = () => block.classList.toggle('open');
+    
+    const body = document.createElement('div');
+    body.className = 'section-body';
+    
+    for (const t of sRes.tests) {
+        const row = document.createElement('div');
+        row.className = 'test-row';
+        const detailSpan = t.detail ? `<span class="timing">${t.detail}</span>` : '';
+        row.innerHTML = `<span class="test-icon">${t.pass ? '✅' : '❌'}</span><span class="test-label">${t.name}${detailSpan}</span>`;
+        body.appendChild(row);
+        if (!t.pass && t.error) {
+            const detail = document.createElement('div');
+            detail.className = 'test-detail';
+            detail.textContent = t.error;
+            body.appendChild(detail);
+        }
+    }
+    
+    block.appendChild(header);
+    block.appendChild(body);
+    resultsDiv.appendChild(block);
+}
+</script>
+</body>
+</html>

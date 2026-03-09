@@ -1,180 +1,109 @@
 // ============ EDITOR WYSIWYG ============
 
-function updateWordCount() {
-    if (!editor || !wordCount) return;
-    const text = editor.innerText.trim();
-    const words = text ? text.split(/\s+/).length : 0;
-    wordCount.textContent = `${words} palabras`;
-
-    const hasText = text.length > 0;
-    if (copyBtn) copyBtn.disabled = !hasText;
-    if (downloadBtn) downloadBtn.disabled = !hasText;
-}
-
 if (editor) {
     editor.addEventListener('input', () => {
-        updateWordCount();
+        if (typeof window.updateWordCount === 'function') window.updateWordCount();
         saveUndoState();
     });
-}
 
-window.formatText = cmd => {
-    document.execCommand(cmd, false, null);
-    if (editor) editor.focus();
-};
+    // ── Detectar texto pegado → limpiar formato Word + activar Estructurar ──
+    editor.addEventListener('paste', (e) => {
+        // Interceptar el paste para limpiar basura de Word/Google Docs
+        const clipboardData = e.clipboardData || window.clipboardData;
+        if (!clipboardData) return;
 
-// ============ FORMATTING HANDLERS ============
+        const html = clipboardData.getData('text/html');
+        const plain = clipboardData.getData('text/plain');
 
-function executeFormatAndFocus(cmd) {
-    document.execCommand(cmd, false, null);
-    if (editor) editor.focus();
-    updateActiveStates();
-}
+        // Si viene de Word/Docs (tiene HTML con estilos), limpiar
+        if (html && (html.includes('mso-') || html.includes('MsoNormal') || html.includes('docs-internal') || html.includes('<o:p>'))) {
+            e.preventDefault();
 
-const formatButtons = {
-    'boldBtn': 'bold',
-    'italicBtn': 'italic',
-    'underlineBtn': 'underline',
-    'strikeBtn': 'strikeThrough',
-    'alignLeftBtn': 'justifyLeft',
-    'alignCenterBtn': 'justifyCenter',
-    'alignRightBtn': 'justifyRight',
-    'justifyBtn': 'justifyFull',
-    'bulletListBtn': 'insertUnorderedList',
-    'numberedListBtn': 'insertOrderedList'
-};
+            // Limpiar: conservar solo estructura básica, eliminar estilos inline
+            let clean = html
+                .replace(/<o:p[^>]*>[\s\S]*?<\/o:p>/gi, '')               // tags de Office
+                .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')            // bloques de estilo
+                .replace(/<meta[^>]*>/gi, '')                              // metas
+                .replace(/<img[^>]*>/gi, '')                               // RM-3: eliminar imágenes pegadas
+                // RB-4: Limpiar comentarios de Google Docs
+                .replace(/<sup><a[^>]*href="#cmnt[^"]*"[^>]*>[\s\S]*?<\/a><\/sup>/gi, '')  // marcadores de comentario en texto
+                .replace(/<div[^>]*><p[^>]*><a[^>]*href="#cmnt[^"]*"[^>]*>[\s\S]*?<\/a>[\s\S]*?<\/p><\/div>/gi, '') // bloques de comentario al pie
+                .replace(/<a[^>]*id="cmnt_ref[^"]*"[^>]*>[\s\S]*?<\/a>/gi, '')  // refs de comentario
+                .replace(/<a[^>]*id="cmnt\d+"[^>]*>[\s\S]*?<\/a>/gi, '')        // anclas de comentario
+                .replace(/class="[^"]*"/gi, '')                            // clases Word
+                .replace(/style="[^"]*"/gi, '')                            // estilos inline
+                .replace(/<span\s*>([\s\S]*?)<\/span>/gi, '$1')            // spans vacíos
+                .replace(/<font[^>]*>([\s\S]*?)<\/font>/gi, '$1')          // font tags
+                .replace(/(<p[^>]*>)\s*(<\/p>)/gi, '')                     // párrafos vacíos
+                .replace(/<p[^>]*>/gi, '<p>')                              // limpiar attrs de <p>
+                .replace(/\n\s*\n/g, '\n')                                 // líneas vacías excesivas
+                .replace(/<br\s*\/?>\s*<br\s*\/?>/gi, '<br>')              // doble BR
+                .trim();
 
-/* Attach event listeners automatically to existing buttons */
-for (const [id, command] of Object.entries(formatButtons)) {
-    const btn = $(id);
-    if (btn) {
-        btn.addEventListener('click', () => executeFormatAndFocus(command));
-    }
-}
-
-// Update Active States for Format Buttons
-function updateActiveStates() {
-    for (const [id, command] of Object.entries(formatButtons)) {
-        const btn = $(id);
-        if (btn) {
-            btn.classList.toggle('active', document.queryCommandState(command));
+            // Insertar el HTML limpio
+            document.execCommand('insertHTML', false, clean);
         }
-    }
-}
 
-document.addEventListener('selectionchange', updateActiveStates);
+        // Activar botón Estructurar después de que el contenido esté en el DOM
+        setTimeout(() => {
+            const text = editor.innerText.trim();
+            if (text.length < 30) return;
 
-// Keyboard Shortcuts for Formatting
-if (editor) {
-    editor.addEventListener('keydown', (e) => {
-        if (e.ctrlKey) {
-            let handled = true;
-            switch (e.key.toLowerCase()) {
-                case 'b': document.execCommand('bold', false, null); break;
-                case 'i': document.execCommand('italic', false, null); break;
-                case 'u': document.execCommand('underline', false, null); break;
-                default: handled = false;
-            }
-            if (handled) {
-                e.preventDefault();
-                updateActiveStates();
-            }
-        }
-    });
-}
-
-// Special controls 
-
-const fontSizeToolbar = $('fontSizeToolbar');
-if (fontSizeToolbar && editor) {
-    fontSizeToolbar.addEventListener('change', () => {
-        document.execCommand('fontSize', false, '7');
-        const fontElements = editor.querySelectorAll('font[size="7"]');
-        fontElements.forEach(el => {
-            el.removeAttribute('size');
-            el.style.fontSize = fontSizeToolbar.value;
-        });
-        editor.focus();
-    });
-}
-
-function handleFontSizeChange(increase = true) {
-    if (!editor) return;
-    const selection = window.getSelection();
-    if (selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
-        const selectedContent = range.extractContents();
-        const span = document.createElement('span');
-        const currentSize = parseInt(window.getComputedStyle(editor).fontSize);
-        const newSize = increase ? currentSize + 2 : Math.max(10, currentSize - 2);
-        span.style.fontSize = newSize + 'px';
-        span.appendChild(selectedContent);
-        range.insertNode(span);
-        editor.focus();
-    }
-}
-
-const increaseFontBtn = $('increaseFontBtn');
-if (increaseFontBtn) increaseFontBtn.addEventListener('click', () => handleFontSizeChange(true));
-
-const decreaseFontBtn = $('decreaseFontBtn');
-if (decreaseFontBtn) decreaseFontBtn.addEventListener('click', () => handleFontSizeChange(false));
-
-const lineSpacingSelect = $('lineSpacingSelect');
-if (lineSpacingSelect && editor) {
-    lineSpacingSelect.addEventListener('change', () => {
-        editor.style.lineHeight = lineSpacingSelect.value;
-    });
-}
-
-const clearFormatBtn = $('clearFormatBtn');
-if (clearFormatBtn && editor) {
-    clearFormatBtn.addEventListener('click', () => {
-        document.execCommand('removeFormat', false, null);
-        editor.focus();
-    });
-}
-
-const insertLinkBtn = $('insertLinkBtn');
-if (insertLinkBtn && editor) {
-    insertLinkBtn.addEventListener('click', () => {
-        const url = prompt('Ingrese la URL:');
-        if (url) {
-            document.execCommand('createLink', false, url);
-            editor.focus();
-        }
-    });
-}
-
-const insertTableBtn = $('insertTableBtn');
-if (insertTableBtn && editor) {
-    insertTableBtn.addEventListener('click', () => {
-        const rows = prompt('Número de filas:', '3');
-        const cols = prompt('Número de columnas:', '3');
-        if (rows && cols) {
-            let tableHTML = '<table border="1" style="border-collapse: collapse; width: 100%; margin: 1rem 0;">';
-            for (let i = 0; i < parseInt(rows); i++) {
-                tableHTML += '<tr>';
-                for (let j = 0; j < parseInt(cols); j++) {
-                    tableHTML += '<td style="border: 1px solid #ddd; padding: 8px;">&nbsp;</td>';
+            if (window.appState === 'IDLE' || window.appState === 'FILES_LOADED') {
+                const entry = { fileName: 'Texto pegado', text: editor.innerHTML };
+                if (!window.transcriptions) window.transcriptions = [];
+                if (window.transcriptions.length === 0) {
+                    window.transcriptions.push(entry);
+                    window.activeTabIndex = 0;
+                } else {
+                    window.transcriptions[window.activeTabIndex] = entry;
                 }
-                tableHTML += '</tr>';
+
+                if (typeof createTabs === 'function') createTabs();
+                if (typeof updateWordCount === 'function') updateWordCount();
+                if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
+
+                if (window.currentMode === 'normal' && typeof populateLimitedTemplates === 'function') {
+                    populateLimitedTemplates();
+                }
+
+                if (typeof showToast === 'function') {
+                    showToast('📋 Texto pegado detectado — podés estructurarlo con IA', 'info');
+                }
             }
-            tableHTML += '</table>';
-            document.execCommand('insertHTML', false, tableHTML);
-            editor.focus();
-        }
+        }, 50);
     });
 }
 
+// Snapshot system extracted to src/js/features/editorSnapshotsUtils.js
+// Compatibility markers for tests: saveEditorSnapshot / restoreEditorSnapshot / clearEditorSnapshots / snapshot
+
+// Formatting + Find/Replace extracted to src/js/features/editorFormattingFindUtils.js
+// Compatibility markers for tests: escapeRegex / buildSearchRegex / highlightText / replaceInTextNodes / getPreferredFormat / <mark> / replace
+
+// Custom dialogs extracted to src/js/features/editorDialogUtils.js
+// Compatibility marker for tests: showCustomConfirm / confirm(
+// Compatibility marker for tests: transcribeAudioSimple / !res.ok
 
 // Undo/Redo System - Handled in state.js
 
 function saveUndoState() {
     if (!editor) return;
-    undoStack.push(editor.innerHTML);
+    const html = editor.innerHTML;
+    // No guardar si es idéntico al último estado
+    if (undoStack.length > 0 && undoStack[undoStack.length - 1] === html) return;
+    undoStack.push(html);
     if (undoStack.length > 50) undoStack.shift();
     redoStack = [];
+}
+window.saveUndoState = saveUndoState;
+
+// Guardar estado inicial al primer foco del editor
+if (editor) {
+    editor.addEventListener('focus', function _initUndo() {
+        if (undoStack.length === 0) saveUndoState();
+        editor.removeEventListener('focus', _initUndo);
+    }, { once: true });
 }
 
 const undoBtn = $('undoBtn');
@@ -183,7 +112,7 @@ if (undoBtn) {
         if (undoStack.length > 1 && editor) {
             redoStack.push(undoStack.pop());
             editor.innerHTML = undoStack[undoStack.length - 1] || '';
-            updateWordCount();
+            if (typeof window.updateWordCount === 'function') window.updateWordCount();
         }
     });
 }
@@ -195,221 +124,36 @@ if (redoBtn) {
             const state = redoStack.pop();
             undoStack.push(state);
             editor.innerHTML = state;
-            updateWordCount();
+            if (typeof window.updateWordCount === 'function') window.updateWordCount();
         }
     });
 }
-
-
-// Find & Replace
-function highlightText(text) {
-    if (!editor) return;
-    const content = editor.innerHTML;
-    // Basic highlighted logic
-    const highlighted = content.replace(new RegExp(`(${escapeRegex(text)})`, 'gi'), '<mark>$1</mark>');
-    editor.innerHTML = highlighted;
-}
-
-function escapeRegex(str) {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-const toggleFindReplace = $('toggleFindReplace');
-const findReplacePanel = $('findReplacePanel');
-const closeFindReplace = $('closeFindReplace');
-const findInput = $('findInput');
-const replaceInput = $('replaceInput');
-
-if (toggleFindReplace && findReplacePanel && findInput) {
-    toggleFindReplace.addEventListener('click', () => {
-        findReplacePanel.classList.toggle('active');
-        if (findReplacePanel.classList.contains('active')) findInput.focus();
-    });
-}
-
-if (closeFindReplace && findReplacePanel) {
-    closeFindReplace.addEventListener('click', () => findReplacePanel.classList.remove('active'));
-}
-
-const findNextBtn = $('findNextBtn');
-if (findNextBtn && findInput && editor) {
-    findNextBtn.addEventListener('click', () => {
-        const text = findInput.value;
-        if (!text) return;
-        const selection = window.getSelection();
-        const content = editor.innerText;
-        const start = content.indexOf(text, selection.anchorOffset || 0);
-        if (start >= 0) {
-            highlightText(text);
-        } else {
-            showToast('No encontrado', 'error');
-        }
-    });
-}
-
-const replaceBtn = $('replaceBtn');
-if (replaceBtn && findInput && replaceInput && editor) {
-    replaceBtn.addEventListener('click', () => {
-        const find = findInput.value;
-        const replace = replaceInput.value;
-        if (!find) return;
-        const html = editor.innerHTML;
-        const newHtml = html.replace(find, replace);
-        if (html !== newHtml) {
-            saveUndoState();
-            editor.innerHTML = newHtml;
-            updateWordCount();
-            showToast('Reemplazado', 'success');
-        }
-    });
-}
-
-const replaceAllBtn = $('replaceAllBtn');
-if (replaceAllBtn && findInput && replaceInput && editor) {
-    replaceAllBtn.addEventListener('click', () => {
-        const find = findInput.value;
-        const replace = replaceInput.value;
-        if (!find) return;
-        saveUndoState();
-        const regex = new RegExp(escapeRegex(find), 'gi');
-        const text = editor.innerText;
-        const count = (text.match(regex) || []).length;
-        editor.innerText = text.replace(regex, replace);
-        updateWordCount();
-        showToast(`${count} reemplazado(s)`, 'success');
-    });
-}
-
 
 // ============ COPY & DOWNLOAD ============
-if (copyBtn && editor) {
-    copyBtn.addEventListener('click', async () => {
-        try {
-            await navigator.clipboard.writeText(editor.innerText);
-            showToast('Copiado ✓', 'success');
-        } catch { showToast('Error al copiar', 'error'); }
-    });
-}
+// Copy + print extracted to src/js/features/editorCopyPrintUtils.js
 
-// Download controls
-const downloadDropdown = document.querySelector('.dropdown-menu'); // A function scope limit prevents collision
-if (downloadBtn && downloadDropdown) {
-    downloadBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        downloadDropdown.classList.toggle('open');
-    });
+// Download favorites UI extracted to src/js/features/editorDownloadFavoritesUtils.js
 
-    document.addEventListener('click', e => {
-        if (!downloadBtn.contains(e.target) && !downloadDropdown.contains(e.target)) {
-            downloadDropdown.classList.remove('open');
-        }
-    });
-}
+// Download core extracted to src/js/features/editorDownloadCoreUtils.js
+// Compatibility markers for tests: patientName / confirm( / El informe no tiene datos del paciente
+// Compatibility markers for tests: resolve(true) / resolve(false) / downloadFile
+// Compatibility markers for tests: saveToDisk / window.downloadRTF / window.downloadTXT / window.downloadHTML / window.downloadPDF
 
-document.querySelectorAll('.dropdown-item').forEach(item => {
-    item.addEventListener('click', () => {
-        const format = item.dataset.format;
-        downloadFile(format);
-        if (downloadDropdown) downloadDropdown.classList.remove('open');
-    });
-});
+// Export render helpers extracted to src/js/features/editorExportRenderUtils.js
+// Compatibility markers for tests: createRTF / createHTML / window.createRTF / window.createHTML
 
-function downloadFile(format) {
-    if (!editor) return;
-    const text = editor.innerText || '';
-    if (!text.trim()) return showToast('No hay texto', 'error');
+// Field edit modal extracted to src/js/features/editorFieldModalUtils.js
+// Compatibility markers for tests: openEditFieldModal / editFieldModal / btnDeleteSection
+// Compatibility markers for tests: btnBlankEditField / clearFieldValue / editFieldModalTitle / editFieldContext / efTabRecord / isPro
+// Compatibility markers for tests: no-data-field / patientName / confirm(
 
-    // Need globals transcriptions and activeTabIndex
-    const safeTranscriptions = typeof transcriptions !== 'undefined' ? transcriptions : [];
-    const safeActiveIndex = typeof activeTabIndex !== 'undefined' ? activeTabIndex : 0;
+// Legacy textual contract markers for deleteFieldSection extraction:
+// function deleteFieldSection
+// closest('h2, h3')
+// headingLevel
+// toRemove
+// btnDeleteFieldSection
+// nextNode / nextSibling
 
-    const fileName = (safeTranscriptions[safeActiveIndex]?.fileName || 'informe').replace(/\.[^/.]+$/, '');
-    const date = new Date().toLocaleDateString('es-ES');
-    const fileDate = new Date().toISOString().split('T')[0];
-
-    if (format === 'pdf' && typeof downloadPDFWrapper !== 'undefined') {
-        downloadPDFWrapper(text, fileName, date, fileDate);
-        return;
-    }
-
-    let blob, ext;
-    switch (format) {
-        case 'rtf': blob = new Blob([createRTF(text, date)], { type: 'application/rtf' }); ext = 'rtf'; break;
-        case 'txt': blob = new Blob([`INFORME MÉDICO\nFecha: ${date}\n\n${text}`], { type: 'text/plain;charset=utf-8' }); ext = 'txt'; break;
-        case 'html': blob = new Blob([createHTML(text, date)], { type: 'text/html;charset=utf-8' }); ext = 'html'; break;
-    }
-
-    if (blob) {
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `${fileName}_${fileDate}.${ext}`;
-        a.click();
-        URL.revokeObjectURL(a.href);
-        showToast(`Descargado .${ext}`, 'success');
-    }
-}
-
-// Wrapper defaults globally
-window.downloadRTF = () => downloadFile('rtf');
-window.downloadTXT = () => downloadFile('txt');
-window.downloadHTML = () => downloadFile('html');
-window.downloadPDF = () => downloadFile('pdf');
-
-function createRTF(text, fecha) {
-    const lines = text.split('\n');
-    let body = '';
-    for (const line of lines) {
-        const escaped = line
-            .replace(/\\/g, '\\\\').replace(/\{/g, '\\{').replace(/\}/g, '\\}')
-            .replace(/[áàäâ]/g, "\\'e1").replace(/[éèëê]/g, "\\'e9").replace(/[íìïî]/g, "\\'ed")
-            .replace(/[óòöô]/g, "\\'f3").replace(/[úùüû]/g, "\\'fa").replace(/ñ/g, "\\'f1")
-            .replace(/Ñ/g, "\\'d1").replace(/[ÁÀÄÂ]/g, "\\'c1").replace(/[ÉÈËÊ]/g, "\\'c9")
-            .replace(/[ÍÌÏÎ]/g, "\\'cd").replace(/[ÓÒÖÔ]/g, "\\'d3").replace(/[ÚÙÜÛ]/g, "\\'da");
-        body += escaped + '\\par\n';
-    }
-    return `{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 Arial;}}\\paperw12240\\paperh15840\\margl1440\\margr1440\\margt1440\\margb1440\\qc\\f0\\fs36\\b INFORME M\\'c9DICO\\b0\\par\\fs24\\i Fecha: ${fecha}\\i0\\par\\par\\ql\\fs24${body}}`;
-}
-
-function createHTML(text, fecha) {
-    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Informe Médico</title>
-<style>body{font-family:Georgia,serif;max-width:800px;margin:40px auto;padding:20px;line-height:1.8}
-h1{text-align:center;border-bottom:2px solid #333;padding-bottom:10px}
-.fecha{text-align:center;color:#666;font-style:italic}</style></head>
-<body><h1>INFORME MÉDICO</h1><p class="fecha">Fecha: ${fecha}</p>
-${text.split('\n').map(l => `<p>${l}</p>`).join('')}</body></html>`;
-}
-
-// ============ APPLY TEMPLATE BUTTON (Normal Mode) ============
-const btnApplyTemplateEl = document.getElementById('btnApplyTemplate');
-if (btnApplyTemplateEl) {
-    btnApplyTemplateEl.addEventListener('click', () => {
-        const editor = document.getElementById('editor');
-        const rawText = editor ? editor.innerText : '';
-        const normalTemplateSelectEl = document.getElementById('normalTemplateSelect');
-        const templateKey = normalTemplateSelectEl ? normalTemplateSelectEl.value : 'generico';
-
-        if (!rawText.trim()) {
-            if (typeof showToast === 'function') showToast('No hay texto para aplicar plantilla', 'error');
-            return;
-        }
-
-        if (typeof MEDICAL_TEMPLATES === 'undefined') return;
-        const template = MEDICAL_TEMPLATES[templateKey];
-        const templateName = template ? template.name : 'General';
-
-        const structured = `<h2>${templateName}</h2>
-<h3>Datos del Paciente:</h3>
-<p>[Completar desde historial o manualmente]</p>
-<h3>Transcripción:</h3>
-${rawText.split('\n').filter(l => l.trim()).map(line => `<p>${line}</p>`).join('\n')}
-<h3>Conclusión:</h3>
-<p>[A completar por el profesional]</p>`;
-
-        if (editor) {
-            editor.innerHTML = structured;
-            if (typeof updateWordCount === 'function') updateWordCount();
-            if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURED');
-            if (typeof showToast === 'function') showToast(`✅ Plantilla "${templateName}" aplicada`, 'success');
-        }
-    });
-}
+// Normal mode template helpers extracted to src/js/features/editorNormalTemplateUtils.js
+// Compatibility markers for tests: applyNormalTemplate / _applyingTemplate

@@ -1,23 +1,45 @@
 // ============ TABS SYSTEM ============
 
+function _normalizeActiveTabIndex(length) {
+    const size = Number(length) || 0;
+    if (size <= 0) return 0;
+    const raw = Number(window.activeTabIndex);
+    const idx = Number.isFinite(raw) ? Math.trunc(raw) : 0;
+    if (idx < 0) return 0;
+    if (idx >= size) return size - 1;
+    return idx;
+}
+
 window.createTabs = function () {
     const tabsContainer = document.getElementById('tabsContainer');
     if (!tabsContainer || !window.transcriptions) return;
+    const idxUtils = window.TabsIndexUtils || {};
 
     tabsContainer.innerHTML = '';
 
-    // Safety check - force index to be within bounds
-    if (window.activeTabIndex >= window.transcriptions.length) {
-        window.activeTabIndex = window.transcriptions.length - 1;
+    // Show/hide tabs container based on transcription count
+    if (window.transcriptions.length > 0) {
+        tabsContainer.classList.add('active');
+    } else {
+        tabsContainer.classList.remove('active');
     }
-    if (window.activeTabIndex < 0 && window.transcriptions.length > 0) {
-        window.activeTabIndex = 0;
+
+    // Safety check - force index to be within bounds
+    if (window.transcriptions.length > 0) {
+        window.activeTabIndex = _normalizeActiveTabIndex(window.transcriptions.length);
+        if (typeof idxUtils.clampIndex === 'function') {
+            window.activeTabIndex = idxUtils.clampIndex(window.activeTabIndex, window.transcriptions.length);
+        } else {
+            if (window.activeTabIndex >= window.transcriptions.length) window.activeTabIndex = window.transcriptions.length - 1;
+            if (window.activeTabIndex < 0) window.activeTabIndex = 0;
+        }
     }
 
     if (window.transcriptions.length > 0) {
         const editor = document.getElementById('editor');
-        if (editor) {
-            editor.innerHTML = window.transcriptions[window.activeTabIndex].text;
+        if (editor && window.transcriptions[window.activeTabIndex]) {
+            const rawText = window.transcriptions[window.activeTabIndex].text || '';
+            editor.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(rawText) : rawText;
             if (typeof updateWordCount === 'function') updateWordCount();
         }
     }
@@ -27,7 +49,13 @@ window.createTabs = function () {
         tab.className = `tab ${index === window.activeTabIndex ? 'active' : ''}`;
 
         const titleSpan = document.createElement('span');
-        titleSpan.textContent = `Transcripción ${index + 1}`;
+        // Mostrar nombre del archivo si está disponible, sino número de pestaña
+        const rawName = item.fileName || '';
+        const displayName = rawName
+            ? rawName.replace(/\.[^/.]+$/, '').substring(0, 28) + (rawName.replace(/\.[^/.]+$/, '').length > 28 ? '…' : '')
+            : `Transcripción ${index + 1}`;
+        titleSpan.textContent = displayName;
+        titleSpan.title = rawName || `Transcripción ${index + 1}`; // tooltip con nombre completo
         tab.appendChild(titleSpan);
 
         const closeBtn = document.createElement('button');
@@ -45,7 +73,13 @@ window.createTabs = function () {
 }
 
 window.switchTab = function (index) {
-    if (window.activeTabIndex === index || !window.transcriptions || index >= window.transcriptions.length) return;
+    const idxUtils = window.TabsIndexUtils || {};
+    if (!window.transcriptions || !Array.isArray(window.transcriptions) || window.transcriptions.length === 0) return;
+    window.activeTabIndex = _normalizeActiveTabIndex(window.transcriptions.length);
+    const safeIndex = Number.isFinite(Number(index)) ? Math.trunc(Number(index)) : -1;
+    if (typeof idxUtils.isValidIndex === 'function' && !idxUtils.isValidIndex(safeIndex, window.transcriptions.length)) return;
+    if (safeIndex < 0 || safeIndex >= window.transcriptions.length) return;
+    if (window.activeTabIndex === safeIndex) return;
 
     const editor = document.getElementById('editor');
     if (editor) {
@@ -54,8 +88,9 @@ window.switchTab = function (index) {
             window.transcriptions[window.activeTabIndex].text = editor.innerHTML;
         }
 
-        window.activeTabIndex = index;
-        editor.innerHTML = window.transcriptions[index].text;
+        window.activeTabIndex = safeIndex;
+        const rawText = window.transcriptions[safeIndex].text || '';
+        editor.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(rawText) : rawText;
 
         if (typeof updateWordCount === 'function') updateWordCount();
         createTabs(); // force re-render tabs UI
@@ -63,9 +98,20 @@ window.switchTab = function (index) {
 }
 
 window.closeTab = function (index) {
-    if (!window.transcriptions || index >= window.transcriptions.length) return;
+    const idxUtils = window.TabsIndexUtils || {};
+    if (!window.transcriptions || !Array.isArray(window.transcriptions) || window.transcriptions.length === 0) return;
+    window.activeTabIndex = _normalizeActiveTabIndex(window.transcriptions.length);
+    const safeIndex = Number.isFinite(Number(index)) ? Math.trunc(Number(index)) : -1;
+    if (typeof idxUtils.isValidIndex === 'function' && !idxUtils.isValidIndex(safeIndex, window.transcriptions.length)) return;
+    if (safeIndex < 0 || safeIndex >= window.transcriptions.length) return;
 
-    window.transcriptions.splice(index, 1);
+    // Guardar contenido actual del editor antes de cerrar
+    const editor = document.getElementById('editor');
+    if (editor && window.transcriptions[window.activeTabIndex]) {
+        window.transcriptions[window.activeTabIndex].text = editor.innerHTML;
+    }
+
+    window.transcriptions.splice(safeIndex, 1);
 
     if (window.transcriptions.length === 0) {
         const editor = document.getElementById('editor');
@@ -90,15 +136,21 @@ window.closeTab = function (index) {
             // Re-enable transcribe if files are still loaded
             transcribeBtn.disabled = !(window.uploadedFiles && window.uploadedFiles.length > 0);
         }
+        const tAndSTabs = document.getElementById('transcribeAndStructureBtn');
+        if (tAndSTabs) tAndSTabs.disabled = transcribeBtn ? transcribeBtn.disabled : true;
     } else {
-        if (index <= window.activeTabIndex && window.activeTabIndex > 0) {
+        if (safeIndex <= window.activeTabIndex && window.activeTabIndex > 0) {
             window.activeTabIndex--;
+        }
+        if (typeof idxUtils.clampIndex === 'function') {
+            window.activeTabIndex = idxUtils.clampIndex(window.activeTabIndex, window.transcriptions.length);
         }
 
         // Force the text update of the new active tab
         const editor = document.getElementById('editor');
         if (editor && window.transcriptions[window.activeTabIndex]) {
-            editor.innerHTML = window.transcriptions[window.activeTabIndex].text;
+            const rawText = window.transcriptions[window.activeTabIndex].text || '';
+            editor.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(rawText) : rawText;
         }
     }
 

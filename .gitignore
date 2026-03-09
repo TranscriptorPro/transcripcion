@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-error.log
+
+# Build outputs
+dist/
+build/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Test output (keep audit_diagnostic.js but ignore generated reports)
+tests/audit_report.json
+
+# Local workspace artifacts (not part of runtime app)
+anexos/local_workspace/
+
+# Generated report/export artifacts
+fail_lines.txt
+test_output.txt
+test_output_full.txt
+test_run_output.txt
+Informe Combinado*.pdf
+Informe Combinado*.rtf
+informe_*.rtf

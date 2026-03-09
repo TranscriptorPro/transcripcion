@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>&#x1F9EA; Tests K3 &mdash; Bot&oacute;n Contacto</title>
+<style>
+  :root { --primary:#2563eb; --bg-card:#1e293b; --bg:#0f172a; --text-primary:#f1f5f9; --text-muted:#94a3b8; --border:#334155; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text-primary); font-family:system-ui,sans-serif; padding:1.5rem; }
+  h2 { font-size:1rem; color:var(--text-muted); margin:1.25rem 0 .5rem; text-transform:uppercase; letter-spacing:.06em; }
+  .suite { display:flex; flex-direction:column; gap:.5rem; }
+  .test-row { background:var(--bg-card); border:1px solid var(--border); border-radius:.5rem; padding:.75rem 1rem; display:flex; gap:.75rem; align-items:flex-start; }
+  .info { flex:1; } .info strong { font-size:.9rem; } .info p { font-size:.78rem; color:var(--text-muted); margin-top:.2rem; }
+  .status { min-width:300px; font-size:.8rem; display:flex; align-items:center; gap:.4rem; border-radius:.35rem; padding:.35rem .6rem; }
+  .status.wait { background:#1e293b; color:#64748b; } .status.ok { background:#022c22; color:#6ee7b7; } .status.fail { background:#450a0a; color:#fca5a5; }
+  .status .dot { width:7px; height:7px; border-radius:50%; background:currentColor; flex-shrink:0; }
+  .run-btn { background:var(--primary); color:#fff; border:none; padding:.4rem .85rem; border-radius:.35rem; cursor:pointer; font-size:.78rem; white-space:nowrap; }
+  .run-btn:hover { filter:brightness(1.15); }
+  .legend { font-size:.8rem; color:var(--text-muted); line-height:1.7; background:var(--bg-card); border:1px solid var(--border); border-radius:.5rem; padding:.85rem 1rem; }
+  .legend code { background:#0f172a; padding:.1em .35em; border-radius:.2rem; font-size:.75rem; }
+</style>
+</head>
+<body>
+
+<!-- DOM fixtures -->
+<div id="fixtures" style="display:none">
+  <button id="btnContacto" style="display:none"></button>
+  <div class="modal-overlay" id="contactModalOverlay" style="display:none">
+    <div id="contactModal">
+      <button id="btnCloseContactModal"></button>
+      <form id="contactForm">
+        <select id="contactMotivo"><option value=""></option><option value="Consulta general">Consulta general</option></select>
+        <textarea id="contactDetalle"></textarea>
+        <button type="submit" id="btnSendContact" disabled></button>
+      </form>
+      <div id="contactSuccess" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<main>
+<h2>&#9889; Tests K3 &mdash; Bot&oacute;n Contacto</h2>
+<div class="suite" id="suite"></div>
+
+<h2>&#8505;&#65039; Que verifica cada test</h2>
+<div class="legend">
+  <strong>K3-admin-hidden</strong>: Con <code>CLIENT_CONFIG.type=ADMIN</code> el bot&oacute;n Contacto tiene <code>display:none</code>.<br>
+  <strong>K3-normal-visible</strong>: Con <code>CLIENT_CONFIG.type=NORMAL</code> el bot&oacute;n queda visible.<br>
+  <strong>K3-modal-opens</strong>: Al hacer click en el bot&oacute;n, el overlay agrega la clase <code>active</code>.<br>
+  <strong>K3-btn-disabled</strong>: El bot&oacute;n de enviar est&aacute; <em>disabled</em> si no hay motivo ni detalle.<br>
+  <strong>K3-btn-enabled</strong>: Al seleccionar motivo + detalle el bot&oacute;n queda habilitado.<br>
+  <strong>K3-mailto</strong>: El submit genera una URL <code>mailto:</code> correctamente formateada.
+</div>
+</main>
+
+<script>
+// Stubs
+window.showToast = (m,t) => {};
+// Simular CLIENT_CONFIG
+let SIM_TYPE = 'ADMIN';
+function makeClientConfig(type) { return { type, contactEmail: 'test@example.com' }; }
+
+// version inline de initContact para tests (igual a la real pero sin window.open)
+let lastMailto = null;
+function initContactInline(cfg) {
+    // Parchar window.open temporalmente
+    const origOpen = window.open;
+    window.open = (url) => { lastMailto = url; };
+
+    window.CLIENT_CONFIG = cfg;
+
+    const isAdmin = (!cfg || cfg.type === 'ADMIN');
+    const btn = document.getElementById('btnContacto');
+    if (!btn) { window.open = origOpen; return; }
+    if (isAdmin) { btn.style.display = 'none'; window.open = origOpen; return; }
+    btn.style.display = '';
+
+    const overlay   = document.getElementById('contactModalOverlay');
+    const closeBtn  = document.getElementById('btnCloseContactModal');
+    const form      = document.getElementById('contactForm');
+    const sendBtn   = document.getElementById('btnSendContact');
+    const successMsg = document.getElementById('contactSuccess');
+
+    if (!overlay) { window.open = origOpen; return; }
+
+    // Clonar form PRIMERO (limpia listeners de submit previos)
+    // LUEGO añadir todos los listeners a los elementos frescos del clon
+    if (form) {
+        const newForm = form.cloneNode(true);
+        form.parentNode.replaceChild(newForm, form);
+    }
+
+    function validateForm() {
+        const motivo  = document.getElementById('contactMotivo')?.value;
+        const detalle = document.getElementById('contactDetalle')?.value?.trim();
+        const sb = document.getElementById('btnSendContact');
+        if (sb) sb.disabled = !motivo || !detalle;
+    }
+
+    // Listeners de validación sobre los elementos dentro del form ya clonado
+    document.getElementById('contactMotivo')?.addEventListener('change', validateForm);
+    document.getElementById('contactDetalle')?.addEventListener('input',  validateForm);
+
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+    document.getElementById('btnContacto').addEventListener('click', () => {
+        overlay.classList.add('active');
+        if (successMsg) successMsg.style.display = 'none';
+        const f = document.getElementById('contactForm');
+        if (f) f.style.display = 'flex';
+        const sb = document.getElementById('btnSendContact');
+        if (sb) sb.disabled = true;
+    });
+
+    function closeModal() { overlay.classList.remove('active'); }
+    if (closeBtn) {
+        const nb = closeBtn.cloneNode(true);
+        closeBtn.parentNode.replaceChild(nb, closeBtn);
+        document.getElementById('btnCloseContactModal').addEventListener('click', closeModal);
+    }
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+
+    document.getElementById('contactForm')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const motivo  = document.getElementById('contactMotivo')?.value  || 'Sin motivo';
+        const detalle = document.getElementById('contactDetalle')?.value?.trim() || '';
+        const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
+        const nombre  = profData.nombre || 'M\u00e9dico';
+        const mat     = profData.matricula || '';
+        const contactEmail = (window.CLIENT_CONFIG && window.CLIENT_CONFIG.contactEmail)
+            ? window.CLIENT_CONFIG.contactEmail : 'soporte@transcriptorpro.app';
+        const subject = encodeURIComponent(`[TranscriptorPro] ${motivo}`);
+        const body    = encodeURIComponent(`Motivo: ${motivo}\n\n${detalle}\n\n---\nDr./Dra. ${nombre} | Mat. ${mat}\nApp: TranscriptorPro`);
+        window.open(`mailto:${contactEmail}?subject=${subject}&body=${body}`, '_blank');
+        const cf = document.getElementById('contactForm');
+        if (cf) cf.style.display = 'none';
+        if (successMsg) successMsg.style.display = 'block';
+    });
+
+    window.open = origOpen;
+}
+
+function resetFixtures() {
+    const overlay = document.getElementById('contactModalOverlay');
+    if (overlay) overlay.classList.remove('active');
+    const sendBtn = document.getElementById('btnSendContact');
+    if (sendBtn) sendBtn.disabled = true;
+    const motivo  = document.getElementById('contactMotivo');
+    const detalle = document.getElementById('contactDetalle');
+    if (motivo)  motivo.value  = '';
+    if (detalle) detalle.value = '';
+    lastMailto = null;
+}
+
+function assert(cond, ok, fail) { return cond ? ['ok', ok] : ['fail', fail]; }
+function setStatus(id, type, msg) {
+    const el = document.getElementById('st-' + id);
+    if (!el) return;
+    el.className = 'status ' + type;
+    el.innerHTML = '<div class="dot"></div><span>' + msg + '</span>';
+}
+
+const TESTS = [
+    {
+        id: 'k3-admin-hidden',
+        label: 'K3 \u2014 Admin: btn Contacto oculto',
+        desc: 'Con CLIENT_CONFIG.type=ADMIN el bot\u00f3n tiene display:none.',
+        run() {
+            resetFixtures();
+            initContactInline(makeClientConfig('ADMIN'));
+            const btn = document.getElementById('btnContacto');
+            return assert(btn.style.display === 'none',
+                'display:none para admin \u2713',
+                `display="${btn.style.display}" \u2014 esperado none`);
+        }
+    },
+    {
+        id: 'k3-normal-visible',
+        label: 'K3 \u2014 Normal: btn Contacto visible',
+        desc: 'Con CLIENT_CONFIG.type=NORMAL el bot\u00f3n es visible.',
+        run() {
+            resetFixtures();
+            initContactInline(makeClientConfig('NORMAL'));
+            const btn = document.getElementById('btnContacto');
+            return assert(btn.style.display === '',
+                'btn visible (display:"") para NORMAL \u2713',
+                `display="${btn.style.display}"`);
+        }
+    },
+    {
+        id: 'k3-modal-opens',
+        label: 'K3 \u2014 Click abre el modal (overlay.active)',
+        desc: 'Al hacer click en el bot\u00f3n, el overlay agrega clase active.',
+        run() {
+            resetFixtures();
+            initContactInline(makeClientConfig('NORMAL'));
+            document.getElementById('btnContacto').click();
+            const overlay = document.getElementById('contactModalOverlay');
+            return assert(overlay.classList.contains('active'),
+                'overlay.active = true \u2713',
+                'overlay no tiene clase active');
+        }
+    },
+    {
+        id: 'k3-btn-disabled',
+        label: 'K3 \u2014 Enviar disabled sin datos',
+        desc: 'El bot\u00f3n de enviar est\u00e1 disabled si motivo o detalle est\u00e1n vac\u00edos.',
+        run() {
+            resetFixtures();
+            initContactInline(makeClientConfig('NORMAL'));
+            document.getElementById('btnContacto').click();
+            const sendBtn = document.getElementById('btnSendContact');
+            return assert(sendBtn.disabled,
+                'btnSendContact disabled \u2713',
+                'btnSendContact ya est\u00e1 habilitado sin datos');
+        }
+    },
+    {
+        id: 'k3-btn-enabled',
+        label: 'K3 \u2014 Enviar habilitado con motivo + detalle',
+        desc: 'Al elegir motivo y escribir detalle, el bot\u00f3n se habilita.',
+        run() {
+            resetFixtures();
+            initContactInline(makeClientConfig('NORMAL'));
+            document.getElementById('btnContacto').click();
+            const motivoEl  = document.getElementById('contactMotivo');
+            const detalleEl = document.getElementById('contactDetalle');
+            motivoEl.value  = 'Consulta general';
+            motivoEl.dispatchEvent(new Event('change'));
+            detalleEl.value = 'Texto de prueba';
+            detalleEl.dispatchEvent(new Event('input'));
+            const sendBtn = document.getElementById('btnSendContact');
+            return assert(!sendBtn.disabled,
+                'btnSendContact habilitado \u2713',
+                'btnSendContact sigue disabled');
+        }
+    },
+    {
+        id: 'k3-mailto',
+        label: 'K3 \u2014 Submit genera URL mailto: correcta',
+        desc: 'Al enviar, window.open recibe una URL que empieza con mailto: y contiene el motivo.',
+        run() {
+            resetFixtures();
+            localStorage.setItem('prof_data', JSON.stringify({ nombre: 'Dr. Test', matricula: 'MN 9' }));
+            initContactInline(makeClientConfig('NORMAL'));
+            document.getElementById('btnContacto').click();
+            const motivoEl  = document.getElementById('contactMotivo');
+            const detalleEl = document.getElementById('contactDetalle');
+            motivoEl.value  = 'Consulta general';
+            motivoEl.dispatchEvent(new Event('change'));
+            detalleEl.value = 'Quiero consultar algo';
+            detalleEl.dispatchEvent(new Event('input'));
+
+            // Parchar window.open para capturar la URL
+            const origOpen = window.open;
+            window.open = (url) => { lastMailto = url; };
+            document.getElementById('contactForm').dispatchEvent(new Event('submit'));
+            window.open = origOpen;
+            localStorage.removeItem('prof_data');
+
+            const ok = lastMailto && lastMailto.startsWith('mailto:') && lastMailto.includes('Consulta');
+            return assert(ok,
+                `mailto generado: ${lastMailto?.substring(0, 60)}... \u2713`,
+                `mailto="${lastMailto}"`);
+        }
+    }
+];
+
+const suite = document.getElementById('suite');
+TESTS.forEach(t => {
+    const row = document.createElement('div');
+    row.className = 'test-row';
+    row.innerHTML = `<div class="info"><strong>${t.label}</strong><p>${t.desc}</p></div>
+        <div class="status wait" id="st-${t.id}"><div class="dot"></div><span>&mdash; pendiente &mdash;</span></div>
+        <button class="run-btn" onclick="runTest('${t.id}')">&#9654; Ejecutar</button>`;
+    suite.appendChild(row);
+});
+
+const allBtn = document.createElement('button');
+allBtn.textContent = '\u25b6\u25b6 Ejecutar todos';
+allBtn.className = 'run-btn';
+allBtn.style.cssText = 'background:#10b981;margin-top:.5rem;padding:.55rem 1.25rem;';
+allBtn.onclick = async () => { for (const t of TESTS) { runTest(t.id); await new Promise(r => setTimeout(r, 80)); } };
+suite.appendChild(allBtn);
+
+function runTest(id) {
+    const t = TESTS.find(x => x.id === id);
+    if (!t) return;
+    setStatus(id, 'wait', '\u23f3 ejecutando...');
+    try {
+        const [type, msg] = t.run();
+        setStatus(id, type, (type === 'ok' ? '\u2713 ' : '\u2717 ') + msg);
+    } catch(err) {
+        setStatus(id, 'fail', '\u2717 JS Error: ' + err.message);
+    }
+}
+</script>
+</body>
+</html>

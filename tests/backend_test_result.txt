@@ -1,0 +1,13 @@
+﻿=== TEST BACKEND 2026-03-07 11:15:41 ===
+
+PASS | T01 validate sin ID
+PASS | T02 validate ID inexistente
+PASS | T03 accion GET invalida
+PASS | T04 admin_list_users sin auth
+PASS | T05 admin_login key incorrecta
+PASS | T06 admin_list_regs sin auth
+PASS | T07 admin_approve sin auth
+PASS | T08 POST email invalido
+PASS | T09 POST accion invalida
+
+RESULTADO: 9/9 pruebas OK

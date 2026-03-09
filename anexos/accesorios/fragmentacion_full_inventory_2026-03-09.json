@@ -1,0 +1,1345 @@
+{
+  "generatedAt": "2026-03-09T21:01:03.936Z",
+  "scope": "runtime files: src/js + index/admin + admin-assets + sw/manifest",
+  "counts": {
+    "runtimeFiles": 95,
+    "fragmentedFiles": 69,
+    "nonFragmentedFiles": 26
+  },
+  "fragmented": [
+    {
+      "file": "index.html",
+      "lines": 2778
+    },
+    {
+      "file": "recursos/admin-assets/css/admin-inline-style-01.css",
+      "lines": 3
+    },
+    {
+      "file": "recursos/admin-assets/css/admin-inline-style-02.css",
+      "lines": 1818
+    },
+    {
+      "file": "recursos/admin-assets/css/admin-inline-style-03.css",
+      "lines": 36
+    },
+    {
+      "file": "recursos/admin-assets/js/admin-inline-script-01.js",
+      "lines": 19
+    },
+    {
+      "file": "recursos/admin-assets/js/admin-inline-script-02.js",
+      "lines": 14
+    },
+    {
+      "file": "recursos/admin-assets/js/admin-inline-script-03.js",
+      "lines": 28
+    },
+    {
+      "file": "recursos/admin-assets/js/admin-inline-script-04.js",
+      "lines": 4518
+    },
+    {
+      "file": "recursos/admin-assets/js/admin-inline-script-05.js",
+      "lines": 121
+    },
+    {
+      "file": "recursos/admin-assets/js/admin-inline-script-06.js",
+      "lines": 67
+    },
+    {
+      "file": "recursos/admin-assets/js/admin-inline-script-07.js",
+      "lines": 736
+    },
+    {
+      "file": "recursos/admin-assets/js/admin-inline-script-08.js",
+      "lines": 209
+    },
+    {
+      "file": "recursos/admin-assets/js/admin-inline-script-09.js",
+      "lines": 47
+    },
+    {
+      "file": "recursos/admin.html",
+      "lines": 24
+    },
+    {
+      "file": "src/js/config/templates.js",
+      "lines": 119
+    },
+    {
+      "file": "src/js/config/templatesCatalog.js",
+      "lines": 572
+    },
+    {
+      "file": "src/js/config/templatesCatalogPart2.js",
+      "lines": 260
+    },
+    {
+      "file": "src/js/config/templatesCatalogPart3.js",
+      "lines": 304
+    },
+    {
+      "file": "src/js/features/business.js",
+      "lines": 587
+    },
+    {
+      "file": "src/js/features/businessClientAdminUtils.js",
+      "lines": 130
+    },
+    {
+      "file": "src/js/features/businessFactorySetupUtils.js",
+      "lines": 337
+    },
+    {
+      "file": "src/js/features/businessFactoryUiUtils.js",
+      "lines": 62
+    },
+    {
+      "file": "src/js/features/businessOnboardingUtils.js",
+      "lines": 316
+    },
+    {
+      "file": "src/js/features/businessUiHelpers.js",
+      "lines": 148
+    },
+    {
+      "file": "src/js/features/editor.js",
+      "lines": 160
+    },
+    {
+      "file": "src/js/features/editorCopyPrintUtils.js",
+      "lines": 29
+    },
+    {
+      "file": "src/js/features/editorDialogUtils.js",
+      "lines": 85
+    },
+    {
+      "file": "src/js/features/editorDownloadCoreUtils.js",
+      "lines": 182
+    },
+    {
+      "file": "src/js/features/editorDownloadFavoritesUtils.js",
+      "lines": 78
+    },
+    {
+      "file": "src/js/features/editorFieldModalUtils.js",
+      "lines": 411
+    },
+    {
+      "file": "src/js/features/editorFormattingFindUtils.js",
+      "lines": 290
+    },
+    {
+      "file": "src/js/features/editorNormalTemplateUtils.js",
+      "lines": 111
+    },
+    {
+      "file": "src/js/features/editorSnapshotsUtils.js",
+      "lines": 195
+    },
+    {
+      "file": "src/js/features/medDictionary.js",
+      "lines": 695
+    },
+    {
+      "file": "src/js/features/pdfMaker.js",
+      "lines": 644
+    },
+    {
+      "file": "src/js/features/pdfMakerSectionUtils.js",
+      "lines": 183
+    },
+    {
+      "file": "src/js/features/pdfPreview.js",
+      "lines": 690
+    },
+    {
+      "file": "src/js/features/pdfPreviewActions.js",
+      "lines": 330
+    },
+    {
+      "file": "src/js/features/settingsAccountUtils.js",
+      "lines": 79
+    },
+    {
+      "file": "src/js/features/settingsApiUtils.js",
+      "lines": 91
+    },
+    {
+      "file": "src/js/features/settingsBackupActionsUtils.js",
+      "lines": 62
+    },
+    {
+      "file": "src/js/features/settingsBackupUtils.js",
+      "lines": 67
+    },
+    {
+      "file": "src/js/features/settingsEditorPrefsUtils.js",
+      "lines": 123
+    },
+    {
+      "file": "src/js/features/settingsModalActionsUtils.js",
+      "lines": 79
+    },
+    {
+      "file": "src/js/features/settingsModalPopulateUtils.js",
+      "lines": 81
+    },
+    {
+      "file": "src/js/features/settingsModalShellUtils.js",
+      "lines": 68
+    },
+    {
+      "file": "src/js/features/settingsModalWatchUtils.js",
+      "lines": 24
+    },
+    {
+      "file": "src/js/features/settingsPanel.js",
+      "lines": 307
+    },
+    {
+      "file": "src/js/features/settingsQuickProfilesUtils.js",
+      "lines": 117
+    },
+    {
+      "file": "src/js/features/settingsThemeSectionUtils.js",
+      "lines": 247
+    },
+    {
+      "file": "src/js/features/settingsThemeUtils.js",
+      "lines": 63
+    },
+    {
+      "file": "src/js/features/settingsToolsLinksUtils.js",
+      "lines": 71
+    },
+    {
+      "file": "src/js/features/settingsWorkplaceUtils.js",
+      "lines": 44
+    },
+    {
+      "file": "src/js/features/structurer.js",
+      "lines": 646
+    },
+    {
+      "file": "src/js/features/structurerCoreUtils.js",
+      "lines": 299
+    },
+    {
+      "file": "src/js/features/transcriptor.js",
+      "lines": 660
+    },
+    {
+      "file": "src/js/features/transcriptorWhisperPromptUtils.js",
+      "lines": 153
+    },
+    {
+      "file": "src/js/utils/ui.js",
+      "lines": 691
+    },
+    {
+      "file": "src/js/utils/uiApiManagementUtils.js",
+      "lines": 154
+    },
+    {
+      "file": "src/js/utils/uiAutosaveUtils.js",
+      "lines": 95
+    },
+    {
+      "file": "src/js/utils/uiComparisonUtils.js",
+      "lines": 155
+    },
+    {
+      "file": "src/js/utils/uiKeyboardShortcuts.js",
+      "lines": 80
+    },
+    {
+      "file": "src/js/utils/uiModalFocusUtils.js",
+      "lines": 59
+    },
+    {
+      "file": "src/js/utils/uiMultiTabUtils.js",
+      "lines": 23
+    },
+    {
+      "file": "src/js/utils/uiPatientDataUtils.js",
+      "lines": 144
+    },
+    {
+      "file": "src/js/utils/uiPreviewDownloadUtils.js",
+      "lines": 85
+    },
+    {
+      "file": "src/js/utils/uiProfessionalUtils.js",
+      "lines": 56
+    },
+    {
+      "file": "src/js/utils/uiThemeUtils.js",
+      "lines": 51
+    },
+    {
+      "file": "sw.js",
+      "lines": 180
+    }
+  ],
+  "nonFragmented": [
+    {
+      "file": "manifest.json",
+      "lines": 48
+    },
+    {
+      "file": "src/js/config/config.js",
+      "lines": 136
+    },
+    {
+      "file": "src/js/config/studyTerminology.js",
+      "lines": 603
+    },
+    {
+      "file": "src/js/core/audio.js",
+      "lines": 411
+    },
+    {
+      "file": "src/js/core/state.js",
+      "lines": 32
+    },
+    {
+      "file": "src/js/features/contact.js",
+      "lines": 271
+    },
+    {
+      "file": "src/js/features/diagnostic.js",
+      "lines": 164
+    },
+    {
+      "file": "src/js/features/editorExportRenderUtils.js",
+      "lines": 276
+    },
+    {
+      "file": "src/js/features/formHandler.js",
+      "lines": 365
+    },
+    {
+      "file": "src/js/features/licenseCacheUtils.js",
+      "lines": 17
+    },
+    {
+      "file": "src/js/features/licenseManager.js",
+      "lines": 535
+    },
+    {
+      "file": "src/js/features/outputProfiles.js",
+      "lines": 309
+    },
+    {
+      "file": "src/js/features/patientRegistry.js",
+      "lines": 419
+    },
+    {
+      "file": "src/js/features/pdfDataAccessUtils.js",
+      "lines": 31
+    },
+    {
+      "file": "src/js/features/pricingCart.js",
+      "lines": 353
+    },
+    {
+      "file": "src/js/features/reportHistory.js",
+      "lines": 585
+    },
+    {
+      "file": "src/js/features/reportHistoryPolicyUtils.js",
+      "lines": 54
+    },
+    {
+      "file": "src/js/features/sessionAssistant.js",
+      "lines": 410
+    },
+    {
+      "file": "src/js/features/themeManager.js",
+      "lines": 320
+    },
+    {
+      "file": "src/js/features/userGuide.js",
+      "lines": 358
+    },
+    {
+      "file": "src/js/utils/db.js",
+      "lines": 301
+    },
+    {
+      "file": "src/js/utils/dom.js",
+      "lines": 159
+    },
+    {
+      "file": "src/js/utils/stateManager.js",
+      "lines": 345
+    },
+    {
+      "file": "src/js/utils/tabs.js",
+      "lines": 160
+    },
+    {
+      "file": "src/js/utils/tabsIndexUtils.js",
+      "lines": 24
+    },
+    {
+      "file": "src/js/utils/toast.js",
+      "lines": 86
+    }
+  ],
+  "timeline": [
+    {
+      "commit": "2f27cbc refactor: close fragmentation debt and add accesorios docs",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/config/templatesCatalog.js",
+          "lines": 572
+        },
+        {
+          "status": "A",
+          "file": "src/js/config/templatesCatalogPart3.js",
+          "lines": 304
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/pdfMaker.js",
+          "lines": 644
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/pdfMakerSectionUtils.js",
+          "lines": 183
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/transcriptor.js",
+          "lines": 660
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/transcriptorWhisperPromptUtils.js",
+          "lines": 153
+        }
+      ]
+    },
+    {
+      "commit": "171d5a6 refactor: accelerate fragmentation with structurer core split and admin compaction",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "recursos/admin.html",
+          "lines": 24
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/pdfPreview.js",
+          "lines": 690
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/structurer.js",
+          "lines": 646
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/structurerCoreUtils.js",
+          "lines": 299
+        }
+      ]
+    },
+    {
+      "commit": "e14c34a refactor: reduce medDictionary file size without logic changes",
+      "files": [
+        {
+          "status": "M",
+          "file": "src/js/features/medDictionary.js",
+          "lines": 695
+        }
+      ]
+    },
+    {
+      "commit": "1c0191b refactor: split templates catalog into two modules",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/config/templatesCatalog.js",
+          "lines": 572
+        },
+        {
+          "status": "A",
+          "file": "src/js/config/templatesCatalogPart2.js",
+          "lines": 260
+        }
+      ]
+    },
+    {
+      "commit": "d4d4872 refactor: extract business factory setup core",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/business.js",
+          "lines": 587
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/businessFactorySetupUtils.js",
+          "lines": 337
+        }
+      ]
+    },
+    {
+      "commit": "bc6e8f9 refactor: split pdf preview actions into dedicated module",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/pdfPreview.js",
+          "lines": 690
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/pdfPreviewActions.js",
+          "lines": 330
+        }
+      ]
+    },
+    {
+      "commit": "36642cc refactor: externaliza JS/CSS inline de admin dashboard",
+      "files": [
+        {
+          "status": "A",
+          "file": "recursos/admin-assets/css/admin-inline-style-01.css",
+          "lines": 3
+        },
+        {
+          "status": "A",
+          "file": "recursos/admin-assets/css/admin-inline-style-02.css",
+          "lines": 1818
+        },
+        {
+          "status": "A",
+          "file": "recursos/admin-assets/css/admin-inline-style-03.css",
+          "lines": 36
+        },
+        {
+          "status": "A",
+          "file": "recursos/admin-assets/js/admin-inline-script-01.js",
+          "lines": 19
+        },
+        {
+          "status": "A",
+          "file": "recursos/admin-assets/js/admin-inline-script-02.js",
+          "lines": 14
+        },
+        {
+          "status": "A",
+          "file": "recursos/admin-assets/js/admin-inline-script-03.js",
+          "lines": 28
+        },
+        {
+          "status": "A",
+          "file": "recursos/admin-assets/js/admin-inline-script-04.js",
+          "lines": 4518
+        },
+        {
+          "status": "A",
+          "file": "recursos/admin-assets/js/admin-inline-script-05.js",
+          "lines": 121
+        },
+        {
+          "status": "A",
+          "file": "recursos/admin-assets/js/admin-inline-script-06.js",
+          "lines": 67
+        },
+        {
+          "status": "A",
+          "file": "recursos/admin-assets/js/admin-inline-script-07.js",
+          "lines": 736
+        },
+        {
+          "status": "A",
+          "file": "recursos/admin-assets/js/admin-inline-script-08.js",
+          "lines": 209
+        },
+        {
+          "status": "A",
+          "file": "recursos/admin-assets/js/admin-inline-script-09.js",
+          "lines": 47
+        },
+        {
+          "status": "M",
+          "file": "recursos/admin.html",
+          "lines": 24
+        }
+      ]
+    },
+    {
+      "commit": "5b83218 refactor: split templates catalog from helpers for faster fragmentation",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/config/templates.js",
+          "lines": 119
+        },
+        {
+          "status": "A",
+          "file": "src/js/config/templatesCatalog.js",
+          "lines": 572
+        }
+      ]
+    },
+    {
+      "commit": "2837e73 refactor: extrae modal y datos de paciente de ui",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/utils/ui.js",
+          "lines": 691
+        },
+        {
+          "status": "A",
+          "file": "src/js/utils/uiPatientDataUtils.js",
+          "lines": 144
+        }
+      ]
+    },
+    {
+      "commit": "417e167 refactor: extrae dropdown de descarga en preview",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/utils/ui.js",
+          "lines": 691
+        },
+        {
+          "status": "A",
+          "file": "src/js/utils/uiPreviewDownloadUtils.js",
+          "lines": 85
+        }
+      ]
+    },
+    {
+      "commit": "a00b771 refactor: mueve shortcuts de ui a uiKeyboardShortcuts",
+      "files": [
+        {
+          "status": "M",
+          "file": "src/js/utils/ui.js",
+          "lines": 691
+        },
+        {
+          "status": "M",
+          "file": "src/js/utils/uiKeyboardShortcuts.js",
+          "lines": 80
+        }
+      ]
+    },
+    {
+      "commit": "e0d9c7e refactor: extrae modo comparacion de ui a util dedicado",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/utils/ui.js",
+          "lines": 691
+        },
+        {
+          "status": "A",
+          "file": "src/js/utils/uiComparisonUtils.js",
+          "lines": 155
+        }
+      ]
+    },
+    {
+      "commit": "f7f5fd8 refactor: extrae plantillas modo normal del editor",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/editor.js",
+          "lines": 160
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/editorNormalTemplateUtils.js",
+          "lines": 111
+        }
+      ]
+    },
+    {
+      "commit": "a7e2e87 refactor: extrae copy y print del editor",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/editor.js",
+          "lines": 160
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/editorCopyPrintUtils.js",
+          "lines": 29
+        }
+      ]
+    },
+    {
+      "commit": "d19d109 refactor: extrae núcleo de descarga del editor",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/editor.js",
+          "lines": 160
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/editorDownloadCoreUtils.js",
+          "lines": 182
+        }
+      ]
+    },
+    {
+      "commit": "b97a558 refactor: extrae favoritos de descarga del editor",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/editor.js",
+          "lines": 160
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/editorDownloadFavoritesUtils.js",
+          "lines": 78
+        }
+      ]
+    },
+    {
+      "commit": "4e26ae2 refactor: extrae modal de campos del editor",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/editor.js",
+          "lines": 160
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/editorFieldModalUtils.js",
+          "lines": 411
+        }
+      ]
+    },
+    {
+      "commit": "466d9bd refactor: extrae dialogs custom del editor",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/editor.js",
+          "lines": 160
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/editorDialogUtils.js",
+          "lines": 85
+        }
+      ]
+    },
+    {
+      "commit": "3768d1e refactor: extrae formatting y find/replace del editor",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/editor.js",
+          "lines": 160
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/editorFormattingFindUtils.js",
+          "lines": 290
+        }
+      ]
+    },
+    {
+      "commit": "e9d7584 refactor: extrae snapshots del editor a modulo",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/editor.js",
+          "lines": 160
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/editorSnapshotsUtils.js",
+          "lines": 195
+        }
+      ]
+    },
+    {
+      "commit": "fdd817b refactor: extrae flujo onboarding de business",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/business.js",
+          "lines": 587
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/businessOnboardingUtils.js",
+          "lines": 316
+        }
+      ]
+    },
+    {
+      "commit": "bec02fd refactor: extrae flujo client/admin de business",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/business.js",
+          "lines": 587
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/businessClientAdminUtils.js",
+          "lines": 130
+        }
+      ]
+    },
+    {
+      "commit": "656835d refactor: separa overlays de setup en business",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/business.js",
+          "lines": 587
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/businessFactoryUiUtils.js",
+          "lines": 62
+        }
+      ]
+    },
+    {
+      "commit": "00dddb6 refactor: extrae helpers de onboarding y pwa en business",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/business.js",
+          "lines": 587
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/businessUiHelpers.js",
+          "lines": 148
+        }
+      ]
+    },
+    {
+      "commit": "6ae4834 refactor: separa manejo de tema en ui utils",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/utils/ui.js",
+          "lines": 691
+        },
+        {
+          "status": "A",
+          "file": "src/js/utils/uiThemeUtils.js",
+          "lines": 51
+        }
+      ]
+    },
+    {
+      "commit": "22798c4 refactor: extrae focus trap de modales en ui utils",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/utils/ui.js",
+          "lines": 691
+        },
+        {
+          "status": "A",
+          "file": "src/js/utils/uiModalFocusUtils.js",
+          "lines": 59
+        }
+      ]
+    },
+    {
+      "commit": "46ac576 refactor: separa api y perfil profesional de ui utils",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/utils/ui.js",
+          "lines": 691
+        },
+        {
+          "status": "A",
+          "file": "src/js/utils/uiApiManagementUtils.js",
+          "lines": 154
+        },
+        {
+          "status": "A",
+          "file": "src/js/utils/uiProfessionalUtils.js",
+          "lines": 56
+        }
+      ]
+    },
+    {
+      "commit": "5769589 refactor: fragmenta ui utils en modulos dedicados",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/utils/ui.js",
+          "lines": 691
+        },
+        {
+          "status": "A",
+          "file": "src/js/utils/uiAutosaveUtils.js",
+          "lines": 95
+        },
+        {
+          "status": "A",
+          "file": "src/js/utils/uiKeyboardShortcuts.js",
+          "lines": 80
+        },
+        {
+          "status": "A",
+          "file": "src/js/utils/uiMultiTabUtils.js",
+          "lines": 23
+        }
+      ]
+    },
+    {
+      "commit": "a7cab5f refactor: extrae watch y backup actions de settings panel",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/settingsBackupActionsUtils.js",
+          "lines": 62
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/settingsModalWatchUtils.js",
+          "lines": 24
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/settingsPanel.js",
+          "lines": 307
+        }
+      ]
+    },
+    {
+      "commit": "9db33a0 refactor: extrae seccion de tema del settings panel",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/settingsPanel.js",
+          "lines": 307
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/settingsThemeSectionUtils.js",
+          "lines": 247
+        }
+      ]
+    },
+    {
+      "commit": "1769654 refactor: modulariza account api profiles y tools de settings",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/settingsAccountUtils.js",
+          "lines": 79
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/settingsApiUtils.js",
+          "lines": 91
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/settingsPanel.js",
+          "lines": 307
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/settingsQuickProfilesUtils.js",
+          "lines": 117
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/settingsToolsLinksUtils.js",
+          "lines": 71
+        }
+      ]
+    },
+    {
+      "commit": "8048cd2 refactor: extrae shell del modal de settings",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/settingsModalShellUtils.js",
+          "lines": 68
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/settingsPanel.js",
+          "lines": 307
+        }
+      ]
+    },
+    {
+      "commit": "2bad0a5 refactor: extrae workplace y preferencias editor de settings panel",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/settingsEditorPrefsUtils.js",
+          "lines": 123
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/settingsPanel.js",
+          "lines": 307
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/settingsWorkplaceUtils.js",
+          "lines": 44
+        }
+      ]
+    },
+    {
+      "commit": "fb06cf1 refactor: extrae acciones de info/upgrade de settings panel",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/settingsModalActionsUtils.js",
+          "lines": 79
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/settingsPanel.js",
+          "lines": 307
+        }
+      ]
+    },
+    {
+      "commit": "214f96b refactor: extrae populate stats/info de settings panel",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/settingsModalPopulateUtils.js",
+          "lines": 81
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/settingsPanel.js",
+          "lines": 307
+        }
+      ]
+    },
+    {
+      "commit": "9de1e87 refactor: extrae backup/import de settings panel",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/settingsBackupUtils.js",
+          "lines": 67
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/settingsPanel.js",
+          "lines": 307
+        }
+      ]
+    },
+    {
+      "commit": "6977f91 refactor: extrae utilidades de tema de settings panel",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/settingsPanel.js",
+          "lines": 307
+        },
+        {
+          "status": "A",
+          "file": "src/js/features/settingsThemeUtils.js",
+          "lines": 63
+        }
+      ]
+    },
+    {
+      "commit": "eefb005 refactor: separa estilos de vista previa/impresion en css dedicado",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        }
+      ]
+    },
+    {
+      "commit": "8031e90 refactor: mover editor de logo institucional a secciones de workplace (GIFT paso 2 + Approve modal) - Editor inline en cada workplace del wizard GIFT (prefijo gwLogo) - Editor inline en cada workplace del modal Approve (prefijo apvWpLogo) - Eliminado card Logo Institucional de GIFT paso 5 y Approve imagen proc - Limpieza de 13 refs obsoletas (_apvInstEditor, switchGiftInstWp, etc) - Crop interactivo + preview lateral (sesion anterior sin commit) - 634/634 tests OK",
+      "files": [
+        {
+          "status": "M",
+          "file": "recursos/admin.html",
+          "lines": 24
+        }
+      ]
+    },
+    {
+      "commit": "8cb41c1 refactor: split index.html — extraer init.js + pwa.js",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "A",
+          "file": "src/js/init.js",
+          "lines": null
+        },
+        {
+          "status": "A",
+          "file": "src/js/pwa.js",
+          "lines": null
+        },
+        {
+          "status": "M",
+          "file": "sw.js",
+          "lines": 180
+        }
+      ]
+    },
+    {
+      "commit": "03b3b2b refactor: split components.css 4703 líneas → 5 archivos temáticos",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "sw.js",
+          "lines": 180
+        }
+      ]
+    },
+    {
+      "commit": "45a6f97 refactor: split admin.html 7700→1654 lines — CSS + JS a archivos externos",
+      "files": [
+        {
+          "status": "M",
+          "file": "recursos/admin.html",
+          "lines": 24
+        },
+        {
+          "status": "A",
+          "file": "src/js/admin/admin-image-processor.js",
+          "lines": null
+        },
+        {
+          "status": "A",
+          "file": "src/js/admin/admin-plans.js",
+          "lines": null
+        },
+        {
+          "status": "A",
+          "file": "src/js/admin/admin.js",
+          "lines": null
+        }
+      ]
+    },
+    {
+      "commit": "c8bbef7 refactor: modal Configurar Informe — tabs reales + lógica UX",
+      "files": [
+        {
+          "status": "M",
+          "file": "index.html",
+          "lines": 2778
+        },
+        {
+          "status": "M",
+          "file": "src/js/features/pdfPreview.js",
+          "lines": 690
+        },
+        {
+          "status": "M",
+          "file": "src/js/utils/ui.js",
+          "lines": 691
+        }
+      ]
+    }
+  ]
+}

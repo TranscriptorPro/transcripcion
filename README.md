@@ -45,18 +45,18 @@ Convierte dictados médicos en informes profesionales estructurados usando IA (W
 ### Opción 1: Usar directamente (GitHub Pages)
 Abrir en el navegador:
 ```
-https://aldowagner78-cmd.github.io/transcripcion/
+https://transcriptorpro.github.io/transcripcion/
 ```
 
 ### Opción 2: Descargar ZIP para uso local
-1. Ir a: https://github.com/aldowagner78-cmd/transcripcion
+1. Ir a: https://github.com/TranscriptorPro/transcripcion
 2. Click en **Code** → **Download ZIP**
 3. Descomprimir en cualquier carpeta
 4. Abrir `index.html` en el navegador
 
 ### Opción 3: Clonar con Git
 ```bash
-git clone https://github.com/aldowagner78-cmd/transcripcion.git
+git clone https://github.com/TranscriptorPro/transcripcion.git
 cd transcripcion
 # Abrir index.html en el navegador
 ```
@@ -74,12 +74,33 @@ cd transcripcion
 
 ```
 transcripcion/
-├── index.html                    # App principal (HTML + CSS + JS en un solo archivo)
-├── README.md                     # Este archivo
+├── index.html                        # App principal
+├── README.md
+├── package.json
+├── .gitignore
+├── src/
+│   └── js/
+│       ├── config/
+│       │   └── config.js             # Configuración global y CLIENT_CONFIG
+│       ├── core/
+│       │   └── audio.js              # Grabación, manejo de archivos y procesamiento de audio
+│       ├── features/
+│       │   ├── transcriptor.js       # Transcripción con Groq Whisper
+│       │   ├── structurer.js         # Estructuración con LLaMA 3.3 70B
+│       │   └── business.js           # Inicialización, workplaces y suite de negocio
+│       └── utils/
+│           ├── ui.js                 # Gestión de UI, API Key, temas y modales
+│           └── stateManager.js       # Modo Pro/Normal, templates y estado global
+├── recursos/
+│   ├── admin.html                    # Panel de administración
+│   └── login.html                   # Login del panel admin
 ├── backend/
-│   └── google_apps_script.js     # Backend para Google Sheets (control de usuarios)
+│   ├── google_apps_script.js         # Backend Google Apps Script (control de usuarios)
+│   └── GOOGLE_SHEET_SETUP.md        # Instrucciones de configuración del Sheet
+├── tests/
+│   └── audit_diagnostic.js          # Script de auditoría con Playwright
 └── documentacion/
-    └── CONTEXTO_PROYECTO.md      # Visión y contexto del proyecto
+    └── CONTEXTO_PROYECTO.md         # Visión y contexto del proyecto
 ```
 
 ## 🛠️ Tecnologías utilizadas

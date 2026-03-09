@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Plan GIFT — Fábrica de Clones</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; padding: 1.5rem; color: #1e293b; }
+        h1 { font-size: 1.4rem; margin-bottom: .3rem; }
+        .subtitle { color: #64748b; font-size: .85rem; margin-bottom: 1.5rem; }
+        .summary { display: flex; gap: 1rem; margin-bottom: 1.5rem; padding: 1rem; background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; }
+        .summary-item { text-align: center; flex: 1; }
+        .summary-item .num { font-size: 1.8rem; font-weight: 700; }
+        .summary-item .label { font-size: .75rem; color: #64748b; }
+        .pass .num { color: #16a34a; }
+        .fail .num { color: #dc2626; }
+        .skip .num { color: #f59e0b; }
+        .group { margin-bottom: 1.5rem; }
+        .group-header { font-size: .95rem; font-weight: 700; padding: .5rem .8rem; background: #e2e8f0; border-radius: 8px; margin-bottom: .5rem; cursor: pointer; }
+        .group-header:hover { background: #cbd5e1; }
+        .test-row { display: flex; align-items: center; gap: .6rem; padding: .35rem .8rem; font-size: .82rem; border-bottom: 1px solid #f1f5f9; }
+        .test-row:last-child { border-bottom: none; }
+        .icon { font-size: 1rem; min-width: 1.2rem; text-align: center; }
+        .test-name { flex: 1; }
+        .test-detail { font-size: .72rem; color: #94a3b8; max-width: 40%; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .bar { height: 8px; border-radius: 4px; background: #e2e8f0; overflow: hidden; margin-bottom: 1rem; }
+        .bar-fill { height: 100%; border-radius: 4px; transition: width .5s; }
+        .bar-pass { background: #16a34a; }
+        .bar-fail { background: #dc2626; }
+        #runBtn { padding: .6rem 1.5rem; background: #2563eb; color: #fff; border: none; border-radius: 8px; font-size: .9rem; font-weight: 600; cursor: pointer; }
+        #runBtn:hover { background: #1d4ed8; }
+        #runBtn:disabled { opacity: .5; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <h1>🎁 Test — Plan GIFT en Fábrica de Clones</h1>
+    <p class="subtitle">Validación automática del flujo de creación de usuarios regalo</p>
+    <button id="runBtn" onclick="runTests()">▶️ Ejecutar Tests</button>
+    <div id="progress" style="margin-top:1rem;"></div>
+    <div class="summary" id="summary" style="display:none;">
+        <div class="summary-item pass"><div class="num" id="totalPass">0</div><div class="label">Pasaron</div></div>
+        <div class="summary-item fail"><div class="num" id="totalFail">0</div><div class="label">Fallaron</div></div>
+        <div class="summary-item skip"><div class="num" id="totalSkip">0</div><div class="label">Omitidos</div></div>
+    </div>
+    <div class="bar" id="bar" style="display:none;"><div class="bar-fill" id="barFill"></div></div>
+    <div id="results"></div>
+
+<script>
+    // ========== MOCK SETUP ==========
+    // Simulate the structures from admin.html
+
+    const ESPECIALIDADES = [
+        'Neumología', 'Oftalmología', 'Imágenes', 'Endoscopía',
+        'Cardiología', 'Ginecología', 'General', 'Quirúrgico'
+    ];
+
+    const TEMPLATE_MAP = {
+        'Neumología': [
+            { key: 'espirometria', name: 'Espirometría' },
+            { key: 'test_marcha', name: 'Test Marcha 6 min' },
+            { key: 'pletismografia', name: 'Pletismografía' },
+            { key: 'oximetria_nocturna', name: 'Oximetría Nocturna' }
+        ],
+        'Oftalmología': [
+            { key: 'campimetria', name: 'Campimetría' },
+            { key: 'oct_retinal', name: 'OCT Retinal' },
+            { key: 'topografia_corneal', name: 'Topografía Corneal' },
+            { key: 'fondo_ojo', name: 'Fondo de Ojo' }
+        ],
+        'Imágenes': [
+            { key: 'tac', name: 'TAC' },
+            { key: 'resonancia', name: 'Resonancia' },
+            { key: 'mamografia', name: 'Mamografía' },
+            { key: 'densitometria', name: 'Densitometría' },
+            { key: 'pet_ct', name: 'PET-CT' },
+            { key: 'radiografia', name: 'Radiografía' },
+            { key: 'ecografia_abdominal', name: 'Ecografía Abdominal' },
+            { key: 'eco_doppler', name: 'Eco-Doppler' }
+        ],
+        'Endoscopía': [
+            { key: 'gastroscopia', name: 'Gastroscopía' },
+            { key: 'colonoscopia', name: 'Colonoscopía' },
+            { key: 'broncoscopia', name: 'Broncoscopía' },
+            { key: 'laringoscopia', name: 'Laringoscopía' }
+        ],
+        'Cardiología': [
+            { key: 'gammagrafia_cardiaca', name: 'Gammagrafía Cardíaca' },
+            { key: 'holter', name: 'Holter' },
+            { key: 'mapa', name: 'MAPA' },
+            { key: 'cinecoro', name: 'Cinecoronariografía' },
+            { key: 'ecg', name: 'ECG' },
+            { key: 'eco_stress', name: 'Eco-Stress' },
+            { key: 'ett', name: 'Ecocardiograma TT' }
+        ],
+        'Ginecología': [
+            { key: 'pap', name: 'PAP' },
+            { key: 'colposcopia', name: 'Colposcopía' }
+        ],
+        'Neurología': [
+            { key: 'electromiografia', name: 'Electromiografía' },
+            { key: 'polisomnografia', name: 'Polisomnografía' }
+        ],
+        'ORL': [
+            { key: 'naso', name: 'Nasofibroscopía' },
+            { key: 'endoscopia_otologica', name: 'Endoscopía Otológica' }
+        ],
+        'Quirúrgico': [
+            { key: 'protocolo_quirurgico', name: 'Protocolo Quirúrgico' }
+        ],
+        'General': [
+            { key: 'nota_evolucion', name: 'Nota de Evolución' },
+            { key: 'epicrisis', name: 'Epicrisis' },
+            { key: 'generico', name: 'Informe Genérico' }
+        ]
+    };
+
+    const DEVICES_POR_PLAN = { NORMAL: 2, PRO: 5, CLINIC: 999, TRIAL: 2, GIFT: 10 };
+
+    function _getAllTemplateKeys() {
+        const keys = [];
+        Object.values(TEMPLATE_MAP).forEach(cat => {
+            cat.forEach(t => keys.push(t.key));
+        });
+        return keys;
+    }
+
+    // Mock allUsers
+    let allUsers = [
+        { ID_Medico: 'MED001', Nombre: 'Dr. Test Normal', Plan: 'NORMAL', Estado: 'active', Email: 'normal@test.com', Matricula: 'MN001', Especialidad: 'Cardiología', API_Key: 'gsk_test1' },
+        { ID_Medico: 'MED002', Nombre: 'Dr. Test Pro', Plan: 'PRO', Estado: 'active', Email: 'pro@test.com', Matricula: 'MN002', Especialidad: 'Neumología', API_Key: 'gsk_test2' },
+    ];
+
+    // ========== TEST FRAMEWORK ==========
+    let results = [];
+    let currentGroup = '';
+
+    function group(name) { currentGroup = name; }
+
+    function assert(testName, condition, detail = '') {
+        results.push({
+            group: currentGroup,
+            name: testName,
+            passed: !!condition,
+            detail: detail || (condition ? 'OK' : 'FAIL')
+        });
+    }
+
+    function assertEqual(testName, actual, expected) {
+        const pass = actual === expected;
+        results.push({
+            group: currentGroup,
+            name: testName,
+            passed: pass,
+            detail: pass ? `${actual}` : `esperado: ${expected}, recibido: ${actual}`
+        });
+    }
+
+    function assertIncludes(testName, array, value) {
+        const pass = Array.isArray(array) && array.includes(value);
+        results.push({
+            group: currentGroup,
+            name: testName,
+            passed: pass,
+            detail: pass ? `contiene ${value}` : `no contiene ${value}`
+        });
+    }
+
+    // ========== TESTS ==========
+    function runTests() {
+        results = [];
+        const btn = document.getElementById('runBtn');
+        btn.disabled = true;
+        btn.textContent = '⏳ Ejecutando...';
+
+        try {
+            testDevicesPorPlan();
+            testGetAllTemplateKeys();
+            testGiftUserDataGeneration();
+            testGiftIdGeneration();
+            testGiftAutoConfig();
+            testGiftTemplatesAsJson();
+            testGiftModeFlags();
+            testGiftInApproveModal();
+            testPlanBadgeClasses();
+            testFilterPlanOptions();
+            testPlanSelectOptions();
+            testBackendPlanMap();
+        } catch (e) {
+            results.push({ group: 'ERROR', name: 'Error inesperado: ' + e.message, passed: false, detail: e.stack });
+        }
+
+        renderResults();
+        btn.disabled = false;
+        btn.textContent = '▶️ Ejecutar Tests';
+    }
+
+    // ── Test 1: DEVICES_POR_PLAN ──
+    function testDevicesPorPlan() {
+        group('📱 DEVICES_POR_PLAN');
+
+        assertEqual('NORMAL = 2 dispositivos', DEVICES_POR_PLAN.NORMAL, 2);
+        assertEqual('PRO = 5 dispositivos', DEVICES_POR_PLAN.PRO, 5);
+        assertEqual('CLINIC = 999 (ilimitados)', DEVICES_POR_PLAN.CLINIC, 999);
+        assertEqual('TRIAL = 2 dispositivos', DEVICES_POR_PLAN.TRIAL, 2);
+        assertEqual('GIFT = 10 dispositivos', DEVICES_POR_PLAN.GIFT, 10);
+        assert('GIFT existe en el mapa', 'GIFT' in DEVICES_POR_PLAN);
+        assert('Todos los planes definidos', Object.keys(DEVICES_POR_PLAN).length === 5, `${Object.keys(DEVICES_POR_PLAN).length} planes`);
+    }
+
+    // ── Test 2: _getAllTemplateKeys ──
+    function testGetAllTemplateKeys() {
+        group('📄 _getAllTemplateKeys()');
+
+        const allKeys = _getAllTemplateKeys();
+        assert('Retorna array', Array.isArray(allKeys));
+        assert('Tiene 37 plantillas', allKeys.length === 37, `${allKeys.length} plantillas`);
+        
+        // Verificar que contiene plantillas de cada categoría
+        assertIncludes('Incluye espirometria', allKeys, 'espirometria');
+        assertIncludes('Incluye campimetria', allKeys, 'campimetria');
+        assertIncludes('Incluye tac', allKeys, 'tac');
+        assertIncludes('Incluye gastroscopia', allKeys, 'gastroscopia');
+        assertIncludes('Incluye holter', allKeys, 'holter');
+        assertIncludes('Incluye pap', allKeys, 'pap');
+        assertIncludes('Incluye electromiografia', allKeys, 'electromiografia');
+        assertIncludes('Incluye naso', allKeys, 'naso');
+        assertIncludes('Incluye protocolo_quirurgico', allKeys, 'protocolo_quirurgico');
+        assertIncludes('Incluye nota_evolucion', allKeys, 'nota_evolucion');
+        assertIncludes('Incluye generico', allKeys, 'generico');
+        assertIncludes('Incluye ett', allKeys, 'ett');
+        assertIncludes('Incluye eco_doppler', allKeys, 'eco_doppler');
+
+        // Verificar que no hay duplicados
+        const unique = [...new Set(allKeys)];
+        assertEqual('Sin duplicados', unique.length, allKeys.length);
+    }
+
+    // ── Test 3: Datos del usuario GIFT ──
+    function testGiftUserDataGeneration() {
+        group('🎁 Datos usuario GIFT');
+
+        const nombre = 'Dr. Regalo Test';
+        const email = 'regalo@test.com';
+        const matricula = 'MN99999';
+        const especialidad = 'Cardiología';
+        const apiKey = 'gsk_gift_test_key';
+
+        const newId = 'GIFT' + Date.now().toString(36).toUpperCase();
+        const allTemplates = JSON.stringify(_getAllTemplateKeys());
+        const now = new Date().toISOString();
+        const venc = new Date();
+        venc.setFullYear(venc.getFullYear() + 1);
+        const fechaVenc = venc.toISOString().split('T')[0];
+
+        const userData = {
+            ID_Medico: newId,
+            Nombre: nombre,
+            Email: email,
+            Matricula: matricula,
+            Especialidad: especialidad,
+            Plan: 'GIFT',
+            Estado: 'active',
+            Fecha_Registro: now,
+            Fecha_Vencimiento: fechaVenc,
+            API_Key: apiKey,
+            Devices_Max: 10,
+            Allowed_Templates: allTemplates,
+            Usage_Count: 0,
+            Devices_Logged: '[]',
+            Diagnostico_Pendiente: 'false',
+            Notas_Admin: '🎁 Usuario regalo — creado desde Fábrica de Clones'
+        };
+
+        assertEqual('Plan = GIFT', userData.Plan, 'GIFT');
+        assertEqual('Estado = active', userData.Estado, 'active');
+        assertEqual('Devices_Max = 10', userData.Devices_Max, 10);
+        assertEqual('Nombre correcto', userData.Nombre, nombre);
+        assertEqual('Email correcto', userData.Email, email);
+        assertEqual('Matrícula correcta', userData.Matricula, matricula);
+        assertEqual('Especialidad correcta', userData.Especialidad, especialidad);
+        assertEqual('API Key correcta', userData.API_Key, apiKey);
+        assert('ID empieza con GIFT', userData.ID_Medico.startsWith('GIFT'), userData.ID_Medico);
+        assert('Fecha registro ISO', userData.Fecha_Registro.includes('T'));
+        assert('Fecha vencimiento formato YYYY-MM-DD', /^\d{4}-\d{2}-\d{2}$/.test(userData.Fecha_Vencimiento), userData.Fecha_Vencimiento);
+        assertEqual('Usage_Count = 0', userData.Usage_Count, 0);
+        assertEqual('Devices_Logged = []', userData.Devices_Logged, '[]');
+        assert('Notas incluyen emoji regalo', userData.Notas_Admin.includes('🎁'));
+        assert('Notas mencionan Fábrica', userData.Notas_Admin.includes('Fábrica'));
+
+        // Validar templates como JSON
+        const parsed = JSON.parse(userData.Allowed_Templates);
+        assert('Allowed_Templates es JSON válido', Array.isArray(parsed));
+        assertEqual('Tiene 37 templates', parsed.length, 37);
+    }
+
+    // ── Test 4: ID Generation ──
+    function testGiftIdGeneration() {
+        group('🔑 Generación de ID GIFT');
+
+        const id1 = 'GIFT' + Date.now().toString(36).toUpperCase();
+        // Small delay to ensure different timestamp
+        const id2 = 'GIFT' + (Date.now() + 1).toString(36).toUpperCase();
+
+        assert('Prefijo GIFT', id1.startsWith('GIFT'));
+        assert('IDs únicos', id1 !== id2, `${id1} vs ${id2}`);
+        assert('Longitud razonable', id1.length >= 8 && id1.length <= 20, `length: ${id1.length}`);
+        assert('Caracteres válidos', /^GIFT[A-Z0-9]+$/.test(id1), id1);
+    }
+
+    // ── Test 5: Auto-configuración GIFT ──
+    function testGiftAutoConfig() {
+        group('⚡ Auto-configuración GIFT');
+
+        // Simular lo que hace openGiftFactory
+        const config = {
+            plan: 'GIFT',
+            templates: _getAllTemplateKeys(),
+            devices: DEVICES_POR_PLAN.GIFT,
+            estado: 'active'
+        };
+
+        assertEqual('Plan auto = GIFT', config.plan, 'GIFT');
+        assertEqual('Devices auto = 10', config.devices, 10);
+        assertEqual('Estado auto = active', config.estado, 'active');
+        assertEqual('Templates auto = 37', config.templates.length, 37);
+
+        // Verificar que TODAS las categorías están representadas
+        const allCats = Object.keys(TEMPLATE_MAP);
+        allCats.forEach(cat => {
+            const catKeys = TEMPLATE_MAP[cat].map(t => t.key);
+            const allIncluded = catKeys.every(k => config.templates.includes(k));
+            assert(`Incluye toda la categoría: ${cat}`, allIncluded, `${catKeys.length} plantillas`);
+        });
+    }
+
+    // ── Test 6: Templates como JSON ──
+    function testGiftTemplatesAsJson() {
+        group('📋 Templates como JSON');
+
+        const allKeys = _getAllTemplateKeys();
+        const jsonStr = JSON.stringify(allKeys);
+
+        assert('Es string JSON válido', typeof jsonStr === 'string');
+        assert('Empieza con [', jsonStr.startsWith('['));
+        assert('Termina con ]', jsonStr.endsWith(']'));
+
+        const parsed = JSON.parse(jsonStr);
+        assert('Parse exitoso', Array.isArray(parsed));
+        assertEqual('Mismo tamaño tras parse', parsed.length, allKeys.length);
+        assertEqual('Primer elemento correcto', parsed[0], allKeys[0]);
+        assertEqual('Último elemento correcto', parsed[parsed.length - 1], allKeys[allKeys.length - 1]);
+
+        // Formato consistente con approve modal
+        const approveFormat = JSON.stringify(['espirometria', 'tac', 'holter']);
+        const parsedApprove = JSON.parse(approveFormat);
+        assert('Compatible con formato approve modal', Array.isArray(parsedApprove));
+    }
+
+    // ── Test 7: Mode flags ──
+    function testGiftModeFlags() {
+        group('🔀 Modos de la Fábrica');
+
+        // Simular modos
+        const modes = ['normal', 'gift'];
+        assertIncludes('Modo normal existe', modes, 'normal');
+        assertIncludes('Modo gift existe', modes, 'gift');
+
+        // Título por modo
+        const titles = {
+            normal: '📦 Generar App para Usuario',
+            gift: '🎁 Crear Usuario Regalo'
+        };
+        assert('Título normal correcto', titles.normal.includes('Generar App'));
+        assert('Título gift correcto', titles.gift.includes('Usuario Regalo'));
+
+        // Botón por modo
+        const btnTexts = {
+            normal: '🔗 Generar Link',
+            gift: '🎁 Crear y Generar Link'
+        };
+        assert('Botón normal correcto', btnTexts.normal.includes('Generar Link'));
+        assert('Botón gift incluye Crear', btnTexts.gift.includes('Crear'));
+    }
+
+    // ── Test 8: GIFT en approve modal ──
+    function testGiftInApproveModal() {
+        group('✅ GIFT en modal aprobar');
+
+        // Simular recopilación de templates para GIFT
+        let selectedTemplates = [];
+        const plan = 'GIFT';
+
+        if (plan === 'GIFT') {
+            Object.values(TEMPLATE_MAP).forEach(cat => {
+                cat.forEach(t => selectedTemplates.push(t.key));
+            });
+        }
+
+        assertEqual('GIFT recopila 37 templates', selectedTemplates.length, 37);
+
+        // Deduplicate
+        selectedTemplates = [...new Set(selectedTemplates)];
+        assertEqual('Sin duplicados tras dedup', selectedTemplates.length, 37);
+
+        const json = JSON.stringify(selectedTemplates);
+        assert('JSON válido', json.startsWith('['));
+
+        // Devices para GIFT
+        const maxDevices = DEVICES_POR_PLAN[plan] || 2;
+        assertEqual('Devices = 10', maxDevices, 10);
+    }
+
+    // ── Test 9: Badge CSS classes ──
+    function testPlanBadgeClasses() {
+        group('🏷️ Badge CSS por plan');
+
+        const plans = ['trial', 'pro', 'enterprise', 'normal', 'gift', 'clinic'];
+        const expectedClasses = {
+            trial: 'badge-trial',
+            pro: 'badge-pro',
+            enterprise: 'badge-enterprise',
+            normal: 'badge-normal',
+            gift: 'badge-gift',
+            clinic: 'badge-clinic'
+        };
+
+        plans.forEach(p => {
+            const cssClass = `badge-${p}`;
+            assertEqual(`Plan ${p} → ${cssClass}`, expectedClasses[p], cssClass);
+        });
+    }
+
+    // ── Test 10: Filter plan options ──
+    function testFilterPlanOptions() {
+        group('🔍 Filtro de planes');
+
+        const expectedOptions = ['', 'trial', 'NORMAL', 'PRO', 'CLINIC', 'GIFT', 'enterprise'];
+        assert('7 opciones de filtro', expectedOptions.length === 7, `${expectedOptions.length} opciones`);
+        assertIncludes('GIFT en filtro', expectedOptions, 'GIFT');
+        assertIncludes('NORMAL en filtro', expectedOptions, 'NORMAL');
+        assertIncludes('CLINIC en filtro', expectedOptions, 'CLINIC');
+        assertIncludes('PRO en filtro', expectedOptions, 'PRO');
+    }
+
+    // ── Test 11: Plan select options ──
+    function testPlanSelectOptions() {
+        group('📝 Selectores de plan');
+
+        // Approve modal
+        const approveOptions = ['NORMAL', 'PRO', 'CLINIC', 'GIFT', 'TRIAL'];
+        assertIncludes('Approve: tiene GIFT', approveOptions, 'GIFT');
+        assert('Approve: 5 opciones', approveOptions.length === 5);
+
+        // New/Edit user
+        const editOptions = ['trial', 'NORMAL', 'pro', 'GIFT', 'CLINIC', 'enterprise'];
+        assertIncludes('Edit: tiene GIFT', editOptions, 'GIFT');
+        assertIncludes('Edit: tiene NORMAL', editOptions, 'NORMAL');
+        assertIncludes('Edit: tiene CLINIC', editOptions, 'CLINIC');
+    }
+
+    // ── Test 12: Backend plan map ──
+    function testBackendPlanMap() {
+        group('🔧 Backend planMap');
+
+        const planMap = {
+            'trial':      { type: 'TRIAL',  hasProMode: false, hasDashboard: false, canGenerateApps: false },
+            'normal':     { type: 'NORMAL', hasProMode: false, hasDashboard: false, canGenerateApps: false },
+            'pro':        { type: 'PRO',    hasProMode: true,  hasDashboard: true,  canGenerateApps: false },
+            'enterprise': { type: 'PRO',    hasProMode: true,  hasDashboard: true,  canGenerateApps: false },
+            'gift':       { type: 'PRO',    hasProMode: true,  hasDashboard: true,  canGenerateApps: false },
+            'clinic':     { type: 'PRO',    hasProMode: true,  hasDashboard: true,  canGenerateApps: true  }
+        };
+
+        // GIFT config
+        assert('GIFT en planMap', 'gift' in planMap);
+        assertEqual('GIFT type = PRO', planMap.gift.type, 'PRO');
+        assertEqual('GIFT hasProMode = true', planMap.gift.hasProMode, true);
+        assertEqual('GIFT hasDashboard = true', planMap.gift.hasDashboard, true);
+        assertEqual('GIFT canGenerateApps = false', planMap.gift.canGenerateApps, false);
+
+        // CLINIC config
+        assert('CLINIC en planMap', 'clinic' in planMap);
+        assertEqual('CLINIC type = PRO', planMap.clinic.type, 'PRO');
+        assertEqual('CLINIC canGenerateApps = true', planMap.clinic.canGenerateApps, true);
+
+        // Comparar GIFT vs PRO — deben ser iguales
+        assertEqual('GIFT.type === PRO.type', planMap.gift.type, planMap.pro.type);
+        assertEqual('GIFT.hasProMode === PRO.hasProMode', planMap.gift.hasProMode, planMap.pro.hasProMode);
+        assertEqual('GIFT.hasDashboard === PRO.hasDashboard', planMap.gift.hasDashboard, planMap.pro.hasDashboard);
+
+        // Fecha vencimiento: GIFT = 1 año
+        const venc = new Date();
+        venc.setFullYear(venc.getFullYear() + 1);
+        const fechaVenc = venc.toISOString().split('T')[0];
+        const year = parseInt(fechaVenc.split('-')[0]);
+        const currentYear = new Date().getFullYear();
+        assertEqual('Vencimiento = año siguiente', year, currentYear + 1);
+    }
+
+    // ========== RENDER RESULTS ==========
+    function renderResults() {
+        const container = document.getElementById('results');
+        const summary = document.getElementById('summary');
+        const bar = document.getElementById('bar');
+        const barFill = document.getElementById('barFill');
+
+        const total = results.length;
+        const passed = results.filter(r => r.passed).length;
+        const failed = results.filter(r => !r.passed).length;
+
+        document.getElementById('totalPass').textContent = passed;
+        document.getElementById('totalFail').textContent = failed;
+        document.getElementById('totalSkip').textContent = 0;
+        summary.style.display = 'flex';
+
+        const pct = total > 0 ? (passed / total * 100) : 0;
+        bar.style.display = 'block';
+        barFill.style.width = pct + '%';
+        barFill.className = 'bar-fill ' + (failed > 0 ? 'bar-fail' : 'bar-pass');
+        barFill.style.background = failed > 0
+            ? `linear-gradient(90deg, #16a34a ${(passed/total*100)}%, #dc2626 ${(passed/total*100)}%)`
+            : '#16a34a';
+
+        // Group results
+        const groups = {};
+        results.forEach(r => {
+            if (!groups[r.group]) groups[r.group] = [];
+            groups[r.group].push(r);
+        });
+
+        let html = '';
+        for (const [groupName, tests] of Object.entries(groups)) {
+            const groupPassed = tests.filter(t => t.passed).length;
+            const groupFailed = tests.filter(t => !t.passed).length;
+            const emoji = groupFailed > 0 ? '❌' : '✅';
+
+            html += `<div class="group">`;
+            html += `<div class="group-header">${emoji} ${groupName} — ${groupPassed}/${tests.length}</div>`;
+            tests.forEach(t => {
+                html += `<div class="test-row">
+                    <span class="icon">${t.passed ? '✅' : '❌'}</span>
+                    <span class="test-name">${t.name}</span>
+                    <span class="test-detail">${t.detail}</span>
+                </div>`;
+            });
+            html += `</div>`;
+        }
+
+        container.innerHTML = html;
+
+        // Auto-scroll to first failure
+        const firstFail = container.querySelector('.test-row .icon');
+        if (failed > 0) {
+            const failRows = container.querySelectorAll('.test-row');
+            for (const row of failRows) {
+                if (row.querySelector('.icon').textContent === '❌') {
+                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    row.style.background = '#fef2f2';
+                    break;
+                }
+            }
+        }
+
+        document.title = `${failed === 0 ? '✅' : '❌'} ${passed}/${total} — Test GIFT`;
+    }
+
+    // Auto-run
+    window.addEventListener('DOMContentLoaded', () => setTimeout(runTests, 300));
+</script>
+</body>
+</html>

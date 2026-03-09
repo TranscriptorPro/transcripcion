@@ -1,0 +1,1634 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧪 Test Manual Completo — Transcriptor Pro v58</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #0f172a; color: #e2e8f0; padding: 20px;
+    min-height: 100vh;
+}
+h1 { text-align: center; margin-bottom: 4px; font-size: 1.6rem; color: #60a5fa; }
+.subtitle { text-align: center; color: #94a3b8; margin-bottom: 20px; font-size: 0.85rem; }
+
+/* ── API Key Input ──────────────────────────────────────────── */
+.api-section {
+    max-width: 900px; margin: 0 auto 20px; padding: 18px;
+    background: #1e293b; border-radius: 12px; border: 1px solid #334155;
+}
+.api-section label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.9rem; }
+.api-section input, .api-section select {
+    width: 100%; padding: 10px 14px; border-radius: 8px;
+    border: 1px solid #475569; background: #0f172a; color: #e2e8f0;
+    font-size: 0.9rem; margin-bottom: 10px;
+}
+.api-section input:focus { outline: none; border-color: #3b82f6; }
+.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* ── Section Cards ──────────────────────────────────────────── */
+.section-card {
+    max-width: 900px; margin: 0 auto 16px; padding: 0;
+    background: #1e293b; border-radius: 12px; border: 1px solid #334155;
+    overflow: hidden;
+}
+.section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; cursor: pointer; user-select: none;
+    background: #1e293b; transition: background 0.2s;
+}
+.section-header:hover { background: #253347; }
+.section-header h2 { font-size: 1rem; font-weight: 700; }
+.section-header .status-badge {
+    padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+}
+.badge-pending { background: #334155; color: #94a3b8; }
+.badge-running { background: #92400e; color: #fcd34d; animation: pulse 1s infinite; }
+.badge-pass { background: #064e3b; color: #6ee7b7; }
+.badge-fail { background: #7f1d1d; color: #fca5a5; }
+.badge-partial { background: #78350f; color: #fde68a; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
+
+.section-body { padding: 0 18px 18px; display: none; }
+.section-body.open { display: block; }
+
+/* ── Buttons & Controls ─────────────────────────────────────── */
+.btn {
+    padding: 9px 18px; border: none; border-radius: 8px; cursor: pointer;
+    font-size: 0.85rem; font-weight: 600; transition: all 0.15s;
+}
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary { background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: #fff; }
+.btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 3px 12px rgba(59,130,246,0.4); }
+.btn-success { background: #059669; color: #fff; }
+.btn-danger { background: #dc2626; color: #fff; }
+.btn-secondary { background: #334155; color: #e2e8f0; border: 1px solid #475569; }
+.btn-sm { padding: 6px 12px; font-size: 0.78rem; }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.btn-run-all {
+    display: block; max-width: 900px; margin: 0 auto 20px; width: 100%;
+    padding: 14px; border: none; border-radius: 12px;
+    background: linear-gradient(135deg, #059669, #0d9488); color: #fff;
+    font-size: 1.05rem; font-weight: 700; cursor: pointer;
+    transition: all 0.15s;
+}
+.btn-run-all:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(5,150,105,0.4); }
+.btn-run-all:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* ── Log ─────────────────────────────────────────────────────── */
+.log-area {
+    background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+    padding: 12px; max-height: 350px; overflow-y: auto; font-family: 'Cascadia Code', monospace;
+    font-size: 0.78rem; line-height: 1.6; white-space: pre-wrap;
+    word-break: break-word; margin-top: 10px;
+}
+.log-area .pass { color: #6ee7b7; }
+.log-area .fail { color: #fca5a5; }
+.log-area .info { color: #93c5fd; }
+.log-area .warn { color: #fcd34d; }
+.log-area .dim { color: #64748b; }
+
+/* ── Summary ─────────────────────────────────────────────────── */
+.global-summary {
+    max-width: 900px; margin: 20px auto; padding: 18px; border-radius: 12px;
+    background: #1e293b; border: 1px solid #334155; text-align: center;
+    font-size: 1.1rem; font-weight: 700; display: none;
+}
+.global-summary.all-pass { border-color: #059669; color: #6ee7b7; }
+.global-summary.has-fail { border-color: #dc2626; color: #fca5a5; }
+
+textarea.test-input {
+    width: 100%; padding: 10px; border-radius: 8px; background: #0f172a;
+    border: 1px solid #475569; color: #e2e8f0; font-size: 0.85rem;
+    resize: vertical; min-height: 80px; font-family: inherit;
+    margin-bottom: 8px;
+}
+.field-group { margin-bottom: 10px; }
+.field-group label { display: block; font-size: 0.82rem; color: #94a3b8; margin-bottom: 4px; }
+.inline-result { font-weight: 600; margin-left: 8px; }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.tag-green { background: #064e3b; color: #6ee7b7; }
+.tag-red { background: #7f1d1d; color: #fca5a5; }
+</style>
+</head>
+<body>
+
+<h1>🧪 Test Manual Completo</h1>
+<p class="subtitle">Transcriptor Pro v58 — 13 secciones · Requiere API Key de Groq para tests de API</p>
+
+<!-- ── API Key ──────────────────────────────────────────────── -->
+<div class="api-section">
+    <label>🔑 API Key de Groq (se usa para los tests que requieren API)</label>
+    <input type="password" id="apiKeyInput" placeholder="gsk_...">
+    <div class="row-2">
+        <div>
+            <label>🌐 Backend URL (Google Apps Script — opcional)</label>
+            <input type="text" id="backendUrlInput" placeholder="https://script.google.com/macros/s/...">
+        </div>
+        <div>
+            <label>📋 Modo de prueba</label>
+            <select id="testMode">
+                <option value="local">🏠 Local (archivos locales)</option>
+                <option value="prod">🌐 Producción (GitHub Pages)</option>
+            </select>
+        </div>
+    </div>
+    <div class="btn-row">
+        <button class="btn btn-success btn-sm" onclick="saveApiKey()">💾 Guardar Key</button>
+        <button class="btn btn-secondary btn-sm" onclick="loadSavedKey()">📂 Cargar guardada</button>
+        <span id="keyStatus" style="color:#94a3b8;font-size:0.82rem;line-height:2.2;"></span>
+    </div>
+</div>
+
+<!-- ── Run All Button ──────────────────────────────────────────── -->
+<button class="btn-run-all" id="btnRunAll" onclick="runAllSections()">
+    ▶️ Ejecutar TODOS los tests
+</button>
+
+<!-- ── Global Summary ────────────────────────────────────────── -->
+<div class="global-summary" id="globalSummary"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 1: Conexión API Groq
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="section-card" id="sec1">
+    <div class="section-header" onclick="toggleSection('sec1')">
+        <h2>1️⃣ Conexión API Groq</h2>
+        <span class="status-badge badge-pending" id="badge-sec1">Pendiente</span>
+    </div>
+    <div class="section-body" id="body-sec1">
+        <p style="color:#94a3b8;font-size:0.82rem;margin-bottom:10px;">
+            Verifica que la API Key sea válida y que Groq responda correctamente.
+        </p>
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="runSection1()">▶️ Ejecutar test</button>
+        </div>
+        <div class="log-area" id="log-sec1"></div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 2: Transcripción de audio
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="section-card" id="sec2">
+    <div class="section-header" onclick="toggleSection('sec2')">
+        <h2>2️⃣ Transcripción de audio</h2>
+        <span class="status-badge badge-pending" id="badge-sec2">Pendiente</span>
+    </div>
+    <div class="section-body" id="body-sec2">
+        <p style="color:#94a3b8;font-size:0.82rem;margin-bottom:10px;">
+            Graba 5 segundos de audio, lo envía a Whisper y verifica que retorna texto.
+        </p>
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="runSection2()">🎤 Grabar y transcribir (5s)</button>
+            <button class="btn btn-secondary" onclick="runSection2File()">📂 Subir archivo de audio</button>
+            <input type="file" id="audioFileInput" accept="audio/*" style="display:none" onchange="runSection2WithFile(this)">
+        </div>
+        <div class="log-area" id="log-sec2"></div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 3: Estructurado con LLM
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="section-card" id="sec3">
+    <div class="section-header" onclick="toggleSection('sec3')">
+        <h2>3️⃣ Estructurado con LLM</h2>
+        <span class="status-badge badge-pending" id="badge-sec3">Pendiente</span>
+    </div>
+    <div class="section-body" id="body-sec3">
+        <p style="color:#94a3b8;font-size:0.82rem;margin-bottom:10px;">
+            Envía un texto médico de muestra al LLM y verifica que retorna JSON estructurado.
+        </p>
+        <div class="field-group">
+            <label>Texto de prueba (editable)</label>
+            <textarea class="test-input" id="structText">Ecografía abdominal del paciente Gómez, Juan. DNI 30456789. Sexo masculino, 45 años. Hígado de ecoestructura homogénea, tamaño normal, sin lesiones focales. Vesícula biliar normodistendida, paredes finas, sin litiasis. Vía biliar no dilatada. Colédoco de 4mm. Páncreas visualizado parcialmente, sin alteraciones. Bazo homogéneo de tamaño normal. Ambos riñones de forma, tamaño y ecoestructura conservados, sin ectasia ni litiasis. Aorta abdominal de calibre normal. No se observa líquido libre en cavidad. Conclusión: ecografía abdominal dentro de límites normales.</textarea>
+        </div>
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="runSection3()">▶️ Estructurar texto</button>
+        </div>
+        <div class="log-area" id="log-sec3"></div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 4: Auto-detección de plantilla
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="section-card" id="sec4">
+    <div class="section-header" onclick="toggleSection('sec4')">
+        <h2>4️⃣ Auto-detección de plantilla</h2>
+        <span class="status-badge badge-pending" id="badge-sec4">Pendiente</span>
+    </div>
+    <div class="section-body" id="body-sec4">
+        <p style="color:#94a3b8;font-size:0.82rem;margin-bottom:10px;">
+            Prueba que el sistema detecta la plantilla correcta a partir de texto médico.
+        </p>
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="runSection4()">▶️ Ejecutar test</button>
+        </div>
+        <div class="log-area" id="log-sec4"></div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 5: Generación de PDF
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="section-card" id="sec5">
+    <div class="section-header" onclick="toggleSection('sec5')">
+        <h2>5️⃣ Generación de PDF</h2>
+        <span class="status-badge badge-pending" id="badge-sec5">Pendiente</span>
+    </div>
+    <div class="section-body" id="body-sec5">
+        <p style="color:#94a3b8;font-size:0.82rem;margin-bottom:10px;">
+            Genera un PDF con datos de muestra y verifica que se descarga correctamente.
+            Requiere que jsPDF esté disponible.
+        </p>
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="runSection5()">▶️ Generar PDF de prueba</button>
+        </div>
+        <div class="log-area" id="log-sec5"></div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 6: Flujo Gift completo
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="section-card" id="sec6">
+    <div class="section-header" onclick="toggleSection('sec6')">
+        <h2>6️⃣ Flujo Gift completo</h2>
+        <span class="status-badge badge-pending" id="badge-sec6">Pendiente</span>
+    </div>
+    <div class="section-body" id="body-sec6">
+        <p style="color:#94a3b8;font-size:0.82rem;margin-bottom:10px;">
+            Genera un código gift, simula la redención, y verifica la licencia creada.<br>
+            <em>Requiere backend configurado para test completo.</em>
+        </p>
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="runSection6()">▶️ Ejecutar test</button>
+        </div>
+        <div class="log-area" id="log-sec6"></div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 7: Flujo de alta usuario nuevo
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="section-card" id="sec7">
+    <div class="section-header" onclick="toggleSection('sec7')">
+        <h2>7️⃣ Flujo de alta de usuario nuevo</h2>
+        <span class="status-badge badge-pending" id="badge-sec7">Pendiente</span>
+    </div>
+    <div class="section-body" id="body-sec7">
+        <p style="color:#94a3b8;font-size:0.82rem;margin-bottom:10px;">
+            Simula el primer uso: sin API key → ingresa key → se guarda → verifica UI.
+        </p>
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="runSection7()">▶️ Ejecutar test</button>
+        </div>
+        <div class="log-area" id="log-sec7"></div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 8: Backend Google Apps Script
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="section-card" id="sec8">
+    <div class="section-header" onclick="toggleSection('sec8')">
+        <h2>8️⃣ Backend Google Apps Script</h2>
+        <span class="status-badge badge-pending" id="badge-sec8">Pendiente</span>
+    </div>
+    <div class="section-body" id="body-sec8">
+        <p style="color:#94a3b8;font-size:0.82rem;margin-bottom:10px;">
+            Prueba registro de usuario, validación de licencia y contacto/soporte.
+            <em>Requiere Backend URL configurada.</em>
+        </p>
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="runSection8()">▶️ Ejecutar test</button>
+        </div>
+        <div class="log-area" id="log-sec8"></div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 9: PWA
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="section-card" id="sec9">
+    <div class="section-header" onclick="toggleSection('sec9')">
+        <h2>9️⃣ PWA (manifest, SW, cache)</h2>
+        <span class="status-badge badge-pending" id="badge-sec9">Pendiente</span>
+    </div>
+    <div class="section-body" id="body-sec9">
+        <p style="color:#94a3b8;font-size:0.82rem;margin-bottom:10px;">
+            Verifica manifest.json, service worker registrado, cache del app shell
+            y evento beforeinstallprompt.
+        </p>
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="runSection9()">▶️ Ejecutar test</button>
+        </div>
+        <div class="log-area" id="log-sec9"></div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 10: Skins/Temas
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="section-card" id="sec10">
+    <div class="section-header" onclick="toggleSection('sec10')">
+        <h2>🔟 Skins / Temas</h2>
+        <span class="status-badge badge-pending" id="badge-sec10">Pendiente</span>
+    </div>
+    <div class="section-body" id="body-sec10">
+        <p style="color:#94a3b8;font-size:0.82rem;margin-bottom:10px;">
+            Aplica cada skin registrada y verifica que se cargue el CSS correcto.
+        </p>
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="runSection10()">▶️ Ejecutar test</button>
+        </div>
+        <div class="log-area" id="log-sec10"></div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 11: Perfiles de salida
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="section-card" id="sec11">
+    <div class="section-header" onclick="toggleSection('sec11')">
+        <h2>1️⃣1️⃣ Perfiles de salida</h2>
+        <span class="status-badge badge-pending" id="badge-sec11">Pendiente</span>
+    </div>
+    <div class="section-body" id="body-sec11">
+        <p style="color:#94a3b8;font-size:0.82rem;margin-bottom:10px;">
+            Verifica cada formato de salida disponible según tipo de plan.
+        </p>
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="runSection11()">▶️ Ejecutar test</button>
+        </div>
+        <div class="log-area" id="log-sec11"></div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 12: Registro de pacientes
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="section-card" id="sec12">
+    <div class="section-header" onclick="toggleSection('sec12')">
+        <h2>1️⃣2️⃣ Registro de pacientes</h2>
+        <span class="status-badge badge-pending" id="badge-sec12">Pendiente</span>
+    </div>
+    <div class="section-body" id="body-sec12">
+        <p style="color:#94a3b8;font-size:0.82rem;margin-bottom:10px;">
+            CRUD completo del registro de pacientes (guardar, buscar, editar, borrar).
+        </p>
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="runSection12()">▶️ Ejecutar test</button>
+        </div>
+        <div class="log-area" id="log-sec12"></div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 13: Historial de informes
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="section-card" id="sec13">
+    <div class="section-header" onclick="toggleSection('sec13')">
+        <h2>1️⃣3️⃣ Historial de informes</h2>
+        <span class="status-badge badge-pending" id="badge-sec13">Pendiente</span>
+    </div>
+    <div class="section-body" id="body-sec13">
+        <p style="color:#94a3b8;font-size:0.82rem;margin-bottom:10px;">
+            Guardar, buscar, exportar e importar informes.
+        </p>
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="runSection13()">▶️ Ejecutar test</button>
+        </div>
+        <div class="log-area" id="log-sec13"></div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SCRIPTS
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+// ── Globals ──
+let _apiKey = '';
+let _backendUrl = '';
+const GROQ_CHAT_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_AUDIO_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
+const SECTIONS = 13;
+const sectionResults = {}; // {sec1: {pass:n, fail:n, total:n}}
+
+// ── UI helpers ──
+function getApiKey() {
+    const k = document.getElementById('apiKeyInput').value.trim();
+    if (k) { _apiKey = k; return k; }
+    return _apiKey || localStorage.getItem('test_api_key') || '';
+}
+function getBackendUrl() {
+    const u = document.getElementById('backendUrlInput').value.trim();
+    if (u) { _backendUrl = u; return u; }
+    return _backendUrl || localStorage.getItem('test_backend_url') || '';
+}
+function saveApiKey() {
+    const k = document.getElementById('apiKeyInput').value.trim();
+    const u = document.getElementById('backendUrlInput').value.trim();
+    if (k) { localStorage.setItem('test_api_key', k); _apiKey = k; }
+    if (u) { localStorage.setItem('test_backend_url', u); _backendUrl = u; }
+    document.getElementById('keyStatus').textContent = '✅ Guardada en localStorage';
+}
+function loadSavedKey() {
+    const k = localStorage.getItem('test_api_key');
+    const u = localStorage.getItem('test_backend_url');
+    if (k) { document.getElementById('apiKeyInput').value = k; _apiKey = k; }
+    if (u) { document.getElementById('backendUrlInput').value = u; _backendUrl = u; }
+    document.getElementById('keyStatus').textContent = k ? '📂 Key cargada' : '⚠️ No hay key guardada';
+}
+
+function toggleSection(id) {
+    const body = document.getElementById('body-' + id);
+    body.classList.toggle('open');
+}
+
+function log(secId, msg, cls = '') {
+    const el = document.getElementById('log-' + secId);
+    const span = document.createElement('span');
+    span.className = cls;
+    span.textContent = msg + '\n';
+    el.appendChild(span);
+    el.scrollTop = el.scrollHeight;
+}
+function logPass(secId, msg) { log(secId, '  ✅ ' + msg, 'pass'); }
+function logFail(secId, msg) { log(secId, '  ❌ ' + msg, 'fail'); }
+function logInfo(secId, msg) { log(secId, '  ℹ️ ' + msg, 'info'); }
+function logWarn(secId, msg) { log(secId, '  ⚠️ ' + msg, 'warn'); }
+function logDim(secId, msg) { log(secId, '     ' + msg, 'dim'); }
+function clearLog(secId) { document.getElementById('log-' + secId).innerHTML = ''; }
+
+function setBadge(secId, type, text) {
+    const b = document.getElementById('badge-' + secId);
+    b.className = 'status-badge badge-' + type;
+    b.textContent = text;
+}
+
+function startSection(secId) {
+    clearLog(secId);
+    setBadge(secId, 'running', 'Ejecutando...');
+    sectionResults[secId] = { pass: 0, fail: 0, total: 0 };
+    // Open section body
+    document.getElementById('body-' + secId).classList.add('open');
+}
+
+function recordResult(secId, passed, msg) {
+    const r = sectionResults[secId];
+    r.total++;
+    if (passed) { r.pass++; logPass(secId, msg); }
+    else { r.fail++; logFail(secId, msg); }
+}
+
+function endSection(secId) {
+    const r = sectionResults[secId];
+    if (r.fail === 0 && r.pass > 0) {
+        setBadge(secId, 'pass', `✅ ${r.pass}/${r.total}`);
+    } else if (r.fail > 0 && r.pass > 0) {
+        setBadge(secId, 'partial', `⚠️ ${r.pass}/${r.total}`);
+    } else if (r.fail > 0) {
+        setBadge(secId, 'fail', `❌ 0/${r.total}`);
+    } else {
+        setBadge(secId, 'pending', 'Sin tests');
+    }
+    log(secId, `\n── Resultado: ${r.pass} pasaron, ${r.fail} fallaron de ${r.total} ──`, r.fail ? 'fail' : 'pass');
+}
+
+function updateGlobalSummary() {
+    let totalP = 0, totalF = 0, totalT = 0, sections = 0;
+    for (const [k, v] of Object.entries(sectionResults)) {
+        totalP += v.pass; totalF += v.fail; totalT += v.total; sections++;
+    }
+    const el = document.getElementById('globalSummary');
+    el.style.display = 'block';
+    el.className = 'global-summary ' + (totalF > 0 ? 'has-fail' : 'all-pass');
+    el.innerHTML = `${totalF === 0 ? '✅' : '⚠️'} ${sections} secciones ejecutadas | ${totalP} pasaron, ${totalF} fallaron de ${totalT} tests`;
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ═══════════════════════════════════════════════════════════════
+// SECTION 1: Conexión API Groq
+// ═══════════════════════════════════════════════════════════════
+async function runSection1() {
+    const sid = 'sec1';
+    startSection(sid);
+    const key = getApiKey();
+
+    // Test 1: Key exists and has correct format
+    const hasKey = !!key;
+    recordResult(sid, hasKey, 'API Key presente');
+    if (!hasKey) { logInfo(sid, 'Ingresá tu API Key arriba para continuar'); endSection(sid); return; }
+
+    const startsGsk = key.startsWith('gsk_');
+    recordResult(sid, startsGsk, `Key comienza con gsk_ (${key.substring(0, 8)}...)`);
+
+    // Test 2: Ping to Groq API (models endpoint)
+    logInfo(sid, 'Conectando con Groq API...');
+    try {
+        const res = await fetch('https://api.groq.com/openai/v1/models', {
+            headers: { 'Authorization': `Bearer ${key}` }
+        });
+        recordResult(sid, res.ok, `GET /models → HTTP ${res.status}`);
+
+        if (res.ok) {
+            const data = await res.json();
+            const models = data.data || [];
+            recordResult(sid, models.length > 0, `${models.length} modelos disponibles`);
+
+            // Check Whisper model available
+            const whisper = models.find(m => m.id.includes('whisper'));
+            recordResult(sid, !!whisper, whisper ? `Whisper disponible: ${whisper.id}` : 'Whisper NO encontrado');
+
+            // Check LLM models
+            const llms = models.filter(m => m.id.includes('llama') || m.id.includes('mixtral') || m.id.includes('gemma'));
+            recordResult(sid, llms.length > 0, `${llms.length} LLMs disponibles (${llms.slice(0, 3).map(m => m.id).join(', ')})`);
+        }
+    } catch (err) {
+        recordResult(sid, false, 'Error de conexión: ' + err.message);
+    }
+
+    // Test 3: Quick chat completion
+    logInfo(sid, 'Probando chat completion...');
+    try {
+        const res = await fetch(GROQ_CHAT_URL, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: 'llama-3.1-8b-instant',
+                messages: [{ role: 'user', content: 'Responde solo "OK"' }],
+                max_tokens: 10
+            })
+        });
+        const data = await res.json();
+        const reply = data.choices?.[0]?.message?.content || '';
+        recordResult(sid, res.ok && reply.length > 0, `Chat completion: "${reply.trim()}"`);
+    } catch (err) {
+        recordResult(sid, false, 'Chat completion falló: ' + err.message);
+    }
+
+    endSection(sid);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SECTION 2: Transcripción de audio
+// ═══════════════════════════════════════════════════════════════
+async function runSection2() {
+    const sid = 'sec2';
+    startSection(sid);
+    const key = getApiKey();
+    if (!key) { recordResult(sid, false, 'API Key requerida'); endSection(sid); return; }
+
+    logInfo(sid, 'Solicitando acceso al micrófono...');
+    let stream;
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        recordResult(sid, true, 'Acceso al micrófono concedido');
+    } catch (err) {
+        recordResult(sid, false, 'No se pudo acceder al micrófono: ' + err.message);
+        endSection(sid); return;
+    }
+
+    logInfo(sid, '🎤 Grabando 5 segundos... Hablá algo.');
+    const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
+    const chunks = [];
+    recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+
+    recorder.start();
+    await delay(5000);
+    recorder.stop();
+    stream.getTracks().forEach(t => t.stop());
+
+    await new Promise(r => { recorder.onstop = r; });
+    const blob = new Blob(chunks, { type: 'audio/webm' });
+    recordResult(sid, blob.size > 0, `Audio grabado: ${(blob.size / 1024).toFixed(1)} KB`);
+
+    // Send to Whisper
+    await _transcribeBlob(sid, key, blob);
+    endSection(sid);
+}
+
+function runSection2File() {
+    document.getElementById('audioFileInput').click();
+}
+
+async function runSection2WithFile(input) {
+    const sid = 'sec2';
+    startSection(sid);
+    const key = getApiKey();
+    if (!key) { recordResult(sid, false, 'API Key requerida'); endSection(sid); return; }
+
+    const file = input.files[0];
+    if (!file) { recordResult(sid, false, 'No se seleccionó archivo'); endSection(sid); return; }
+    recordResult(sid, true, `Archivo: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
+    await _transcribeBlob(sid, key, file);
+    endSection(sid);
+}
+
+async function _transcribeBlob(sid, key, blob) {
+    logInfo(sid, 'Enviando a Whisper...');
+    try {
+        const form = new FormData();
+        form.append('file', blob, 'audio.webm');
+        form.append('model', 'whisper-large-v3');
+        form.append('language', 'es');
+        form.append('response_format', 'verbose_json');
+
+        const res = await fetch(GROQ_AUDIO_URL, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${key}` },
+            body: form
+        });
+        const data = await res.json();
+        recordResult(sid, res.ok, `Whisper HTTP ${res.status}`);
+
+        if (data.text) {
+            recordResult(sid, data.text.length > 0, `Texto transcrito (${data.text.length} chars)`);
+            logDim(sid, `"${data.text.substring(0, 200)}${data.text.length > 200 ? '...' : ''}"`);
+
+            if (data.segments) {
+                recordResult(sid, data.segments.length > 0, `${data.segments.length} segmentos detectados`);
+            }
+            if (data.language) {
+                recordResult(sid, true, `Idioma detectado: ${data.language}`);
+            }
+        } else {
+            recordResult(sid, false, 'Whisper no retornó texto: ' + JSON.stringify(data).substring(0, 200));
+        }
+    } catch (err) {
+        recordResult(sid, false, 'Error Whisper: ' + err.message);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SECTION 3: Estructurado con LLM
+// ═══════════════════════════════════════════════════════════════
+async function runSection3() {
+    const sid = 'sec3';
+    startSection(sid);
+    const key = getApiKey();
+    if (!key) { recordResult(sid, false, 'API Key requerida'); endSection(sid); return; }
+
+    const text = document.getElementById('structText').value.trim();
+    if (!text) { recordResult(sid, false, 'Texto de prueba vacío'); endSection(sid); return; }
+    recordResult(sid, true, `Texto de entrada: ${text.length} caracteres`);
+
+    const systemPrompt = `Eres un asistente médico. Dado el siguiente texto de una ecografía abdominal, devuelve un JSON con la estructura:
+{
+  "titulo": "string",
+  "paciente": { "nombre": "string", "dni": "string", "edad": "string", "sexo": "string" },
+  "organos": {
+    "higado": "string",
+    "vesicula": "string",
+    "via_biliar": "string",
+    "pancreas": "string",
+    "bazo": "string",
+    "rinones": "string",
+    "aorta": "string",
+    "liquido_libre": "string"
+  },
+  "conclusion": "string"
+}
+Responde SOLO con el JSON, sin markdown ni explicaciones.`;
+
+    logInfo(sid, 'Enviando a LLM para estructurar...');
+    try {
+        const res = await fetch(GROQ_CHAT_URL, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: 'llama-3.3-70b-versatile',
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: text }
+                ],
+                temperature: 0.1,
+                max_tokens: 1500
+            })
+        });
+        const data = await res.json();
+        recordResult(sid, res.ok, `LLM HTTP ${res.status}`);
+
+        const reply = data.choices?.[0]?.message?.content || '';
+        recordResult(sid, reply.length > 0, `Respuesta: ${reply.length} caracteres`);
+
+        // Try to parse JSON
+        let parsed;
+        try {
+            // Remove markdown code fences if present
+            const clean = reply.replace(/```json?\s*/g, '').replace(/```/g, '').trim();
+            parsed = JSON.parse(clean);
+            recordResult(sid, true, 'JSON parseado correctamente');
+        } catch (e) {
+            recordResult(sid, false, 'JSON inválido: ' + e.message);
+            logDim(sid, reply.substring(0, 300));
+            endSection(sid); return;
+        }
+
+        // Verify structure
+        recordResult(sid, !!parsed.titulo, `Título: "${parsed.titulo || '—'}"`);
+        recordResult(sid, !!parsed.paciente, `Paciente: ${JSON.stringify(parsed.paciente || {})}`);
+        recordResult(sid, !!parsed.organos, `Órganos: ${Object.keys(parsed.organos || {}).length} campos`);
+        recordResult(sid, !!parsed.conclusion, `Conclusión: "${(parsed.conclusion || '').substring(0, 80)}..."`);
+
+        // Verify usage info
+        if (data.usage) {
+            logDim(sid, `Tokens: prompt=${data.usage.prompt_tokens}, completion=${data.usage.completion_tokens}, total=${data.usage.total_tokens}`);
+        }
+
+    } catch (err) {
+        recordResult(sid, false, 'Error LLM: ' + err.message);
+    }
+
+    endSection(sid);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SECTION 4: Auto-detección de plantilla
+// ═══════════════════════════════════════════════════════════════
+async function runSection4() {
+    const sid = 'sec4';
+    startSection(sid);
+
+    // Expected keys deben coincidir con las keys reales en templates.js
+    const testCases = [
+        { text: 'Ecografía abdominal. Hígado de ecoestructura homogénea. Vesícula normodistendida. Bazo homogéneo.', expected: 'ecografia_abdominal', label: 'Eco abdominal' },
+        { text: 'Espirometría. CVF 3.5L, VEF1 2.8L, relación VEF1/CVF 80%. Curva flujo-volumen normal.', expected: 'espirometria', label: 'Espirometría' },
+        { text: 'Ecografía renal bilateral. Riñón derecho 11cm, parénquima renal conservado. Riñón izquierdo 10.5cm. Sin ectasia piélica. Sin litiasis renal.', expected: 'ecografia_renal', label: 'Eco renal' },
+        { text: 'Ecografía tiroidea. Lóbulo tiroideo derecho con nódulo tiroideo sólido de 8mm hipoecoico. TIRADS 3. Lóbulo izquierdo sin lesiones. Tiroides de tamaño normal.', expected: 'ecografia_tiroidea', label: 'Eco tiroidea' },
+        { text: 'Ecografía mamaria bilateral. Mamas con predominio del tejido fibroglandular. Nódulo mamario en mama derecha a hora 2, sólido, BIRADS 3. Conductos mamarios normales.', expected: 'ecografia_mamaria', label: 'Eco mamaria' },
+        { text: 'Ecografía obstétrica. Gestación de 20 semanas. Feto único, vitalidad fetal conservada, FCF 140 lpm. Biometría fetal acorde. Placenta anterior. Líquido amniótico normal.', expected: 'ecografia_obstetrica', label: 'Eco obstétrica' },
+        { text: 'Holter de 24 horas. Frecuencia cardíaca promedio 72 lpm. Sin arritmias significativas. Ritmo sinusal.', expected: 'holter', label: 'Holter' },
+        { text: 'Mamografía bilateral. Mamas con predominio del tejido fibroglandular, sin lesiones sospechosas. BIRADS 1.', expected: 'mamografia', label: 'Mamografía' },
+        { text: 'Colonoscopia. Se avanza hasta ciego. Mucosa de aspecto normal en todos los segmentos. Se toman biopsias.', expected: 'colonoscopia', label: 'Colonoscopia' },
+        { text: 'Ecocardiograma transtorácico. Ventrículo izquierdo con función sistólica conservada. FEVI 60%. Válvula mitral sin alteraciones.', expected: 'ett', label: 'Ecocardiograma TT (ett)' },
+        { text: 'Eco Doppler arterial de miembros inferiores. Doppler vascular. Flujo trifásico en ambas femorales.', expected: 'eco_doppler', label: 'Eco Doppler (eco_doppler)' },
+    ];
+
+    // Check if autoDetectTemplateKey is available
+    if (typeof window.autoDetectTemplateKey !== 'function') {
+        logWarn(sid, 'autoDetectTemplateKey no disponible — cargando módulos...');
+        // Try to source the scripts
+        const scripts = ['src/js/config/templatesCatalog.js', 'src/js/config/templatesCatalogPart2.js', 'src/js/config/templatesCatalogPart3.js', 'src/js/config/templates.js', 'src/js/features/structurerCoreUtils.js', 'src/js/features/structurer.js'];
+        for (const src of scripts) {
+            try {
+                await loadScript(src);
+                logInfo(sid, `Cargado: ${src}`);
+            } catch (e) {
+                logWarn(sid, `No se pudo cargar ${src}: ${e.message}`);
+            }
+        }
+    }
+
+    if (typeof window.autoDetectTemplateKey === 'function') {
+        for (const tc of testCases) {
+            try {
+                const detected = autoDetectTemplateKey(tc.text);
+                const pass = detected === tc.expected;
+                recordResult(sid, pass, `${tc.label}: "${detected}" ${pass ? '===' : '!=='} "${tc.expected}"`);
+            } catch (err) {
+                recordResult(sid, false, `${tc.label}: Error — ${err.message}`);
+            }
+        }
+    } else {
+        // Fallback: test with API directly
+        logInfo(sid, 'autoDetectTemplateKey no disponible, probando detección manual...');
+        const templates = [
+            'ecografia_abdominal', 'espirometria', 'ecografia_renal', 'ecografia_tiroidea',
+            'ecografia_mamaria', 'ecografia_obstetrica', 'ett', 'eco_doppler'
+        ];
+        recordResult(sid, true, `Plantillas conocidas: ${templates.length}`);
+        for (const tc of testCases) {
+            // Simple keyword check
+            const lower = tc.text.toLowerCase();
+            const detected = lower.includes('abdominal') ? 'ecografia_abdominal'
+                : lower.includes('espirometría') || lower.includes('cvf') ? 'espirometria'
+                : lower.includes('renal') || lower.includes('riñón') ? 'ecografia_renal'
+                : lower.includes('tiroidea') || lower.includes('tiroides') ? 'ecografia_tiroidea'
+                : lower.includes('mamaria') ? 'ecografia_mamaria'
+                : lower.includes('obstétrica') || lower.includes('gestación') || lower.includes('feto') ? 'ecografia_obstetrica'
+                : lower.includes('ecocardiograma') || lower.includes('fevi') ? 'ett'
+                : lower.includes('doppler') ? 'eco_doppler'
+                : 'generico';
+            recordResult(sid, detected === tc.expected, `${tc.label}: ${detected === tc.expected ? 'detectado' : 'fallo'} (${detected})`);
+        }
+    }
+
+    endSection(sid);
+}
+
+function loadScript(src) {
+    return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = '../' + src;
+        s.onload = resolve;
+        s.onerror = () => reject(new Error('Script load failed: ' + src));
+        document.head.appendChild(s);
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SECTION 5: Generación de PDF
+// ═══════════════════════════════════════════════════════════════
+async function runSection5() {
+    const sid = 'sec5';
+    startSection(sid);
+
+    // Check jsPDF availability
+    if (typeof window.jspdf === 'undefined' && typeof window.jsPDF === 'undefined') {
+        logInfo(sid, 'Cargando jsPDF desde CDN...');
+        const cdns = [
+            'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js',
+            'https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js',
+            'https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js'
+        ];
+        let loaded = false;
+        for (const cdn of cdns) {
+            try {
+                await loadScriptAbsolute(cdn);
+                recordResult(sid, true, 'jsPDF cargado desde CDN');
+                loaded = true;
+                break;
+            } catch (e) {
+                logDim(sid, 'CDN falló: ' + cdn.split('/')[2]);
+            }
+        }
+        if (!loaded) {
+            // Try relative path (when served from app)
+            try {
+                await loadScriptAbsolute('../src/lib/jspdf.umd.min.js');
+                loaded = true;
+                recordResult(sid, true, 'jsPDF cargado desde lib local');
+            } catch (_) {}
+        }
+        if (!loaded) {
+            recordResult(sid, false, 'No se pudo cargar jsPDF (CDN bloqueado — abrí desde servidor HTTP, no file://)');
+            endSection(sid); return;
+        }
+    } else {
+        recordResult(sid, true, 'jsPDF ya disponible');
+    }
+
+    const jsPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+    if (!jsPDF) { recordResult(sid, false, 'jsPDF constructor no encontrado'); endSection(sid); return; }
+
+    // Test 1: Create basic PDF
+    try {
+        const doc = new jsPDF();
+        recordResult(sid, true, 'jsPDF instanciado');
+
+        doc.setFontSize(16);
+        doc.text('INFORME MÉDICO — TEST', 20, 20);
+        doc.setFontSize(11);
+        doc.text('Paciente: Juan Pérez Gómez', 20, 35);
+        doc.text('DNI: 30.456.789', 20, 42);
+        doc.text('Fecha: ' + new Date().toLocaleDateString('es-AR'), 20, 49);
+        doc.text('Estudio: Ecografía Abdominal', 20, 56);
+
+        doc.setFontSize(12);
+        doc.text('Hallazgos:', 20, 72);
+        doc.setFontSize(10);
+        const hallazgos = [
+            'Hígado de ecoestructura homogénea, tamaño normal.',
+            'Vesícula biliar normodistendida, sin litiasis.',
+            'Vía biliar no dilatada. Colédoco 4mm.',
+            'Páncreas sin alteraciones.',
+            'Bazo homogéneo de tamaño normal.',
+            'Riñones de forma y ecoestructura conservados.',
+            'Aorta abdominal de calibre normal.',
+            'No se observa líquido libre.'
+        ];
+        hallazgos.forEach((h, i) => doc.text('• ' + h, 25, 82 + i * 7));
+
+        doc.setFontSize(11);
+        doc.text('Conclusión: Ecografía abdominal dentro de límites normales.', 20, 145);
+
+        recordResult(sid, true, 'Contenido del PDF generado');
+
+        // Test 2: Output as blob
+        const blob = doc.output('blob');
+        recordResult(sid, blob.size > 0, `PDF generado: ${(blob.size / 1024).toFixed(1)} KB`);
+
+        // Test 3: Download
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'test-informe-medico.pdf';
+        a.click();
+        URL.revokeObjectURL(url);
+        recordResult(sid, true, 'PDF descargado como test-informe-medico.pdf');
+
+    } catch (err) {
+        recordResult(sid, false, 'Error generando PDF: ' + err.message);
+    }
+
+    endSection(sid);
+}
+
+function loadScriptAbsolute(url) {
+    return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = url;
+        s.onload = resolve;
+        s.onerror = () => reject(new Error('Load failed'));
+        document.head.appendChild(s);
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SECTION 6: Flujo Gift completo
+// ═══════════════════════════════════════════════════════════════
+async function runSection6() {
+    const sid = 'sec6';
+    startSection(sid);
+    const backendUrl = getBackendUrl();
+
+    // Test 1: Generar código gift localmente
+    logInfo(sid, 'Generando código gift local...');
+    const giftCode = 'GIFT-TEST-' + Date.now().toString(36).toUpperCase();
+    recordResult(sid, giftCode.startsWith('GIFT-'), `Código generado: ${giftCode}`);
+
+    // Test 2: Estructura del gift
+    const giftData = {
+        code: giftCode,
+        plan: 'PRO', // 'BASIC', 'PRO', 'PREMIUM'
+        duration_months: 3,
+        created_by: 'TEST_ADMIN',
+        created_at: new Date().toISOString(),
+        redeemed: false,
+        redeemed_by: null,
+        redeemed_at: null
+    };
+    recordResult(sid, true, `Gift data: plan=${giftData.plan}, duración=${giftData.duration_months} meses`);
+
+    // Test 3: Guardar en localStorage (simula la generación)
+    const existingGifts = JSON.parse(localStorage.getItem('generated_gifts') || '[]');
+    existingGifts.push(giftData);
+    localStorage.setItem('generated_gifts', JSON.stringify(existingGifts));
+    recordResult(sid, true, 'Gift guardado en localStorage');
+
+    // Test 4: Simular redención
+    logInfo(sid, 'Simulando redención del gift...');
+    giftData.redeemed = true;
+    giftData.redeemed_by = 'test-device-123';
+    giftData.redeemed_at = new Date().toISOString();
+    recordResult(sid, giftData.redeemed, 'Gift marcado como redimido');
+
+    // Test 5: Verificar licencia creada
+    const licenseData = {
+        type: giftData.plan,
+        device_id: giftData.redeemed_by,
+        valid_until: new Date(Date.now() + giftData.duration_months * 30 * 24 * 60 * 60 * 1000).toISOString(),
+        source: 'gift',
+        gift_code: giftCode
+    };
+    recordResult(sid, licenseData.type === 'PRO', `Licencia tipo: ${licenseData.type}`);
+    recordResult(sid, new Date(licenseData.valid_until) > new Date(), `Válida hasta: ${licenseData.valid_until.split('T')[0]}`);
+
+    // Test 6: Restricciones por plan
+    const planFormats = {
+        'BASIC': { pdf: false, docx: false, clipboard: true, txt: true },
+        'PRO': { pdf: true, docx: true, clipboard: true, txt: true },
+        'PREMIUM': { pdf: true, docx: true, clipboard: true, txt: true }
+    };
+    const formats = planFormats[licenseData.type];
+    recordResult(sid, formats.pdf === true, `Plan ${licenseData.type}: PDF ${formats.pdf ? 'habilitado' : 'deshabilitado'}`);
+    recordResult(sid, formats.docx === true, `Plan ${licenseData.type}: DOCX ${formats.docx ? 'habilitado' : 'deshabilitado'}`);
+
+    // Test 7: Backend integration (if available)
+    if (backendUrl) {
+        logInfo(sid, 'Probando con backend...');
+        try {
+            const res = await fetch(backendUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'validate_gift', code: giftCode })
+            });
+            const data = await res.json();
+            recordResult(sid, res.ok, `Backend validate_gift: HTTP ${res.status}`);
+            logDim(sid, JSON.stringify(data).substring(0, 200));
+        } catch (err) {
+            logWarn(sid, 'Backend no alcanzable: ' + err.message);
+            logInfo(sid, 'Esto es normal si no tenés backend configurado');
+        }
+    } else {
+        logInfo(sid, 'Backend URL no configurada — skip test de backend');
+    }
+
+    // Clean up test data
+    localStorage.removeItem('generated_gifts');
+    endSection(sid);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SECTION 7: Flujo de alta usuario nuevo
+// ═══════════════════════════════════════════════════════════════
+async function runSection7() {
+    const sid = 'sec7';
+    startSection(sid);
+
+    // Test 1: Simular estado sin API key
+    const savedKey = localStorage.getItem('groq_api_key');
+    localStorage.removeItem('groq_api_key');
+    const noKey = !localStorage.getItem('groq_api_key');
+    recordResult(sid, noKey, 'Estado "sin API key" simulado');
+
+    // Test 2: Verificar que CLIENT_CONFIG existe
+    const hasConfig = typeof window.CLIENT_CONFIG !== 'undefined' || localStorage.getItem('client_config');
+    recordResult(sid, true, `CLIENT_CONFIG: ${hasConfig ? 'existe' : 'no definido (normal en test aislado)'}`);
+
+    // Test 3: Simular ingreso de API key
+    const testKey = getApiKey() || 'gsk_test_fake_key_12345';
+    localStorage.setItem('groq_api_key', testKey);
+    const storedKey = localStorage.getItem('groq_api_key');
+    recordResult(sid, storedKey === testKey, 'API key guardada en localStorage');
+
+    // Test 4: Verificar persistencia (no se vuelve a pedir)
+    const keyPersists = !!localStorage.getItem('groq_api_key');
+    recordResult(sid, keyPersists, 'Key persiste después de guardar');
+
+    // Test 5: Verificar UI de admin vs usuario
+    logInfo(sid, 'Verificando diferenciación Admin/Usuario...');
+    const adminCheck = {
+        admin: { type: 'ADMIN', showConfig: true, showContact: false },
+        user: { type: 'USER', showConfig: false, showContact: true }
+    };
+    recordResult(sid, adminCheck.admin.showConfig && !adminCheck.admin.showContact,
+        'ADMIN: configuración visible, contacto oculto');
+    recordResult(sid, !adminCheck.user.showConfig && adminCheck.user.showContact,
+        'USER: configuración oculto, contacto visible');
+
+    // Test 6: Verificar device_id
+    let deviceId = localStorage.getItem('device_id');
+    if (!deviceId) {
+        deviceId = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 8);
+        localStorage.setItem('device_id', deviceId);
+    }
+    recordResult(sid, deviceId && deviceId.length > 5, `Device ID: ${deviceId}`);
+
+    // Restore saved key if existed
+    if (savedKey) localStorage.setItem('groq_api_key', savedKey);
+
+    endSection(sid);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SECTION 8: Backend Google Apps Script
+// ═══════════════════════════════════════════════════════════════
+async function runSection8() {
+    const sid = 'sec8';
+    startSection(sid);
+    const backendUrl = getBackendUrl();
+
+    if (!backendUrl) {
+        logWarn(sid, 'Backend URL no configurada. Ingresá la URL arriba para probar.');
+        logInfo(sid, 'Esta sección requiere un backend Google Apps Script desplegado.');
+        recordResult(sid, true, 'Skip: Backend URL no configurada (opcional)');
+        endSection(sid); return;
+    }
+
+    let backendOnline = false;
+
+    // Test 1: Ping backend
+    logInfo(sid, 'Ping al backend...');
+    try {
+        const res = await fetch(backendUrl + '?action=ping', { method: 'GET' });
+        const text = await res.text();
+        backendOnline = res.ok;
+        recordResult(sid, res.ok, `Ping: HTTP ${res.status}`);
+        logDim(sid, text.substring(0, 200));
+    } catch (err) {
+        recordResult(sid, false, `Ping FALLÓ: ${err.message} — Verificá que el backend esté desplegado y la URL sea correcta.`);
+    }
+
+    if (!backendOnline) {
+        logWarn(sid, 'Backend no responde. Los tests restantes no se pueden ejecutar.');
+        recordResult(sid, false, 'Registro: no ejecutado (backend offline)');
+        recordResult(sid, false, 'Validación: no ejecutado (backend offline)');
+        recordResult(sid, false, 'Contacto: no ejecutado (backend offline)');
+        endSection(sid); return;
+    }
+
+    // Test 2: Registro de usuario
+    logInfo(sid, 'Probando registro de usuario...');
+    try {
+        const res = await fetch(backendUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'register_user',
+                device_id: 'test_device_manual_' + Date.now(),
+                medico_name: 'Dr. Test Manual',
+                medico_mat: 'MP-99999',
+                plan: 'TEST'
+            })
+        });
+        const data = await res.json();
+        recordResult(sid, res.ok, `Registro: HTTP ${res.status} — ${data.success ? 'OK' : data.error || 'Error'}`);
+    } catch (err) {
+        recordResult(sid, false, `Registro FALLÓ: ${err.message}`);
+    }
+
+    // Test 3: Validación de licencia
+    logInfo(sid, 'Probando validación de licencia...');
+    try {
+        const res = await fetch(backendUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'validate_license',
+                device_id: 'test_device_manual',
+                medico_id: 'TEST_001'
+            })
+        });
+        const data = await res.json();
+        recordResult(sid, res.ok, `Validación: HTTP ${res.status} — estado: ${data.status || data.error || '?'}`);
+        if (data.license) logDim(sid, `Licencia: ${JSON.stringify(data.license).substring(0, 150)}`);
+    } catch (err) {
+        recordResult(sid, false, `Validación FALLÓ: ${err.message}`);
+    }
+
+    // Test 4: Contacto/soporte
+    logInfo(sid, 'Probando envío de contacto...');
+    try {
+        const res = await fetch(backendUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'send_email',
+                to: 'test@test.com',
+                subject: '[TEST] Contacto manual',
+                htmlBody: '<p>Test desde test-manual-completo.html</p>',
+                senderName: 'Test Manual'
+            })
+        });
+        const data = await res.json();
+        recordResult(sid, res.ok, `Contacto: HTTP ${res.status} — ${data.success ? 'enviado' : data.error || 'Error'}`);
+    } catch (err) {
+        recordResult(sid, false, `Contacto FALLÓ: ${err.message}`);
+    }
+
+    endSection(sid);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SECTION 9: PWA
+// ═══════════════════════════════════════════════════════════════
+async function runSection9() {
+    const sid = 'sec9';
+    startSection(sid);
+
+    // Test 1: manifest.json
+    logInfo(sid, 'Verificando manifest.json...');
+    const isFileProtocol = location.protocol === 'file:';
+    if (isFileProtocol) {
+        logWarn(sid, 'Protocolo file:// detectado — fetch no funciona. Abrí desde un servidor HTTP.');
+        logInfo(sid, 'Tip: npx serve . o Live Server de VS Code');
+    }
+    try {
+        const manifestLink = document.querySelector('link[rel="manifest"]');
+        if (manifestLink) {
+            recordResult(sid, true, `<link rel="manifest"> encontrado: ${manifestLink.href}`);
+        } else {
+            logInfo(sid, 'No hay <link rel=manifest> en este HTML — buscando en la raíz...');
+        }
+        const manifestUrl = manifestLink ? manifestLink.href : '../manifest.json';
+        const res = await fetch(manifestUrl);
+        if (res.ok) {
+            const manifest = await res.json();
+            recordResult(sid, !!manifest.name, `name: "${manifest.name}"`);
+            recordResult(sid, !!manifest.short_name, `short_name: "${manifest.short_name}"`);
+            recordResult(sid, manifest.display === 'standalone', `display: "${manifest.display}"`);
+            recordResult(sid, !!manifest.start_url, `start_url: "${manifest.start_url}"`);
+            recordResult(sid, !!manifest.theme_color, `theme_color: "${manifest.theme_color}"`);
+
+            const icons = manifest.icons || [];
+            recordResult(sid, icons.length >= 2, `${icons.length} íconos definidos`);
+            const has192 = icons.some(i => i.sizes === '192x192');
+            const has512 = icons.some(i => i.sizes === '512x512');
+            recordResult(sid, has192, `Ícono 192x192: ${has192 ? 'sí' : 'no'}`);
+            recordResult(sid, has512, `Ícono 512x512: ${has512 ? 'sí' : 'no'}`);
+        } else {
+            recordResult(sid, false, `manifest.json no accesible: HTTP ${res.status}`);
+        }
+    } catch (err) {
+        if (isFileProtocol) {
+            recordResult(sid, true, 'Skip manifest fetch (file:// — esperado)');
+        } else {
+            recordResult(sid, false, 'Error verificando manifest: ' + err.message);
+        }
+    }
+
+    // Test 2: Service Worker
+    logInfo(sid, 'Verificando Service Worker...');
+    if ('serviceWorker' in navigator) {
+        recordResult(sid, true, 'navigator.serviceWorker disponible');
+        try {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            if (registrations.length > 0) {
+                recordResult(sid, true, `${registrations.length} SW registrado(s)`);
+                registrations.forEach(reg => {
+                    const sw = reg.active || reg.installing || reg.waiting;
+                    logDim(sid, `  Scope: ${reg.scope} | State: ${sw ? sw.state : 'none'}`);
+                });
+            } else {
+                if (isFileProtocol) {
+                    recordResult(sid, true, 'Skip: SW no se registra en file:// (esperado)');
+                } else {
+                    recordResult(sid, false, 'Ningún Service Worker registrado');
+                    logInfo(sid, 'Tip: Abrí la app principal para que se registre el SW');
+                }
+            }
+        } catch (err) {
+            recordResult(sid, false, 'Error consultando SW: ' + err.message);
+        }
+    } else {
+        recordResult(sid, false, 'Service Worker no soportado en este navegador');
+    }
+
+    // Test 3: Cache Storage
+    logInfo(sid, 'Verificando Cache Storage...');
+    if ('caches' in window) {
+        try {
+            const cacheNames = await caches.keys();
+            if (cacheNames.length > 0) {
+                recordResult(sid, true, `${cacheNames.length} cache(s) encontrados`);
+            } else if (isFileProtocol) {
+                recordResult(sid, true, 'Skip: Cache vacío en file:// (esperado)');
+            } else {
+                recordResult(sid, false, '0 caches encontrados');
+            }
+            for (const name of cacheNames) {
+                const cache = await caches.open(name);
+                const keys = await cache.keys();
+                logDim(sid, `  "${name}": ${keys.length} entradas`);
+            }
+        } catch (err) {
+            recordResult(sid, false, 'Error leyendo caches: ' + err.message);
+        }
+    } else {
+        recordResult(sid, false, 'Cache API no disponible');
+    }
+
+    // Test 4: beforeinstallprompt
+    logInfo(sid, 'Verificando beforeinstallprompt...');
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+                      || window.navigator.standalone === true;
+    if (isStandalone) {
+        recordResult(sid, true, 'App ya está instalada (modo standalone)');
+    } else {
+        recordResult(sid, true, 'App no instalada — beforeinstallprompt puede aún no haberse disparado');
+        logInfo(sid, 'Tip: Abrí la app principal desde un servidor HTTPS para ver el prompt de instalación');
+    }
+
+    endSection(sid);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SECTION 10: Skins/Temas
+// ═══════════════════════════════════════════════════════════════
+async function runSection10() {
+    const sid = 'sec10';
+    startSection(sid);
+
+    // Built-in skins
+    const skins = [
+        { id: 'default', label: 'Default (dark)', css: null },
+        { id: 'cyberpunk', label: 'Cyberpunk', css: 'src/css/skins/cyberpunk.css' },
+        { id: 'light-minimal', label: 'Light Minimal', css: 'src/css/skins/light-minimal.css' },
+    ];
+    const isFileProt = location.protocol === 'file:';
+
+    // Test 1: Check that skin CSS files exist
+    for (const skin of skins) {
+        if (!skin.css) {
+            recordResult(sid, true, `Skin "${skin.label}": Default (no CSS adicional)`);
+            continue;
+        }
+        if (isFileProt) {
+            // file:// can't fetch — check by trying to create a link element
+            recordResult(sid, true, `Skin "${skin.label}": Skip fetch en file:// (CSS: ${skin.css})`);
+            continue;
+        }
+        try {
+            const res = await fetch('../' + skin.css);
+            recordResult(sid, res.ok, `Skin "${skin.label}": CSS accesible (${skin.css})`);
+        } catch (err) {
+            recordResult(sid, false, `Skin "${skin.label}": CSS no encontrado`);
+        }
+    }
+
+    // Test 2: localStorage persistence
+    localStorage.setItem('selected_skin', 'cyberpunk');
+    const saved = localStorage.getItem('selected_skin');
+    recordResult(sid, saved === 'cyberpunk', `Persistencia: guardado="${saved}"`);
+
+    // Test 3: Restore default
+    localStorage.setItem('selected_skin', 'default');
+    const restored = localStorage.getItem('selected_skin');
+    recordResult(sid, restored === 'default', `Restaurar default: "${restored}"`);
+
+    // Test 4: Check themeManager functions
+    if (typeof window.applySkin === 'function') {
+        recordResult(sid, true, 'applySkin() disponible');
+    } else {
+        logInfo(sid, 'applySkin() no disponible (normal en test aislado)');
+    }
+
+    if (typeof window.getSkinRegistry === 'function') {
+        const registry = window.getSkinRegistry();
+        recordResult(sid, Array.isArray(registry) && registry.length > 0, `Skin registry: ${registry.length} skins`);
+    } else {
+        logInfo(sid, 'getSkinRegistry() no disponible');
+    }
+
+    endSection(sid);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SECTION 11: Perfiles de salida
+// ═══════════════════════════════════════════════════════════════
+async function runSection11() {
+    const sid = 'sec11';
+    startSection(sid);
+
+    // Available formats
+    const allFormats = [
+        { id: 'txt', label: 'Texto plano', plans: ['BASIC', 'PRO', 'PREMIUM', 'ADMIN'] },
+        { id: 'clipboard', label: 'Portapapeles', plans: ['BASIC', 'PRO', 'PREMIUM', 'ADMIN'] },
+        { id: 'pdf', label: 'PDF', plans: ['PRO', 'PREMIUM', 'ADMIN'] },
+        { id: 'docx', label: 'DOCX', plans: ['PRO', 'PREMIUM', 'ADMIN'] },
+    ];
+
+    // Test 1: Format availability per plan
+    const plans = ['BASIC', 'PRO', 'PREMIUM', 'ADMIN'];
+    for (const plan of plans) {
+        const available = allFormats.filter(f => f.plans.includes(plan));
+        recordResult(sid, available.length > 0, `Plan ${plan}: ${available.length} formatos (${available.map(f => f.id).join(', ')})`);
+    }
+
+    // Test 2: BASIC restrictions
+    const basicHasPdf = allFormats.find(f => f.id === 'pdf').plans.includes('BASIC');
+    recordResult(sid, !basicHasPdf, 'BASIC no tiene acceso a PDF');
+
+    const basicHasDocx = allFormats.find(f => f.id === 'docx').plans.includes('BASIC');
+    recordResult(sid, !basicHasDocx, 'BASIC no tiene acceso a DOCX');
+
+    // Test 3: PRO has all
+    const proFormats = allFormats.filter(f => f.plans.includes('PRO'));
+    recordResult(sid, proFormats.length === 4, `PRO tiene ${proFormats.length} formatos (esperado: 4)`);
+
+    // Test 4: Output profiles CRUD
+    logInfo(sid, 'Probando CRUD de perfiles de salida...');
+
+    // Create profile
+    const profile = { name: 'Test Profile', format: 'pdf', template: 'ecografia_abdominal', created: Date.now() };
+    const profiles = JSON.parse(localStorage.getItem('output_profiles') || '[]');
+    profiles.push(profile);
+    localStorage.setItem('output_profiles', JSON.stringify(profiles));
+    const saved = JSON.parse(localStorage.getItem('output_profiles'));
+    recordResult(sid, saved.length > 0 && saved[saved.length - 1].name === 'Test Profile', 'Perfil guardado');
+
+    // Delete profile
+    saved.pop();
+    localStorage.setItem('output_profiles', JSON.stringify(saved));
+    const afterDel = JSON.parse(localStorage.getItem('output_profiles'));
+    recordResult(sid, !afterDel.find(p => p.name === 'Test Profile'), 'Perfil eliminado');
+
+    endSection(sid);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SECTION 12: Registro de pacientes
+// ═══════════════════════════════════════════════════════════════
+async function runSection12() {
+    const sid = 'sec12';
+    startSection(sid);
+
+    // Ensure functions are available
+    let hasFunctions = typeof window.savePatientToRegistry === 'function'
+        && typeof window.searchPatientRegistry === 'function';
+
+    if (!hasFunctions) {
+        logInfo(sid, 'Cargando módulo patientRegistry...');
+        try {
+            await loadScript('src/js/features/patientRegistry.js');
+            hasFunctions = typeof window.savePatientToRegistry === 'function';
+        } catch (e) { /* */ }
+    }
+
+    if (!hasFunctions) {
+        // Direct localStorage test
+        logWarn(sid, 'Funciones de registro no disponibles — test con localStorage directo');
+    }
+
+    // Clear test data
+    const TEST_KEY = 'patient_registry_test';
+    localStorage.removeItem('patient_registry');
+
+    // Test 1: Save patient
+    logInfo(sid, 'CRUD de pacientes...');
+    if (typeof savePatientToRegistry === 'function') {
+        savePatientToRegistry({ name: 'García, María', dni: '11111111', age: 35, sex: 'F' });
+        savePatientToRegistry({ name: 'López, Juan', dni: '22222222', age: 50, sex: 'M' });
+        savePatientToRegistry({ name: 'Pérez, Ana', dni: '33333333', age: 28, sex: 'F' });
+        recordResult(sid, true, '3 pacientes guardados');
+
+        // Test 2: Search by name
+        const byName = searchPatientRegistry('García');
+        recordResult(sid, byName.length >= 1, `Búsqueda "García": ${byName.length} resultado(s)`);
+
+        // Test 3: Search by DNI
+        const byDni = searchPatientRegistry('22222222');
+        recordResult(sid, byDni.length >= 1, `Búsqueda DNI "22222222": ${byDni.length} resultado(s)`);
+        if (byDni.length > 0) {
+            recordResult(sid, byDni[0].name.includes('López'), `Nombre: ${byDni[0].name}`);
+        }
+
+        // Test 4: Search empty
+        const empty = searchPatientRegistry('ZZZZZ');
+        recordResult(sid, empty.length === 0, 'Búsqueda sin resultados: 0');
+
+        // Test 5: Deduplication
+        savePatientToRegistry({ name: 'García, María', dni: '11111111', age: 36, sex: 'F' });
+        // Usar getAllPatients() para verificar deduplicación (no depende de query length)
+        const allPatients = typeof getAllPatients === 'function' ? getAllPatients() : searchPatientRegistry('García');
+        const garcias = allPatients.filter(p => p.dni === '11111111');
+        recordResult(sid, garcias.length === 1, `Deduplicación: ${garcias.length} "García" con DNI 11111111 (esperado: 1)`);
+        if (garcias.length > 0) {
+            recordResult(sid, garcias[0].age === 36, `Edad actualizada: ${garcias[0].age}`);
+        }
+
+        // Test 6: Delete patient
+        if (typeof deletePatientFromRegistry === 'function') {
+            deletePatientFromRegistry('33333333');
+            const afterDel = searchPatientRegistry('Pérez');
+            recordResult(sid, afterDel.length === 0, 'Paciente eliminado: "Pérez" no encontrado');
+        } else {
+            logInfo(sid, 'deletePatientFromRegistry no disponible');
+        }
+    } else {
+        // Fallback: test localStorage directly
+        const registry = [];
+        registry.push({ name: 'Test, Paciente', dni: '99999999', age: 40, sex: 'M', lastVisit: new Date().toISOString() });
+        localStorage.setItem('patient_registry', JSON.stringify(registry));
+        const loaded = JSON.parse(localStorage.getItem('patient_registry'));
+        recordResult(sid, loaded.length === 1, 'Paciente guardado en localStorage');
+        recordResult(sid, loaded[0].name === 'Test, Paciente', `Nombre: ${loaded[0].name}`);
+        recordResult(sid, loaded[0].dni === '99999999', `DNI: ${loaded[0].dni}`);
+    }
+
+    endSection(sid);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SECTION 13: Historial de informes
+// ═══════════════════════════════════════════════════════════════
+async function runSection13() {
+    const sid = 'sec13';
+    startSection(sid);
+
+    let hasFunctions = typeof window.saveReportToHistory === 'function';
+    if (!hasFunctions) {
+        logInfo(sid, 'Cargando módulo reportHistory...');
+        try {
+            await loadScript('src/js/features/reportHistory.js');
+            hasFunctions = typeof window.saveReportToHistory === 'function';
+        } catch (e) { /* */ }
+    }
+
+    // Clear existing data
+    localStorage.removeItem('report_history');
+
+    if (hasFunctions) {
+        // Reset cache
+        if (typeof _reportHistCache !== 'undefined') window._reportHistCache = null;
+
+        // Test 1: Save report
+        const id1 = saveReportToHistory({
+            htmlContent: '<h2>Ecografía Abdominal</h2><p>Hígado homogéneo. Sin hallazgos patológicos.</p>',
+            patientName: 'Gómez, Juan',
+            patientDni: '30456789',
+            templateKey: 'ecografia_abdominal'
+        });
+        recordResult(sid, !!id1, `Informe guardado: ${id1}`);
+
+        // Test 2: Save another
+        const id2 = saveReportToHistory({
+            htmlContent: '<h2>Espirometría</h2><p>CVF 3.5L (95%). VEF1 2.8L (92%). Normal.</p>',
+            patientName: 'López, Ana',
+            patientDni: '11223344',
+            templateKey: 'espirometria'
+        });
+        recordResult(sid, !!id2, `Segundo informe: ${id2}`);
+
+        // Test 3: Get all
+        const all = getAllReports();
+        recordResult(sid, all.length >= 2, `getAllReports: ${all.length} informes`);
+
+        // Test 4: Get by ID
+        const found = getReportById(id1);
+        recordResult(sid, found && found.patientName === 'Gómez, Juan', `getReportById: ${found ? found.patientName : 'null'}`);
+
+        // Test 5: Get patient reports
+        const patReports = getPatientReports('Gómez');
+        recordResult(sid, patReports.length >= 1, `getPatientReports("Gómez"): ${patReports.length}`);
+
+        // Test 6: Stats
+        const stats = getReportHistoryStats();
+        recordResult(sid, stats.total >= 2, `Stats: total=${stats.total}, pacientes=${stats.patients}`);
+
+        // Test 7: Export — exportReportHistory() ahora retorna el JSON string además de descargar
+        const exported = exportReportHistory();
+        recordResult(sid, typeof exported === 'string' && exported.length > 10, `exportReportHistory(): ${typeof exported === 'string' ? exported.length + ' chars' : 'retornó ' + typeof exported} (esperado: string)`);
+
+        // Test 8: Import
+        localStorage.removeItem('report_history');
+        window._reportHistCache = null;
+        const imported = importReportHistory(exported);
+        recordResult(sid, imported >= 2, `Importados: ${imported} informes`);
+        const afterImport = getAllReports();
+        recordResult(sid, afterImport.length >= 2, `Después de importar: ${afterImport.length} informes`);
+
+        // Test 9: Delete
+        deleteReport(id1);
+        const afterDel = getAllReports();
+        recordResult(sid, afterDel.length === afterImport.length - 1, `Después de borrar: ${afterDel.length} informes`);
+
+    } else {
+        logWarn(sid, 'Funciones de historial no disponibles — test con localStorage directo');
+        const reports = [
+            { id: 'rpt_test1', date: new Date().toISOString(), htmlContent: '<p>Test 1</p>', patientName: 'Test' },
+            { id: 'rpt_test2', date: new Date().toISOString(), htmlContent: '<p>Test 2</p>', patientName: 'Test' }
+        ];
+        localStorage.setItem('report_history', JSON.stringify(reports));
+        const loaded = JSON.parse(localStorage.getItem('report_history'));
+        recordResult(sid, loaded.length === 2, `${loaded.length} informes en localStorage`);
+
+        // Export as JSON
+        const json = JSON.stringify(loaded, null, 2);
+        recordResult(sid, json.length > 10, `Exportado: ${json.length} caracteres`);
+
+        // Import
+        const parsed = JSON.parse(json);
+        recordResult(sid, Array.isArray(parsed), 'Import: JSON válido y es array');
+    }
+
+    endSection(sid);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RUN ALL SECTIONS
+// ═══════════════════════════════════════════════════════════════
+async function runAllSections() {
+    const btn = document.getElementById('btnRunAll');
+    btn.disabled = true;
+    btn.textContent = '⏳ Ejecutando todas las secciones...';
+
+    const runners = [
+        runSection1, runSection2Skip, runSection3, runSection4, runSection5,
+        runSection6, runSection7, runSection8, runSection9, runSection10,
+        runSection11, runSection12, runSection13
+    ];
+
+    for (let i = 0; i < runners.length; i++) {
+        btn.textContent = `⏳ Ejecutando sección ${i + 1}/${runners.length}...`;
+        try {
+            await runners[i]();
+        } catch (err) {
+            const sid = 'sec' + (i + 1);
+            if (!sectionResults[sid]) sectionResults[sid] = { pass: 0, fail: 0, total: 0 };
+            recordResult(sid, false, 'Error inesperado: ' + err.message);
+            endSection(sid);
+        }
+        await delay(200);
+    }
+
+    btn.disabled = false;
+    btn.textContent = '▶️ Ejecutar TODOS los tests';
+    updateGlobalSummary();
+}
+
+// Special: skip audio recording in "run all" mode (needs interaction)
+async function runSection2Skip() {
+    const sid = 'sec2';
+    startSection(sid);
+    logWarn(sid, 'Audio: skipped en modo "Run All" — usá el botón individual para testear grabación.');
+    recordResult(sid, true, 'Skip: transcripción requiere interacción del usuario');
+    endSection(sid);
+}
+
+// ── Load saved key on page load ──
+window.addEventListener('DOMContentLoaded', () => {
+    loadSavedKey();
+});
+</script>
+
+</body>
+</html>

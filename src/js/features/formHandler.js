@@ -1,44 +1,89 @@
 // ============ FORM & PATIENT DATA HANDLER ============
 
-// ---- Patient History ----
-const MAX_PATIENT_HISTORY = 50;
-window.patientHistory = JSON.parse(localStorage.getItem('patient_history') || '[]');
+// ---- G2: Sistema unificado — patient_history MIGRADO a patient_registry ----
+// savePatientToHistory es ahora un alias transparente de savePatientToRegistry.
+// Al iniciar, migramos cualquier dato residual de patient_history → patient_registry.
+(function _migratePatientHistory() {
+    try {
+        const old = JSON.parse(localStorage.getItem('patient_history') || '[]');
+        if (old.length && typeof savePatientToRegistry === 'function') {
+            // Migrar cada paciente viejo al registro (no duplica si ya existe)
+            old.forEach(p => { if (p && p.name) savePatientToRegistry(p); });
+            // Borrar la clave obsoleta solo si la migración fue posible
+            localStorage.removeItem('patient_history');
+        }
+    } catch (_) { /* ignorar errores de migración */ }
+
+    // En instalaciones antiguas, la clave legacy puede existir en appDB.
+    if (typeof appDB !== 'undefined' && typeof appDB.get === 'function') {
+        appDB.get('patient_history').then(function(oldDb) {
+            try {
+                if (!Array.isArray(oldDb) || !oldDb.length || typeof savePatientToRegistry !== 'function') return;
+                oldDb.forEach(function(p) { if (p && p.name) savePatientToRegistry(p); });
+                if (typeof appDB.remove === 'function') appDB.remove('patient_history');
+            } catch (_) { /* ignorar errores de migración desde appDB */ }
+        }).catch(function() {});
+    }
+})();
 
 window.savePatientToHistory = function (patient) {
-    if (!patient || !patient.name) return;
-    window.patientHistory = window.patientHistory.filter(p => !(patient.dni && p.dni === patient.dni));
-    window.patientHistory.unshift(patient);
-    if (window.patientHistory.length > MAX_PATIENT_HISTORY) window.patientHistory.pop();
-    localStorage.setItem('patient_history', JSON.stringify(window.patientHistory));
+    // Alias: delega 100% al registro unificado
+    if (typeof savePatientToRegistry === 'function') savePatientToRegistry(patient);
+};
+
+// populatePatientDatalist → delega al de patientRegistry.js (que usa getRegistry)
+// Si patientRegistry aún no cargó, no-op.
+if (typeof window.populatePatientDatalist === 'undefined') {
+    window.populatePatientDatalist = function () {};
 }
 
-window.populatePatientDatalist = function () {
-    const datalist = document.getElementById('patientHistoryList');
-    if (!datalist) return;
-    datalist.innerHTML = '';
-    window.patientHistory.forEach((p, i) => {
-        const option = document.createElement('option');
-        option.value = p.dni ? `${p.name} - DNI: ${p.dni}` : p.name;
-        option.dataset.index = i;
-        datalist.appendChild(option);
-    });
-}
-
-// Initial binding for patient search
+// Initial binding for patient search — usa searchPatientRegistry (registro unificado)
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('patientSearch')?.addEventListener('input', (e) => {
-        const val = e.target.value;
-        const selected = window.patientHistory.find(p =>
-            (p.dni && val.includes(p.dni)) || (p.name && val.includes(p.name))
-        );
-        if (selected) {
-            const set = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
-            set('pdfPatientName', selected.name);
-            set('pdfPatientDni', selected.dni);
-            set('pdfPatientAge', selected.age);
-            set('pdfPatientSex', selected.sex);
-            set('pdfPatientInsurance', selected.insurance);
-            set('pdfPatientPhone', selected.phone);
+    const searchInput = document.getElementById('patientSearch');
+    if (!searchInput) return;
+
+    // C3: Dropdown de resultados múltiples
+    var dropdown = document.createElement('div');
+    dropdown.id = 'patientSearchDropdown';
+    dropdown.style.cssText = 'position:absolute;z-index:100;background:var(--bg-card,#fff);border:1px solid var(--border-color,#ccc);border-radius:6px;max-height:180px;overflow-y:auto;display:none;width:100%;box-shadow:0 4px 12px rgba(0,0,0,.15);';
+    searchInput.parentNode.style.position = 'relative';
+    searchInput.parentNode.appendChild(dropdown);
+
+    function fillPatient(p) {
+        var set = function(id, v) { var el = document.getElementById(id); if (el && v != null && v !== '') el.value = v; };
+        set('pdfPatientName', p.name);
+        set('pdfPatientDni', p.dni);
+        set('pdfPatientAge', p.age);
+        set('pdfPatientSex', p.sex);
+        set('pdfPatientInsurance', p.insurance);
+        set('pdfPatientPhone', p.phone);
+        dropdown.style.display = 'none';
+    }
+
+    searchInput.addEventListener('input', function(e) {
+        var val = e.target.value;
+        if (!val || val.length < 2) { dropdown.style.display = 'none'; return; }
+        var results = typeof searchPatientRegistry === 'function' ? searchPatientRegistry(val) : [];
+        if (results.length === 0) { dropdown.style.display = 'none'; return; }
+        if (results.length === 1) { fillPatient(results[0]); return; }
+
+        dropdown.innerHTML = '';
+        results.slice(0, 10).forEach(function(p) {
+            var item = document.createElement('div');
+            item.textContent = p.name + (p.dni ? ' — DNI: ' + p.dni : '');
+            item.style.cssText = 'padding:6px 10px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid var(--border-color,#eee);';
+            item.addEventListener('mouseenter', function() { item.style.background = 'var(--primary-light,#e0f2fe)'; });
+            item.addEventListener('mouseleave', function() { item.style.background = ''; });
+            item.addEventListener('click', function() { fillPatient(p); searchInput.value = p.name; });
+            dropdown.appendChild(item);
+        });
+        dropdown.style.display = 'block';
+    });
+
+    // Cerrar dropdown al hacer click fuera
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = 'none';
         }
     });
 
@@ -58,35 +103,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const ageEl = document.getElementById('pdfPatientAge');
         if (ageEl) ageEl.value = age;
     });
-
-    // --- NUEVO: Lógica para la API Key de Groq ---
-    const groqInput = document.getElementById('inputGroqKey');
-    const groqBtn = document.getElementById('btnSaveGroqKey');
-
-    // Cargar clave si ya existe al iniciar
-    if (groqInput) {
-        groqInput.value = localStorage.getItem('groq_api_key') || '';
-    }
-
-    // Guardar clave al hacer clic
-    groqBtn?.addEventListener('click', () => {
-        const key = groqInput.value.trim();
-        if (key) {
-            localStorage.setItem('groq_api_key', key);
-            if (typeof showToast === 'function') showToast('🔑 API Key de Groq guardada', 'success');
-        } else {
-            if (typeof showToast === 'function') showToast('⚠️ Ingresa una clave válida', 'error');
-        }
-    });
 });
 
 // ---- Extract patient data from transcription ----
 const PATIENT_NAME_REGEX = /paciente\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)+)/i;
-const DNI_REGEX = /(?:DNI|documento|D\.N\.I\.?)\s*(?:N[°º]?\s*)?(\d{1,3}\.?\d{3}\.?\d{3})/i;
+const DNI_REGEX = /(?:DNI|documento|D\.N\.I\.?)[:\s]*(?:N[°º]?\s*)?(\d{1,3}\.?\d{3}\.?\d{3})/i;
 const AGE_REGEX = /(\d{1,3})\s*años/i;
 const SEX_REGEX = /(?:sexo|género)\s*(?::|,)?\s*(masculino|femenino|masc|fem)/i;
 
 window.extractPatientDataFromText = function (text) {
+    if (!text) return {};
     const data = {};
     const nameMatch = text.match(PATIENT_NAME_REGEX);
     if (nameMatch) data.name = nameMatch[1];
@@ -100,13 +126,77 @@ window.extractPatientDataFromText = function (text) {
 }
 
 // ---- Report numbering ----
+// Nueva nomenclatura: XX-NNNNN-ddmmaa (XX=tipo estudio, NNNNN=correlativo, ddmmaa=fecha)
+const _REPORT_ABBREVS = {
+    espirometria: 'ES', holter: 'HL', test_marcha: 'TM', mapa: 'MP',
+    pletismografia: 'PL', cinecoro: 'CI', oximetria_nocturna: 'OX', ecg: 'EG',
+    campimetria: 'CM', eco_stress: 'EC', oct_retinal: 'OC', pap: 'PP',
+    topografia_corneal: 'TC', colposcopia: 'CP', fondo_ojo: 'FO',
+    electromiografia: 'EM', tac: 'TA', polisomnografia: 'PS', naso: 'NL',
+    resonancia: 'RM', mamografia: 'MG', endoscopia_otologica: 'EO',
+    densitometria: 'DX', protocolo_quirurgico: 'PQ', pet_ct: 'PT',
+    ett: 'ET', radiografia: 'RX', ecografia_renal: 'ER',
+    ecografia_abdominal: 'EA', ecografia_tiroidea: 'TI', gastroscopia: 'GS',
+    ecografia_mamaria: 'MM', colonoscopia: 'CO', ecografia_obstetrica: 'OB',
+    broncoscopia: 'BR', eco_doppler: 'ED', laringoscopia: 'LA',
+    nota_evolucion: 'NE', gammagrafia_cardiaca: 'GC', epicrisis: 'EP',
+    generico: 'IG'
+};
+
 window.generateReportNumber = function () {
-    const year = new Date().getFullYear();
-    let counter = parseInt(localStorage.getItem('report_counter_' + year) || '0');
+    let tplKey = '';
+    try {
+        const cfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        tplKey = cfg.selectedTemplate || '';
+    } catch(_) {}
+    if (!tplKey) tplKey = (typeof window !== 'undefined' && window.selectedTemplate) ? window.selectedTemplate : '';
+    const abbrev = _REPORT_ABBREVS[tplKey] || 'IG';
+    const counterKey = 'report_counter_' + abbrev;
+    let counter = parseInt(localStorage.getItem(counterKey) || '0');
     counter++;
-    localStorage.setItem('report_counter_' + year, counter);
-    return `${year}-${String(counter).padStart(4, '0')}`;
-}
+    if (typeof appDB !== 'undefined') appDB.set(counterKey, counter);
+    localStorage.setItem(counterKey, counter);
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const aa = String(now.getFullYear()).slice(-2);
+    return `${abbrev}-${String(counter).padStart(5, '0')}-${dd}${mm}${aa}`;
+};
+
+// ---- Reset / Edit botones de Informe Nº ----
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('btnResetReportNum')?.addEventListener('click', () => {
+        let tplKey = '';
+        try {
+            const cfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+            tplKey = cfg.selectedTemplate || '';
+        } catch(_) {}
+        if (!tplKey) tplKey = (typeof window !== 'undefined' && window.selectedTemplate) ? window.selectedTemplate : '';
+        const abbrev = _REPORT_ABBREVS[tplKey] || 'IG';
+        localStorage.removeItem('report_counter_' + abbrev);
+        if (typeof appDB !== 'undefined') appDB.set('report_counter_' + abbrev, 0);
+        const el = document.getElementById('pdfReportNumber');
+        if (el) el.value = '';
+        if (typeof showToast === 'function') showToast(`Contador reiniciado — el próximo informe ${abbrev} será 00001`, 'info');
+    });
+
+    document.getElementById('btnEditReportNum')?.addEventListener('click', () => {
+        const el = document.getElementById('btnEditReportNum');
+        const inp = document.getElementById('pdfReportNumber');
+        if (!inp) return;
+        if (inp.readOnly) {
+            inp.readOnly = false;
+            inp.focus();
+            inp.select();
+            if (el) el.title = 'Bloquear edición';
+            if (el) el.textContent = '🔒';
+        } else {
+            inp.readOnly = true;
+            if (el) el.title = 'Editar número manualmente';
+            if (el) el.textContent = '✏️';
+        }
+    });
+});
 
 // ---- Image upload handlers ----
 window.handleImageUpload = function (inputId, previewId, storageKey) {
@@ -118,11 +208,15 @@ window.handleImageUpload = function (inputId, previewId, storageKey) {
             const dataUrl = event.target.result;
             const preview = document.getElementById(previewId);
             if (preview) preview.innerHTML = `<img src="${dataUrl}" alt="Preview" style="max-height:80px;">`;
-            try {
-                localStorage.setItem(storageKey, dataUrl);
-            } catch (storageErr) {
-                console.error('Storage error:', storageErr);
-                if (typeof showToast === 'function') showToast('No se pudo guardar la imagen (almacenamiento lleno)', 'error');
+            if (typeof appDB !== 'undefined') {
+                appDB.set(storageKey, dataUrl);
+            } else {
+                try {
+                    localStorage.setItem(storageKey, dataUrl);
+                } catch (storageErr) {
+                    console.error('Storage error:', storageErr);
+                    if (typeof showToast === 'function') showToast('No se pudo guardar la imagen (almacenamiento lleno)', 'error');
+                }
             }
         };
         reader.readAsDataURL(file);
@@ -133,8 +227,14 @@ window.handleImageUpload = function (inputId, previewId, storageKey) {
 window.savePdfConfiguration = function () {
     const val = (id) => document.getElementById(id)?.value || '';
     const chk = (id, def) => document.getElementById(id)?.checked ?? def;
+
+    // Preservar datos del profesional activo que fueron seteados por business.js
+    const existing = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
+
     const config = {
         studyType: val('pdfStudyType'),
+        selectedTemplate: window.selectedTemplate || '',
+        reportNum: val('pdfReportNumber'),
         studyDate: val('pdfStudyDate'),
         studyTime: val('pdfStudyTime'),
         studyReason: val('pdfStudyReason'),
@@ -158,27 +258,64 @@ window.savePdfConfiguration = function () {
         showHeader: chk('pdfShowHeader', true),
         showFooter: chk('pdfShowFooter', true),
         showPageNum: chk('pdfShowPageNum', true),
-        showDate: chk('pdfShowDate', false),
-        showQR: chk('pdfShowQR', false),
+        showDate: chk('pdfShowDate', true),
+        showQR: chk('pdfShowQR', true),
         showSignLine: chk('pdfShowSignLine', true),
         showSignName: chk('pdfShowSignName', true),
         showSignMatricula: chk('pdfShowSignMatricula', true),
+        showSignImage: chk('pdfShowSignImage', true),
+        showPhone: chk('pdfShowPhone', true),
+        showEmail: chk('pdfShowEmail', true),
+        showSocial: chk('pdfShowSocial', false),
+        logoSizePx: parseInt(document.getElementById('pdfLogoSize')?.value || '60'),
+        firmaSizePx: parseInt(document.getElementById('pdfFirmaSize')?.value || '60'),
         footerText: val('pdfFooterText'),
         selectedWorkplace: val('pdfWorkplace'),
         workplaceAddress: val('pdfWorkplaceAddress'),
         workplacePhone: val('pdfWorkplacePhone'),
         workplaceEmail: val('pdfWorkplaceEmail')
     };
-    localStorage.setItem('pdf_config', JSON.stringify(config));
+
+    // Preservar campos de profesional activo (seteados por business.js)
+    if (existing.activeProfessional)      config.activeProfessional      = existing.activeProfessional;
+    if (existing.activeProfessionalIndex !== undefined) config.activeProfessionalIndex = existing.activeProfessionalIndex;
+    if (existing.activeWorkplaceIndex    !== undefined) config.activeWorkplaceIndex    = existing.activeWorkplaceIndex;
+
+    // Si hay profesional activo, sincronizar los campos visibles del modal para evitar drift
+    if (config.activeProfessional && typeof config.activeProfessional === 'object') {
+        const profName = (val('pdfProfName') || '').trim();
+        const profMat = (val('pdfProfMatricula') || '').trim();
+        const profEsp = (val('pdfProfEspecialidad') || '').trim();
+        const colEl = document.getElementById('pdfHeaderColor');
+        const hdrColor = colEl?.dataset?.selectedColor || colEl?.value || '';
+        if (profName) config.activeProfessional.nombre = profName;
+        if (profMat) config.activeProfessional.matricula = profMat;
+        if (profEsp) config.activeProfessional.especialidades = profEsp;
+        if (hdrColor) config.activeProfessional.headerColor = hdrColor;
+    }
+
+    window._pdfConfigCache = config;
+    if (typeof appDB !== 'undefined') appDB.set('pdf_config', config);
+    else localStorage.setItem('pdf_config', JSON.stringify(config));
+    // Persistir tamaños de logo y firma en localStorage para acceso rápido
+    localStorage.setItem('prof_logo_size_px', String(config.logoSizePx || 60));
+    localStorage.setItem('firma_size_px', String(config.firmaSizePx || 60));
+    if (typeof appDB !== 'undefined') {
+        appDB.set('prof_logo_size_px', config.logoSizePx || 60);
+        appDB.set('firma_size_px', config.firmaSizePx || 60);
+    }
     if (typeof showToast === 'function') showToast('💾 Configuración PDF guardada', 'success');
 }
 
-window.loadPdfConfiguration = function () {
-    const config = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+window.loadPdfConfiguration = async function () {
+    const config = (typeof appDB !== 'undefined' ? await appDB.get('pdf_config') : null)
+        || window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
+    window._pdfConfigCache = config;
     const set = (id, v) => { if (v !== undefined && v !== null) { const el = document.getElementById(id); if (el) el.value = v; } };
     const setChk = (id, v, def) => { const el = document.getElementById(id); if (el) el.checked = (v !== undefined) ? v : def; };
 
     set('pdfStudyType', config.studyType);
+    set('pdfReportNumber', config.reportNum);
     set('pdfStudyDate', config.studyDate);
     set('pdfStudyTime', config.studyTime);
     set('pdfStudyReason', config.studyReason);
@@ -202,11 +339,22 @@ window.loadPdfConfiguration = function () {
     setChk('pdfShowHeader', config.showHeader, true);
     setChk('pdfShowFooter', config.showFooter, true);
     setChk('pdfShowPageNum', config.showPageNum, true);
-    setChk('pdfShowDate', config.showDate, false);
-    setChk('pdfShowQR', config.showQR, false);
+    setChk('pdfShowDate', config.showDate, true);
+    setChk('pdfShowQR', config.showQR, true);
     setChk('pdfShowSignLine', config.showSignLine, true);
     setChk('pdfShowSignName', config.showSignName, true);
     setChk('pdfShowSignMatricula', config.showSignMatricula, true);
+    setChk('pdfShowSignImage', config.showSignImage, true);
+    setChk('pdfShowPhone',     config.showPhone,  true);
+    setChk('pdfShowEmail',     config.showEmail,  true);
+    setChk('pdfShowSocial',    config.showSocial, false);
+    // Sliders de tamaño
+    const logoSlider = document.getElementById('pdfLogoSize');
+    const firmaSlider = document.getElementById('pdfFirmaSize');
+    const lsVal = config.logoSizePx || parseInt(localStorage.getItem('prof_logo_size_px') || '60');
+    const fsVal = config.firmaSizePx || parseInt(localStorage.getItem('firma_size_px') || '60');
+    if (logoSlider) { logoSlider.value = lsVal; const lbl = document.getElementById('logoSizeValue'); if (lbl) lbl.textContent = lsVal; }
+    if (firmaSlider) { firmaSlider.value = fsVal; const lbl = document.getElementById('firmaSizeValue'); if (lbl) lbl.textContent = fsVal; }
     set('pdfFooterText', config.footerText);
     set('pdfWorkplace', config.selectedWorkplace);
     set('pdfWorkplaceAddress', config.workplaceAddress);
@@ -214,14 +362,14 @@ window.loadPdfConfiguration = function () {
     set('pdfWorkplaceEmail', config.workplaceEmail);
 
     // Restore logo preview
-    const savedLogo = localStorage.getItem('pdf_logo');
+    const savedLogo = typeof appDB !== 'undefined' ? await appDB.get('pdf_logo') : localStorage.getItem('pdf_logo');
     if (savedLogo && savedLogo.startsWith('data:image/')) {
         const lp = document.getElementById('pdfLogoPreview');
         if (lp) lp.innerHTML = `<img src="${savedLogo}" alt="Logo" style="max-height:80px;">`;
     }
-    const savedSig = localStorage.getItem('pdf_signature');
+    const savedSig = typeof appDB !== 'undefined' ? await appDB.get('pdf_signature') : localStorage.getItem('pdf_signature');
     if (savedSig && savedSig.startsWith('data:image/')) {
         const sp = document.getElementById('pdfSignaturePreview');
         if (sp) sp.innerHTML = `<img src="${savedSig}" alt="Firma" style="max-height:80px;">`;
     }
-}
+};

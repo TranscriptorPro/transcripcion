@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Visual — Vista Previa Completa</title>
+    <style>
+        /* ── Reset & Base ── */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #1e293b;
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            padding: 2rem;
+        }
+        h1 { font-size: 1.6rem; text-align: center; }
+        h1 span { color: #f59e0b; }
+        .desc { color: #94a3b8; text-align: center; max-width: 600px; line-height: 1.6; font-size: 0.9rem; }
+
+        .btn-group { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; }
+        .btn-show {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #fff;
+        }
+        .btn-show:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+        .btn-full   { background: linear-gradient(135deg, #0f766e, #14b8a6); }
+        .btn-min    { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+        .btn-cardio { background: linear-gradient(135deg, #dc2626, #f97316); }
+
+        /* ── Print Preview Overlay ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 10000;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: #1e293b;
+            border-radius: 16px;
+            max-width: 900px;
+            width: 100%;
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .modal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h2 { font-size: 1.1rem; }
+        .modal-close {
+            background: none; border: none; color: #94a3b8;
+            font-size: 1.5rem; cursor: pointer;
+        }
+        .modal-close:hover { color: #fff; }
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #334155;
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+        .modal-footer .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            background: #334155;
+            color: #e2e8f0;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .modal-footer .btn:hover { background: #475569; }
+
+        /* ── Print Preview Container ── */
+        .print-preview-container {
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 1.5rem;
+            background: #b0b0b0;
+            display: flex;
+            justify-content: center;
+            flex: 1;
+        }
+
+        /* ── A4 Page ── */
+        .a4-page {
+            position: relative;
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            padding: 0 18mm 18mm;
+            box-shadow: 0 4px 32px rgba(0,0,0,0.45);
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 10pt;
+            line-height: 1.5;
+            color: #111;
+            box-sizing: border-box;
+            border-top: 5px solid var(--pa, #1a56a0);
+            overflow-x: hidden;
+        }
+
+        /* ── Lugar de trabajo ── */
+        .preview-workplace {
+            background: var(--pa, #1a56a0);
+            color: white;
+            margin: 0 -18mm;
+            padding: 8px 18mm 7px;
+            font-family: Helvetica, Arial, sans-serif;
+        }
+        .pvw-block {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+        }
+        .pvw-logo {
+            max-height: 48px;
+            max-width: 80px;
+            object-fit: contain;
+            flex-shrink: 0;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.15);
+            padding: 3px;
+        }
+        .pvw-text { text-align: center; }
+        .pvw-name {
+            font-size: 11pt;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+        .pvw-details {
+            font-size: 8pt;
+            opacity: 0.9;
+            margin-top: 2px;
+            letter-spacing: 0.02em;
+        }
+
+        /* ── Encabezado profesional ── */
+        .preview-header {
+            padding: 12px 0 10px;
+            border-bottom: 2px solid var(--pa, #1a56a0);
+            margin-bottom: 12px;
+        }
+        .pvh-body {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .pvh-info { flex: 1; }
+        .pvh-name {
+            font-size: 14pt;
+            font-weight: 700;
+            color: var(--pa, #1a56a0);
+            letter-spacing: 0.02em;
+            margin-bottom: 1px;
+        }
+        .pvh-spec { font-size: 10pt; color: #444; margin-top: 2px; font-style: italic; }
+        .pvh-mat  { font-size: 9pt; color: #555; margin-top: 2px; }
+        .pvh-inst { font-size: 9.5pt; color: #333; font-style: italic; margin-top: 2px; }
+
+        /* ── Datos del estudio ── */
+        .preview-study { margin-bottom: 16px; }
+        .pvs-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px 24px;
+            font-size: 8.5pt;
+            color: #333;
+            background: #f4f7fb;
+            padding: 10px 16px;
+            border-radius: 4px 4px 0 0;
+            border: 1px solid #e3e8ef;
+            font-family: Helvetica, Arial, sans-serif;
+        }
+        .pvs-grid.pvs-3col { grid-template-columns: repeat(3, 1fr); border-bottom: none; }
+        .pvs-grid.pvs-2col {
+            grid-template-columns: 1fr 1fr;
+            border-radius: 0 0 4px 4px;
+            border-top: 1px dashed #dde3ee;
+        }
+        .pvs-grid + .pvs-grid { margin-top: 0; }
+        .pvs-cell { display: flex; flex-direction: column; gap: 2px; padding: 2px 0; }
+        .pvs-lbl {
+            font-size: 6.5pt;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--pa, #1a56a0);
+            font-weight: 600;
+            opacity: 0.75;
+        }
+        .pvs-val {
+            font-size: 9pt;
+            color: #222;
+            font-weight: 700;
+            font-family: Helvetica, Arial, sans-serif;
+        }
+
+        /* ── Datos del paciente ── */
+        .preview-patient { margin-bottom: 10px; }
+        .pvp-grid {
+            background: #fafbfc;
+            border: 1px solid #d0d7de;
+            border-left: 4px solid var(--pa, #1a56a0);
+            border-radius: 4px;
+            padding: 10px 16px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px 20px;
+        }
+        .pvp-cell  { display: flex; flex-direction: column; gap: 2px; }
+        .pvp-lbl   {
+            font-size: 6.5pt;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--pa, #1a56a0);
+            font-family: Helvetica, Arial, sans-serif;
+            font-weight: 600;
+            opacity: 0.75;
+        }
+        .pvp-val   {
+            font-size: 10pt;
+            color: #111;
+            font-weight: 700;
+            font-family: Helvetica, Arial, sans-serif;
+        }
+        .pvp-bold  { font-weight: 700; }
+
+        /* ── Contenido del informe ── */
+        .preview-content { margin: 8px 0 24px; }
+
+        .a4-page .preview-content h1 {
+            font-size: 13pt;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--pa, #1a56a0);
+            border-bottom: 2px solid var(--pa, #1a56a0);
+            padding-bottom: 4px;
+            margin: 20px 0 10px;
+            text-align: center;
+        }
+        .a4-page .preview-content h2 {
+            font-size: 11pt;
+            font-weight: 700;
+            color: var(--pa, #1a56a0);
+            margin: 16px 0 6px;
+            padding-bottom: 3px;
+            border-bottom: 1px solid color-mix(in srgb, var(--pa, #1a56a0) 30%, transparent);
+        }
+        .a4-page .preview-content h3 {
+            font-size: 10.5pt;
+            font-weight: 600;
+            font-style: italic;
+            color: #333;
+            margin: 12px 0 5px;
+        }
+        .a4-page .preview-content p {
+            margin: 2px 0 6px;
+            line-height: 1.5;
+            text-align: justify;
+        }
+        .a4-page .preview-content ul,
+        .a4-page .preview-content ol {
+            padding-left: 1.5em;
+            margin: 4px 0 8px;
+        }
+        .a4-page .preview-content li { margin-bottom: 4px; line-height: 1.5; }
+        .a4-page .preview-content hr {
+            border: none;
+            border-top: 1px solid #ddd;
+            margin: 14px 0;
+        }
+        .a4-page .preview-content table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9.5pt;
+            margin: 10px 0 16px;
+        }
+        .a4-page .preview-content thead th {
+            background: var(--pa, #1a56a0);
+            color: white;
+            font-weight: 700;
+            padding: 6px 10px;
+            text-align: center;
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 8.5pt;
+            letter-spacing: 0.04em;
+        }
+        .a4-page .preview-content tbody tr:nth-child(even) td { background: #f0f4fb; }
+        .a4-page .preview-content tbody td {
+            padding: 5px 10px;
+            border-bottom: 1px solid #dde3ee;
+            color: #111;
+        }
+
+        /* ── Firma ── */
+        .preview-signature { margin-top: 48px; margin-bottom: 8px; }
+        .pvsig-block   { text-align: center; width: 240px; margin-left: auto; }
+        .pvsig-img     { max-height: 60px; display: block; margin: 0 auto 0; background: transparent; }
+        .pvsig-line    { border: none; border-top: 1.5px solid #333; width: 200px; margin: 0 auto; }
+        .pvsig-name    { font-size: 10pt; font-weight: 700; margin-top: 6px; text-align: center; }
+        .pvsig-mat     { font-size: 9pt; color: #555; margin-top: 2px; text-align: center; }
+        .pvsig-spec    { font-size: 8.5pt; color: #666; font-style: italic; margin-top: 1px; text-align: center; }
+
+        /* ── QR ── */
+        .preview-qr { text-align: center; margin-top: 12px; }
+        .preview-qr img { width: 64px; height: 64px; image-rendering: pixelated; }
+        .pvqr-label {
+            font-size: 6pt; color: #999; display: block;
+            text-align: center; font-family: Helvetica, Arial, sans-serif;
+            text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px;
+        }
+
+        /* ── Footer ── */
+        .preview-footer { margin-top: 20px; border-top: 1.5px solid #ccc; padding-top: 8px; }
+        .pvf-wrap {
+            display: flex; flex-wrap: wrap; justify-content: space-between;
+            font-size: 7.5pt; color: #888;
+            font-family: Helvetica, Arial, sans-serif; gap: 4px;
+        }
+
+        /* ── Marcador visual de salto de página ── */
+        .pv-pagebreak-marker {
+            margin: 24px -18mm 0;
+            position: relative;
+            background: white;
+        }
+        .pv-pb-separator {
+            border-top: 3px dashed #c5cdd8;
+            padding: 10px 18mm;
+            text-align: center;
+            background: repeating-linear-gradient(
+                -45deg,
+                #f0f3f7,
+                #f0f3f7 5px,
+                #e4e9ee 5px,
+                #e4e9ee 10px
+            );
+        }
+        .pv-pb-label {
+            display: inline-block;
+            background: #dce3ec;
+            color: #5a6577;
+            font-size: 8pt;
+            padding: 3px 16px;
+            border-radius: 10px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+        .pv-pb-repeated-header {
+            border-top: 5px solid var(--pa, #1a56a0);
+            margin-top: 0;
+        }
+        .pv-pb-repeated-header .preview-workplace {
+            pointer-events: none;
+            margin: 0;
+            padding: 8px 18mm 7px;
+        }
+        /* Contenido después del salto: padding interno como la primera página */
+        .pv-pb-after-content {
+            padding: 12px 18mm 0;
+        }
+
+        /* ── @media print: solo imprimir el contenido A4 ── */
+        @media print {
+            /* Ocultar toda la UI */
+            body > *:not(.modal-overlay) { display: none !important; }
+            .modal-overlay { 
+                display: block !important; 
+                position: static !important; 
+                background: none !important; 
+                padding: 0 !important;
+                overflow: visible !important;
+            }
+            .modal {
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                height: auto !important;
+                max-width: none !important;
+                background: none !important;
+            }
+            .modal-header, .modal-footer { display: none !important; }
+            .print-preview-container {
+                padding: 0 !important;
+                background: none !important;
+                overflow: visible !important;
+            }
+            .a4-page {
+                box-shadow: none !important;
+                width: 100% !important;
+                min-height: auto !important;
+                padding: 0 10mm 10mm !important;
+                border-top: none !important;
+                margin: 0 !important;
+            }
+            /* Ocultar los marcadores visuales de salto */
+            .pv-pb-separator { display: none !important; }
+            .pv-pb-label { display: none !important; }
+            /* El encabezado repetido sí se muestra */
+            .pv-pb-repeated-header { border-top: none !important; margin-top: 0 !important; }
+            .pv-pagebreak-marker {
+                margin: 0 !important;
+                break-before: page;
+                page-break-before: always;
+            }
+            /* Workplace banner: quitar márgenes negativos en print */
+            .preview-workplace, .pv-pb-repeated-header .preview-workplace {
+                margin: 0 -10mm !important;
+                padding-left: 10mm !important;
+                padding-right: 10mm !important;
+            }
+            /* Color del encabezado debe imprimirse */
+            .preview-workplace { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            thead th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            tbody tr:nth-child(even) td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .pvp-grid { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .pvs-grid { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .print-preview-container { padding: 0.5rem; }
+            .a4-page {
+                width: 100%; min-height: auto; padding: 8mm; font-size: 9pt;
+            }
+            .preview-workplace { margin: 0 -8mm; padding: 6px 8mm 5px; }
+            .pvp-grid { grid-template-columns: 1fr 1fr; font-size: 8.5pt; }
+            .pvs-grid { grid-template-columns: 1fr; }
+        }
+
+        /* ── Color picker panel ── */
+        .color-panel {
+            display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center;
+            margin-top: 1rem; padding: 1rem; background: #0f172a;
+            border-radius: 12px; max-width: 620px;
+        }
+        .color-panel label {
+            font-size: 0.8rem; color: #94a3b8; display: flex;
+            align-items: center; gap: 6px;
+        }
+        .color-panel input[type="color"] {
+            width: 36px; height: 28px; border: 2px solid #475569;
+            border-radius: 6px; cursor: pointer; background: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>👁️ Test Visual — <span>Vista Previa Completa</span></h1>
+    <p class="desc">
+        Simulación de informes médicos con TODOS los campos posibles.
+        Presioná un botón para ver la vista previa con datos inventados.
+    </p>
+
+    <div class="btn-group">
+        <button class="btn-show btn-full" onclick="showPreview('full')">
+            📋 Informe Completo (todos los campos)
+        </button>
+        <button class="btn-show btn-cardio" onclick="showPreview('cardio')">
+            🫀 Ecocardiograma Transtorácico
+        </button>
+        <button class="btn-show btn-min" onclick="showPreview('minimal')">
+            📝 Informe Mínimo (pocos campos)
+        </button>
+    </div>
+
+    <div class="color-panel">
+        <label>🎨 Color de acento:
+            <input type="color" id="accentColor" value="#1a56a0" onchange="updateAccent(this.value)">
+        </label>
+        <label style="font-size:0.75rem; color:#64748b;">
+            Probá: #1a56a0 (azul) · #0f766e (teal) · #7c3aed (violeta) · #dc2626 (rojo) · #0369a1 (cielo)
+        </label>
+    </div>
+
+    <!-- ── MODAL PREVIEW ── -->
+    <div class="modal-overlay" id="printPreviewOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>👁️ Vista Previa de Impresión</h2>
+                <button class="modal-close" onclick="closePreview()">&times;</button>
+            </div>
+            <div class="print-preview-container">
+                <div class="a4-page" id="previewPage">
+                    <div class="preview-workplace" id="previewWorkplace"></div>
+                    <div class="preview-header" id="previewHeader"></div>
+                    <div class="preview-study" id="previewStudy"></div>
+                    <div class="preview-patient" id="previewPatient"></div>
+                    <div class="preview-content" id="previewContent"></div>
+                    <div class="preview-signature" id="previewSignature"></div>
+                    <div class="preview-qr" id="previewQR"></div>
+                    <div class="preview-footer" id="previewFooter"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="window.print()">🖨️ Imprimir</button>
+                <button class="btn" onclick="closePreview()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+// ── SVG Logo con fondo transparente (estetoscopio + cruz médica) ──
+const DEMO_LOGO = (() => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+        <defs>
+            <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+                <stop offset="100%" stop-color="#e0e7ff" stop-opacity="0.9"/>
+            </linearGradient>
+        </defs>
+        <!-- Escudo/forma orgánica -->
+        <path d="M60 8 C85 8, 108 28, 108 56 C108 88, 60 112, 60 112 C60 112, 12 88, 12 56 C12 28, 35 8, 60 8Z"
+              fill="url(#g1)" stroke="white" stroke-width="2" opacity="0.2"/>
+        <!-- Cruz médica -->
+        <rect x="50" y="25" width="20" height="52" rx="4" fill="white" opacity="0.95"/>
+        <rect x="34" y="41" width="52" height="20" rx="4" fill="white" opacity="0.95"/>
+        <!-- Estetoscopio estilizado -->
+        <path d="M38 72 C38 58, 42 50, 48 46" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.7"/>
+        <path d="M82 72 C82 58, 78 50, 72 46" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.7"/>
+        <circle cx="38" cy="76" r="6" fill="none" stroke="white" stroke-width="2.5" opacity="0.7"/>
+        <circle cx="82" cy="76" r="6" fill="none" stroke="white" stroke-width="2.5" opacity="0.7"/>
+        <path d="M44 76 Q60 95, 76 76" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.6"/>
+        <circle cx="60" cy="92" r="4" fill="white" opacity="0.7"/>
+    </svg>`;
+    return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+})();
+
+// ── SVG Firma con fondo transparente ──
+const DEMO_SIGNATURE = (() => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 80" width="300" height="80">
+        <!-- Trazo de firma manuscrita simulada -->
+        <path d="M20 55 C25 20, 35 15, 40 40 C45 60, 50 20, 60 35 C65 42, 55 55, 70 45
+                 C80 38, 75 25, 90 30 C100 34, 95 50, 105 42 C112 36, 108 28, 120 35
+                 C128 40, 122 52, 135 45" 
+              stroke="#1a1a2e" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M130 48 C140 30, 150 25, 155 40 C158 50, 145 55, 160 48
+                 C170 42, 165 30, 178 38 Q185 42, 192 35 C198 28, 195 45, 208 40 
+                 L215 38 C218 37, 225 42, 230 38" 
+              stroke="#1a1a2e" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- Rúbrica decorativa -->
+        <path d="M135 55 Q165 62, 200 52 Q220 47, 240 55 Q255 60, 270 50" 
+              stroke="#1a1a2e" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.6"/>
+        <!-- Punto final -->
+        <circle cx="272" cy="50" r="2" fill="#1a1a2e" opacity="0.7"/>
+    </svg>`;
+    return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+})();
+
+// ── QR Code falso (imagen SVG de cuadrícula QR) ──
+const DEMO_QR = (() => {
+    // Generar un patrón de QR realista
+    const size = 21; // QR version 1
+    const px = 4;
+    let rects = '';
+    // Patterns para simular un QR real
+    const pattern = [
+        [1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1],
+        [1,0,0,0,0,0,1,0,0,1,0,1,0,0,1,0,0,0,0,0,1],
+        [1,0,1,1,1,0,1,0,1,0,1,0,1,0,1,0,1,1,1,0,1],
+        [1,0,1,1,1,0,1,0,0,1,1,0,0,0,1,0,1,1,1,0,1],
+        [1,0,1,1,1,0,1,0,1,0,0,1,1,0,1,0,1,1,1,0,1],
+        [1,0,0,0,0,0,1,0,0,1,0,1,0,0,1,0,0,0,0,0,1],
+        [1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1],
+        [0,0,0,0,0,0,0,0,1,1,0,0,1,0,0,0,0,0,0,0,0],
+        [1,0,1,0,1,1,1,1,0,1,1,0,0,1,1,0,1,0,1,0,1],
+        [0,1,0,1,0,0,0,1,1,0,1,1,0,1,0,1,0,1,0,1,0],
+        [1,1,1,0,1,0,1,0,0,1,0,0,1,0,1,0,1,1,0,0,1],
+        [0,1,0,0,1,1,0,0,1,0,1,1,0,1,0,0,1,0,1,1,0],
+        [1,0,1,1,0,0,1,1,0,1,0,0,1,0,1,1,0,0,1,0,1],
+        [0,0,0,0,0,0,0,0,1,0,1,1,0,0,0,1,0,1,0,1,0],
+        [1,1,1,1,1,1,1,0,0,1,0,0,1,0,1,0,1,0,1,0,1],
+        [1,0,0,0,0,0,1,0,1,0,1,1,0,1,0,1,0,0,1,1,0],
+        [1,0,1,1,1,0,1,0,1,1,0,0,1,0,1,0,1,1,0,0,1],
+        [1,0,1,1,1,0,1,0,0,1,1,0,0,1,0,0,1,0,1,1,0],
+        [1,0,1,1,1,0,1,0,1,0,0,1,1,0,1,1,0,1,0,0,1],
+        [1,0,0,0,0,0,1,0,0,1,0,1,0,1,0,1,0,0,1,0,0],
+        [1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,0,1,1,1,1,1],
+    ];
+    for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+            if (pattern[y][x]) {
+                rects += `<rect x="${x*px}" y="${y*px}" width="${px}" height="${px}" fill="#111"/>`;
+            }
+        }
+    }
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size*px} ${size*px}" width="${size*px}" height="${size*px}">
+        <rect width="100%" height="100%" fill="white"/>${rects}</svg>`;
+    return 'data:image/svg+xml;base64,' + btoa(svg);
+})();
+
+
+// ── Datos de demostración ──
+const PROFILES = {
+    full: {
+        accent: '#1a56a0',
+        workplace: {
+            name: 'Centro de Diagnóstico por Imágenes San Martín',
+            address: 'Av. Rivadavia 4520, Piso 3 — C1424CEO, CABA',
+            phone: '(011) 4902-3456',
+            email: 'turnos@centrosanmartin.com.ar'
+        },
+        professional: {
+            name: 'Dra. María Alejandra Rodríguez',
+            specialty: 'Diagnóstico por imágenes / Ecografía general y vascular',
+            institution: 'Hospital Italiano de Buenos Aires',
+            matricula: 'MN 118.452'
+        },
+        study: {
+            type: 'Ecografía abdominal completa',
+            reportNum: 'ECO-2026-00847',
+            date: '26/02/2026',
+            time: '10:35',
+            reason: 'Dolor abdominal recurrente en hipocondrio derecho',
+            refDoctor: 'Dr. Carlos Alberto Gutiérrez'
+        },
+        patient: {
+            name: 'Roberto Alejandro Fernández',
+            dni: '28.456.912',
+            age: '52',
+            sex: 'Masculino',
+            insurance: 'OSDE 310',
+            affiliateNum: '0412-87654-03'
+        },
+        content: `
+            <h1>Ecografía Abdominal Completa</h1>
+
+            <h2>Hígado</h2>
+            <p>Hígado de tamaño conservado, con ecoestructura homogénea, sin evidencia de lesiones focales sólidas ni quísticas. Bordes regulares. Venas suprahepáticas y porta de calibre normal. No se observan signos de esteatosis hepática. La vena porta mide 11 mm de diámetro, con flujo hepatópeto.</p>
+
+            <h2>Vesícula Biliar y Vías Biliares</h2>
+            <p>Vesícula biliar distendida, de paredes finas (2 mm), con contenido anecoico. Se observan <strong>dos imágenes litiásicas de 8 mm y 12 mm</strong> con sombra acústica posterior, móviles con los cambios de decúbito. Colédoco de calibre normal (4 mm). Vía biliar intrahepática no dilatada.</p>
+
+            <h2>Páncreas</h2>
+            <p>Parcialmente visualizado por interposición gaseosa. Los segmentos visualizados muestran ecoestructura conservada, sin dilatación del conducto de Wirsung. No se identifican masas ni colecciones peripancreáticas.</p>
+
+            <h2>Bazo</h2>
+            <p>De tamaño y ecoestructura normal. Diámetro bipolar de 105 mm. Hilio esplénico permeable. No se observan lesiones focales.</p>
+
+            <h2>Riñones</h2>
+            <p><strong>Riñón derecho:</strong> mide 112 × 55 mm, con adecuada diferenciación córtico-medular. Parénquima de 16 mm de espesor. No se observan litiasis ni dilatación del sistema colector. Quiste cortical simple de 14 mm en polo inferior (Bosniak I).</p>
+            <p><strong>Riñón izquierdo:</strong> mide 115 × 52 mm, con parénquima homogéneo de 17 mm. Sin litiasis ni ectasia piélica. No se observan masas ni colecciones perirrenales.</p>
+
+            <h2>Aorta Abdominal</h2>
+            <p>De calibre normal (18 mm a nivel infrarrenal). Paredes regulares sin evidencia de dilatación aneurismática. Flujo laminar conservado.</p>
+
+            <h2>Vejiga</h2>
+            <p>Con adecuada repleción, paredes regulares, sin vegetaciones ni litiasis endoluminales. Contenido anecoico homogéneo. Volumen residual post-miccional no valorado en este estudio.</p>
+
+            <h2>Espacio Peritoneal</h2>
+            <p>No se observa líquido libre en los fondos de saco de Douglas ni en los espacios parietocólicos. Morrison negativo.</p>
+
+            <hr>
+
+            <h2>Mediciones Principales</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Estructura</th>
+                        <th>Medida</th>
+                        <th>Ref. Normal</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Hígado (lóbulo derecho)</td><td>148 mm</td><td>&lt;155 mm</td><td>Normal</td></tr>
+                    <tr><td>Vena porta</td><td>11 mm</td><td>&lt;13 mm</td><td>Normal</td></tr>
+                    <tr><td>Vesícula biliar</td><td>95 × 38 mm</td><td>Var.</td><td>Distendida</td></tr>
+                    <tr><td>Colédoco</td><td>4 mm</td><td>&lt;7 mm</td><td>Normal</td></tr>
+                    <tr><td>Bazo</td><td>105 mm</td><td>&lt;120 mm</td><td>Normal</td></tr>
+                    <tr><td>Riñón derecho</td><td>112 × 55 mm</td><td>100-120 mm</td><td>Normal</td></tr>
+                    <tr><td>Riñón izquierdo</td><td>115 × 52 mm</td><td>100-120 mm</td><td>Normal</td></tr>
+                    <tr><td>Aorta infrarrenal</td><td>18 mm</td><td>&lt;30 mm</td><td>Normal</td></tr>
+                </tbody>
+            </table>
+
+            <h1>Conclusión</h1>
+            <p><strong>1.</strong> Litiasis vesicular múltiple (dos imágenes de 8 y 12 mm) con vesícula de paredes finas, sin signos ecográficos de colecistitis aguda.</p>
+            <p><strong>2.</strong> Quiste cortical simple en polo inferior de riñón derecho (14 mm, Bosniak I), hallazgo incidental sin significación patológica.</p>
+            <p><strong>3.</strong> Restantes órganos abdominales evaluados dentro de límites normales.</p>
+            <p style="margin-top:12px; font-style:italic; color:#555;">Se sugiere correlación clínica y valoración quirúrgica para la litiasis vesicular si es sintomática. Control ecográfico del quiste renal en 12 meses.</p>
+        `,
+        footer: 'Este informe es válido únicamente con la firma del profesional a cargo.',
+        showSignature: true,
+        showQR: true
+    },
+
+    cardio: {
+        accent: '#b91c1c',
+        workplace: {
+            name: 'Instituto Cardiovascular del Litoral',
+            address: 'Bulevar Gálvez 1150, Santa Fe (S3000)',
+            phone: '(0342) 456-7890',
+            email: 'info@icvlitoral.com.ar'
+        },
+        professional: {
+            name: 'Dr. Hernán Patricio Vázquez',
+            specialty: 'Cardiología / Ecocardiografía',
+            institution: 'Sanatorio Británico de Rosario',
+            matricula: 'MP 24.891'
+        },
+        study: {
+            type: 'Ecocardiograma transtorácico',
+            reportNum: 'ETT-2026-00192',
+            date: '26/02/2026',
+            time: '14:20',
+            reason: 'Soplo sistólico en foco aórtico grado III/VI',
+            refDoctor: 'Dra. Luciana Beatriz Colombo'
+        },
+        patient: {
+            name: 'Marta Susana López de Giménez',
+            dni: '14.982.003',
+            age: '71',
+            sex: 'Femenino',
+            insurance: 'PAMI',
+            affiliateNum: '14982003-01'
+        },
+        content: `
+            <h1>Ecocardiograma Transtorácico</h1>
+
+            <h2>Ventrículo Izquierdo</h2>
+            <p>Dimensiones conservadas. Diámetro diastólico 48 mm, diámetro sistólico 30 mm. Espesores parietales normales: septum interventricular 10 mm, pared posterior 10 mm. Motilidad global y segmentaria conservada. Fracción de eyección del ventrículo izquierdo estimada en <strong>62%</strong> (método de Simpson biplano). No se observan trombos intracavitarios.</p>
+
+            <h2>Ventrículo Derecho</h2>
+            <p>De tamaño y función sistólica conservados. TAPSE 22 mm. No se evidencia dilatación ni hipokinesia de pared libre. Espesor de pared libre 4 mm.</p>
+
+            <h2>Aurículas</h2>
+            <p><strong>Aurícula izquierda:</strong> levemente dilatada (42 mm anteroposterior, volumen indexado 35 ml/m²). Sin trombos ni masas.</p>
+            <p><strong>Aurícula derecha:</strong> de dimensiones normales. No se observa dilatación ni derrame pericárdico asociado.</p>
+
+            <h2>Válvula Aórtica</h2>
+            <p>Trivalva, con <strong>esclerosis y calcificación moderada</strong> de las valvas no coronaria y coronaria derecha. Apertura reducida. Se estima un <strong>área valvular de 1.1 cm²</strong> por ecuación de continuidad, compatible con <strong>estenosis aórtica moderada</strong>.</p>
+            <p>Velocidad pico transaórtica: 3.6 m/s. Gradiente medio: 28 mmHg. Gradiente pico: 52 mmHg.</p>
+            <p>Insuficiencia aórtica leve asociada (vena contracta 3 mm, jet central).</p>
+
+            <h2>Válvula Mitral</h2>
+            <p>Valvas de aspecto normal, sin prolapso ni restricción. Patrón de llenado con relación E/A de 0.8 (alteración de la relajación). Tiempo de desaceleración 240 ms. E' lateral 8 cm/s, relación E/e' 10. Insuficiencia valvular trivial fisiológica.</p>
+
+            <h2>Válvula Tricúspide</h2>
+            <p>Morfología conservada. Insuficiencia leve que permite estimar una presión sistólica pulmonar de <strong>35 mmHg</strong> (con PVC estimada en 5 mmHg). Sin signos de hipertensión pulmonar severa.</p>
+
+            <h2>Válvula Pulmonar</h2>
+            <p>Morfología normal, sin estenosis ni insuficiencia significativa. Tiempo de aceleración del flujo pulmonar normal.</p>
+
+            <h2>Pericardio</h2>
+            <p>Sin derrame pericárdico. Pericardio de aspecto ecográfico normal.</p>
+
+            <h2>Aorta</h2>
+            <p>Raíz aórtica 34 mm. Aorta ascendente 37 mm (límite superior normal para edad y superficie corporal). Arco aórtico visible, sin dilatación significativa.</p>
+
+            <hr>
+
+            <h2>Resumen de Mediciones</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Parámetro</th>
+                        <th>Valor</th>
+                        <th>Referencia</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>DDVI</td><td>48 mm</td><td>39-53 mm</td></tr>
+                    <tr><td>DSVI</td><td>30 mm</td><td>22-35 mm</td></tr>
+                    <tr><td>SIV</td><td>10 mm</td><td>6-11 mm</td></tr>
+                    <tr><td>PP</td><td>10 mm</td><td>6-11 mm</td></tr>
+                    <tr><td>FEVI (Simpson)</td><td>62%</td><td>≥55%</td></tr>
+                    <tr><td>AI (AP)</td><td>42 mm</td><td>&lt;40 mm</td></tr>
+                    <tr><td>Raíz aórtica</td><td>34 mm</td><td>&lt;37 mm</td></tr>
+                    <tr><td>Ao ascendente</td><td>37 mm</td><td>&lt;40 mm</td></tr>
+                    <tr><td>TAPSE</td><td>22 mm</td><td>≥17 mm</td></tr>
+                    <tr><td>Vel. pico Ao</td><td>3.6 m/s</td><td>&lt;2.5 m/s</td></tr>
+                    <tr><td>Grad. medio Ao</td><td>28 mmHg</td><td>&lt;20 mmHg</td></tr>
+                    <tr><td>Área valv. Ao</td><td>1.1 cm²</td><td>&gt;1.5 cm²</td></tr>
+                    <tr><td>E/A</td><td>0.8</td><td>1-2</td></tr>
+                    <tr><td>PSAP estimada</td><td>35 mmHg</td><td>&lt;35 mmHg</td></tr>
+                </tbody>
+            </table>
+
+            <h1>Conclusión</h1>
+            <p><strong>1.</strong> Estenosis valvular aórtica moderada (área 1.1 cm², gradiente medio 28 mmHg, velocidad pico 3.6 m/s) con insuficiencia aórtica leve asociada.</p>
+            <p><strong>2.</strong> Función sistólica del ventrículo izquierdo conservada (FEVI 62%).</p>
+            <p><strong>3.</strong> Aurícula izquierda levemente dilatada. Disfunción diastólica grado I (alteración de la relajación).</p>
+            <p><strong>4.</strong> Estimación de presión sistólica pulmonar en límite superior normal (35 mmHg).</p>
+            <p><strong>5.</strong> Restantes hallazgos dentro de límites normales.</p>
+            <p style="margin-top:12px; font-style:italic; color:#555;">Se recomienda seguimiento ecocardiográfico anual por estenosis aórtica moderada. Correlacionar con cuadro clínico para definir conducta. Considerar ecocardiograma transesofágico si se requiere mayor caracterización valvular.</p>
+        `,
+        footer: 'Documento generado por Transcriptor Médico Pro — Verificable con código QR.',
+        showSignature: true,
+        showQR: true
+    },
+
+    minimal: {
+        accent: '#6d28d9',
+        workplace: {
+            name: 'Consultorio Médico Dr. Ramírez',
+            address: '',
+            phone: '',
+            email: ''
+        },
+        professional: {
+            name: 'Dr. Julián Ramírez',
+            specialty: 'Clínica médica',
+            institution: '',
+            matricula: 'MP 9.204'
+        },
+        study: {
+            type: 'Nota de evolución',
+            reportNum: '',
+            date: '26/02/2026',
+            time: '',
+            reason: '',
+            refDoctor: ''
+        },
+        patient: {
+            name: 'Ana García',
+            dni: '32.109.876',
+            age: '38',
+            sex: 'Femenino',
+            insurance: '',
+            affiliateNum: ''
+        },
+        content: `
+            <h1>Nota de Evolución</h1>
+
+            <h2>Motivo de Consulta</h2>
+            <p>Paciente que consulta por cefalea tensional recurrente de 2 semanas de evolución, predominantemente vespertina, de tipo opresivo en región frontal y temporal bilateral, sin signos de alarma neurológica.</p>
+
+            <h2>Examen Físico</h2>
+            <p>Paciente lúcida, orientada en tiempo y espacio. TA: 120/78 mmHg. FC: 72 lpm. Temperatura: 36.4°C. Sin rigidez de nuca. Pares craneanos conservados. Fondo de ojo normal (evaluación directa). Sin déficit focal motor ni sensitivo.</p>
+
+            <h2>Conducta</h2>
+            <ul>
+                <li>Se indica ibuprofeno 400 mg cada 8 horas por 5 días (condicional al dolor).</li>
+                <li>Medidas higiénico-dietéticas: hidratación adecuada, reducción de pantallas, higiene del sueño.</li>
+                <li>Control en 2 semanas o antes si aparecen signos de alarma (visión borrosa, vómitos, rigidez de nuca).</li>
+            </ul>
+
+            <h2>Diagnóstico Presuntivo</h2>
+            <p>Cefalea tensional episódica. CIE-10: G44.2</p>
+        `,
+        footer: 'Este informe es válido únicamente con la firma del profesional a cargo.',
+        showSignature: true,
+        showQR: false
+    }
+};
+
+
+function showPreview(type) {
+    const d = PROFILES[type];
+    const accent = document.getElementById('accentColor').value || d.accent;
+    const page = document.getElementById('previewPage');
+    page.style.setProperty('--pa', accent);
+
+    // ── Workplace ──
+    const wpEl = document.getElementById('previewWorkplace');
+    const wp = d.workplace;
+    let wpHtml = '<div class="pvw-block">';
+    wpHtml += `<img class="pvw-logo" src="${DEMO_LOGO}" alt="Logo">`;
+    wpHtml += '<div class="pvw-text">';
+    wpHtml += `<div class="pvw-name">${wp.name}</div>`;
+    const wpDetails = [wp.address, wp.phone ? 'Tel: ' + wp.phone : '', wp.email].filter(Boolean);
+    if (wpDetails.length) wpHtml += `<div class="pvw-details">${wpDetails.join(' &nbsp;•&nbsp; ')}</div>`;
+    wpHtml += '</div></div>';
+    wpEl.innerHTML = wpHtml;
+    wpEl.style.display = '';
+
+    // ── Professional Header ──
+    const hdrEl = document.getElementById('previewHeader');
+    const pro = d.professional;
+    hdrEl.innerHTML = `
+        <div class="pvh-body">
+            <div class="pvh-info">
+                <div class="pvh-name">${pro.name}</div>
+                ${pro.specialty ? `<div class="pvh-spec">${pro.specialty}</div>` : ''}
+                ${pro.institution ? `<div class="pvh-inst">${pro.institution}</div>` : ''}
+                ${pro.matricula ? `<div class="pvh-mat">Mat. ${pro.matricula}</div>` : ''}
+            </div>
+        </div>`;
+    hdrEl.style.display = '';
+
+    // ── Study Data ──
+    const styEl = document.getElementById('previewStudy');
+    const s = d.study;
+    let row1 = `<div class="pvs-cell"><span class="pvs-lbl">Estudio</span><span class="pvs-val">${s.type || '—'}</span></div>`;
+    row1 += `<div class="pvs-cell"><span class="pvs-lbl">Informe Nº</span><span class="pvs-val">${s.reportNum || '—'}</span></div>`;
+    row1 += `<div class="pvs-cell"><span class="pvs-lbl">Fecha</span><span class="pvs-val">${s.date}${s.time ? ' ' + s.time : ''}</span></div>`;
+    let row2 = '';
+    if (s.refDoctor) row2 += `<div class="pvs-cell"><span class="pvs-lbl">Solicitante</span><span class="pvs-val">${s.refDoctor}</span></div>`;
+    if (s.reason)    row2 += `<div class="pvs-cell"><span class="pvs-lbl">Motivo</span><span class="pvs-val">${s.reason}</span></div>`;
+    styEl.innerHTML = `<div class="pvs-grid pvs-3col">${row1}</div>` + (row2 ? `<div class="pvs-grid pvs-2col">${row2}</div>` : '');
+
+    // ── Patient Data ──
+    const patEl = document.getElementById('previewPatient');
+    const p = d.patient;
+    const cells = [];
+    if (p.name)         cells.push(`<div class="pvp-cell"><span class="pvp-lbl">Paciente</span><span class="pvp-val pvp-bold">${p.name}</span></div>`);
+    if (p.dni)          cells.push(`<div class="pvp-cell"><span class="pvp-lbl">DNI</span><span class="pvp-val">${p.dni}</span></div>`);
+    if (p.age)          cells.push(`<div class="pvp-cell"><span class="pvp-lbl">Edad</span><span class="pvp-val">${p.age} años</span></div>`);
+    if (p.sex)          cells.push(`<div class="pvp-cell"><span class="pvp-lbl">Sexo</span><span class="pvp-val">${p.sex}</span></div>`);
+    if (p.insurance)    cells.push(`<div class="pvp-cell"><span class="pvp-lbl">Cobertura</span><span class="pvp-val">${p.insurance}</span></div>`);
+    if (p.affiliateNum) cells.push(`<div class="pvp-cell"><span class="pvp-lbl">Nº Afiliado</span><span class="pvp-val">${p.affiliateNum}</span></div>`);
+    patEl.innerHTML = cells.length ? `<div class="pvp-grid">${cells.join('')}</div>` : '';
+    patEl.style.display = cells.length ? '' : 'none';
+
+    // ── Report Content ──
+    document.getElementById('previewContent').innerHTML = d.content;
+
+    // ── Signature ──
+    const sigEl = document.getElementById('previewSignature');
+    if (d.showSignature) {
+        sigEl.style.display = '';
+        sigEl.innerHTML = `<div class="pvsig-block">
+            <img src="${DEMO_SIGNATURE}" class="pvsig-img" alt="Firma">
+            <div class="pvsig-line"></div>
+            <div class="pvsig-name">${pro.name}</div>
+            <div class="pvsig-mat">Mat. ${pro.matricula}</div>
+            <div class="pvsig-spec">${pro.specialty.split('/')[0].trim()}</div>
+        </div>`;
+    } else {
+        sigEl.innerHTML = '';
+        sigEl.style.display = 'none';
+    }
+
+    // ── QR Code ──
+    const qrEl = document.getElementById('previewQR');
+    if (d.showQR) {
+        qrEl.style.display = '';
+        qrEl.innerHTML = `<img src="${DEMO_QR}" alt="QR" style="width:72px;height:72px;">
+            <span class="pvqr-label">Código de verificación</span>`;
+    } else {
+        qrEl.innerHTML = '';
+        qrEl.style.display = 'none';
+    }
+
+    // ── Footer ──
+    const ftEl = document.getElementById('previewFooter');
+    ftEl.innerHTML = `<div class="pvf-wrap">
+        <span>${d.footer}</span>
+        <span>Impreso: 26/02/2026</span>
+        <span style="margin-left:auto;">Página 1</span>
+    </div>`;
+    ftEl.style.display = '';
+
+    // Show overlay
+    document.getElementById('printPreviewOverlay').classList.add('active');
+
+    // ── Insertar marcadores de salto de página con encabezado repetido ──
+    setTimeout(() => insertPageBreaks(d), 100);
+}
+
+function closePreview() {
+    document.getElementById('printPreviewOverlay').classList.remove('active');
+}
+
+function updateAccent(color) {
+    const page = document.getElementById('previewPage');
+    if (page) page.style.setProperty('--pa', color);
+}
+
+/**
+ * Inserta marcadores visuales de salto de página con el encabezado del
+ * workplace repetido, para simular exactamente cómo se verá impreso.
+ */
+function insertPageBreaks(d) {
+    const page = document.getElementById('previewPage');
+    if (!page) return;
+
+    // Eliminar marcadores previos
+    page.querySelectorAll('.pv-pagebreak-marker').forEach(el => el.remove());
+
+    const PAGE_HEIGHT_PX = 297 * (96 / 25.4); // ~1122px por página A4
+    const MARGIN_BOTTOM_PX = 18 * (96 / 25.4); // ~68px margen inferior
+    const usableHeight = PAGE_HEIGHT_PX - MARGIN_BOTTOM_PX;
+
+    // Construir el HTML del workplace que se repetirá
+    const wp = d.workplace;
+    let wpRepeatHtml = '<div class="preview-workplace">';
+    wpRepeatHtml += '<div class="pvw-block">';
+    wpRepeatHtml += `<img class="pvw-logo" src="${DEMO_LOGO}" alt="Logo">`;
+    wpRepeatHtml += '<div class="pvw-text">';
+    wpRepeatHtml += `<div class="pvw-name">${wp.name}</div>`;
+    const wpDetails = [wp.address, wp.phone ? 'Tel: ' + wp.phone : '', wp.email].filter(Boolean);
+    if (wpDetails.length) wpRepeatHtml += `<div class="pvw-details">${wpDetails.join(' &nbsp;•&nbsp; ')}</div>`;
+    wpRepeatHtml += '</div></div></div>';
+
+    // Recorrer los hijos del contenido buscando dónde insertar saltos
+    const contentEl = document.getElementById('previewContent');
+    if (!contentEl) return;
+
+    let currentPageBottom = usableHeight;
+    let pageNum = 1;
+    const children = Array.from(contentEl.children);
+
+    for (let i = 0; i < children.length; i++) {
+        const child = children[i];
+        const childTop = child.offsetTop;
+        const childBottom = childTop + child.offsetHeight;
+
+        if (childBottom > currentPageBottom && pageNum < 20) {
+            pageNum++;
+            // Crear marcador
+            const marker = document.createElement('div');
+            marker.className = 'pv-pagebreak-marker';
+            marker.innerHTML = `
+                <div class="pv-pb-separator">
+                    <span class="pv-pb-label">— Página ${pageNum} —</span>
+                </div>
+                <div class="pv-pb-repeated-header">
+                    ${wpRepeatHtml}
+                </div>`;
+            // Insertar antes de este hijo
+            contentEl.insertBefore(marker, child);
+            // Recalcular: el marcador empuja a los hijos hacia abajo
+            currentPageBottom = child.offsetTop + usableHeight - 60; // compensar altura del marcador
+        }
+    }
+
+    // Actualizar numeración de página en el footer
+    const ftEl = document.getElementById('previewFooter');
+    if (ftEl) {
+        const pageSpan = ftEl.querySelector('.pvf-wrap span:last-child');
+        if (pageSpan) pageSpan.textContent = `Páginas: 1-${pageNum}`;
+    }
+}
+
+// Cerrar con Escape
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closePreview();
+});
+</script>
+
+</body>
+</html>

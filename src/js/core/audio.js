@@ -20,22 +20,38 @@ async function toggleRecording() {
             };
 
             window.mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(window.audioChunks, { type: 'audio/wav' });
+                // Detectar MIME real del MediaRecorder (webm/ogg, NO wav)
+                const realMime = window.mediaRecorder.mimeType || 'audio/webm';
+                const ext = realMime.includes('ogg') ? 'ogg' : 'webm';
+                const audioBlob = new Blob(window.audioChunks, { type: realMime });
                 const audioUrl = URL.createObjectURL(audioBlob);
-                const fileName = `Grabación ${new Date().toLocaleTimeString().replace(/:/g, '-')}.wav`;
-                const file = new File([audioBlob], fileName, { type: 'audio/wav' });
+                const fileName = `Grabación ${new Date().toLocaleTimeString().replace(/:/g, '-')}.${ext}`;
+                const file = new File([audioBlob], fileName, { type: realMime });
 
                 handleFiles([file]);
 
+                // Liberar URL del blob (handleFiles crea su propia URL)
+                URL.revokeObjectURL(audioUrl);
+
                 // Stop all tracks
                 stream.getTracks().forEach(track => track.stop());
+            };
+
+            window.mediaRecorder.onerror = (e) => {
+                console.error('MediaRecorder error:', e.error);
+                stream.getTracks().forEach(track => track.stop());
+                window.isRecording = false;
+                updateRecordingUI(false);
+                clearInterval(window.recordingInterval);
+                if (recordingTime) recordingTime.textContent = '00:00';
+                if (typeof showToast !== 'undefined') showToast('Error en la grabación. Intentá de nuevo.', 'error');
             };
 
             window.mediaRecorder.start();
             window.isRecording = true;
             updateRecordingUI(true);
 
-            // Timer
+            // Timer visual
             window.recordingStartTime = Date.now();
             window.recordingInterval = setInterval(() => {
                 const diff = Date.now() - window.recordingStartTime;
@@ -44,17 +60,33 @@ async function toggleRecording() {
                 recordingTime.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             }, 1000);
 
+            // RA-1: Warning a los 30 min
+            window._recordingWarningTimer = setTimeout(() => {
+                if (typeof showToast !== 'undefined') showToast('⏱️ 30 min de grabación. Se detendrá automáticamente a los 45 min.', 'warning', 5000);
+            }, 30 * 60 * 1000);
+
+            // RA-1: Auto-stop a los 45 min
+            window._recordingAutoStopTimer = setTimeout(() => {
+                if (window.isRecording) {
+                    if (typeof showToast !== 'undefined') showToast('⏱️ Grabación detenida: límite de 45 minutos alcanzado', 'warning', 5000);
+                    toggleRecording(); // detener
+                }
+            }, 45 * 60 * 1000);
+
         } catch (err) {
             console.error('Error accessing microphone:', err);
             if (typeof showToast !== 'undefined') showToast('No se pudo acceder al micrófono. Verifica los permisos.', 'error');
         }
     } else {
         // Stop Recording
-        window.mediaRecorder.stop();
+        try { window.mediaRecorder.stop(); } catch (_) { /* already stopped */ }
         window.isRecording = false;
         updateRecordingUI(false);
         clearInterval(window.recordingInterval);
-        recordingTime.textContent = '00:00';
+        // RA-1: Limpiar timers de warning y auto-stop
+        if (window._recordingWarningTimer) { clearTimeout(window._recordingWarningTimer); window._recordingWarningTimer = null; }
+        if (window._recordingAutoStopTimer) { clearTimeout(window._recordingAutoStopTimer); window._recordingAutoStopTimer = null; }
+        if (recordingTime) recordingTime.textContent = '00:00';
     }
 }
 
@@ -105,11 +137,13 @@ function handleFiles(files) {
         if (typeof showToast !== 'undefined') showToast('Archivos >25MB ignorados', 'error');
     }
 
-    window.uploadedFiles.push(...validFiles.map(f => ({ file: f, status: 'pending' })));
+    window.uploadedFiles.push(...validFiles.map(f => ({ file: f, status: 'pending', audioUrl: URL.createObjectURL(f) })));
     if (typeof updateFileList === 'function') updateFileList();
 
     const transcribeBtn = document.getElementById('transcribeBtn');
     if (transcribeBtn) transcribeBtn.disabled = false;
+    const tAndS1 = document.getElementById('transcribeAndStructureBtn');
+    if (tAndS1) tAndS1.disabled = false;
     if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('FILES_LOADED');
 }
 
@@ -120,23 +154,99 @@ window.updateFileList = function () {
     fileList.innerHTML = window.uploadedFiles.map((item, i) => `
     <div class="file-item">
         <div class="file-item-icon ${item.status}">
-            <svg viewBox="0 0 24 24"><path d="${item.status === 'done' ? 'M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z' : 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4-1.79 4-4V7h4V3h-6z'}"/></svg>
+            <svg viewBox="0 0 24 24"><path d="${item.status === 'done' ? 'M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z' : 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4s4-1.79 4-4V7h4V3h-6z'}"/></svg>
         </div>
         <div class="file-item-info">
             <div class="file-item-name">${item.file.name}</div>
             <div class="file-item-status">${formatSize(item.file.size)} • ${item.status === 'done' ? '✓ Listo' : item.status === 'processing' ? 'Procesando...' : 'Pendiente'}</div>
         </div>
-        ${!window.isProcessing ? `<button class="file-item-remove" onclick="removeFile(${i})"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>` : ''}
+        <div class="file-item-actions">
+            ${item.audioUrl ? `<button class="file-item-play" title="${item._isPlaying ? 'Pausar audio' : 'Reproducir audio'}" onclick="togglePlayAudio(${i}, this)" data-playing="${item._isPlaying ? 'true' : 'false'}"><svg viewBox="0 0 24 24"><path d="${item._isPlaying ? 'M6 19h4V5H6v14zm8-14v14h4V5h-4z' : 'M8 5v14l11-7z'}"/></svg></button>` : ''}
+            ${!window.isProcessing ? `<button class="file-item-remove" onclick="removeFile(${i})" title="Eliminar"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>` : ''}
+        </div>
     </div>
 `).join('');
+
+    // RA-2: Mostrar/ocultar botón de reintentar fallidos
+    const btnRetry = document.getElementById('btnRetryFailed');
+    if (btnRetry) {
+        const hasFailed = window.uploadedFiles.some(f => f.status === 'error');
+        btnRetry.style.display = hasFailed ? '' : 'none';
+    }
 }
 
+window._currentAudio = null;
+window._currentPlayBtn = null;
+
+window.togglePlayAudio = function (index, btn) {
+    const item = window.uploadedFiles[index];
+    if (!item || !item.audioUrl) return;
+
+    const isPlaying = btn.dataset.playing === 'true';
+
+    if (window._currentAudio && (!item._audio || window._currentAudio !== item._audio)) {
+        window._currentAudio.pause();
+        window._currentAudio.currentTime = 0;
+        if (window._currentPlayBtn) {
+            window._currentPlayBtn.dataset.playing = 'false';
+            window._currentPlayBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+            window._currentPlayBtn.title = 'Reproducir audio';
+        }
+        // Reset playing state on the previously playing item
+        const prevIndex = window.uploadedFiles.findIndex(f => f._audio === window._currentAudio);
+        if (prevIndex !== -1) window.uploadedFiles[prevIndex]._isPlaying = false;
+    }
+
+    if (!item._audio) {
+        item._audio = new Audio(item.audioUrl);
+        item._audio.onended = () => {
+            item._isPlaying = false;
+            window._currentAudio = null;
+            window._currentPlayBtn = null;
+            if (typeof updateFileList === 'function') updateFileList();
+        };
+    }
+
+    if (isPlaying) {
+        item._audio.pause();
+        item._isPlaying = false;
+        btn.dataset.playing = 'false';
+        btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+        btn.title = 'Reproducir audio';
+        window._currentAudio = null;
+        window._currentPlayBtn = null;
+    } else {
+        item._audio.play();
+        item._isPlaying = true;
+        btn.dataset.playing = 'true';
+        btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+        btn.title = 'Pausar audio';
+        window._currentAudio = item._audio;
+        window._currentPlayBtn = btn;
+    }
+};
+
 window.removeFile = i => {
+    const item = window.uploadedFiles[i];
+    if (item) {
+        if (item._audio) {
+            item._audio.pause();
+            if (window._currentAudio === item._audio) {
+                window._currentAudio = null;
+                window._currentPlayBtn = null;
+            }
+        }
+        if (item.audioUrl) {
+            URL.revokeObjectURL(item.audioUrl);
+        }
+    }
     window.uploadedFiles.splice(i, 1);
     updateFileList();
 
     const transcribeBtn = document.getElementById('transcribeBtn');
     if (transcribeBtn) transcribeBtn.disabled = !window.uploadedFiles.length;
+    const tAndS2 = document.getElementById('transcribeAndStructureBtn');
+    if (tAndS2) tAndS2.disabled = !window.uploadedFiles.length;
 
     if (!window.uploadedFiles.length) {
         if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('IDLE');
@@ -145,8 +255,8 @@ window.removeFile = i => {
 
 function formatSize(bytes) {
     if (!bytes) return '0 B';
-    const k = 1024, sizes = ['B', 'KB', 'MB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    const k = 1024, sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1);
     return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
 }
 
@@ -295,3 +405,6 @@ function writeString(view, offset, string) {
         view.setUint8(offset + i, string.charCodeAt(i));
     }
 }
+
+// Expose audioBufferToWav globally so testGroqConnection() in transcriptor.js can use it
+window.audioBufferToWav = audioBufferToWav;

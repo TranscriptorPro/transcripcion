@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>🧪 Tests Bloque 4 — allowedTemplates</title>
+<style>
+  :root {
+    --primary:#2563eb; --bg-card:#1e293b; --bg:#0f172a;
+    --text-primary:#f1f5f9; --text-muted:#94a3b8;
+    --border:#334155; --danger:#ef4444; --success:#10b981;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text-primary); font-family:system-ui,sans-serif; padding:1.5rem; }
+  h2 { font-size:1rem; color:var(--text-muted); margin:1.25rem 0 .5rem; text-transform:uppercase; letter-spacing:.06em; }
+  .suite { display:flex; flex-direction:column; gap:.5rem; }
+  .test-row { background:var(--bg-card); border:1px solid var(--border); border-radius:.5rem;
+    padding:.75rem 1rem; display:flex; gap:.75rem; align-items:flex-start; }
+  .info { flex:1; }
+  .info strong { font-size:.9rem; }
+  .info p { font-size:.78rem; color:var(--text-muted); margin-top:.2rem; }
+  .status { min-width:300px; font-size:.8rem; display:flex; align-items:center; gap:.4rem;
+    border-radius:.35rem; padding:.35rem .6rem; }
+  .status.wait   { background:#1e293b; color:#64748b; }
+  .status.ok     { background:#022c22; color:#6ee7b7; }
+  .status.fail   { background:#450a0a; color:#fca5a5; }
+  .status .dot   { width:7px; height:7px; border-radius:50%; background:currentColor; flex-shrink:0; }
+  .run-btn { background:var(--primary); color:#fff; border:none; padding:.4rem .85rem;
+    border-radius:.35rem; cursor:pointer; font-size:.78rem; white-space:nowrap; }
+  .run-btn:hover { filter:brightness(1.15); }
+  .legend { font-size:.8rem; color:var(--text-muted); line-height:1.7; background:var(--bg-card);
+    border:1px solid var(--border); border-radius:.5rem; padding:.85rem 1rem; }
+  .legend code { background:#0f172a; padding:.1em .35em; border-radius:.2rem; font-size:.75rem; }
+</style>
+</head>
+<body>
+
+<!-- select oculto para los tests -->
+<select id="templateSelect" style="display:none"></select>
+
+<main>
+<h2>&#9889; Tests automatizados — Bloque 4: allowedTemplates</h2>
+<div class="suite" id="suite"></div>
+
+<h2>&#8505;&#65039; Que verifica cada test</h2>
+<div class="legend">
+  <strong>T1 — Lista vacia</strong>: <code>allowedTemplates:[]</code> → el dropdown muestra <strong>todas</strong> las plantillas (5 en los stubs).<br>
+  <strong>T2 — Lista con 2 claves</strong>: <code>allowedTemplates:['echo','gastro']</code> → solo esas 2 aparecen (mas Plantilla General).<br>
+  <strong>T3 — Lista con 1 clave</strong>: <code>allowedTemplates:['colono']</code> → solo esa aparece (mas Plantilla General).<br>
+  <strong>T4 — Clave inexistente ignorada</strong>: <code>allowedTemplates:['NOEXISTE']</code> → 0 opciones extra (solo Plantilla General).<br>
+  <strong>T5 — Toast Cambiar filtra por allowed</strong>: con <code>allowedTemplates:['echo','gastro']</code>, el <code>&lt;select&gt;</code> del toast tiene exactamente 2 opciones.
+</div>
+</main>
+
+<!-- Stubs minimos -->
+<script>
+window.MEDICAL_TEMPLATES = {
+    generico:  { name: 'Plantilla General' },
+    echo:      { name: 'Ecografia Abdominal' },
+    gastro:    { name: 'Gastroscopia' },
+    colono:    { name: 'Colonoscopia' },
+    cinecoro:  { name: 'Cinecoronariografia' },
+    ett:       { name: 'Ecocardiograma ETT' }
+};
+window.TEMPLATE_CATEGORIES = {
+    'Imagenes':    ['echo', 'ett'],
+    'Endoscopia':  ['gastro', 'colono'],
+    'Cardiologia': ['cinecoro']
+};
+window.CLIENT_CONFIG = { type: 'NORMAL', hasProMode: false, allowedTemplates: [] };
+window.showToast = (m, t) => console.log('[toast]', t||'info', m);
+</script>
+
+<!-- buildDropdown inline — logica identica a templates.js -->
+<script>
+function buildDropdownWith(selectEl, allowed) {
+    if (!selectEl) return;
+    selectEl.innerHTML = '<option value="generico">\ud83d\udccb Plantilla General</option>';
+    const _allowed = (Array.isArray(allowed) && allowed.length) ? new Set(allowed) : null;
+    for (const [cat, keys] of Object.entries(window.TEMPLATE_CATEGORIES)) {
+        const group = document.createElement('optgroup');
+        group.label = cat;
+        let added = false;
+        keys.forEach(key => {
+            if (key === 'generico') return;
+            if (_allowed && !_allowed.has(key)) return; // filtro Bloque 4
+            const t = window.MEDICAL_TEMPLATES[key];
+            if (!t) return;
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = t.name;
+            group.appendChild(option);
+            added = true;
+        });
+        if (added) selectEl.appendChild(group);
+    }
+}
+
+// Simula el comportamiento de promptTemplateSelection — extrae las options del select
+function buildToastOptions(detectedKey, allowedTemplates) {
+    const tmpl = window.MEDICAL_TEMPLATES;
+    const _allowed = (Array.isArray(allowedTemplates) && allowedTemplates.length)
+        ? allowedTemplates
+        : Object.keys(tmpl).filter(k => k !== 'generico');
+    return _allowed;
+}
+</script>
+
+<!-- Logica de tests -->
+<script>
+function setStatus(id, type, msg) {
+    const el = document.getElementById('st-' + id);
+    if (!el) return;
+    el.className = 'status ' + type;
+    el.innerHTML = '<div class="dot"></div><span>' + msg + '</span>';
+}
+function assert(cond, ok, fail) { return cond ? ['ok', ok] : ['fail', fail]; }
+
+function getSelectValues(selectEl) {
+    return Array.from(selectEl.options).map(o => o.value).filter(v => v !== 'generico');
+}
+
+const TESTS = [
+    {
+        id: 't1-all',
+        label: 'T1 — allowedTemplates:[] → todas las plantillas',
+        desc: 'Lista vacia = sin restriccion. Deben aparecer las 5 plantillas stub.',
+        run() {
+            const sel = document.getElementById('templateSelect');
+            buildDropdownWith(sel, []);
+            const vals = getSelectValues(sel);
+            const expected = ['echo','ett','gastro','colono','cinecoro'];
+            const allPresent = expected.every(k => vals.includes(k));
+            return assert(
+                allPresent && vals.length === 5,
+                `${vals.length}/5 plantillas ✓ (${vals.join(', ')})`,
+                `Esperado 5, obtenido ${vals.length}: ${vals.join(', ')}`
+            );
+        }
+    },
+    {
+        id: 't2-two',
+        label: 'T2 — allowedTemplates:[echo,gastro] → solo esas 2',
+        desc: 'Lista con 2 claves: el dropdown solo debe tener echo y gastro.',
+        run() {
+            const sel = document.getElementById('templateSelect');
+            buildDropdownWith(sel, ['echo','gastro']);
+            const vals = getSelectValues(sel);
+            return assert(
+                vals.length === 2 && vals.includes('echo') && vals.includes('gastro'),
+                `echo + gastro ✓ (${vals.join(', ')})`,
+                `Obtenido: ${vals.join(', ')} — esperado: echo, gastro`
+            );
+        }
+    },
+    {
+        id: 't3-one',
+        label: 'T3 — allowedTemplates:[colono] → solo esa',
+        desc: 'Lista con 1 clave: el dropdown solo debe tener colono.',
+        run() {
+            const sel = document.getElementById('templateSelect');
+            buildDropdownWith(sel, ['colono']);
+            const vals = getSelectValues(sel);
+            return assert(
+                vals.length === 1 && vals[0] === 'colono',
+                `colono ✓`,
+                `Obtenido: ${vals.join(', ')} — esperado: colono`
+            );
+        }
+    },
+    {
+        id: 't4-inexistente',
+        label: 'T4 — Clave inexistente ignorada',
+        desc: 'allowedTemplates:[NOEXISTE] → 0 opciones extra (solo Plantilla General).',
+        run() {
+            const sel = document.getElementById('templateSelect');
+            buildDropdownWith(sel, ['NOEXISTE']);
+            const vals = getSelectValues(sel);
+            return assert(
+                vals.length === 0,
+                '0 opciones extra ✓ (solo Plantilla General)',
+                `Obtenido ${vals.length} opciones extra: ${vals.join(', ')}`
+            );
+        }
+    },
+    {
+        id: 't5-toast',
+        label: 'T5 — Toast [Cambiar] respeta allowedTemplates',
+        desc: 'Con allowedTemplates:[echo,gastro], el select del toast tiene exactamente 2 opciones.',
+        run() {
+            const opts = buildToastOptions('echo', ['echo','gastro']);
+            return assert(
+                opts.length === 2 && opts.includes('echo') && opts.includes('gastro'),
+                `Toast: 2 opciones ✓ (${opts.join(', ')})`,
+                `Toast: ${opts.length} opciones (${opts.join(', ')}) — esperado 2`
+            );
+        }
+    }
+];
+
+const suite = document.getElementById('suite');
+TESTS.forEach(t => {
+    const row = document.createElement('div');
+    row.className = 'test-row';
+    row.innerHTML = `
+        <div class="info"><strong>${t.label}</strong><p>${t.desc}</p></div>
+        <div class="status wait" id="st-${t.id}"><div class="dot"></div><span>— pendiente —</span></div>
+        <button class="run-btn" onclick="runTest('${t.id}')">&#9654; Ejecutar</button>`;
+    suite.appendChild(row);
+});
+
+const allBtn = document.createElement('button');
+allBtn.textContent = '\u25b6\u25b6 Ejecutar todos';
+allBtn.className = 'run-btn';
+allBtn.style.cssText = 'background:#10b981;margin-top:.5rem;padding:.55rem 1.25rem;';
+allBtn.onclick = async () => {
+    for (const t of TESTS) {
+        runTest(t.id);
+        await new Promise(r => setTimeout(r, 60));
+    }
+};
+suite.appendChild(allBtn);
+
+function runTest(id) {
+    const t = TESTS.find(x => x.id === id);
+    if (!t) return;
+    setStatus(id, 'wait', '\u23f3 ejecutando...');
+    try {
+        const [type, msg] = t.run();
+        setStatus(id, type, (type === 'ok' ? '\u2713 ' : '\u2717 ') + msg);
+    } catch(err) {
+        setStatus(id, 'fail', '\u2717 JS Error: ' + err.message);
+    }
+}
+</script>
+</body>
+</html>

@@ -1,16 +1,20 @@
 {
   "sheetName": "Usuarios_Transcriptor",
-  "scriptUrl": "https://script.google.com/macros/s/AKfycbw9xT0IdmPbpIsncavlktd3a9vJgao1wR-kwaEZA2PUUVXEo2GIIfV-FgJpBHE_-u9ofg/exec",
-  "adminKey": "ADMIN_SECRET_2026",
+  "scriptUrl": "https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec",
+  "adminKey": "SET_IN_SCRIPT_PROPERTIES_NOT_HERE",
   "endpoints": {
+    "login": "?action=admin_login&username=USER&password=PASS&adminKey=KEY",
     "listUsers": "?action=admin_list_users",
     "updateUser": "POST with action=admin_update_user",
-    "validateUser": "?id=USER_ID&deviceId=DEVICE_ID"
+    "validateUser": "?id=USER_ID&deviceId=DEVICE_ID",
+    "generateConfig": "?action=admin_generate_config&userId=USER_ID"
   },
   "notes": [
     "1. Deploy Apps Script as Web App (Anyone, even anonymous)",
     "2. Copy the Web App URL to scriptUrl field",
-    "3. Change ADMIN_SECRET_2026 to a secure random string",
-    "4. Never commit the real admin key to GitHub"
+    "3. Set ADMIN_KEY in Script Properties (NOT in code): File > Project Properties > Script Properties",
+    "4. Never commit the real admin key to GitHub",
+    "5. Admin Key is entered in the browser on first login and stored in localStorage",
+    "6. After login, a signed session token is used for all API calls (8h expiry)"
   ]
 }

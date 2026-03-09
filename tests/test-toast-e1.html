@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>🧪 Test E1 — Toast plantilla detectada</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+  header { background: #1e293b; border-bottom: 1px solid #334155; padding: 1rem 2rem; }
+  header h1 { font-size: 1.1rem; font-weight: 700; }
+  header p  { color: #94a3b8; font-size: 0.82rem; margin-top: 0.25rem; }
+
+  main { padding: 1.5rem 2rem; display: grid; gap: 1rem; max-width: 900px; }
+
+  h2 { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+       color: #64748b; margin: 1.25rem 0 0.5rem; }
+
+  .scenario-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.75rem; }
+
+  .card {
+    background: #1e293b; border: 1px solid #334155; border-radius: 10px;
+    padding: 1rem; display: flex; flex-direction: column; gap: 0.6rem;
+  }
+  .card-title { font-size: 0.9rem; font-weight: 700; }
+  .card-desc  { font-size: 0.78rem; color: #94a3b8; line-height: 1.5; flex: 1; }
+  .card-btn {
+    background: #6366f1; color: #fff; border: none; border-radius: 6px;
+    padding: 0.5rem 1rem; cursor: pointer; font-size: 0.82rem; font-weight: 600;
+    transition: background .2s;
+  }
+  .card-btn:hover { background: #4f46e5; }
+  .card-btn:disabled { background: #475569; cursor: not-allowed; }
+
+  .result-box {
+    background: #0f172a; border: 1px solid #334155; border-radius: 6px;
+    padding: 0.5rem 0.75rem; font-size: 0.78rem; font-family: monospace;
+    min-height: 2.2rem; display: flex; align-items: center; gap: 0.5rem;
+    transition: border-color .3s;
+  }
+  .result-box.waiting { border-color: #1d4ed8; color: #93c5fd; }
+  .result-box.ok      { border-color: #10b981; color: #6ee7b7; }
+  .result-box .dot { width:8px; height:8px; border-radius:50%; background:currentColor; flex-shrink:0; }
+
+  .legend {
+    background: #1e293b; border: 1px solid #334155; border-radius: 10px;
+    padding: 1rem 1.25rem; font-size: 0.82rem; line-height: 1.8; color: #94a3b8;
+  }
+  .legend strong { color: #e2e8f0; }
+  .legend code { background: #263548; border-radius: 4px; padding: 1px 5px; font-family: monospace; font-size: 0.78rem; }
+
+  /* ── Copia local del CSS de toast-action para que se vea igual al real ── */
+  /* (structurer.js ya incluye `promptTemplateSelection` que manipula el DOM) */
+</style>
+
+<!-- Toast-action CSS — mismo que components.css para fidelidad visual -->
+<link rel="stylesheet" href="../src/css/variables.css">
+<link rel="stylesheet" href="../src/css/components.css">
+</head>
+<body>
+
+<header>
+  <h1>🧪 Test E1 — Toast de plantilla detectada</h1>
+  <p>Prueba el toast "<strong>Plantilla: X [Cambiar]</strong>" sin necesitar audio ni API Key.
+     El structured NO se llama — solo se verifica la detección y la interacción.</p>
+</header>
+
+<main>
+
+<h2>⚡ Escenarios de prueba</h2>
+
+<div class="scenario-grid" id="scenarioGrid"></div>
+
+<h2>📋 Resultado del último test</h2>
+<div class="result-box" id="globalResult">
+  <span style="color:#475569">— Esperando test —</span>
+</div>
+
+<h2>ℹ️ Qué verificar en cada test</h2>
+<div class="legend">
+  <strong>Flujo normal (auto-confirm)</strong><br>
+  1. Toast aparece en bottom-right: <em>"🔍 Plantilla: [Nombre] [Cambiar]"</em><br>
+  2. Esperar 5 segundos → el toast desaparece y el resultado muestra la plantilla detectada.<br><br>
+
+  <strong>Flujo Cambiar → Confirmar</strong><br>
+  1. Click <strong>[Cambiar]</strong> → toast muta a <code>&lt;select&gt;</code> con todas las plantillas + ✓ Confirmar / ✗ cancelar.<br>
+  2. Elegir otra plantilla → click Confirmar → resultado muestra la nueva plantilla.<br><br>
+
+  <strong>Flujo Cambiar → Cancelar</strong><br>
+  1. Click [Cambiar] → click ✗ → resultado muestra la plantilla detectada original (sin cambio).<br><br>
+
+  <strong>Flujo Cambiar → timeout 10s</strong><br>
+  1. Click [Cambiar] → no hacer nada 10 s → resultado muestra la plantilla detectada original.<br><br>
+
+  <strong>Texto genérico</strong><br>
+  El toast NO debe aparecer. El resultado debe decir <em>"generico (sin toast)"</em>.
+</div>
+
+</main>
+
+<!-- Stubs mínimos para cargar structurer.js fuera del DOM real -->
+<script>
+  window.showToast           = (m) => console.log('[showToast]', m);
+  window.showProgress        = () => {};
+  window.hideProgress        = () => {};
+  window.showAINote          = () => {};
+  window.updateWordCount     = () => {};
+  window.updateButtonsVisibility = () => {};
+  window.triggerPatientDataCheck = () => {};
+  window.extractPatientDataFromText = () => ({});
+  window.GROQ_API_KEY        = 'test';          // evita el guard "no API key"
+  window.selectedTemplate    = '';              // simula "sin plantilla manual"
+  window.CLIENT_CONFIG       = { type: 'ADMIN', allowedTemplates: [] };
+</script>
+<script src="../src/js/config/templatesCatalog.js"></script>
+<script src="../src/js/config/templatesCatalogPart2.js"></script>
+<script src="../src/js/config/templatesCatalogPart3.js"></script>
+<script src="../src/js/config/templates.js"></script>
+<script src="../src/js/features/structurerCoreUtils.js"></script>
+<script src="../src/js/features/structurer.js"></script>
+
+<script>
+// ── Textos de prueba ──────────────────────────────────────────────────────────
+const SCENARIOS = [
+  {
+    id: 'cinecoro',
+    label: '🫀 Cinecoronariografía',
+    expectedKey: 'cinecoro',
+    text: `Cinecoronariografía por acceso femoral derecho. Se constata tronco coronario izquierdo sin lesiones.
+Arteria descendente anterior con estenosis del 75% en segmento proximal. Circunfleja sin lesiones.
+Coronaria derecha con lesión del 40% en tercio medio. Fracción de eyección conservada. Fin del procedimiento.`
+  },
+  {
+    id: 'ecografia',
+    label: '🫎 Ecografía abdominal',
+    expectedKey: 'ecografia_abdominal',
+    text: `Ecografía abdominal. Hígado de tamaño conservado, ecotextura homogénea, sin lesiones focales.
+Vesícula biliar con cálculo de 8 mm. Vías biliares no dilatadas. Páncreas parcialmente valorable.
+Bazo de tamaño normal. Riñón derecho con quiste simple de 12 mm. Riñón izquierdo sin alteraciones.`
+  },
+  {
+    id: 'gastroscopia',
+    label: '🔭 Gastroscopía',
+    expectedKey: 'gastroscopia',
+    text: `Se realiza gastroscopía con equipo Olympus. Esófago de mucosa normal, sin lesiones.
+Unión gastroesofágica con hernia hiatal pequeña de 2 cm. Estómago con mucosa eritematosa en antro, compatible con pangastritis leve.
+Píloro de aspecto normal. Duodeno primera y segunda porción sin alteraciones.`
+  },
+  {
+    id: 'colonoscopia',
+    label: '🔭 Colonoscopía',
+    expectedKey: 'colonoscopia',
+    text: `Colonoscopía completa con preparación buena. Recto sin lesiones. Colon sigmoideo con divertículos múltiples.
+Colon descendente y transverso sin hallazgos patológicos. Colon ascendente y ciego con mucosa normal.
+Se llega a íleon terminal sin alteraciones. No se detectan pólipos ni masas.`
+  },
+  {
+    id: 'generico',
+    label: '📄 Texto genérico (sin plantilla)',
+    expectedKey: 'generico',
+    text: `El paciente refiere dolor en epigastrio de 3 días de evolución, asociado a náuseas ocasionales.
+Antecedentes de hipertensión arterial medicada. Al examen físico abdomen blando, depresible, dolor leve a la palpación en epigastrio. Se solicitan estudios complementarios.`
+  },
+  {
+    id: 'laringoscopia',
+    label: '🎙️ Laringoscopía',
+    expectedKey: 'laringoscopia',
+    text: `Laringoscopía fibróptica. Nasofaringe sin alteraciones. Hipofaringe de aspecto normal.
+Laringe: epiglotis bien conformada, aritenoides simétricas, cuerdas vocales móviles bilateralmente con cierre glótico completo. No se observan lesiones mucosas ni pólipos.`
+  }
+];
+
+// ── Render tarjetas ───────────────────────────────────────────────────────────
+const grid = document.getElementById('scenarioGrid');
+
+SCENARIOS.forEach(sc => {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    <div class="card-title">${sc.label}</div>
+    <div class="card-desc" style="font-size:0.75rem; color:#64748b; font-style:italic; max-height:3.5rem; overflow:hidden;"
+    >${sc.text.slice(0, 120)}…</div>
+    <div class="result-box" id="res-${sc.id}"><span style="color:#475569">— pendiente —</span></div>
+    <button class="card-btn" id="btn-${sc.id}" onclick="runScenario('${sc.id}')">▶ Ejecutar</button>
+  `;
+  grid.appendChild(card);
+});
+
+// ── Ejecutar escenario ────────────────────────────────────────────────────────
+async function runScenario(id) {
+  const sc = SCENARIOS.find(s => s.id === id);
+  const btn = document.getElementById(`btn-${id}`);
+  const res = document.getElementById(`res-${id}`);
+  const global = document.getElementById('globalResult');
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Esperando interacción…';
+  res.className = 'result-box waiting';
+  res.innerHTML = '<div class="dot"></div> Esperando respuesta del toast…';
+  global.className = 'result-box waiting';
+  global.innerHTML = '<div class="dot"></div> Test en curso: ' + sc.label;
+
+  const detected = autoDetectTemplateKey(sc.text);
+
+  let chosen;
+  if (detected === 'generico') {
+    // Sin toast para texto genérico
+    chosen = 'generico';
+  } else {
+    chosen = await promptTemplateSelection(detected);
+  }
+
+  const chosenName = (window.MEDICAL_TEMPLATES[chosen]?.name) || chosen;
+  const detectedName = (window.MEDICAL_TEMPLATES[detected]?.name) || detected;
+  const changed = chosen !== detected;
+  const isExpected = (detected === sc.expectedKey) || (sc.expectedKey === 'generico' && detected === 'generico');
+
+  const icon  = isExpected ? '✅' : '⚠️';
+  const label = detected === 'generico'
+    ? `${icon} generico (sin toast) ← correcto`
+    : changed
+      ? `${icon} Detectado: <strong>${detectedName}</strong> → Cambiado a: <strong>${chosenName}</strong>`
+      : `${icon} Confirmado: <strong>${chosenName}</strong>`;
+
+  res.className = 'result-box ok';
+  res.innerHTML = `<div class="dot"></div> <span>${label}</span>`;
+  global.className = 'result-box ok';
+  global.innerHTML = `<div class="dot"></div> <span>${label}</span>`;
+
+  btn.disabled = false;
+  btn.textContent = '▶ Volver a ejecutar';
+}
+</script>
+</body>
+</html>

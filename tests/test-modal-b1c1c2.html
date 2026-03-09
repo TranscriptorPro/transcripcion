@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>🧪 Tests B1 + C1 + C2 — Modal editar campo</title>
+<style>
+  :root {
+    --primary:#2563eb; --bg-card:#1e293b; --bg:#0f172a;
+    --text-primary:#f1f5f9; --text-muted:#94a3b8;
+    --border:#334155; --danger:#ef4444; --success:#10b981;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text-primary); font-family:system-ui,sans-serif; padding:1.5rem; }
+  h2 { font-size:1rem; color:var(--text-muted); margin:1.25rem 0 .5rem; text-transform:uppercase; letter-spacing:.06em; }
+  .suite { display:flex; flex-direction:column; gap:.5rem; }
+  .test-row { background:var(--bg-card); border:1px solid var(--border); border-radius:.5rem;
+    padding:.75rem 1rem; display:flex; gap:.75rem; align-items:flex-start; }
+  .info { flex:1; }
+  .info strong { font-size:.9rem; }
+  .info p { font-size:.78rem; color:var(--text-muted); margin-top:.2rem; }
+  .status { min-width:260px; font-size:.8rem; display:flex; align-items:center; gap:.4rem; border-radius:.35rem; padding:.35rem .6rem; }
+  .status.wait   { background:#1e293b; color:#64748b; }
+  .status.ok     { background:#022c22; color:#6ee7b7; }
+  .status.fail   { background:#450a0a; color:#fca5a5; }
+  .status .dot   { width:7px; height:7px; border-radius:50%; background:currentColor; flex-shrink:0; }
+  .run-btn { background:var(--primary); color:#fff; border:none; padding:.4rem .85rem;
+    border-radius:.35rem; cursor:pointer; font-size:.78rem; white-space:nowrap; }
+  .run-btn:hover { filter:brightness(1.15); }
+  .legend { font-size:.8rem; color:var(--text-muted); line-height:1.6; background:var(--bg-card);
+    border:1px solid var(--border); border-radius:.5rem; padding:.85rem 1rem; }
+  .legend code { background:#0f172a; padding:.1em .35em; border-radius:.2rem; font-size:.75rem; }
+
+  /* ── Fixtures HTML del editor (oculto) ── */
+  #editor-fixture { display:none; }
+
+  /* ── Modal overlay ── */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7);
+    z-index:1000; align-items:center; justify-content:center; }
+  .modal-overlay.active { display:flex; }
+  .modal { background:var(--bg-card); border:1px solid var(--border); border-radius:.75rem;
+    width:min(520px,95vw); max-height:90vh; overflow:auto; padding:1.25rem; }
+  .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:.75rem; }
+  .modal-header h3 { font-size:1rem; }
+  .modal-close { background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.1rem; }
+  .modal-context { font-size:.78rem; color:var(--text-muted); margin-bottom:.75rem;
+    background:#0f172a; padding:.5rem .75rem; border-radius:.35rem; }
+  .tabs { display:flex; gap:.4rem; margin-bottom:.75rem; }
+  .tab-btn { flex:1; padding:.45rem; border:1px solid var(--border); background:var(--bg-card);
+    color:var(--text-primary); border-radius:.35rem; cursor:pointer; font-size:.82rem; }
+  .panel { }
+  .panel textarea { width:100%; background:#0f172a; color:var(--text-primary); border:1px solid var(--border);
+    border-radius:.35rem; padding:.6rem; font-size:.88rem; resize:vertical; min-height:80px; }
+  .status-msg { font-size:.75rem; color:var(--text-muted); margin-top:.35rem; }
+  .timer { font-size:.8rem; color:var(--text-muted); margin:.35rem 0; }
+  .record-btn { background:#7c3aed; color:#fff; border:none; padding:.5rem 1rem;
+    border-radius:.35rem; cursor:pointer; font-size:.82rem; display:flex; align-items:center; gap:.4rem; }
+  .modal-footer { display:flex; align-items:center; gap:.5rem; margin-top:.85rem; padding-top:.85rem;
+    border-top:1px solid var(--border); }
+  .btn-danger { background:transparent; border:1px solid var(--danger); color:var(--danger);
+    padding:.4rem .85rem; border-radius:.35rem; cursor:pointer; font-size:.82rem; }
+  .btn-secondary { background:transparent; border:1px solid var(--border); color:var(--text-muted);
+    padding:.4rem .85rem; border-radius:.35rem; cursor:pointer; font-size:.82rem; }
+  .btn-primary { background:var(--primary); color:#fff; border:none;
+    padding:.4rem .85rem; border-radius:.35rem; cursor:pointer; font-size:.82rem; }
+
+  /* span no-data-field */
+  .no-data-field { background:#1e3a5f; border:1px dashed #3b82f6; border-radius:.25rem;
+    padding:.05em .3em; cursor:pointer; display:inline-flex; align-items:center; gap:.25rem; }
+  .no-data-text { color:#93c5fd; font-style:italic; pointer-events:none; }
+  .no-data-edit-btn { background:none; border:none; padding:0; cursor:pointer;
+    font-size:.75em; line-height:1; }
+</style>
+</head>
+<body>
+
+<!-- ── Fixtures del editor (invisible) ── -->
+<div id="editor-fixture">
+  <div id="editor" contenteditable="true">
+    <p id="paraNombre">Nombre: <span class="no-data-field" contenteditable="false" data-field-empty="1" id="spanNombre"><span class="no-data-text">No especificado</span><button class="no-data-edit-btn" type="button">✏️</button></span></p>
+    <p id="paraTamano">Tamaño tumoral: <span class="no-data-field" contenteditable="false" data-field-empty="1" id="spanTamano"><span class="no-data-text">No especificado</span><button class="no-data-edit-btn" type="button">✏️</button></span></p>
+    <p id="paraConclu">Conclusión: <span class="no-data-field" contenteditable="false" data-field-empty="1" id="spanConclu"><span class="no-data-text">No especificado</span><button class="no-data-edit-btn" type="button">✏️</button></span></p>
+  </div>
+</div>
+
+<!-- ── Modal editar campo ── -->
+<div class="modal-overlay" id="editFieldModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="editFieldModalTitle">✏️ Completar campo</h3>
+      <button class="modal-close" id="closeEditFieldModal">✕</button>
+    </div>
+    <div class="modal-context" id="editFieldContext"></div>
+    <div class="tabs">
+      <button class="tab-btn" id="efTabWrite">✍️ Escribir</button>
+      <button class="tab-btn" id="efTabRecord">🎙️ Grabar</button>
+    </div>
+    <div class="panel" id="efPanelWrite">
+      <textarea id="efTextInput" placeholder="Escribí el valor del campo…"></textarea>
+    </div>
+    <div class="panel" id="efPanelRecord" style="display:none">
+      <div class="timer" id="efRecordTime">00:00</div>
+      <button class="record-btn" id="efRecordBtn">
+        <span id="efRecordIcon">🎙️</span>
+        <span id="efRecordLabel">Iniciar grabación</span>
+      </button>
+      <div class="status-msg" id="efTranscribeStatus"></div>
+      <textarea id="efRecordResult" placeholder="Resultado de transcripción…"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-danger" id="btnBlankEditField" style="margin-right:auto">🗑️ Dejar en blanco</button>
+      <button class="btn-secondary" id="btnCancelEditField">Cancelar</button>
+      <button class="btn-primary" id="btnConfirmEditField">✅ Aplicar</button>
+    </div>
+  </div>
+</div>
+
+<main>
+
+<h2>⚡ Tests automatizados — hacer clic en cada botón o "Ejecutar todos"</h2>
+<div class="suite" id="suite"></div>
+
+<h2>ℹ️ Qué verifica cada test</h2>
+<div class="legend">
+  <strong>B1 — Modo Normal (sin Pro)</strong>: el tab <code>🎙️ Grabar</code> debe estar oculto (<code>display:none</code>).<br>
+  <strong>B1 — Modo Pro (con API key)</strong>: el tab <code>🎙️ Grabar</code> debe ser visible.<br>
+  <strong>C1 — Título dinámico</strong>: el encabezado del modal debe mostrar el nombre del campo (ej. "✏️ Nombre").<br>
+  <strong>C2 — Dejar en blanco</strong>: al hacer clic en <em>🗑️ Dejar en blanco</em>, el span desaparece y el modal se cierra.<br><br>
+  Tras cada test el modal <strong>queda abierto</strong> para inspección visual (excepto C2 que ya cierra).
+</div>
+
+</main>
+
+<!-- Stubs mínimos -->
+<script>
+  window.GROQ_API_KEY  = '';
+  window.CLIENT_CONFIG = { type: 'NORMAL', hasProMode: false };
+  window.showToast     = (m, t) => console.log('[toast]', t || 'info', m);
+</script>
+
+<!-- IIFE del modal — copiada de editor.js sin dependencias externas -->
+<script>
+// ============ MODAL EDITAR CAMPO [No especificado] ============
+(function () {
+    const modal    = document.getElementById('editFieldModal');
+    const overlay  = modal; // es el propio modal-overlay
+    if (!modal) return;
+
+    let _targetSpan = null; // span.no-data-field activo
+    let _efRecorder = null;
+    let _efChunks   = [];
+    let _efRecordInterval = null;
+    let _efRecording = false;
+
+    // Pro = tiene API key Y el modo del cliente lo permite
+    const isPro = () => !!(window.GROQ_API_KEY) &&
+        (typeof CLIENT_CONFIG === 'undefined' ||
+         CLIENT_CONFIG.type === 'ADMIN' ||
+         CLIENT_CONFIG.hasProMode === true);
+
+    // ── Abrir modal ──────────────────────────────────────────────
+    function openEditFieldModal(span) {
+        _targetSpan = span;
+
+        // Obtener texto contexto (línea del párrafo que contiene el span)
+        const para = span.closest('p,li') || span.parentElement;
+        const ctx  = document.getElementById('editFieldContext');
+        if (ctx && para) {
+            const full = para.innerText || para.textContent;
+            ctx.textContent = full.length > 90 ? full.slice(0, 87) + '…' : full;
+        }
+
+        // C1: Extraer nombre del campo (texto del párrafo ANTES del span)
+        const title = document.getElementById('editFieldModalTitle');
+        if (title && para) {
+            let labelText = '';
+            for (const node of para.childNodes) {
+                if (node === span || (node.nodeType === 1 && node.contains && node.contains(span))) break;
+                labelText += node.textContent || '';
+            }
+            labelText = labelText.trim().replace(/:+\s*$/, '').trim();
+            // Si hay varios segmentos con ':', tomar el último
+            const colonIdx = labelText.lastIndexOf(':');
+            if (colonIdx >= 0) labelText = labelText.slice(colonIdx + 1).trim();
+            if (labelText.length > 40) labelText = labelText.slice(0, 40) + '…';
+            title.textContent = labelText
+                ? '✏️ ' + labelText.charAt(0).toUpperCase() + labelText.slice(1)
+                : '✏️ Completar campo';
+        }
+
+        // Limpiar estado
+        document.getElementById('efTextInput').value     = '';
+        document.getElementById('efRecordResult').value  = '';
+        document.getElementById('efTranscribeStatus').textContent = '';
+        document.getElementById('efRecordTime').textContent = '00:00';
+        _stopRecordingEF();
+
+        // Pestaña por defecto
+        _switchTab('write');
+
+        // B1: Ocultar tab Grabar si no es Pro
+        const tabRec = document.getElementById('efTabRecord');
+        if (tabRec) tabRec.style.display = isPro() ? '' : 'none';
+
+        overlay.classList.add('active');
+    }
+
+    // ── Cerrar modal ─────────────────────────────────────────────
+    function closeEditFieldModal() {
+        _stopRecordingEF();
+        overlay.classList.remove('active');
+        _targetSpan = null;
+    }
+
+    // ── Aplicar valor al span ────────────────────────────────────
+    function applyFieldValue(val) {
+        if (!_targetSpan) return;
+        const text = (val || '').trim();
+        if (!text) { closeEditFieldModal(); return; }
+        const node = document.createTextNode(text);
+        _targetSpan.replaceWith(node);
+        closeEditFieldModal();
+    }
+
+    // ── Pestañas ─────────────────────────────────────────────────
+    function _switchTab(tab) {
+        const isWrite = tab === 'write';
+        document.getElementById('efPanelWrite').style.display   = isWrite ? '' : 'none';
+        document.getElementById('efPanelRecord').style.display  = isWrite ? 'none' : '';
+        document.getElementById('efTabWrite').style.background  = isWrite ? 'var(--primary)' : 'var(--bg-card)';
+        document.getElementById('efTabWrite').style.color       = isWrite ? '#fff' : 'var(--text-primary)';
+        document.getElementById('efTabRecord').style.background = isWrite ? 'var(--bg-card)' : 'var(--primary)';
+        document.getElementById('efTabRecord').style.color      = isWrite ? 'var(--text-primary)' : '#fff';
+    }
+
+    document.getElementById('efTabWrite')?.addEventListener('click', () => _switchTab('write'));
+    document.getElementById('efTabRecord')?.addEventListener('click', () => {
+        if (!isPro()) { window.showToast('Función disponible en Modo Pro (API Key requerida)', 'warning'); return; }
+        _switchTab('record');
+    });
+
+    // ── Grabación ─────────────────────────────────────────────────
+    function _stopRecordingEF() {
+        if (_efRecorder && _efRecording) {
+            try { _efRecorder.stop(); } catch(e) {}
+        }
+        _efRecording = false;
+        clearInterval(_efRecordInterval);
+        const btn = document.getElementById('efRecordBtn');
+        if (btn) {
+            document.getElementById('efRecordIcon').textContent  = '🎙️';
+            document.getElementById('efRecordLabel').textContent = 'Iniciar grabación';
+            btn.classList.remove('recording-pulse');
+        }
+    }
+
+    document.getElementById('efRecordBtn')?.addEventListener('click', async () => {
+        if (!_efRecording) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                _efChunks = [];
+                _efRecorder = new MediaRecorder(stream);
+                _efRecorder.ondataavailable = e => _efChunks.push(e.data);
+                _efRecorder.onstop = async () => {
+                    stream.getTracks().forEach(t => t.stop());
+                    const blob = new Blob(_efChunks, { type: 'audio/wav' });
+                    const file = new File([blob], 'campo.wav', { type: 'audio/wav' });
+                    const status = document.getElementById('efTranscribeStatus');
+                    const result = document.getElementById('efRecordResult');
+                    if (status) status.textContent = '⏳ Transcribiendo...';
+                    try {
+                        const form = new FormData();
+                        form.append('file', file);
+                        form.append('model', 'whisper-large-v3-turbo');
+                        form.append('response_format', 'text');
+                        form.append('language', 'es');
+                        const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${window.GROQ_API_KEY}` },
+                            body: form
+                        });
+                        const txt = await res.text();
+                        if (result) result.value = txt.trim();
+                        if (status) status.textContent = '✅ Transcripción lista.';
+                    } catch(e) {
+                        if (status) status.textContent = '❌ Error al transcribir.';
+                    }
+                };
+                _efRecorder.start();
+                _efRecording = true;
+                const start = Date.now();
+                _efRecordInterval = setInterval(() => {
+                    const d = Date.now() - start;
+                    const s = Math.floor((d/1000)%60), m = Math.floor(d/60000);
+                    const el = document.getElementById('efRecordTime');
+                    if (el) el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+                }, 1000);
+                document.getElementById('efRecordIcon').textContent  = '⏹️';
+                document.getElementById('efRecordLabel').textContent = 'Detener grabación';
+                document.getElementById('efRecordBtn').classList.add('recording-pulse');
+            } catch(err) {
+                window.showToast('No se pudo acceder al micrófono', 'error');
+            }
+        } else {
+            _stopRecordingEF();
+        }
+    });
+
+    // C2: Dejar en blanco — elimina el span del DOM
+    function clearFieldValue() {
+        if (!_targetSpan) return;
+        _targetSpan.remove();
+        closeEditFieldModal();
+    }
+    document.getElementById('btnBlankEditField')?.addEventListener('click', clearFieldValue);
+
+    // ── Confirmar ─────────────────────────────────────────────────
+    document.getElementById('btnConfirmEditField')?.addEventListener('click', () => {
+        const writePanel = document.getElementById('efPanelWrite');
+        const isWrite = writePanel && writePanel.style.display !== 'none';
+        const val = isWrite
+            ? document.getElementById('efTextInput').value
+            : document.getElementById('efRecordResult').value;
+        applyFieldValue(val);
+    });
+
+    // ── Cancelar & cerrar ─────────────────────────────────────────
+    document.getElementById('btnCancelEditField')?.addEventListener('click', closeEditFieldModal);
+    document.getElementById('closeEditFieldModal')?.addEventListener('click', closeEditFieldModal);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeEditFieldModal(); });
+
+    // ── Teclas en textarea ────────────────────────────────────────
+    document.getElementById('efTextInput')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); document.getElementById('btnConfirmEditField').click(); }
+        if (e.key === 'Escape') closeEditFieldModal();
+    });
+
+    // Exponer para tests y uso externo
+    window._openEditFieldModal  = openEditFieldModal;
+    window._closeEditFieldModal = closeEditFieldModal;
+}());
+</script>
+
+<!-- Lógica de tests -->
+<script>
+function setStatus(id, type, msg) {
+    const el = document.getElementById('st-' + id);
+    if (!el) return;
+    el.className = 'status ' + type;
+    el.innerHTML = `<div class="dot"></div><span>${msg}</span>`;
+}
+function assert(cond, ok, fail) { return cond ? ['ok', ok] : ['fail', fail]; }
+function openModal(spanId) {
+    const span = document.getElementById(spanId);
+    if (!span || typeof window._openEditFieldModal !== 'function') return false;
+    window._openEditFieldModal(span);
+    return true;
+}
+function closeModal() { window._closeEditFieldModal?.(); }
+
+const TESTS = [
+    {
+        id: 'b1-normal',
+        label: 'B1 — Modo Normal: tab Grabar oculto',
+        desc: 'CLIENT_CONFIG.hasProMode=false + sin API key → tab Grabar debe tener display:none.',
+        run() {
+            closeModal();
+            window.GROQ_API_KEY  = '';
+            window.CLIENT_CONFIG = { type: 'NORMAL', hasProMode: false };
+            if (!openModal('spanNombre')) return ['fail', '_openEditFieldModal no disponible'];
+            const tab = document.getElementById('efTabRecord');
+            return assert(
+                tab && tab.style.display === 'none',
+                'Tab Grabar: display:none ✓',
+                `Tab visible (display="${tab?.style.display}") — esperado none`
+            );
+        }
+    },
+    {
+        id: 'b1-pro',
+        label: 'B1 — Modo Pro: tab Grabar visible',
+        desc: 'CLIENT_CONFIG.hasProMode=true + API key → tab Grabar debe ser visible.',
+        run() {
+            closeModal();
+            window.GROQ_API_KEY  = 'gsk_test_fake_key';
+            window.CLIENT_CONFIG = { type: 'PRO', hasProMode: true };
+            if (!openModal('spanNombre')) return ['fail', '_openEditFieldModal no disponible'];
+            const tab = document.getElementById('efTabRecord');
+            return assert(
+                tab && tab.style.display !== 'none',
+                'Tab Grabar visible ✓',
+                `Tab oculto (display="${tab?.style.display}")`
+            );
+        }
+    },
+    {
+        id: 'c1-nombre',
+        label: 'C1 — Titulo: "\u270f\ufe0f Nombre"',
+        desc: 'Parrafo "Nombre: [No especificado]" → titulo debe ser "\u270f\ufe0f Nombre".',
+        run() {
+            closeModal();
+            window.GROQ_API_KEY  = '';
+            window.CLIENT_CONFIG = { type: 'NORMAL', hasProMode: false };
+            if (!openModal('spanNombre')) return ['fail', '_openEditFieldModal no disponible'];
+            const title = document.getElementById('editFieldModalTitle')?.textContent?.trim();
+            const expected = '\u270f\ufe0f Nombre';
+            return assert(title === expected, `"${title}" ✓`, `"${title}" — esperado "${expected}"`);
+        }
+    },
+    {
+        id: 'c1-tamano',
+        label: 'C1 — Titulo: "\u270f\ufe0f Tama\u00f1o tumoral"',
+        desc: 'Parrafo "Tama\u00f1o tumoral: ..." → titulo del modal.',
+        run() {
+            closeModal();
+            if (!openModal('spanTamano')) return ['fail', '_openEditFieldModal no disponible'];
+            const title = document.getElementById('editFieldModalTitle')?.textContent?.trim();
+            const expected = '\u270f\ufe0f Tama\u00f1o tumoral';
+            return assert(title === expected, `"${title}" ✓`, `"${title}" — esperado "${expected}"`);
+        }
+    },
+    {
+        id: 'c1-conclu',
+        label: 'C1 — Titulo: "\u270f\ufe0f Conclusi\u00f3n"',
+        desc: 'Parrafo "Conclusi\u00f3n: ..." → titulo del modal.',
+        run() {
+            closeModal();
+            if (!openModal('spanConclu')) return ['fail', '_openEditFieldModal no disponible'];
+            const title = document.getElementById('editFieldModalTitle')?.textContent?.trim();
+            const expected = '\u270f\ufe0f Conclusi\u00f3n';
+            return assert(title === expected, `"${title}" ✓`, `"${title}" — esperado "${expected}"`);
+        }
+    },
+    {
+        id: 'c2-blank',
+        label: 'C2 — Dejar en blanco: span eliminado del DOM',
+        desc: 'Abrir modal → click "Dejar en blanco" → span desaparece y modal se cierra.',
+        run() {
+            // Recrear el span si C2 ya lo eliminó antes
+            if (!document.getElementById('spanConclu')) {
+                const p = document.getElementById('paraConclu');
+                if (p) {
+                    const s = document.createElement('span');
+                    s.className = 'no-data-field';
+                    s.contentEditable = 'false';
+                    s.setAttribute('data-field-empty', '1');
+                    s.id = 'spanConclu';
+                    s.innerHTML = '<span class="no-data-text">No especificado</span>'
+                        + '<button class="no-data-edit-btn" type="button">\u270f\ufe0f</button>';
+                    p.appendChild(s);
+                }
+            }
+            closeModal();
+            if (!openModal('spanConclu')) return ['fail', '_openEditFieldModal no disponible'];
+            document.getElementById('btnBlankEditField').click();
+            const gone   = !document.getElementById('spanConclu');
+            const closed = !document.getElementById('editFieldModal').classList.contains('active');
+            return assert(
+                gone && closed,
+                'Span eliminado ✓ · Modal cerrado ✓',
+                `spanGone=${gone} · modalClosed=${closed}`
+            );
+        }
+    }
+];
+
+const suite = document.getElementById('suite');
+TESTS.forEach(t => {
+    const row = document.createElement('div');
+    row.className = 'test-row';
+    row.innerHTML = `
+        <div class="info"><strong>${t.label}</strong><p>${t.desc}</p></div>
+        <div class="status wait" id="st-${t.id}"><div class="dot"></div><span>— pendiente —</span></div>
+        <button class="run-btn" onclick="runTest('${t.id}')">▶ Ejecutar</button>`;
+    suite.appendChild(row);
+});
+
+const allBtn = document.createElement('button');
+allBtn.textContent = '\u25b6\u25b6 Ejecutar todos';
+allBtn.className = 'run-btn';
+allBtn.style.cssText = 'background:#10b981;margin-top:.5rem;padding:.55rem 1.25rem;';
+allBtn.onclick = async () => {
+    for (const t of TESTS) {
+        runTest(t.id);
+        await new Promise(r => setTimeout(r, 90));
+        if (t.id !== 'c2-blank') closeModal();
+    }
+};
+suite.appendChild(allBtn);
+
+function runTest(id) {
+    const t = TESTS.find(x => x.id === id);
+    if (!t) return;
+    setStatus(id, 'wait', '\u23f3 ejecutando...');
+    try {
+        const [type, msg] = t.run();
+        setStatus(id, type, (type === 'ok' ? '✓ ' : '✗ ') + msg);
+    } catch(err) {
+        setStatus(id, 'fail', '✗ JS Error: ' + err.message);
+    }
+}
+</script>
+</body>
+</html>

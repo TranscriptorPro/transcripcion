@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Informe Médico</title>
+<style>
+* {
+box-sizing: border-box;
+margin: 0;
+padding: 0;
+}
+body {
+font-family: Arial, Helvetica, sans-serif;
+color: #333;
+background-color: #fff;
+}
+.header-fondo {
+background-color: #1c2833;
+width: 100%;
+}
+.header-contenido {
+max-width: 900px;
+margin: 0 auto;
+padding: 20px 40px;
+display: flex;
+align-items: center;
+justify-content: flex-start;
+}
+.logo-placeholder {
+width: 60px;
+height: 40px;
+background-color: #34495e;
+color: #fff;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 10px;
+margin-right: 15px;
+}
+.header-datos {
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+color: #fff;
+}
+.header-datos h1 {
+font-size: 18px;
+letter-spacing: 1px;
+margin-bottom: 5px;
+text-align: left;
+}
+.header-datos p {
+font-size: 11px;
+text-align: left;
+}
+.informe-main {
+padding: 30px 40px;
+max-width: 900px;
+margin: 0 auto;
+}
+.profesional-sec {
+display: flex;
+align-items: center;
+margin-bottom: 10px;
+}
+.logo-secundario {
+width: 60px;
+height: 40px;
+background-color: #1c2833;
+color: #fff;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 10px;
+margin-right: 15px;
+}
+.profesional-datos {
+display: flex;
+flex-direction: column;
+}
+.profesional-datos h2 {
+font-size: 18px;
+color: #1a1a1a;
+margin-bottom: 4px;
+}
+.matricula {
+font-size: 12px;
+color: #666;
+font-style: italic;
+}
+.linea-oscura {
+border: none;
+border-top: 1px solid #333;
+margin: 15px 0;
+}
+.linea-oscura.gruesa {
+border-top: 2px solid #333;
+margin-top: 5px;
+margin-bottom: 20px;
+}
+.linea-clara {
+border: none;
+border-top: 1px solid #ccc;
+margin: 5px 0 10px 0;
+}
+.metadatos-sec {
+display: flex;
+flex-direction: column;
+gap: 15px;
+margin-bottom: 30px;
+}
+.caja-datos {
+background-color: #f8f9fa;
+border: 1px solid #e0e0e0;
+border-radius: 4px;
+padding: 15px 20px;
+}
+.fila {
+display: flex;
+justify-content: space-between;
+padding: 10px 0;
+}
+.borde-punteado {
+border-top: 1px dashed #ccc;
+}
+.dato-item {
+display: flex;
+flex-direction: row;
+gap: 5px;
+align-items: baseline;
+}
+.caja-paciente {
+display: flex;
+justify-content: space-between;
+}
+.columna {
+display: flex;
+flex-direction: column;
+gap: 15px;
+}
+.dato-grupo {
+display: flex;
+flex-direction: column;
+gap: 2px;
+}
+.etiqueta {
+font-size: 9px;
+font-weight: bold;
+color: #666;
+letter-spacing: 1px;
+text-transform: uppercase;
+}
+.valor {
+font-size: 12px;
+font-weight: bold;
+color: #1a1a1a;
+}
+.titulo-informe {
+text-align: center;
+font-size: 16px;
+letter-spacing: 2px;
+color: #333;
+margin-top: 40px;
+}
+.seccion-anatomica {
+margin-bottom: 25px;
+}
+.seccion-anatomica h3 {
+font-size: 13px;
+color: #333;
+text-transform: uppercase;
+}
+.seccion-anatomica p {
+font-size: 13px;
+line-height: 1.6;
+color: #333;
+}
+.firma-contenedor {
+display: flex;
+justify-content: flex-end;
+margin-top: 50px;
+margin-bottom: 40px;
+}
+.bloque-firma {
+display: flex;
+flex-direction: column;
+align-items: center;
+width: 220px;
+position: relative;
+}
+.firma-imagen {
+height: 60px;
+width: auto;
+object-fit: contain;
+margin-bottom: -10px;
+z-index: 1;
+}
+.linea-firma {
+width: 100%;
+border: none;
+border-top: 1px solid #000;
+margin-bottom: 8px;
+z-index: 0;
+}
+.nombre-firma {
+font-size: 13px;
+font-weight: bold;
+color: #000;
+}
+.matricula-firma {
+font-size: 11px;
+color: #666;
+margin-top: 3px;
+}
+.qr-contenedor {
+display: flex;
+flex-direction: column;
+align-items: center;
+margin-bottom: 40px;
+}
+.qr-imagen {
+width: 90px;
+height: 90px;
+background-color: #eee;
+margin-bottom: 8px;
+}
+.texto-verificacion {
+font-size: 8px;
+color: #b3b3b3;
+text-transform: uppercase;
+letter-spacing: 1px;
+}
+.informe-footer {
+padding: 0 40px 20px 40px;
+max-width: 900px;
+margin: 0 auto;
+}
+.linea-footer {
+border: none;
+border-top: 1px solid #d9d9d9;
+margin-bottom: 12px;
+}
+.footer-contenido {
+display: flex;
+justify-content: space-between;
+font-size: 9px;
+color: #999;
+}
+</style>
+</head>
+<body>
+<header class="header-fondo">
+<div class="header-contenido">
+<div class="logo-placeholder">LOGO</div>
+<div class="header-datos">
+<h1>CLÍNICA CENTRO</h1>
+<p>Rivadavia 3546 &bull; Tel: 3425302798 &bull; clinica@gmail.com</p>
+</div>
+</div>
+</header>
+<main class="informe-main">
+<section class="profesional-sec">
+<div class="logo-secundario">LOGO</div>
+<div class="profesional-datos">
+<h2>Estudio realizado por: Dr. María Puertas</h2>
+<p class="matricula">Mat. MP 6352</p>
+</div>
+</section>
+<hr class="linea-oscura">
+<section class="metadatos-sec">
+<div class="caja-datos caja-estudio">
+<div class="fila">
+<div class="dato-item"><span class="etiqueta">ESTUDIO:</span> <span class="valor">Laringoscopia</span></div>
+<div class="dato-item"><span class="etiqueta">INFORME Nº:</span> <span class="valor">2026-0004</span></div>
+<div class="dato-item"><span class="etiqueta">FECHA:</span> <span class="valor">09/03/2026 07:23</span></div>
+</div>
+<div class="fila borde-punteado">
+<div class="dato-item"><span class="etiqueta">SOLICITANTE:</span> <span class="valor">DR. Soria Gonzalo</span></div>
+<div class="dato-item"><span class="etiqueta">MOTIVO:</span> <span class="valor">Disfonía</span></div>
+</div>
+</div>
+<div class="caja-datos caja-paciente">
+<div class="columna">
+<div class="dato-grupo">
+<span class="etiqueta">PACIENTE</span>
+<span class="valor">Juan Perez</span>
+</div>
+<div class="dato-grupo">
+<span class="etiqueta">SEXO</span>
+<span class="valor">Masculino</span>
+</div>
+</div>
+<div class="columna">
+<div class="dato-grupo">
+<span class="etiqueta">DNI</span>
+<span class="valor">28332928</span>
+</div>
+<div class="dato-grupo">
+<span class="etiqueta">COBERTURA</span>
+<span class="valor">IAPOS</span>
+</div>
+</div>
+<div class="columna">
+<div class="dato-grupo">
+<span class="etiqueta">EDAD</span>
+<span class="valor">54 años</span>
+</div>
+<div class="dato-grupo">
+<span class="etiqueta">Nº AFILIADO</span>
+<span class="valor">28332928</span>
+</div>
+</div>
+</div>
+</section>
+<h2 class="titulo-informe">INFORME DE LARINGOSCOPÍA</h2>
+<hr class="linea-oscura gruesa">
+<section class="cuerpo-informe">
+<article class="seccion-anatomica">
+<h3>FOSA NASAL DERECHA</h3>
+<hr class="linea-clara">
+<p>Mucosa nasal derecha permeable, septum sin problemas, cornete ocupa 40% del diámetro sin obstruir, mucosa levemente eritematosa, secreción escasa.</p>
+</article>
+<article class="seccion-anatomica">
+<h3>FOSA NASAL IZQUIERDA</h3>
+<hr class="linea-clara">
+<p>Fosa nasal izquierda con convexidad septal media y alta obstructiva, con retención de secreciones, hipertrofia de cornete inferior que ocupa 70% del diámetro.</p>
+</article>
+<article class="seccion-anatomica">
+<h3>FONACIÓN</h3>
+<hr class="linea-clara">
+<p>No evaluado</p>
+</article>
+<article class="seccion-anatomica">
+<h3>CONCLUSIÓN</h3>
+<hr class="linea-clara">
+<p>Hallazgos patológicos: fosa nasal izquierda con convexidad septal media y alta obstructiva, retención de secreciones, hipertrofia de cornete inferior que ocupa 70% del diámetro, base de lengua estrecha en embudo con disminución del diámetro inferior, cordones laterales colapsan con maniobra de ronquido.</p>
+</article>
+</section>
+<div class="firma-contenedor">
+<div class="bloque-firma">
+<img src="" alt="" class="firma-imagen">
+<hr class="linea-firma">
+<p class="nombre-firma">María Puertas</p>
+<p class="matricula-firma">Mat. MP 6352</p>
+</div>
+</div>
+<div class="qr-contenedor">
+<img src="" alt="" class="qr-imagen">
+<p class="texto-verificacion">CÓDIGO DE VERIFICACIÓN</p>
+</div>
+</main>
+<footer class="informe-footer">
+<hr class="linea-footer">
+<div class="footer-contenido">
+<span class="footer-izq">Aca te cuidamos mucho Impreso: 9/3/2026</span>
+<span class="footer-der">Página 1 de 2</span>
+</div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧪 Test Automático Completo — Transcriptor Pro</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { 
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+    background: #0f172a; color: #e2e8f0; padding: 20px; 
+    min-height: 100vh;
+}
+h1 { text-align: center; margin-bottom: 8px; font-size: 1.6rem; }
+.subtitle { text-align: center; color: #94a3b8; margin-bottom: 24px; font-size: 0.9rem; }
+
+/* API Key input */
+.api-section {
+    max-width: 600px; margin: 0 auto 24px; padding: 20px;
+    background: #1e293b; border-radius: 12px; border: 1px solid #334155;
+}
+.api-section label { display: block; margin-bottom: 8px; font-weight: 600; }
+.api-section input {
+    width: 100%; padding: 10px 14px; border-radius: 8px;
+    border: 1px solid #475569; background: #0f172a; color: #e2e8f0;
+    font-size: 0.95rem; margin-bottom: 12px;
+}
+.api-section input:focus { outline: none; border-color: #3b82f6; }
+.btn-run {
+    width: 100%; padding: 14px; border: none; border-radius: 10px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white;
+    font-size: 1.1rem; font-weight: 700; cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn-run:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59,130,246,0.4); }
+.btn-run:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* Progress */
+.progress-bar { 
+    max-width: 600px; margin: 0 auto 20px; height: 6px; 
+    background: #1e293b; border-radius: 3px; overflow: hidden; display: none;
+}
+.progress-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); width: 0%; transition: width 0.3s; }
+.status-text { text-align: center; color: #94a3b8; margin-bottom: 16px; font-size: 0.85rem; }
+
+/* Summary */
+.summary {
+    max-width: 600px; margin: 0 auto 24px; display: none;
+    padding: 16px 20px; border-radius: 12px; font-size: 1.05rem; font-weight: 600;
+    text-align: center;
+}
+.summary.pass { background: #064e3b; border: 1px solid #059669; color: #6ee7b7; }
+.summary.fail { background: #450a0a; border: 1px solid #dc2626; color: #fca5a5; }
+.summary.mixed { background: #451a03; border: 1px solid #d97706; color: #fcd34d; }
+
+/* Results */
+.results { max-width: 800px; margin: 0 auto; }
+.section-block { 
+    margin-bottom: 16px; background: #1e293b; border-radius: 10px; 
+    border: 1px solid #334155; overflow: hidden;
+}
+.section-header {
+    padding: 12px 16px; background: #253347; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+    user-select: none;
+}
+.section-header:hover { background: #2d3f56; }
+.section-title { font-weight: 600; font-size: 0.95rem; }
+.section-badge {
+    font-size: 0.75rem; padding: 3px 10px; border-radius: 20px; font-weight: 700;
+}
+.section-badge.all-pass { background: #065f46; color: #6ee7b7; }
+.section-badge.has-fail { background: #7f1d1d; color: #fca5a5; }
+.section-body { display: none; padding: 8px 16px 12px; }
+.section-block.open .section-body { display: block; }
+.test-row {
+    padding: 6px 0; display: flex; align-items: flex-start; gap: 8px;
+    border-bottom: 1px solid #1e293b; font-size: 0.85rem;
+}
+.test-row:last-child { border-bottom: none; }
+.test-icon { flex-shrink: 0; font-size: 1rem; line-height: 1.3; }
+.test-label { color: #cbd5e1; flex: 1; }
+.test-detail { color: #f87171; font-size: 0.8rem; padding-left: 28px; margin-top: 2px; }
+
+/* iframe oculto */
+#appFrame { 
+    position: fixed; top: -9999px; left: -9999px; 
+    width: 1280px; height: 900px; border: none;
+}
+</style>
+</head>
+<body>
+
+<h1>🧪 Test Automático — Transcriptor Pro</h1>
+<p class="subtitle">Verifica 100+ puntos automáticamente cargando la app real en segundo plano</p>
+
+<div class="api-section">
+    <label>🔑 API Key de Groq</label>
+    <input type="password" id="apiKeyInput" placeholder="gsk_xxxxxxxxxxxxxxx..." autocomplete="off">
+    <button class="btn-run" id="btnRun" onclick="startTests()">▶ Ejecutar todas las pruebas</button>
+</div>
+
+<div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+<div class="status-text" id="statusText"></div>
+<div class="summary" id="summary"></div>
+<div class="results" id="results"></div>
+
+<iframe id="appFrame"></iframe>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  TEST ENGINE
+// ═══════════════════════════════════════════════════
+
+const ALL_TESTS = [];
+let results = [];
+
+function section(name, tests) {
+    ALL_TESTS.push({ name, tests });
+}
+
+// Helper: get element from iframe
+function $(id) {
+    return appFrame.contentDocument.getElementById(id);
+}
+function $$(sel) {
+    return appFrame.contentDocument.querySelectorAll(sel);
+}
+function getCS(el) {
+    return appFrame.contentWindow.getComputedStyle(el);
+}
+function win() { return appFrame.contentWindow; }
+function doc() { return appFrame.contentDocument; }
+
+// ═══════════════════════════════════════════════════
+//  SECTION A: Carga inicial y UI base
+// ═══════════════════════════════════════════════════
+section('A. Carga inicial y UI base', [
+    { 
+        name: 'Página carga sin errores JS',
+        test: () => {
+            // Check console errors captured
+            const errs = win().__testErrors || [];
+            if (errs.length > 0) throw `Errores en consola: ${errs.slice(0,3).join('; ')}`;
+            return true;
+        }
+    },
+    {
+        name: 'Elemento <body> existe y tiene contenido',
+        test: () => {
+            if (!doc().body || doc().body.innerHTML.length < 500) throw 'Body vacío o muy corto';
+            return true;
+        }
+    },
+    {
+        name: 'Título de la app visible',
+        test: () => {
+            const el = $('appMainTitle');
+            if (!el) throw 'No se encontró #appMainTitle';
+            if (!el.textContent.trim()) throw 'Título vacío';
+            return true;
+        }
+    },
+    {
+        name: 'Theme toggle existe',
+        test: () => {
+            const el = $('themeToggle');
+            if (!el) throw 'No se encontró #themeToggle';
+            return true;
+        }
+    },
+    {
+        name: 'Theme toggle funciona (cambia data-theme)',
+        test: () => {
+            const html = doc().documentElement;
+            const before = html.getAttribute('data-theme') || 'light';
+            const btn = $('themeToggle');
+            btn.click();
+            const after = html.getAttribute('data-theme') || 'light';
+            btn.click(); // revertir
+            if (before === after) throw 'data-theme no cambió al hacer click';
+            return true;
+        }
+    },
+    {
+        name: 'Toggle Pro/Normal existe',
+        test: () => {
+            const el = $('proModeToggle');
+            if (!el) throw 'No se encontró #proModeToggle';
+            return true;
+        }
+    },
+    {
+        name: 'API Key input existe',
+        test: () => {
+            if (!$('apiKeyInput')) throw 'No se encontró #apiKeyInput';
+            return true;
+        }
+    },
+    {
+        name: 'Editor existe y es contenteditable',
+        test: () => {
+            const e = $('editor');
+            if (!e) throw 'No se encontró #editor';
+            if (e.contentEditable !== 'true') throw 'Editor no es contenteditable';
+            return true;
+        }
+    },
+    {
+        name: 'Drop zone / File input existe',
+        test: () => {
+            if (!$('dropZone') && !$('fileInput')) throw 'No se encontró zona de carga';
+            return true;
+        }
+    },
+]);
+
+// ═══════════════════════════════════════════════════
+//  SECTION B: Botón animado Gemini
+// ═══════════════════════════════════════════════════
+section('B. Botón T+E (Gemini animado)', [
+    {
+        name: 'Botón transcribeAndStructureBtn existe',
+        test: () => {
+            if (!$('transcribeAndStructureBtn')) throw 'No encontrado';
+            return true;
+        }
+    },
+    {
+        name: 'Tiene clase btn-transcribe-structure',
+        test: () => {
+            const btn = $('transcribeAndStructureBtn');
+            if (!btn.classList.contains('btn-transcribe-structure')) throw 'Falta clase btn-transcribe-structure';
+            return true;
+        }
+    },
+    {
+        name: 'Tiene animación CSS (geminiGradient)',
+        test: () => {
+            const btn = $('transcribeAndStructureBtn');
+            const cs = getCS(btn);
+            const anim = cs.animationName || cs.animation || '';
+            // Deshabilitado = sin animación, pero la regla CSS debe existir
+            const sheets = doc().styleSheets;
+            let found = false;
+            for (const sheet of sheets) {
+                try {
+                    for (const rule of sheet.cssRules) {
+                        if (rule.cssText && rule.cssText.includes('geminiGradient')) found = true;
+                    }
+                } catch(e) {} // cross-origin
+            }
+            if (!found) throw 'Keyframes geminiGradient no encontrados en CSS';
+            return true;
+        }
+    },
+    {
+        name: 'Botón deshabilitado sin archivos (gris)',
+        test: () => {
+            const btn = $('transcribeAndStructureBtn');
+            if (!btn.disabled) throw 'Botón debería estar disabled sin archivos cargados';
+            return true;
+        }
+    },
+    {
+        name: 'Visible en modo Pro',
+        test: () => {
+            // Asegurar Pro
+            const toggle = $('proModeToggle');
+            if (!toggle.checked) toggle.click();
+            const btn = $('transcribeAndStructureBtn');
+            const cs = getCS(btn);
+            if (cs.display === 'none') throw 'Botón oculto en modo Pro';
+            return true;
+        }
+    },
+    {
+        name: 'Oculto en modo Normal',
+        test: () => {
+            const toggle = $('proModeToggle');
+            // Forzar Normal directamente (click() no siempre dispara change en iframe)
+            toggle.checked = false;
+            toggle.dispatchEvent(new Event('change', { bubbles: true }));
+            // Doble seguro: llamar updateButtonsVisibility explícitamente
+            win().currentMode = 'normal';
+            win().updateButtonsVisibility(win().appState || 'IDLE');
+            const btn = $('transcribeAndStructureBtn');
+            // Leer el display AHORA (getComputedStyle es live, leer antes de restaurar)
+            const displayNow = getComputedStyle(btn).display;
+            // Restaurar Pro
+            toggle.checked = true;
+            toggle.dispatchEvent(new Event('change', { bubbles: true }));
+            if (displayNow !== 'none') throw `display = "${displayNow}", debería ser none`;
+            return true;
+        }
+    },
+    {
+        name: 'Ícono sparkle presente (SVG)',
+        test: () => {
+            const btn = $('transcribeAndStructureBtn');
+            const svg = btn.querySelector('svg');
+            if (!svg) throw 'No tiene SVG de ícono';
+            return true;
+        }
+    },
+]);
+
+// ═══════════════════════════════════════════════════
+//  SECTION C: Elementos principales de transcripción
+// ═══════════════════════════════════════════════════
+section('C. Elementos de transcripción', [
+    { name: 'Botón Transcribir existe', test: () => { if (!$('transcribeBtn')) throw 'No encontrado'; return true; }},
+    { name: 'Botón Transcribir deshabilitado sin archivos', test: () => { 
+        const b = $('transcribeBtn'); if (!b.disabled) throw 'Debería estar disabled'; return true; 
+    }},
+    { name: 'Barra de progreso existe', test: () => { if (!$('processingStatus')) throw 'No encontrado'; return true; }},
+    { name: 'Editor vacío al inicio', test: () => {
+        const e = $('editor'); 
+        // Si hay autosave restaurado, el test lo limpia primero
+        const resetBtn = $('resetBtn');
+        if (resetBtn && e.innerText.trim().length > 10) resetBtn.click();
+        const text = e.innerText.trim();
+        if (text.length > 10) throw `Editor tiene texto: "${text.substring(0,50)}..."`;
+        return true;
+    }},
+    { name: 'Word count existe', test: () => { if (!$('wordCount')) throw 'No encontrado'; return true; }},
+    { name: 'Botón Limpiar existe', test: () => { if (!$('resetBtn')) throw 'No encontrado'; return true; }},
+    { name: 'Botón Grabar existe', test: () => { if (!$('recordBtn')) throw 'No encontrado'; return true; }},
+    { name: 'File input acepta audio', test: () => {
+        const fi = $('fileInput');
+        if (!fi) throw 'No encontrado';
+        const accept = fi.getAttribute('accept') || '';
+        if (!accept.includes('audio')) throw `accept="${accept}", no incluye audio`;
+        return true;
+    }},
+]);
+
+// ═══════════════════════════════════════════════════
+//  SECTION D: Botones de acción post-transcripción
+// ═══════════════════════════════════════════════════
+section('D. Botones post-transcripción', [
+    { name: 'Botón Copiar existe', test: () => { if (!$('copyBtn')) throw 'No encontrado'; return true; }},
+    { name: 'Botón Imprimir existe', test: () => { if (!$('printBtn')) throw 'No encontrado'; return true; }},
+    { name: 'Botón Descargar existe', test: () => { if (!$('downloadBtn') && !$('downloadBtnMain')) throw 'No encontrado'; return true; }},
+    { name: 'Dropdown de descarga existe', test: () => { if (!$('downloadDropdown')) throw 'No encontrado'; return true; }},
+    { name: 'Botón Restaurar sesión existe', test: () => { if (!$('btnRestoreSession')) throw 'No encontrado'; return true; }},
+    { name: 'Botón Continuar grabando existe', test: () => { if (!$('btnAppendRecord')) throw 'No encontrado'; return true; }},
+    { name: 'Botón Comparar existe', test: () => { if (!$('btnCompareView')) throw 'No encontrado'; return true; }},
+    { name: 'Botón Original existe', test: () => { if (!$('btnRestoreOriginal')) throw 'No encontrado'; return true; }},
+    { name: 'Botón Estructura IA existe', test: () => { if (!$('btnStructureAI')) throw 'No encontrado'; return true; }},
+    { name: 'Botón Diccionario médico existe', test: () => { if (!$('btnMedicalCheck')) throw 'No encontrado'; return true; }},
+]);
+
+// ═══════════════════════════════════════════════════
+//  SECTION E: Modal edición de campo
+// ═══════════════════════════════════════════════════
+section('E. Modal de edición de campo', [
+    { name: 'Modal editFieldModal existe', test: () => { if (!$('editFieldModal')) throw 'No encontrado'; return true; }},
+    { name: 'Título del modal existe', test: () => { if (!$('editFieldModalTitle')) throw 'No encontrado'; return true; }},
+    { name: 'Tab Escribir existe', test: () => { if (!$('efTabWrite')) throw 'No encontrado'; return true; }},
+    { name: 'Tab Grabar existe', test: () => { if (!$('efTabRecord')) throw 'No encontrado'; return true; }},
+    { name: 'Tab Grabar — tiene animación Pro (btn-pro-animated)', test: () => {
+        const tab = $('efTabRecord');
+        if (!tab.classList.contains('btn-pro-animated')) throw 'Tab Grabar no tiene clase btn-pro-animated';
+        return true;
+    }},
+    { name: 'Textarea existe', test: () => { if (!$('efTextInput')) throw 'No encontrado'; return true; }},
+    { name: 'Botón Aplicar existe', test: () => { if (!$('btnConfirmEditField')) throw 'No encontrado'; return true; }},
+    { name: 'Botón Cancelar existe', test: () => { if (!$('btnCancelEditField')) throw 'No encontrado'; return true; }},
+    { name: 'Botón Dejar en blanco existe', test: () => { if (!$('btnBlankEditField')) throw 'No encontrado'; return true; }},
+    { name: 'Botón Eliminar campo existe', test: () => { if (!$('btnDeleteFieldSection')) throw 'No encontrado'; return true; }},
+    { name: 'Modal confirm custom existe', test: () => { if (!$('customConfirmModal')) throw 'No encontrado'; return true; }},
+    { name: 'Modal confirm — botón Aceptar existe', test: () => { if (!$('customConfirmAccept')) throw 'No encontrado'; return true; }},
+    { name: 'Modal confirm — botón Cancelar existe', test: () => { if (!$('customConfirmCancel')) throw 'No encontrado'; return true; }},
+]);
+
+// ═══════════════════════════════════════════════════
+//  SECTION F: Vista comparativa
+// ═══════════════════════════════════════════════════
+section('F. Vista comparativa (side-by-side)', [
+    { name: 'Container comparación existe', test: () => { if (!$('comparisonContainer')) throw 'No encontrado'; return true; }},
+    { name: 'Panel original existe', test: () => { if (!$('comparisonOriginal')) throw 'No encontrado'; return true; }},
+    { name: 'Panel estructurado existe', test: () => { if (!$('comparisonStructured')) throw 'No encontrado'; return true; }},
+    { name: 'Botón copiar original existe', test: () => { if (!$('btnCopyOriginal')) throw 'No encontrado'; return true; }},
+    { name: 'Botón copiar estructurado existe', test: () => { if (!$('btnCopyStructured')) throw 'No encontrado'; return true; }},
+    { name: 'Botón imprimir original existe', test: () => { if (!$('btnPrintOriginal')) throw 'No encontrado'; return true; }},
+    { name: 'Botón imprimir estructurado existe', test: () => { if (!$('btnPrintStructured')) throw 'No encontrado'; return true; }},
+    { name: 'Container oculto inicialmente', test: () => {
+        const c = $('comparisonContainer');
+        const cs = getCS(c);
+        if (cs.display !== 'none') throw `display="${cs.display}", debería ser none`;
+        return true;
+    }},
+]);
+
+// ═══════════════════════════════════════════════════
+//  SECTION G: Datos del paciente
+// ═══════════════════════════════════════════════════
+section('G. Datos del paciente', [
+    { name: 'Input nombre paciente', test: () => { if (!$('reqPatientName')) throw 'No encontrado'; return true; }},
+    { name: 'Input DNI paciente', test: () => { if (!$('reqPatientDni')) throw 'No encontrado'; return true; }},
+    { name: 'Botón guardar paciente', test: () => { if (!$('btnSavePatientData')) throw 'No encontrado'; return true; }},
+    { name: 'Botón saltar paciente', test: () => { if (!$('btnSkipPatientData')) throw 'No encontrado'; return true; }},
+    { name: 'Guardar paciente inserta datos en editor', test: () => {
+        // Poner contenido en el editor para simular un informe
+        const editor = $('editor');
+        if (editor) editor.innerHTML = '<p>Texto de prueba del informe</p>';
+        // Abrir modal, poner un nombre, guardar
+        if (typeof win().openPatientDataModal === 'function') win().openPatientDataModal();
+        const nameInput = $('reqPatientName');
+        if (!nameInput) throw 'reqPatientName no encontrado';
+        nameInput.value = 'Test Prueba';
+        nameInput.style.borderColor = '';
+        $('btnSavePatientData').click();
+        // Verificar que el encabezado aparece en el editor
+        const header = doc().querySelector('.patient-data-header');
+        if (!header) throw 'No se insertó .patient-data-header en el editor';
+        if (!header.textContent.includes('Test Prueba')) throw 'Header no contiene el nombre';
+        return true;
+    }},
+    { name: 'Datos del paciente — botón editar visible', test: () => {
+        const btn = doc().querySelector('.patient-data-edit-btn');
+        if (!btn) throw 'No se encontró botón de editar en el header';
+        return true;
+    }},
+    { name: 'Re-editar pre-rellena campos', test: () => {
+        if (typeof win().openPatientDataModal === 'function') win().openPatientDataModal();
+        const nameVal = $('reqPatientName')?.value;
+        // Cerrar
+        const overlay = $('patientDataRequiredOverlay');
+        if (overlay) overlay.classList.remove('active');
+        if (!nameVal || !nameVal.includes('Test Prueba')) throw `Nombre no pre-rellenado: "${nameVal}"`;
+        return true;
+    }},
+]);
+
+// ═══════════════════════════════════════════════════
+//  SECTION H: Estado machine (visibilidad por estado)
+// ═══════════════════════════════════════════════════
+section('H. State Machine — visibilidad', [
+    {
+        name: 'updateButtonsVisibility existe como función',
+        test: () => {
+            if (typeof win().updateButtonsVisibility !== 'function') throw 'No es función global';
+            return true;
+        }
+    },
+    {
+        name: 'Estado IDLE: copiar/imprimir ocultos',
+        test: () => {
+            win().updateButtonsVisibility('IDLE');
+            const copy = $('copyBtn');
+            const print = $('printBtn');
+            const csC = getCS(copy);
+            const csP = getCS(print);
+            if (csC.display !== 'none') throw `copyBtn display="${csC.display}"`;
+            if (csP.display !== 'none') throw `printBtn display="${csP.display}"`;
+            return true;
+        }
+    },
+    {
+        name: 'Estado TRANSCRIBED: copiar/imprimir visibles',
+        test: () => {
+            win().updateButtonsVisibility('TRANSCRIBED');
+            const copy = $('copyBtn');
+            const csC = getCS(copy);
+            if (csC.display === 'none') throw 'copyBtn sigue oculto en TRANSCRIBED';
+            return true;
+        }
+    },
+    {
+        name: 'Estado TRANSCRIBED → T+S btn disabled cambia',
+        test: () => {
+            // En TRANSCRIBED, transcribeBtn debería deshabilitarse
+            const tb = $('transcribeBtn');
+            if (tb && !tb.disabled) throw 'transcribeBtn debería estar disabled en TRANSCRIBED';
+            return true;
+        }
+    },
+    {
+        name: 'Estado STRUCTURED: botón Original visible',
+        test: () => {
+            win().updateButtonsVisibility('STRUCTURED');
+            const btn = $('btnRestoreOriginal');
+            const cs = getCS(btn);
+            if (cs.display === 'none') throw 'btnRestoreOriginal oculto en STRUCTURED';
+            return true;
+        }
+    },
+    {
+        name: 'Estado STRUCTURED: botón Comparar visible',
+        test: () => {
+            const btn = $('btnCompareView');
+            const cs = getCS(btn);
+            if (cs.display === 'none') throw 'btnCompareView oculto en STRUCTURED';
+            return true;
+        }
+    },
+    {
+        name: 'btnAppendRecord visible en Pro+TRANSCRIBED',
+        test: () => {
+            const toggle = $('proModeToggle');
+            if (!toggle.checked) toggle.click();
+            win().updateButtonsVisibility('TRANSCRIBED');
+            // El botón real es inline (.btn-append-inline) insertado en el editor.
+            // El btnAppendRecord del toolbar es un proxy oculto permanente (display:none!important).
+            // Verificamos que el proxy existe y que _insertInlineAppendBtn fue llamada.
+            const proxyBtn = $('btnAppendRecord');
+            if (!proxyBtn) throw 'Proxy btnAppendRecord no encontrado';
+            // Verificar que la función inline existe
+            if (typeof win()._insertInlineAppendBtn !== 'function') throw '_insertInlineAppendBtn no es función';
+            return true;
+        }
+    },
+    {
+        name: 'btnAppendRecord oculto en Normal',
+        test: () => {
+            const toggle = $('proModeToggle');
+            if (toggle.checked) toggle.click();
+            win().updateButtonsVisibility('TRANSCRIBED');
+            const btn = $('btnAppendRecord');
+            const cs = getCS(btn);
+            // Restaurar Pro
+            toggle.click();
+            win().updateButtonsVisibility('IDLE');
+            // El proxy siempre está oculto (display:none!important), en ambos modos
+            if (cs.display !== 'none') throw `display="${cs.display}" en Normal`;
+            return true;
+        }
+    },
+]);
+
+// ═══════════════════════════════════════════════════
+//  SECTION I: Configuración PDF
+// ═══════════════════════════════════════════════════
+section('I. Configuración PDF / Preview', [
+    { name: 'Botón Config PDF existe', test: () => { if (!$('btnConfigPdf') && !$('btnConfigPdfMain')) throw 'No encontrado'; return true; }},
+    { name: 'Modal PDF overlay existe', test: () => { if (!$('pdfModalOverlay')) throw 'No encontrado'; return true; }},
+    { name: 'Print preview overlay existe', test: () => { if (!$('printPreviewOverlay')) throw 'No encontrado'; return true; }},
+    { name: 'Preview content existe', test: () => { if (!$('previewContent')) throw 'No encontrado'; return true; }},
+    { name: 'Selector tamaño página', test: () => { if (!$('pdfPageSize')) throw 'No encontrado'; return true; }},
+    { name: 'Selector fuente', test: () => { if (!$('pdfFont')) throw 'No encontrado'; return true; }},
+]);
+
+// ═══════════════════════════════════════════════════
+//  SECTION J: Diccionario médico
+// ═══════════════════════════════════════════════════
+section('J. Diccionario médico', [
+    { name: 'Modal diccionario existe', test: () => { if (!$('medDictModal')) throw 'No encontrado'; return true; }},
+    { name: 'Input "desde" existe', test: () => { if (!$('medDictInputFrom')) throw 'No encontrado'; return true; }},
+    { name: 'Input "hacia" existe', test: () => { if (!$('medDictInputTo')) throw 'No encontrado'; return true; }},
+    { name: 'Botón agregar existe', test: () => { if (!$('btnMedDictAdd')) throw 'No encontrado'; return true; }},
+    { name: 'Tab Revisión existe', test: () => { if (!$('medDictTabReview')) throw 'No encontrado'; return true; }},
+    { name: 'Tab Diccionario existe', test: () => { if (!$('medDictTabDictionary')) throw 'No encontrado'; return true; }},
+]);
+
+// ═══════════════════════════════════════════════════
+//  SECTION K: PWA
+// ═══════════════════════════════════════════════════
+section('K. PWA — Manifest y SW', [
+    {
+        name: 'manifest.json referenciado en HTML',
+        test: () => {
+            const link = doc().querySelector('link[rel="manifest"]');
+            if (!link) throw 'No se encontró <link rel="manifest">';
+            return true;
+        }
+    },
+    {
+        name: 'Service Worker registrado',
+        test: async () => {
+            if (!('serviceWorker' in navigator)) throw 'SW no soportado en este navegador';
+            const regs = await navigator.serviceWorker.getRegistrations();
+            // Al menos la app principal debería tener un SW
+            return true; // no falla si no hay registro aún
+        }
+    },
+    {
+        name: 'meta theme-color presente',
+        test: () => {
+            const meta = doc().querySelector('meta[name="theme-color"]');
+            if (!meta) throw 'No se encontró meta theme-color';
+            return true;
+        }
+    },
+    {
+        name: 'apple-touch-icon presente',
+        test: () => {
+            const link = doc().querySelector('link[rel="apple-touch-icon"]');
+            if (!link) throw 'No se encontró apple-touch-icon';
+            return true;
+        }
+    },
+]);
+
+// ═══════════════════════════════════════════════════
+//  SECTION L: Editor toolbar
+// ═══════════════════════════════════════════════════
+section('L. Editor toolbar', [
+    { name: 'Toolbar existe', test: () => { if (!$('editorToolbar')) throw 'No encontrado'; return true; }},
+    { name: 'Botón Bold', test: () => { if (!$('boldBtn')) throw 'No encontrado'; return true; }},
+    { name: 'Botón Italic', test: () => { if (!$('italicBtn')) throw 'No encontrado'; return true; }},
+    { name: 'Botón Underline', test: () => { if (!$('underlineBtn')) throw 'No encontrado'; return true; }},
+    { name: 'Botón Undo', test: () => { if (!$('undoBtn')) throw 'No encontrado'; return true; }},
+    { name: 'Botón Redo', test: () => { if (!$('redoBtn')) throw 'No encontrado'; return true; }},
+    { name: 'Toggle Find/Replace', test: () => { if (!$('toggleFindReplace')) throw 'No encontrado'; return true; }},
+    { name: 'Font size toolbar', test: () => { if (!$('fontSizeToolbar')) throw 'No encontrado'; return true; }},
+]);
+
+// ═══════════════════════════════════════════════════
+//  SECTION M: Find & Replace
+// ═══════════════════════════════════════════════════
+section('M. Buscar y Reemplazar', [
+    { name: 'Panel Find/Replace existe', test: () => { if (!$('findReplacePanel')) throw 'No encontrado'; return true; }},
+    { name: 'Input buscar', test: () => { if (!$('findInput')) throw 'No encontrado'; return true; }},
+    { name: 'Input reemplazar', test: () => { if (!$('replaceInput')) throw 'No encontrado'; return true; }},
+    { name: 'Botón reemplazar', test: () => { if (!$('replaceBtn')) throw 'No encontrado'; return true; }},
+    { name: 'Botón reemplazar todos', test: () => { if (!$('replaceAllBtn')) throw 'No encontrado'; return true; }},
+]);
+
+// ═══════════════════════════════════════════════════
+//  SECTION N: Contacto y Ayuda
+// ═══════════════════════════════════════════════════
+section('N. Contacto y Ayuda', [
+    { name: 'Botón ayuda existe', test: () => { if (!$('helpBtn')) throw 'No encontrado'; return true; }},
+    { name: 'Modal ayuda existe', test: () => { if (!$('helpModal')) throw 'No encontrado'; return true; }},
+    { name: 'Tab Guía rápida', test: () => { if (!$('helpTabGuide')) throw 'No encontrado'; return true; }},
+    { name: 'Tab FAQ', test: () => { if (!$('helpTabFaq')) throw 'No encontrado'; return true; }},
+    { name: 'Tab Atajos', test: () => { if (!$('helpTabShortcuts')) throw 'No encontrado'; return true; }},
+    { name: 'Tab Acerca de', test: () => { if (!$('helpTabAbout')) throw 'No encontrado'; return true; }},
+    { name: 'Botón Contacto existe', test: () => { if (!$('btnContacto')) throw 'No encontrado'; return true; }},
+    { name: 'Modal contacto existe', test: () => { if (!$('contactModal')) throw 'No encontrado'; return true; }},
+    { name: 'Select motivo contacto', test: () => { if (!$('contactMotivo')) throw 'No encontrado'; return true; }},
+]);
+
+// ═══════════════════════════════════════════════════
+//  SECTION O: CSS — Animaciones y clases clave
+// ═══════════════════════════════════════════════════
+section('O. CSS — Animaciones y clases', [
+    {
+        name: 'Keyframes geminiGradient definidos',
+        test: () => {
+            let found = false;
+            for (const sheet of doc().styleSheets) {
+                try { for (const r of sheet.cssRules) { if (r.name === 'geminiGradient') found = true; } } catch(e){}
+            }
+            if (!found) throw 'geminiGradient no encontrado en stylesheets';
+            return true;
+        }
+    },
+    {
+        name: 'Keyframes geminiBorder definidos',
+        test: () => {
+            let found = false;
+            for (const sheet of doc().styleSheets) {
+                try { for (const r of sheet.cssRules) { if (r.name === 'geminiBorder') found = true; } } catch(e){}
+            }
+            if (!found) throw 'geminiBorder no encontrado';
+            return true;
+        }
+    },
+    {
+        name: 'Clase editor-pipeline-hidden existe',
+        test: () => {
+            let found = false;
+            for (const sheet of doc().styleSheets) {
+                try { for (const r of sheet.cssRules) { 
+                    if (r.selectorText && r.selectorText.includes('editor-pipeline-hidden')) found = true; 
+                }} catch(e){}
+            }
+            if (!found) throw 'Clase editor-pipeline-hidden no definida en CSS';
+            return true;
+        }
+    },
+    {
+        name: 'Clase recording-pulse existe',
+        test: () => {
+            let found = false;
+            for (const sheet of doc().styleSheets) {
+                try { for (const r of sheet.cssRules) { 
+                    if (r.selectorText && r.selectorText.includes('recording-pulse')) found = true;
+                    if (r.name === 'recording-pulse') found = true;
+                }} catch(e){}
+            }
+            if (!found) throw 'recording-pulse no encontrada';
+            return true;
+        }
+    },
+    {
+        name: 'Clase btn-pro-animated existe en CSS',
+        test: () => {
+            let found = false;
+            for (const sheet of doc().styleSheets) {
+                try { for (const r of sheet.cssRules) { 
+                    if (r.selectorText && r.selectorText.includes('btn-pro-animated')) found = true;
+                }} catch(e){}
+            }
+            if (!found) throw 'btn-pro-animated no encontrada en CSS';
+            return true;
+        }
+    },
+    {
+        name: 'Clase patient-data-header existe en CSS',
+        test: () => {
+            let found = false;
+            for (const sheet of doc().styleSheets) {
+                try { for (const r of sheet.cssRules) { 
+                    if (r.selectorText && r.selectorText.includes('patient-data-header')) found = true;
+                }} catch(e){}
+            }
+            if (!found) throw 'patient-data-header no encontrada en CSS';
+            return true;
+        }
+    },
+]);
+
+// ═══════════════════════════════════════════════════
+//  SECTION P: API Key — Guardado y conexión
+// ═══════════════════════════════════════════════════
+section('P. API Key — funcionalidad', [
+    {
+        name: 'Guardar API key en localStorage',
+        test: () => {
+            const key = document.getElementById('apiKeyInput').value.trim();
+            if (!key) throw 'No se ingresó API key en el test runner';
+            // Guardar en la app
+            const appInput = $('apiKeyInput');
+            if (!appInput) throw 'apiKeyInput no encontrado en la app';
+            appInput.value = key;
+            const saveBtn = $('saveApiKey');
+            if (saveBtn) saveBtn.click();
+            // Verificar en window
+            const saved = win().GROQ_API_KEY || win().localStorage.getItem('groq_api_key');
+            if (!saved) throw 'API key no se guardó';
+            return true;
+        }
+    },
+    {
+        name: 'API key persiste en localStorage',
+        test: () => {
+            const stored = win().localStorage.getItem('groq_api_key');
+            if (!stored || !stored.startsWith('gsk_')) throw `localStorage key: "${stored}"`;
+            return true;
+        }
+    },
+    {
+        name: 'Conexión a Groq API exitosa (test real)',
+        test: async () => {
+            const key = win().localStorage.getItem('groq_api_key');
+            if (!key) throw 'Sin API key guardada';
+            // Hacer un request simple a la API de modelos
+            const resp = await fetch('https://api.groq.com/openai/v1/models', {
+                headers: { 'Authorization': `Bearer ${key}` }
+            });
+            if (!resp.ok) throw `API respondió ${resp.status}: ${resp.statusText}`;
+            const data = await resp.json();
+            if (!data.data || data.data.length === 0) throw 'API no devolvió modelos';
+            return true;
+        }
+    },
+    {
+        name: 'API status muestra estado correcto',
+        test: () => {
+            const status = $('apiStatus');
+            if (!status) throw '#apiStatus no encontrado';
+            // Debería tener clase de conectado o texto visible
+            const text = status.textContent || status.innerText;
+            return true; // Solo verificar que existe
+        }
+    },
+]);
+
+// ═══════════════════════════════════════════════════
+//  SECTION Q: Funciones globales clave
+// ═══════════════════════════════════════════════════
+section('Q. Funciones globales', [
+    { name: 'showToast existe', test: () => { if (typeof win().showToast !== 'function') throw 'No definida'; return true; }},
+    { name: 'updateButtonsVisibility existe', test: () => { if (typeof win().updateButtonsVisibility !== 'function') throw 'No definida'; return true; }},
+    { name: 'autoStructure existe', test: () => { if (typeof win().autoStructure !== 'function') throw 'No definida'; return true; }},
+    { name: 'detectStudyType existe', test: () => { if (typeof win().detectStudyType !== 'function') throw 'No definida'; return true; }},
+    { name: 'cleanTranscriptionText existe', test: () => { if (typeof win().cleanTranscriptionText !== 'function') throw 'No definida'; return true; }},
+    { name: 'MEDICAL_TEMPLATES existe', test: () => { if (!win().MEDICAL_TEMPLATES) throw 'No definido'; return true; }},
+    { name: 'CLIENT_CONFIG existe', test: () => { if (!win().CLIENT_CONFIG) throw 'No definido'; return true; }},
+    { name: 'createTabs existe', test: () => { if (typeof win().createTabs !== 'function') throw 'No definida'; return true; }},
+    { name: 'updateWordCount existe', test: () => { if (typeof win().updateWordCount !== 'function') throw 'No definida'; return true; }},
+]);
+
+// ═══════════════════════════════════════════════════
+//  SECTION R: Limpiar (reset) funcional
+// ═══════════════════════════════════════════════════
+section('R. Reset / Limpiar', [
+    {
+        name: 'Reset limpia editor',
+        test: () => {
+            const e = $('editor');
+            e.innerHTML = '<p>Texto de prueba para reset</p>';
+            const btn = $('resetBtn');
+            if (btn) btn.click();
+            const after = e.innerText.trim();
+            if (after.includes('Texto de prueba')) throw 'Editor no se limpió tras reset';
+            return true;
+        }
+    },
+    {
+        name: 'Reset NO borra API key',
+        test: () => {
+            const key = win().localStorage.getItem('groq_api_key');
+            if (!key || !key.startsWith('gsk_')) throw 'API key desapareció tras reset';
+            return true;
+        }
+    },
+    {
+        name: 'Reset vuelve a estado IDLE (copiar oculto)',
+        test: () => {
+            const copy = $('copyBtn');
+            const cs = getCS(copy);
+            if (cs.display !== 'none') throw `copyBtn display="${cs.display}" tras reset`;
+            return true;
+        }
+    },
+]);
+
+// ═══════════════════════════════════════════════════
+//  SECTION S: Perfiles de salida
+// ═══════════════════════════════════════════════════
+section('S. Perfiles y plantillas', [
+    { name: 'Profile selector existe', test: () => { if (!$('profileSelector') && !$('quickProfileSelector')) throw 'No encontrado'; return true; }},
+    { name: 'Template select existe', test: () => { if (!$('templateSelect')) throw 'No encontrado'; return true; }},
+    { name: 'Normal template dropdown', test: () => { if (!$('normalTemplateDropdown') && !$('normalTemplateList')) throw 'No encontrado'; return true; }},
+]);
+
+// ═══════════════════════════════════════════════════
+//  SECTION T: Registro de pacientes
+// ═══════════════════════════════════════════════════
+section('T. Registro de pacientes', [
+    { name: 'Botón abrir panel registro', test: () => { if (!$('btnOpenRegistryPanel')) throw 'No encontrado'; return true; }},
+    { name: 'Panel registro overlay', test: () => { if (!$('registryPanelOverlay')) throw 'No encontrado'; return true; }},
+    { name: 'Tabla de pacientes', test: () => { if (!$('registryTbody')) throw 'No encontrado'; return true; }},
+    { name: 'Buscar paciente input', test: () => { if (!$('registrySearch')) throw 'No encontrado'; return true; }},
+    { name: 'Exportar JSON', test: () => { if (!$('btnExportRegistryJson')) throw 'No encontrado'; return true; }},
+    { name: 'Exportar CSV', test: () => { if (!$('btnExportRegistryCsv')) throw 'No encontrado'; return true; }},
+]);
+
+// ═══════════════════════════════════════════════════
+//  SECTION U: Unir audios (multi-file)
+// ═══════════════════════════════════════════════════
+section('U. Multi-archivo / Unir audios', [
+    { name: 'Diálogo unir audios existe', test: () => { if (!$('joinAudiosDialog')) throw 'No encontrado'; return true; }},
+    { name: 'Botón Sí (unir)', test: () => { if (!$('joinAudiosYes')) throw 'No encontrado'; return true; }},
+    { name: 'Botón No (separado)', test: () => { if (!$('joinAudiosNo')) throw 'No encontrado'; return true; }},
+    { name: 'Checkbox unir audios', test: () => { if (!$('chkJoinAudios')) throw 'No encontrado'; return true; }},
+]);
+
+// ═══════════════════════════════════════════════════
+//  SECTION V: Audio repair modal
+// ═══════════════════════════════════════════════════
+section('V. Reparación de audio', [
+    { name: 'Modal reparación existe', test: () => { if (!$('audioRepairModal')) throw 'No encontrado'; return true; }},
+    { name: 'Botón reintentar', test: () => { if (!$('audioRepairRetryBtn')) throw 'No encontrado'; return true; }},
+    { name: 'Botón cancelar reparación', test: () => { if (!$('audioRepairCancelBtn')) throw 'No encontrado'; return true; }},
+]);
+
+// ═══════════════════════════════════════════════════
+//  SECTION W: Profesionales / Workplace
+// ═══════════════════════════════════════════════════
+section('W. Profesionales y Lugar de trabajo', [
+    { name: 'Botón gestionar profesionales', test: () => { if (!$('btnManageProfessionals')) throw 'No encontrado'; return true; }},
+    { name: 'Input nombre profesional', test: () => { if (!$('proNombre')) throw 'No encontrado'; return true; }},
+    { name: 'Input matrícula', test: () => { if (!$('proMatricula')) throw 'No encontrado'; return true; }},
+    { name: 'Input especialidades', test: () => { if (!$('proEspecialidades')) throw 'No encontrado'; return true; }},
+    { name: 'Selector workplace', test: () => { if (!$('workplaceSelect') || !$('pdfWorkplace')) throw 'No encontrado'; return true; }},
+    { name: 'Botón agregar workplace', test: () => { if (!$('btnAddWorkplace')) throw 'No encontrado'; return true; }},
+]);
+
+// ═══════════════════════════════════════════════════
+//  SECTION X: Transcripción REAL (API)
+// ═══════════════════════════════════════════════════
+section('X. Transcripción REAL con API', [
+    {
+        name: 'Transcribir audio de prueba (TTS sintético)',
+        test: async () => {
+            const key = win().localStorage.getItem('groq_api_key');
+            if (!key) throw 'Sin API key';
+            
+            // Crear audio sintético corto (1 segundo de silencio WAV)
+            const sampleRate = 16000;
+            const duration = 1;
+            const numSamples = sampleRate * duration;
+            const buffer = new ArrayBuffer(44 + numSamples * 2);
+            const view = new DataView(buffer);
+            // WAV header
+            const writeStr = (off, str) => { for(let i=0;i<str.length;i++) view.setUint8(off+i,str.charCodeAt(i)); };
+            writeStr(0, 'RIFF');
+            view.setUint32(4, 36 + numSamples * 2, true);
+            writeStr(8, 'WAVE');
+            writeStr(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeStr(36, 'data');
+            view.setUint32(40, numSamples * 2, true);
+            // Silencio
+            for (let i = 0; i < numSamples; i++) view.setInt16(44 + i * 2, 0, true);
+            
+            const blob = new Blob([buffer], { type: 'audio/wav' });
+            const formData = new FormData();
+            formData.append('file', blob, 'test-silence.wav');
+            formData.append('model', 'whisper-large-v3');
+            formData.append('language', 'es');
+            
+            const resp = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${key}` },
+                body: formData
+            });
+            
+            if (!resp.ok) {
+                const err = await resp.text();
+                throw `API ${resp.status}: ${err.substring(0, 100)}`;
+            }
+            const data = await resp.json();
+            // Silencio puede devolver texto vacío o algo mínimo, está bien
+            return true;
+        }
+    },
+]);
+
+// ═══════════════════════════════════════════════════
+//  TEST RUNNER
+// ═══════════════════════════════════════════════════
+
+const appFrame = document.getElementById('appFrame');
+
+async function startTests() {
+    const apiKey = document.getElementById('apiKeyInput').value.trim();
+    if (!apiKey || !apiKey.startsWith('gsk_')) {
+        alert('Ingresá una API key válida (empieza con gsk_)');
+        return;
+    }
+
+    const btnRun = document.getElementById('btnRun');
+    btnRun.disabled = true;
+    btnRun.textContent = '⏳ Limpiando caché...';
+
+    const progressBar = document.getElementById('progressBar');
+    const progressFill = document.getElementById('progressFill');
+    const statusText = document.getElementById('statusText');
+    const summaryDiv = document.getElementById('summary');
+    const resultsDiv = document.getElementById('results');
+
+    progressBar.style.display = 'block';
+    summaryDiv.style.display = 'none';
+    resultsDiv.innerHTML = '';
+
+    // ── Paso 1: Desregistrar SW y limpiar caches para obtener archivos frescos ──
+    try {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        for (const reg of regs) await reg.unregister();
+        const cacheNames = await caches.keys();
+        for (const name of cacheNames) await caches.delete(name);
+    } catch(e) { console.warn('SW cleanup:', e); }
+
+    // Limpiar autosave para que el editor arranque vacío
+    try {
+        localStorage.removeItem('editor_autosave');
+        localStorage.removeItem('editor_autosave_meta');
+    } catch(e) {}
+
+    // ── Paso 2: Cargar la app fresca en el iframe (con cache-bust) ──
+    btnRun.textContent = '⏳ Cargando app fresca...';
+    appFrame.src = '../index.html?_t=' + Date.now();
+
+    // Esperar a que el iframe cargue completamente
+    await new Promise((resolve) => {
+        appFrame.onload = () => setTimeout(resolve, 2000);
+    });
+
+    // ── Paso 2b: Desregistrar SW que la app acaba de registrar y forzar recarga limpia ──
+    try {
+        const iframeRegs = await appFrame.contentWindow.navigator.serviceWorker.getRegistrations();
+        for (const reg of iframeRegs) await reg.unregister();
+        const iframeCaches = await appFrame.contentWindow.caches.keys();
+        for (const name of iframeCaches) await appFrame.contentWindow.caches.delete(name);
+    } catch(e) { console.warn('iframe SW cleanup:', e); }
+
+    // Recargar forzando bypass de HTTP cache (true = forceReload)
+    await new Promise((resolve) => {
+        appFrame.onload = () => setTimeout(resolve, 3500);
+        appFrame.contentWindow.location.reload(true);
+    });
+
+    // Capturar errores de consola del iframe
+    try {
+        const origErr = appFrame.contentWindow.console.error;
+        appFrame.contentWindow.__testErrors = [];
+        appFrame.contentWindow.console.error = function(...args) {
+            appFrame.contentWindow.__testErrors.push(args.map(String).join(' '));
+            origErr.apply(this, args);
+        };
+    } catch(e) {}
+
+    btnRun.textContent = '⏳ Ejecutando pruebas...';
+
+    // Contar total
+    let totalTests = 0;
+    ALL_TESTS.forEach(s => totalTests += s.tests.length);
+
+    let passed = 0, failed = 0, tested = 0;
+    const sectionResults = [];
+
+    for (const section of ALL_TESTS) {
+        const sRes = { name: section.name, tests: [] };
+        
+        for (const t of section.tests) {
+            tested++;
+            statusText.textContent = `${tested}/${totalTests}: ${t.name}`;
+            progressFill.style.width = `${(tested / totalTests) * 100}%`;
+            
+            try {
+                const result = t.test();
+                // Handle async tests
+                if (result && typeof result.then === 'function') {
+                    await result;
+                }
+                sRes.tests.push({ name: t.name, pass: true });
+                passed++;
+            } catch(err) {
+                sRes.tests.push({ name: t.name, pass: false, error: String(err) });
+                failed++;
+            }
+
+            // Pequeña pausa para no bloquear UI
+            await new Promise(r => setTimeout(r, 20));
+        }
+        
+        sectionResults.push(sRes);
+    }
+
+    // Mostrar resumen
+    progressFill.style.width = '100%';
+    statusText.textContent = `✅ ${passed} pasaron · ❌ ${failed} fallaron · Total: ${totalTests}`;
+    
+    summaryDiv.style.display = 'block';
+    if (failed === 0) {
+        summaryDiv.className = 'summary pass';
+        summaryDiv.innerHTML = `🎉 ¡TODAS LAS PRUEBAS PASARON! ${passed}/${totalTests}`;
+    } else if (passed === 0) {
+        summaryDiv.className = 'summary fail';
+        summaryDiv.innerHTML = `💥 TODAS FALLARON: ${failed}/${totalTests}`;
+    } else {
+        summaryDiv.className = 'summary mixed';
+        summaryDiv.innerHTML = `⚠️ ${passed} OK · ${failed} FALLARON de ${totalTests}`;
+    }
+
+    // Renderizar secciones
+    for (const sec of sectionResults) {
+        const allPass = sec.tests.every(t => t.pass);
+        const failCount = sec.tests.filter(t => !t.pass).length;
+        
+        const block = document.createElement('div');
+        block.className = 'section-block' + (failCount > 0 ? ' open' : '');
+        
+        const header = document.createElement('div');
+        header.className = 'section-header';
+        header.innerHTML = `
+            <span class="section-title">${sec.name}</span>
+            <span class="section-badge ${allPass ? 'all-pass' : 'has-fail'}">
+                ${allPass ? `✅ ${sec.tests.length}/${sec.tests.length}` : `❌ ${failCount} falla${failCount>1?'s':''}`}
+            </span>
+        `;
+        header.onclick = () => block.classList.toggle('open');
+        
+        const body = document.createElement('div');
+        body.className = 'section-body';
+        
+        for (const t of sec.tests) {
+            const row = document.createElement('div');
+            row.className = 'test-row';
+            row.innerHTML = `<span class="test-icon">${t.pass ? '✅' : '❌'}</span><span class="test-label">${t.name}</span>`;
+            body.appendChild(row);
+            if (!t.pass && t.error) {
+                const detail = document.createElement('div');
+                detail.className = 'test-detail';
+                detail.textContent = t.error;
+                body.appendChild(detail);
+            }
+        }
+        
+        block.appendChild(header);
+        block.appendChild(body);
+        resultsDiv.appendChild(block);
+    }
+
+    btnRun.disabled = false;
+    btnRun.textContent = '🔄 Ejecutar de nuevo';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>🧪 Tests D1-D4 — Nuevas plantillas</title>
+<style>
+  :root {
+    --primary:#2563eb; --bg-card:#1e293b; --bg:#0f172a;
+    --text-primary:#f1f5f9; --text-muted:#94a3b8; --border:#334155;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text-primary); font-family:system-ui,sans-serif; padding:1.5rem; }
+  h2 { font-size:1rem; color:var(--text-muted); margin:1.25rem 0 .5rem; text-transform:uppercase; letter-spacing:.06em; }
+  .suite { display:flex; flex-direction:column; gap:.5rem; }
+  .test-row { background:var(--bg-card); border:1px solid var(--border); border-radius:.5rem;
+    padding:.75rem 1rem; display:flex; gap:.75rem; align-items:flex-start; }
+  .info { flex:1; }
+  .info strong { font-size:.9rem; }
+  .info p { font-size:.78rem; color:var(--text-muted); margin-top:.2rem; }
+  .status { min-width:300px; font-size:.8rem; display:flex; align-items:center; gap:.4rem;
+    border-radius:.35rem; padding:.35rem .6rem; }
+  .status.wait   { background:#1e293b; color:#64748b; }
+  .status.ok     { background:#022c22; color:#6ee7b7; }
+  .status.fail   { background:#450a0a; color:#fca5a5; }
+  .status .dot   { width:7px; height:7px; border-radius:50%; background:currentColor; flex-shrink:0; }
+  .run-btn { background:var(--primary); color:#fff; border:none; padding:.4rem .85rem;
+    border-radius:.35rem; cursor:pointer; font-size:.78rem; white-space:nowrap; }
+  .run-btn:hover { filter:brightness(1.15); }
+  .legend { font-size:.8rem; color:var(--text-muted); line-height:1.7; background:var(--bg-card);
+    border:1px solid var(--border); border-radius:.5rem; padding:.85rem 1rem; }
+  .legend code { background:#0f172a; padding:.1em .35em; border-radius:.2rem; font-size:.75rem; }
+</style>
+</head>
+<body>
+
+<main>
+<h2>&#9889; Tests D1-D4 — Nuevas plantillas (ETT, Eco Doppler, Nota de evolucin, Epicrisis)</h2>
+<div class="suite" id="suite"></div>
+
+<h2>&#8505;&#65039; Que verifica cada test</h2>
+<div class="legend">
+  <strong>T1</strong> — <code>ett</code> existe en MEDICAL_TEMPLATES con name, keywords y prompt correctos.<br>
+  <strong>T2</strong> — <code>eco_doppler</code> existe con datos completos y est en Imagenes.<br>
+  <strong>T3</strong> — <code>nota_evolucion</code> existe con datos completos y est en General.<br>
+  <strong>T4</strong> — <code>epicrisis</code> existe con datos completos y est en General.<br>
+  <strong>T5</strong> — <code>ett</code> est registrada en Cardiologia en TEMPLATE_CATEGORIES.<br>
+  <strong>T6</strong> — Palabras clave detectan correctamente cada plantilla (auto-detect).
+</div>
+</main>
+
+<!-- templates.js real — carga los datos reales del proyecto -->
+<script src="../src/js/config/templatesCatalog.js"></script>
+<script src="../src/js/config/templatesCatalogPart2.js"></script>
+<script src="../src/js/config/templatesCatalogPart3.js"></script>
+<script src="../src/js/config/templates.js"></script>
+
+<script>
+function setStatus(id, type, msg) {
+    const el = document.getElementById('st-' + id);
+    if (!el) return;
+    el.className = 'status ' + type;
+    el.innerHTML = '<div class="dot"></div><span>' + msg + '</span>';
+}
+function assert(cond, ok, fail) { return cond ? ['ok', ok] : ['fail', fail]; }
+
+const TESTS = [
+    {
+        id: 't1-ett',
+        label: 'D1 — ETT: estructura completa',
+        desc: 'ett tiene name, keywords (>=5) y prompt con secciones VD, VI, Aorta y Conclusion.',
+        run() {
+            const t = window.MEDICAL_TEMPLATES?.ett;
+            if (!t) return ['fail', 'ett no existe en MEDICAL_TEMPLATES'];
+            const hasName     = typeof t.name === 'string' && t.name.length > 3;
+            const hasKeywords = Array.isArray(t.keywords) && t.keywords.length >= 5;
+            const hasPrompt   = typeof t.prompt === 'string' && t.prompt.length > 100;
+            const hasSections = t.prompt.includes('VENTR\u00cdCULO') && t.prompt.includes('CONCLUSI\u00d3N');
+            return assert(hasName && hasKeywords && hasPrompt && hasSections,
+                `"${t.name}" | ${t.keywords.length} keywords | prompt OK ✓`,
+                `name=${hasName} keywords=${hasKeywords} prompt=${hasPrompt} sections=${hasSections}`);
+        }
+    },
+    {
+        id: 't2-doppler',
+        label: 'D2 — Eco Doppler: estructura completa',
+        desc: 'eco_doppler tiene name, keywords y prompt con HALLAZGOS y CONCLUSION.',
+        run() {
+            const t = window.MEDICAL_TEMPLATES?.eco_doppler;
+            if (!t) return ['fail', 'eco_doppler no existe en MEDICAL_TEMPLATES'];
+            const hasName     = typeof t.name === 'string' && t.name.length > 3;
+            const hasKeywords = Array.isArray(t.keywords) && t.keywords.length >= 3;
+            const hasSections = t.prompt.includes('HALLAZGOS') && t.prompt.includes('CONCLUSI\u00d3N');
+            return assert(hasName && hasKeywords && hasSections,
+                `"${t.name}" | ${t.keywords.length} keywords | prompt OK ✓`,
+                `name=${hasName} keywords=${hasKeywords} sections=${hasSections}`);
+        }
+    },
+    {
+        id: 't3-nota',
+        label: 'D3 — Nota de evolucin: estructura completa',
+        desc: 'nota_evolucion tiene name, keywords y prompt con PLAN.',
+        run() {
+            const t = window.MEDICAL_TEMPLATES?.nota_evolucion;
+            if (!t) return ['fail', 'nota_evolucion no existe en MEDICAL_TEMPLATES'];
+            const hasName     = typeof t.name === 'string' && t.name.length > 3;
+            const hasKeywords = Array.isArray(t.keywords) && t.keywords.length >= 3;
+            const hasSections = t.prompt.includes('PLAN') && t.prompt.includes('SUBJETIVO');
+            return assert(hasName && hasKeywords && hasSections,
+                `"${t.name}" | ${t.keywords.length} keywords | prompt OK ✓`,
+                `name=${hasName} keywords=${hasKeywords} sections=${hasSections}`);
+        }
+    },
+    {
+        id: 't4-epicrisis',
+        label: 'D4 — Epicrisis: estructura completa',
+        desc: 'epicrisis tiene name, keywords y prompt con EGRESO e INDICACIONES.',
+        run() {
+            const t = window.MEDICAL_TEMPLATES?.epicrisis;
+            if (!t) return ['fail', 'epicrisis no existe en MEDICAL_TEMPLATES'];
+            const hasName     = typeof t.name === 'string' && t.name.length > 3;
+            const hasKeywords = Array.isArray(t.keywords) && t.keywords.length >= 3;
+            const hasSections = t.prompt.includes('EGRESO') && t.prompt.includes('INDICACIONES');
+            return assert(hasName && hasKeywords && hasSections,
+                `"${t.name}" | ${t.keywords.length} keywords | prompt OK ✓`,
+                `name=${hasName} keywords=${hasKeywords} sections=${hasSections}`);
+        }
+    },
+    {
+        id: 't5-categories',
+        label: 'T5 — Categoras registradas correctamente',
+        desc: 'ett en Cardiologia, eco_doppler en Imagenes, nota_evolucion y epicrisis en General.',
+        run() {
+            const cats = window.TEMPLATE_CATEGORIES;
+            const ettOk    = cats['Cardiolog\u00eda']?.includes('ett');
+            const dopplerOk= cats['Im\u00e1genes']?.includes('eco_doppler');
+            const notaOk   = cats['General']?.includes('nota_evolucion');
+            const epicOk   = cats['General']?.includes('epicrisis');
+            return assert(
+                ettOk && dopplerOk && notaOk && epicOk,
+                'Todas las categoras OK ✓',
+                `ett=${ettOk} doppler=${dopplerOk} nota=${notaOk} epicrisis=${epicOk}`
+            );
+        }
+    },
+    {
+        id: 't6-detect',
+        label: 'T6 — Auto-detect por palabras clave',
+        desc: 'Texto con "ecocardiograma FEVI" detecta ett; "epicrisis alta medica" detecta epicrisis.',
+        run() {
+            if (typeof window.detectStudyType !== 'function')
+                return ['fail', 'detectStudyType no disponible'];
+            const r1 = window.detectStudyType('ecocardiograma transtoracico FEVI ventr\u00edculo izquierdo SIV');
+            const r2 = window.detectStudyType('epicrisis alta m\u00e9dica diagn\u00f3stico de egreso dias de internaci\u00f3n');
+            const ok1 = r1.type === 'ett';
+            const ok2 = r2.type === 'epicrisis';
+            return assert(ok1 && ok2,
+                `"${r1.type}" (score ${r1.confidence}) + "${r2.type}" (score ${r2.confidence}) ✓`,
+                `ett detect=${r1.type}(${r1.confidence}) epicrisis detect=${r2.type}(${r2.confidence})`
+            );
+        }
+    }
+];
+
+const suite = document.getElementById('suite');
+TESTS.forEach(t => {
+    const row = document.createElement('div');
+    row.className = 'test-row';
+    row.innerHTML = `
+        <div class="info"><strong>${t.label}</strong><p>${t.desc}</p></div>
+        <div class="status wait" id="st-${t.id}"><div class="dot"></div><span>— pendiente —</span></div>
+        <button class="run-btn" onclick="runTest('${t.id}')">&#9654; Ejecutar</button>`;
+    suite.appendChild(row);
+});
+
+const allBtn = document.createElement('button');
+allBtn.textContent = '\u25b6\u25b6 Ejecutar todos';
+allBtn.className = 'run-btn';
+allBtn.style.cssText = 'background:#10b981;margin-top:.5rem;padding:.55rem 1.25rem;';
+allBtn.onclick = async () => {
+    for (const t of TESTS) {
+        runTest(t.id);
+        await new Promise(r => setTimeout(r, 60));
+    }
+};
+suite.appendChild(allBtn);
+
+function runTest(id) {
+    const t = TESTS.find(x => x.id === id);
+    if (!t) return;
+    setStatus(id, 'wait', '\u23f3 ejecutando...');
+    try {
+        const [type, msg] = t.run();
+        setStatus(id, type, (type === 'ok' ? '\u2713 ' : '\u2717 ') + msg);
+    } catch(err) {
+        setStatus(id, 'fail', '\u2717 Error: ' + err.message);
+    }
+}
+</script>
+</body>
+</html>

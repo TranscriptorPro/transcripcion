@@ -1,0 +1,158 @@
+flowchart TD
+    subgraph FASE0["FASE 0 — CONFIGURACIÓN INICIAL"]
+        CFG0[/"Primera vez: Modal API Key<br/>(localStorage vacío)"/]
+        CFG1["Usuario pega API Key<br/>(prefijo gsk_)"]
+        CFG2["Guardar en localStorage<br/>+ validar con Groq"]
+        CFG3{"¿Key válida?"}
+        CFG4["✅ Indicador verde<br/>App habilitada"]
+        CFG5["❌ Error<br/>Reintentar"]
+        CFG0 --> CFG1 --> CFG2 --> CFG3
+        CFG3 -->|Sí| CFG4
+        CFG3 -->|No| CFG5 --> CFG1
+    end
+
+    subgraph FASE1["FASE 1 — ESTADO IDLE"]
+        direction TB
+        IDLE["🟢 IDLE<br/>Estado inicial"]
+        INPUT1["🎤 Grabar audio<br/>(MediaRecorder)"]
+        INPUT2["📁 Subir archivos<br/>(Dropzone / input)"]
+        INPUT3["📋 Pegar texto<br/>(Ctrl+V en editor)"]
+        
+        IDLE --> INPUT1
+        IDLE --> INPUT2
+        IDLE --> INPUT3
+    end
+
+    subgraph GRABACION["Grabación de Audio"]
+        REC1["toggleRecording()"]
+        REC2["getUserMedia → MediaRecorder"]
+        REC3["🔴 Grabando...<br/>Dropzone deshabilitada"]
+        REC4["Stop → Blob → File"]
+        REC5["handleFiles()"]
+        REC1 --> REC2 --> REC3 --> REC4 --> REC5
+    end
+
+    subgraph ARCHIVOS["Manejo de Archivos"]
+        FILE1["handleFiles(files)"]
+        FILE2{"Filtro:<br/>audio/* y ≤25MB"}
+        FILE3["Agregar a uploadedFiles<br/>status='pending'"]
+        FILE4["Actualizar lista visual"]
+        FILE5["🟡 FILES_LOADED"]
+        FILE1 --> FILE2
+        FILE2 -->|Pasa| FILE3 --> FILE4 --> FILE5
+        FILE2 -->|No pasa| FILE1
+    end
+
+    subgraph PASTE["Pegado de Texto"]
+        PASTE1["Evento 'paste' en editor"]
+        PASTE2{"¿HTML de Word/Docs?<br/>(mso-, MsoNormal, docs-internal)"}
+        PASTE3["Limpiar: strips estilos,<br/>clases, tags Office,<br/>spans vacíos"]
+        PASTE4["insertHTML limpio"]
+        PASTE5{"¿Texto > 30 chars?"}
+        PASTE6["Crear transcripción virtual<br/>→ TRANSCRIBED"]
+        PASTE1 --> PASTE2
+        PASTE2 -->|Sí| PASTE3 --> PASTE4
+        PASTE2 -->|No| PASTE4
+        PASTE4 --> PASTE5
+        PASTE5 -->|Sí| PASTE6
+        PASTE5 -->|No| IDLE2["Queda en estado actual"]
+    end
+
+    subgraph FASE2["FASE 2 — TRANSCRIPCIÓN"]
+        TRANS1["🔵 Botón Transcribir<br/>(o Transcribir+Estructurar)"]
+        TRANS2["validateAudioFile()"]
+        TRANS3["transcribeWithRetry()<br/>4 intentos"]
+        TRANS4["Intento 1: whisper-large-v3<br/>language=es, delay 1.5s"]
+        TRANS5["Intento 2: auto-detect lang<br/>delay 3s"]
+        TRANS6["Intento 3: audio reparado<br/>(mono 16kHz, filtros)<br/>delay 4.5s"]
+        TRANS7["Intento 4: reparado +<br/>auto-detect lang"]
+        TRANS8{"¿Éxito?"}
+        TRANS9["cleanTranscriptionText()<br/>+ Insertar en editor"]
+        TRANS10["🟣 TRANSCRIBED"]
+        TRANS11["❌ Error → showAudioRepairModal()"]
+        
+        TRANS1 --> TRANS2 --> TRANS3
+        TRANS3 --> TRANS4 --> TRANS5 --> TRANS6 --> TRANS7
+        TRANS7 --> TRANS8
+        TRANS8 -->|Sí| TRANS9 --> TRANS10
+        TRANS8 -->|No| TRANS11
+    end
+
+    subgraph FASE3["FASE 3 — ESTRUCTURACIÓN IA"]
+        direction TB
+        STRUCT1["🤖 Botón Estructurar"]
+        STRUCT2["autoDetectTemplateKey()<br/>Score: name +10, keyword +6,<br/>proximity +4, MIN=7"]
+        STRUCT3["Toast: Plantilla detectada<br/>(5s auto-confirm)"]
+        STRUCT4["structureWithRetry()<br/>4 estrategias"]
+        STRUCT5["E1: llama-3.3-70b<br/>temp=0.1"]
+        STRUCT6["E2: llama-3.3-70b<br/>temp=0.15"]
+        STRUCT7["E3: llama-3.1-70b<br/>temp=0.1"]
+        STRUCT8["E4: llama-3.1-8b<br/>temp=0.1"]
+        STRUCT9{"¿Éxito?"}
+        STRUCT10["parseAIResponse()<br/>markdownToHtml()"]
+        STRUCT11["Actualizar editor<br/>→ STRUCTURED"]
+        STRUCT12["Cola pendiente<br/>(max 10, localStorage)"]
+        STRUCT13["triggerPatientDataCheck()<br/>Extraer nombre, DNI,<br/>edad, sexo"]
+        
+        STRUCT1 --> STRUCT2 --> STRUCT3 --> STRUCT4
+        STRUCT4 --> STRUCT5 --> STRUCT6 --> STRUCT7 --> STRUCT8
+        STRUCT8 --> STRUCT9
+        STRUCT9 -->|Sí| STRUCT10 --> STRUCT11 --> STRUCT13
+        STRUCT9 -->|No| STRUCT12
+    end
+
+    subgraph FASE4["FASE 4 — PDF Y EXPORTACIÓN"]
+        PDF1["📄 Botón Vista Previa"]
+        PDF2["openPdfConfigModal()<br/>Configurar header/footer"]
+        PDF3["generateQRCode()<br/>(metadata: nº, fecha,<br/>profesional, paciente)"]
+        PDF4["downloadPDFWrapper()"]
+        PDF5["drawHeader() en cada página"]
+        PDF6["renderNode() recursivo<br/>(h1/h2/h3/table/ul/p)"]
+        PDF7["drawSignature()<br/>(imagen opcional)"]
+        PDF8["drawFooter() + QR"]
+        PDF9["Multi-formato:<br/>PDF / RTF / TXT / HTML"]
+        
+        PDF1 --> PDF2 --> PDF3
+        PDF2 --> PDF4
+        PDF4 --> PDF5 --> PDF6 --> PDF7 --> PDF8
+        PDF4 --> PDF9
+    end
+
+    subgraph MODOS["MODOS DE OPERACIÓN"]
+        MODE1["🔵 Modo Normal<br/>Plantilla manual<br/>Editor libre"]
+        MODE2["🟣 Modo Pro<br/>Estructuración IA<br/>Detección automática"]
+        MODE3["Botón Toggle<br/>Persiste en localStorage"]
+        MODE1 <--> MODE3 <--> MODE2
+    end
+
+    subgraph SEGURIDAD["SEGURIDAD Y PERSISTENCIA"]
+        SEC1["API Key en localStorage<br/>(prefijo gsk_)"]
+        SEC2["Autosave: beforeunload<br/>+ periódico"]
+        SEC3["Restaurar borrador<br/>al recargar"]
+        SEC4["Reset: revokeObjectURL<br/>+ limpiar estado"]
+    end
+
+    CFG4 --> IDLE
+    INPUT1 --> REC1
+    INPUT2 --> FILE1
+    INPUT3 --> PASTE1
+    FILE5 --> TRANS1
+    PASTE6 --> STRUCT1
+    TRANS10 --> STRUCT1
+    STRUCT11 --> PDF1
+
+    style FASE0 fill:#1a1a2e,stroke:#e94560,color:#fff
+    style FASE1 fill:#16213e,stroke:#0f3460,color:#fff
+    style FASE2 fill:#1a1a2e,stroke:#e94560,color:#fff
+    style FASE3 fill:#0f3460,stroke:#533483,color:#fff
+    style FASE4 fill:#1a1a2e,stroke:#e94560,color:#fff
+    style GRABACION fill:#16213e,stroke:#0f3460,color:#fff
+    style ARCHIVOS fill:#16213e,stroke:#0f3460,color:#fff
+    style PASTE fill:#16213e,stroke:#0f3460,color:#fff
+    style MODOS fill:#533483,stroke:#e94560,color:#fff
+    style SEGURIDAD fill:#2c003e,stroke:#e94560,color:#fff
+    style IDLE fill:#00b894,stroke:#fff,color:#000
+    style TRANS10 fill:#6c5ce7,stroke:#fff,color:#fff
+    style STRUCT11 fill:#e17055,stroke:#fff,color:#fff
+    style FILE5 fill:#fdcb6e,stroke:#000,color:#000
+    style CFG4 fill:#00b894,stroke:#fff,color:#000
