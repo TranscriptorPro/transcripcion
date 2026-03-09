@@ -132,7 +132,10 @@ window.getResolvedEmailSenderName = function () {
         const setupId = params.get('id');
         const host = String(window.location.hostname || '').toLowerCase();
         const path = String(window.location.pathname || '').replace(/\/+$/, '') || '/';
-        const isOfficialAdminBase = (host === 'transcriptorpro.github.io' && path === '/transcripcion');
+        const isOfficialAdminBase = (
+            host === 'transcriptorpro.github.io'
+            && (path === '/transcripcion' || path === '/transcripcion/index.html')
+        );
 
         // 0) Escape hatch: ?admin → forzar modo ADMIN (borrar config de cliente)
         if (params.has('admin')) {

@@ -445,6 +445,28 @@ window.initWorkplaceManagement = function () {
 
 // ---- Original initBusinessSuite updated ----
 window.initBusinessSuite = async function () {
+    // Guardia critica: la URL base oficial SIEMPRE debe abrir como ADMIN
+    // (excepto links de fabrica con ?id=...)
+    try {
+        const host = String(window.location.hostname || '').toLowerCase();
+        const path = String(window.location.pathname || '').replace(/\/+$/, '') || '/';
+        const params = new URLSearchParams(window.location.search);
+        const isOfficialAdminBase = (
+            host === 'transcriptorpro.github.io'
+            && (path === '/transcripcion' || path === '/transcripcion/index.html')
+        );
+
+        if (isOfficialAdminBase && !params.get('id')) {
+            try { localStorage.removeItem('client_config_stored'); } catch (_) {}
+            try { sessionStorage.removeItem('pending_setup_id'); } catch (_) {}
+            if (typeof window.CLIENT_CONFIG === 'object' && window.CLIENT_CONFIG) {
+                window.CLIENT_CONFIG.type = 'ADMIN';
+            }
+            _initAdmin();
+            return;
+        }
+    } catch (_) {}
+
     // ── Interceptar link de la fábrica (?id=MED001) ──────────────────────────
     if (window._PENDING_SETUP_ID) {
         // ── Protección: si ya era ADMIN, confirmar antes de sobreescribir ──
