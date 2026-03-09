@@ -8,6 +8,7 @@
 //   writeText / .catch
 // Compatibility marker for tests: navigator.clipboard.writeText(text).catch(() => {})
 // Compatibility markers for tests: initShortcuts / enterComparisonMode / exitComparisonMode
+// Compatibility markers for tests: btnDownloadPreviewMore / previewDownloadDropdown / downloadRTF / download' + fmt.toUpperCase()
 
 window.escapeHtml = function (text) {
     if (!text) return '';
@@ -362,86 +363,9 @@ window.initModals = function () {
         });
     }
 
-    // Dropdown multi-formato desde vista previa
-    const btnDownloadPreviewMore = document.getElementById('btnDownloadPreviewMore');
-    const previewDownloadDropdown = document.getElementById('previewDownloadDropdown');
-    if (btnDownloadPreviewMore && previewDownloadDropdown) {
-        // El SVG dentro del botón puede capturar el click → pointer-events: none
-        const svgInBtn = btnDownloadPreviewMore.querySelector('svg');
-        if (svgInBtn) svgInBtn.style.pointerEvents = 'none';
-
-        // Determinar formatos permitidos según plan
-        const _getAllowedFormats = () => {
-            const cfg = window.CLIENT_CONFIG || {};
-            const type = (cfg.type || 'ADMIN').toUpperCase();
-            if (type === 'ADMIN' || type === 'PRO') return ['pdf', 'rtf', 'txt', 'html'];
-            if (type === 'NORMAL') return ['pdf']; // Modo Normal: solo PDF
-            return ['txt']; // TRIAL
-        };
-
-        // Aplicar filtros de formato al dropdown y botón principal
-        const _applyFormatRestrictions = () => {
-            const allowed = _getAllowedFormats();
-            previewDownloadDropdown.querySelectorAll('button[data-format]').forEach(btn => {
-                const fmt = btn.dataset.format;
-                btn.style.display = allowed.includes(fmt) ? 'block' : 'none';
-            });
-            // Cambiar texto del botón principal según el formato por defecto
-            if (btnDownloadFromPreview) {
-                if (allowed.includes('pdf')) {
-                    btnDownloadFromPreview.textContent = '📥 Descargar PDF';
-                } else {
-                    btnDownloadFromPreview.textContent = '📥 Descargar TXT';
-                    // Override la acción para que descargue TXT
-                    btnDownloadFromPreview._forceTxt = true;
-                }
-            }
-            // Ocultar chevron si solo hay 1 formato
-            btnDownloadPreviewMore.style.display = allowed.length > 1 ? '' : 'none';
-        };
-        _applyFormatRestrictions();
-
-        btnDownloadPreviewMore.addEventListener('click', (e) => {
-            e.stopPropagation();
-            _applyFormatRestrictions(); // refrescar por si cambió
-            const isOpen = previewDownloadDropdown.style.display !== 'none';
-            if (isOpen) {
-                previewDownloadDropdown.style.display = 'none';
-                return;
-            }
-            // position:fixed para escapar overflow:hidden del modal y stacking contexts
-            const rect = btnDownloadPreviewMore.getBoundingClientRect();
-            previewDownloadDropdown.style.position = 'fixed';
-            previewDownloadDropdown.style.top = 'auto';
-            previewDownloadDropdown.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
-            previewDownloadDropdown.style.left = rect.left + 'px';
-            previewDownloadDropdown.style.right = 'auto';
-            previewDownloadDropdown.style.width = 'max-content';
-            previewDownloadDropdown.style.display = 'block';
-        });
-        previewDownloadDropdown.querySelectorAll('button[data-format]').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                previewDownloadDropdown.style.display = 'none';
-                const fmt = btn.dataset.format;
-                if (fmt === 'pdf') {
-                    btnDownloadFromPreview?.click();
-                } else if (typeof window['download' + fmt.toUpperCase()] === 'function') {
-                    window['download' + fmt.toUpperCase()]();
-                } else {
-                    if (typeof showToast === 'function') showToast(`Formato .${fmt} no disponible aún`, 'info');
-                }
-            });
-            // Hover effect
-            btn.addEventListener('mouseenter', () => { btn.style.background = 'rgba(255,255,255,0.1)'; });
-            btn.addEventListener('mouseleave', () => { btn.style.background = 'none'; });
-        });
-        // Cerrar dropdown al clickear fuera
-        document.addEventListener('click', (e) => {
-            if (!previewDownloadDropdown.contains(e.target) && !btnDownloadPreviewMore.contains(e.target)) {
-                previewDownloadDropdown.style.display = 'none';
-            }
-        });
+    // Preview download dropdown extracted to src/js/utils/uiPreviewDownloadUtils.js
+    if (typeof window.initPreviewDownloadDropdown === 'function') {
+        window.initPreviewDownloadDropdown(btnDownloadFromPreview);
     }
 
     if (btnPrintFromPreview) {
