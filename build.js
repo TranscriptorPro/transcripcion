@@ -78,6 +78,7 @@ const JS_FILES = [
     'src/js/features/businessFactoryUiUtils.js',
     'src/js/features/businessClientAdminUtils.js',
     'src/js/features/businessOnboardingUtils.js',
+    'src/js/features/businessFactorySetupUtils.js',
     'src/js/features/business.js',
     'src/js/features/sessionAssistant.js',
     'src/js/features/outputProfiles.js',
