@@ -37,6 +37,7 @@ const JS_FILES = [
     'src/js/features/editor.js',
     'src/js/features/editorDialogUtils.js',
     'src/js/features/editorFieldModalUtils.js',
+    'src/js/features/editorDownloadCoreUtils.js',
     'src/js/features/editorDownloadFavoritesUtils.js',
     'src/js/features/editorFormattingFindUtils.js',
     'src/js/features/editorSnapshotsUtils.js',
