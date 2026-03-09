@@ -235,14 +235,6 @@ window.initModals = function () {
         });
     }
 
-    // PDF Preview Main button
-    const btnPreviewPdfMain = document.getElementById('btnPreviewPdfMain');
-    if (btnPreviewPdfMain) {
-        btnPreviewPdfMain.addEventListener('click', () => {
-            if (typeof openPrintPreview === 'function') openPrintPreview();
-        });
-    }
-
     // PDF Config Modal — close buttons
     const pdfModalOverlay = document.getElementById('pdfModalOverlay');
     const closePdfConfig = document.getElementById('closePdfConfig');

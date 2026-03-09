@@ -1164,7 +1164,6 @@ function createMockDOM() {
     mkEl('structureBtn');
     mkEl('downloadPdfBtn');
     mkEl('btnConfigPdfMain');
-    mkEl('btnPreviewPdfMain');
     mkEl('copyBtn');
     mkEl('printBtn');
     mkEl('downloadBtn');
@@ -1203,7 +1202,6 @@ test('State Machine — IDLE: todos los botones de acción ocultos/deshabilitado
     const e = mock.elements;
     assertEqual(e.btnStructureAI.style.display, 'none', 'btnStructureAI oculto en IDLE');
     assertEqual(e.btnConfigPdfMain.style.display, 'none', 'btnConfigPdfMain oculto en IDLE');
-    assertEqual(e.btnPreviewPdfMain.style.display, 'none', 'btnPreviewPdfMain oculto en IDLE');
     assertEqual(e.copyBtn.style.display, 'none', 'copyBtn oculto en IDLE');
     assertEqual(e.printBtn.style.display, 'none', 'printBtn oculto en IDLE');
     assertEqual(e.downloadBtnContainer.style.display, 'none', 'downloadBtnContainer oculto en IDLE');
@@ -1231,7 +1229,6 @@ test('State Machine — TRANSCRIBED Pro: btnStructureAI visible, botonera activa
     assertEqual(e.btnStructureAI.style.display, 'inline-flex', 'btnStructureAI visible en TRANSCRIBED Pro');
     assertEqual(e.btnStructureAI.disabled, false, 'btnStructureAI habilitado');
     assertEqual(e.btnConfigPdfMain.style.display, 'inline-flex', 'Config visible');
-    assertEqual(e.btnPreviewPdfMain.style.display, 'inline-flex', 'Preview visible');
     assertEqual(e.copyBtn.style.display, 'inline-flex', 'Copy visible');
     assertEqual(e.printBtn.style.display, 'inline-flex', 'Print visible');
     assertEqual(e.downloadBtnContainer.style.display, 'block', 'Download container visible');

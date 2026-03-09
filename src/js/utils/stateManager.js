@@ -17,7 +17,6 @@ window.updateButtonsVisibility = function (state) {
     const structureBtn           = document.getElementById('structureBtn');
     const downloadPdfBtn         = document.getElementById('downloadPdfBtn');
     const btnConfigPdfMain       = document.getElementById('btnConfigPdfMain');
-    const btnPreviewPdfMain      = document.getElementById('btnPreviewPdfMain');
     const copyBtn                = document.getElementById('copyBtn');
     const printBtn               = document.getElementById('printBtn');
     const downloadBtn            = document.getElementById('downloadBtn');
@@ -65,10 +64,6 @@ window.updateButtonsVisibility = function (state) {
         if (isTranscribed && typeof updateConfigTrafficLight === 'function') {
             updateConfigTrafficLight();
         }
-    }
-    if (btnPreviewPdfMain) {
-        btnPreviewPdfMain.style.display = isTranscribed ? 'inline-flex' : 'none';
-        btnPreviewPdfMain.disabled = !isTranscribed;
     }
     // Selector rápido de perfil de salida:
     // Admin: siempre visible tras transcripción
@@ -338,12 +333,12 @@ if (resetBtn) {
 // Buttons helpers mappings
 window.enableButtons = function () {
     const ids = ['copyBtn', 'printBtn', 'downloadBtn', 'downloadBtnMain',
-                 'structureBtn', 'downloadPdfBtn', 'btnConfigPdfMain', 'btnPreviewPdfMain'];
-    ids.forEach(id => { const b = document.getElementById(id); if (b) b.disabled = false; });
+                 'structureBtn', 'downloadPdfBtn', 'btnConfigPdfMain'];
+    ids.forEach(id => { const b = document.getElementById(id); if (b) b.disabled = false; })
 }
 
 window.disableButtons = function () {
     const ids = ['copyBtn', 'printBtn', 'downloadBtn', 'downloadBtnMain',
-                 'structureBtn', 'downloadPdfBtn', 'btnConfigPdfMain', 'btnPreviewPdfMain'];
+                 'structureBtn', 'downloadPdfBtn', 'btnConfigPdfMain'];
     ids.forEach(id => { const b = document.getElementById(id); if (b) b.disabled = true; });
 }
