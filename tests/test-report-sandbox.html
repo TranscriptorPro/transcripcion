@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sandbox QA - Informes</title>
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; font-family: "Segoe UI", Arial, sans-serif; background: #f3f6fb; color: #142133; }
+header { padding: 14px 18px; background: #0f3d79; color: #fff; }
+header h1 { margin: 0; font-size: 18px; }
+header p { margin: 4px 0 0; font-size: 12px; opacity: 0.95; }
+.layout { display: grid; grid-template-columns: 420px 1fr; gap: 12px; padding: 12px; }
+.card { background: #fff; border: 1px solid #d5e0ef; border-radius: 10px; padding: 10px; }
+.card h2 { margin: 0 0 10px; font-size: 14px; color: #0f3d79; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+.field label { font-size: 12px; color: #385377; }
+input, select, textarea, button { font: inherit; }
+input[type="text"], input[type="email"], input[type="date"], input[type="time"], input[type="password"], select, textarea {
+  width: 100%; border: 1px solid #b8c8df; border-radius: 8px; padding: 8px; font-size: 13px;
+}
+textarea { min-height: 90px; resize: vertical; }
+button {
+  border: 1px solid #0f3d79; background: #0f3d79; color: #fff; border-radius: 8px;
+  padding: 8px 10px; cursor: pointer; font-size: 13px;
+}
+button.secondary { background: #fff; color: #0f3d79; }
+button:disabled { opacity: 0.6; cursor: not-allowed; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.hint { font-size: 11px; color: #58739a; }
+.checks { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; margin: 6px 0 10px; }
+.checks label { font-size: 12px; color: #385377; }
+.preview-wrap { display: grid; grid-template-rows: auto 1fr auto; gap: 8px; }
+.output-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.output-head h2 { margin: 0; }
+.output-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.codebox { background: #0f172a; color: #d2e3ff; border-radius: 8px; padding: 8px; font-family: Consolas, monospace; font-size: 12px; white-space: pre-wrap; min-height: 160px; max-height: 300px; overflow: auto; }
+#previewFrame { width: 100%; min-height: 700px; border: 1px solid #c8d6ea; border-radius: 8px; background: #fff; }
+.status { font-size: 12px; color: #385377; min-height: 18px; }
+@media (max-width: 1100px) {
+  .layout { grid-template-columns: 1fr; }
+  .row, .checks, .output-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Sandbox QA de Informes</h1>
+  <p>Prueba visual completa: estructuracion con Groq + logos/firma/redes + salida simultanea HTML/TXT/RTF + PDF via imprimir.</p>
+</header>
+
+<div class="layout">
+  <section class="card">
+    <h2>1) Configuracion y Datos</h2>
+
+    <div class="field">
+      <label>API Key Groq</label>
+      <input id="groqKey" type="password" placeholder="gsk_...">
+      <div class="hint">No se guarda en servidor. Solo se usa en este navegador para llamar a Groq.</div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>Plantilla</label>
+        <select id="templateSelect"></select>
+      </div>
+      <div class="field">
+        <label>Color encabezado</label>
+        <input id="accentColor" type="color" value="#1a56a0">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>Lugar de trabajo</label>
+        <input id="wpName" type="text" value="Centro Medico Demo">
+      </div>
+      <div class="field">
+        <label>Email lugar</label>
+        <input id="wpEmail" type="email" value="recepcion@centro-demo.com">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>Direccion</label>
+        <input id="wpAddr" type="text" value="Av. Siempreviva 123, Rosario">
+      </div>
+      <div class="field">
+        <label>Telefono lugar</label>
+        <input id="wpPhone" type="text" value="+54 341 555-0101">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>Profesional</label>
+        <input id="proName" type="text" value="Ana Perez">
+      </div>
+      <div class="field">
+        <label>Sexo profesional</label>
+        <select id="proSexo">
+          <option value="F">F - Dra.</option>
+          <option value="M">M - Dr.</option>
+          <option value="">Sin especificar</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>Matricula</label>
+        <input id="proMat" type="text" value="MN 12345">
+      </div>
+      <div class="field">
+        <label>Especialidades (coma o /)</label>
+        <input id="proSpecs" type="text" value="Cardiologia, Ecocardiografia">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>Telefono profesional</label>
+        <input id="proTel" type="text" value="+54 341 555-0202">
+      </div>
+      <div class="field">
+        <label>Email profesional</label>
+        <input id="proEmail" type="email" value="dra.perez@demo.com">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>Instagram</label>
+        <input id="proInstagram" type="text" value="@dranaperez">
+      </div>
+      <div class="field">
+        <label>Facebook</label>
+        <input id="proFacebook" type="text" value="DraAnaPerez">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>X</label>
+        <input id="proX" type="text" value="@dranaperezx">
+      </div>
+      <div class="field">
+        <label>YouTube</label>
+        <input id="proYoutube" type="text" value="@DraAnaPerez">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>WhatsApp</label>
+        <input id="proWa" type="text" value="+54 9 341 555-0303">
+      </div>
+      <div class="field">
+        <label>Medico solicitante</label>
+        <input id="refDoctor" type="text" value="Carlos Gomez">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>Paciente</label>
+        <input id="patientName" type="text" value="Juan Lopez">
+      </div>
+      <div class="field">
+        <label>DNI</label>
+        <input id="patientDni" type="text" value="30111222">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>Edad</label>
+        <input id="patientAge" type="text" value="58">
+      </div>
+      <div class="field">
+        <label>Sexo paciente</label>
+        <select id="patientSex"><option>Masculino</option><option>Femenino</option></select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>Cobertura</label>
+        <input id="patientIns" type="text" value="OSDE 210">
+      </div>
+      <div class="field">
+        <label>Nro afiliado</label>
+        <input id="patientAff" type="text" value="A12345678">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>Fecha estudio</label>
+        <input id="studyDate" type="date">
+      </div>
+      <div class="field">
+        <label>Hora estudio</label>
+        <input id="studyTime" type="time">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>Informe Nro</label>
+        <input id="reportNum" type="text" value="ET-00001-090326">
+      </div>
+      <div class="field">
+        <label>Motivo estudio</label>
+        <input id="studyReason" type="text" value="Control anual">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>Logo institucion</label>
+        <input id="instLogo" type="file" accept="image/*">
+      </div>
+      <div class="field">
+        <label>Logo profesional</label>
+        <input id="proLogo" type="file" accept="image/*">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Firma profesional (PNG/JPG)</label>
+      <input id="proSign" type="file" accept="image/*">
+    </div>
+
+    <div class="checks">
+      <label><input id="showWp" type="checkbox" checked> Mostrar bloque lugar</label>
+      <label><input id="showHeader" type="checkbox" checked> Mostrar encabezado profesional</label>
+      <label><input id="showPatient" type="checkbox" checked> Mostrar datos paciente</label>
+      <label><input id="showStudy" type="checkbox" checked> Mostrar datos estudio</label>
+      <label><input id="showSignImage" type="checkbox" checked> Mostrar imagen firma</label>
+      <label><input id="showSignLine" type="checkbox" checked> Mostrar linea firma</label>
+      <label><input id="showSignName" type="checkbox" checked> Mostrar nombre en firma</label>
+      <label><input id="showSignMat" type="checkbox" checked> Mostrar matricula en firma</label>
+      <label><input id="showFooterDate" type="checkbox" checked> Footer fecha</label>
+      <label><input id="showFooterPage" type="checkbox" checked> Footer pagina</label>
+    </div>
+
+    <div class="field">
+      <label>Texto sin estructurar (o subi .txt)</label>
+      <textarea id="rawText" placeholder="Pega texto crudo aqui..."></textarea>
+    </div>
+
+    <div class="actions">
+      <input id="rawFile" type="file" accept=".txt">
+      <button id="btnStruct">Estructurar con Groq</button>
+      <button id="btnRender" class="secondary">Renderizar manual</button>
+    </div>
+
+    <div class="field" style="margin-top:8px;">
+      <label>Resultado estructurado (editable)</label>
+      <textarea id="structuredText"></textarea>
+    </div>
+
+    <div class="status" id="status"></div>
+  </section>
+
+  <section class="preview-wrap">
+    <div class="card output-head">
+      <h2>2) Vista previa final</h2>
+      <div class="actions">
+        <button id="btnPrint">Imprimir / Guardar PDF</button>
+        <button id="btnDownloadHtml" class="secondary">Descargar HTML</button>
+        <button id="btnDownloadTxt" class="secondary">Descargar TXT</button>
+        <button id="btnDownloadRtf" class="secondary">Descargar RTF</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <iframe id="previewFrame" title="Preview"></iframe>
+    </div>
+
+    <div class="output-grid">
+      <div class="card">
+        <h2>3) HTML generado</h2>
+        <pre id="htmlOut" class="codebox"></pre>
+      </div>
+      <div class="card">
+        <h2>4) TXT / RTF generado</h2>
+        <pre id="txtOut" class="codebox"></pre>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="../src/js/config/templates.js"></script>
+<script>
+(function() {
+  const $ = (id) => document.getElementById(id);
+  const status = $('status');
+  const today = new Date();
+  $('studyDate').value = today.toISOString().slice(0, 10);
+  $('studyTime').value = String(today.getHours()).padStart(2, '0') + ':' + String(today.getMinutes()).padStart(2, '0');
+
+  const tplSelect = $('templateSelect');
+  const templates = window.MEDICAL_TEMPLATES || {};
+  Object.keys(templates).forEach((k) => {
+    const o = document.createElement('option');
+    o.value = k;
+    o.textContent = templates[k].name || k;
+    tplSelect.appendChild(o);
+  });
+  if (templates.ett) tplSelect.value = 'ett';
+
+  const state = {
+    instLogo: '',
+    proLogo: '',
+    sign: '',
+    htmlDoc: '',
+    txtDoc: '',
+    rtfDoc: ''
+  };
+
+  $('rawText').value = 'Paciente masculino de 58 anos. Ecocardiograma transtoracico: ventriculo izquierdo no dilatado, FEVI 62%, sin trastornos segmentarios. Valvula mitral con insuficiencia leve. Aorta no dilatada. Sin derrame pericardico. Conclusion: funcion sistolica conservada.';
+
+  const socialItems = [
+    ['proTel', '\u260E'],
+    ['proEmail', '\u2709'],
+    ['proWa', '\uD83D\uDCF1'],
+    ['proInstagram', '@'],
+    ['proFacebook', 'f'],
+    ['proX', 'X'],
+    ['proYoutube', '\u25B6']
+  ];
+
+  function esc(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function proTitle() {
+    const sx = $('proSexo').value;
+    return sx === 'F' ? 'Dra.' : sx === 'M' ? 'Dr.' : 'Dr.';
+  }
+
+  function normalizeStructuredText(t) {
+    const lines = String(t || '').split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
+    if (!lines.length) return '<p>[Sin contenido estructurado]</p>';
+    return lines.map((line) => {
+      if (/^#{1,3}\s+/.test(line)) {
+        const m = line.match(/^(#{1,3})\s+(.*)$/);
+        const level = m[1].length;
+        const content = esc(m[2]);
+        return '<h' + level + '>' + content + '</h' + level + '>';
+      }
+      if (/^-\s+/.test(line)) return '<p>- ' + esc(line.replace(/^-\s+/, '')) + '</p>';
+      return '<p>' + esc(line) + '</p>';
+    }).join('');
+  }
+
+  function generateHtmlDoc() {
+    const tplKey = tplSelect.value;
+    const tplName = templates[tplKey] ? templates[tplKey].name : tplKey;
+    const accent = $('accentColor').value || '#1a56a0';
+    const specs = $('proSpecs').value.split(/[,/]/).map((s) => s.trim()).filter(Boolean);
+    const contactRows = socialItems
+      .map(([id, icon]) => ({ value: $(id).value.trim(), icon }))
+      .filter((x) => x.value)
+      .map((x) => '<div class="pvh-ci"><span class="pvh-ci-icon">' + x.icon + '</span><span>' + esc(x.value) + '</span></div>')
+      .join('');
+    const reportBody = normalizeStructuredText($('structuredText').value || $('rawText').value);
+
+    const wpOn = $('showWp').checked;
+    const hdOn = $('showHeader').checked;
+    const ptOn = $('showPatient').checked;
+    const stOn = $('showStudy').checked;
+
+    const footerText = 'Este informe es valido unicamente con la firma del profesional a cargo.';
+
+    const html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">'
+      + '<title>Informe QA</title><style>'
+      + ':root{--pa:' + accent + ';}*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Helvetica,Arial,sans-serif;background:#fff;color:#111;max-width:210mm;margin:0 auto;padding:0 18mm 18mm;border-top:5px solid var(--pa);}'
+      + '.preview-workplace{background:var(--pa);color:#fff;margin:0 -18mm;padding:8px 18mm 7px;}.pvw-block{display:flex;align-items:center;gap:14px;}.pvw-logo{max-height:52px;max-width:90px;object-fit:contain;}.pvw-name{font-size:11pt;font-weight:700;letter-spacing:.06em;text-transform:uppercase;}.pvw-details{font-size:8pt;opacity:.95;margin-top:2px;}'
+      + '.preview-header{padding:12px 0 10px;border-bottom:2px solid var(--pa);margin-bottom:12px;}.pvh-body{display:flex;align-items:center;gap:14px;}.pvh-info{flex:1;}.pvh-name{font-size:14pt;font-weight:700;color:var(--pa);}.pvh-badges{margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;}.pvh-badge{background:#eaf1fb;color:var(--pa);border:1px solid #cfdeef;border-radius:12px;padding:1px 8px;font-size:8pt;font-weight:600;}.pvh-mat{font-size:8.5pt;color:#555;margin-top:3px;}.pvh-contact{margin-left:auto;text-align:right;font-size:8pt;color:#555;min-width:130px;}.pvh-ci{display:flex;justify-content:flex-end;gap:5px;margin-bottom:3px;}.pvh-ci-icon{width:14px;text-align:center;color:var(--pa);}'
+      + '.preview-patient{margin-bottom:10px;}.pvp-grid{background:#fafbfc;border:1px solid #d0d7de;border-left:4px solid var(--pa);border-radius:4px;padding:10px 16px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px 20px;}.pvp-cell{display:flex;flex-direction:column;gap:2px;}.pvp-lbl{font-size:6.5pt;text-transform:uppercase;letter-spacing:.1em;color:var(--pa);opacity:.8;}.pvp-val{font-size:10pt;color:#111;font-weight:700;}'
+      + '.preview-study{margin-bottom:16px;}.pvs-grid{display:grid;gap:6px 24px;font-size:8.5pt;color:#333;background:#f4f7fb;padding:10px 16px;border:1px solid #e3e8ef;}.pvs-grid.pvs-3col{grid-template-columns:repeat(3,1fr);border-radius:4px 4px 0 0;border-bottom:none;}.pvs-grid.pvs-2col{grid-template-columns:1fr 1fr;border-radius:0 0 4px 4px;border-top:1px dashed #dde3ee;}.pvs-cell{display:flex;gap:4px;align-items:baseline;}.pvs-lbl{font-size:6.5pt;text-transform:uppercase;letter-spacing:.1em;color:var(--pa);}.pvs-val{font-size:9pt;font-weight:700;color:#222;}'
+      + '.preview-content{margin:8px 0 24px;font-family:"Times New Roman",Times,serif;font-size:10pt;line-height:1.5;}.preview-content h1{font-size:13pt;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--pa);border-bottom:2px solid var(--pa);padding-bottom:4px;margin:20px 0 10px;text-align:center;}.preview-content h2{font-size:11pt;font-weight:700;color:var(--pa);margin:16px 0 6px;padding-bottom:3px;border-bottom:1px solid #cbdaf0;}.preview-content h3{font-size:10.5pt;font-weight:600;color:#222;margin:12px 0 5px;}.preview-content p{margin:2px 0 6px;text-align:justify;}'
+      + '.preview-signature{margin-top:72px;margin-bottom:8px;}.pvsig-block{text-align:center;width:240px;margin-left:auto;}.pvsig-img{max-height:60px;display:block;margin:0 auto;}.pvsig-line{border:none;border-top:1.5px solid #333;width:200px;margin:0 auto;}.pvsig-name{font-size:10pt;font-weight:700;margin-top:9px;text-align:center;}.pvsig-mat{font-size:9pt;color:#555;margin-top:2px;text-align:center;}'
+      + '.preview-footer{margin-top:20px;border-top:1.5px solid #ccc;padding-top:8px;}.pvf-wrap{display:flex;font-size:7.5pt;color:#888;gap:8px;}.pvf-right{margin-left:auto;text-align:right;}'
+      + '@media print{body{border-top:none;padding:0;margin:0;max-width:none;}.preview-workplace{margin:0;}}'
+      + '</style></head><body>'
+      + (wpOn ? ('<div class="preview-workplace"><div class="pvw-block">'
+          + (state.instLogo ? '<img class="pvw-logo" src="' + state.instLogo + '">' : '')
+          + '<div><div class="pvw-name">' + esc($('wpName').value) + '</div><div class="pvw-details">' + esc($('wpAddr').value) + ' • ' + esc($('wpPhone').value) + ' • ' + esc($('wpEmail').value) + '</div></div></div></div>') : '')
+      + (hdOn ? ('<div class="preview-header"><div class="pvh-body">'
+          + (state.proLogo ? '<img class="pvw-logo" style="max-height:40px;max-width:80px" src="' + state.proLogo + '">' : '')
+          + '<div class="pvh-info"><div class="pvh-name">Estudio realizado por: ' + proTitle() + ' ' + esc($('proName').value) + '</div>'
+          + '<div class="pvh-badges">' + specs.map((s) => '<span class="pvh-badge">' + esc(s) + '</span>').join('') + '</div>'
+          + '<div class="pvh-mat">Mat. ' + esc($('proMat').value) + '</div></div>'
+          + '<div class="pvh-contact">' + contactRows + '</div></div></div>') : '')
+      + (ptOn ? ('<div class="preview-patient"><div class="pvp-grid">'
+          + '<div class="pvp-cell"><span class="pvp-lbl">Paciente</span><span class="pvp-val">' + esc($('patientName').value) + '</span></div>'
+          + '<div class="pvp-cell"><span class="pvp-lbl">DNI</span><span class="pvp-val">' + esc($('patientDni').value) + '</span></div>'
+          + '<div class="pvp-cell"><span class="pvp-lbl">Edad</span><span class="pvp-val">' + esc($('patientAge').value) + ' anos</span></div>'
+          + '<div class="pvp-cell"><span class="pvp-lbl">Sexo</span><span class="pvp-val">' + esc($('patientSex').value) + '</span></div>'
+          + '<div class="pvp-cell"><span class="pvp-lbl">Cobertura</span><span class="pvp-val">' + esc($('patientIns').value) + '</span></div>'
+          + '<div class="pvp-cell"><span class="pvp-lbl">Nro Afiliado</span><span class="pvp-val">' + esc($('patientAff').value) + '</span></div>'
+          + '</div></div>') : '')
+      + (stOn ? ('<div class="preview-study"><div class="pvs-grid pvs-3col">'
+          + '<div class="pvs-cell"><span class="pvs-lbl">ESTUDIO:</span><span class="pvs-val">' + esc(tplName) + '</span></div>'
+          + '<div class="pvs-cell"><span class="pvs-lbl">INFORME N:</span><span class="pvs-val">' + esc($('reportNum').value) + '</span></div>'
+          + '<div class="pvs-cell"><span class="pvs-lbl">FECHA:</span><span class="pvs-val">' + esc($('studyDate').value) + ' ' + esc($('studyTime').value) + '</span></div>'
+          + '</div><div class="pvs-grid pvs-2col">'
+          + '<div class="pvs-cell"><span class="pvs-lbl">SOLICITANTE:</span><span class="pvs-val">' + proTitle() + ' ' + esc($('refDoctor').value) + '</span></div>'
+          + '<div class="pvs-cell"><span class="pvs-lbl">MOTIVO:</span><span class="pvs-val">' + esc($('studyReason').value) + '</span></div>'
+          + '</div></div>') : '')
+      + '<div class="preview-content">' + reportBody + '</div>'
+      + '<div class="preview-signature"><div class="pvsig-block">'
+      + (($('showSignImage').checked && state.sign) ? '<img class="pvsig-img" src="' + state.sign + '">' : '')
+      + ($('showSignLine').checked ? '<div class="pvsig-line"></div>' : '')
+      + ($('showSignName').checked ? '<div class="pvsig-name">' + proTitle() + ' ' + esc($('proName').value) + '</div>' : '')
+      + ($('showSignMat').checked ? '<div class="pvsig-mat">Mat. ' + esc($('proMat').value) + '</div>' : '')
+      + '</div></div>'
+      + '<div class="preview-footer"><div class="pvf-wrap"><span>' + footerText + '</span><span class="pvf-right">'
+      + ($('showFooterDate').checked ? 'Impreso: ' + new Date().toLocaleDateString('es-AR') : '')
+      + ($('showFooterPage').checked ? ' | Pagina 1' : '')
+      + '</span></div></div>'
+      + '</body></html>';
+
+    state.htmlDoc = html;
+    return html;
+  }
+
+  function generateTxt() {
+    const t = ($('structuredText').value || $('rawText').value || '').trim();
+    const txt = [
+      'INFORME MEDICO',
+      'Estudio: ' + (templates[tplSelect.value] ? templates[tplSelect.value].name : tplSelect.value),
+      'Informe N: ' + $('reportNum').value,
+      'Fecha: ' + $('studyDate').value + ' ' + $('studyTime').value,
+      'Profesional: ' + proTitle() + ' ' + $('proName').value,
+      '',
+      t
+    ].join('\n');
+    state.txtDoc = txt;
+    return txt;
+  }
+
+  function toRtf(txt) {
+    const escRtf = txt.replace(/\\/g, '\\\\').replace(/{/g, '\\{').replace(/}/g, '\\}').replace(/\n/g, '\\par\n');
+    const rtf = '{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 Times New Roman;}}\\f0\\fs22\n' + escRtf + '\n}';
+    state.rtfDoc = rtf;
+    return rtf;
+  }
+
+  function renderAll() {
+    const html = generateHtmlDoc();
+    const txt = generateTxt();
+    const rtf = toRtf(txt);
+    $('htmlOut').textContent = html;
+    $('txtOut').textContent = txt + '\n\n----- RTF -----\n' + rtf.slice(0, 2000) + (rtf.length > 2000 ? '\n...[truncado para vista]...' : '');
+    const fr = $('previewFrame');
+    fr.srcdoc = html;
+    setStatus('Render completo.');
+  }
+
+  function setStatus(msg, err) {
+    status.textContent = msg;
+    status.style.color = err ? '#b42318' : '#385377';
+  }
+
+  async function fileToDataUrl(file) {
+    if (!file) return '';
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
+  }
+
+  async function callGroqStructure(rawText, templateName, apiKey) {
+    const prompt = [
+      'Estructura el texto medico en espanol con formato claro.',
+      'Usa encabezados markdown (# ##) y parrafos breves.',
+      'Debe terminar con una seccion llamada Conclusiones.',
+      'No inventes datos no presentes.',
+      'Plantilla objetivo: ' + templateName + '.',
+      'Texto:',
+      rawText
+    ].join('\n');
+
+    const body = {
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0.1,
+      messages: [
+        { role: 'system', content: 'Sos un medico redactor. Entrega solo texto estructurado, sin explicaciones extra.' },
+        { role: 'user', content: prompt }
+      ]
+    };
+
+    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + apiKey
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!resp.ok) {
+      const tx = await resp.text();
+      throw new Error('Groq error ' + resp.status + ': ' + tx.slice(0, 240));
+    }
+    const data = await resp.json();
+    return data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : '';
+  }
+
+  function downloadFile(name, content, mime) {
+    const blob = new Blob([content], { type: mime });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1200);
+  }
+
+  $('rawFile').addEventListener('change', async (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    $('rawText').value = await f.text();
+    setStatus('Texto cargado desde archivo.');
+  });
+
+  $('instLogo').addEventListener('change', async (e) => {
+    state.instLogo = await fileToDataUrl(e.target.files[0]);
+    renderAll();
+  });
+  $('proLogo').addEventListener('change', async (e) => {
+    state.proLogo = await fileToDataUrl(e.target.files[0]);
+    renderAll();
+  });
+  $('proSign').addEventListener('change', async (e) => {
+    state.sign = await fileToDataUrl(e.target.files[0]);
+    renderAll();
+  });
+
+  $('btnStruct').addEventListener('click', async () => {
+    const key = $('groqKey').value.trim();
+    const raw = $('rawText').value.trim();
+    if (!key.startsWith('gsk_')) return setStatus('API key Groq invalida.', true);
+    if (!raw) return setStatus('No hay texto para estructurar.', true);
+    try {
+      $('btnStruct').disabled = true;
+      setStatus('Estructurando con Groq...');
+      const tplName = templates[tplSelect.value] ? templates[tplSelect.value].name : tplSelect.value;
+      const out = await callGroqStructure(raw, tplName, key);
+      $('structuredText').value = out.trim();
+      renderAll();
+      setStatus('Estructuracion completada.');
+    } catch (err) {
+      setStatus(err.message || 'Error al estructurar.', true);
+    } finally {
+      $('btnStruct').disabled = false;
+    }
+  });
+
+  $('btnRender').addEventListener('click', renderAll);
+
+  $('btnPrint').addEventListener('click', () => {
+    if (!state.htmlDoc) renderAll();
+    const w = window.open('', '_blank');
+    if (!w) return setStatus('Popup bloqueado por el navegador.', true);
+    w.document.open();
+    w.document.write(state.htmlDoc);
+    w.document.close();
+    setTimeout(() => { w.focus(); w.print(); }, 250);
+  });
+
+  $('btnDownloadHtml').addEventListener('click', () => {
+    if (!state.htmlDoc) renderAll();
+    downloadFile('sandbox_informe.html', state.htmlDoc, 'text/html;charset=utf-8');
+  });
+
+  $('btnDownloadTxt').addEventListener('click', () => {
+    if (!state.txtDoc) renderAll();
+    downloadFile('sandbox_informe.txt', state.txtDoc, 'text/plain;charset=utf-8');
+  });
+
+  $('btnDownloadRtf').addEventListener('click', () => {
+    if (!state.rtfDoc) {
+      if (!state.txtDoc) generateTxt();
+      toRtf(state.txtDoc);
+    }
+    downloadFile('sandbox_informe.rtf', state.rtfDoc, 'application/rtf');
+  });
+
+  [
+    'accentColor','templateSelect','wpName','wpEmail','wpAddr','wpPhone','proName','proSexo','proMat','proSpecs','proTel','proEmail','proInstagram','proFacebook','proX','proYoutube','proWa',
+    'refDoctor','patientName','patientDni','patientAge','patientSex','patientIns','patientAff','studyDate','studyTime','reportNum','studyReason',
+    'showWp','showHeader','showPatient','showStudy','showSignImage','showSignLine','showSignName','showSignMat','showFooterDate','showFooterPage','structuredText'
+  ].forEach((id) => $(id).addEventListener('input', renderAll));
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
