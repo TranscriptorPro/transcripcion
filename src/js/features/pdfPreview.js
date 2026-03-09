@@ -1,4 +1,3 @@
-// ============ PDF MODAL & PRINT PREVIEW HANDLER ============
 
 /**
  * Genera un código QR como data URL (imagen PNG base64).
@@ -56,7 +55,6 @@ window.openPdfConfigModal = async function () {
     const isAdmin = typeof isAdminUser === 'function' && isAdminUser();
     const isPro = window.currentMode === 'pro';
 
-    // ── Datos del profesional (locked para no-admin) ──
     set('pdfProfName', profData.nombre);
     set('pdfProfMatricula', profData.matricula);
     const specs = Array.isArray(profData.specialties) ? profData.specialties.join(' / ') : (profData.especialidad || '');
@@ -73,7 +71,6 @@ window.openPdfConfigModal = async function () {
         });
     }
 
-    // ── Color del encabezado (palette de 6 opciones) ──
     const headerColorEl = document.getElementById('pdfHeaderColor');
     if (headerColorEl) {
         const savedColor = profData.headerColor || '#1a56a0';
@@ -86,15 +83,12 @@ window.openPdfConfigModal = async function () {
         if (previewBar) previewBar.style.background = savedColor;
     }
 
-    // ── Lugar de trabajo: botón Agregar solo para Pro ──
     const btnAdd = document.getElementById('btnAddWorkplace');
     if (btnAdd) btnAdd.style.display = isPro ? '' : 'none';
 
-    // ── Panel de detalles del lugar: oculto por defecto ──
     const detailsPanel = document.getElementById('workplaceDetailsPanel');
     if (detailsPanel) detailsPanel.style.display = 'none';
 
-    // ── Poblar dropdown de Tipo de Estudio con las plantillas ──
     const studyTypeSelect = document.getElementById('pdfStudyType');
     if (studyTypeSelect && studyTypeSelect.options.length <= 1) {
         // Solo poblar una vez
@@ -114,7 +108,6 @@ window.openPdfConfigModal = async function () {
         studyTypeSelect.appendChild(otherOpt);
     }
 
-    // ── En modo Pro: autoseleccionar tipo de estudio desde plantilla detectada ──
     if (isPro && window.selectedTemplate && window.MEDICAL_TEMPLATES?.[window.selectedTemplate]) {
         const tplName = window.MEDICAL_TEMPLATES[window.selectedTemplate].name || '';
         if (studyTypeSelect && tplName) {
@@ -124,7 +117,6 @@ window.openPdfConfigModal = async function () {
         }
     }
 
-    // ── Datos del paciente: extraer del editor ──
     const editorForExtract = window.editor || document.getElementById('editor');
     const freshExtract = (editorForExtract && typeof extractPatientDataFromText === 'function')
         ? extractPatientDataFromText(editorForExtract.innerText) : {};
@@ -164,7 +156,6 @@ window.openPdfConfigModal = async function () {
         }
     }
 
-    // ── Informe Nº, fecha y hora ──
     const reportNumEl = document.getElementById('pdfReportNumber');
     if (reportNumEl && !reportNumEl.value && typeof generateReportNumber === 'function') {
         reportNumEl.value = generateReportNumber();
@@ -207,14 +198,11 @@ window.openPdfConfigModal = async function () {
         }
     }
 
-    // ── Firma: checkbox de mostrar imagen (la imagen se define en los clones) ──
     const showSignImageChk = document.getElementById('pdfShowSignImage');
     if (showSignImageChk) showSignImageChk.checked = pdfCfgRestore.showSignImage ?? false;
 
-    // ── Logo upload: solo visible al agregar lugar nuevo (en el panel de detalles) ──
     // No se oculta globalmente aquí porque el panel entero ya está oculto
 
-    // ── Restaurar tipo de estudio desde config guardada ──
     if (studyTypeSelect && pdfCfgRestore.studyType) {
         // Intentar seleccionar del dropdown
         const opts = Array.from(studyTypeSelect.options).map(o => o.value);
@@ -359,7 +347,6 @@ window.openPrintPreview = async function () {
         page.style.paddingBottom = cfgMargin;
     }
 
-    // ── LUGAR DE TRABAJO (arriba de todo — se repite en cada hoja impresa) ──
     const wpHeaderEl = document.getElementById('previewWorkplace');
     if (wpHeaderEl) {
         const hasWpData = wpName || wkAddr || wkPhone || wpEmail;
@@ -380,7 +367,6 @@ window.openPrintPreview = async function () {
         }
     }
 
-    // ── ENCABEZADO PROFESIONAL (no se repite — solo página 1) ─────
     const headerEl = document.getElementById('previewHeader');
     if (headerEl) {
         // Ocultar encabezado si es ADMIN sin profesional activo configurado
@@ -420,7 +406,6 @@ window.openPrintPreview = async function () {
         }
     }
 
-    // ── DATOS DEL PACIENTE ───────────────────────────────────────
     const patientEl = document.getElementById('previewPatient');
     if (patientEl) {
         const cells = [];
@@ -440,7 +425,6 @@ window.openPrintPreview = async function () {
         }
     }
 
-    // ── DATOS DEL ESTUDIO (3 columnas fila 1, 2 columnas fila 2) ────
     const studyEl = document.getElementById('previewStudy');
     if (studyEl) {
         // Fila 1: Estudio | Informe Nº | Fecha
@@ -456,7 +440,6 @@ window.openPrintPreview = async function () {
             + (row2 ? `<div class="pvs-grid pvs-2col">${row2}</div>` : '');
     }
 
-    // ── CONTENIDO DEL INFORME ────────────────────────────────────
     const contentEl = document.getElementById('previewContent');
     if (contentEl) {
         contentEl.innerHTML = editorEl ? editorEl.innerHTML : '';
@@ -470,7 +453,6 @@ window.openPrintPreview = async function () {
         });
     }
 
-    // ── FIRMA ────────────────────────────────────────────────────
     const sigEl = document.getElementById('previewSignature');
     // Mostrar imagen de firma por defecto si existe (el usuario puede desactivarla en la config)
     const showSignImage = config.showSignImage ?? hasSig;
@@ -495,7 +477,6 @@ window.openPrintPreview = async function () {
         }
     }
 
-    // ── PIE DE PÁGINA ─────────────────────────────────────────────
     const footerEl = document.getElementById('previewFooter');
     if (footerEl) {
         const parts = [];
@@ -507,7 +488,6 @@ window.openPrintPreview = async function () {
         footerEl.style.display = parts.length ? '' : 'none';
     }
 
-    // ── CÓDIGO QR DE VERIFICACIÓN (debajo de la firma) ─────────────
     const qrEl = document.getElementById('previewQR');
     if (qrEl) {
         const showQR = config.showQR ?? false;
@@ -549,7 +529,6 @@ window.openPrintPreview = async function () {
             pageNumEl.textContent = totalPages > 1 ? `Página 1 de ${totalPages}` : 'Página 1 de 1';
         }
 
-        // ── Indicadores visuales de salto de página ──────────────
         // Muestran dónde caería cada salto de página con un separador
         // y una mini-repetición del banner del lugar de trabajo (como hace el PDF real)
         if (pageEl && totalPages > 1) {
@@ -647,7 +626,6 @@ window.openPrintPreview = async function () {
 // Extraido a pdfPreviewActions.js para reducir tamano del modulo principal.
 // Compat tests (texto): _escHtml | printFromPreview | saveToDisk | downloadAs
 
-// ============ CONFIG COMPLETENESS TRAFFIC LIGHT ============
 
 /**
  * Evalúa la completitud de la configuración del PDF/impresión.
