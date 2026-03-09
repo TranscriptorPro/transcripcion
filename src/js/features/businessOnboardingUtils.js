@@ -275,6 +275,25 @@ function _showClientOnboarding() {
         submitBtn.addEventListener('click', () => {
             if (!acceptTerms?.checked) return;
 
+            // K1: Si no hay API key precargada, exigir ingreso valido en primer uso.
+            const apiStepVisible = apiStep && apiStep.style.display !== 'none';
+            const currentStoredKey = String(localStorage.getItem('groq_api_key') || '').trim();
+            const onbKeyEl = document.getElementById('onboardingApiKey');
+            const inputKey = String(onbKeyEl?.value || '').trim();
+            const resolvedKey = currentStoredKey || inputKey;
+
+            if (apiStepVisible && (!resolvedKey || !resolvedKey.startsWith('gsk_'))) {
+                if (typeof showToast === 'function') {
+                    showToast('🔑 Para continuar, ingresá una API Key válida (gsk_)', 'warning');
+                }
+                if (onbKeyEl) {
+                    onbKeyEl.focus();
+                    onbKeyEl.style.outline = '2px solid #f59e0b';
+                    setTimeout(() => { onbKeyEl.style.outline = ''; }, 1600);
+                }
+                return;
+            }
+
             if (typeof appDB !== 'undefined') appDB.set('onboarding_accepted', 'true');
             localStorage.setItem('onboarding_accepted', 'true');
 

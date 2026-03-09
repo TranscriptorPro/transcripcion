@@ -44,6 +44,14 @@
 
     function populateInfo() {
         const el = (id) => document.getElementById(id);
+        const isAdmin = typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'ADMIN';
+
+        // K2: datos avanzados solo para admin.
+        const deviceItem = el('settingsDeviceId')?.closest('.stg-info-item');
+        const planItem = el('settingsAccountType')?.closest('.stg-info-item');
+        if (deviceItem) deviceItem.style.display = isAdmin ? '' : 'none';
+        if (planItem) planItem.style.display = isAdmin ? '' : 'none';
+
         if (el('settingsAppVersion')) el('settingsAppVersion').textContent = '2.0';
         if (el('settingsAboutVersion')) el('settingsAboutVersion').textContent = '2.0';
 
