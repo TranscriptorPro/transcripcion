@@ -918,18 +918,15 @@
 
     // ─── 10.5. Upgrade button ──────────────────────────────────────
     function _initUpgradeButton() {
-        const btn = document.getElementById('settingsUpgradePlan');
-        if (btn) {
-            btn.addEventListener('click', () => {
-                const overlay = document.getElementById('settingsModalOverlay');
-                if (overlay) overlay.classList.remove('active');
-                if (typeof window.openPricingCart === 'function') {
-                    window.openPricingCart();
-                    const pricingOverlay = document.getElementById('pricingModalOverlay');
-                    if (pricingOverlay) {
-                        _watchForClose(pricingOverlay, () => {
-                            if (overlay) { populateSettingsModal(); overlay.classList.add('active'); }
-                        });
+        const utils = window.SettingsModalActionsUtils || {};
+        if (typeof utils.initUpgradeButton === 'function') {
+            utils.initUpgradeButton({
+                watchForClose: _watchForClose,
+                repopulateAndOpenSettings: () => {
+                    const overlay = document.getElementById('settingsModalOverlay');
+                    if (overlay) {
+                        populateSettingsModal();
+                        overlay.classList.add('active');
                     }
                 }
             });
@@ -938,34 +935,16 @@
 
     // ─── 11. Info & Support ──────────────────────────────────────────
     function _initInfoSection() {
-        const contactBtn = document.getElementById('settingsContactSupport');
-        if (contactBtn) {
-            contactBtn.addEventListener('click', () => {
-                const overlay = document.getElementById('settingsModalOverlay');
-                if (overlay) overlay.classList.remove('active');
-                const btnContacto = document.getElementById('btnContacto');
-                if (btnContacto) btnContacto.click();
-            });
-        }
-        // Botón abrir centro de ayuda desde Info
-        const helpBtn = document.getElementById('settingsOpenHelp');
-        if (helpBtn) {
-            helpBtn.addEventListener('click', () => {
-                const overlay = document.getElementById('settingsModalOverlay');
-                if (overlay) overlay.classList.remove('active');
-                const helpModal = document.getElementById('helpModal');
-                if (helpModal) {
-                    // Reset a tab guía rápida
-                    document.querySelectorAll('.help-tab').forEach(t => {
-                        t.classList.toggle('active', t.dataset.helpTab === 'guide');
-                    });
-                    document.querySelectorAll('.help-tab-content').forEach(p => p.classList.remove('active'));
-                    const panel = document.querySelector('[data-help-panel="guide"]');
-                    if (panel) panel.classList.add('active');
-                    helpModal.classList.add('active');
-                    _watchForClose(helpModal, () => {
-                        if (overlay) { populateSettingsModal(); overlay.classList.add('active'); }
-                    });
+        const utils = window.SettingsModalActionsUtils || {};
+        if (typeof utils.initInfoSection === 'function') {
+            utils.initInfoSection({
+                watchForClose: _watchForClose,
+                repopulateAndOpenSettings: () => {
+                    const overlay = document.getElementById('settingsModalOverlay');
+                    if (overlay) {
+                        populateSettingsModal();
+                        overlay.classList.add('active');
+                    }
                 }
             });
         }

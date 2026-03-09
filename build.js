@@ -39,6 +39,7 @@ const JS_FILES = [
     'src/js/features/settingsThemeUtils.js',
     'src/js/features/settingsBackupUtils.js',
     'src/js/features/settingsModalPopulateUtils.js',
+    'src/js/features/settingsModalActionsUtils.js',
     'src/js/features/settingsPanel.js',
     'src/js/features/pricingCart.js',
     'src/js/features/business.js',
