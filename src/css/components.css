@@ -3064,8 +3064,8 @@
             gap: 14px;
         }
         .pvw-logo {
-            max-height: 48px;
-            max-width: 80px;
+            max-height: 52px;
+            max-width: 90px;
             object-fit: contain;
             flex-shrink: 0;
             border-radius: 0;
@@ -3118,9 +3118,44 @@
             margin-bottom: 1px;
         }
         .pvh-spec { font-size: 10pt; color: #444; margin-top: 2px; font-style: italic; }
-        .pvh-mat  { font-size: 9pt; color: #555; margin-top: 2px; }
+        .pvh-mat  { font-size: 8.5pt; color: #555; margin-top: 3px; }
         .pvh-inst { font-size: 9.5pt; color: #333; font-style: italic; margin-top: 2px; }
         .pvh-addr { font-size: 8.5pt; color: #777; margin-top: 3px; }
+        .pvh-badges { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px; }
+        .pvh-badge {
+            background: color-mix(in srgb, var(--pa, #1a56a0) 15%, white);
+            color: var(--pa, #1a56a0);
+            border: 1px solid color-mix(in srgb, var(--pa, #1a56a0) 25%, white);
+            border-radius: 12px;
+            padding: 1px 8px;
+            font-size: 8pt;
+            font-weight: 600;
+            white-space: nowrap;
+            font-family: Helvetica, Arial, sans-serif;
+        }
+        .pvh-contact {
+            margin-left: auto;
+            text-align: right;
+            font-size: 8pt;
+            color: #555;
+            font-family: Helvetica, Arial, sans-serif;
+            min-width: 130px;
+        }
+        .pvh-ci {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            justify-content: flex-end;
+            margin-bottom: 3px;
+            white-space: nowrap;
+        }
+        .pvh-ci-icon {
+            width: 14px;
+            text-align: center;
+            font-size: 9.5pt;
+            color: var(--pa, #1a56a0);
+            flex-shrink: 0;
+        }
 
         /* ── Marcador visual de salto de página ── */
         .pv-pagebreak-marker {
@@ -3399,7 +3434,7 @@
         .pvsig-block   { text-align: center; width: 240px; margin-left: auto; }
         .pvsig-img     { max-height: 60px; display: block; margin: 0 auto 0; background: transparent; }
         .pvsig-line    { border: none; border-top: 1.5px solid #333; width: 200px; margin: 0 auto; }
-        .pvsig-name    { font-size: 10pt; font-weight: 700; margin-top: 6px; text-align: center; }
+        .pvsig-name    { font-size: 10pt; font-weight: 700; margin-top: 9px; text-align: center; }
         .pvsig-mat     { font-size: 9pt; color: #555; margin-top: 2px; text-align: center; }
         .pvsig-spec    { font-size: 8.5pt; color: #666; font-style: italic; margin-top: 1px; text-align: center; }
 

@@ -1097,14 +1097,12 @@ test('extractPatientDataFromText extrae sexo', () => {
     assertEqual(data.sex, 'F');
 });
 
-test('generateReportNumber genera formato YYYY-NNNN', () => {
+test('generateReportNumber genera formato XX-NNNNN-ddmmaa', () => {
     localStorage.clear();
     const fn = global.generateReportNumber;
     assert(typeof fn === 'function', 'generateReportNumber debe existir');
     const num = fn();
-    const year = new Date().getFullYear();
-    assert(num.startsWith(String(year) + '-'), `Debe empezar con ${year}-`);
-    assert(/^\d{4}-\d{4}$/.test(num), `Formato YYYY-NNNN, obtuvo: ${num}`);
+    assert(/^[A-Z]{2}-\d{5}-\d{6}$/.test(num), `Formato XX-NNNNN-ddmmaa, obtuvo: ${num}`);
 });
 
 test('generateReportNumber incrementa secuencialmente', () => {
@@ -1112,9 +1110,9 @@ test('generateReportNumber incrementa secuencialmente', () => {
     const n1 = global.generateReportNumber();
     const n2 = global.generateReportNumber();
     const n3 = global.generateReportNumber();
-    assert(n1.endsWith('-0001'), `Primero debe ser 0001, obtuvo: ${n1}`);
-    assert(n2.endsWith('-0002'), `Segundo debe ser 0002, obtuvo: ${n2}`);
-    assert(n3.endsWith('-0003'), `Tercero debe ser 0003, obtuvo: ${n3}`);
+    assert(n1.split('-')[1] === '00001', `Primero debe ser 00001, obtuvo: ${n1}`);
+    assert(n2.split('-')[1] === '00002', `Segundo debe ser 00002, obtuvo: ${n2}`);
+    assert(n3.split('-')[1] === '00003', `Tercero debe ser 00003, obtuvo: ${n3}`);
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════

@@ -115,23 +115,77 @@ window.extractPatientDataFromText = function (text) {
 }
 
 // ---- Report numbering ----
-// D3: En CLINIC, prefija con ID del profesional para contadores separados
+// Nueva nomenclatura: XX-NNNNN-ddmmaa (XX=tipo estudio, NNNNN=correlativo, ddmmaa=fecha)
+const _REPORT_ABBREVS = {
+    espirometria: 'ES', holter: 'HL', test_marcha: 'TM', mapa: 'MP',
+    pletismografia: 'PL', cinecoro: 'CI', oximetria_nocturna: 'OX', ecg: 'EG',
+    campimetria: 'CM', eco_stress: 'EC', oct_retinal: 'OC', pap: 'PP',
+    topografia_corneal: 'TC', colposcopia: 'CP', fondo_ojo: 'FO',
+    electromiografia: 'EM', tac: 'TA', polisomnografia: 'PS', naso: 'NL',
+    resonancia: 'RM', mamografia: 'MG', endoscopia_otologica: 'EO',
+    densitometria: 'DX', protocolo_quirurgico: 'PQ', pet_ct: 'PT',
+    ett: 'ET', radiografia: 'RX', ecografia_renal: 'ER',
+    ecografia_abdominal: 'EA', ecografia_tiroidea: 'TI', gastroscopia: 'GS',
+    ecografia_mamaria: 'MM', colonoscopia: 'CO', ecografia_obstetrica: 'OB',
+    broncoscopia: 'BR', eco_doppler: 'ED', laringoscopia: 'LA',
+    nota_evolucion: 'NE', gammagrafia_cardiaca: 'GC', epicrisis: 'EP',
+    generico: 'IG'
+};
+
 window.generateReportNumber = function () {
-    const year = new Date().getFullYear();
-    var profPrefix = '';
+    let tplKey = '';
     try {
-        var cfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
-        if (cfg.activeProfessional && cfg.activeProfessional.nombre) {
-            profPrefix = cfg.activeProfessional.nombre.replace(/[^a-zA-Z]/g, '').substring(0, 4).toUpperCase() + '_';
-        }
+        const cfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        tplKey = cfg.selectedTemplate || '';
     } catch(_) {}
-    const key = 'report_counter_' + profPrefix + year;
-    let counter = parseInt(localStorage.getItem(key) || '0');
+    if (!tplKey) tplKey = (typeof window !== 'undefined' && window.selectedTemplate) ? window.selectedTemplate : '';
+    const abbrev = _REPORT_ABBREVS[tplKey] || 'IG';
+    const counterKey = 'report_counter_' + abbrev;
+    let counter = parseInt(localStorage.getItem(counterKey) || '0');
     counter++;
-    if (typeof appDB !== 'undefined') appDB.set(key, counter);
-    localStorage.setItem(key, counter);
-    return `${year}-${profPrefix}${String(counter).padStart(4, '0')}`;
-}
+    if (typeof appDB !== 'undefined') appDB.set(counterKey, counter);
+    localStorage.setItem(counterKey, counter);
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const aa = String(now.getFullYear()).slice(-2);
+    return `${abbrev}-${String(counter).padStart(5, '0')}-${dd}${mm}${aa}`;
+};
+
+// ---- Reset / Edit botones de Informe Nº ----
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('btnResetReportNum')?.addEventListener('click', () => {
+        let tplKey = '';
+        try {
+            const cfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+            tplKey = cfg.selectedTemplate || '';
+        } catch(_) {}
+        if (!tplKey) tplKey = (typeof window !== 'undefined' && window.selectedTemplate) ? window.selectedTemplate : '';
+        const abbrev = _REPORT_ABBREVS[tplKey] || 'IG';
+        localStorage.removeItem('report_counter_' + abbrev);
+        if (typeof appDB !== 'undefined') appDB.set('report_counter_' + abbrev, 0);
+        const el = document.getElementById('pdfReportNumber');
+        if (el) el.value = '';
+        if (typeof showToast === 'function') showToast(`Contador reiniciado — el próximo informe ${abbrev} será 00001`, 'info');
+    });
+
+    document.getElementById('btnEditReportNum')?.addEventListener('click', () => {
+        const el = document.getElementById('btnEditReportNum');
+        const inp = document.getElementById('pdfReportNumber');
+        if (!inp) return;
+        if (inp.readOnly) {
+            inp.readOnly = false;
+            inp.focus();
+            inp.select();
+            if (el) el.title = 'Bloquear edición';
+            if (el) el.textContent = '🔒';
+        } else {
+            inp.readOnly = true;
+            if (el) el.title = 'Editar número manualmente';
+            if (el) el.textContent = '✏️';
+        }
+    });
+});
 
 // ---- Image upload handlers ----
 window.handleImageUpload = function (inputId, previewId, storageKey) {

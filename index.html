@@ -1058,8 +1058,12 @@
                             </div>
                             <div class="field-group">
                                 <label>Informe Nº</label>
-                                <input type="text" id="pdfReportNumber" placeholder="Auto: 2026-0042" readonly>
-                                <small>Numeración correlativa automática (formato: YYYY-NNNN)</small>
+                                <div style="display:flex;gap:6px;align-items:center;">
+                                    <input type="text" id="pdfReportNumber" placeholder="Auto: EC-00042-090326" readonly style="flex:1;">
+                                    <button type="button" id="btnResetReportNum" class="btn btn-sm btn-outline" title="Reiniciar contador (próximo será 00001)">→1</button>
+                                    <button type="button" id="btnEditReportNum" class="btn btn-sm btn-outline" title="Editar número manualmente">✏️</button>
+                                </div>
+                                <small>Numeración automática: TIPO-NNNNN-ddmmaa. →1 reinicia el contador del tipo de estudio actual.</small>
                             </div>
                         </div>
                     </div>
@@ -1266,6 +1270,40 @@
                             <div class="field-group">
                                 <label>Email</label>
                                 <input type="email" id="proEmail" placeholder="dr@ejemplo.com">
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Sexo (para Dr./Dra.)</label>
+                                <select id="proSexo">
+                                    <option value="">Sin especificar</option>
+                                    <option value="M">Masculino &mdash; Dr.</option>
+                                    <option value="F">Femenino &mdash; Dra.</option>
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label>WhatsApp (opcional)</label>
+                                <input type="text" id="proWhatsapp" placeholder="+54 11 xxxx-xxxx">
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Instagram (opcional)</label>
+                                <input type="text" id="proInstagram" placeholder="@usuario">
+                            </div>
+                            <div class="field-group">
+                                <label>Facebook (opcional)</label>
+                                <input type="text" id="proFacebook" placeholder="Nombre de página">
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>X / Twitter (opcional)</label>
+                                <input type="text" id="proX" placeholder="@usuario">
+                            </div>
+                            <div class="field-group">
+                                <label>YouTube (opcional)</label>
+                                <input type="text" id="proYoutube" placeholder="@canal">
                             </div>
                         </div>
                         <div class="field-row">

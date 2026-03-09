@@ -164,10 +164,13 @@ window.initWorkplaceManagement = function () {
     }
 
     function resetProfessionalForm() {
-        ['proNombre','proMatricula','proEspecialidades','proTelefono','proEmail'].forEach(id => {
+        ['proNombre','proMatricula','proEspecialidades','proTelefono','proEmail',
+         'proWhatsapp','proInstagram','proFacebook','proX','proYoutube'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.value = '';
         });
+        const proSexoEl = document.getElementById('proSexo');
+        if (proSexoEl) proSexoEl.value = '';
         ['proFirmaPreview','proLogoPreview'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.innerHTML = '';
@@ -228,6 +231,18 @@ window.initWorkplaceManagement = function () {
             document.getElementById('proEspecialidades').value  = p.especialidades  || '';
             document.getElementById('proTelefono').value        = p.telefono        || '';
             document.getElementById('proEmail').value           = p.email           || '';
+            const proSexoEl = document.getElementById('proSexo');
+            if (proSexoEl) proSexoEl.value = p.sexo || '';
+            const proWaEl = document.getElementById('proWhatsapp');
+            if (proWaEl) proWaEl.value = p.whatsapp || '';
+            const proIgEl = document.getElementById('proInstagram');
+            if (proIgEl) proIgEl.value = p.instagram || '';
+            const proFbEl = document.getElementById('proFacebook');
+            if (proFbEl) proFbEl.value = p.facebook || '';
+            const proXEl = document.getElementById('proX');
+            if (proXEl) proXEl.value = p.x || '';
+            const proYtEl = document.getElementById('proYoutube');
+            if (proYtEl) proYtEl.value = p.youtube || '';
             const fp = document.getElementById('proFirmaPreview');
             if (fp) fp.innerHTML = p.firma  ? `<img src="${p.firma}"  style="max-height:50px;">` : '';
             const lp = document.getElementById('proLogoPreview');
@@ -247,10 +262,16 @@ window.initWorkplaceManagement = function () {
             const prof = {
                 id:            `PRO_${Date.now()}`,
                 nombre,
+                sexo:          document.getElementById('proSexo')?.value                   || '',
                 matricula:     document.getElementById('proMatricula')?.value?.trim()      || '',
                 especialidades:document.getElementById('proEspecialidades')?.value?.trim() || '',
                 telefono:      document.getElementById('proTelefono')?.value?.trim()       || '',
                 email:         document.getElementById('proEmail')?.value?.trim()          || '',
+                whatsapp:      document.getElementById('proWhatsapp')?.value?.trim()       || '',
+                instagram:     document.getElementById('proInstagram')?.value?.trim()      || '',
+                facebook:      document.getElementById('proFacebook')?.value?.trim()       || '',
+                x:             document.getElementById('proX')?.value?.trim()              || '',
+                youtube:       document.getElementById('proYoutube')?.value?.trim()        || '',
                 firma:         firmaB64,
                 logo:          logoB64,
             };
@@ -587,19 +608,27 @@ async function _handleFactorySetup(medicoId) {
                 const wp = typeof regDatos.workplace === 'string' ? JSON.parse(regDatos.workplace) : regDatos.workplace;
                 if (wp && wp.name) {
                     // Construir perfil del profesional para cada lugar
-                    const buildProfessional = () => ({
-                        nombre:          doctor.Nombre    || '',
-                        matricula:       doctor.Matricula || '',
-                        especialidades:  doctor.Especialidad || '',
-                        telefono:        doctor.Telefono  || '',
-                        email:           doctor.Email     || '',
-                        firma:           regDatos.firma   || '',
-                        logo:            regDatos.proLogo || '',
-                        socialMedia:     regDatos.socialMedia || null,
-                        showPhone:       regDatos.showPhone  !== false,
-                        showEmail:       regDatos.showEmail  !== false,
-                        showSocial:      regDatos.showSocial === true
-                    });
+                    const buildProfessional = () => {
+                        const sm = (typeof regDatos.socialMedia === 'object' && regDatos.socialMedia) ? regDatos.socialMedia : {};
+                        return {
+                            nombre:          doctor.Nombre    || '',
+                            sexo:            regDatos.sexo || doctor.sexo || '',
+                            matricula:       doctor.Matricula || '',
+                            especialidades:  doctor.Especialidad || '',
+                            telefono:        doctor.Telefono  || '',
+                            email:           doctor.Email     || '',
+                            whatsapp:        sm.whatsapp  || sm.WhatsApp  || '',
+                            instagram:       sm.instagram || sm.Instagram || '',
+                            facebook:        sm.facebook  || sm.Facebook  || '',
+                            x:               sm.x || sm.X || sm.twitter || sm.Twitter || '',
+                            youtube:         sm.youtube   || sm.YouTube   || '',
+                            firma:           regDatos.firma   || '',
+                            logo:            regDatos.proLogo || '',
+                            showPhone:       regDatos.showPhone  !== false,
+                            showEmail:       regDatos.showEmail  !== false,
+                            showSocial:      regDatos.showSocial === true
+                        };
+                    };
 
                     const workplaceProfiles = [{
                         name:    wp.name    || '',

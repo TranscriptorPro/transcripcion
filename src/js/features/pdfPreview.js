@@ -232,11 +232,19 @@ window.openPrintPreview = async function () {
     const especialidadDisplay = esc((especialidadRaw || '').replace(/^ALL$/i, '').replace(/^General$/i, 'Medicina General').trim());
     // Detectar título Dr./Dra. del nombre del profesional
     const _rawNameStr = activePro?.nombre || profData.nombre || '';
-    const _titleMatch = _rawNameStr.match(/^(Dra?\.?\s*)/i);
-    const profDisplayTitle = _titleMatch
-        ? (_titleMatch[1].trim().toLowerCase().startsWith('dra') ? 'Dra.' : 'Dr.')
-        : 'Dr.';
+    const _titleMatch = _rawNameStr.match(/^(Dra?\.?\.?\s*)/i);
+    const profSexo = activePro?.sexo || profData.sexo || '';
+    const profDisplayTitle = profSexo === 'F' ? 'Dra.' : profSexo === 'M' ? 'Dr.' :
+        (_titleMatch ? (_titleMatch[1].trim().toLowerCase().startsWith('dra') ? 'Dra.' : 'Dr.') : 'Dr.');
     const profDisplayName = escName(_rawNameStr.replace(/^(Dra?\.?\s*)/i, '').trim()) || profName;
+    // Contacto del profesional
+    const pvTelefono  = esc(activePro?.telefono  || profData.telefono  || '');
+    const pvEmail     = esc(activePro?.email     || profData.email     || '');
+    const pvWhatsapp  = esc(activePro?.whatsapp  || '');
+    const pvInstagram = esc(activePro?.instagram || '');
+    const pvFacebook  = esc(activePro?.facebook  || '');
+    const pvXSocial   = esc(activePro?.x         || '');
+    const pvYoutube   = esc(activePro?.youtube   || '');
     const profLogoSize = config.logoSizePx || parseInt(localStorage.getItem('prof_logo_size_px') || '60');
     const firmaSize   = config.firmaSizePx || parseInt(localStorage.getItem('firma_size_px') || '60');
     const instLogoSize = config.instLogoSizePx || parseInt(localStorage.getItem('inst_logo_size_px') || '60');
@@ -359,16 +367,31 @@ window.openPrintPreview = async function () {
             headerEl.style.display = 'none';
         } else {
             headerEl.style.display = '';
+            // Specialties as badges
+            const pvEspArr = (especialidadRaw || '').replace(/^ALL$/i, 'Medicina General')
+                .split(/[,\/]/).map(s => s.replace(/^General$/i, 'Medicina General').trim()).filter(Boolean);
+            const pvBadgesHtml = pvEspArr.map(s => `<span class="pvh-badge">${esc(s)}</span>`).join('');
+            // Contact right column
+            const pvCItems = [];
+            if (pvTelefono)  pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#9742;</span>${pvTelefono}</div>`);
+            if (pvEmail)     pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#9993;</span>${pvEmail}</div>`);
+            if (pvWhatsapp)  pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#128241;</span>${pvWhatsapp}</div>`);
+            if (pvInstagram) pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">@</span>${pvInstagram}</div>`);
+            if (pvFacebook)  pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">f</span>${pvFacebook}</div>`);
+            if (pvXSocial)   pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#120143;</span>${pvXSocial}</div>`);
+            if (pvYoutube)   pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#9654;</span>${pvYoutube}</div>`);
+            const pvContactHtml = pvCItems.length ? `<div class="pvh-contact">${pvCItems.join('')}</div>` : '';
             headerEl.innerHTML = `
                 <div class="pvh-body" style="display:flex;align-items:center;gap:12px;">
-                    ${hasProfLogo ? `<img src="${profLogoSrc}" alt="Logo Prof" style="height:${profLogoSize}px;width:auto;object-fit:contain;flex-shrink:0;background:transparent;border:none;border-radius:0;">` : ''}
+                    ${hasProfLogo ? `<img src="${profLogoSrc}" alt="Logo Prof" style="height:40px;max-height:40px;width:auto;object-fit:contain;flex-shrink:0;background:transparent;border:none;border-radius:0;">` : ''}
                     <div class="pvh-info" style="flex:1;min-width:0;">
                         <div>
                             <span class="pvh-name">Estudio realizado por: ${profDisplayTitle} ${profDisplayName}</span>
                         </div>
-                        ${(especialidadDisplay || matricula) ? `<div class="pvh-spec">${[especialidadDisplay, matricula ? 'Mat. ' + matricula : ''].filter(Boolean).join(' &nbsp;&bull;&nbsp; ')}</div>` : ''}
-                        ${institutionName ? `<div class="pvh-inst">${institutionName}</div>` : ''}
+                        ${pvBadgesHtml ? `<div class="pvh-badges">${pvBadgesHtml}</div>` : ''}
+                        ${matricula ? `<div class="pvh-mat">Mat. ${matricula}</div>` : ''}
                     </div>
+                    ${pvContactHtml}
                 </div>`;
         }
     }
@@ -440,7 +463,7 @@ window.openPrintPreview = async function () {
             // Imagen de firma va ENCIMA de la línea
             if (showSignImage && hasSig) sigHtml += `<img src="${sigSrc}" class="pvsig-img" alt="Firma" style="max-height:${firmaSize}px;">`;
             if (showSignLine) sigHtml += `<div class="pvsig-line"></div>`;
-            if (showSignName && profName) sigHtml += `<div class="pvsig-name">${profName}</div>`;
+            if (showSignName && profName) sigHtml += `<div class="pvsig-name">${profDisplayTitle} ${profDisplayName}</div>`;
             if (showSignMat  && matricula) sigHtml += `<div class="pvsig-mat">Mat. ${matricula}</div>`;
             if (especialidad) sigHtml += `<div class="pvsig-spec">${especialidad}</div>`;
             sigHtml += '</div>';

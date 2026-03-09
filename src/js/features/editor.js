@@ -926,11 +926,22 @@ async function createHTML() {
     const especialidad = escSentence(espRaw);
     const espDisplay   = esc((espRaw || '').replace(/^ALL$/i, '').replace(/^General$/i, 'Medicina General').trim());
     const _rawN      = activePro?.nombre || profData.nombre || '';
-    const _tM        = _rawN.match(/^(Dra?\.?\s*)/i);
-    const profTitle  = _tM ? (_tM[1].trim().toLowerCase().startsWith('dra') ? 'Dra.' : 'Dr.') : 'Dr.';
+    const _tM        = _rawN.match(/^(Dra?\.\.?\s*)/i);
+    const profSexo   = activePro?.sexo || profData.sexo || '';
+    const profTitle  = profSexo === 'F' ? 'Dra.' : profSexo === 'M' ? 'Dr.' :
+        (_tM ? (_tM[1].trim().toLowerCase().startsWith('dra') ? 'Dra.' : 'Dr.') : 'Dr.');
     const profDispName = escName(_rawN.replace(/^(Dra?\.?\s*)/i, '').trim()) || profName;
     const institutionName = escName(activePro?.institutionName || profData.institutionName || '');
     const accentColor = activePro?.headerColor || profData.headerColor || '#1a56a0';
+
+    // ── Contacto del profesional ──
+    const profTelefono = esc(activePro?.telefono || profData.telefono || '');
+    const profEmail    = esc(activePro?.email    || profData.email    || '');
+    const profWhatsapp  = esc(activePro?.whatsapp  || '');
+    const profInstagram = esc(activePro?.instagram || '');
+    const profFacebook  = esc(activePro?.facebook  || '');
+    const profXSocial   = esc(activePro?.x         || '');
+    const profYoutube   = esc(activePro?.youtube   || '');
 
     // ── Logos y firma (base64 data URLs) ──
     const wpProfiles = (typeof appDB !== 'undefined' ? await appDB.get('workplace_profiles') : null) || [];
@@ -1004,12 +1015,26 @@ async function createHTML() {
     let headerSection = '';
     const isAdminNoProf = (!activePro || !activePro.nombre) && (!profData.nombre || profData.nombre === 'Administrador' || profData.nombre === 'Admin');
     if (!isAdminNoProf && profName) {
+        // Specialty badges
+        const espArr = (espRaw || '').replace(/^ALL$/i, 'Medicina General')
+            .split(/[,\/]/).map(s => s.replace(/^General$/i, 'Medicina General').trim()).filter(Boolean);
+        const espBadgesHtml = espArr.map(s => `<span class="pvh-badge">${esc(s)}</span>`).join('');
+        // Contact right column
+        const cItems = [];
+        if (profTelefono) cItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#9742;</span>${profTelefono}</div>`);
+        if (profEmail)    cItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#9993;</span>${profEmail}</div>`);
+        if (profWhatsapp) cItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#128241;</span>${profWhatsapp}</div>`);
+        if (profInstagram) cItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">@</span>${profInstagram}</div>`);
+        if (profFacebook) cItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">f</span>${profFacebook}</div>`);
+        if (profXSocial)  cItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#120143;</span>${profXSocial}</div>`);
+        if (profYoutube)  cItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#9654;</span>${profYoutube}</div>`);
+        const contactHtml = cItems.length ? `<div class="pvh-contact">${cItems.join('')}</div>` : '';
         headerSection = `<div class="preview-header"><div class="pvh-body">`
-            + (hasProfLogo ? `<img src="${profLogoSrc}" style="height:${profLogoSize}px;width:auto;object-fit:contain;flex-shrink:0;background:transparent;border:none;border-radius:0;">` : '')
+            + (hasProfLogo ? `<img src="${profLogoSrc}" style="height:40px;max-height:40px;width:auto;object-fit:contain;flex-shrink:0;background:transparent;border:none;border-radius:0;">` : '')
             + `<div class="pvh-info"><div><span class="pvh-name">Estudio realizado por: ${profTitle} ${profDispName}</span></div>`
-            + ((espDisplay || matricula) ? `<div class="pvh-spec">${[espDisplay, matricula ? 'Mat. ' + matricula : ''].filter(Boolean).join(' &nbsp;&bull;&nbsp; ')}</div>` : '')
-            + (institutionName ? `<div class="pvh-inst">${institutionName}</div>` : '')
-            + `</div></div></div>`;
+            + (espBadgesHtml ? `<div class="pvh-badges">${espBadgesHtml}</div>` : '')
+            + (matricula ? `<div class="pvh-mat">Mat. ${matricula}</div>` : '')
+            + `</div>${contactHtml}</div></div>`;
     }
 
     // Patient block
@@ -1040,7 +1065,7 @@ async function createHTML() {
         sigSection = '<div class="preview-signature"><div class="pvsig-block">';
         if (showSignImage && hasSig) sigSection += `<img src="${sigSrc}" class="pvsig-img" style="max-height:${firmaSize}px;">`;
         if (showSignLine) sigSection += '<div class="pvsig-line"></div>';
-        if (showSignName && profName) sigSection += `<div class="pvsig-name">${profName}</div>`;
+        if (showSignName && profName) sigSection += `<div class="pvsig-name">${profTitle} ${profDispName}</div>`;
         if (showSignMat && matricula) sigSection += `<div class="pvsig-mat">Mat. ${matricula}</div>`;
         if (especialidad) sigSection += `<div class="pvsig-spec">${especialidad}</div>`;
         sigSection += '</div></div>';
@@ -1096,7 +1121,7 @@ body {
     font-family: Helvetica, Arial, sans-serif;
 }
 .pvw-block { display: flex; align-items: center; justify-content: flex-start; gap: 14px; }
-.pvw-logo { max-height: 48px; max-width: 80px; object-fit: contain; flex-shrink: 0; border: none; border-radius: 0; background: transparent; }
+.pvw-logo { max-height: 52px; max-width: 90px; object-fit: contain; flex-shrink: 0; border: none; border-radius: 0; background: transparent; }
 .pvw-text { text-align: center; }
 .pvw-name { font-size: 11pt; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
 .pvw-details { font-size: 8pt; opacity: 0.9; margin-top: 2px; letter-spacing: 0.02em; }
@@ -1104,8 +1129,14 @@ body {
 .pvh-body { display: flex; align-items: center; gap: 14px; }
 .pvh-info { flex: 1; }
 .pvh-name { font-size: 14pt; font-weight: 700; color: var(--pa); letter-spacing: 0.02em; }
+.pvh-badges { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px; }
+.pvh-badge { background: ${accentLight}; color: var(--pa); border: 1px solid ${accentLight}; border-radius: 12px; padding: 1px 8px; font-size: 8pt; font-weight: 600; white-space: nowrap; font-family: Helvetica, Arial, sans-serif; }
+.pvh-mat { font-size: 8.5pt; color: #555; margin-top: 3px; }
 .pvh-spec { font-size: 10pt; color: #444; margin-top: 2px; font-style: italic; }
 .pvh-inst { font-size: 9.5pt; color: #333; font-style: italic; margin-top: 2px; }
+.pvh-contact { margin-left: auto; text-align: right; font-size: 8pt; color: #555; font-family: Helvetica, Arial, sans-serif; min-width: 130px; }
+.pvh-ci { display: flex; align-items: center; gap: 5px; justify-content: flex-end; margin-bottom: 3px; white-space: nowrap; }
+.pvh-ci-icon { width: 14px; text-align: center; font-size: 9.5pt; color: var(--pa); flex-shrink: 0; }
 .preview-patient { margin-bottom: 10px; }
 .pvp-grid {
     background: #fafbfc; border: 1px solid #d0d7de;
@@ -1157,7 +1188,7 @@ body {
 .pvsig-block { text-align: center; width: 240px; margin-left: auto; }
 .pvsig-img { max-height: 60px; display: block; margin: 0 auto; background: transparent; }
 .pvsig-line { border: none; border-top: 1.5px solid #333; width: 200px; margin: 0 auto; }
-.pvsig-name { font-size: 10pt; font-weight: 700; margin-top: 6px; text-align: center; }
+.pvsig-name { font-size: 10pt; font-weight: 700; margin-top: 9px; text-align: center; }
 .pvsig-mat { font-size: 9pt; color: #555; margin-top: 2px; text-align: center; }
 .pvsig-spec { font-size: 8.5pt; color: #666; font-style: italic; margin-top: 1px; text-align: center; }
 .preview-footer { margin-top: 20px; border-top: 1.5px solid #ccc; padding-top: 8px; }
