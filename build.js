@@ -63,6 +63,7 @@ const JS_FILES = [
     'src/js/features/pricingCart.js',
     'src/js/features/businessUiHelpers.js',
     'src/js/features/businessFactoryUiUtils.js',
+    'src/js/features/businessClientAdminUtils.js',
     'src/js/features/business.js',
     'src/js/features/sessionAssistant.js',
     'src/js/features/outputProfiles.js',
