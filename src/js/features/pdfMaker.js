@@ -89,12 +89,32 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const especialidad = Array.isArray(rawEsp)
             ? rawEsp.filter(e => e && e !== 'Todas').join(' / ')
             : (rawEsp || '');
+        const profSexoRaw = (activePro?.sexo || profData.sexo || '').toString().trim().toUpperCase();
+        const nameTitleMatch = profName.match(/^(DRA?\.?\s*)/i);
+        const profTitle = profSexoRaw === 'F' ? 'Dra.' : profSexoRaw === 'M' ? 'Dr.' : (nameTitleMatch && /^dra/i.test(nameTitleMatch[1]) ? 'Dra.' : 'Dr.');
+        const profNameBase = profName.replace(/^(DRA?\.?\s*)/i, '').trim();
+        const profDisplayName = `${profTitle} ${profNameBase || profName}`.trim();
+        const specialtyBadges = (Array.isArray(rawEsp) ? rawEsp : String(rawEsp || '').split(/[\/,]/))
+            .map(s => String(s || '').trim())
+            .filter(Boolean)
+            .filter(s => !/^all$/i.test(s) && !/^todas$/i.test(s))
+            .map(s => /^general$/i.test(s) ? 'Medicina General' : s);
         const institutionName = activePro?.institutionName || profData.institutionName || '';
         const accent       = _hexToRgb(activePro?.headerColor || profData.headerColor || '#1a56a0');
         const wpAddress = config.workplaceAddress || activeWp?.address || '';
         const wpPhone   = config.workplacePhone   || activeWp?.phone   || '';
         const wpName    = activeWp?.name || '';
         const wpEmail   = activeWp?.email || config.workplaceEmail || '';
+        const showPhone = config.showPhone !== false;
+        const showEmail = config.showEmail !== false;
+        const showSocial = config.showSocial === true;
+        const profPhone = activePro?.telefono || profData.telefono || '';
+        const profEmail = activePro?.email || profData.email || '';
+        const profWhatsapp = activePro?.whatsapp || profData.whatsapp || '';
+        const profInstagram = activePro?.instagram || profData.instagram || '';
+        const profFacebook = activePro?.facebook || profData.facebook || '';
+        const profX = activePro?.x || profData.x || '';
+        const profYoutube = activePro?.youtube || profData.youtube || '';
 
         // ── Leer datos del paciente frescos: editor → config → formulario ──
         const _reqVal = (id) => { try { return document.getElementById(id)?.value?.trim() || ''; } catch(_) { return ''; } };
@@ -153,6 +173,18 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             doc.line(ML, y, PAGE_W - MR, y);
             doc.setDrawColor(0);
         };
+        const truncateForWidth = (text, maxWidth) => {
+            const s = String(text || '').trim();
+            if (!s || maxWidth <= 0) return '';
+            const lines = doc.splitTextToSize(s, maxWidth);
+            if (!lines || !lines.length) return '';
+            if (lines.length === 1) return lines[0];
+            let out = String(lines[0] || '');
+            while (out.length > 1 && doc.getTextWidth(out + '...') > maxWidth) {
+                out = out.slice(0, -1);
+            }
+            return out + '...';
+        };
 
         // ── Asegurar espacio o saltar de página ──────────────────────
         function ensureSpace(needed) {
@@ -180,11 +212,14 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             const leftParts = [];
             if (cfgShowFooter && footerText) leftParts.push(footerText);
             if (cfgShowDate) leftParts.push(`Impreso: ${new Date().toLocaleDateString('es-ES')}`);
+            const rightText = cfgShowPageNum ? `Página ${num}` : '';
+            const rightW = rightText ? doc.getTextWidth(rightText) : 0;
+            const leftMaxW = Math.max(20, (PAGE_W - MR) - ML - rightW - 6);
             if (leftParts.length) {
-                doc.text(leftParts.join('  '), ML, FOOTER_Y);
+                doc.text(truncateForWidth(leftParts.join('  '), leftMaxW), ML, FOOTER_Y);
             }
-            if (cfgShowPageNum) {
-                doc.text(`Página ${num}`, PAGE_W - MR, FOOTER_Y, { align: 'right' });
+            if (rightText) {
+                doc.text(rightText, PAGE_W - MR, FOOTER_Y, { align: 'right' });
             }
             setBlack();
         }
@@ -244,6 +279,16 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         function drawHeader() {
             if (!cfgShowHeader) { headerH = cy; return; }
             let infoX = ML;
+            const contactItems = [];
+            if (showPhone && profPhone) contactItems.push(`Tel: ${profPhone}`);
+            if (showEmail && profEmail) contactItems.push(profEmail);
+            if (showSocial && profWhatsapp) contactItems.push(`WhatsApp: ${profWhatsapp}`);
+            if (showSocial && profInstagram) contactItems.push(`Instagram: ${profInstagram}`);
+            if (showSocial && profFacebook) contactItems.push(`Facebook: ${profFacebook}`);
+            if (showSocial && profX) contactItems.push(`X: ${profX}`);
+            if (showSocial && profYoutube) contactItems.push(`YouTube: ${profYoutube}`);
+            const contactColW = contactItems.length ? 54 : 0;
+            const infoRightLimit = contactItems.length ? (PAGE_W - MR - contactColW - 3) : (PAGE_W - MR);
 
             // Logo/foto del profesional (match: .pvh-logo → max-height:68px ≈ 18mm)
             if (profLogoB64 && profLogoB64 !== instLogoB64) {
@@ -260,34 +305,73 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
 
             // (match: .pvh-name 14pt bold accent)
             let iy = cy + 5;
-            if (profName) {
+            if (profDisplayName) {
                 doc.setFontSize(14);
                 doc.setFont(mainFont, 'bold');
                 setAccent();
-                doc.text('Estudio realizado por: ' + profName, infoX, iy);
-                iy += 5.5;
+                const nameLines = doc.splitTextToSize('Estudio realizado por: ' + profDisplayName, Math.max(25, infoRightLimit - infoX));
+                doc.text(nameLines, infoX, iy);
+                iy += (nameLines.length * 5.2);
             }
-            // (match: .pvh-spec 10pt italic #444)
-            const specMatParts = [];
-            if (especialidad) specMatParts.push(especialidad);
-            if (matricula) specMatParts.push('Mat. ' + matricula);
-            if (specMatParts.length) {
+            if (matricula) {
                 doc.setFontSize(10);
                 doc.setFont(mainFont, 'italic');
                 setGray(68); // #444
-                doc.text(specMatParts.join(' • '), infoX, iy);
+                doc.text('Mat. ' + matricula, infoX, iy);
                 iy += 4.5;
+            }
+            if (specialtyBadges.length) {
+                let bx = infoX;
+                let by = iy;
+                const badgeH = 5;
+                const maxX = infoRightLimit;
+                doc.setFont(mainFont, 'normal');
+                doc.setFontSize(8.2);
+                for (const badgeRaw of specialtyBadges) {
+                    const txt = String(badgeRaw || '').trim();
+                    if (!txt) continue;
+                    const txtW = doc.getTextWidth(txt);
+                    const badgeW = Math.min(45, txtW + 4.2);
+                    if (bx + badgeW > maxX) {
+                        bx = infoX;
+                        by += badgeH + 1.6;
+                    }
+                    doc.setFillColor(241, 245, 249);
+                    doc.setDrawColor(203, 213, 225);
+                    doc.setLineWidth(0.2);
+                    doc.roundedRect(bx, by - 3.4, badgeW, badgeH, 1.6, 1.6, 'FD');
+                    setGray(55);
+                    doc.text(truncateForWidth(txt, badgeW - 2.2), bx + 1.1, by);
+                    bx += badgeW + 1.8;
+                }
+                iy = by + badgeH + 1.2;
             }
             // (match: .pvh-inst 9.5pt italic #333)
             if (institutionName) {
                 doc.setFontSize(9.5);
                 doc.setFont(mainFont, 'italic');
                 setGray(51); // #333
-                doc.text(institutionName, infoX, iy);
+                const instLines = doc.splitTextToSize(institutionName, Math.max(25, infoRightLimit - infoX));
+                doc.text(instLines, infoX, iy);
                 iy += 4;
             }
 
-            cy = Math.max(iy, profLogoB64 ? cy + 20 : iy) + 3;
+            let contactEndY = cy + 2;
+            if (contactItems.length) {
+                const cx = PAGE_W - MR - contactColW;
+                let cY = cy + 4;
+                doc.setFontSize(8);
+                doc.setFont(mainFont, 'normal');
+                setGray(68);
+                for (const item of contactItems.slice(0, 7)) {
+                    const line = truncateForWidth(item, contactColW);
+                    doc.text(line, cx, cY);
+                    cY += 3.8;
+                }
+                contactEndY = cY;
+            }
+
+            cy = Math.max(iy, profLogoB64 ? cy + 20 : iy, contactEndY) + 3;
             // (match: .preview-header border-bottom 2px solid accent)
             doc.setDrawColor(accent.r, accent.g, accent.b);
             doc.setLineWidth(0.6);
@@ -744,7 +828,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                 doc.setFontSize(10);
                 doc.setFont(mainFont, 'bold');
                 setBlack();
-                doc.text(profName, sigCenterX, cy, { align: 'center' });
+                doc.text(profDisplayName || profName, sigCenterX, cy, { align: 'center' });
                 cy += 4;
             }
             // Matrícula (match: .pvsig-mat 9pt #555)

@@ -5,7 +5,12 @@ window.emailFromPreview = async function () {
     const config   = (await _pdfPreviewSafeGet('pdf_config', {})) || {};
     const profData = (await _pdfPreviewSafeGet('prof_data', {})) || {};
     const activePro = config.activeProfessional || null;
-    const profName  = activePro?.nombre || profData.nombre || 'Profesional';
+    const rawProfName = activePro?.nombre || profData.nombre || 'Profesional';
+    const profSexo = activePro?.sexo || profData.sexo || '';
+    const titleMatch = String(rawProfName).match(/^(Dra?\.?\s*)/i);
+    const profTitle = profSexo === 'F' ? 'Dra.' : profSexo === 'M' ? 'Dr.' : (titleMatch && /^dra/i.test(titleMatch[1]) ? 'Dra.' : 'Dr.');
+    const profBaseName = String(rawProfName).replace(/^(Dra?\.?\s*)/i, '').trim();
+    const profDisplay = `${profTitle} ${profBaseName || rawProfName}`.trim();
     const patientName = config.patientName || '';
     const studyType   = config.studyType   || 'Informe médico';
     const reportNum   = config.reportNum   || '';
@@ -47,7 +52,7 @@ window.emailFromPreview = async function () {
         <hr style="border:none;border-top:1px solid #ddd;margin:16px 0;">
         <p style="font-size:13px;color:#666;margin:0;line-height:1.5;text-transform:uppercase;">
             Atentamente,<br>
-            <strong>${_escHtml(profName).toUpperCase()}</strong><br>
+            <strong>${_escHtml(profDisplay).toUpperCase()}</strong><br>
             ${_escHtml(wpName).toUpperCase()}
         </p>
     </div>
@@ -80,7 +85,7 @@ window.emailFromPreview = async function () {
     overlay.classList.add('active');
 
     // Guardar datos para el envío
-    window._emailPendingData = { subject, htmlBody, studyType, studyDate, profName, patientName };
+    window._emailPendingData = { subject, htmlBody, studyType, studyDate, profName: profDisplay, patientName };
 };
 
 function _escHtml(s) {

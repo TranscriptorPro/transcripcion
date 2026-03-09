@@ -285,6 +285,7 @@ window.initModals = function () {
                 const chk = (id, def) => document.getElementById(id)?.checked ?? def;
                 const config = {
                     studyType: val('pdfStudyType'), studyDate: val('pdfStudyDate'),
+                    reportNum: val('pdfReportNumber'),
                     studyTime: val('pdfStudyTime'), studyReason: val('pdfStudyReason'),
                     referringDoctor: val('pdfReferringDoctor'), equipment: val('pdfEquipment'),
                     technique: val('pdfTechnique'), patientName: val('pdfPatientName'),
@@ -300,6 +301,7 @@ window.initModals = function () {
                     showQR: chk('pdfShowQR', false), showSignLine: chk('pdfShowSignLine', true),
                     showSignName: chk('pdfShowSignName', true), showSignMatricula: chk('pdfShowSignMatricula', true),
                     showSignImage: chk('pdfShowSignImage', false),
+                    showPhone: chk('pdfShowPhone', true), showEmail: chk('pdfShowEmail', true), showSocial: chk('pdfShowSocial', false),
                     logoSizePx: parseInt(document.getElementById('pdfLogoSize')?.value || '60'),
                     firmaSizePx: parseInt(document.getElementById('pdfFirmaSize')?.value || '60'),
                     footerText: val('pdfFooterText'), selectedWorkplace: val('pdfWorkplace'),
@@ -310,6 +312,17 @@ window.initModals = function () {
                 if (existing.activeProfessional)                       config.activeProfessional      = existing.activeProfessional;
                 if (existing.activeProfessionalIndex !== undefined)     config.activeProfessionalIndex = existing.activeProfessionalIndex;
                 if (existing.activeWorkplaceIndex    !== undefined)     config.activeWorkplaceIndex    = existing.activeWorkplaceIndex;
+                if (config.activeProfessional && typeof config.activeProfessional === 'object') {
+                    const pName = (val('pdfProfName') || '').trim();
+                    const pMat = (val('pdfProfMatricula') || '').trim();
+                    const pEsp = (val('pdfProfEspecialidad') || '').trim();
+                    const cEl = document.getElementById('pdfHeaderColor');
+                    const hColor = cEl?.dataset?.selectedColor || cEl?.value || '';
+                    if (pName) config.activeProfessional.nombre = pName;
+                    if (pMat) config.activeProfessional.matricula = pMat;
+                    if (pEsp) config.activeProfessional.especialidades = pEsp;
+                    if (hColor) config.activeProfessional.headerColor = hColor;
+                }
                 window._pdfConfigCache = config;
                 if (typeof appDB !== 'undefined') appDB.set('pdf_config', config);
                 localStorage.setItem('pdf_config', JSON.stringify(config));

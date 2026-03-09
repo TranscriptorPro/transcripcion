@@ -223,6 +223,7 @@ window.savePdfConfiguration = function () {
     const config = {
         studyType: val('pdfStudyType'),
         selectedTemplate: window.selectedTemplate || '',
+        reportNum: val('pdfReportNumber'),
         studyDate: val('pdfStudyDate'),
         studyTime: val('pdfStudyTime'),
         studyReason: val('pdfStudyReason'),
@@ -252,6 +253,9 @@ window.savePdfConfiguration = function () {
         showSignName: chk('pdfShowSignName', true),
         showSignMatricula: chk('pdfShowSignMatricula', true),
         showSignImage: chk('pdfShowSignImage', true),
+        showPhone: chk('pdfShowPhone', true),
+        showEmail: chk('pdfShowEmail', true),
+        showSocial: chk('pdfShowSocial', false),
         logoSizePx: parseInt(document.getElementById('pdfLogoSize')?.value || '60'),
         firmaSizePx: parseInt(document.getElementById('pdfFirmaSize')?.value || '60'),
         footerText: val('pdfFooterText'),
@@ -265,6 +269,19 @@ window.savePdfConfiguration = function () {
     if (existing.activeProfessional)      config.activeProfessional      = existing.activeProfessional;
     if (existing.activeProfessionalIndex !== undefined) config.activeProfessionalIndex = existing.activeProfessionalIndex;
     if (existing.activeWorkplaceIndex    !== undefined) config.activeWorkplaceIndex    = existing.activeWorkplaceIndex;
+
+    // Si hay profesional activo, sincronizar los campos visibles del modal para evitar drift
+    if (config.activeProfessional && typeof config.activeProfessional === 'object') {
+        const profName = (val('pdfProfName') || '').trim();
+        const profMat = (val('pdfProfMatricula') || '').trim();
+        const profEsp = (val('pdfProfEspecialidad') || '').trim();
+        const colEl = document.getElementById('pdfHeaderColor');
+        const hdrColor = colEl?.dataset?.selectedColor || colEl?.value || '';
+        if (profName) config.activeProfessional.nombre = profName;
+        if (profMat) config.activeProfessional.matricula = profMat;
+        if (profEsp) config.activeProfessional.especialidades = profEsp;
+        if (hdrColor) config.activeProfessional.headerColor = hdrColor;
+    }
 
     window._pdfConfigCache = config;
     if (typeof appDB !== 'undefined') appDB.set('pdf_config', config);
@@ -287,6 +304,7 @@ window.loadPdfConfiguration = async function () {
     const setChk = (id, v, def) => { const el = document.getElementById(id); if (el) el.checked = (v !== undefined) ? v : def; };
 
     set('pdfStudyType', config.studyType);
+    set('pdfReportNumber', config.reportNum);
     set('pdfStudyDate', config.studyDate);
     set('pdfStudyTime', config.studyTime);
     set('pdfStudyReason', config.studyReason);
