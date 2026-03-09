@@ -7,15 +7,12 @@
     'use strict';
 
     const SETTINGS_PREFS_KEY = 'settings_prefs';
-    const QUICK_PROFILES_KEY = 'quick_profiles';
 
     // ─── In-memory write-through caches ─────────────────────────────────
     let _settingsPrefsCache = null;
-    let _quickProfilesCache = null;
     // Init caches from appDB at module load
     if (typeof appDB !== 'undefined') {
         appDB.get(SETTINGS_PREFS_KEY).then(v => { if (v !== undefined) _settingsPrefsCache = v; });
-        appDB.get(QUICK_PROFILES_KEY).then(v => { if (v !== undefined) _quickProfilesCache = v; });
     }
 
     // ─── Default preferences ─────────────────────────────────────────
@@ -107,146 +104,25 @@
 
     // ─── 1. Account data (read-only) ─────────────────────────────────
     function _populateAccountData() {
-        const profData = window._profDataCache || JSON.parse(localStorage.getItem('prof_data') || '{}');
-        const el = (id) => document.getElementById(id);
-
-        // B2: En modo clínica, mostrar profesional activo con dropdown para cambiar
-        const isClinic = typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.canGenerateApps;
-        if (isClinic) {
-            _populateClinicAccountSelector(el, profData);
-        } else {
-            if (el('settingsProfName')) el('settingsProfName').textContent = profData.nombre || '—';
-            if (el('settingsProfMatricula')) el('settingsProfMatricula').textContent = profData.matricula || '—';
-            if (el('settingsProfEspecialidad')) el('settingsProfEspecialidad').textContent = profData.especialidad || '—';
-        }
-
-        const planEl = el('settingsProfPlan');
-        if (planEl && typeof CLIENT_CONFIG !== 'undefined') {
-            const planNames = { ADMIN: 'Administrador', PRO: 'Profesional PRO', TRIAL: 'Prueba', NORMAL: 'Básico' };
-            planEl.textContent = planNames[CLIENT_CONFIG.type] || CLIENT_CONFIG.type || '—';
-        }
-    }
-
-    // B2: Selector de profesional activo para modo CLINIC
-    function _populateClinicAccountSelector(el, profData) {
-        var wpProfiles = [];
-        try { wpProfiles = JSON.parse(localStorage.getItem('workplace_profiles') || '[]'); } catch(_) {}
-        var pdfCfg = {};
-        try { pdfCfg = JSON.parse(localStorage.getItem('pdf_config') || '{}'); } catch(_) {}
-        var wpIdx = pdfCfg.activeWorkplaceIndex || 0;
-        var wp = wpProfiles[Number(wpIdx)];
-        var profs = (wp && wp.professionals) ? wp.professionals : [];
-        var activeProfIdx = pdfCfg.activeProfessionalIndex || 0;
-        var activeProf = profs[activeProfIdx] || {};
-
-        if (el('settingsProfName')) el('settingsProfName').textContent = activeProf.nombre || profData.nombre || '—';
-        if (el('settingsProfMatricula')) el('settingsProfMatricula').textContent = activeProf.matricula || profData.matricula || '—';
-        var espRaw = activeProf.especialidades || profData.especialidad || '';
-        if (el('settingsProfEspecialidad')) el('settingsProfEspecialidad').textContent = Array.isArray(espRaw) ? espRaw.filter(function(e){return e&&e!=='Todas';}).join(' / ') : (espRaw || '—');
-
-        // Inyectar dropdown si hay >1 profesional
-        if (profs.length > 1) {
-            var container = el('settingsProfName');
-            if (container && !document.getElementById('settingsClinicProfSelect')) {
-                var select = document.createElement('select');
-                select.id = 'settingsClinicProfSelect';
-                select.style.cssText = 'margin-left:8px;padding:2px 4px;font-size:0.85rem;border-radius:4px;border:1px solid var(--border-color);';
-                profs.forEach(function(p, i) {
-                    var opt = document.createElement('option');
-                    opt.value = i;
-                    opt.textContent = p.nombre || ('Profesional ' + (i + 1));
-                    if (i === activeProfIdx) opt.selected = true;
-                    select.appendChild(opt);
-                });
-                select.addEventListener('change', function() {
-                    var idx = parseInt(select.value);
-                    if (typeof loadProfessionalProfile === 'function') {
-                        loadProfessionalProfile(wpIdx, idx);
-                    }
-                    populateSettingsModal();
-                });
-                container.parentNode.appendChild(select);
-            }
+        const utils = window.SettingsAccountUtils || {};
+        if (typeof utils.populateAccountData === 'function') {
+            utils.populateAccountData({ onProfileChanged: () => populateSettingsModal() });
         }
     }
 
     // ─── 2. API Key ──────────────────────────────────────────────────
     function _initApiKeySection() {
-        const saveBtn = document.getElementById('settingsSaveApiKey');
-        const testBtn = document.getElementById('settingsTestApiKey');
-        const input = document.getElementById('settingsApiKeyInput');
-
-        if (saveBtn && input) {
-            saveBtn.addEventListener('click', () => {
-                const key = input.value.trim();
-                if (!key) {
-                    if (typeof showToast === 'function') showToast('Ingresá una API key válida', 'error');
-                    return;
-                }
-                localStorage.setItem('groq_api_key', key);
-                if (typeof appDB !== 'undefined') appDB.set('groq_api_key', key);
-                window.GROQ_API_KEY = key;
-                if (typeof updateApiStatus === 'function') updateApiStatus(key);
-                _setApiDot(true);
-                _populateApiKeyStatus();
-                if (typeof showToast === 'function') showToast('✅ API Key guardada', 'success');
-            });
-        }
-
-        if (testBtn && input) {
-            testBtn.addEventListener('click', async () => {
-                const key = input.value.trim() || window.GROQ_API_KEY || localStorage.getItem('groq_api_key');
-                if (!key) {
-                    if (typeof showToast === 'function') showToast('Ingresá una API key primero', 'error');
-                    return;
-                }
-                const resultEl = document.getElementById('settingsApiTestResult');
-                if (resultEl) {
-                    resultEl.style.display = 'block';
-                    resultEl.innerHTML = '<span style="color: var(--text-secondary);">⏳ Probando conexión...</span>';
-                }
-                try {
-                    const resp = await fetch('https://api.groq.com/openai/v1/models', {
-                        headers: { 'Authorization': 'Bearer ' + key }
-                    });
-                    if (resp.ok) {
-                        if (resultEl) resultEl.innerHTML = '<span style="color: #22c55e; font-weight: 600;">✅ Conexión exitosa</span>';
-                        _setApiDot(true);
-                        if (typeof showToast === 'function') showToast('✅ Conexión con Groq OK', 'success');
-                    } else {
-                        if (resultEl) resultEl.innerHTML = '<span style="color: #ef4444; font-weight: 600;">❌ Key inválida o expirada</span>';
-                        _setApiDot(false);
-                    }
-                } catch (err) {
-                    if (resultEl) resultEl.innerHTML = '<span style="color: #ef4444;">❌ Error de red</span>';
-                    _setApiDot(false);
-                }
-            });
+        const utils = window.SettingsApiUtils || {};
+        if (typeof utils.initApiKeySection === 'function') {
+            utils.initApiKeySection();
         }
     }
 
     function _populateApiKeyStatus() {
-        const key = window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '';
-        const input = document.getElementById('settingsApiKeyInput');
-        if (input && key) input.value = key;
-
-        const statusEl = document.getElementById('settingsApiStatus');
-        if (statusEl) {
-            if (key) {
-                statusEl.className = 'api-status connected';
-                statusEl.innerHTML = '<span>✅ Configurada</span>';
-            } else {
-                statusEl.className = 'api-status disconnected';
-                statusEl.innerHTML = '<span>❌ No configurada</span>';
-            }
+        const utils = window.SettingsApiUtils || {};
+        if (typeof utils.populateApiKeyStatus === 'function') {
+            utils.populateApiKeyStatus();
         }
-        _setApiDot(!!key);
-    }
-
-    function _setApiDot(ok) {
-        const dot = document.getElementById('settingsApiDot');
-        if (!dot) return;
-        dot.className = 'stg-status ' + (ok ? 'ok' : 'fail');
     }
 
     // ─── 3. Workplace ────────────────────────────────────────────────
@@ -265,99 +141,18 @@
     }
 
     // ─── 4. Quick Profiles ───────────────────────────────────────────
-    function _getQuickProfiles() {
-        if (_quickProfilesCache !== null) return _quickProfilesCache;
-        try { return JSON.parse(localStorage.getItem(QUICK_PROFILES_KEY) || '[]'); }
-        catch (_) { return []; }
-    }
-    function _saveQuickProfiles(arr) {
-        _quickProfilesCache = arr;
-        if (typeof appDB !== 'undefined') appDB.set(QUICK_PROFILES_KEY, arr);
-        localStorage.setItem(QUICK_PROFILES_KEY, JSON.stringify(arr));
-    }
-
     function _initQuickProfiles() {
-        const saveBtn = document.getElementById('settingsSaveProfile');
-        if (saveBtn) {
-            saveBtn.addEventListener('click', () => {
-                const wpName = localStorage.getItem('current_workplace_name') || 'Sin lugar';
-                const template = window.selectedTemplate || 'generico';
-                const mode = window.currentMode || 'pro';
-                const profileName = wpName + ' — ' + mode.toUpperCase();
-
-                const profiles = _getQuickProfiles();
-                profiles.push({
-                    id: 'qp_' + Date.now(),
-                    name: profileName,
-                    workplace: wpName,
-                    template: template,
-                    mode: mode,
-                    created: new Date().toISOString()
-                });
-                _saveQuickProfiles(profiles);
-                _populateQuickProfiles();
-                if (typeof showToast === 'function') showToast('⚡ Perfil guardado: ' + profileName, 'success');
-            });
+        const utils = window.SettingsQuickProfilesUtils || {};
+        if (typeof utils.initQuickProfiles === 'function') {
+            utils.initQuickProfiles({ onProfilesChanged: () => _populateQuickProfiles() });
         }
     }
 
     function _populateQuickProfiles() {
-        const container = document.getElementById('settingsQuickProfiles');
-        if (!container) return;
-
-        const profiles = _getQuickProfiles();
-        if (profiles.length === 0) {
-            container.innerHTML = '<p class="stg-hint" style="text-align:center; opacity:0.6;">No hay perfiles guardados aún</p>';
-            return;
+        const utils = window.SettingsQuickProfilesUtils || {};
+        if (typeof utils.populateQuickProfiles === 'function') {
+            utils.populateQuickProfiles();
         }
-
-        container.innerHTML = profiles.map(p => `
-            <div class="stg-profile-item" data-profile-id="${p.id}">
-                <span class="stg-profile-name">⚡ ${p.name}</span>
-                <span class="stg-profile-meta">${p.mode.toUpperCase()}</span>
-                <button class="stg-profile-del" data-del="${p.id}" title="Eliminar perfil">✕</button>
-            </div>
-        `).join('');
-
-        // Click to load profile
-        container.querySelectorAll('.stg-profile-item').forEach(item => {
-            item.addEventListener('click', (e) => {
-                if (e.target.classList.contains('stg-profile-del')) return;
-                const id = item.dataset.profileId;
-                const profile = profiles.find(p => p.id === id);
-                if (!profile) return;
-                _loadQuickProfile(profile);
-            });
-        });
-
-        // Delete buttons
-        container.querySelectorAll('.stg-profile-del').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const id = btn.dataset.del;
-                const remaining = profiles.filter(p => p.id !== id);
-                _saveQuickProfiles(remaining);
-                _populateQuickProfiles();
-                if (typeof showToast === 'function') showToast('Perfil eliminado', 'success');
-            });
-        });
-    }
-
-    function _loadQuickProfile(profile) {
-        if (profile.mode && typeof setMode === 'function') {
-            setMode(profile.mode, true);
-            window._lastProfileTypeCache = profile.mode;
-            if (typeof appDB !== 'undefined') appDB.set('last_profile_type', profile.mode);
-            localStorage.setItem('last_profile_type', profile.mode);
-        }
-        if (profile.template) {
-            window.selectedTemplate = profile.template;
-            const sel = document.getElementById('templateSelect');
-            if (sel) sel.value = profile.template;
-        }
-        const overlay = document.getElementById('settingsModalOverlay');
-        if (overlay) overlay.classList.remove('active');
-        if (typeof showToast === 'function') showToast('⚡ Perfil cargado: ' + profile.name, 'success');
     }
 
     // ─── 5. PDF Config link ──────────────────────────────────────────
@@ -418,57 +213,16 @@
     }
 
     function _initToolsLinks() {
-        const historyBtn = document.getElementById('settingsOpenHistory');
-        const dictBtn = document.getElementById('settingsOpenDictionary');
-        const shortcutsBtn = document.getElementById('settingsOpenShortcuts');
-        const overlay = document.getElementById('settingsModalOverlay');
-
-        // A2: Función para reabrir settings al cerrar sub-modal
-        const reopenSettings = () => {
-            if (overlay) {
-                populateSettingsModal();
-                overlay.classList.add('active');
-            }
-        };
-
-        if (historyBtn) {
-            historyBtn.addEventListener('click', () => {
-                if (overlay) overlay.classList.remove('active');
-                const histOverlay = document.getElementById('reportHistoryOverlay');
-                if (histOverlay) {
-                    histOverlay.classList.add('active');
-                    _watchForClose(histOverlay, reopenSettings);
-                }
-            });
-        }
-        if (dictBtn) {
-            dictBtn.addEventListener('click', () => {
-                if (overlay) overlay.classList.remove('active');
-                // A3: Abrir diccionario sin validar editor, directo a tab "dictionary"
-                if (typeof window.openMedDictModal === 'function') {
-                    window.openMedDictModal({ skipEditorCheck: true, defaultTab: 'dictionary' });
-                } else {
-                    const dictModal = document.getElementById('medDictModal');
-                    if (dictModal) dictModal.classList.add('active');
-                }
-                const dictModal = document.getElementById('medDictModal');
-                if (dictModal) _watchForClose(dictModal, reopenSettings);
-            });
-        }
-        if (shortcutsBtn) {
-            shortcutsBtn.addEventListener('click', () => {
-                if (overlay) overlay.classList.remove('active');
-                // A4: Abrir help modal directamente en tab "Atajos"
-                const helpModal = document.getElementById('helpModal');
-                if (helpModal) {
-                    document.querySelectorAll('.help-tab').forEach(t => {
-                        t.classList.toggle('active', t.dataset.helpTab === 'shortcuts');
-                    });
-                    document.querySelectorAll('.help-tab-content').forEach(p => p.classList.remove('active'));
-                    const panel = document.querySelector('[data-help-panel="shortcuts"]');
-                    if (panel) panel.classList.add('active');
-                    helpModal.classList.add('active');
-                    _watchForClose(helpModal, reopenSettings);
+        const utils = window.SettingsToolsLinksUtils || {};
+        if (typeof utils.initToolsLinks === 'function') {
+            utils.initToolsLinks({
+                watchForClose: _watchForClose,
+                repopulateAndOpenSettings: () => {
+                    const overlay = document.getElementById('settingsModalOverlay');
+                    if (overlay) {
+                        populateSettingsModal();
+                        overlay.classList.add('active');
+                    }
                 }
             });
         }
