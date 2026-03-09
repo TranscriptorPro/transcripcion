@@ -113,6 +113,7 @@ const load = (rel) => {
 
 load('src/js/utils/dom.js');
 load('src/js/config/templatesCatalog.js');
+load('src/js/config/templatesCatalogPart2.js');
 load('src/js/config/templates.js');
 load('src/js/features/structurer.js');
 load('src/js/features/patientRegistry.js');
