@@ -1836,6 +1836,20 @@
                     Grabar o Subir
                 </div>
 
+                <div id="proInputSourceSwitch" style="display:none; margin-bottom:0.75rem; padding:0.55rem; border:1px solid var(--border); border-radius:10px; background:var(--bg-hover);">
+                    <div style="font-size:0.72rem; color:var(--text-secondary); margin-bottom:0.45rem;">Fuente para estructuración (Modo Pro)</div>
+                    <div style="display:flex; align-items:center; justify-content:center; gap:0.6rem;">
+                        <span style="font-size:0.8rem;">🎙️ Audio</span>
+                        <label class="pro-toggle-switch" style="margin:0;">
+                            <input type="checkbox" id="proSourceToggle">
+                            <span class="pro-toggle-slider"></span>
+                        </label>
+                        <span style="font-size:0.8rem;">📝 Texto</span>
+                    </div>
+                </div>
+
+                <div id="audioSourcePanel">
+
                 <button class="btn btn-primary btn-full" id="recordBtn">
                     <span id="recordBtnIcon" class="btn-icon">🎙️</span>
                     <span id="recordBtnText">Grabar Audio</span>
@@ -1942,6 +1956,19 @@
                     Transcribir y Estructurar
                     <span class="pro-badge-sm">Pro</span>
                 </button>
+                </div>
+
+                <div id="textSourcePanel" style="display:none; margin-top:0.2rem;">
+                    <label class="sidebar-label" style="margin-bottom:0.35rem;">Texto a estructurar</label>
+                    <textarea id="proTextInput" class="toolbar-input" rows="7" style="width:100%; resize:vertical; min-height:140px;"
+                        placeholder="Pegá aquí el texto médico, o cargá un archivo .txt/.md/.rtf"></textarea>
+                    <input type="file" id="proTextFileInput" accept=".txt,.md,.rtf,.csv,.json,text/plain,text/markdown,text/rtf" style="display:none;">
+                    <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+                        <button class="btn btn-secondary" id="btnAttachTextFile" style="flex:1;">📎 Adjuntar texto</button>
+                        <button class="btn btn-primary" id="btnStructureTextPro" style="flex:1;">✨ Estructurar texto</button>
+                    </div>
+                    <small id="proTextFileName" style="display:block; margin-top:0.35rem; color:var(--text-secondary);"></small>
+                </div>
             </div>
 
             <!-- Wizard: Template Selection (Contextual) -->
@@ -2351,6 +2378,7 @@
         <script src="src/js/features/transcriptor.js"></script>
         <script src="src/js/features/structurerCoreUtils.js"></script>
         <script src="src/js/features/structurer.js"></script>
+        <script src="src/js/features/proSidebarSourceMode.js"></script>
         <script src="src/js/features/medDictionary.js"></script>
         <script src="src/js/features/contact.js"></script>
         <script src="src/js/features/diagnostic.js"></script>

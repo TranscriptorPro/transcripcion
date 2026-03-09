@@ -136,6 +136,10 @@ window.updateButtonsVisibility = function (state) {
     if (btnMedicalCheck) {
         btnMedicalCheck.style.display = isTranscribed ? '' : 'none';
     }
+
+    if (typeof window.updateProSourceModeUI === 'function') {
+        window.updateProSourceModeUI();
+    }
 };
 
 const proModeToggle = document.getElementById('proModeToggle');
@@ -180,6 +184,9 @@ function setMode(mode, notify = false) {
         updateButtonsVisibility(window.appState || 'IDLE');
     }
     updateUIByMode();
+    if (typeof window.updateProSourceModeUI === 'function') {
+        window.updateProSourceModeUI();
+    }
 }
 
 function initializeMode() {

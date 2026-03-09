@@ -311,6 +311,8 @@ function _showClientOnboarding() {
 
             if (typeof appDB !== 'undefined') appDB.set('onboarding_accepted', 'true');
             localStorage.setItem('onboarding_accepted', 'true');
+            if (typeof appDB !== 'undefined') appDB.set('onboarding_done', true);
+            localStorage.setItem('onboarding_done', 'true');
 
             _launchConfetti();
 

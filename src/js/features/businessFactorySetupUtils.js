@@ -167,12 +167,18 @@ window.handleFactorySetupCore = async function (medicoId) {
                     } catch(_) {}
                     if (Array.isArray(clinicProfs) && clinicProfs.length > 1) {
                         workplaceProfiles[0].professionals = clinicProfs.map(function(p) {
+                            const smp = (typeof p.socialMedia === 'object' && p.socialMedia) ? p.socialMedia : {};
                             return {
                                 nombre:         p.nombre        || '',
                                 matricula:      p.matricula     || '',
                                 especialidades: p.especialidad  || p.especialidades || '',
                                 telefono:       p.telefono      || '',
                                 email:          p.email         || '',
+                                whatsapp:       p.whatsapp      || smp.whatsapp || smp.WhatsApp || '',
+                                instagram:      p.instagram     || smp.instagram || smp.Instagram || '',
+                                facebook:       p.facebook      || smp.facebook || smp.Facebook || '',
+                                x:              p.x             || smp.x || smp.X || smp.twitter || smp.Twitter || '',
+                                youtube:        p.youtube       || smp.youtube || smp.YouTube || '',
                                 firma:          p.firma         || '',
                                 logo:           p.logo          || '',
                                 socialMedia:    p.socialMedia   || null,
