@@ -12,6 +12,41 @@ window.buildWhisperPrompt = buildWhisperPrompt;
 
 window._shouldAutoStructure = false;
 
+function _isAdminTranscriptorContext() {
+    return typeof CLIENT_CONFIG === 'undefined' || CLIENT_CONFIG.type === 'ADMIN';
+}
+
+function _showApiKeyGuidance(message) {
+    const msg = message || 'Error de API Key.';
+    const isAdmin = _isAdminTranscriptorContext();
+
+    if (typeof showToastWithAction === 'function') {
+        if (isAdmin) {
+            showToastWithAction(msg, 'error', '⚙️ Configurar', function () {
+                var overlay = document.getElementById('settingsModalOverlay');
+                if (overlay) {
+                    if (typeof populateSettingsModal === 'function') populateSettingsModal();
+                    overlay.classList.add('active');
+                }
+            }, 7000);
+        } else {
+            showToastWithAction('🔑 No pudimos validar tu API Key. Te ayudamos desde soporte.', 'warning', '📧 Contactar', function () {
+                if (typeof window.openContactModal === 'function') {
+                    window.openContactModal('Problema con la API Key');
+                } else {
+                    var btnContacto = document.getElementById('btnContacto');
+                    if (btnContacto) btnContacto.click();
+                }
+            }, 7000);
+        }
+        return;
+    }
+
+    if (typeof showToast === 'function') {
+        showToast(isAdmin ? msg : '🔑 Error de API Key. Contactá a soporte.', 'error');
+    }
+}
+
 const transcribeAndStructureBtn = document.getElementById('transcribeAndStructureBtn');
 if (transcribeAndStructureBtn) {
     transcribeAndStructureBtn.addEventListener('click', () => {
@@ -29,14 +64,14 @@ if (transcribeBtn) {
         window._shouldAutoStructure = false;
 
         if (!window.GROQ_API_KEY) {
-            showToast('⚠️ Configura tu API Key de Groq primero', 'error');
-            if (apiKeyInput) apiKeyInput.focus();
+            _showApiKeyGuidance('⚠️ Configurá tu API Key de Groq primero');
+            if (_isAdminTranscriptorContext() && apiKeyInput) apiKeyInput.focus();
             return;
         }
 
         if (!window.GROQ_API_KEY.startsWith('gsk_')) {
-            showToast('❌ API Key inválida (debe empezar con gsk_)', 'error');
-            if (apiKeyInput) apiKeyInput.focus();
+            _showApiKeyGuidance('❌ API Key inválida (debe empezar con gsk_)');
+            if (_isAdminTranscriptorContext() && apiKeyInput) apiKeyInput.focus();
             return;
         }
 
@@ -227,7 +262,12 @@ if (transcribeBtn) {
 
         } catch (generalError) {
             console.error('Error general:', generalError);
-            showToast('Error general en el proceso: ' + (generalError?.message || 'Error desconocido'), 'error');
+            const errMsg = String(generalError?.message || '');
+            if (errMsg.includes('API Key') || errMsg.includes('401')) {
+                _showApiKeyGuidance('🔑 Problema de autenticación con la API Key.');
+            } else {
+                showToast('Error general en el proceso: ' + (generalError?.message || 'Error desconocido'), 'error');
+            }
             if (window.transcriptions && window.transcriptions.length > 0) {
                 if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
             }
@@ -416,8 +456,16 @@ function classifyTranscriptionError(errMsg) {
             suggestions: ['Dividir el audio en partes más cortas', 'Comprimir el archivo antes de subirlo'] };
     }
     if (msg.includes('api key') || msg.includes('401') || msg.includes('inválida o expirada') || status === 401) {
-        return { type: 'auth', userMsg: 'API Key inválida o expirada. Verificá tu clave en Configuración.',
-            suggestions: ['Verificar que la clave comience con gsk_', 'Generar una nueva API Key en console.groq.com'] };
+        const isAdmin = _isAdminTranscriptorContext();
+        return {
+            type: 'auth',
+            userMsg: isAdmin
+                ? 'API Key inválida o expirada. Verificá tu clave en Configuración.'
+                : 'No pudimos validar la API Key. Contactá al soporte para ayudarte rápido.',
+            suggestions: isAdmin
+                ? ['Verificar que la clave comience con gsk_', 'Generar una nueva API Key en console.groq.com']
+                : ['Abrir Contacto desde Configuración', 'Elegir "Problema con la API Key"']
+        };
     }
     if (msg.includes('formato') || msg.includes('inválido') || msg.includes('corrupto') || msg.includes('400')) {
         return { type: 'format', userMsg: 'El archivo de audio no es compatible o está dañado.',
