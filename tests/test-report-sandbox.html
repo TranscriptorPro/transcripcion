@@ -377,6 +377,15 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 (function() {
   const $ = (id) => document.getElementById(id);
   const status = $('status');
+
+  window.addEventListener('error', (e) => {
+    const msg = (e && e.message) ? e.message : 'Error JS inesperado';
+    setStatus('Error JS: ' + msg, true);
+  });
+  window.addEventListener('unhandledrejection', (e) => {
+    const msg = e && e.reason ? (e.reason.message || String(e.reason)) : 'Promise rechazada';
+    setStatus('Error async: ' + msg, true);
+  });
   const today = new Date();
   $('studyDate').value = today.toISOString().slice(0, 10);
   $('studyTime').value = String(today.getHours()).padStart(2, '0') + ':' + String(today.getMinutes()).padStart(2, '0');
@@ -575,14 +584,28 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
     }
   }
 
+  function compactHtmlForInspector(html) {
+    if (!html) return '';
+    // Evita congelar la UI cuando hay imágenes base64 largas.
+    return html
+      .replace(/src="data:[^"]+"/g, 'src="[DATA_URL_OMITIDO]"')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+  }
+
   function renderAll() {
-    const html = generateHtmlDoc();
-    const txt = generateTxt();
-    const rtf = toRtf(txt);
-    $('htmlOut').textContent = html;
-    $('txtOut').textContent = txt + '\n\n----- RTF -----\n' + rtf.slice(0, 2000) + (rtf.length > 2000 ? '\n...[truncado para vista]...' : '');
-    renderIntoFrame(html);
-    setStatus('Render completo.');
+    try {
+      const html = generateHtmlDoc();
+      const txt = generateTxt();
+      const rtf = toRtf(txt);
+      $('htmlOut').textContent = compactHtmlForInspector(html);
+      $('txtOut').textContent = txt + '\n\n----- RTF -----\n' + rtf.slice(0, 2000) + (rtf.length > 2000 ? '\n...[truncado para vista]...' : '');
+      renderIntoFrame(html);
+      setStatus('Render completo.');
+    } catch (err) {
+      state.frameReady = false;
+      setStatus('Error al renderizar: ' + (err.message || err), true);
+    }
   }
 
   function setStatus(msg, err) {
@@ -743,6 +766,10 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
             height: img.naturalHeight || 0,
             kb: Math.round((file.size || 0) / 1024)
           };
+          if (meta.width <= 0 || meta.height <= 0) {
+            reject(new Error(label + ': la imagen no tiene dimensiones validas.'));
+            return;
+          }
           resolve({ dataUrl, meta, recommended: rec });
         };
         img.onerror = () => reject(new Error(label + ': no se pudo leer la imagen.'));
@@ -814,7 +841,7 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
       paintAssetPreview('instLogoPreview', state.instLogo);
       paintAssetMeta('instLogoMeta', state.instLogoMeta, ASSET_RECOMMENDED.instLogo);
       renderAll();
-      setStatus('Logo institucion cargado correctamente.');
+      setStatus('Logo institucion cargado correctamente (' + parsed.meta.width + 'x' + parsed.meta.height + ', ' + parsed.meta.kb + ' KB).');
     } catch (err) {
       setStatus(err.message || 'No se pudo cargar logo de institucion.', true);
     }
@@ -827,7 +854,7 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
       paintAssetPreview('proLogoPreview', state.proLogo);
       paintAssetMeta('proLogoMeta', state.proLogoMeta, ASSET_RECOMMENDED.proLogo);
       renderAll();
-      setStatus('Logo profesional cargado correctamente.');
+      setStatus('Logo profesional cargado correctamente (' + parsed.meta.width + 'x' + parsed.meta.height + ', ' + parsed.meta.kb + ' KB).');
     } catch (err) {
       setStatus(err.message || 'No se pudo cargar logo profesional.', true);
     }
@@ -840,7 +867,7 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
       paintAssetPreview('proSignPreview', state.sign);
       paintAssetMeta('proSignMeta', state.signMeta, ASSET_RECOMMENDED.sign);
       renderAll();
-      setStatus('Firma cargada correctamente.');
+      setStatus('Firma cargada correctamente (' + parsed.meta.width + 'x' + parsed.meta.height + ', ' + parsed.meta.kb + ' KB).');
     } catch (err) {
       setStatus(err.message || 'No se pudo cargar firma.', true);
     }
