@@ -36,6 +36,7 @@ const JS_FILES = [
     'src/js/core/audio.js',
     'src/js/features/editor.js',
     'src/js/features/editorDialogUtils.js',
+    'src/js/features/editorFieldModalUtils.js',
     'src/js/features/editorFormattingFindUtils.js',
     'src/js/features/editorSnapshotsUtils.js',
     'src/js/features/transcriptor.js',
