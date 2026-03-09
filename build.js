@@ -40,6 +40,7 @@ const JS_FILES = [
     'src/js/features/editorCopyPrintUtils.js',
     'src/js/features/editorDownloadCoreUtils.js',
     'src/js/features/editorDownloadFavoritesUtils.js',
+    'src/js/features/editorNormalTemplateUtils.js',
     'src/js/features/editorFormattingFindUtils.js',
     'src/js/features/editorSnapshotsUtils.js',
     'src/js/features/transcriptor.js',
