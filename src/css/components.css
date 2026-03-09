@@ -2097,30 +2097,42 @@
             position: relative;
         }
 
+        .fixed-tip-anchor.fixed-tip-anchor--button {
+            overflow: visible;
+        }
+
         .fixed-tip-btn {
             position: absolute;
-            top: 6px;
-            right: 6px;
-            width: 16px;
-            height: 16px;
-            border: 1px solid var(--border);
+            top: 4px;
+            right: 4px;
+            width: 14px;
+            height: 14px;
+            border: 1.5px solid #60a5fa;
             border-radius: 999px;
-            background: var(--bg-card);
-            color: var(--text-secondary);
-            font-size: 11px;
+            background: transparent;
+            color: #60a5fa;
+            font-size: 10px;
             font-weight: 700;
             line-height: 1;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            opacity: 0.92;
-            z-index: 5;
+            opacity: 0.88;
+            z-index: 8;
+            padding: 0;
+        }
+
+        .fixed-tip-anchor--button > .fixed-tip-btn {
+            top: -7px;
+            right: -7px;
         }
 
         .fixed-tip-btn:hover {
-            color: var(--primary);
-            border-color: var(--primary-light);
+            color: #38bdf8;
+            border-color: #38bdf8;
+            background: rgba(56, 189, 248, 0.08);
+            opacity: 1;
         }
 
         .fixed-tip-popover {

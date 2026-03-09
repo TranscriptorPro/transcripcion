@@ -83,7 +83,7 @@
     function getDensityProfile() {
         const type = detectUserType();
         if (type === 'ADMIN') {
-            return { type, maxTips: 220, levels: new Set(['high', 'medium', 'low']) };
+            return { type, maxTips: 90, levels: new Set(['high', 'medium']) };
         }
         if (type === 'PRO' || type === 'CLINIC' || type === 'GIFT') {
             return { type, maxTips: 120, levels: new Set(['high', 'medium']) };
@@ -91,7 +91,7 @@
         if (type === 'TRIAL') {
             return { type, maxTips: 70, levels: new Set(['high', 'medium']) };
         }
-        return { type, maxTips: 60, levels: new Set(['high', 'medium']) };
+        return { type, maxTips: 42, levels: new Set(['high']) };
     }
 
     function ensureStyles() {
@@ -100,8 +100,10 @@
         style.id = 'fixed-tip-inline-styles';
         style.textContent = [
             '.fixed-tip-anchor{position:relative;}',
-            '.fixed-tip-btn{position:absolute;top:6px;right:6px;width:16px;height:16px;border:1px solid var(--border,#cbd5e1);border-radius:999px;background:var(--bg-card,#fff);color:var(--text-secondary,#64748b);font-size:11px;font-weight:700;line-height:1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;opacity:.92;z-index:7;}',
-            '.fixed-tip-btn:hover{color:var(--primary,#0f766e);border-color:var(--primary-light,#99f6e4);}',
+            '.fixed-tip-anchor.fixed-tip-anchor--button{overflow:visible;}',
+            '.fixed-tip-btn{position:absolute;top:4px;right:4px;width:14px;height:14px;border:1.5px solid #60a5fa;border-radius:999px;background:transparent;color:#60a5fa;font-size:10px;font-weight:700;line-height:1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;opacity:.88;z-index:8;padding:0;}',
+            '.fixed-tip-anchor--button>.fixed-tip-btn{top:-7px;right:-7px;}',
+            '.fixed-tip-btn:hover{color:#38bdf8;border-color:#38bdf8;background:rgba(56,189,248,.08);opacity:1;}',
             '.fixed-tip-popover{position:fixed;z-index:10001;width:min(360px,calc(100vw - 24px));padding:10px 12px;border:1px solid var(--border,#cbd5e1);border-radius:10px;background:var(--bg-card,#fff);color:var(--text-primary,#0f172a);box-shadow:0 10px 28px rgba(2,6,23,.16);font-size:12px;line-height:1.4;display:none;}',
             '.fixed-tip-popover.active{display:block;}',
             '.fixed-tip-popover strong{color:var(--primary,#0f766e);font-weight:700;}'
@@ -162,6 +164,7 @@
 
     function getTipPriority(target) {
         if (!target) return 'low';
+        if (target.closest('.header-actions, .toolbar, .toolbar-row')) return 'low';
         const id = target.id || '';
         if ((id && MANUAL_TIPS[id]) || target.hasAttribute('data-fixed-tip')) return 'high';
         if (target.matches('.tab-btn, button[id], [title], [aria-label]')) return 'medium';
@@ -229,6 +232,9 @@
         if (!anchor || hasOwnTipButton(anchor)) return false;
 
         anchor.classList.add('fixed-tip-anchor');
+        if (anchor.matches('button, .btn, .btn-primary, .btn-secondary, .btn-icon, .tab-btn')) {
+            anchor.classList.add('fixed-tip-anchor--button');
+        }
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'fixed-tip-btn';
