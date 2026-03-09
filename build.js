@@ -23,6 +23,7 @@ const JS_FILES = [
     'src/js/utils/toast.js',
     'src/js/utils/uiModalFocusUtils.js',
     'src/js/utils/ui.js',
+    'src/js/utils/uiComparisonUtils.js',
     'src/js/utils/uiThemeUtils.js',
     'src/js/utils/uiKeyboardShortcuts.js',
     'src/js/utils/uiAutosaveUtils.js',
