@@ -9,6 +9,7 @@
 
         const profData = window._profDataCache || JSON.parse(localStorage.getItem('prof_data') || '{}');
         const el = (id) => document.getElementById(id);
+        const isAdmin = typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'ADMIN';
 
         const isClinic = typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.canGenerateApps;
         if (isClinic) {
@@ -23,7 +24,12 @@
         if (planEl && typeof CLIENT_CONFIG !== 'undefined') {
             const planNames = { ADMIN: 'Administrador', PRO: 'Profesional PRO', TRIAL: 'Prueba', NORMAL: 'Básico' };
             planEl.textContent = planNames[CLIENT_CONFIG.type] || CLIENT_CONFIG.type || '—';
+            const planRow = planEl.closest('.stg-row');
+            if (planRow) planRow.style.display = isAdmin ? '' : 'none';
         }
+
+        const upgradeBtn = el('settingsUpgradePlan');
+        if (upgradeBtn) upgradeBtn.style.display = isAdmin ? '' : 'none';
     }
 
     function populateClinicAccountSelector(el, profData, onProfileChanged) {

@@ -95,6 +95,31 @@ window.updateApiStatus = function (apiKey) {
     }
 }
 
+window.handleApiKeyBannerAction = function () {
+    const isAdmin = typeof window.isAdminUser === 'function' && window.isAdminUser();
+
+    if (isAdmin) {
+        const s = document.getElementById('settingsModalOverlay');
+        if (s) {
+            s.classList.add('active');
+            if (typeof populateSettingsModal === 'function') populateSettingsModal();
+            return;
+        }
+        document.getElementById('adminApiKeyCard')?.scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('apiKeyInput')?.focus();
+        return;
+    }
+
+    if (typeof window.openContactModal === 'function') {
+        window.openContactModal('Problema con la API Key');
+    } else {
+        document.getElementById('btnContacto')?.click();
+    }
+    if (typeof showToast === 'function') {
+        showToast('Te ayudamos a resolver la API Key desde soporte.', 'info');
+    }
+};
+
 // ============ MODALS & INTERFACE ============
 window.initModals = function () {
     const helpModal = document.getElementById('helpModal');

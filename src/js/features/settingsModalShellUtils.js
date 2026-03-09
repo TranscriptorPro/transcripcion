@@ -54,9 +54,18 @@
             if (el) el.style.display = visible ? '' : 'none';
         }
 
-        toggleAccordion('apikey', isAdmin);
-        if (isClinic) toggleAccordion('profiles', false);
-        if (isClinic) toggleAccordion('backup', false);
+        const allSections = ['cuenta', 'apikey', 'workplace', 'profiles', 'pdf', 'editor', 'tools', 'theme', 'skins', 'stats', 'backup', 'info', 'about'];
+
+        if (isAdmin) {
+            allSections.forEach((key) => toggleAccordion(key, true));
+            if (isClinic) toggleAccordion('profiles', false);
+            if (isClinic) toggleAccordion('backup', false);
+            return;
+        }
+
+        // K2: Cliente final ve solo datos profesionales, lugar de trabajo y soporte.
+        const clientAllowed = ['cuenta', 'workplace', 'info'];
+        allSections.forEach((key) => toggleAccordion(key, clientAllowed.includes(key)));
     }
 
     window.SettingsModalShellUtils = {
