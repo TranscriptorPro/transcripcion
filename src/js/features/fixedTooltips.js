@@ -52,6 +52,39 @@
     let activeBtn = null;
     let observer = null;
     let bindQueued = false;
+    let boundCount = 0;
+
+    function detectUserType() {
+        try {
+            const isAdminPage = /\/recursos\/admin\.html$/i.test((window.location && window.location.pathname) || '');
+            if (isAdminPage) return 'ADMIN';
+
+            if (window.CLIENT_CONFIG && window.CLIENT_CONFIG.type) {
+                return String(window.CLIENT_CONFIG.type).toUpperCase();
+            }
+
+            const stored = localStorage.getItem('client_config_stored');
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                if (parsed && parsed.type) return String(parsed.type).toUpperCase();
+            }
+        } catch (_) {}
+        return 'NORMAL';
+    }
+
+    function getDensityProfile() {
+        const type = detectUserType();
+        if (type === 'ADMIN') {
+            return { type, maxTips: 220, levels: new Set(['high', 'medium', 'low']) };
+        }
+        if (type === 'PRO' || type === 'CLINIC' || type === 'GIFT') {
+            return { type, maxTips: 120, levels: new Set(['high', 'medium']) };
+        }
+        if (type === 'TRIAL') {
+            return { type, maxTips: 70, levels: new Set(['high', 'medium']) };
+        }
+        return { type, maxTips: 38, levels: new Set(['high']) };
+    }
 
     function ensureStyles() {
         if (document.getElementById('fixed-tip-inline-styles')) return;
@@ -119,6 +152,14 @@
         return '';
     }
 
+    function getTipPriority(target) {
+        if (!target) return 'low';
+        const id = target.id || '';
+        if ((id && MANUAL_TIPS[id]) || target.hasAttribute('data-fixed-tip')) return 'high';
+        if (target.matches('.tab-btn, button[id], [title], [aria-label]')) return 'medium';
+        return 'low';
+    }
+
     function closeTip() {
         if (!pop) return;
         pop.classList.remove('active');
@@ -163,11 +204,11 @@
     }
 
     function attachTip(target, tipText) {
-        if (!target || !tipText) return;
-        if (target.matches(SKIP_SELECTOR) || target.closest(SKIP_SELECTOR)) return;
+        if (!target || !tipText) return false;
+        if (target.matches(SKIP_SELECTOR) || target.closest(SKIP_SELECTOR)) return false;
 
         const anchor = resolveAnchor(target);
-        if (!anchor || anchor.querySelector(':scope > .fixed-tip-btn')) return;
+        if (!anchor || anchor.querySelector(':scope > .fixed-tip-btn')) return false;
 
         anchor.classList.add('fixed-tip-anchor');
         const btn = document.createElement('button');
@@ -189,16 +230,35 @@
         });
 
         anchor.appendChild(btn);
+        return true;
     }
 
     function bindAll() {
+        const profile = getDensityProfile();
         const elements = document.querySelectorAll(BIND_SELECTOR);
         elements.forEach((el) => {
-            if (!el || el.dataset.fixedTipBound === '1') return;
+            if (!el || el.dataset.fixedTipBound === '1' || el.dataset.fixedTipBound === 'skip') return;
+            const priority = getTipPriority(el);
+            if (!profile.levels.has(priority)) {
+                el.dataset.fixedTipBound = 'skip';
+                return;
+            }
+            if (boundCount >= profile.maxTips) {
+                el.dataset.fixedTipBound = 'skip';
+                return;
+            }
             const tipText = deriveLabelText(el);
-            if (!tipText) return;
-            el.dataset.fixedTipBound = '1';
-            attachTip(el, tipText);
+            if (!tipText) {
+                el.dataset.fixedTipBound = 'skip';
+                return;
+            }
+            const attached = attachTip(el, tipText);
+            if (attached) {
+                el.dataset.fixedTipBound = '1';
+                boundCount += 1;
+            } else {
+                el.dataset.fixedTipBound = 'skip';
+            }
         });
     }
 
