@@ -47,6 +47,13 @@ function _showSettingsGear() {
 
 // PWA Install: intentar mostrar prompt con reintentos
 function _tryPwaInstall(maxRetries) {
+    if (window._pwaInstallFlowStarted) return;
+    window._pwaInstallFlowStarted = true;
+
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+        return;
+    }
+
     let attempt = 0;
     const interval = setInterval(() => {
         attempt++;
