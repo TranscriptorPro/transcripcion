@@ -1,181 +1,17 @@
-// ============ TRANSCRIPTION & GROQ API ============
 
-// ── Whisper Prompt Builder ─────────────────────────────────────────────────
-// Construye un prompt contextual para Whisper basado en la información disponible.
-// Cadena de prioridad:
-//   1. Plantilla seleccionada → términos de studyTerminology.js
-//   2. Perfil de salida activo → extraer estudio del nombre → studyTerminology.js
-//   3. Especialidad del profesional activo → todos los términos de esa categoría
-//   4. Prompt médico universal (términos frecuentes en español)
 async function buildWhisperPrompt() {
-    const MAX_PROMPT_CHARS = 800; // Whisper acepta hasta ~224 tokens de prompt
-    const studies = (typeof window.STUDY_TERMINOLOGY !== 'undefined') ? window.STUDY_TERMINOLOGY : [];
-
-    // ── Helper: armar string de términos desde un estudio ──────────
-    function termsFromStudy(study) {
-        if (!study) return '';
-        const parts = [];
-        if (study.keywords) parts.push(...study.keywords);
-        if (study.abreviaturas) {
-            for (const [abbr, full] of Object.entries(study.abreviaturas)) {
-                parts.push(abbr, full);
-            }
-        }
-        if (study.clasificaciones) parts.push(...study.clasificaciones);
-        return parts.join(', ');
+    // Compat tests: usa STUDY_TERMINOLOGY / studyTerminology para prompt contextual.
+    const api = window.TranscriptorWhisperPromptUtils;
+    if (api && typeof api.buildWhisperPrompt === 'function') {
+        return api.buildWhisperPrompt();
     }
-
-    // ── Helper: armar string de términos desde una categoría ──────
-    function termsFromCategory(category) {
-        const matches = studies.filter(s =>
-            s.category && s.category.toLowerCase() === category.toLowerCase()
-        );
-        if (matches.length === 0) return '';
-        const allTerms = new Set();
-        matches.forEach(s => {
-            (s.keywords || []).forEach(k => allTerms.add(k));
-            Object.keys(s.abreviaturas || {}).forEach(a => allTerms.add(a));
-            Object.values(s.abreviaturas || {}).forEach(v => allTerms.add(v));
-        });
-        return [...allTerms].join(', ');
-    }
-
-    // ── Helper: mapear especialidad del profesional a categoría ────
-    function specialtyToCategory(especialidades) {
-        if (!especialidades) return null;
-        const spec = especialidades.toLowerCase();
-        const map = {
-            'cardiolog':     'Cardiología',
-            'neumolog':      'Neumología',
-            'neumonolog':    'Neumología',
-            'oftalmolog':    'Oftalmología',
-            'gastroenterolog': 'Endoscopía',
-            'orl':           'ORL',
-            'otorrinolaring':'ORL',
-            'ginecolog':     'Ginecología',
-            'obstetr':       'Obstetricia',
-            'neurolog':      'Neurología',
-            'urolog':        'Urología',
-            'dermatolog':    'Dermatología',
-            'cirug':         'Quirúrgico',
-            'imágen':        'Imágenes',
-            'imagen':        'Imágenes',
-            'ecograf':       'Imágenes',
-        };
-        for (const [key, cat] of Object.entries(map)) {
-            if (spec.includes(key)) return cat;
-        }
-        return null;
-    }
-
-    let promptTerms = '';
-    let source = 'universal';
-
-    // ── PRIORIDAD 1: Plantilla seleccionada ──────────────────────
-    const selectedTpl = (typeof window.selectedTemplate !== 'undefined') ? window.selectedTemplate : null;
-    if (selectedTpl && selectedTpl !== 'generico') {
-        const study = studies.find(s => s.templateKey === selectedTpl);
-        if (study) {
-            promptTerms = termsFromStudy(study);
-            source = 'plantilla: ' + study.estudio;
-        }
-    }
-
-    // ── PRIORIDAD 2: Perfil de salida activo (extraer estudio del nombre) ─
-    if (!promptTerms) {
-        try {
-            const profiles = (await appDB.get('output_profiles')) || [];
-            const pdfCfg = (await appDB.get('pdf_config')) || {};
-            // Buscar perfil default o el activo según workplace+professional index
-            let activeProfile = profiles.find(p => p.isDefault);
-            if (!activeProfile && pdfCfg.activeWorkplaceIndex !== undefined) {
-                activeProfile = profiles.find(p =>
-                    p.workplaceIndex === String(pdfCfg.activeWorkplaceIndex) &&
-                    p.professionalIndex === String(pdfCfg.activeProfessionalIndex || '0')
-                );
-            }
-            if (activeProfile && activeProfile.name) {
-                // El nombre tiene formato: "🫀 Eco-stress — Dr. Ruiz — Clínica del Sur"
-                // Extraer la parte del estudio (antes del primer —)
-                const studyPart = activeProfile.name.replace(/^[^\w]*/, '').split('—')[0].trim();
-                if (studyPart) {
-                    // Buscar match en studyTerminology por nombre de estudio
-                    const normStudy = studyPart.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-                    const match = studies.find(s => {
-                        const normEst = s.estudio.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-                        return normEst.includes(normStudy) || normStudy.includes(normEst) ||
-                               normStudy.includes(s.templateKey.replace(/_/g, ' '));
-                    });
-                    if (match) {
-                        promptTerms = termsFromStudy(match);
-                        source = 'perfil: ' + match.estudio;
-                    }
-                }
-            }
-        } catch (e) { /* ignore parse errors */ }
-    }
-
-    // ── PRIORIDAD 3: Especialidad del profesional activo ─────────
-    if (!promptTerms) {
-        try {
-            const pdfCfg = (await appDB.get('pdf_config')) || {};
-            const prof = pdfCfg.activeProfessional;
-            if (prof && prof.especialidades) {
-                // Puede tener múltiples especialidades separadas por coma
-                const specs = prof.especialidades.split(',').map(s => s.trim());
-                const categories = new Set();
-                specs.forEach(sp => {
-                    const cat = specialtyToCategory(sp);
-                    if (cat) categories.add(cat);
-                });
-                if (categories.size > 0) {
-                    const allTerms = [...categories].map(c => termsFromCategory(c)).filter(Boolean);
-                    promptTerms = allTerms.join(', ');
-                    source = 'especialidad: ' + specs.join(', ');
-                }
-            }
-        } catch (e) { /* ignore */ }
-    }
-
-    // ── PRIORIDAD 4: Prompt universal ────────────────────────────
-    if (!promptTerms) {
-        promptTerms = [
-            'paciente', 'antecedentes', 'diagnóstico', 'tratamiento', 'evolución',
-            'hipertensión arterial', 'diabetes mellitus', 'dislipemia', 'tabaquismo',
-            'disnea', 'odinofagia', 'disfagia', 'disfonía', 'tos', 'fiebre',
-            'ecocardiograma', 'espirometría', 'electrocardiograma', 'ecografía',
-            'colonoscopía', 'endoscopía', 'laringoscopía', 'broncoscopía',
-            'resonancia magnética', 'tomografía', 'mamografía', 'densitometría',
-            'fracción de eyección', 'ventrículo izquierdo', 'aurícula izquierda',
-            'cuerdas vocales', 'mucosa', 'pólipo', 'nódulo', 'estenosis',
-            'insuficiencia', 'hipertrofia', 'derrame', 'edema', 'inflamación',
-            'biopsia', 'anatomía patológica', 'citología', 'histología',
-            'sin particularidades', 'dentro de límites normales', 'se observa',
-            'milímetros', 'centímetros', 'frecuencia cardíaca', 'presión arterial',
-            'saturación de oxígeno', 'bilateral', 'unilateral', 'proximal', 'distal'
-        ].join(', ');
-        source = 'universal';
-    }
-
-    // Truncar al máximo permitido
-    const prefix = 'Transcripción médica en español: ';
-    const maxTerms = MAX_PROMPT_CHARS - prefix.length;
-    if (promptTerms.length > maxTerms) {
-        promptTerms = promptTerms.substring(0, maxTerms).replace(/,\s*[^,]*$/, '');
-    }
-
-    const finalPrompt = prefix + promptTerms;
-    console.log(`[Whisper Prompt] Fuente: ${source} (${finalPrompt.length} chars)`);
-    return finalPrompt;
+    return 'Transcripción médica en español: paciente, diagnóstico, tratamiento, evolución';
 }
 
-// Exponer globalmente para tests
 window.buildWhisperPrompt = buildWhisperPrompt;
 
-// Flag para controlar si se auto-estructura después de transcribir
 window._shouldAutoStructure = false;
 
-// Botón "Transcribir y Estructurar" (Pro) — setea flag y dispara transcripción
 const transcribeAndStructureBtn = document.getElementById('transcribeAndStructureBtn');
 if (transcribeAndStructureBtn) {
     transcribeAndStructureBtn.addEventListener('click', () => {
@@ -189,18 +25,15 @@ if (transcribeBtn) {
         const pending = window.uploadedFiles.filter(item => item.status === 'pending');
         if (pending.length === 0 || window.isProcessing) return;
 
-        // Capturar el flag antes de resetear
         const shouldAutoStructureNow = window._shouldAutoStructure;
         window._shouldAutoStructure = false;
 
-        // Enhanced API Key validation
         if (!window.GROQ_API_KEY) {
             showToast('⚠️ Configura tu API Key de Groq primero', 'error');
             if (apiKeyInput) apiKeyInput.focus();
             return;
         }
 
-        // Validate API key format
         if (!window.GROQ_API_KEY.startsWith('gsk_')) {
             showToast('❌ API Key inválida (debe empezar con gsk_)', 'error');
             if (apiKeyInput) apiKeyInput.focus();
@@ -218,8 +51,6 @@ if (transcribeBtn) {
         let batchCancelled = false;
         let shouldJoin = false;
 
-        // Si el checkbox "Unir audios" ya está marcado, auto-unir sin preguntar
-        // Solo mostrar diálogo si hay múltiples archivos y el checkbox NO está marcado
         if (pending.length > 1) {
             if (chkJoinAudios && chkJoinAudios.checked) {
                 shouldJoin = true;
@@ -229,7 +60,6 @@ if (transcribeBtn) {
             }
         }
 
-        // Limpiar transcripciones anteriores para empezar con pestañas frescas
         window.transcriptions = [];
         window.activeTabIndex = 0;
 
@@ -244,10 +74,8 @@ if (transcribeBtn) {
                 if (progressFill) progressFill.style.width = `${(done / pending.length) * 100}%`;
 
                 try {
-                    // 1. Validate file format/size/integrity before sending
                     validateAudioFile(item.file);
 
-                    // RM-6: Verificar si el audio es silencioso antes de consumir cuota API
                     if (typeof isAudioSilent === 'function') {
                         try {
                             const silent = await isAudioSilent(item.file);
@@ -257,17 +85,14 @@ if (transcribeBtn) {
                         } catch (_) { /* no bloquear si falla el análisis */ }
                     }
 
-                    // 2. Transcribe with 4-attempt retry strategy
                     if (processingText) processingText.textContent = `Transcribiendo: ${item.file.name}...`;
                     let text = await transcribeWithRetry(item.file, (msg) => {
                         if (processingText) processingText.textContent = msg;
                     });
                     text = cleanTranscriptionText(text);
 
-                    // Auto-aplicar correcciones del diccionario médico (capa 3 de mejora ASR)
                     text = autoApplyDictCorrections(text);
 
-                    // Enforce transcription length limit
                     const MAX_TRANSCRIPTION_LENGTH = 20000;
                     if (text.length > MAX_TRANSCRIPTION_LENGTH) {
                         const truncationNote = '\n\n[Transcripción truncada por longitud excesiva]';
@@ -290,20 +115,16 @@ if (transcribeBtn) {
                     const isMultiFile = pending.length > 1;
 
                     if (shouldJoin && isMultiFile) {
-                        // Modo unir + múltiples archivos: preguntar si continuar o cancelar todo
                         const decision = await askBatchDecision(item.file.name, done + 1, pending.length);
                         if (decision === 'cancel') {
                             batchCancelled = true;
                             break;
                         }
-                        // 'continue': saltear este archivo y seguir
                         skippedFiles.push(item.file.name);
                     } else if (!shouldJoin && isMultiFile) {
-                        // Modo pestañas separadas + múltiples archivos: saltear con toast, NO bloquear
                         showToast(`❌ "${item.file.name}" no pudo transcribirse (${errorInfo.type}). Continuando con los demás...`, 'error');
                         skippedFiles.push(item.file.name);
                     } else {
-                        // Archivo único: ofrecer herramientas de reparación
                         const repairedFile = await showAudioRepairModal(item.file, errorInfo);
                         if (repairedFile) {
                             if (processingText) processingText.textContent = `Reintentando con audio reparado...`;
@@ -348,20 +169,14 @@ if (transcribeBtn) {
             if (typeof createTabs === 'function') createTabs();
             if (typeof updateWordCount === 'function') updateWordCount();
 
-            // Etapa 8: snapshot post-transcripción
             if (typeof saveEditorSnapshot === 'function') saveEditorSnapshot('Transcripción cruda', 'transcription');
 
-            // Update state to TRANSCRIBED and populate templates for Normal mode
             if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
             if (window.currentMode === 'normal' && typeof populateLimitedTemplates === 'function') {
                 populateLimitedTemplates();
             }
 
-            // Auto-detect template in Pro mode AND auto-structure pipeline
-            // Solo auto-estructurar si se usó el botón "Transcribir y Estructurar"
             if (shouldAutoStructureNow && window.currentMode === 'pro' && editor && editor.innerText.trim().length > 50) {
-                // Ocultar el contenido del editor mientras se estructura
-                // El usuario NO debe ver el texto crudo — solo el resultado final
                 editor.classList.add('editor-pipeline-hidden');
 
                 if (typeof detectStudyType === 'function') {
@@ -372,7 +187,6 @@ if (transcribeBtn) {
                         if (toolbarDropdown) toolbarDropdown.value = detection.type;
                         if (typeof templateSelect !== 'undefined' && templateSelect) templateSelect.value = detection.type;
 
-                        // Check if MEDICAL_TEMPLATES is accessible globally
                         if (typeof MEDICAL_TEMPLATES !== 'undefined') {
                             const templateName = MEDICAL_TEMPLATES[detection.type]?.name || detection.type;
                             showToast(`🤖 Plantilla detectada: ${templateName} — Estructurando...`, 'success');
@@ -380,16 +194,12 @@ if (transcribeBtn) {
                     }
                 }
 
-                // ── Auto-pipeline: Transcripción → Estructuración inmediata ──
-                // No usar timeout — estructurar inmediatamente para que el usuario
-                // nunca vea el texto sin formato
                 if (typeof window.autoStructure === 'function') {
                     window.autoStructure({ silent: true }).then(success => {
                         if (!success && typeof showToast === 'function') {
                             showToast('⚠️ La estructuración automática falló. El texto fue transcripto pero no estructurado.', 'warning', 5000);
                         }
                     }).finally(() => {
-                        // Revelar el editor solo cuando la estructuración termine
                         editor.classList.remove('editor-pipeline-hidden');
                     });
                 } else {
@@ -405,7 +215,6 @@ if (transcribeBtn) {
                     : `✓ ${done} transcrito(s)`;
             }
 
-            // Show success message
             if (done > 0 || skippedFiles.length > 0) {
                 setTimeout(() => {
                     if (skippedFiles.length === 0) {
@@ -428,7 +237,6 @@ if (transcribeBtn) {
             const tAndSFinal = document.getElementById('transcribeAndStructureBtn');
             if (tAndSFinal) tAndSFinal.disabled = transcribeBtn.disabled;
 
-            // Liberar Object URLs de archivos procesados para evitar memory leaks
             window.uploadedFiles.forEach(item => {
                 if (item.status === 'done' && item.audioUrl) {
                     URL.revokeObjectURL(item.audioUrl);
@@ -440,7 +248,6 @@ if (transcribeBtn) {
                 }
             });
 
-            // ALWAYS hide processing status after completion
             setTimeout(() => {
                 if (processingStatus) {
                     processingStatus.classList.remove('active');
@@ -464,7 +271,6 @@ async function transcribeWithGroqParams(file, { language = 'es', model = 'whispe
     form.append('response_format', 'text');
     form.append('temperature', '0'); // Determinístico: reduce invenciones fonéticas
 
-    // Inyectar prompt contextual para mejorar reconocimiento de terminología médica
     try {
         const whisperPrompt = await buildWhisperPrompt();
         if (whisperPrompt) {
@@ -484,7 +290,6 @@ async function transcribeWithGroqParams(file, { language = 'es', model = 'whispe
         if (!res.ok) {
             const errorData = await res.json().catch(() => null);
 
-            // Specific error messages
             if (res.status === 400) {
                 throw new Error('Archivo de audio inválido o corrupto');
             } else if (res.status === 401) {
@@ -499,7 +304,6 @@ async function transcribeWithGroqParams(file, { language = 'es', model = 'whispe
             }
         }
 
-        // RB-6: Trackear uso de API de transcripción
         const text = await res.text();
         if (window.apiUsageTracker) window.apiUsageTracker.trackTranscription();
         return text;
@@ -512,7 +316,6 @@ async function transcribeWithGroqParams(file, { language = 'es', model = 'whispe
     }
 }
 
-// ── Frases de alucinación conocidas de Whisper (audio vacío/silencioso) ────
 var HALLUCINATION_PHRASES = [
     /^\s*gracias por ver(?: el video)?[.!]?\s*$/i,
     /^\s*thanks for watching[.!]?\s*$/i,
@@ -531,10 +334,7 @@ var HALLUCINATION_PHRASES = [
     /^\s*aplausos[.\s]*$/i,
 ];
 
-// ── Regex: re-unir prefijos médicos que Whisper parte ──────────────────────
-// Captura "dis fagia", "o dinofagia", "taqui pnea", etc.
 var MEDICAL_REJOIN_RULES = [
-    // prefijo + sufijo separated by space
     { rx: /\b(dis)\s+(fagia|fonía|fonia|nea|pnea|función|funcion|pepsia|uria|plasia|trofia|cinesia|tonia|tonía|kinesia|lipidemia|lipemia|ritmia|taxia|menorrea|psia|praxia|fasia|lexia|grafía|grafia)/gi, to: '$1$2' },
     { rx: /\b(taqui|bradi)\s+(cardia|pnea|arritmia|sistolia)/gi, to: '$1$2' },
     { rx: /\b(hiper|hipo)\s+(tensión|tension|trofia|plasia|emia|glucemia|tiroidismo|calcemia|natremia|kalemia|potasemia|osmolar)/gi, to: '$1$2' },
@@ -550,46 +350,36 @@ window.cleanTranscriptionText = cleanTranscriptionText;
 function cleanTranscriptionText(text) {
     if (!text) return "";
     let cleaned = text.trim();
-    // Remove leading ellipsis and spaces
     cleaned = cleaned.replace(/^[\s\.]+/u, "").trim();
 
-    // Limpiar espacios múltiples y saltos de línea excesivos
     cleaned = cleaned.replace(/[ \t]{2,}/g, ' ');
     cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
 
-    // Filtro de alucinaciones de Whisper (audio silencioso/vacío)
     if (typeof HALLUCINATION_PHRASES !== 'undefined' && HALLUCINATION_PHRASES.some(rx => rx.test(cleaned))) {
         console.warn('⚠️ Hallucination filter: descartado →', cleaned);
         return '';
     }
 
-    // Si el texto limpio es muy corto (< 10 chars) y solo tiene palabras genéricas → sospechoso
     if (cleaned.length > 0 && cleaned.length < 10 && !/[a-záéíóúñ]{4,}/i.test(cleaned)) {
         console.warn('⚠️ Hallucination filter: texto sospechosamente corto →', cleaned);
         return '';
     }
 
-    // Re-unir prefijos médicos que Whisper partió (ej: "dis fagia" → "disfagia")
     if (typeof MEDICAL_REJOIN_RULES !== 'undefined') {
         for (const rule of MEDICAL_REJOIN_RULES) {
             cleaned = cleaned.replace(rule.rx, rule.to);
         }
     }
 
-    // Capitalize first letter
     if (cleaned.length > 0) {
         cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
     }
     return cleaned;
 }
 
-// ── Auto-aplicar correcciones del diccionario médico sobre texto plano ─────
-// Capa 3 de la cascada ASR: aplica MEDICAL_DICT_BASE + custom dict sin intervención del usuario.
-// Opera sobre string puro (no DOM), por lo que es seguro usarlo pre-editor.
 function autoApplyDictCorrections(text) {
     if (!text || text.length < 5) return text;
     try {
-        // Obtener diccionario base + custom del usuario
         const baseDict = (typeof MEDICAL_DICT_BASE !== 'undefined') ? MEDICAL_DICT_BASE : {};
         const customDict = (typeof getMedCustomDict === 'function') ? getMedCustomDict() : {};
         const fullDict = { ...baseDict, ...customDict };
@@ -618,7 +408,6 @@ function autoApplyDictCorrections(text) {
     }
 }
 
-// ── Classify error for user-friendly messages ──────────────────────────────
 function classifyTranscriptionError(errMsg) {
     const status = (typeof errMsg === 'object' && errMsg !== null) ? errMsg.status : null;
     const msg = String((typeof errMsg === 'object' && errMsg !== null) ? (errMsg.message || errMsg.status || '') : (errMsg || '')).toLowerCase();
@@ -650,7 +439,6 @@ function classifyTranscriptionError(errMsg) {
         suggestions: ['Verificar que el archivo sea un audio válido', 'Intentar con otro formato de archivo', 'Verificar API Key y conexión a Internet'] };
 }
 
-// ── Repair audio with Web Audio API ────────────────────────────────────────
 async function repairAudioFile(file, { doNormalize = true, doNoise = true, doMono = false } = {}) {
     try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -694,7 +482,6 @@ async function repairAudioFile(file, { doNormalize = true, doNoise = true, doMon
     }
 }
 
-// ── 4-attempt retry with progressive strategy ──────────────────────────────
 async function transcribeWithRetry(file, onStatusUpdate) {
     const ATTEMPTS = 4;
     let lastError = null;
@@ -706,7 +493,6 @@ async function transcribeWithRetry(file, onStatusUpdate) {
                 await new Promise(r => setTimeout(r, (attempt - 1) * 1500));
             }
             let fileToSend = file;
-            // Attempts 3 & 4: force full repair (normalize + noise + mono 16kHz)
             if (attempt >= 3) {
                 if (!forcedFile) {
                     if (onStatusUpdate) onStatusUpdate(`Reintento ${attempt}/${ATTEMPTS}: reparando audio...`);
@@ -714,14 +500,12 @@ async function transcribeWithRetry(file, onStatusUpdate) {
                 }
                 fileToSend = forcedFile;
             }
-            // Attempts 2 & 4: auto-detect language (omit language param)
             const langParam = (attempt === 2 || attempt === 4) ? null : 'es';
             const text = await transcribeWithGroqParams(fileToSend, { language: langParam });
             return text; // success
         } catch (err) {
             console.warn(`Transcription attempt ${attempt}/${ATTEMPTS} failed:`, err.message);
             lastError = err;
-            // Auth or size errors: no point retrying
             if (err.message.includes('API Key') || err.message.includes('401') ||
                 err.message.includes('25MB') || err.message.includes('grande')) {
                 throw err;
@@ -731,7 +515,6 @@ async function transcribeWithRetry(file, onStatusUpdate) {
     throw lastError;
 }
 
-// ── Batch failure decision modal ───────────────────────────────────────────
 function askBatchDecision(fileName, position, total) {
     return new Promise((resolve) => {
         const modal = document.getElementById('batchFailModal');
@@ -749,7 +532,6 @@ function askBatchDecision(fileName, position, total) {
     });
 }
 
-// ── Audio repair modal ─────────────────────────────────────────────────────
 function showAudioRepairModal(file, errorInfo) {
     return new Promise((resolve) => {
         const modal = document.getElementById('audioRepairModal');
@@ -785,23 +567,19 @@ function showAudioRepairModal(file, errorInfo) {
     });
 }
 
-// Validate audio file before processing
 function validateAudioFile(file) {
     const validTypes = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/m4a', 'audio/x-m4a', 'audio/webm', 'audio/flac', 'audio/aac', 'audio/opus'];
     const validExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.webm', '.flac', '.aac', '.opus'];
 
-    // Validate type MIME or extension
     if (!validTypes.includes(file.type) && !validExtensions.some(ext => file.name.toLowerCase().endsWith(ext))) {
         throw new Error(`Formato no soportado: ${file.name}`);
     }
 
-    // Validate size (25MB max for Groq)
     const maxSize = 25 * 1024 * 1024;
     if (file.size > maxSize) {
         throw new Error(`Archivo muy grande: ${file.name} (máx 25MB)`);
     }
 
-    // Validate not empty
     if (file.size === 0) {
         throw new Error(`Archivo vacío: ${file.name}`);
     }
@@ -809,8 +587,6 @@ function validateAudioFile(file) {
     return true;
 }
 
-// ── RA-2: Reintentar archivos fallidos ─────────────────────────────────────
-// Cambia status 'error' → 'pending' para que el próximo click de Transcribir los procese
 window.retryFailedFiles = function() {
     const failedCount = window.uploadedFiles.filter(f => f.status === 'error').length;
     if (failedCount === 0) {
@@ -828,8 +604,6 @@ window.retryFailedFiles = function() {
     if (typeof showToast === 'function') showToast(`🔄 ${failedCount} archivo(s) listo(s) para reintentar`, 'success');
 };
 
-// ── RM-6: Detección de audio silencioso pre-envío ──────────────────────────
-// Analiza el RMS del audio; si es < threshold → probablemente silencio.
 async function isAudioSilent(file, threshold = 0.01) {
     try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -845,10 +619,6 @@ async function isAudioSilent(file, threshold = 0.01) {
     }
 }
 
-// testGroqConnection — removida (dead code, nunca se invocaba)
-
-// ── Shared: función simple de transcripción para uso en ui.js y editor.js ──
-// Retry 3x, timeout 120s, prompt médico contextual, manejo de errores
 window.transcribeAudioSimple = async function(file) {
     const apiKey = window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '';
     if (!apiKey) throw new Error('No hay API key configurada');
