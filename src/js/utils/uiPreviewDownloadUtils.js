@@ -12,8 +12,10 @@ window.initPreviewDownloadDropdown = function (btnDownloadFromPreview) {
     const getAllowedFormats = () => {
         const cfg = window.CLIENT_CONFIG || {};
         const type = (cfg.type || 'ADMIN').toUpperCase();
-        if (type === 'ADMIN' || type === 'PRO') return ['pdf', 'rtf', 'txt', 'html'];
-        if (type === 'NORMAL') return ['pdf'];
+        if (type === 'ADMIN' || type === 'PRO' || type === 'GIFT' || type === 'CLINIC') {
+            return ['pdf', 'rtf', 'txt', 'html'];
+        }
+        if (type === 'NORMAL') return ['pdf', 'txt'];
         return ['txt'];
     };
 

@@ -3754,28 +3754,29 @@ test('Registro_Datos: headerColor válido pasa validación', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Bloque 64: _getAllowedFormats con GIFT directo (sin mapeo previo)
+// Bloque 64: _getAllowedFormats con tipos directos robustos
 // ═══════════════════════════════════════════════════════════════════════════════
 console.log('\n── Bloque 64: _getAllowedFormats con tipos directos ────────────────────');
 
 function _testGetAllowedFormatsRaw(type) {
     type = (type || 'ADMIN').toUpperCase();
-    if (type === 'ADMIN' || type === 'PRO') return ['pdf', 'rtf', 'txt', 'html'];
+    if (type === 'ADMIN' || type === 'PRO' || type === 'GIFT' || type === 'CLINIC') return ['pdf', 'rtf', 'txt', 'html'];
     if (type === 'NORMAL') return ['txt', 'pdf'];
     return ['txt']; // TRIAL, y cualquier otro
 }
 
-test('Formatos raw: GIFT directo (sin mapeo) → solo TXT (cae en default)', () => {
+test('Formatos raw: GIFT directo (sin mapeo) → 4 formatos', () => {
     const formats = _testGetAllowedFormatsRaw('GIFT');
-    // GIFT no está en la lógica directa → cae en default = ['txt']
-    // Esto revela que GIFT sin mapeo previo pierde formatos
-    assertEqual(formats.length, 1, 'GIFT directo cae en default (solo txt)');
+    assertEqual(formats.length, 4, 'GIFT directo debe tener todos los formatos');
+    assert(formats.includes('pdf'));
+    assert(formats.includes('rtf'));
     assert(formats.includes('txt'));
+    assert(formats.includes('html'));
 });
 
-test('Formatos raw: CLINIC directo → solo TXT (cae en default)', () => {
+test('Formatos raw: CLINIC directo → 4 formatos', () => {
     const formats = _testGetAllowedFormatsRaw('CLINIC');
-    assertEqual(formats.length, 1, 'CLINIC directo cae en default');
+    assertEqual(formats.length, 4, 'CLINIC directo debe tener todos los formatos');
 });
 
 test('Formatos raw: ENTERPRISE directo → solo TXT (cae en default)', () => {
@@ -3795,13 +3796,10 @@ test('Formatos: CLINIC mapeado como PRO → 4 formatos', () => {
     assertEqual(formats.length, 4, 'CLINIC mapeado a PRO → todos los formatos');
 });
 
-test('Formatos: si CLIENT_CONFIG.type no fue mapeado, GIFT pierde formatos (bug potencial)', () => {
-    // Este test documenta un comportamiento potencialmente problemático:
-    // Si alguien guarda type='GIFT' directamente en CLIENT_CONFIG sin mapear a PRO,
-    // el usuario solo puede descargar TXT.
+test('Formatos: GIFT directo y GIFT mapeado son equivalentes', () => {
     const directGift = _testGetAllowedFormatsRaw('GIFT');
     const mappedGift = _testGetAllowedFormatsRaw(_testPlanMapping('gift').type);
-    assert(directGift.length < mappedGift.length, 'GIFT directo tiene menos formatos que GIFT mapeado');
+    assertEqual(directGift.length, mappedGift.length, 'GIFT directo no debe perder formatos frente al mapeo');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
