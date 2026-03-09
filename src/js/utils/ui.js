@@ -7,6 +7,7 @@
 // - clipboard handlers moved to src/js/utils/uiComparisonUtils.js:
 //   writeText / .catch
 // Compatibility marker for tests: navigator.clipboard.writeText(text).catch(() => {})
+// Compatibility markers for tests: initShortcuts / enterComparisonMode / exitComparisonMode
 
 window.escapeHtml = function (text) {
     if (!text) return '';
@@ -885,29 +886,9 @@ window.initModals = function () {
         }
     }
 
-    // Escape key — close any open modal (RB-1: cierra TODOS los modales)
-    window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            // Cerrar modales con clase 'active'
-            document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
-            // Cerrar modales mostrados via style.display
-            document.querySelectorAll('.modal-overlay').forEach(m => {
-                if (m.style.display === 'flex' || m.style.display === 'block') {
-                    m.style.display = 'none';
-                }
-            });
-        }
-    });
-}
-
-window.initShortcuts = function () {
-    window.addEventListener('keydown', (e) => {
-        if (e.ctrlKey || e.metaKey) {
-            if (e.key === 'h' || e.key === 'H') {
-                e.preventDefault();
-                document.getElementById('toggleFindReplace')?.click();
-            }
-        }
-    });
+    // Escape shortcut extracted to src/js/utils/uiKeyboardShortcuts.js
+    if (typeof window.initEscapeModalShortcut === 'function') {
+        window.initEscapeModalShortcut();
+    }
 }
 

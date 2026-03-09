@@ -53,3 +53,27 @@ document.addEventListener('keydown', (e) => {
         return;
     }
 });
+
+window.initShortcuts = function () {
+    window.addEventListener('keydown', (e) => {
+        if (e.ctrlKey || e.metaKey) {
+            if (e.key === 'h' || e.key === 'H') {
+                e.preventDefault();
+                document.getElementById('toggleFindReplace')?.click();
+            }
+        }
+    });
+};
+
+window.initEscapeModalShortcut = function () {
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+            document.querySelectorAll('.modal-overlay').forEach(m => {
+                if (m.style.display === 'flex' || m.style.display === 'block') {
+                    m.style.display = 'none';
+                }
+            });
+        }
+    });
+};
