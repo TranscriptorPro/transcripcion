@@ -43,6 +43,25 @@ function _getReportHistoryMax() {
     return REPORT_HISTORY_MAX;
 }
 
+window.setReportHistoryMax = function (value) {
+    const policy = window.ReportHistoryPolicyUtils || {};
+    if (typeof policy.setReportHistoryMax !== 'function') return _getReportHistoryMax();
+    const effectiveMax = policy.setReportHistoryMax(value);
+
+    // Trim current history immediately when limit is reduced.
+    const history = _getReportHistory();
+    while (history.length > effectiveMax) history.pop();
+    try { _setReportHistory(history); } catch (_) { /* keep policy even if trim fails */ }
+    if (typeof _refreshReportHistoryPanel === 'function') _refreshReportHistoryPanel();
+    return effectiveMax;
+};
+
+window.resetReportHistoryMax = function () {
+    const policy = window.ReportHistoryPolicyUtils || {};
+    if (typeof policy.resetReportHistoryMax !== 'function') return _getReportHistoryMax();
+    return policy.resetReportHistoryMax();
+};
+
 // ---- Guardar informe ----
 // Se invoca al descargar PDF o al imprimir — momento en que el informe se considera "final".
 window.saveReportToHistory = function (data) {
