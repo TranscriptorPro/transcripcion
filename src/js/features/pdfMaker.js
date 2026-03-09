@@ -153,15 +153,23 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         // ── Pie de página ─────────────────────────────────────────────
         function drawFooter(num) {
             if (!cfgShowFooter && !cfgShowPageNum) return;
-            doc.setFontSize(8);
-            doc.setFont(mainFont, 'italic');
-            setGray(120);
-            const parts = [];
-            if (cfgShowFooter && footerText) parts.push(footerText);
-            if (cfgShowDate) parts.push(`Fecha: ${pDate}`);
-            if (cfgShowPageNum) parts.push(`Página ${num}`);
-            if (parts.length) {
-                doc.text(parts.join('  •  '), PAGE_W / 2, FOOTER_Y, { align: 'center' });
+            // Línea separadora superior
+            doc.setDrawColor(204, 204, 204);
+            doc.setLineWidth(0.4);
+            doc.line(ML, FOOTER_Y - 5, PAGE_W - MR, FOOTER_Y - 5);
+            doc.setDrawColor(0);
+
+            doc.setFontSize(7.5);
+            doc.setFont(mainFont, 'normal');
+            setGray(136); // #888
+            const leftParts = [];
+            if (cfgShowFooter && footerText) leftParts.push(footerText);
+            if (cfgShowDate) leftParts.push(`Impreso: ${new Date().toLocaleDateString('es-ES')}`);
+            if (leftParts.length) {
+                doc.text(leftParts.join('  '), ML, FOOTER_Y);
+            }
+            if (cfgShowPageNum) {
+                doc.text(`Página ${num}`, PAGE_W - MR, FOOTER_Y, { align: 'right' });
             }
             setBlack();
         }
@@ -172,13 +180,13 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             const hasWpData = wpName || wpAddress || wpPhone || wpEmail;
             if (!hasWpData && !instLogoB64) { cy = 10; return; }
 
-            // Rectángulo de color de fondo
-            const bannerH = 14;
+            // Rectángulo de color de fondo (match: .preview-workplace → padding 8px/7px)
+            const bannerH = 16;
             doc.setFillColor(accent.r, accent.g, accent.b);
             doc.rect(0, 0, PAGE_W, bannerH, 'F');
 
             let contentX = ML;
-            // Logo institucional
+            // Logo institucional (match: .pvw-logo → max-height:48px ≈ 12.7mm)
             if (instLogoB64) {
                 try {
                     const instSizePx = parseInt(config.instLogoSizePx || localStorage.getItem('inst_logo_size_px') || '60');
@@ -191,18 +199,18 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                 } catch (e) { /* imagen inválida */ }
             }
 
-            // Texto del lugar
+            // Texto del lugar (match: .pvw-name 11pt bold uppercase + .pvw-details 8pt)
             doc.setTextColor(255, 255, 255);
             if (wpName) {
                 doc.setFontSize(11);
                 doc.setFont(mainFont, 'bold');
-                doc.text(wpName.toUpperCase(), contentX, 6);
+                doc.text(wpName.toUpperCase(), contentX, 7);
             }
             const wpDetails = [wpAddress, wpPhone ? 'Tel: ' + wpPhone : '', wpEmail].filter(Boolean);
             if (wpDetails.length) {
-                doc.setFontSize(7.5);
+                doc.setFontSize(8);
                 doc.setFont(mainFont, 'normal');
-                doc.text(wpDetails.join(' • '), contentX, 11);
+                doc.text(wpDetails.join(' • '), contentX, 12);
             }
             setBlack();
             cy = bannerH + 4;
@@ -213,7 +221,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             if (!cfgShowHeader) { headerH = cy; return; }
             let infoX = ML;
 
-            // Logo/foto del profesional (a la izquierda)
+            // Logo/foto del profesional (match: .pvh-logo → max-height:68px ≈ 18mm)
             if (profLogoB64 && profLogoB64 !== instLogoB64) {
                 try {
                     const profSizePx = parseInt(localStorage.getItem('prof_logo_size_px') || '60');
@@ -226,96 +234,179 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                 } catch (e) { /* imagen inválida */ }
             }
 
-            // "Estudio realizado por: Dr. Nombre"
+            // (match: .pvh-name 14pt bold accent)
             let iy = cy + 5;
             if (profName) {
-                doc.setFontSize(13);
+                doc.setFontSize(14);
                 doc.setFont(mainFont, 'bold');
                 setAccent();
                 doc.text('Estudio realizado por: ' + profName, infoX, iy);
-                iy += 5;
+                iy += 5.5;
             }
-            // Especialidad • Mat. XXXX
+            // (match: .pvh-spec 10pt italic #444)
             const specMatParts = [];
             if (especialidad) specMatParts.push(especialidad);
             if (matricula) specMatParts.push('Mat. ' + matricula);
             if (specMatParts.length) {
-                doc.setFontSize(9);
+                doc.setFontSize(10);
                 doc.setFont(mainFont, 'italic');
-                setGray(70);
+                setGray(68); // #444
                 doc.text(specMatParts.join(' • '), infoX, iy);
+                iy += 4.5;
+            }
+            // (match: .pvh-inst 9.5pt italic #333)
+            if (institutionName) {
+                doc.setFontSize(9.5);
+                doc.setFont(mainFont, 'italic');
+                setGray(51); // #333
+                doc.text(institutionName, infoX, iy);
                 iy += 4;
             }
 
-            cy = Math.max(iy, profLogoB64 ? cy + 20 : iy) + 2;
-            accentLine(cy);
-            cy += 4;
+            cy = Math.max(iy, profLogoB64 ? cy + 20 : iy) + 3;
+            // (match: .preview-header border-bottom 2px solid accent)
+            doc.setDrawColor(accent.r, accent.g, accent.b);
+            doc.setLineWidth(0.6);
+            doc.line(ML, cy, PAGE_W - MR, cy);
+            doc.setDrawColor(0);
+            cy += 5;
             headerH = cy;
             setBlack();
         }
 
-        // ── Datos del estudio ────────────────────────────────────────
+        // ── Datos del estudio (match: .pvs-grid con 2 filas) ─────────
         function drawStudyInfo() {
-            const items = [];
-            if (studyType)   items.push(`Estudio: ${studyType}`);
-            if (reportNum)   items.push(`Informe Nº: ${reportNum}`);
-            items.push(`Fecha: ${pDate}${studyTime ? ' ' + studyTime : ''}`);
-            if (refDoctor)   items.push(`Solicitante: ${refDoctor}`);
-            if (studyReason) items.push(`Motivo: ${studyReason}`);
-            if (!items.length) return;
+            const row1 = [];
+            row1.push({ label: 'ESTUDIO:', value: studyType || '—' });
+            row1.push({ label: 'INFORME Nº:', value: reportNum || '—' });
+            row1.push({ label: 'FECHA:', value: `${pDate}${studyTime ? ' ' + studyTime : ''}` });
 
-            doc.setFontSize(8.5);
-            doc.setFont('helvetica', 'italic');
-            setGray(60);
-            const line = doc.splitTextToSize(items.join('  |  '), CW);
-            doc.text(line, ML, cy);
-            cy += line.length * 4.5 + 3;
+            const row2 = [];
+            if (refDoctor)   row2.push({ label: 'SOLICITANTE:', value: refDoctor });
+            if (studyReason) row2.push({ label: 'MOTIVO:', value: studyReason });
+
+            const padX = 4.2, padY = 2.6;
+            const rowH = 5.5;
+            const innerW = CW - 2 * padX;
+            let boxH = padY * 2 + rowH;
+            if (row2.length) boxH += 1 + rowH;
+
+            ensureSpace(boxH + 4);
+
+            // Fondo (match: .pvs-grid bg:#f4f7fb border:#e3e8ef)
+            doc.setFillColor(244, 247, 251);
+            doc.setDrawColor(227, 232, 239);
+            doc.setLineWidth(0.25);
+            doc.roundedRect(ML, cy, CW, boxH, 1.2, 1.2, 'FD');
+
+            // Fila 1: 3 columnas (match: .pvs-3col)
+            const col3W = innerW / 3;
+            let ry = cy + padY + 3.5;
+            for (let i = 0; i < row1.length; i++) {
+                const cx = ML + padX + i * col3W;
+                doc.setFontSize(6.5);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(accent.r, accent.g, accent.b);
+                doc.text(row1[i].label, cx, ry);
+                const lblW = doc.getTextWidth(row1[i].label);
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(34, 34, 34);
+                doc.text(row1[i].value, cx + lblW + 1.5, ry);
+            }
+
+            // Fila 2 con separador punteado (match: .pvs-2col + border-top dashed)
+            if (row2.length) {
+                const sepY = cy + padY + rowH + 0.5;
+                doc.setDrawColor(221, 227, 238);
+                doc.setLineWidth(0.2);
+                // Línea punteada manual
+                let dx = ML + padX;
+                const endX = ML + CW - padX;
+                while (dx < endX) {
+                    const segEnd = Math.min(dx + 1.5, endX);
+                    doc.line(dx, sepY, segEnd, sepY);
+                    dx += 3;
+                }
+                const col2W = innerW / row2.length;
+                ry = sepY + rowH - 0.5;
+                for (let i = 0; i < row2.length; i++) {
+                    const cx = ML + padX + i * col2W;
+                    doc.setFontSize(6.5);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(accent.r, accent.g, accent.b);
+                    doc.text(row2[i].label, cx, ry);
+                    const lblW = doc.getTextWidth(row2[i].label);
+                    doc.setFontSize(9);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(34, 34, 34);
+                    doc.text(row2[i].value, cx + lblW + 1.5, ry);
+                }
+            }
+
+            doc.setDrawColor(0);
+            cy += boxH + 4;
             setBlack();
         }
 
-        // ── Datos del paciente ───────────────────────────────────────
+        // ── Datos del paciente (match: .pvp-grid 3 columnas) ─────────
         function drawPatientBlock() {
-            const cells = [];
-            if (pName)     cells.push(['Paciente', pName]);
-            if (pDni)      cells.push(['DNI', pDni]);
-            if (pAge)      cells.push(['Edad', pAge]);
-            if (pSex)      cells.push(['Sexo', pSex]);
-            if (pInsurance)cells.push(['OS/Prepaga', pInsurance]);
-            if (pAffiliateNum) cells.push(['Nº Afiliado', pAffiliateNum]);
-            if (!cells.length) return;
+            // Distribuir datos en 3 columnas × 2 filas
+            const col1 = [], col2 = [], col3 = [];
+            if (pName)        col1.push({ label: 'PACIENTE', value: pName });
+            if (pSex)         col1.push({ label: 'SEXO', value: pSex });
+            if (pDni)         col2.push({ label: 'DNI', value: pDni });
+            if (pInsurance)   col2.push({ label: 'COBERTURA', value: pInsurance });
+            if (pAge)         col3.push({ label: 'EDAD', value: pAge });
+            if (pAffiliateNum)col3.push({ label: 'Nº AFILIADO', value: pAffiliateNum });
 
-            // Usamos rectángulo de fondo suave si caben datos
-            if (typeof doc.autoTable === 'function') {
-                doc.autoTable({
-                    startY: cy,
-                    body: cells.map(([k, v]) => ({ k, v })),
-                    columns: [
-                        { dataKey: 'k', header: '' },
-                        { dataKey: 'v', header: '' }
-                    ],
-                    theme: 'plain',
-                    styles: { fontSize: 9, cellPadding: { top: 1, bottom: 1, left: 1, right: 1 } },
-                    columnStyles: {
-                        k: { fontStyle: 'bold', textColor: [80, 80, 80], cellWidth: 28 },
-                        v: { textColor: [0, 0, 0] }
-                    },
-                    tableWidth: CW,
-                    margin: { left: ML },
-                    showHead: 'never'
-                });
-                cy = doc.lastAutoTable.finalY + 3;
-            } else {
-                doc.setFontSize(9);
-                cells.forEach(([k, v]) => {
+            if (!col1.length && !col2.length && !col3.length) return;
+
+            const padX = 4.2, padY = 3;
+            const groupH = 7;
+            const groupGap = 3;
+            const maxGroups = Math.max(col1.length, col2.length, col3.length);
+            const boxH = padY * 2 + maxGroups * groupH + Math.max(0, maxGroups - 1) * groupGap;
+            const accentBorderW = 1.2; // 4px
+
+            ensureSpace(boxH + 4);
+
+            // Fondo (match: .pvp-grid bg:#fafbfc border:#d0d7de border-left:4px accent)
+            doc.setFillColor(250, 251, 252);
+            doc.setDrawColor(208, 215, 222);
+            doc.setLineWidth(0.25);
+            doc.roundedRect(ML, cy, CW, boxH, 1.2, 1.2, 'FD');
+            // Borde izquierdo accent
+            doc.setFillColor(accent.r, accent.g, accent.b);
+            doc.rect(ML, cy, accentBorderW, boxH, 'F');
+
+            // Dibujar columnas
+            const innerW = CW - 2 * padX;
+            const colW = innerW / 3;
+            const columns = [col1, col2, col3];
+
+            for (let c = 0; c < 3; c++) {
+                const col = columns[c];
+                const cx = ML + padX + c * colW;
+                let gy = cy + padY;
+                for (let g = 0; g < col.length; g++) {
+                    // Label (match: .pvp-lbl 6.5pt uppercase accent)
+                    doc.setFontSize(6.5);
                     doc.setFont('helvetica', 'bold');
-                    doc.text(k + ': ', ML, cy);
-                    doc.setFont('helvetica', 'normal');
-                    doc.text(v, ML + doc.getTextWidth(k + ': '), cy);
-                    cy += 5;
-                });
+                    doc.setTextColor(accent.r, accent.g, accent.b);
+                    doc.text(col[g].label, cx, gy + 3);
+                    // Value (match: .pvp-val 10pt bold #111)
+                    doc.setFontSize(10);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(17, 17, 17);
+                    doc.text(col[g].value, cx, gy + 7);
+                    gy += groupH + groupGap;
+                }
             }
-            grayLine(cy);
-            cy += 5;
+
+            doc.setDrawColor(0);
+            cy += boxH + 4;
+            setBlack();
         }
 
         // ── Renderizado del contenido HTML ───────────────────────────
@@ -338,53 +429,55 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             if (node.classList.contains('no-data-field')             ) return;
             if (node.id === 'aiNotePanel'                            ) return;
 
-            // ── H1: título de sección grande, centrado ───────────────
+            // ── H1: título de sección grande, centrado (match: h1 13pt bold uppercase accent, border-bottom 2px) ──
             if (tag === 'h1') {
                 const txt = node.textContent.trim();
                 if (!txt) return;
-                ensureSpace(18);
-                cy += 3;
-                doc.setFontSize(15);
+                ensureSpace(35);
+                cy += 6;
+                doc.setFontSize(13);
                 doc.setFont('helvetica', 'bold');
                 setAccent();
                 doc.text(txt.toUpperCase(), PAGE_W / 2, cy, { align: 'center' });
                 cy += 2;
-                accentLine(cy, true);
+                doc.setDrawColor(accent.r, accent.g, accent.b);
+                doc.setLineWidth(0.6);
+                doc.line(ML, cy, PAGE_W - MR, cy);
+                doc.setDrawColor(0);
                 cy += 6;
                 setBlack();
                 return;
             }
 
-            // ── H2: subtítulo sólido con línea bajo el texto ─────────
+            // ── H2: subtítulo (match: h2 11pt bold uppercase accent, border-bottom 1px accent 30%) ──
             if (tag === 'h2') {
                 const txt = node.textContent.trim();
                 if (!txt) return;
-                ensureSpace(14);
-                cy += 4;
-                doc.setFontSize(11.5);
+                ensureSpace(30);
+                cy += 5;
+                doc.setFontSize(11);
                 doc.setFont('helvetica', 'bold');
                 setAccent();
-                doc.text(txt, ML, cy);
-                const tw = doc.getTextWidth(txt);
-                cy += 1;
+                doc.text(txt.toUpperCase(), ML, cy);
+                cy += 2;
                 doc.setDrawColor(accent.r, accent.g, accent.b);
-                doc.setLineWidth(0.4);
-                doc.line(ML, cy, ML + tw + 5, cy);
+                doc.setLineWidth(0.25);
+                doc.line(ML, cy, PAGE_W - MR, cy);
                 doc.setDrawColor(0);
                 cy += 5;
                 setBlack();
                 return;
             }
 
-            // ── H3: encabezado terciario ──────────────────────────────
+            // ── H3: encabezado terciario (match: h3 10.5pt semibold italic #333) ──
             if (tag === 'h3') {
                 const txt = node.textContent.trim();
                 if (!txt) return;
-                ensureSpace(10);
-                cy += 3;
-                doc.setFontSize(10);
+                ensureSpace(25);
+                cy += 4;
+                doc.setFontSize(10.5);
                 doc.setFont('helvetica', 'bolditalic');
-                setGray(40);
+                setGray(51); // #333
                 doc.text(txt, ML, cy);
                 cy += 5;
                 setBlack();
@@ -593,44 +686,59 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             cy = lineY + LINE_H + 2;
         }
 
-        // ── Bloque de firma ───────────────────────────────────────────
+        // ── Bloque de firma (match: .pvsig-block width:240px=63mm, right-aligned) ──
         function drawSignature() {
-            cy += 10;
-            ensureSpace(40);
+            cy += 18;
+            ensureSpace(45);
 
-            // Posición dinámica: centrar firma en el tercio derecho de la página
-            const sigLineW = 60;
-            const sigStartX = PAGE_W - MR - sigLineW;
-            const sigCenterX = sigStartX + sigLineW / 2;
+            // (match: .pvsig-block margin-left:auto → right-aligned, width 63mm)
+            const sigBlockW = 63;
+            const sigLineW  = 53; // 200px ≈ 53mm
+            const sigStartX = PAGE_W - MR - sigBlockW;
+            const sigCenterX = sigStartX + sigBlockW / 2;
+            const lineX     = sigCenterX - sigLineW / 2;
 
+            // Imagen de firma (match: .pvsig-img max-height:60px ≈ 16mm)
             if (sigB64) {
                 try {
                     const imgType = sigB64.includes('data:image/png') ? 'PNG' : 'JPEG';
                     const b64data = sigB64.includes(',') ? sigB64.split(',')[1] : sigB64;
-                    doc.addImage(b64data, imgType, sigStartX, cy, 50, 20);
-                    cy += 22;
+                    doc.addImage(b64data, imgType, sigCenterX - 20, cy, 40, 16);
+                    cy += 16;
                 } catch (e) { /* imagen inválida */ }
             }
+            // Línea de firma (match: .pvsig-line 1.5px solid #333)
             if (showSignLine) {
-                doc.setDrawColor(0);
+                doc.setDrawColor(51, 51, 51);
                 doc.setLineWidth(0.4);
-                doc.line(sigStartX, cy, sigStartX + sigLineW, cy);
-                cy += 4;
+                doc.line(lineX, cy, lineX + sigLineW, cy);
+                doc.setDrawColor(0);
+                cy += 3;
             }
-            doc.setFontSize(9);
-            doc.setFont(mainFont, 'normal');
-            setBlack();
+            // Nombre (match: .pvsig-name 10pt bold)
             if (showSignName && profName) {
+                doc.setFontSize(10);
+                doc.setFont(mainFont, 'bold');
+                setBlack();
                 doc.text(profName, sigCenterX, cy, { align: 'center' });
                 cy += 4;
             }
+            // Matrícula (match: .pvsig-mat 9pt #555)
             if (showSignMat && matricula) {
+                doc.setFontSize(9);
+                doc.setFont(mainFont, 'normal');
+                setGray(85); // #555
                 doc.text('Mat. ' + matricula, sigCenterX, cy, { align: 'center' });
-                cy += 4;
+                cy += 3.5;
             }
+            // Especialidad (match: .pvsig-spec 8.5pt italic #666)
             if (especialidad) {
+                doc.setFontSize(8.5);
+                doc.setFont(mainFont, 'italic');
+                setGray(102); // #666
                 doc.text(especialidad, sigCenterX, cy, { align: 'center' });
             }
+            setBlack();
         }
 
         // ── ¡Ejecutar todo! ───────────────────────────────────────────
@@ -649,11 +757,10 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
 
         drawSignature();
 
-        // ── Etapa 6: QR de verificación debajo de la firma ───────────
+        // ── Etapa 6: QR de verificación centrado (match: .preview-qr text-align:center) ──
         const cfgShowQR = config.showQR ?? false;
         if (cfgShowQR && typeof generateQRCode === 'function') {
             try {
-                // Construir texto de verificación con datos del informe
                 const qrParts = [
                     'TPRO-VERIFY',
                     `ID:${reportNum || 'TPRO-' + Date.now()}`,
@@ -669,18 +776,14 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                 const qrDataUrl = generateQRCode(qrText);
                 if (qrDataUrl) {
                     cy += 6;
-                    ensureSpace(28);
-                    const qrSize = 18;
-                    // Centrar debajo de la firma (misma posición que en preview)
-                    const sigLineW = 60;
-                    const sigStartX = PAGE_W - MR - sigLineW;
-                    const sigCenterX = sigStartX + sigLineW / 2;
-                    const qrX = sigCenterX - qrSize / 2;
+                    ensureSpace(24);
+                    const qrSize = 17; // 64px ≈ 17mm
+                    const qrX = PAGE_W / 2 - qrSize / 2;
                     doc.addImage(qrDataUrl, 'GIF', qrX, cy, qrSize, qrSize);
                     cy += qrSize + 2;
                     doc.setFontSize(6);
-                    setGray(140);
-                    doc.text('Código de verificación', sigCenterX, cy, { align: 'center' });
+                    setGray(153); // #999
+                    doc.text('CÓDIGO DE VERIFICACIÓN', PAGE_W / 2, cy, { align: 'center' });
                     setBlack();
                     doc.setFontSize(mainFontSize);
                 }
