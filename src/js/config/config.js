@@ -27,6 +27,61 @@ window.CLIENT_CONFIG = {
     allowedTemplates: [] // [] = todas; ['key1','key2'] = solo esas
 };
 
+// URL backend por defecto (Apps Script productivo).
+const DEFAULT_BACKEND_URL = 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec';
+
+function _isValidBackendUrl(url) {
+    return /^https?:\/\//i.test(String(url || '').trim());
+}
+
+function _readStoredClientConfig() {
+    try {
+        return JSON.parse(localStorage.getItem('client_config_stored') || '{}') || {};
+    } catch (_) {
+        return {};
+    }
+}
+
+function _pickBestBackendUrl() {
+    const fromRuntime = (window.CLIENT_CONFIG && window.CLIENT_CONFIG.backendUrl) || '';
+    if (_isValidBackendUrl(fromRuntime)) return String(fromRuntime).trim();
+
+    const fromStoredConfig = _readStoredClientConfig().backendUrl || '';
+    if (_isValidBackendUrl(fromStoredConfig)) return String(fromStoredConfig).trim();
+
+    const fromLegacyStorage = localStorage.getItem('backend_url') || '';
+    if (_isValidBackendUrl(fromLegacyStorage)) return String(fromLegacyStorage).trim();
+
+    return DEFAULT_BACKEND_URL;
+}
+
+function _persistBackendUrlEverywhere(url) {
+    const safeUrl = String(url || '').trim();
+    if (!_isValidBackendUrl(safeUrl)) return;
+
+    if (window.CLIENT_CONFIG) window.CLIENT_CONFIG.backendUrl = safeUrl;
+
+    try {
+        const storedCfg = _readStoredClientConfig();
+        storedCfg.backendUrl = safeUrl;
+        localStorage.setItem('client_config_stored', JSON.stringify(storedCfg));
+    } catch (_) {}
+
+    try { localStorage.setItem('backend_url', safeUrl); } catch (_) {}
+
+    if (typeof appDB !== 'undefined') {
+        try {
+            appDB.set('backend_url', safeUrl);
+        } catch (_) {}
+    }
+}
+
+window.getResolvedBackendUrl = function () {
+    const url = _pickBestBackendUrl();
+    _persistBackendUrlEverywhere(url);
+    return url;
+};
+
 // ═══════════════════════════════════════════════════════════════════════════
 // CONFIG DINÁMICA — carga desde localStorage o URL ?id= (fábrica de clones)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -86,6 +141,13 @@ window.CLIENT_CONFIG = {
             } catch(_) {}
         }
     } catch (_) { /* navegadores antiguos sin URLSearchParams */ }
+})();
+
+// Garantiza backend URL consistente desde el arranque (admin y cliente final).
+(function _hydrateBackendUrlAtBoot() {
+    try {
+        window.getResolvedBackendUrl();
+    } catch (_) {}
 })();
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
