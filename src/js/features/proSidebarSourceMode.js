@@ -93,6 +93,9 @@
         const els = getEls();
         if (!els.switchWrap) return;
 
+        // Regla UX: siempre iniciar en Audio al abrir la app.
+        if (els.sourceToggle) els.sourceToggle.checked = false;
+
         applySourceUI();
 
         if (els.sourceToggle && !els.sourceToggle._bound) {
