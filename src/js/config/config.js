@@ -29,7 +29,7 @@ window.CLIENT_CONFIG = {
 
 // URL backend por defecto (Apps Script productivo).
 const DEFAULT_BACKEND_URL = 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec';
-const DEFAULT_EMAIL_SENDER_NAME = 'Equipo Transcriptor Pro';
+const DEFAULT_EMAIL_SENDER_NAME = 'Transcriptor Pro | Soporte';
 
 function _isValidBackendUrl(url) {
     return /^https?:\/\//i.test(String(url || '').trim());

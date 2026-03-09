@@ -1498,11 +1498,19 @@ function doPost(e) {
       const safeSenderName = requestedName
         ? requestedName.replace(/[\r\n<>]/g, '').slice(0, 80)
         : 'Equipo Transcriptor Pro';
+      const requestedReplyTo = String(payload.replyTo || '').trim();
+      const safeReplyTo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(requestedReplyTo)
+        ? requestedReplyTo.replace(/[\r\n<>]/g, '').slice(0, 120)
+        : '';
 
       const emailOptions = {
         htmlBody: htmlBody || '<p>Mensaje de Transcriptor Médico Pro.</p>',
         name: safeSenderName
       };
+
+      if (safeReplyTo) {
+        emailOptions.replyTo = safeReplyTo;
+      }
 
       // Solo adjuntar PDF si se proporcionó
       if (pdfB64) {

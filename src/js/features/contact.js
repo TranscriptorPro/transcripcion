@@ -19,10 +19,6 @@ window._retryPendingContacts = async function () {
         || localStorage.getItem('backend_url');
     if (!backendUrl) return; // sin backend no podemos reintentar
 
-    const senderName = (typeof window.getResolvedEmailSenderName === 'function')
-        ? window.getResolvedEmailSenderName()
-        : 'Equipo Transcriptor Pro';
-
     const still = [];
     for (const msg of pending) {
         try {
@@ -34,7 +30,8 @@ window._retryPendingContacts = async function () {
                     to: 'soporte@transcriptorpro.com',
                     subject: `[Contacto pendiente] ${msg.motivo}`,
                     htmlBody: `<p><b>Motivo:</b> ${(msg.motivo||"").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</p><p>${(msg.detalle||"").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</p><p><small>${(msg.nombre||"").replace(/</g,"&lt;")} — Mat. ${(msg.mat||"").replace(/</g,"&lt;")} — ${msg.date}</small></p>`,
-                    senderName: senderName
+                    senderName: msg.senderName || (`Dr./Dra. ${msg.nombre || 'Profesional'}`),
+                    replyTo: msg.replyTo || ''
                 })
             });
             const data = await res.json();
@@ -165,9 +162,12 @@ window.initContact = function () {
             const contactEmail = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.contactEmail)
                 ? CLIENT_CONFIG.contactEmail
                 : 'soporte@transcriptorpro.app';
-            const senderName = (typeof window.getResolvedEmailSenderName === 'function')
-                ? window.getResolvedEmailSenderName()
-                : 'Equipo Transcriptor Pro';
+            const senderName = `Dr./Dra. ${nombre}`;
+            const replyTo = String(
+                profData.email
+                || (typeof CLIENT_CONFIG !== 'undefined' ? CLIENT_CONFIG.email : '')
+                || ''
+            ).trim();
 
             // Deshabilitar botón y mostrar estado
             if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = '⏳ Enviando...'; }
@@ -206,7 +206,8 @@ window.initContact = function () {
                             to: contactEmail,
                             subject: subject,
                             htmlBody: htmlBody,
-                            senderName: senderName
+                            senderName: senderName,
+                            replyTo: replyTo
                         })
                     });
                     const data = await response.json();
@@ -242,7 +243,7 @@ window.initContact = function () {
                     try {
                         const pending = (typeof appDB !== 'undefined' ? await appDB.get('pending_contacts') : null)
                             || JSON.parse(localStorage.getItem('pending_contacts') || '[]');
-                        pending.push({ motivo, detalle, nombre, mat, date: new Date().toISOString() });
+                        pending.push({ motivo, detalle, nombre, mat, date: new Date().toISOString(), senderName, replyTo });
                         if (typeof appDB !== 'undefined') await appDB.set('pending_contacts', pending);
                         else localStorage.setItem('pending_contacts', JSON.stringify(pending));
                     } catch (_) {}
@@ -258,7 +259,7 @@ window.initContact = function () {
             try {
                 const pending = (typeof appDB !== 'undefined' ? await appDB.get('pending_contacts') : null)
                     || JSON.parse(localStorage.getItem('pending_contacts') || '[]');
-                pending.push({ motivo, detalle, nombre, mat, date: new Date().toISOString() });
+                pending.push({ motivo, detalle, nombre, mat, date: new Date().toISOString(), senderName, replyTo });
                 if (typeof appDB !== 'undefined') await appDB.set('pending_contacts', pending);
                 else localStorage.setItem('pending_contacts', JSON.stringify(pending));
             } catch (_) {}

@@ -2620,7 +2620,7 @@
                         to: to,
                         subject: subject || 'Transcriptor Médico Pro',
                         htmlBody: htmlBody,
-                        senderName: 'Transcriptor Médico Pro — Admin'
+                        senderName: 'Transcriptor Pro | Soporte'
                     })
                 });
                 const data = await response.json();

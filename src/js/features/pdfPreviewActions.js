@@ -40,6 +40,7 @@ window.emailFromPreview = async function () {
     const activeWp = (wpIdx !== undefined && wpIdx !== null) ? wpProfiles[Number(wpIdx)] : wpProfiles[0];
     const wpName = activeWp?.name || '';
     const wpPhone = activeWp?.phone || config.workplacePhone || '';
+    const senderReplyTo = String(activePro?.email || profData.email || activeWp?.email || config.workplaceEmail || '').trim();
 
     const htmlBody = `
 <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
@@ -96,7 +97,16 @@ window.emailFromPreview = async function () {
     overlay.classList.add('active');
 
     // Guardar datos para el envío
-    window._emailPendingData = { subject, htmlBody, studyType, studyDate, profName: profDisplay, patientName };
+    window._emailPendingData = {
+        subject,
+        htmlBody,
+        studyType,
+        studyDate,
+        profName: profDisplay,
+        patientName,
+        senderName: profDisplay,
+        replyTo: senderReplyTo
+    };
 };
 
 function _escHtml(s) {
@@ -230,9 +240,8 @@ window.initEmailSendModal = function () {
             sendBtn.textContent = '📨 Enviando...';
             if (statusEl) statusEl.textContent = '📨 Enviando email...';
 
-            const senderName = (typeof window.getResolvedEmailSenderName === 'function')
-                ? window.getResolvedEmailSenderName()
-                : 'Equipo Transcriptor Pro';
+            const senderName = String(data.senderName || data.profName || 'Profesional').trim();
+            const replyTo = String(data.replyTo || '').trim();
 
             const fileDate = new Date().toISOString().split('T')[0];
             const fileName = `Informe_${(data.studyType || 'Medico').replace(/\s+/g, '_')}_${fileDate}.pdf`;
@@ -247,7 +256,8 @@ window.initEmailSendModal = function () {
                     htmlBody: data.htmlBody,
                     pdfBase64: pdfBase64,
                     fileName: fileName,
-                    senderName: senderName
+                    senderName: senderName,
+                    replyTo: replyTo
                 })
             });
 
