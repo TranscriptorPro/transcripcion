@@ -7,6 +7,8 @@ function _showClientOnboarding() {
 
     const profData = window._profDataCache || JSON.parse(localStorage.getItem('prof_data') || '{}');
     let currentStep = 1;
+    const currentType = String((typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type) || 'NORMAL').toUpperCase();
+    const shouldSkipAdvancedStep = !['PRO', 'ADMIN'].includes(currentType);
 
     // Rellenar datos precargados
     const displayNombre = document.getElementById('onboardingDisplayNombre');
@@ -64,13 +66,26 @@ function _showClientOnboarding() {
 
     if (next1) next1.addEventListener('click', () => goToStep(2));
     if (next2) next2.addEventListener('click', () => {
+        if (shouldSkipAdvancedStep) {
+            goToStep(4);
+            return;
+        }
         _initOnbStep3();
         goToStep(3);
     });
     if (back2) back2.addEventListener('click', () => goToStep(1));
     if (back3) back3.addEventListener('click', () => goToStep(2));
     if (next3) next3.addEventListener('click', () => { _saveOnbConfig(); goToStep(4); });
-    if (back4) back4.addEventListener('click', () => goToStep(3));
+    if (back4) back4.addEventListener('click', () => goToStep(shouldSkipAdvancedStep ? 2 : 3));
+
+    // En planes basicos ocultar visualmente el paso avanzado para reducir friccion.
+    if (shouldSkipAdvancedStep) {
+        const step3 = document.getElementById('onboardingStep3');
+        if (step3) step3.style.display = 'none';
+        document.querySelectorAll('.onboarding-dot[data-step="3"]').forEach((dot) => {
+            dot.style.display = 'none';
+        });
+    }
 
     const _isProUser = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.hasProMode) || ['ADMIN', 'PRO'].includes(CLIENT_CONFIG?.type);
 
@@ -323,7 +338,12 @@ function _showClientOnboarding() {
                 _showSettingsGear();
 
                 const saludo = profData.nombre ? `¡Bienvenido/a, ${profData.nombre}! 🎉` : '¡Bienvenido/a! 🎉';
-                if (typeof showToast === 'function') showToast(saludo, 'success');
+                if (typeof showToast === 'function') {
+                    showToast(saludo, 'success');
+                    setTimeout(() => {
+                        showToast('Guia rapida: 1) Subi audio 2) Transcribi 3) Descargar/Enviar', 'info', 5200);
+                    }, 500);
+                }
 
                 _tryPwaInstall(3);
 
