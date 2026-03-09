@@ -3,6 +3,7 @@
 window.createTabs = function () {
     const tabsContainer = document.getElementById('tabsContainer');
     if (!tabsContainer || !window.transcriptions) return;
+    const idxUtils = window.TabsIndexUtils || {};
 
     tabsContainer.innerHTML = '';
 
@@ -14,11 +15,13 @@ window.createTabs = function () {
     }
 
     // Safety check - force index to be within bounds
-    if (window.activeTabIndex >= window.transcriptions.length) {
-        window.activeTabIndex = window.transcriptions.length - 1;
-    }
-    if (window.activeTabIndex < 0 && window.transcriptions.length > 0) {
-        window.activeTabIndex = 0;
+    if (window.transcriptions.length > 0) {
+        if (typeof idxUtils.clampIndex === 'function') {
+            window.activeTabIndex = idxUtils.clampIndex(window.activeTabIndex, window.transcriptions.length);
+        } else {
+            if (window.activeTabIndex >= window.transcriptions.length) window.activeTabIndex = window.transcriptions.length - 1;
+            if (window.activeTabIndex < 0) window.activeTabIndex = 0;
+        }
     }
 
     if (window.transcriptions.length > 0) {
@@ -59,7 +62,11 @@ window.createTabs = function () {
 }
 
 window.switchTab = function (index) {
-    if (window.activeTabIndex === index || !window.transcriptions || index >= window.transcriptions.length) return;
+    const idxUtils = window.TabsIndexUtils || {};
+    if (!window.transcriptions || !Array.isArray(window.transcriptions) || window.transcriptions.length === 0) return;
+    if (typeof idxUtils.isValidIndex === 'function' && !idxUtils.isValidIndex(index, window.transcriptions.length)) return;
+    if (index < 0 || index >= window.transcriptions.length) return;
+    if (window.activeTabIndex === index) return;
 
     const editor = document.getElementById('editor');
     if (editor) {
@@ -78,7 +85,10 @@ window.switchTab = function (index) {
 }
 
 window.closeTab = function (index) {
-    if (!window.transcriptions || index >= window.transcriptions.length) return;
+    const idxUtils = window.TabsIndexUtils || {};
+    if (!window.transcriptions || !Array.isArray(window.transcriptions) || window.transcriptions.length === 0) return;
+    if (typeof idxUtils.isValidIndex === 'function' && !idxUtils.isValidIndex(index, window.transcriptions.length)) return;
+    if (index < 0 || index >= window.transcriptions.length) return;
 
     // Guardar contenido actual del editor antes de cerrar
     const editor = document.getElementById('editor');
@@ -116,6 +126,9 @@ window.closeTab = function (index) {
     } else {
         if (index <= window.activeTabIndex && window.activeTabIndex > 0) {
             window.activeTabIndex--;
+        }
+        if (typeof idxUtils.clampIndex === 'function') {
+            window.activeTabIndex = idxUtils.clampIndex(window.activeTabIndex, window.transcriptions.length);
         }
 
         // Force the text update of the new active tab

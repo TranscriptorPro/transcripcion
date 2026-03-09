@@ -4,6 +4,7 @@
 // El médico puede ver informes anteriores (solo lectura) y re-exportarlos a PDF.
 
 var REPORT_HISTORY_KEY = 'report_history';
+const REPORT_HISTORY_MAX = 200;
 
 var _reportHistCache = null;
 (function _initReportHistCache() {
@@ -21,8 +22,17 @@ function _getReportHistory() {
 
 function _setReportHistory(arr) {
     _reportHistCache = arr;
-    if (typeof appDB !== 'undefined') appDB.set(REPORT_HISTORY_KEY, arr);
-    else { try { localStorage.setItem(REPORT_HISTORY_KEY, JSON.stringify(arr)); } catch(_) {} }
+    if (typeof appDB !== 'undefined') {
+        appDB.set(REPORT_HISTORY_KEY, arr);
+    } else {
+        localStorage.setItem(REPORT_HISTORY_KEY, JSON.stringify(arr));
+    }
+}
+
+function _getReportHistoryMax() {
+    const policy = window.ReportHistoryPolicyUtils || {};
+    if (typeof policy.getReportHistoryMax === 'function') return policy.getReportHistoryMax();
+    return REPORT_HISTORY_MAX;
 }
 
 // ---- Guardar informe ----
@@ -62,9 +72,9 @@ window.saveReportToHistory = function (data) {
     const history = _getReportHistory();
     history.unshift(entry);
 
-    // Limitar historial a máximo 200 informes para evitar crecimiento indefinido
-    const REPORT_HISTORY_MAX = 200;
-    while (history.length > REPORT_HISTORY_MAX) history.pop();
+    // Limitar historial según política configurable
+    const reportHistoryMax = _getReportHistoryMax();
+    while (history.length > reportHistoryMax) history.pop();
 
     // Intentar guardar; si localStorage está lleno, eliminar los más antiguos
     try {
@@ -115,7 +125,11 @@ window.getReportById = function (id) {
 // ---- Eliminar un informe ----
 window.deleteReport = function (id) {
     const history = _getReportHistory().filter(r => r.id !== id);
-    _setReportHistory(history);
+    try {
+        _setReportHistory(history);
+    } catch (e) {
+        if (typeof showToast === 'function') showToast('No se pudo actualizar historial: ' + (e && e.message ? e.message : 'error de almacenamiento'), 'error');
+    }
 };
 
 // ---- Eliminar TODOS los informes de un paciente ----
@@ -128,7 +142,11 @@ window.deletePatientReports = function (nameOrDni) {
         if (r.patientName && _normStr(r.patientName) === q) return false;
         return true;
     });
-    _setReportHistory(history);
+    try {
+        _setReportHistory(history);
+    } catch (e) {
+        if (typeof showToast === 'function') showToast('No se pudo actualizar historial: ' + (e && e.message ? e.message : 'error de almacenamiento'), 'error');
+    }
 };
 
 // ---- Exportar historial completo como JSON ----
@@ -172,6 +190,9 @@ window.importReportHistory = function (jsonData) {
 
         // Ordenar por fecha descendente
         existing.sort((a, b) => new Date(b.date) - new Date(a.date));
+        // Aplicar límite configurable también en importaciones
+        const max = _getReportHistoryMax();
+        while (existing.length > max) existing.pop();
         _setReportHistory(existing);
         if (typeof showToast === 'function') showToast(`${added} informes importados ✓`, 'success');
         return added;
@@ -441,9 +462,13 @@ window.initReportHistoryPanel = function () {
         }
         const ok = await window.showCustomConfirm('🗑️ Limpiar historial', `¿Eliminar TODOS los informes del historial? (${stats.total} informes)\n\nEsta acción no se puede deshacer. Recomendamos exportar antes.`);
         if (!ok) return;
-        _setReportHistory([]);
-        renderTable();
-        if (typeof showToast === 'function') showToast('Historial limpiado', 'info');
+        try {
+            _setReportHistory([]);
+            renderTable();
+            if (typeof showToast === 'function') showToast('Historial limpiado', 'info');
+        } catch (e) {
+            if (typeof showToast === 'function') showToast('No se pudo limpiar historial: ' + (e && e.message ? e.message : 'error de almacenamiento'), 'error');
+        }
     });
 };
 

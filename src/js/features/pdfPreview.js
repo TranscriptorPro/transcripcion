@@ -28,8 +28,10 @@ window.updatePdfModalByMode = function () {
 
 window.openPdfConfigModal = async function () {
     if (typeof loadPdfConfiguration === 'function') loadPdfConfiguration();
+    const dataUtils = window.PdfDataAccessUtils || {};
+    const safeGet = (typeof dataUtils.safeGet === 'function') ? dataUtils.safeGet : async (_k, fallback) => fallback;
 
-    const profData = (await appDB.get('prof_data')) || {};
+    const profData = (await safeGet('prof_data', {})) || {};
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
     const isAdmin = typeof isAdminUser === 'function' && isAdminUser();
     const isPro = window.currentMode === 'pro';
@@ -162,7 +164,7 @@ window.openPdfConfigModal = async function () {
     if (typeof populatePatientDatalist === 'function') populatePatientDatalist();
 
     // Restaurar profesional activo
-    const pdfCfgRestore = (await appDB.get('pdf_config')) || {};
+    const pdfCfgRestore = (await safeGet('pdf_config', {})) || {};
     const activeProRestore = pdfCfgRestore.activeProfessional;
     if (activeProRestore) {
         set('pdfProfName',        activeProRestore.nombre        || '');
@@ -205,10 +207,12 @@ window.openPdfConfigModal = async function () {
 }
 
 window.openPrintPreview = async function () {
-    const profData = (await appDB.get('prof_data')) || {};
+    const dataUtils = window.PdfDataAccessUtils || {};
+    const safeGet = (typeof dataUtils.safeGet === 'function') ? dataUtils.safeGet : async (_k, fallback) => fallback;
+    const profData = (await safeGet('prof_data', {})) || {};
     // Priorizar _pdfConfigCache (actualizado en memoria de forma síncrona por el botón Previsualizar)
     // para que los cambios del formulario sean visibles ANTES de guardar en IndexedDB
-    const config   = window._pdfConfigCache || (await appDB.get('pdf_config')) || {};
+    const config   = window._pdfConfigCache || (await safeGet('pdf_config', {})) || {};
 
     const esc = (t) => t != null ? String(t)
         .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
@@ -252,7 +256,7 @@ window.openPrintPreview = async function () {
     const accentColor     = activePro?.headerColor || profData.headerColor || '#1a56a0';
 
     // Datos del lugar de trabajo (desde workplace_profiles)
-    const wpProfiles = (await appDB.get('workplace_profiles')) || [];
+    const wpProfiles = (await safeGet('workplace_profiles', [])) || [];
     const wpIdx = config.activeWorkplaceIndex;
     const activeWp = (wpIdx !== undefined && wpIdx !== null) ? wpProfiles[Number(wpIdx)] : wpProfiles[0];
     const wpName = escName(activeWp?.name || '');
@@ -303,11 +307,11 @@ window.openPrintPreview = async function () {
     const showSignMat  = config.showSignMatricula ?? true;
     // Logo institucional: del workplace activo (wp.logo) → fallback a pdf_logo para compat. con usuarios sin factory setup
     const _wpLogoRaw = activeWp?.logo || '';
-    const instLogoSrc = (_wpLogoRaw && _wpLogoRaw.startsWith('data:')) ? _wpLogoRaw : ((await appDB.get('pdf_logo')) || '');
+    const instLogoSrc = (_wpLogoRaw && _wpLogoRaw.startsWith('data:')) ? _wpLogoRaw : ((await safeGet('pdf_logo', '')) || '');
     // Logo del profesional (foto/logo del médico, distinto del logo institucional)
     const profLogoSrc = (activePro?.logo && activePro.logo.startsWith('data:')) ? activePro.logo : '';
     // Firma digital
-    const sigSrc  = (activePro?.firma && activePro.firma.startsWith('data:')) ? activePro.firma : ((await appDB.get('pdf_signature')) || '');
+    const sigSrc  = (activePro?.firma && activePro.firma.startsWith('data:')) ? activePro.firma : ((await safeGet('pdf_signature', '')) || '');
     const hasInstLogo = !!(instLogoSrc && instLogoSrc.startsWith('data:image/'));
     const hasProfLogo = !!(profLogoSrc && profLogoSrc.startsWith('data:image/'));
     const hasLogo = hasInstLogo; // alias para compat. interna

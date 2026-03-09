@@ -80,6 +80,13 @@ function _lmGetCache() {
             else localStorage.removeItem(_LM_CACHE_KEY);
             return null;
         }
+        const cacheUtils = window.LicenseCacheUtils || {};
+        if (typeof cacheUtils.isExpiredByDate === 'function' && cacheUtils.isExpiredByDate(cached.data)) {
+            _lmCacheCache = null;
+            if (typeof appDB !== 'undefined') appDB.remove(_LM_CACHE_KEY);
+            else localStorage.removeItem(_LM_CACHE_KEY);
+            return null;
+        }
         return cached.data;
     } catch (e) {
         return null;
@@ -126,6 +133,11 @@ async function _lmCallValidate() {
                     console.warn('[licenseManager] Cache offline: licencia vencida por fecha');
                     return { error: 'Licencia expirada (offline)', code: 'EXPIRED', plan: cached.plan || 'unknown' };
                 }
+            }
+            const cacheUtils = window.LicenseCacheUtils || {};
+            if (typeof cacheUtils.isExpiredByDate === 'function' && cacheUtils.isExpiredByDate(cached)) {
+                console.warn('[licenseManager] Cache offline: licencia vencida por fecha');
+                return { error: 'Licencia expirada (offline)', code: 'EXPIRED', plan: cached.plan || 'unknown' };
             }
             console.info('[licenseManager] Usando cache offline');
             return cached;
