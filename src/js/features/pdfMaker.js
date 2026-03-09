@@ -96,21 +96,36 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const wpName    = activeWp?.name || '';
         const wpEmail   = activeWp?.email || config.workplaceEmail || '';
 
-        const pName      = config.patientName      || '';
-        const pDni       = config.patientDni       || '';
-        const pAge       = config.patientAge       ? `${config.patientAge} años` : '';
-        const pSex       = config.patientSex       || '';
-        const pInsurance = config.patientInsurance || '';
-        const pAffiliateNum = config.patientAffiliateNum || '';
+        // ── Leer datos del paciente frescos: editor → config → formulario ──
+        const _reqVal = (id) => { try { return document.getElementById(id)?.value?.trim() || ''; } catch(_) { return ''; } };
+        const _edEl = typeof window !== 'undefined' ? (window.editor || document.getElementById('editor')) : null;
+        const _extracted = (_edEl && typeof extractPatientDataFromText === 'function')
+            ? extractPatientDataFromText(_edEl.innerText) : {};
+        const _formP = {
+            name:      _reqVal('reqPatientName')      || _reqVal('pdfPatientName'),
+            dni:       _reqVal('reqPatientDni')        || _reqVal('pdfPatientDni'),
+            age:       _reqVal('reqPatientAge')        || _reqVal('pdfPatientAge'),
+            sex:       _reqVal('reqPatientSex')        || _reqVal('pdfPatientSex'),
+            insurance: _reqVal('reqPatientInsurance')  || _reqVal('pdfPatientInsurance'),
+            affiliate: _reqVal('reqPatientAffiliateNum') || _reqVal('pdfPatientAffiliateNum'),
+        };
+        const pName      = _extracted.name || config.patientName || _formP.name || '';
+        const pDni       = _extracted.dni  || config.patientDni  || _formP.dni  || '';
+        const _rawAge    = _extracted.age  || config.patientAge  || _formP.age  || '';
+        const pAge       = _rawAge ? `${_rawAge} años` : '';
+        const _rawSex    = _extracted.sex  || config.patientSex  || _formP.sex  || '';
+        const pSex       = _rawSex === 'M' ? 'Masculino' : _rawSex === 'F' ? 'Femenino' : _rawSex;
+        const pInsurance = config.patientInsurance || _formP.insurance || '';
+        const pAffiliateNum = config.patientAffiliateNum || _formP.affiliate || '';
         const rawDate    = config.studyDate        || '';
         const pDate      = rawDate
-            ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES')
-            : fecha;
-        const studyTime   = config.studyTime         || '';
-        const tplKey      = config.selectedTemplate || '';
+            ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'})
+            : new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'});
+        const studyTime   = _reqVal('pdfStudyTime') || config.studyTime || '';
+        const tplKey      = (typeof window !== 'undefined' && window.selectedTemplate) || config.selectedTemplate || '';
         const tplNameFb   = (tplKey && typeof MEDICAL_TEMPLATES !== 'undefined' && MEDICAL_TEMPLATES[tplKey]?.name) || '';
         const studyType   = config.studyType || tplNameFb || '';
-        const reportNum   = config.reportNum         || '';
+        const reportNum   = _reqVal('pdfReportNumber') || config.reportNum || '';
         const refDoctor   = config.referringDoctor   || '';
         const studyReason = config.studyReason       || '';
         const footerText  = config.footerText        || '';
@@ -201,16 +216,25 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
 
             // Texto del lugar (match: .pvw-name 11pt bold uppercase + .pvw-details 8pt)
             doc.setTextColor(255, 255, 255);
+            const wpDetails = [wpAddress, wpPhone ? 'Tel: ' + wpPhone : '', wpEmail].filter(Boolean);
+            const detailsStr = wpDetails.join(' • ');
+            // Calcular el centro del texto de detalles para alinear el nombre
+            doc.setFontSize(8);
+            doc.setFont(mainFont, 'normal');
+            const detailsW = wpDetails.length ? doc.getTextWidth(detailsStr) : 0;
+            const textCenterX = contentX + detailsW / 2;
             if (wpName) {
                 doc.setFontSize(11);
                 doc.setFont(mainFont, 'bold');
-                doc.text(wpName.toUpperCase(), contentX, 7);
+                const nameW = doc.getTextWidth(wpName.toUpperCase());
+                // Centrar nombre respecto al ancho de la línea de detalles
+                const nameX = detailsW > 0 ? (textCenterX - nameW / 2) : contentX;
+                doc.text(wpName.toUpperCase(), Math.max(contentX, nameX), 7);
             }
-            const wpDetails = [wpAddress, wpPhone ? 'Tel: ' + wpPhone : '', wpEmail].filter(Boolean);
             if (wpDetails.length) {
                 doc.setFontSize(8);
                 doc.setFont(mainFont, 'normal');
-                doc.text(wpDetails.join(' • '), contentX, 12);
+                doc.text(detailsStr, contentX, 12);
             }
             setBlack();
             cy = bannerH + 4;
