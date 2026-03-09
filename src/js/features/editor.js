@@ -130,25 +130,7 @@ if (redoBtn) {
 }
 
 // ============ COPY & DOWNLOAD ============
-if (copyBtn && editor) {
-    copyBtn.addEventListener('click', async () => {
-        try {
-            await navigator.clipboard.writeText(editor.innerText);
-            showToast('Copiado ✓', 'success');
-        } catch { showToast('Error al copiar', 'error'); }
-    });
-}
-
-const printBtn = document.getElementById('printBtn');
-if (printBtn) {
-    printBtn.addEventListener('click', () => {
-        if (typeof openPrintPreview === 'function') {
-            openPrintPreview();
-        } else {
-            window.print(); // fallback
-        }
-    });
-}
+// Copy + print extracted to src/js/features/editorCopyPrintUtils.js
 
 // Download favorites UI extracted to src/js/features/editorDownloadFavoritesUtils.js
 
