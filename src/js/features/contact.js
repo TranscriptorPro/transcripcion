@@ -170,7 +170,7 @@ window.initContact = function () {
 
             const contactEmail = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.contactEmail)
                 ? CLIENT_CONFIG.contactEmail
-                : 'soporte@transcriptorpro.app';
+                : 'soporte@transcriptorpro.com';
             const senderName = (typeof window.getProfessionalDisplay === 'function')
                 ? window.getProfessionalDisplay(nombre, profData.sexo).fullName
                 : (String(nombre || 'Profesional').trim() || 'Profesional');

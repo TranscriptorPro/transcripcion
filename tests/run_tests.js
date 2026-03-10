@@ -5989,6 +5989,13 @@ test('Contact-Formato-3 — email de contacto evita emoji en cabecera', () => {
         'La cabecera textual del email de contacto debe mantenerse');
 });
 
+test('Contact-Formato-4 — fallback de soporte usa dominio válido .com', () => {
+    assert(contactCodeSec.includes("'soporte@transcriptorpro.com'"),
+        'contact.js debe usar soporte@transcriptorpro.com como fallback');
+    assert(!contactCodeSec.includes("'soporte@transcriptorpro.app'"),
+        'contact.js no debe usar dominio .app inexistente para soporte');
+});
+
 const pdfPreviewCodeSec = fs.readFileSync(path.join(root, 'src/js/features/pdfPreview.js'), 'utf-8');
 const pdfPreviewActionsCodeSec = fs.readFileSync(path.join(root, 'src/js/features/pdfPreviewActions.js'), 'utf-8');
 const pdfMakerCodeSec = fs.readFileSync(path.join(root, 'src/js/features/pdfMaker.js'), 'utf-8');
@@ -6603,6 +6610,21 @@ test('MedDict-3 — renderReviewList usa _htmlEncode', () => {
 test('MedDict-4 — AI scan tiene límite de caracteres', () => {
     assert(mdCodeSec.includes('3000') || mdCodeSec.includes('slice(0,') || mdCodeSec.includes('substring(0,'),
         'AI scan debe truncar texto largo');
+});
+
+test('MedDict-5 — vocabulario neumología ampliado', () => {
+    assert(mdCodeSec.includes('curva flujo-volumen') && mdCodeSec.includes('SpO2') && mdCodeSec.includes('FEV1/FVC'),
+        'El diccionario debe incluir términos clave de función respiratoria');
+});
+
+test('MedDict-6 — vocabulario cardiología/oncología/gineco ampliado', () => {
+    assert(mdCodeSec.includes('cinecoronariografía') && mdCodeSec.includes('PET-CT') && mdCodeSec.includes('ASC-US'),
+        'El diccionario debe incluir términos clave multiespecialidad');
+});
+
+test('MedDict-7 — normalización explícita de OROFARINGE', () => {
+    assert(mdCodeSec.includes('"orófaringe":               "orofaringe"') || mdCodeSec.includes('orofaringe'),
+        'El diccionario debe cubrir normalización de orofaringe');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
