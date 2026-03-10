@@ -5296,6 +5296,15 @@ test('pricingCart — tiene _submitUpgradeRequest', () => {
     assertIncludes(pricingCode, '_submitUpgradeRequest');
 });
 
+test('pricingCart — resumen usa displayPrice convertido', () => {
+    assertIncludes(pricingCode, 'displayPrice || i.price');
+});
+
+test('pricingCart — payload incluye currency y exchangeRate', () => {
+    assertIncludes(pricingCode, 'currency: _currency');
+    assertIncludes(pricingCode, "exchangeRate: _currency === 'ARS' ? _getExchangeRate() : null");
+});
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // Bloque 87: userGuide.js — Tour guiado
 // ═══════════════════════════════════════════════════════════════════════════════

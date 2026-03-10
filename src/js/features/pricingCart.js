@@ -188,11 +188,11 @@
         const cartItems = [];
         if (_cart.upgradePlan) {
             const p = PLANS[_cart.upgradePlan];
-            cartItems.push({ label: `Upgrade a ${p.label}`, price: p.price });
+            cartItems.push({ label: `Upgrade a ${p.label}`, price: p.price, displayPrice: _convertPrice(p.price) });
         }
         _cart.addonTemplates.forEach(key => {
             const tpl = (window.MEDICAL_TEMPLATES || {})[key];
-            if (tpl) cartItems.push({ label: tpl.name, price: '$990' });
+            if (tpl) cartItems.push({ label: tpl.name, price: '$990', displayPrice: '$990' });
         });
 
         let summaryHtml = '';
@@ -201,7 +201,7 @@
                 <div class="pricing-summary">
                     <h4 class="pricing-summary-title">🛒 Tu selección</h4>
                     <ul class="pricing-summary-list">
-                        ${cartItems.map(i => `<li><span>${i.label}</span><strong>${i.price}</strong></li>`).join('')}
+                        ${cartItems.map(i => `<li><span>${i.label}</span><strong>${i.displayPrice || i.price}</strong></li>`).join('')}
                     </ul>
                     <button class="btn btn-primary btn-full pricing-submit" id="pricingSubmitRequest">
                         📩 Solicitar upgrade
@@ -288,6 +288,8 @@
             currentPlan: _getCurrentPlan(),
             requestedPlan: _cart.upgradePlan || _getCurrentPlan(),
             requestedTemplates: Array.from(_cart.addonTemplates),
+            currency: _currency,
+            exchangeRate: _currency === 'ARS' ? _getExchangeRate() : null,
             timestamp: new Date().toISOString(),
             deviceId: (typeof appDB !== 'undefined' ? await appDB.get('device_id') : null)
                 || localStorage.getItem('device_id') || '—'
