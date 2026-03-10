@@ -140,9 +140,6 @@
         const custom = target.getAttribute('data-fixed-tip');
         if (custom) return toShortText(custom);
 
-        const title = normalizeTitle(target.getAttribute('title'));
-        if (title) return title;
-
         const aria = normalizeTitle(target.getAttribute('aria-label'));
         if (aria) return aria;
 
@@ -214,6 +211,15 @@
         return target.parentElement || target;
     }
 
+    function hasNativeTooltip(target) {
+        if (!target) return false;
+        const ownTitle = normalizeTitle(target.getAttribute('title'));
+        if (ownTitle) return true;
+        const anchor = target.closest('[title]');
+        if (!anchor) return false;
+        return !!normalizeTitle(anchor.getAttribute('title'));
+    }
+
     function hasOwnTipButton(anchor) {
         if (!anchor) return false;
         const children = anchor.children || [];
@@ -227,9 +233,11 @@
     function attachTip(target, tipText) {
         if (!target || !tipText) return false;
         if (target.matches(SKIP_SELECTOR) || target.closest(SKIP_SELECTOR)) return false;
+        if (hasNativeTooltip(target)) return false;
 
         const anchor = resolveAnchor(target);
         if (!anchor || hasOwnTipButton(anchor)) return false;
+        if (hasNativeTooltip(anchor)) return false;
 
         anchor.classList.add('fixed-tip-anchor');
         if (anchor.matches('button, .btn, .btn-primary, .btn-secondary, .btn-icon, .tab-btn')) {
@@ -262,6 +270,10 @@
         const elements = document.querySelectorAll(BIND_SELECTOR);
         elements.forEach((el) => {
             if (!el || el.dataset.fixedTipBound === '1' || el.dataset.fixedTipBound === 'skip') return;
+            if (hasNativeTooltip(el)) {
+                el.dataset.fixedTipBound = 'skip';
+                return;
+            }
             const priority = getTipPriority(el);
             if (!profile.levels.has(priority)) {
                 el.dataset.fixedTipBound = 'skip';
