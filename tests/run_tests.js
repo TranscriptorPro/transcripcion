@@ -1107,6 +1107,13 @@ test('extractPatientDataFromText extrae sexo', () => {
     assertEqual(data.sex, 'F');
 });
 
+test('extractPatientDataFromText evita nombre invalido y extrae nombre real tras coma', () => {
+    const data = global.extractPatientDataFromText('Paciente masculino de 58 años, Carlos Mendoza, acude por disnea de esfuerzo.');
+    assertEqual(data.name, 'Carlos Mendoza', `Debe extraer nombre real, obtuvo: ${data.name}`);
+    assertEqual(data.sex, 'M', 'Debe extraer sexo desde "paciente masculino"');
+    assertEqual(data.age, 58, 'Debe extraer edad 58');
+});
+
 test('generateReportNumber genera formato XX-NNNNN-ddmmaa', () => {
     localStorage.clear();
     const fn = global.generateReportNumber;
@@ -1347,6 +1354,14 @@ test('triggerPatientDataCheck extrae nombre del audio y lo guarda', () => {
     const config = JSON.parse(localStorage.getItem('pdf_config'));
     assert(config.patientName && config.patientName.includes('González'),
         `Nombre debe incluir González, obtuvo: ${config.patientName}`);
+});
+
+test('triggerPatientDataCheck extrae obra social y afiliado', () => {
+    localStorage.setItem('pdf_config', JSON.stringify({}));
+    triggerPatientDataCheck('Paciente femenino de 42 años, Laura Torres. Obra social: IAPOS. N° afiliado: 26716975.');
+    const config = JSON.parse(localStorage.getItem('pdf_config'));
+    assertEqual(config.patientInsurance, 'IAPOS', `Obra social incorrecta: ${config.patientInsurance}`);
+    assertEqual(config.patientAffiliateNum, '26716975', `Afiliado incorrecto: ${config.patientAffiliateNum}`);
 });
 
 test('triggerPatientDataCheck sin datos → no guarda nombre', () => {

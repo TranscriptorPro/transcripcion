@@ -71,6 +71,16 @@ function _stripGeneralConclusionSections(md) {
     return out.trim();
 }
 
+function _stripPatientIdentitySections(md) {
+    let out = String(md || '');
+    if (!out) return out;
+    // Elimina secciones demograficas completas para evitar duplicar el cuadro de paciente.
+    out = out.replace(/(?:^|\n)##+\s*(?:datos\s+demograficos|datos\s+del\s+paciente|identificacion\s+del\s+paciente|identificacion)\s*\n[\s\S]*?(?=\n##+\s|\s*$)/gi, '\n');
+    // Elimina lineas sueltas de identificacion en cuerpo.
+    out = out.replace(/(^|\n)\s*(?:paciente|nombre|dni|edad|sexo|obra\s+social|afiliad[oa])\s*:\s*[^\n]+(?=\n|$)/gi, '$1');
+    return out.trim();
+}
+
 async function structureTranscription(text, templateKey, temperature = 0.1, model = GROQ_MODELS[0], options = {}) {
     if (!GROQ_API_KEY) {
         throw new Error('HTTP_401: API Key no configurada');
@@ -112,6 +122,7 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepcion:
 REGLAS ABSOLUTAS — cumplirlas todas sin excepción:
 1. PRESERVA TODO EL CONTENIDO: cada hallazgo, medición, valor y dato de la transcripción DEBE aparecer en el informe. Nunca descartes información clínica, aunque no encaje perfectamente en la plantilla.
 2. Si la transcripción contiene datos que no corresponden a las secciones propuestas, ubícalos en la sección más apropiada o crea una subsección adicional con un título descriptivo.
+2.1 DATOS DEL PACIENTE: NO incluyas identificacion del paciente en el cuerpo del informe (nombre, sexo, edad, DNI, obra social o numero de afiliado). Esos datos se gestionan en el cuadro superior del sistema.
 3. Usa SIEMPRE el marcador [No especificado] cuando una estructura NO fue evaluada, NO fue mencionada O no tiene datos en la transcripción. NUNCA escribas "No se evaluó", "No fue evaluado", "No evaluado", "Sin datos" ni ninguna variante. El marcador [No especificado] se convierte en un campo editable interactivo para el médico.
 4. NO añadas información que no esté en la transcripción.
 5. NO añadas notas, comentarios ni advertencias propias en ningún lugar del informe.
@@ -153,7 +164,11 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepción:
         if (!content) throw new Error('La respuesta de la IA no contiene texto válido');
         // RB-6: Trackear uso de API de estructuración
         if (window.apiUsageTracker) window.apiUsageTracker.trackStructuring();
-        const cleaned = forceGeneralNoConclusion ? _stripGeneralConclusionSections(content) : content;
+        let cleaned = forceGeneralNoConclusion ? _stripGeneralConclusionSections(content) : content;
+        const extractedPatient = (typeof extractPatientDataFromText === 'function') ? extractPatientDataFromText(text) : {};
+        if (extractedPatient && (extractedPatient.name || extractedPatient.dni || extractedPatient.age || extractedPatient.sex || extractedPatient.insurance || extractedPatient.affiliateNum)) {
+            cleaned = _stripPatientIdentitySections(cleaned);
+        }
         return _postProcessStructuredMarkdown(cleaned);
     } catch (error) {
         if (error.name === 'AbortError') {
@@ -521,6 +536,8 @@ window.triggerPatientDataCheck = function(rawText) {
     delete savedConfig.patientDni;
     delete savedConfig.patientAge;
     delete savedConfig.patientSex;
+    delete savedConfig.patientInsurance;
+    delete savedConfig.patientAffiliateNum;
     window._pdfConfigCache = savedConfig;
     if (typeof appDB !== 'undefined') appDB.set('pdf_config', savedConfig);
     else localStorage.setItem('pdf_config', JSON.stringify(savedConfig));
@@ -529,17 +546,22 @@ window.triggerPatientDataCheck = function(rawText) {
     const extracted = typeof extractPatientDataFromText === 'function'
         ? extractPatientDataFromText(rawText) : {};
 
-    if (extracted.name) {
-        // Encontrado en el audio — guardar y notificar
-        savedConfig.patientName = extracted.name;
+    const hasPatientData = !!(extracted.name || extracted.dni || extracted.age || extracted.sex || extracted.insurance || extracted.affiliateNum);
+    if (hasPatientData) {
+        // Encontrado en el audio/texto — guardar y notificar
+        if (extracted.name) savedConfig.patientName = extracted.name;
         if (extracted.dni) savedConfig.patientDni = extracted.dni;
         if (extracted.age) savedConfig.patientAge = extracted.age;
         if (extracted.sex) savedConfig.patientSex = extracted.sex;
+        if (extracted.insurance) savedConfig.patientInsurance = extracted.insurance;
+        if (extracted.affiliateNum) savedConfig.patientAffiliateNum = extracted.affiliateNum;
         window._pdfConfigCache = savedConfig;
         if (typeof appDB !== 'undefined') appDB.set('pdf_config', savedConfig);
         else localStorage.setItem('pdf_config', JSON.stringify(savedConfig));
-        if (typeof showToast === 'function')
-            showToast(`👤 Paciente detectado: ${extracted.name}`, 'success');
+        if (typeof showToast === 'function') {
+            const who = extracted.name ? extracted.name : 'datos del paciente';
+            showToast(`👤 Paciente detectado: ${who}`, 'success');
+        }
         // Quitar placeholder si existía e insertar header con datos extraídos
         removePatientPlaceholder();
         if (typeof window._refreshPatientHeader === 'function') window._refreshPatientHeader();
