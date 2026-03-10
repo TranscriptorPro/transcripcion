@@ -102,9 +102,8 @@
             '.fixed-tip-anchor{position:relative;}',
             '.fixed-tip-anchor.fixed-tip-anchor--safe{padding-right:22px;}',
             '.fixed-tip-anchor.fixed-tip-anchor--button{overflow:visible;}',
-            '.fixed-tip-btn{position:absolute;top:50%;right:4px;transform:translateY(-50%);width:14px;height:14px;border:1.5px solid #60a5fa;border-radius:999px;background:transparent;color:#60a5fa;font-size:10px;font-weight:700;line-height:1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;opacity:.88;z-index:8;padding:0;}',
+            '.fixed-tip-btn{position:absolute;top:6px;right:6px;transform:none;width:14px;height:14px;border:1.5px solid #60a5fa;border-radius:999px;background:transparent;color:#60a5fa;font-size:10px;font-weight:700;line-height:1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;opacity:.88;z-index:8;padding:0;}',
             '.fixed-tip-anchor--button>.fixed-tip-btn{top:-7px;right:-7px;}',
-            '.fixed-tip-anchor--outside>.fixed-tip-btn{top:-7px;right:-7px;transform:none;}',
             '.fixed-tip-btn:hover{color:#38bdf8;border-color:#38bdf8;background:rgba(56,189,248,.08);opacity:1;}',
             '.fixed-tip-popover{position:fixed;z-index:10001;width:min(360px,calc(100vw - 24px));padding:10px 12px;border:1px solid var(--border,#cbd5e1);border-radius:10px;background:var(--bg-card,#fff);color:var(--text-primary,#0f172a);box-shadow:0 10px 28px rgba(2,6,23,.16);font-size:12px;line-height:1.4;display:none;}',
             '.fixed-tip-popover.active{display:block;}',
@@ -232,27 +231,6 @@
         return false;
     }
 
-    function rectsIntersect(a, b) {
-        if (!a || !b) return false;
-        return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
-    }
-
-    function overlapsInteractive(anchor, btn) {
-        if (!anchor || !btn) return false;
-        const btnRect = btn.getBoundingClientRect();
-        const nodes = anchor.querySelectorAll('button, input, select, textarea, a, [role="button"], [tabindex]');
-        for (let i = 0; i < nodes.length; i += 1) {
-            const node = nodes[i];
-            if (!node || node === btn || btn.contains(node) || node.contains(btn)) continue;
-            const st = window.getComputedStyle ? window.getComputedStyle(node) : null;
-            if (st && (st.display === 'none' || st.visibility === 'hidden')) continue;
-            const r = node.getBoundingClientRect();
-            if ((r.width <= 0 || r.height <= 0)) continue;
-            if (rectsIntersect(btnRect, r)) return true;
-        }
-        return false;
-    }
-
     function attachTip(target, tipText) {
         if (!target || !tipText) return false;
         if (target.matches(SKIP_SELECTOR) || target.closest(SKIP_SELECTOR)) return false;
@@ -287,14 +265,6 @@
         });
 
         anchor.appendChild(btn);
-
-        // Regla general anti-solapamiento: si toca un control interactivo,
-        // mover el botón afuera del ancla para no tapar elementos.
-        if (!anchor.classList.contains('fixed-tip-anchor--button') && overlapsInteractive(anchor, btn)) {
-            anchor.classList.remove('fixed-tip-anchor--safe');
-            anchor.classList.add('fixed-tip-anchor--outside');
-        }
-
         return true;
     }
 
