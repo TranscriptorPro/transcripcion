@@ -966,7 +966,7 @@ test('A1 — gastroscopia usa formato por segmento con s/p', () => {
 test('A2 — prompt del structurer menciona multi-órgano', () => {
     // El prompt global del structurer (structureTranscription) incluye reglas de multi-órgano
     const code = fs.readFileSync(path.join(root, 'src/js/features/structurer.js'), 'utf-8');
-    assert(code.includes('MULTI-ÓRGANO') || code.includes('multi-organo') || code.includes('MULTI-SEGMENTO'),
+    assert(code.includes('MULTI-ÓRGANO') || code.includes('multi-órgano') || code.includes('MULTI-SEGMENTO') || code.includes('multi-segmento'),
         'structurer.js debe contener regla de multi-órgano');
 });
 
@@ -6355,7 +6355,7 @@ test('Struct-3 — cross-tab mutex con navigator.locks', () => {
 });
 
 test('Struct-4 — Prompt exige ortografía y gramática impecables', () => {
-    assert(structCodeSec.includes('ORTOGRAFÍA, REDACCIÓN Y GRAMÁTICA'),
+    assert(structCodeSec.includes('ORTOGRAFÍA') || structCodeSec.includes('ortografía') || (structCodeSec.includes('Español médico formal impecable') && structCodeSec.includes('ortográficos')),
         'El prompt debe incluir regla explícita de ortografía/gramática');
 });
 

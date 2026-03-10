@@ -59,10 +59,24 @@ function _isLikelyMedicalText(text) {
     if (!src.trim()) return false;
     const sample = src.toLowerCase();
     const cues = [
-        'paciente', 'diagnostico', 'ecografia', 'eco doppler', 'radiografia', 'tomografia', 'resonancia',
-        'colonoscopia', 'gastroscopia', 'laringoscopia', 'broncoscopia', 'cinecoronariografia',
-        'presion arterial', 'frecuencia cardiaca', 'saturacion', 'hallazgo', 'informe medico',
-        'orofaringe', 'ventriculo', 'auricula', 'arteria', 'lesion', 'mmhg', 'mm', 'cm', 'ml'
+        'paciente', 'diagnostico', 'diagnóstico', 'ecografia', 'ecografía', 'eco doppler',
+        'radiografia', 'radiografía', 'tomografia', 'tomografía', 'resonancia',
+        'colonoscopia', 'colonoscopía', 'gastroscopia', 'gastroscopía',
+        'laringoscopia', 'laringoscopía', 'broncoscopia', 'broncoscopía',
+        'cinecoronariografia', 'cinecoronariografía',
+        'presion arterial', 'presión arterial', 'frecuencia cardiaca', 'frecuencia cardíaca',
+        'saturacion', 'saturación', 'hallazgo', 'hallazgos', 'informe medico', 'informe médico',
+        'orofaringe', 'ventriculo', 'ventrículo', 'auricula', 'aurícula',
+        'arteria', 'lesion', 'lesión', 'mmhg',
+        'antecedentes', 'tratamiento', 'medicacion', 'medicación',
+        'biopsia', 'hemograma', 'laboratorio', 'evolucion', 'evolución',
+        'electrocardiograma', 'ecocardiograma', 'endoscopia', 'endoscopía',
+        'tiroides', 'prostata', 'próstata', 'hepatomegalia', 'esplenomegalia',
+        'densitometria', 'densitometría', 'mamografia', 'mamografía',
+        'pap', 'colposcopia', 'colposcopía', 'epicrisis',
+        'anamnesis', 'motivo de consulta', 'examen fisico', 'examen físico',
+        'parénquima', 'parenquima', 'paredes regulares', 'mucosa',
+        'conclusion', 'conclusión'
     ];
     let hits = 0;
     for (const cue of cues) {
@@ -130,23 +144,34 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepcion:
 6. Devuelve UNICAMENTE el contenido estructurado en markdown, sin texto introductorio ni final.`
         : prompt + `
 
-REGLAS ABSOLUTAS — cumplirlas todas sin excepción:
+REGLAS ABSOLUTAS — cumplirlas todas sin excepción (ordenadas por prioridad):
+
+>>> REGLAS CRÍTICAS (NUNCA violar) >>>
 1. PRESERVA TODO EL CONTENIDO: cada hallazgo, medición, valor y dato de la transcripción DEBE aparecer en el informe. Nunca descartes información clínica, aunque no encaje perfectamente en la plantilla.
-2. Si la transcripción contiene datos que no corresponden a las secciones propuestas, ubícalos en la sección más apropiada o crea una subsección adicional con un título descriptivo.
-2.1 DATOS DEL PACIENTE: NO incluyas identificacion del paciente en el cuerpo del informe (nombre, sexo, edad, DNI, obra social o numero de afiliado). Esos datos se gestionan en el cuadro superior del sistema.
-3. Usa SIEMPRE el marcador [No especificado] cuando una estructura NO fue evaluada, NO fue mencionada O no tiene datos en la transcripción. NUNCA escribas "No se evaluó", "No fue evaluado", "No evaluado", "Sin datos" ni ninguna variante. El marcador [No especificado] se convierte en un campo editable interactivo para el médico.
-4. NO añadas información que no esté en la transcripción.
-5. NO añadas notas, comentarios ni advertencias propias en ningún lugar del informe.
-6. Devuelve ÚNICAMENTE el contenido del informe en markdown, sin texto introductorio ni final.
-7. No uses encabezados de nivel > 3 (###).
-8. FORMATO DE PÁRRAFOS (CRÍTICO): dentro de cada sección, escribe los hallazgos como un párrafo continuo y fluido. NO separes cada hallazgo con líneas en blanco. Los ítems de una misma sección van juntos, sin saltos de línea dobles entre ellos. Solo usa línea en blanco para separar SECCIONES distintas (##). La primera palabra de cada párrafo debe comenzar con mayúscula.
-9. NÚMEROS Y UNIDADES: Escribe siempre los valores numéricos con dígitos, nunca con letras. Ejemplos: "75%" no "setenta y cinco por ciento"; "40%" no "cuarenta por ciento"; "12 mm" no "doce milímetros"; "65%" no "sesenta y cinco por ciento"; "18 mm" no "dieciocho milímetros". Esta regla aplica a porcentajes, medidas, edades, frecuencias, presiones y cualquier valor cuantificable.
-10. ESTUDIOS MULTI-ÓRGANO / MULTI-SEGMENTO: En estudios que evalúan múltiples órganos, segmentos anatómicos o vasos (ecografía, colonoscopía, gastroscopía, cinecoronariografía, Doppler vascular, laringoscopía, nasofibroscopía, etc.) dedica una sección ## separada a CADA estructura evaluada. Si una estructura fue evaluada con resultado normal, descríbela en prosa. Si NO fue evaluada ni mencionada en la transcripción, escribe EXACTAMENTE el marcador [No especificado] como único contenido del párrafo de esa sección — NUNCA "No se evaluó", "s/p", "Sin datos" ni ninguna variante libre.
-11. CONCLUSIÓN (REGLA UNIVERSAL): En TODAS las plantillas, la CONCLUSIÓN debe: (a) incluir TODOS los hallazgos patológicos o positivos — ninguno puede omitirse, aunque sea leve; (b) NO incluir estructuras con resultado normal; (c) si absolutamente todo es normal, escribir "Estudio dentro de parámetros normales."; (d) NUNCA dejar la conclusión vacía, en blanco, ni como "[No especificado]"; (e) PROHIBIDO: inventar valores, porcentajes o datos no presentes en la transcripción; (f) PROHIBIDO: indicar tratamientos, medicación o derivaciones si el médico no los mencionó.
-12. NUNCA conviertas entre unidades de medida. Si el médico dice "10 mm", escribe "10 mm", NO "1 cm". Si dice "500 ml", escribe "500 ml", NO "0.5 L". Preserva la unidad exacta que usó el profesional.
-13. CORRECCIÓN DE ERRORES ASR: El texto fue generado por reconocimiento de voz y puede contener errores fonéticos. Corrige silenciosamente los errores evidentes de transcripción de voz: anglicismos incorrectos ("laryngoscopy" → "laringoscopía"), palabras partidas ("o dinofagia" → "odinofagia"), fonemas confundidos ("bujales" → "bucales"), y falta de tildes en términos médicos. NO señales las correcciones, simplemente usa la forma correcta en español.
-14. ORTOGRAFÍA, REDACCIÓN Y GRAMÁTICA: Redacta con español médico formal impecable. PROHIBIDO devolver errores ortográficos, gramaticales o de concordancia. Antes de responder, revisa y corrige todo el texto final.
-15. ENCABEZADOS ANATÓMICOS EN MAYÚSCULAS: Evita tildes incorrectas en títulos anatómicos. Ejemplo obligatorio: escribir "OROFARINGE" (correcto) y NO "ORÓFARINGE".`;
+2. NO añadas información que no esté en la transcripción. NO inventes valores, porcentajes, diagnósticos ni datos que el médico no haya dictado.
+3. DATOS DEL PACIENTE: NO incluyas identificación del paciente en el cuerpo del informe (nombre, sexo, edad, DNI, obra social o número de afiliado). Esos datos se gestionan por separado.
+4. Devuelve ÚNICAMENTE el contenido del informe en markdown, sin texto introductorio ("Aquí está...", "A continuación...") ni final ("Espero que...", "Nota:"). NO añadas notas, comentarios ni advertencias propias.
+
+>>> FORMATO >>>
+5. Markdown con encabezados hasta ### (nunca ####). Usa ## para secciones principales.
+6. PÁRRAFOS CONTINUOS: dentro de cada sección, escribe los hallazgos como un párrafo continuo y fluido. NO separes cada hallazgo en líneas individuales. Solo línea en blanco entre SECCIONES distintas (##). Primera palabra de cada párrafo en mayúscula.
+7. NÚMEROS Y UNIDADES: siempre con dígitos, nunca con letras ("75%" no "setenta y cinco por ciento"; "12 mm" no "doce milímetros"). NUNCA conviertas entre unidades: si dice "10 mm", escribe "10 mm", NO "1 cm".
+
+>>> MARCADOR DE CAMPOS VACÍOS >>>
+8. Usa SIEMPRE y ÚNICAMENTE el marcador [No especificado] cuando una estructura NO fue evaluada o NO tiene datos. NUNCA escribas "No se evaluó", "No fue evaluado", "Sin datos", "s/p" ni ninguna variante libre. Este marcador genera un campo editable interactivo.
+
+>>> ESTUDIOS MULTI-ESTRUCTURA >>>
+9. En estudios multi-órgano/multi-segmento (ecografía, colonoscopía, Doppler, laringoscopía, etc.): una sección ## por CADA estructura evaluada. Si una estructura fue evaluada normal → describir en prosa. Si NO fue evaluada → solo [No especificado]. Si la transcripción contiene datos que no encajan en las secciones propuestas → crear subsección adicional.
+
+>>> CONCLUSIÓN >>>
+10. CONCLUSIÓN (regla universal): (a) incluir TODOS los hallazgos patológicos o positivos, ninguno puede omitirse; (b) NO incluir estructuras normales; (c) si todo es normal: "Estudio dentro de parámetros normales."; (d) NUNCA dejar vacía ni como [No especificado]; (e) NO inventar datos; (f) NO indicar tratamientos si el médico no los mencionó.
+
+>>> CALIDAD LINGÜÍSTICA >>>
+11. CORRECCIÓN ASR: el texto proviene de reconocimiento de voz. Corrige silenciosamente errores fonéticos ("o dinofagia" → "odinofagia", "bujales" → "bucales"), anglicismos ("laryngoscopy" → "laringoscopía") y palabras partidas. NO señales las correcciones.
+12. Español médico formal impecable. Corrige errores ortográficos, gramaticales y de concordancia. Encabezados anatómicos sin tildes incorrectas: "OROFARINGE" (correcto), NO "ORÓFARINGE".
+
+>>> RECORDATORIO FINAL >>>
+Antes de responder, verifica: ¿preservé TODOS los datos? ¿Usé [No especificado] (no variantes)? ¿La conclusión incluye todos los hallazgos patológicos? ¿No inventé nada?`;
 
     try {
         const res = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
@@ -308,12 +333,43 @@ function _postProcessStructuredMarkdown(md) {
 
     // Correcciones ortográficas médicas frecuentes (fallback defensivo post-LLM).
     const replacements = [
+        // Tildes anatómicas incorrectas
         [/\bORÓFARINGE\b/g, 'OROFARINGE'],
         [/\bOrófaringe\b/g, 'Orofaringe'],
         [/\borófaringe\b/g, 'orofaringe'],
+        [/\bHIPÓFARINGE\b/g, 'HIPOFARINGE'],
+        [/\bNASÓFARINGE\b/g, 'NASOFARINGE'],
+        // Errores ASR comunes — anglicismos y fonéticos
         [/\blaryngoscopy\b/gi, 'laringoscopía'],
+        [/\bbronchoscopy\b/gi, 'broncoscopía'],
+        [/\bendoscopy\b/gi, 'endoscopía'],
+        [/\bcolonoscopy\b/gi, 'colonoscopía'],
+        [/\bechocardiography\b/gi, 'ecocardiografía'],
+        [/\bultrasonography\b/gi, 'ecografía'],
+        [/\btomography\b/gi, 'tomografía'],
+        // Palabras partidas por ASR
         [/\bo\s+dinofagia\b/gi, 'odinofagia'],
-        [/\bbujales\b/gi, 'bucales']
+        [/\bdes\s+fagía?\b/gi, 'disfagia'],
+        [/\bdis\s+fagía?\b/gi, 'disfagia'],
+        [/\bdis\s+fonía?\b/gi, 'disfonía'],
+        [/\bdis\s+neá?\b/gi, 'disnea'],
+        [/\btaqui\s+cardía?\b/gi, 'taquicardia'],
+        [/\bbradi\s+cardía?\b/gi, 'bradicardia'],
+        [/\bhepato\s+megalia\b/gi, 'hepatomegalia'],
+        [/\bespleno\s+megalia\b/gi, 'esplenomegalia'],
+        // Fonemas confundidos frecuentes
+        [/\bbujales\b/gi, 'bucales'],
+        [/\bfaringue\b/gi, 'faringe'],
+        [/\blaringue\b/gi, 'laringe'],
+        [/\besofaguo\b/gi, 'esófago'],
+        [/\bepiglotis\b/g, 'epiglotis'],
+        // Marcadores inconsistentes del LLM — unificar a [No especificado]
+        [/\bNo se evalú?o\b/gi, '[No especificado]'],
+        [/\bNo fue evalúa?do\b/gi, '[No especificado]'],
+        [/\bNo evalúa?do\b/gi, '[No especificado]'],
+        [/\bSin datos\b/gi, '[No especificado]'],
+        [/\bNo se report[aó]\b/gi, '[No especificado]'],
+        [/\bNo mencionado\b/gi, '[No especificado]']
     ];
 
     replacements.forEach(([pattern, replacement]) => {
