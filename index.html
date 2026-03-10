@@ -209,10 +209,10 @@
     <main class="main-container">
 
         <!-- Banner: API Key inválida (activado por validación silenciosa al inicio) -->
-        <div id="apiKeyWarningBanner" style="display:none;background:#f59e0b;color:#1c1917;padding:8px 16px;font-size:0.83rem;font-weight:600;position:sticky;top:0;z-index:9999;gap:8px;align-items:center;justify-content:center;text-align:center;">
+        <div id="apiKeyWarningBanner" class="api-key-warning-banner" style="display:none;">
             <span>⚠️ Tu API Key parece inválida o expirada.</span>
-            <button onclick="if (typeof handleApiKeyBannerAction === 'function') { handleApiKeyBannerAction(); }" style="background:var(--bg-card);color:var(--text-primary);border:none;border-radius:4px;padding:2px 12px;cursor:pointer;font-weight:700;font-size:0.8rem;">⚙️ Configurar</button>
-            <button onclick="this.closest('#apiKeyWarningBanner').style.display='none';" style="background:transparent;border:none;cursor:pointer;font-size:1.1rem;font-weight:700;padding:0 4px;">✕</button>
+            <button class="api-key-banner-btn" onclick="if (typeof handleApiKeyBannerAction === 'function') { handleApiKeyBannerAction(); }">⚙️ Configurar</button>
+            <button class="api-key-banner-close" onclick="this.closest('#apiKeyWarningBanner').style.display='none';">✕</button>
         </div>
         <!-- Modals moved to top for early DOM parsing -->
 
@@ -1356,8 +1356,8 @@
         <!-- Reset App Modal (solo admin) -->
         <div class="modal-overlay" id="resetAppModal">
             <div class="modal" style="max-width:440px;">
-                <div class="modal-header" style="background:#ef4444;">
-                    <h3 style="margin:0;color:white;">&#128465;&#65039; Resetear aplicación</h3>
+                <div class="modal-header reset-modal-header">
+                    <h3 class="reset-modal-title">&#128465;&#65039; Resetear aplicación</h3>
                     <button class="modal-close" id="btnCloseResetModal">&times;</button>
                 </div>
                 <div class="modal-body" style="padding:1.25rem 1.5rem;">
@@ -1375,7 +1375,7 @@
                 </div>
                 <div class="modal-footer" style="padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:.5rem;justify-content:flex-end;">
                     <button class="btn btn-outline" id="btnCancelResetApp">Cancelar</button>
-                    <button class="btn" id="btnConfirmResetApp" style="background:#ef4444;color:#fff;border-color:#ef4444;">&#128465;&#65039; Sí, borrar todo</button>
+                    <button class="btn reset-btn-danger" id="btnConfirmResetApp">&#128465;&#65039; Sí, borrar todo</button>
                 </div>
             </div>
         </div>
@@ -2563,16 +2563,16 @@
 
         <!-- K3: Modal Contacto -->
         <div class="modal-overlay" id="contactModalOverlay">
-            <div class="modal" id="contactModal" style="max-width:520px;width:100%;border-radius:16px;overflow:hidden;">
-                <div class="modal-header" style="background:linear-gradient(135deg,#0f766e 0%,#0d9488 100%);padding:1.1rem 1.5rem;">
-                    <h3 style="margin:0;font-size:1.1rem;display:flex;align-items:center;gap:.5rem;color:#fff;">&#x1f4ac; Contactar soporte</h3>
+            <div class="modal contact-modal" id="contactModal">
+                <div class="modal-header contact-modal-header">
+                    <h3 class="contact-modal-title">&#x1f4ac; Contactar soporte</h3>
                     <button class="modal-close" id="btnCloseContactModal" title="Cerrar">&times;</button>
                 </div>
-                <div class="modal-body" style="padding:1.5rem;">
-                    <form id="contactForm" style="display:flex;flex-direction:column;gap:1.1rem;">
+                <div class="modal-body contact-modal-body">
+                    <form id="contactForm" class="contact-form">
                         <div>
-                            <label style="display:block;font-size:.82rem;font-weight:600;color:#475569;margin-bottom:6px;">Motivo <span style="color:#ef4444;">*</span></label>
-                            <select id="contactMotivo" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:.9rem;background:#f8fafc;color:#1e293b;cursor:pointer;appearance:auto;transition:border-color .2s;">
+                            <label class="contact-label">Motivo <span class="field-required">*</span></label>
+                            <select id="contactMotivo" class="contact-input">
                                 <option value="">Seleccion&#225; un motivo...</option>
                                 <option value="L&#237;mite de dispositivos alcanzado">L&#237;mite de dispositivos alcanzado</option>
                                 <option value="Problema con la API Key">Problema con la API Key</option>
@@ -2589,22 +2589,21 @@
                             </select>
                         </div>
                         <div>
-                            <label style="display:block;font-size:.82rem;font-weight:600;color:#475569;margin-bottom:6px;">Descripci&#243;n <span style="color:#ef4444;">*</span></label>
+                            <label class="contact-label">Descripci&#243;n <span class="field-required">*</span></label>
                             <textarea id="contactDetalle" rows="5"
                                 placeholder="Describ&#237; el problema o consulta en detalle..."
-                                style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:.9rem;background:#f8fafc;color:#1e293b;resize:vertical;font-family:inherit;line-height:1.5;transition:border-color .2s;box-sizing:border-box;"></textarea>
+                                class="contact-input contact-textarea"></textarea>
                         </div>
-                        <button type="submit" id="btnSendContact" class="btn" disabled
-                            style="padding:12px 20px;background:linear-gradient(135deg,#0f766e,#0d9488);color:#fff;border:none;border-radius:10px;font-size:.92rem;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.5rem;box-shadow:0 4px 12px rgba(15,118,110,.25);">
+                        <button type="submit" id="btnSendContact" class="btn contact-submit-btn" disabled>
                             &#x1f4e8; Enviar mensaje
                         </button>
                     </form>
-                    <div id="contactSuccess" style="display:none;text-align:center;padding:2rem 1rem;">
-                        <div style="width:56px;height:56px;background:#f0fdf4;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:.8rem;">
+                    <div id="contactSuccess" class="contact-success" style="display:none;">
+                        <div class="contact-success-icon">
                             <span style="font-size:1.6rem;">&#x2705;</span>
                         </div>
-                        <p style="color:#16a34a;font-weight:700;font-size:1.05rem;margin:0 0 .4rem;">&#161;Mensaje enviado!</p>
-                        <p style="font-size:.85rem;color:#64748b;margin:0;">Responderemos a la brevedad. Si no recib&#237;s respuesta, reenvi&#225; la solicitud desde este mismo bot&#243;n de contacto.</p>
+                        <p class="contact-success-title">&#161;Mensaje enviado!</p>
+                        <p class="contact-success-text">Responderemos a la brevedad. Si no recib&#237;s respuesta, reenvi&#225; la solicitud desde este mismo bot&#243;n de contacto.</p>
                     </div>
                 </div>
             </div>

@@ -6792,6 +6792,16 @@ test('Modal-2 — no hay fallback a confirm() nativo en módulos críticos', () 
     assert(!settingsBackupActionsCodeSec.includes(': confirm('), 'settingsBackupActionsUtils.js no debe fallbackear a confirm()');
 });
 
+test('Modal-3 — banner API y modales clave usan clases temáticas', () => {
+    assert(indexCodeSec.includes('class="api-key-warning-banner"'), 'Banner API key debe usar clase temática');
+    assert(indexCodeSec.includes('class="modal-header reset-modal-header"'), 'Reset modal debe usar header temático');
+    assert(indexCodeSec.includes('class="btn reset-btn-danger" id="btnConfirmResetApp"'), 'Reset modal debe usar botón temático de peligro');
+    assert(indexCodeSec.includes('class="modal contact-modal" id="contactModal"'), 'Contact modal debe usar clase temática');
+    assert(indexCodeSec.includes('id="contactMotivo" class="contact-input"'), 'Select de contacto debe usar clase temática');
+    assert(indexCodeSec.includes('id="contactDetalle" rows="5"'), 'Textarea de contacto debe existir');
+    assert(indexCodeSec.includes('class="contact-input contact-textarea"'), 'Textarea de contacto debe usar clase temática');
+});
+
 // Limpiar estado después de tests
 global.localStorage.clear();
 global._reportHistCache = null;
