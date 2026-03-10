@@ -1,4 +1,4 @@
-# ⚡ Guía Rápida — Transcriptor Médico Pro v2.1
+# ⚡ Guía Rápida — Transcriptor Médico Pro v2.1.1
 
 > **Empezá a usar la app en 3 minutos**
 
@@ -25,6 +25,7 @@ Al iniciar, el **Asistente de sesión** te pide:
 > 💡 **Configuración:** Pulsá el ícono **⚙️** en el encabezado para abrir el panel de Configuración. Desde ahí podés cambiar el skin visual (🎭 Skins), ajustar la apariencia, gestionar tu cuenta y más.
 
 ### Tour guiado rápido
+- Adaptativo por perfil (ADMIN/PRO/GIFT/CLINIC/NORMAL): muestra solo pasos aplicables
 - Iniciar: **Ayuda -> Iniciar tour interactivo**
 - Reanudar: si lo cerrás, continúa desde el último paso del perfil actual
 - Reiniciar desde cero:
@@ -130,4 +131,4 @@ En la barra lateral, completá:
 
 ---
 
-*Transcriptor Médico Pro v2.0 — © 2026*
+*Transcriptor Médico Pro v2.1.1 — © 2026*

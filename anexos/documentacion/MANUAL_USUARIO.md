@@ -1,6 +1,6 @@
 # 📘 Manual de Usuario — Transcriptor Médico Pro
 
-> **Versión:** 2.1.0  
+> **Versión:** 2.1.1  
 > **Última actualización:** 10 de marzo de 2026  
 > **Plataforma:** Aplicación web progresiva (PWA)
 
@@ -20,23 +20,23 @@
 10. [Modo Normal vs Modo Pro](#10-modo-normal-vs-modo-pro)
 11. [Estructuración inteligente (Modo Pro)](#11-estructuración-inteligente-modo-pro)
 12. [Estructuración desde texto y archivos](#12-estructuración-desde-texto-y-archivos)
-11. [Editor de informes](#11-editor-de-informes)
-12. [Datos del paciente](#12-datos-del-paciente)
-13. [Registro de pacientes](#13-registro-de-pacientes)
-14. [Configuración de impresión](#14-configuración-de-impresión)
-15. [Perfiles de salida](#15-perfiles-de-salida)
-16. [Exportación de informes](#16-exportación-de-informes)
-17. [Vista previa de impresión](#17-vista-previa-de-impresión)
-18. [Diccionario médico](#18-diccionario-médico)
-19. [Atajos de teclado](#19-atajos-de-teclado)
-20. [Guardado automático](#20-guardado-automático)
-21. [Apariencia y personalización](#21-apariencia-y-personalización)
-22. [Asistente de sesión](#22-asistente-de-sesión)
-23. [Historial de informes](#23-historial-de-informes)
-24. [Versionado y snapshots](#24-versionado-y-snapshots)
-25. [Solución de problemas (FAQ)](#25-solución-de-problemas-faq)
-26. [Contacto y soporte](#26-contacto-y-soporte)
-27. [Privacidad y seguridad](#27-privacidad-y-seguridad)
+13. [Editor de informes](#13-editor-de-informes)
+14. [Datos del paciente](#14-datos-del-paciente)
+15. [Registro de pacientes](#15-registro-de-pacientes)
+16. [Configuración de impresión](#16-configuración-de-impresión)
+17. [Perfiles de salida](#17-perfiles-de-salida)
+18. [Exportación de informes](#18-exportación-de-informes)
+19. [Vista previa de impresión](#19-vista-previa-de-impresión)
+20. [Diccionario médico](#20-diccionario-médico)
+21. [Atajos de teclado](#21-atajos-de-teclado)
+22. [Guardado automático](#22-guardado-automático)
+23. [Apariencia y personalización](#23-apariencia-y-personalización)
+24. [Asistente de sesión](#24-asistente-de-sesión)
+25. [Historial de informes](#25-historial-de-informes)
+26. [Versionado y snapshots](#26-versionado-y-snapshots)
+27. [Solución de problemas (FAQ)](#27-solución-de-problemas-faq)
+28. [Contacto y soporte](#28-contacto-y-soporte)
+29. [Privacidad y seguridad](#29-privacidad-y-seguridad)
 
 ---
 
@@ -300,7 +300,7 @@ Además de audio, podés estructurar directamente desde texto en contexto Pro.
 
 ---
 
-## 11. Editor de informes
+## 13. Editor de informes
 
 ### Funciones del editor
 - **Negrita** (Ctrl+B), **Cursiva** (Ctrl+I), **Subrayado** (Ctrl+U)
@@ -327,7 +327,7 @@ Si subiste varios archivos, cada transcripción aparece en una pestaña. Podés:
 
 ---
 
-## 12. Datos del paciente
+## 14. Datos del paciente
 
 Antes de exportar, podés completar los datos del paciente:
 
@@ -346,7 +346,7 @@ Los datos se extraen automáticamente del texto transcrito cuando es posible.
 
 ---
 
-## 13. Registro de pacientes
+## 15. Registro de pacientes
 
 La app mantiene un registro local de pacientes para autocompletado rápido.
 
@@ -366,7 +366,7 @@ Al escribir el nombre o DNI de un paciente en el formulario, la app sugiere coin
 
 ---
 
-## 14. Configuración de impresión
+## 16. Configuración de impresión
 
 Abrí el modal con el botón **🖨️ Configurar Impresión** en la barra de herramientas.
 
@@ -418,7 +418,7 @@ El botón de configuración muestra un indicador de color:
 
 ---
 
-## 15. Perfiles de salida
+## 17. Perfiles de salida
 
 Podés guardar múltiples configuraciones como perfiles (ej: un perfil por consultorio).
 
@@ -437,7 +437,7 @@ En la barra de herramientas aparece un selector rápido de perfil. Cambiá de pe
 
 ---
 
-## 16. Exportación de informes
+## 18. Exportación de informes
 
 ### Botón de descarga
 El botón de descarga tiene dos partes:
@@ -461,7 +461,7 @@ Si tu configuración profesional está incompleta, la app te avisa antes de gene
 
 ---
 
-## 17. Vista previa de impresión
+## 19. Vista previa de impresión
 
 Pulsá **👁️ Previsualizar** para ver cómo quedará el informe impreso.
 
@@ -471,7 +471,7 @@ Pulsá **👁️ Previsualizar** para ver cómo quedará el informe impreso.
 
 ---
 
-## 18. Diccionario médico
+## 20. Diccionario médico
 
 El botón **📚 Diccionario Médico** abre un panel con correcciones sugeridas para términos técnicos mal transcritos.
 
@@ -484,7 +484,7 @@ El botón **📚 Diccionario Médico** abre un panel con correcciones sugeridas 
 
 ---
 
-## 19. Atajos de teclado
+## 21. Atajos de teclado
 
 | Atajo | Acción |
 |-------|--------|
@@ -501,7 +501,7 @@ El botón **📚 Diccionario Médico** abre un panel con correcciones sugeridas 
 
 ---
 
-## 20. Guardado automático
+## 22. Guardado automático
 
 La app guarda automáticamente el contenido del editor cada **30 segundos** en el almacenamiento local del navegador.
 
@@ -516,7 +516,7 @@ La app guarda automáticamente el contenido del editor cada **30 segundos** en e
 
 ---
 
-## 21. Apariencia y personalización
+## 23. Apariencia y personalización
 
 ### Modo oscuro / claro
 Pulsá el botón **🌙/☀️** en el encabezado para alternar entre tema claro y oscuro. La preferencia se guarda y persiste entre sesiones. Todos los elementos de la interfaz se adaptan al tema seleccionado.
@@ -546,7 +546,7 @@ En **⚙️ Configuración** → **🎨 Apariencia**, podés personalizar el col
 
 ---
 
-## 22. Asistente de sesión
+## 24. Asistente de sesión
 
 El **Asistente de sesión** aparece al iniciar una nueva sesión de trabajo y te ayuda a configurar rápidamente el contexto.
 
@@ -565,7 +565,7 @@ Configura automáticamente los datos del profesional, logo, firma y perfil de sa
 
 ---
 
-## 23. Historial de informes
+## 25. Historial de informes
 
 La app mantiene un historial de los informes generados para referencia rápida.
 
@@ -583,7 +583,7 @@ Los informes se guardan en el almacenamiento local del navegador (localStorage /
 
 ---
 
-## 24. Versionado y snapshots
+## 26. Versionado y snapshots
 
 El editor guarda automáticamente **versiones (snapshots)** de tu informe a medida que trabajás.
 
@@ -606,7 +606,7 @@ El editor guarda automáticamente **versiones (snapshots)** de tu informe a medi
 
 ---
 
-## 25. Solución de problemas (FAQ)
+## 27. Solución de problemas (FAQ)
 
 ### "No se escucha la grabación" / El audio grabado está en silencio
 - Verificá que el micrófono esté seleccionado correctamente en la configuración del navegador
@@ -676,7 +676,7 @@ El editor guarda automáticamente **versiones (snapshots)** de tu informe a medi
 
 ---
 
-## 26. Contacto y soporte
+## 28. Contacto y soporte
 
 ### Botón de contacto
 Pulsá el botón **✉️ Contacto** en el encabezado (o desde **❓ Ayuda** → **Contactar soporte**).
@@ -697,7 +697,7 @@ Si el equipo de soporte lo solicita, podés enviar un **diagnóstico técnico** 
 
 ---
 
-## 27. Privacidad y seguridad
+## 29. Privacidad y seguridad
 
 | Aspecto | Detalle |
 |---------|---------|
@@ -711,4 +711,4 @@ Si el equipo de soporte lo solicita, podés enviar un **diagnóstico técnico** 
 
 ---
 
-*Documento generado el 28/02/2026. Para distribución a usuarios finales de Transcriptor Médico Pro.*
+*Documento actualizado el 10/03/2026. Para distribución a usuarios finales de Transcriptor Médico Pro.*
