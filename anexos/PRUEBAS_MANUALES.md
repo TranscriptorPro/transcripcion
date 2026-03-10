@@ -8,6 +8,63 @@
 
 ---
 
+## 🔹 SECCIÓN 0: Tour adaptativo + estructuración desde archivos de texto
+
+### 0.1 Tour NORMAL muestra paso de activar Modo Pro
+- **Hacer:** Ingresar con usuario NORMAL en modo normal. Abrir Ayuda y lanzar tour.
+- [ ] ✅ Funciona
+- [ ] ❌ No funciona → Motivo: _____
+
+### 0.2 Tour PRO/GIFT/CLINIC NO muestra paso de activar Modo Pro
+- **Hacer:** Ingresar con usuario PRO/GIFT/CLINIC. Lanzar tour y verificar que no aparezca ese paso.
+- [ ] ✅ Funciona
+- [ ] ❌ No funciona → Motivo: _____
+
+### 0.3 Tour ADMIN incluye paso de Panel de administración
+- **Hacer:** En admin, lanzar tour y verificar paso de panel admin.
+- [ ] ✅ Funciona
+- [ ] ❌ No funciona → Motivo: _____
+
+### 0.4 Tour reanuda último paso por perfil
+- **Hacer:** Iniciar tour, avanzar 2-3 pasos, cerrar con Salir. Volver a iniciar tour.
+- **Esperado:** Retoma donde quedó.
+- [ ] ✅ Funciona
+- [ ] ❌ No funciona → Motivo: _____
+
+### 0.5 Reiniciar tour desde Ayuda inicia en paso 1
+- **Hacer:** Usar botón "♻️ Reiniciar desde el inicio" en Ayuda.
+- **Esperado:** Empieza desde el primer paso del perfil actual.
+- [ ] ✅ Funciona
+- [ ] ❌ No funciona → Motivo: _____
+
+### 0.6 Reiniciar tour desde Configuración inicia en paso 1
+- **Hacer:** Configuración -> Herramientas -> "♻️ Reiniciar tutorial desde el inicio".
+- [ ] ✅ Funciona
+- [ ] ❌ No funciona → Motivo: _____
+
+### 0.7 Estructuración: subir TXT
+- **Hacer:** Ir a fuente Texto, adjuntar `.txt`, estructurar.
+- [ ] ✅ Funciona
+- [ ] ❌ No funciona → Motivo: _____
+
+### 0.8 Estructuración: subir DOCX
+- **Hacer:** Adjuntar `.docx`, verificar carga de contenido y estructuración.
+- [ ] ✅ Funciona
+- [ ] ❌ No funciona → Motivo: _____
+
+### 0.9 Estructuración: subir PDF
+- **Hacer:** Adjuntar `.pdf` con texto seleccionable, estructurar.
+- [ ] ✅ Funciona
+- [ ] ❌ No funciona → Motivo: _____
+
+### 0.10 Estructuración: subir DOC legacy
+- **Hacer:** Adjuntar `.doc`.
+- **Esperado:** Si se puede leer, carga y estructura; si no, mensaje para convertir a `.docx`.
+- [ ] ✅ Funciona
+- [ ] ❌ No funciona → Motivo: _____
+
+---
+
 ## 🔹 SECCIÓN A: Carga inicial y UI base
 
 ### A1. Página carga sin errores
