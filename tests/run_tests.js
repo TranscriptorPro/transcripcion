@@ -144,6 +144,12 @@ if (valMatch) vm.runInContext(valMatch[0], ctx);
 // openPdfConfigModal stub para evitar error en validateBeforeDownload
 if (!global.openPdfConfigModal) global.openPdfConfigModal = () => {};
 
+const stateCoreCode = fs.readFileSync(path.join(root, 'src/js/core/state.js'), 'utf-8');
+const onboardingCode = fs.readFileSync(path.join(root, 'src/js/features/businessOnboardingUtils.js'), 'utf-8');
+const settingsApiCode = fs.readFileSync(path.join(root, 'src/js/features/settingsApiUtils.js'), 'utf-8');
+const uiApiMgmtCode = fs.readFileSync(path.join(root, 'src/js/utils/uiApiManagementUtils.js'), 'utf-8');
+const factorySetupCoreCode = fs.readFileSync(path.join(root, 'src/js/features/businessFactorySetupUtils.js'), 'utf-8');
+
 // ── Utilidades de test ────────────────────────────────────────────────────────
 let passed = 0, failed = 0;
 
@@ -3442,6 +3448,29 @@ test('API key: factory setup completo guarda key y no se re-pide', () => {
     assert(hasPreloadedKey, 'Key precargada por factory → onboarding no pide');
     assertEqual(localStorage.getItem('groq_api_key'), 'gsk_factory_full_test');
     localStorage.clear();
+});
+
+test('API key race: core/state expone setGroqApiKey + getResolvedGroqApiKey', () => {
+    assertIncludes(stateCoreCode, 'window.setGroqApiKey = function', 'Debe existir setGroqApiKey');
+    assertIncludes(stateCoreCode, 'window.getResolvedGroqApiKey = function', 'Debe existir getResolvedGroqApiKey');
+    assertIncludes(stateCoreCode, 'if (!allowEmpty && !normalized && current)', 'Debe proteger contra sobreescritura vacía tardía');
+});
+
+test('API key race: factory setup usa setter centralizado', () => {
+    assertIncludes(factorySetupCoreCode, 'setGroqApiKey(apiKey', 'Factory setup debe usar setGroqApiKey');
+});
+
+test('API key race: onboarding usa lectura/escritura centralizada', () => {
+    assertIncludes(onboardingCode, 'getResolvedGroqApiKey', 'Onboarding debe resolver key por helper central');
+    assertIncludes(onboardingCode, 'setGroqApiKey(finalKey', 'Onboarding debe guardar key por helper central');
+});
+
+test('API key race: settings API usa setter centralizado', () => {
+    assertIncludes(settingsApiCode, 'setGroqApiKey(key', 'Settings API debe usar setGroqApiKey');
+});
+
+test('API key race: UI API management usa setter centralizado', () => {
+    assertIncludes(uiApiMgmtCode, 'setGroqApiKey(key', 'UI API management debe usar setGroqApiKey');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════

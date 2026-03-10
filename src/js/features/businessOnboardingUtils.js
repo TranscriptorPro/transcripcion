@@ -292,7 +292,9 @@ function _showClientOnboarding() {
 
             // K1: Si no hay API key precargada, exigir ingreso valido en primer uso.
             const apiStepVisible = apiStep && apiStep.style.display !== 'none';
-            const currentStoredKey = String(localStorage.getItem('groq_api_key') || '').trim();
+            const currentStoredKey = String(
+                (typeof window.getResolvedGroqApiKey === 'function' ? window.getResolvedGroqApiKey() : localStorage.getItem('groq_api_key')) || ''
+            ).trim();
             const onbKeyEl = document.getElementById('onboardingApiKey');
             const inputKey = String(onbKeyEl?.value || '').trim();
             const resolvedKey = currentStoredKey || inputKey;
@@ -321,11 +323,19 @@ function _showClientOnboarding() {
 
                 const onbKey = document.getElementById('onboardingApiKey');
                 if (onbKey && onbKey.value.trim() && onbKey.value.trim().startsWith('gsk_')) {
-                    if (typeof appDB !== 'undefined') appDB.set('groq_api_key', onbKey.value.trim());
-                    localStorage.setItem('groq_api_key', onbKey.value.trim());
+                    const finalKey = onbKey.value.trim();
+                    if (typeof window.setGroqApiKey === 'function') {
+                        window.setGroqApiKey(finalKey, { source: 'onboarding-submit' });
+                    } else {
+                        if (typeof appDB !== 'undefined') appDB.set('groq_api_key', finalKey);
+                        localStorage.setItem('groq_api_key', finalKey);
+                        window.GROQ_API_KEY = finalKey;
+                    }
                 }
 
-                window.GROQ_API_KEY = window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '';
+                window.GROQ_API_KEY = (typeof window.getResolvedGroqApiKey === 'function')
+                    ? window.getResolvedGroqApiKey()
+                    : (window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '');
                 console.info('[Onboarding] API Key loaded:', window.GROQ_API_KEY ? 'gsk_...' + window.GROQ_API_KEY.slice(-4) : 'NONE');
                 _initCommonModules();
 

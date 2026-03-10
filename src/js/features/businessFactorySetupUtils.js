@@ -311,8 +311,13 @@ window.handleFactorySetupCore = async function (medicoId) {
         const apiKeyB1 = doctor.API_Key_B1 || regDatos.apiKeyB1 || '';
         const apiKeyB2 = doctor.API_Key_B2 || regDatos.apiKeyB2 || '';
         if (apiKey) {
-            if (typeof appDB !== 'undefined') appDB.set('groq_api_key', apiKey);
-            localStorage.setItem('groq_api_key', apiKey);
+            if (typeof window.setGroqApiKey === 'function') {
+                window.setGroqApiKey(apiKey, { source: 'factory-setup' });
+            } else {
+                if (typeof appDB !== 'undefined') appDB.set('groq_api_key', apiKey);
+                localStorage.setItem('groq_api_key', apiKey);
+                window.GROQ_API_KEY = apiKey;
+            }
         }
         if (apiKeyB1) {
             if (typeof appDB !== 'undefined') appDB.set('groq_api_key_b1', apiKeyB1);

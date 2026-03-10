@@ -10,7 +10,9 @@
     }
 
     function populateApiKeyStatus() {
-        const key = window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '';
+        const key = (typeof window.getResolvedGroqApiKey === 'function')
+            ? window.getResolvedGroqApiKey()
+            : (window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '');
         const input = document.getElementById('settingsApiKeyInput');
         if (input && key) input.value = key;
 
@@ -39,9 +41,13 @@
                     if (typeof showToast === 'function') showToast('Ingresá una API key válida', 'error');
                     return;
                 }
-                localStorage.setItem('groq_api_key', key);
-                if (typeof appDB !== 'undefined') appDB.set('groq_api_key', key);
-                window.GROQ_API_KEY = key;
+                if (typeof window.setGroqApiKey === 'function') {
+                    window.setGroqApiKey(key, { source: 'settings-save' });
+                } else {
+                    localStorage.setItem('groq_api_key', key);
+                    if (typeof appDB !== 'undefined') appDB.set('groq_api_key', key);
+                    window.GROQ_API_KEY = key;
+                }
                 if (typeof updateApiStatus === 'function') updateApiStatus(key);
                 setApiDot(true);
                 populateApiKeyStatus();
@@ -51,7 +57,8 @@
 
         if (testBtn && input) {
             testBtn.addEventListener('click', async () => {
-                const key = input.value.trim() || window.GROQ_API_KEY || localStorage.getItem('groq_api_key');
+                const key = input.value.trim()
+                    || (typeof window.getResolvedGroqApiKey === 'function' ? window.getResolvedGroqApiKey() : (window.GROQ_API_KEY || localStorage.getItem('groq_api_key')));
                 if (!key) {
                     if (typeof showToast === 'function') showToast('Ingresá una API key primero', 'error');
                     return;
