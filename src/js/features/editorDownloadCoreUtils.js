@@ -132,7 +132,8 @@
         }
 
         if (blob) {
-            await saveToDisk(blob, `${fileName}_${fileDate}.${ext}`);
+            const saveHandler = (typeof window.saveToDisk === 'function') ? window.saveToDisk : saveToDisk;
+            await saveHandler(blob, `${fileName}_${fileDate}.${ext}`);
             showToast(`Descargado .${ext}`, 'success');
         }
     }
