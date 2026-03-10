@@ -217,6 +217,16 @@ function markdownToHtml(md) {
 
     let result = html.join('\n');
     NO_EVAL_PATTERNS.forEach(rx => { result = result.replace(rx, EMPTY_FIELD_HTML); });
+
+    // Limpiar fragmentos huérfanos adyacentes al badge (ej: "s.", ".s", puntuación suelta)
+    // que quedan cuando la IA genera variantes como "[No especificado]s." o "Sin datos."
+    const badgeEndTag = '</span></span>';
+    result = result.replace(new RegExp(badgeEndTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*[a-z]{0,3}[.,;:]+', 'gi'),
+        badgeEndTag);
+
+    // Eliminar secciones (headings) que quedaron vacías (solo título sin contenido debajo)
+    result = result.replace(/<h([23]) class="report-h\1">([^<]*)<\/h\1>\s*(?=<h[123] |$)/gi, '');
+
     return result;
 }
 

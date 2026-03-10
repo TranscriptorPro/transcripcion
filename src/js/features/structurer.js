@@ -100,9 +100,9 @@ function _stripPatientIdentitySections(md) {
     let out = String(md || '');
     if (!out) return out;
     // Elimina secciones demograficas completas para evitar duplicar el cuadro de paciente.
-    out = out.replace(/(?:^|\n)##+\s*(?:datos\s+demograficos|datos\s+del\s+paciente|identificacion\s+del\s+paciente|identificacion)\s*\n[\s\S]*?(?=\n##+\s|\s*$)/gi, '\n');
+    out = out.replace(/(?:^|\n)##+\s*(?:datos\s+demogr[aá]ficos|datos\s+(?:del\s+)?paciente|datos\s+generales|identificaci[oó]n(?:\s+del\s+paciente)?|informaci[oó]n\s+(?:del\s+)?paciente)\s*\n[\s\S]*?(?=\n##+\s|\s*$)/gi, '\n');
     // Elimina lineas sueltas de identificacion en cuerpo.
-    out = out.replace(/(^|\n)\s*(?:paciente|nombre|dni|edad|sexo|obra\s+social|afiliad[oa])\s*:\s*[^\n]+(?=\n|$)/gi, '$1');
+    out = out.replace(/(^|\n)\s*(?:paciente|nombre|dni|edad|sexo|g[eé]nero|obra\s+social|afiliad[oa]|n[uú]mero\s+de\s+(?:afiliado|documento))\s*:\s*[^\n]+(?=\n|$)/gi, '$1');
     return out.trim();
 }
 
@@ -375,6 +375,12 @@ function _postProcessStructuredMarkdown(md) {
     replacements.forEach(([pattern, replacement]) => {
         out = out.replace(pattern, replacement);
     });
+
+    // Eliminar secciones markdown vacías (heading sin contenido debajo)
+    // Ej: "## Datos Demográficos\n\n## Siguiente Sección" → elimina "## Datos Demográficos"
+    out = out.replace(/^(#{1,3}\s+[^\n]+)\n+(?=#{1,3}\s)/gm, '');
+    // Heading vacío al final del documento
+    out = out.replace(/\n#{1,3}\s+[^\n]+\s*$/g, '');
 
     return out.trim();
 }
@@ -757,6 +763,8 @@ async function _doAutoStructure(options) {
         editor.innerHTML = body;
         window._lastStructuredHTML = body;
         if (typeof saveEditorSnapshot === 'function') saveEditorSnapshot('Estructurado con IA', 'structuring');
+        // Re-insertar header de datos del paciente (fue eliminado al reemplazar el innerHTML)
+        if (typeof window._refreshPatientHeader === 'function') window._refreshPatientHeader();
         showAINote(null, null);
         const btnR = document.getElementById('btnRestoreOriginal');
         if (btnR) { btnR.style.display = ''; btnR._showingOriginal = false; btnR.innerHTML = '↩ Original'; btnR.classList.remove('toggle-active'); }
@@ -833,6 +841,8 @@ window.initStructurer = function () {
                 editor.innerHTML = body;
                 window._lastStructuredHTML = body;
                 if (typeof saveEditorSnapshot === 'function') saveEditorSnapshot('Re-estructurado', 'structuring');
+                // Re-insertar header de datos del paciente
+                if (typeof window._refreshPatientHeader === 'function') window._refreshPatientHeader();
                 // No mostrar el panel de plantilla/nota — solo el informe
                 showAINote(null, null);
                 const btnR2 = document.getElementById('btnRestoreOriginal');
