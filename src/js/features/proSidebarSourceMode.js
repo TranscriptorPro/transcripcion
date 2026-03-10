@@ -11,6 +11,11 @@
         return !isNormalUser();
     }
 
+    function isProModeActive() {
+        // Si el modo está explícitamente en normal, ocultar selector incluso para ADMIN.
+        return window.currentMode !== 'normal';
+    }
+
     function getEls() {
         return {
             switchWrap: document.getElementById('proInputSourceSwitch'),
@@ -76,8 +81,9 @@
         const els = getEls();
         if (!els.switchWrap || !els.sourceToggle || !els.audioPanel || !els.textPanel) return;
 
-        if (!canUseTextStructuring()) {
+        if (!canUseTextStructuring() || !isProModeActive()) {
             els.switchWrap.style.display = 'none';
+            els.sourceToggle.checked = false;
             els.audioPanel.style.display = '';
             els.textPanel.style.display = 'none';
             return;
