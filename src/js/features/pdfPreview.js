@@ -237,8 +237,9 @@ window.openPrintPreview = async function () {
     const rawProfName    = activePro?.nombre || profData.nombre || '';
     const profDisplayObj = (typeof window.getProfessionalDisplay === 'function')
         ? window.getProfessionalDisplay(rawProfName, activePro?.sexo || profData.sexo || '')
-        : { fullName: (String(rawProfName || '').trim() || 'Profesional Médico') };
+        : { fullName: (String(rawProfName || '').trim() || 'Profesional Médico'), title: 'Dr.' };
     const profName       = escName(profDisplayObj.fullName) || 'Profesional Médico';
+    const profDisplayTitle = profDisplayObj.title || 'Dr.';
     const matricula      = esc(activePro?.matricula  || profData.matricula || '');
     const especialidadRaw = activePro?.especialidades
         || (Array.isArray(profData.specialties)
