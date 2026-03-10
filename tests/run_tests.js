@@ -6727,6 +6727,7 @@ const businessCodeSec = fs.readFileSync(path.join(root, 'src/js/features/busines
 const indexCodeSec = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
 const fixedTipsCodeSec = fs.readFileSync(path.join(root, 'src/js/features/fixedTooltips.js'), 'utf-8');
 const userGuideCodeSec = fs.readFileSync(path.join(root, 'src/js/features/userGuide.js'), 'utf-8');
+const settingsPopulateCodeSec = fs.readFileSync(path.join(root, 'src/js/features/settingsModalPopulateUtils.js'), 'utf-8');
 
 test('AdminBase-1 — config.js detecta URL oficial /transcripcion', () => {
     assert(configCodeSec.includes("/transcripcion") && configCodeSec.includes('isOfficialAdminBase'),
@@ -6761,6 +6762,18 @@ test('Tooltips-3 — fixed tooltips evita duplicar tooltips nativos', () => {
 test('Guide-1 — tutorial automático configurable (on/off)', () => {
     assert(indexCodeSec.includes('tourAutoToggle') && userGuideCodeSec.includes('auto_tour_enabled'),
         'Debe existir toggle persistente para activar/desactivar tutorial automático');
+});
+
+test('Version-1 — index expone APP_VERSION en runtime', () => {
+    assert(indexCodeSec.includes('window.APP_VERSION = APP_VERSION'),
+        'index.html debe exponer APP_VERSION para trazabilidad de despliegue');
+});
+
+test('Version-2 — settings usa APP_VERSION/app_version y no hardcode 2.0 fijo', () => {
+    assert(settingsPopulateCodeSec.includes('window.APP_VERSION') && settingsPopulateCodeSec.includes("localStorage.getItem('app_version')"),
+        'settingsModalPopulateUtils debe leer version en runtime');
+    assert(!settingsPopulateCodeSec.includes("textContent = '2.0'"),
+        'settingsModalPopulateUtils no debe hardcodear 2.0 en labels de version');
 });
 
 // Limpiar estado después de tests

@@ -21,11 +21,14 @@ Mejora sugerida:
 Evidencia:
 - En auditorias recientes, E2E productivo fallo por bundle antiguo mientras local pasaba (caso `profTitle is not defined`).
 - Reportes en `anexos/accesorios/E2E_QA_INTEGRAL_PLAYWRIGHT_20260310_112317.md` y `anexos/accesorios/E2E_QA_INTEGRAL_PLAYWRIGHT_20260310_112630.md`.
+- Smoke nuevo `tests/smoke-postdeploy-version.js`: FAIL actual en prod (`window.APP_VERSION no esta definido en runtime`) al ejecutar con `EXPECTED_APP_VERSION=v58`.
 Riesgo:
 - Se valida algo en local que no refleja lo que usa el cliente final.
 Mejora sugerida:
 - Agregar gate post-push: smoke E2E contra URL productiva antes de dar por cerrado un bloque.
 - Publicar hash/version visible en UI para comparar rapidamente local vs deploy.
+Estado:
+- En progreso. Ya se implemento exposicion runtime de version y smoke postdeploy; falta confirmar deploy remoto actualizado.
 
 3. Alto - Superficie XSS por restauracion HTML sin sanitizar en autosave.
 Evidencia:
@@ -65,19 +68,23 @@ Mejora sugerida:
 
 7. Bajo - Uso de `document.write` en flujo de recarga de version.
 Evidencia:
-- `index.html:53` usa `document.write(...)` durante purge/refresh.
+- Resuelto en `index.html`: se reemplazo `document.write` por render seguro en `DOMContentLoaded`.
 Riesgo:
 - Patrón fragil y dificil de mantener; potencial de incompatibilidades futuras.
 Mejora sugerida:
 - Reemplazar por render de overlay/modal de actualizacion sin `document.write`.
+Estado:
+- Resuelto (commit `ef58bf3`).
 
 8. Bajo - Test de contacto legacy aun menciona dominio viejo `.app`.
 Evidencia:
-- `tests/test-k3-contact.html:132` usa fallback `soporte@transcriptorpro.app` en fixture inline.
+- Resuelto en `tests/test-k3-contact.html`: fallback actualizado a `.com`.
 Riesgo:
 - Confusion al interpretar resultados de pruebas manuales antiguas.
 Mejora sugerida:
 - Alinear fixture al helper real `getResolvedSupportContactEmail()`.
+Estado:
+- Resuelto (commit `ef58bf3`).
 
 ## Recomendaciones de Implementacion (orden sugerido)
 

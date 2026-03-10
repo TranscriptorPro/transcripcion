@@ -52,8 +52,14 @@
         if (deviceItem) deviceItem.style.display = isAdmin ? '' : 'none';
         if (planItem) planItem.style.display = isAdmin ? '' : 'none';
 
-        if (el('settingsAppVersion')) el('settingsAppVersion').textContent = '2.0';
-        if (el('settingsAboutVersion')) el('settingsAboutVersion').textContent = '2.0';
+        const appVersionRaw = (typeof window !== 'undefined' && window.APP_VERSION)
+            || localStorage.getItem('app_version')
+            || '2.0';
+        const appVersionText = String(appVersionRaw || '2.0').trim();
+        const appVersionNoPrefix = appVersionText.replace(/^v/i, '') || '2.0';
+
+        if (el('settingsAppVersion')) el('settingsAppVersion').textContent = appVersionText;
+        if (el('settingsAboutVersion')) el('settingsAboutVersion').textContent = appVersionNoPrefix;
 
         const deviceId = (typeof window._lmDeviceCache !== 'undefined' && window._lmDeviceCache) || localStorage.getItem('device_id') || '—';
         if (el('settingsDeviceId')) {
