@@ -6258,6 +6258,7 @@ console.log('\n── Bloque 104: Circuito Transcripción ───────�
 const transCodeSec = fs.readFileSync(path.join(root, 'src/js/features/transcriptor.js'), 'utf-8');
 const editorCodeSec = fs.readFileSync(path.join(root, 'src/js/features/editor.js'), 'utf-8');
 const structCodeSec = fs.readFileSync(path.join(root, 'src/js/features/structurer.js'), 'utf-8');
+const indexCodeSec104 = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
 
 test('Trans-1 — Usa Whisper large-v3-turbo', () => {
     assert(transCodeSec.includes('whisper-large-v3-turbo'),
@@ -6290,6 +6291,30 @@ test('Struct-2 — autoDetectTemplateKey tiene umbral mínimo', () => {
 test('Struct-3 — cross-tab mutex con navigator.locks', () => {
     assert(structCodeSec.includes('navigator.locks'),
         'Structurer debe usar navigator.locks para cross-tab mutex');
+});
+
+test('Struct-4 — Prompt exige ortografía y gramática impecables', () => {
+    assert(structCodeSec.includes('ORTOGRAFÍA, REDACCIÓN Y GRAMÁTICA'),
+        'El prompt debe incluir regla explícita de ortografía/gramática');
+});
+
+test('Struct-5 — Prompt fija OROFARINGE sin tilde incorrecta', () => {
+    assert(structCodeSec.includes('OROFARINGE') && structCodeSec.includes('ORÓFARINGE'),
+        'El prompt debe incluir ejemplo explícito OROFARINGE (correcto) vs ORÓFARINGE');
+});
+
+test('Struct-6 — Postproceso ortográfico médico está activo', () => {
+    assert(structCodeSec.includes('function _postProcessStructuredMarkdown') &&
+           structCodeSec.includes('return _postProcessStructuredMarkdown(content)'),
+        'Structurer debe aplicar postproceso ortográfico al contenido de IA');
+});
+
+test('Editor-3 — spellcheck/autocorrect desactivados en editor médico', () => {
+    assert(indexCodeSec104.includes('id="editor"') &&
+           indexCodeSec104.includes('spellcheck="false"') &&
+           indexCodeSec104.includes('autocorrect="off"') &&
+           indexCodeSec104.includes('autocapitalize="off"'),
+        'El editor debe desactivar spellcheck/autocorrect/autocapitalize');
 });
 
 test('Editor-1 — Editor tiene snapshots para undo', () => {

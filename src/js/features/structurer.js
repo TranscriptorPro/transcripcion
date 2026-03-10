@@ -88,7 +88,9 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepción:
 10. ESTUDIOS MULTI-ÓRGANO / MULTI-SEGMENTO: En estudios que evalúan múltiples órganos, segmentos anatómicos o vasos (ecografía, colonoscopía, gastroscopía, cinecoronariografía, Doppler vascular, laringoscopía, nasofibroscopía, etc.) dedica una sección ## separada a CADA estructura evaluada. Si una estructura fue evaluada con resultado normal, descríbela en prosa. Si NO fue evaluada ni mencionada en la transcripción, escribe EXACTAMENTE el marcador [No especificado] como único contenido del párrafo de esa sección — NUNCA "No se evaluó", "s/p", "Sin datos" ni ninguna variante libre.
 11. CONCLUSIÓN (REGLA UNIVERSAL): En TODAS las plantillas, la CONCLUSIÓN debe: (a) incluir TODOS los hallazgos patológicos o positivos — ninguno puede omitirse, aunque sea leve; (b) NO incluir estructuras con resultado normal; (c) si absolutamente todo es normal, escribir "Estudio dentro de parámetros normales."; (d) NUNCA dejar la conclusión vacía, en blanco, ni como "[No especificado]"; (e) PROHIBIDO: inventar valores, porcentajes o datos no presentes en la transcripción; (f) PROHIBIDO: indicar tratamientos, medicación o derivaciones si el médico no los mencionó.
 12. NUNCA conviertas entre unidades de medida. Si el médico dice "10 mm", escribe "10 mm", NO "1 cm". Si dice "500 ml", escribe "500 ml", NO "0.5 L". Preserva la unidad exacta que usó el profesional.
-13. CORRECCIÓN DE ERRORES ASR: El texto fue generado por reconocimiento de voz y puede contener errores fonéticos. Corrige silenciosamente los errores evidentes de transcripción de voz: anglicismos incorrectos ("laryngoscopy" → "laringoscopía"), palabras partidas ("o dinofagia" → "odinofagia"), fonemas confundidos ("bujales" → "bucales"), y falta de tildes en términos médicos. NO señales las correcciones, simplemente usa la forma correcta en español.` },
+13. CORRECCIÓN DE ERRORES ASR: El texto fue generado por reconocimiento de voz y puede contener errores fonéticos. Corrige silenciosamente los errores evidentes de transcripción de voz: anglicismos incorrectos ("laryngoscopy" → "laringoscopía"), palabras partidas ("o dinofagia" → "odinofagia"), fonemas confundidos ("bujales" → "bucales"), y falta de tildes en términos médicos. NO señales las correcciones, simplemente usa la forma correcta en español.
+14. ORTOGRAFÍA, REDACCIÓN Y GRAMÁTICA: Redacta con español médico formal impecable. PROHIBIDO devolver errores ortográficos, gramaticales o de concordancia. Antes de responder, revisa y corrige todo el texto final.
+15. ENCABEZADOS ANATÓMICOS EN MAYÚSCULAS: Evita tildes incorrectas en títulos anatómicos. Ejemplo obligatorio: escribir "OROFARINGE" (correcto) y NO "ORÓFARINGE".` },
                     { role: "user", content: `Transcripción a estructurar:\n\n${text}` }
                 ],
                 temperature: temperature
@@ -105,7 +107,7 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepción:
         if (!content) throw new Error('La respuesta de la IA no contiene texto válido');
         // RB-6: Trackear uso de API de estructuración
         if (window.apiUsageTracker) window.apiUsageTracker.trackStructuring();
-        return content.trim();
+        return _postProcessStructuredMarkdown(content);
     } catch (error) {
         if (error.name === 'AbortError') {
             throw new Error('HTTP_TIMEOUT: El servidor no respondió en 2 minutos');
@@ -225,6 +227,27 @@ function _prepareStructuringInput(text) {
         // Normaliza espacios.
         .replace(/\s{2,}/g, ' ')
         .trim();
+}
+
+function _postProcessStructuredMarkdown(md) {
+    let out = String(md || '');
+    if (!out) return out;
+
+    // Correcciones ortográficas médicas frecuentes (fallback defensivo post-LLM).
+    const replacements = [
+        [/\bORÓFARINGE\b/g, 'OROFARINGE'],
+        [/\bOrófaringe\b/g, 'Orofaringe'],
+        [/\borófaringe\b/g, 'orofaringe'],
+        [/\blaryngoscopy\b/gi, 'laringoscopía'],
+        [/\bo\s+dinofagia\b/gi, 'odinofagia'],
+        [/\bbujales\b/gi, 'bucales']
+    ];
+
+    replacements.forEach(([pattern, replacement]) => {
+        out = out.replace(pattern, replacement);
+    });
+
+    return out.trim();
 }
 
 // ── 4-attempt retry wrapper con fallback inteligente de modelos y backup keys ───
