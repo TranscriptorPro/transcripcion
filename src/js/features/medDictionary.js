@@ -428,6 +428,108 @@ var MEDICAL_DICT_BASE = {
 
 var CUSTOM_DICT_KEY = 'med_dict_custom';
 
+// Glosario canónico ampliado (usuario, 2026-03-10).
+// Se usa para generar reglas automáticas de normalización (acentos/guiones/espacios).
+const MEDICAL_CANONICAL_TERMS_20260310 = [
+    'abatelenguas', 'abdomen agudo', 'abdominoplastia', 'aborto espontáneo', 'adenocarcinoma in situ', 'adenopatía',
+    'adherencia', 'afección', 'agente infeccioso', 'aislamiento', 'algoritmo', 'alergología', 'alomorfo',
+    'amiloidosis cardíaca', 'anastomosis quirúrgica', 'anatomopatólogo', 'anamnesis', 'anestesia general',
+    'anestesia local', 'anestésico local', 'anillo de Waldeyer', 'anillo de Zinn', 'anomalía', 'anticuerpo monoclonal',
+    'anticoagulante', 'anticonceptivo', 'antiinflamatorio', 'antiparkinsoniano', 'aparato circulatorio',
+    'aparato digestivo', 'aparato respiratorio', 'arcada', 'arco', 'arteria', 'arteriografía', 'artrosis', 'asimetría',
+    'asintomático', 'atelectasia', 'atipia', 'atrofia', 'auscultación', 'bacteria', 'barbijo', 'benigno',
+    'biometría hemática', 'biopsia', 'bioterio', 'blastomicosis', 'blefaroplastia', 'bloqueo motor', 'broncoscopia',
+    'broncodilatador', 'bronquios', 'burbuja axénica', 'cadena de infección', 'calcificación', 'calidad de vida',
+    'campimetría', 'cáncer asintomático', 'cáncer cérvicouterino', 'candidosis bucal', 'capacidad pulmonar total',
+    'capacidad vital forzada', 'carbamacepina', 'carcinoma escamoso', 'cardiología', 'cardiopatía', 'caso confirmado',
+    'casuística', 'cefalea', 'células escamosas atípicas', 'células glandulares', 'cerclaje quirúrgico', 'ciego',
+    'ciguatera', 'ciclotrón', 'cinecoronariografía', 'cirugía bariátrica', 'citología exfoliativa', 'citología vaginal',
+    'cloasma', 'cociente de riesgo', 'colangiografía', 'colimador multiláminas', 'colonoscopia', 'colpocitología',
+    'colposcopia', 'comadrón', 'comadrona', 'complejo QRS', 'conglomerado', 'consentimiento diferido',
+    'constantes vitales', 'consultorio', 'contagio prenatal', 'contornos borrosos', 'contornos circunscritos',
+    'contornos espiculados', 'contornos microlobulados', 'contracción', 'cornetes', 'cortocircuito',
+    'crecimiento intrauterino', 'crisis convulsiva', 'crisis epiléptica', 'cristalino', 'criterio principal de eficacia',
+    'cuarentena', 'cuello cervical', 'cuello uterino', 'curva epidemiológica', 'datos demográficos', 'decil',
+    'defecación', 'densitometría ósea', 'derivación coronaria', 'derivación vascular', 'desfibrilador',
+    'desoxi-glucosa', 'desviación estándar', 'dextrosa', 'diabetes', 'diagnóstico', 'dilatación', 'discromía cutánea',
+    'disfagia', 'disnea', 'dispensario', 'dispositivo médico', 'distorsión arquitectural', 'dolor', 'dosis',
+    'ecocardiograma', 'ecografía endoscópica', 'ecografía obstétrica', 'edema macular', 'efecto adverso',
+    'efectividad', 'eficacia', 'eje eléctrico', 'electrocardiograma', 'electrodo', 'electroencefalograma',
+    'electromiografía', 'embarazo', 'emergencia obstétrica', 'endemia', 'endocrinología', 'enfermedad cardíaca',
+    'enfermedad contagiosa', 'enfermedad crónica', 'enfermedad de Alzheimer', 'enfermedad de Parkinson',
+    'enfermedad infecciosa', 'enfermedad respiratoria', 'enfisema', 'engrosamiento cutáneo', 'engrosamiento trabecular',
+    'ensayo clínico', 'epicrisis', 'epidemia', 'epidemiología analítica', 'epidemiología descriptiva',
+    'equivalentes metabólicos', 'ergometría', 'eritema', 'esclerosis lateral amiotrófica', 'escotoma arciforme',
+    'esfigmomanómetro', 'esófago', 'espirometría', 'estenosis aórtica', 'estenosis hemodinámicamente significativa',
+    'estenosis severa', 'estertores', 'estridor', 'estudio clínico', 'etiología', 'evaluación', 'excavación fisiológica',
+    'exploración física', 'extrasístoles ventriculares', 'exudados duros', 'farmacocinética', 'farmacodinamia',
+    'farmacología clínica', 'farmacovigilancia', 'fatiga', 'feocromocitoma', 'fibrilación auricular', 'fibroadenoma',
+    'fibrosis quística', 'flebografía', 'flujo espiratorio pico', 'flujo vaginal', 'fondo de ojo', 'fosa posterior',
+    'fracción de eyección', 'frecuencia cardíaca', 'frotis', 'gastroscopia', 'genética', 'ginecología', 'glaucoma',
+    'glomerulonefritis', 'glucosa', 'gonorrea', 'goteo intermenstrual', 'hemangioma', 'hematocrito', 'hemianopsia',
+    'hemoglobina', 'hemograma', 'hernia', 'herpes simple', 'hidronefrosis', 'hipercapnia', 'hiperdenso',
+    'hiperglucemia', 'hipermetabolismo', 'hipertensión arterial', 'hiperventilación', 'hipoecoico', 'hipodenso',
+    'hipocinesia', 'hipopotasiemia', 'hipoxemia', 'historia clínica', 'hormona', 'hospitalización', 'humor acuoso',
+    'humor vítreo', 'ictericia', 'íleon', 'imagen radiolúcida', 'impresión', 'incidencia', 'índice de letalidad',
+    'índice de masa corporal', 'infarto agudo de miocardio', 'infección', 'inflamación', 'informe médico',
+    'informe radiológico', 'inmunidad', 'inmunodeficiencia', 'intervención quirúrgica', 'investigación clínica',
+    'isquemia miocárdica', 'isodenso', 'isótopos emisores', 'isópteras', 'laringoscopia', 'latencia distal', 'lente',
+    'lesión escamosa intraepitelial', 'leucocitos polimorfonucleares', 'leucoplasia bucal', 'leucorrea',
+    'ligadura de trompas', 'ligamento anular', 'límite inferior de la normalidad', 'lipoma', 'lobulado',
+    'longitud del fémur', 'mácula', 'malignidad', 'mamografía', 'mamoplastia', 'masa', 'mastectomía',
+    'medicamento genérico', 'medicina nuclear', 'medio de contraste', 'médula espinal', 'médula ósea',
+    'médula suprarrenal', 'melasma', 'menopausia', 'mesenterio', 'metabolismo', 'metanálisis', 'metástasis hepáticas',
+    'metástasis pulmonares', 'microaneurismas', 'microcalcificaciones pleomorfas', 'midriasis', 'miosis', 'miocardio',
+    'miometrio', 'monitorización', 'morbilidad', 'morfología', 'mortalidad', 'muguet', 'náusea',
+    'neoplasia cervical intraepitelial', 'neumología', 'neumonía', 'neumopatía', 'neumotórax', 'neuritis óptica',
+    'neuropatía', 'nódulo', 'nódulos linfáticos', 'obesidad', 'obstetricia', 'obstrucción bronquial', 'oftalmoscopia',
+    'oligometrorragia', 'onda P', 'onda T', 'oncología', 'orificio interno', 'osteopenia', 'osteoporosis',
+    'otoplastia', 'oximetría', 'oxitocina', 'parálisis cerebral infantil', 'parénquima pulmonar', 'patología',
+    'perimetría', 'período de incubación', 'pielonefrolitotomía', 'pitiriasis versicolor', 'pleomórficas',
+    'pletismografía', 'policitemia', 'pólipo', 'polisomnografía', 'preeclampsia', 'prescripción', 'prevalencia',
+    'profilaxis', 'pronóstico', 'próstata', 'protocolo clínico', 'protocolo quirúrgico', 'prueba broncodilatadora',
+    'prueba de caminata', 'prueba de esfuerzo', 'prueba de Papanicolaou', 'pulso', 'queratocono',
+    'queratoconjuntivitis', 'quimioterapia', 'quirófano', 'quiste oleoso', 'radiación', 'radiofármaco', 'radiografía',
+    'radiología intervencionista', 'radionúclidos', 'radioterapia', 'reacción adversa', 'recuento sanguíneo',
+    'registro electrocardiográfico', 'repolarización', 'reposo', 'resonancia magnética', 'restricción pulmonar',
+    'retina', 'retinopatía', 'retracción cutánea', 'ritmo sinusal', 'rubéola', 'salbutamol', 'salud pública',
+    'sarcoma', 'segmento ST', 'seguimiento', 'seropositivo', 'sibilancias', 'sícope', 'síndrome de apnea obstructiva',
+    'síndrome del túnel carpiano', 'síntoma', 'sistema nervioso autónomo', 'sistema nervioso entérico',
+    'sobredosis', 'somnolencia', 'sustancia blanca', 'sustancia química', 'taquicardia ventricular',
+    'tasa de incidencia', 'tasa de letalidad', 'tasa de mortalidad', 'tejido fibroglandular', 'tensión arterial',
+    'terapéutica', 'tocología', 'tocoginecológico', 'tomografía axial computarizada', 'tomografía de coherencia óptica',
+    'tomografía por emisión de positrones', 'topografía corneal', 'toxicidad', 'toxoplasma', 'tráquea',
+    'trastorno respiratorio', 'tratamiento', 'tumor benigno', 'tumor maligno', 'ultrasonido',
+    'unidad de cuidados intensivos', 'uréter', 'uretra', 'vacuna', 'vagina', 'válvula aórtica',
+    'varicela', 'varices', 'vector', 'vejiga', 'vena', 'ventrículo izquierdo', 'videonasolaringoscopia',
+    'vigilancia activa', 'vigilancia pasiva', 'vigilancia sindrómica', 'virus del papiloma humano',
+    'volumen residual', 'vómito'
+];
+
+(function _extendMedicalDictFromCanonicalTerms() {
+    const norm = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    MEDICAL_CANONICAL_TERMS_20260310.forEach((term) => {
+        const canonical = String(term || '').trim();
+        if (!canonical) return;
+
+        const lowerCanonical = canonical.toLowerCase();
+        const plain = norm(lowerCanonical);
+        if (plain && plain !== lowerCanonical && !MEDICAL_DICT_BASE[plain]) {
+            MEDICAL_DICT_BASE[plain] = canonical;
+        }
+
+        const noHyphen = plain.replace(/-/g, ' ');
+        if (noHyphen && noHyphen !== plain && !MEDICAL_DICT_BASE[noHyphen]) {
+            MEDICAL_DICT_BASE[noHyphen] = canonical;
+        }
+
+        const squeezed = noHyphen.replace(/\s+/g, ' ').trim();
+        if (squeezed && squeezed !== noHyphen && !MEDICAL_DICT_BASE[squeezed]) {
+            MEDICAL_DICT_BASE[squeezed] = canonical;
+        }
+    });
+})();
+
 var _customDictCache = null;
 if (typeof appDB !== 'undefined') {
     appDB.get(CUSTOM_DICT_KEY).then(function(v) { _customDictCache = v || {}; }).catch(function() {});

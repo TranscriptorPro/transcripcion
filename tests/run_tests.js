@@ -6612,6 +6612,18 @@ test('MedDict-4 — AI scan tiene límite de caracteres', () => {
         'AI scan debe truncar texto largo');
 });
 
+test('MedDict-5 — Glosario canónico 2026-03 cargado', () => {
+    assert(mdCodeSec.includes('MEDICAL_CANONICAL_TERMS_20260310'),
+        'Debe existir glosario canónico ampliado 2026-03');
+    assert(mdCodeSec.includes('amiloidosis cardíaca') && mdCodeSec.includes('videonasolaringoscopia'),
+        'El glosario debe incluir términos clínicos de múltiples especialidades');
+});
+
+test('MedDict-6 — Extensión automática por acentos/guiones activa', () => {
+    assert(mdCodeSec.includes('_extendMedicalDictFromCanonicalTerms') && mdCodeSec.includes("MEDICAL_DICT_BASE[plain] = canonical"),
+        'El diccionario debe generar correcciones automáticas desde el glosario canónico');
+});
+
 test('MedDict-5 — vocabulario neumología ampliado', () => {
     assert(mdCodeSec.includes('curva flujo-volumen') && mdCodeSec.includes('SpO2') && mdCodeSec.includes('FEV1/FVC'),
         'El diccionario debe incluir términos clave de función respiratoria');
