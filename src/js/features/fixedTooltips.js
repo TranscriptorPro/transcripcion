@@ -5,13 +5,9 @@
         proInputSourceSwitch: 'Elegi la fuente para generar el informe. Audio usa grabacion/subida; Texto permite pegar o adjuntar texto.',
         recordBtn: 'Inicia o detiene la grabacion de voz para transcribir.',
         dropZone: 'Arrastra o toca para subir audios. Acepta carga multiple.',
-        chkNormalize: 'Normaliza volumen para mejorar la inteligibilidad.',
-        chkNoise: 'Reduce ruido de fondo para mejorar la transcripcion.',
-        chkJoinAudios: 'Une varios audios en un solo informe.',
         transcribeBtn: 'Convierte audio en texto sin estructuracion.',
         transcribeAndStructureBtn: 'Transcribe y estructura con IA en un solo paso.',
         proTextInput: 'Pega texto medico para estructurarlo sin audio.',
-        btnAttachTextFile: 'Adjunta archivo de texto para estructuracion IA.',
         btnStructureTextPro: 'Estructura con IA el texto actual.',
         templateSelect: 'Define la plantilla clinica para la estructura final.',
         btnStructureAI: 'Aplica estructuracion IA al contenido del editor.',
@@ -19,25 +15,11 @@
         btnDownloadFromPreview: 'Descarga el informe en el formato disponible para tu plan.',
         btnNewUser: 'Crea un usuario nuevo desde cero o desde un registro pendiente.',
         btnGiftUser: 'Inicia la fabrica de clones con configuracion guiada.',
-        btnRefresh: 'Recarga datos del panel para ver el estado mas reciente.',
-        btnRefreshLogs: 'Actualiza el listado de logs administrativos.',
-        btnSavePlans: 'Guarda cambios de planes y precios.',
-        btnSaveExtras: 'Guarda cambios de extras y add-ons.',
-        btnSaveEditUser: 'Guarda los cambios del usuario editado.',
-        btnSaveNewUser: 'Confirma y crea el usuario con los datos cargados.',
-        btnConfirmApprove: 'Aprueba el registro y crea el usuario final.',
         btnDarkMode: 'Alterna entre tema claro y oscuro.'
     };
 
-    const BIND_SELECTOR = [
-        '[data-fixed-tip]',
-        'button[id]',
-        'input[id]:not([type="hidden"])',
-        'select[id]',
-        'textarea[id]',
-        '.tab-btn[data-tab]',
-        '[title][id]'
-    ].join(',');
+    const KEY_TARGET_IDS = Object.keys(MANUAL_TIPS);
+    const BIND_SELECTOR = '[data-fixed-tip]';
 
     const SKIP_SELECTOR = [
         '.fixed-tip-btn',
@@ -53,46 +35,6 @@
     let observer = null;
     let bindQueued = false;
     let boundCount = 0;
-
-    function detectUserType() {
-        try {
-            const isAdminPage = /\/recursos\/admin\.html$/i.test((window.location && window.location.pathname) || '');
-            if (isAdminPage) return 'ADMIN';
-
-            const host = String(window.location.hostname || '').toLowerCase();
-            const path = String(window.location.pathname || '').replace(/\/+$/, '') || '/';
-            const isOfficialAdminBase = (
-                host === 'transcriptorpro.github.io'
-                && (path === '/transcripcion' || path === '/transcripcion/index.html')
-            );
-            if (isOfficialAdminBase) return 'ADMIN';
-
-            if (window.CLIENT_CONFIG && window.CLIENT_CONFIG.type) {
-                return String(window.CLIENT_CONFIG.type).toUpperCase();
-            }
-
-            const stored = localStorage.getItem('client_config_stored');
-            if (stored) {
-                const parsed = JSON.parse(stored);
-                if (parsed && parsed.type) return String(parsed.type).toUpperCase();
-            }
-        } catch (_) {}
-        return 'NORMAL';
-    }
-
-    function getDensityProfile() {
-        const type = detectUserType();
-        if (type === 'ADMIN') {
-            return { type, maxTips: 90, levels: new Set(['high', 'medium']) };
-        }
-        if (type === 'PRO' || type === 'CLINIC' || type === 'GIFT') {
-            return { type, maxTips: 120, levels: new Set(['high', 'medium']) };
-        }
-        if (type === 'TRIAL') {
-            return { type, maxTips: 70, levels: new Set(['high', 'medium']) };
-        }
-        return { type, maxTips: 42, levels: new Set(['high']) };
-    }
 
     function ensureStyles() {
         if (document.getElementById('fixed-tip-inline-styles')) return;
@@ -158,15 +100,6 @@
         }
 
         return '';
-    }
-
-    function getTipPriority(target) {
-        if (!target) return 'low';
-        if (target.closest('.header-actions, .toolbar, .toolbar-row')) return 'low';
-        const id = target.id || '';
-        if ((id && MANUAL_TIPS[id]) || target.hasAttribute('data-fixed-tip')) return 'high';
-        if (target.matches('.tab-btn, button[id], [title], [aria-label]')) return 'medium';
-        return 'low';
     }
 
     function closeTip() {
@@ -268,21 +201,31 @@
         return true;
     }
 
+    function collectKeyElements() {
+        const seen = new Set();
+        const out = [];
+
+        KEY_TARGET_IDS.forEach((id) => {
+            const el = document.getElementById(id);
+            if (!el || seen.has(el)) return;
+            seen.add(el);
+            out.push(el);
+        });
+
+        document.querySelectorAll(BIND_SELECTOR).forEach((el) => {
+            if (!el || seen.has(el)) return;
+            seen.add(el);
+            out.push(el);
+        });
+
+        return out;
+    }
+
     function bindAll() {
-        const profile = getDensityProfile();
-        const elements = document.querySelectorAll(BIND_SELECTOR);
+        const elements = collectKeyElements();
         elements.forEach((el) => {
             if (!el || el.dataset.fixedTipBound === '1' || el.dataset.fixedTipBound === 'skip') return;
             if (hasNativeTooltip(el)) {
-                el.dataset.fixedTipBound = 'skip';
-                return;
-            }
-            const priority = getTipPriority(el);
-            if (!profile.levels.has(priority)) {
-                el.dataset.fixedTipBound = 'skip';
-                return;
-            }
-            if (boundCount >= profile.maxTips) {
                 el.dataset.fixedTipBound = 'skip';
                 return;
             }
@@ -307,34 +250,6 @@
         window.requestAnimationFrame(() => {
             bindQueued = false;
             bindAll();
-        });
-    }
-
-    function forceAttachFallback() {
-        const fallbackIds = [
-            'recordBtn',
-            'dropZone',
-            'transcribeBtn',
-            'btnStructureAI',
-            'btnConfigPdfMain',
-            'btnDownloadFromPreview',
-            'btnNewUser',
-            'btnGiftUser',
-            'btnRefresh',
-            'btnRefreshLogs',
-            'btnSavePlans',
-            'btnSaveExtras'
-        ];
-
-        fallbackIds.forEach((id) => {
-            const el = document.getElementById(id);
-            if (!el) return;
-            const tipText = deriveLabelText(el);
-            if (!tipText) return;
-            if (attachTip(el, tipText)) {
-                el.dataset.fixedTipBound = '1';
-                boundCount += 1;
-            }
         });
     }
 
@@ -367,16 +282,12 @@
     function boot() {
         ensureStyles();
         bindAll();
-        forceAttachFallback();
         startObserver();
 
         // Reintentos suaves por si hay contenido que termina de renderizar tarde.
         setTimeout(queueBind, 250);
         setTimeout(queueBind, 900);
-        setTimeout(() => {
-            queueBind();
-            forceAttachFallback();
-        }, 1800);
+        setTimeout(queueBind, 1800);
     }
 
     if (document.readyState === 'loading') {

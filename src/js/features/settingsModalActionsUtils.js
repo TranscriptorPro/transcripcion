@@ -69,6 +69,40 @@
                 }
             });
         }
+
+        const autoTourToggle = document.getElementById('settingsAutoTourToggle');
+        if (autoTourToggle) {
+            const syncAutoTourToggle = async () => {
+                if (typeof window.getAutoTourEnabled === 'function') {
+                    autoTourToggle.checked = !!(await window.getAutoTourEnabled());
+                }
+            };
+
+            syncAutoTourToggle();
+            autoTourToggle.addEventListener('change', () => {
+                if (typeof window.setAutoTourEnabled === 'function') {
+                    window.setAutoTourEnabled(!!autoTourToggle.checked);
+                }
+                if (typeof showToast === 'function') {
+                    showToast(
+                        autoTourToggle.checked ? '✅ Tutorial automático activado' : 'ℹ️ Tutorial automático desactivado',
+                        'success',
+                        2000
+                    );
+                }
+            });
+        }
+
+        const startTourNowBtn = document.getElementById('settingsStartTourNow');
+        if (startTourNowBtn) {
+            startTourNowBtn.addEventListener('click', () => {
+                const overlay = document.getElementById('settingsModalOverlay');
+                if (overlay) overlay.classList.remove('active');
+                if (typeof window.startGuideTour === 'function') {
+                    setTimeout(() => window.startGuideTour(), 150);
+                }
+            });
+        }
     }
 
     window.SettingsModalActionsUtils = {
