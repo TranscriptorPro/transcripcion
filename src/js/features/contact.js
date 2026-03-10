@@ -20,8 +20,17 @@ window._retryPendingContacts = async function () {
     if (!backendUrl) return; // sin backend no podemos reintentar
 
     const still = [];
+
+    const resolveProfessionalName = (name, sex) => {
+        if (typeof window.getProfessionalDisplay === 'function') {
+            return window.getProfessionalDisplay(name, sex).fullName;
+        }
+        return String(name || 'Profesional').trim() || 'Profesional';
+    };
+
     for (const msg of pending) {
         try {
+            const senderDisplay = resolveProfessionalName(msg.nombre, msg.sexo);
             const res = await fetch(backendUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -29,8 +38,8 @@ window._retryPendingContacts = async function () {
                     action: 'send_email',
                     to: 'soporte@transcriptorpro.com',
                     subject: `[Contacto pendiente] ${msg.motivo}`,
-                    htmlBody: `<p><b>Motivo:</b> ${(msg.motivo||"").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</p><p>${(msg.detalle||"").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</p><p><small>${(msg.nombre||"").replace(/</g,"&lt;")} — Mat. ${(msg.mat||"").replace(/</g,"&lt;")} — ${msg.date}</small></p>`,
-                    senderName: msg.senderName || (`Dr./Dra. ${msg.nombre || 'Profesional'}`),
+                    htmlBody: `<p><b>Motivo:</b> ${(msg.motivo||"").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</p><p>${(msg.detalle||"").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</p><p><small>${senderDisplay.replace(/</g,"&lt;")} - Mat. ${(msg.mat||"").replace(/</g,"&lt;")} - ${msg.date}</small></p>`,
+                    senderName: msg.senderName || senderDisplay,
                     replyTo: msg.replyTo || ''
                 })
             });
@@ -162,7 +171,9 @@ window.initContact = function () {
             const contactEmail = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.contactEmail)
                 ? CLIENT_CONFIG.contactEmail
                 : 'soporte@transcriptorpro.app';
-            const senderName = `Dr./Dra. ${nombre}`;
+            const senderName = (typeof window.getProfessionalDisplay === 'function')
+                ? window.getProfessionalDisplay(nombre, profData.sexo).fullName
+                : (String(nombre || 'Profesional').trim() || 'Profesional');
             const replyTo = String(
                 profData.email
                 || (typeof CLIENT_CONFIG !== 'undefined' ? CLIENT_CONFIG.email : '')
@@ -178,7 +189,7 @@ window.initContact = function () {
             const htmlBody = `
                 <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
                     <div style="background:#0f766e;color:white;padding:16px 20px;border-radius:10px 10px 0 0;">
-                        <h2 style="margin:0;font-size:1.1rem;">📧 Contacto desde TranscriptorPro</h2>
+                        <h2 style="margin:0;font-size:1.1rem;">Contacto desde TranscriptorPro</h2>
                     </div>
                     <div style="padding:20px;background:#ffffff;border:1px solid #e2e8f0;border-top:none;">
                         <p style="margin:0 0 4px;font-size:.85rem;color:#64748b;"><strong>Motivo:</strong> ${_esc(motivo)}</p>
@@ -186,7 +197,7 @@ window.initContact = function () {
                         ${safeDetalle}
                     </div>
                     <div style="padding:12px 20px;background:#f8fafc;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;font-size:.78rem;color:#64748b;">
-                        <strong>Dr./Dra. ${_esc(nombre)}</strong> | Mat. ${_esc(mat)}<br>
+                        <strong>${_esc(senderName)}</strong> | Mat. ${_esc(mat)}<br>
                         ID: ${_esc(medicoId)} | Plan: ${_esc(plan)} | Device: ${_esc(deviceId)}
                     </div>
                 </div>`;

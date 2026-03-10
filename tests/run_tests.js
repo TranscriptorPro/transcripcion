@@ -5827,8 +5827,12 @@ test('XSS-4 — contact.js escapa campos en htmlBody', () => {
     // Verificar que motivo, nombre, mat están escapados
     assert(contactCodeSec.includes('_esc(motivo)') || contactCodeSec.includes('escapeHtml(motivo)'),
         'htmlBody debe escapar motivo');
-    assert(contactCodeSec.includes('_esc(nombre)') || contactCodeSec.includes('escapeHtml(nombre)'),
-        'htmlBody debe escapar nombre');
+    assert(
+        contactCodeSec.includes('_esc(senderName)') ||
+        contactCodeSec.includes('_esc(nombre)') ||
+        contactCodeSec.includes('escapeHtml(nombre)'),
+        'htmlBody debe escapar nombre profesional (senderName/nombre)'
+    );
     assert(contactCodeSec.includes('_esc(mat)'),
         'htmlBody debe escapar matrícula');
 });
@@ -5966,6 +5970,39 @@ test('Contact-Retry-3 — Verifica contador antes de reintentar', () => {
 test('Contact-Retry-4 — Formulario de contacto valida motivo+descripción', () => {
     assert(contactCodeSec.includes('contactMotivo') && contactCodeSec.includes('contactDetalle'),
         'Debe validar campos motivo y detalle');
+});
+
+test('Contact-Formato-1 — contact.js no usa prefijo Dr./Dra. hardcodeado', () => {
+    assert(!contactCodeSec.includes('Dr./Dra.'),
+        'contact.js no debe hardcodear "Dr./Dra." para evitar duplicaciones');
+});
+
+test('Contact-Formato-2 — contact.js usa getProfessionalDisplay', () => {
+    assert(contactCodeSec.includes('getProfessionalDisplay'),
+        'contact.js debe usar getProfessionalDisplay para unificar formato profesional');
+});
+
+test('Contact-Formato-3 — email de contacto evita emoji en cabecera', () => {
+    assert(!contactCodeSec.includes('📧 Contacto desde TranscriptorPro'),
+        'La cabecera del email de contacto no debe incluir emoji para evitar problemas de codificación');
+    assert(contactCodeSec.includes('Contacto desde TranscriptorPro'),
+        'La cabecera textual del email de contacto debe mantenerse');
+});
+
+const pdfPreviewCodeSec = fs.readFileSync(path.join(root, 'src/js/features/pdfPreview.js'), 'utf-8');
+const pdfPreviewActionsCodeSec = fs.readFileSync(path.join(root, 'src/js/features/pdfPreviewActions.js'), 'utf-8');
+const pdfMakerCodeSec = fs.readFileSync(path.join(root, 'src/js/features/pdfMaker.js'), 'utf-8');
+const exportRenderCodeSec = fs.readFileSync(path.join(root, 'src/js/features/editorExportRenderUtils.js'), 'utf-8');
+
+test('ProfessionalDisplay-1 — preview/export/PDF usan helper global', () => {
+    assert(pdfPreviewCodeSec.includes('getProfessionalDisplay'),
+        'pdfPreview.js debe usar getProfessionalDisplay');
+    assert(pdfPreviewActionsCodeSec.includes('getProfessionalDisplay'),
+        'pdfPreviewActions.js debe usar getProfessionalDisplay');
+    assert(pdfMakerCodeSec.includes('getProfessionalDisplay'),
+        'pdfMaker.js debe usar getProfessionalDisplay');
+    assert(exportRenderCodeSec.includes('getProfessionalDisplay'),
+        'editorExportRenderUtils.js debe usar getProfessionalDisplay');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════

@@ -234,7 +234,11 @@ window.openPrintPreview = async function () {
 
     // Datos del profesional (profesional activo tiene prioridad)
     const activePro      = config.activeProfessional || null;
-    const profName       = escName(activePro?.nombre     || profData.nombre) || 'Profesional Médico';
+    const rawProfName    = activePro?.nombre || profData.nombre || '';
+    const profDisplayObj = (typeof window.getProfessionalDisplay === 'function')
+        ? window.getProfessionalDisplay(rawProfName, activePro?.sexo || profData.sexo || '')
+        : { fullName: (String(rawProfName || '').trim() || 'Profesional Médico') };
+    const profName       = escName(profDisplayObj.fullName) || 'Profesional Médico';
     const matricula      = esc(activePro?.matricula  || profData.matricula || '');
     const especialidadRaw = activePro?.especialidades
         || (Array.isArray(profData.specialties)
@@ -242,13 +246,7 @@ window.openPrintPreview = async function () {
             : (profData.especialidad || ''));
     const especialidad    = escSentence(especialidadRaw);
     const especialidadDisplay = esc((especialidadRaw || '').replace(/^ALL$/i, '').replace(/^General$/i, 'Medicina General').trim());
-    // Detectar título Dr./Dra. del nombre del profesional
-    const _rawNameStr = activePro?.nombre || profData.nombre || '';
-    const _titleMatch = _rawNameStr.match(/^(Dra?\.?\.?\s*)/i);
-    const profSexo = activePro?.sexo || profData.sexo || '';
-    const profDisplayTitle = profSexo === 'F' ? 'Dra.' : profSexo === 'M' ? 'Dr.' :
-        (_titleMatch ? (_titleMatch[1].trim().toLowerCase().startsWith('dra') ? 'Dra.' : 'Dr.') : 'Dr.');
-    const profDisplayName = escName(_rawNameStr.replace(/^(Dra?\.?\s*)/i, '').trim()) || profName;
+    const profDisplayName = profName;
     // Contacto del profesional
     const pvTelefono  = esc(activePro?.telefono  || profData.telefono  || '');
     const pvEmail     = esc(activePro?.email     || profData.email     || '');
@@ -396,7 +394,7 @@ window.openPrintPreview = async function () {
                     ${hasProfLogo ? `<img src="${profLogoSrc}" alt="Logo Prof" style="height:40px;max-height:40px;width:auto;object-fit:contain;flex-shrink:0;background:transparent;border:none;border-radius:0;">` : ''}
                     <div class="pvh-info" style="flex:1;min-width:0;">
                         <div>
-                            <span class="pvh-name">Estudio realizado por: ${profDisplayTitle} ${profDisplayName}</span>
+                            <span class="pvh-name">Estudio realizado por: ${profDisplayName}</span>
                         </div>
                         ${pvBadgesHtml ? `<div class="pvh-badges">${pvBadgesHtml}</div>` : ''}
                         ${matricula ? `<div class="pvh-mat">Mat. ${matricula}</div>` : ''}

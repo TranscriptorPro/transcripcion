@@ -102,6 +102,37 @@ window.fetchWithTimeout = function(url, options, timeoutMs = 120000) {
             }).join(' ');
         }).join(' ');
     }
+
+    /**
+     * Regla global de presentacion profesional:
+     * - Nunca duplicar prefijos (Dr./Dra. Dr./Dra.)
+     * - Si el nombre ya trae prefijo, se limpia y se recompone una sola vez
+     * - Si no hay sexo/prefijo, usa Dr. por defecto
+     */
+    window.getProfessionalDisplay = function(rawName, sexo) {
+        const original = String(rawName || '').trim();
+        let baseName = original;
+
+        // Limpia cualquier prefijo repetido al inicio (Dr., Dra., Dr./Dra.)
+        const leadingPrefix = /^(?:\s*(?:dr\.?\s*\/\s*dra\.?|dra\.?|dr\.?))\s+/i;
+        let loops = 0;
+        while (leadingPrefix.test(baseName) && loops < 6) {
+            baseName = baseName.replace(leadingPrefix, '').trim();
+            loops += 1;
+        }
+
+        const sx = String(sexo || '').trim().toUpperCase();
+        let title = '';
+        if (sx === 'F') title = 'Dra.';
+        else if (sx === 'M') title = 'Dr.';
+        else if (/^\s*dra\.?/i.test(original)) title = 'Dra.';
+        else if (/^\s*dr\.?/i.test(original)) title = 'Dr.';
+        else title = 'Dr.';
+
+        const safeName = (baseName || original || 'Profesional').replace(/\s+/g, ' ').trim();
+        const fullName = `${title} ${safeName}`.replace(/\s+/g, ' ').trim();
+        return { title, name: safeName, fullName };
+    };
 })();
 
 // ============ AUTO-NORMALIZACIÓN DE CAMPOS DE FORMULARIO ============

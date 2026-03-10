@@ -58,11 +58,10 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const especialidad = Array.isArray(rawEsp)
             ? rawEsp.filter(e => e && e !== 'Todas').join(' / ')
             : (rawEsp || '');
-        const profSexoRaw = (activePro?.sexo || profData.sexo || '').toString().trim().toUpperCase();
-        const nameTitleMatch = profName.match(/^(DRA?\.?\s*)/i);
-        const profTitle = profSexoRaw === 'F' ? 'Dra.' : profSexoRaw === 'M' ? 'Dr.' : (nameTitleMatch && /^dra/i.test(nameTitleMatch[1]) ? 'Dra.' : 'Dr.');
-        const profNameBase = profName.replace(/^(DRA?\.?\s*)/i, '').trim();
-        const profDisplayName = `${profTitle} ${profNameBase || profName}`.trim();
+        const profDisplayObj = (typeof window.getProfessionalDisplay === 'function')
+            ? window.getProfessionalDisplay(profName, activePro?.sexo || profData.sexo || '')
+            : { fullName: (String(profName || '').trim() || 'Profesional') };
+        const profDisplayName = String(profDisplayObj.fullName || '').trim() || 'Profesional';
         const specialtyBadges = (Array.isArray(rawEsp) ? rawEsp : String(rawEsp || '').split(/[\/,]/))
             .map(s => String(s || '').trim())
             .filter(Boolean)

@@ -41,16 +41,16 @@
         const escSentence = (t) => esc(norm(t || '', 'sentence'));
 
         const activePro = config.activeProfessional || null;
-        const profName = escName(activePro?.nombre || profData.nombre) || '';
+        const rawProfName = activePro?.nombre || profData.nombre || '';
+        const profDisplay = (typeof window.getProfessionalDisplay === 'function')
+            ? window.getProfessionalDisplay(rawProfName, activePro?.sexo || profData.sexo || '').fullName
+            : (String(rawProfName || '').trim() || 'Profesional');
+        const profName = escName(profDisplay) || '';
         const matricula = esc(activePro?.matricula || profData.matricula || '');
         const espRaw = activePro?.especialidades
             || (Array.isArray(profData.specialties) ? profData.specialties.filter(s => s && s !== 'Todas').join(' / ') : (profData.especialidad || ''));
         const especialidad = escSentence(espRaw);
-        const _rawN = activePro?.nombre || profData.nombre || '';
-        const _tM = _rawN.match(/^(Dra?\.\.?\s*)/i);
-        const profSexo = activePro?.sexo || profData.sexo || '';
-        const profTitle = profSexo === 'F' ? 'Dra.' : profSexo === 'M' ? 'Dr.' : (_tM ? (_tM[1].trim().toLowerCase().startsWith('dra') ? 'Dra.' : 'Dr.') : 'Dr.');
-        const profDispName = escName(_rawN.replace(/^(Dra?\.?\s*)/i, '').trim()) || profName;
+        const profDispName = profName;
         const accentColor = activePro?.headerColor || profData.headerColor || '#1a56a0';
 
         const profTelefono = esc(activePro?.telefono || profData.telefono || '');
@@ -136,7 +136,7 @@
             const contactHtml = cItems.length ? `<div class="pvh-contact">${cItems.join('')}</div>` : '';
             headerSection = `<div class="preview-header"><div class="pvh-body">`
                 + (hasProfLogo ? `<img src="${profLogoSrc}" style="height:40px;max-height:40px;width:auto;object-fit:contain;flex-shrink:0;background:transparent;border:none;border-radius:0;">` : '')
-                + `<div class="pvh-info"><div><span class="pvh-name">Estudio realizado por: ${profTitle} ${profDispName}</span></div>`
+                + `<div class="pvh-info"><div><span class="pvh-name">Estudio realizado por: ${profDispName}</span></div>`
                 + (espBadgesHtml ? `<div class="pvh-badges">${espBadgesHtml}</div>` : '')
                 + (matricula ? `<div class="pvh-mat">Mat. ${matricula}</div>` : '')
                 + `</div>${contactHtml}</div></div>`;

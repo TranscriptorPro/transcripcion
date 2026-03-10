@@ -18,11 +18,9 @@ window.emailFromPreview = async function () {
     const profData = (await _pdfPreviewSafeGet('prof_data', {})) || {};
     const activePro = config.activeProfessional || null;
     const rawProfName = activePro?.nombre || profData.nombre || 'Profesional';
-    const profSexo = activePro?.sexo || profData.sexo || '';
-    const titleMatch = String(rawProfName).match(/^(Dra?\.?\s*)/i);
-    const profTitle = profSexo === 'F' ? 'Dra.' : profSexo === 'M' ? 'Dr.' : (titleMatch && /^dra/i.test(titleMatch[1]) ? 'Dra.' : 'Dr.');
-    const profBaseName = String(rawProfName).replace(/^(Dra?\.?\s*)/i, '').trim();
-    const profDisplay = `${profTitle} ${profBaseName || rawProfName}`.trim();
+    const profDisplay = (typeof window.getProfessionalDisplay === 'function')
+        ? window.getProfessionalDisplay(rawProfName, activePro?.sexo || profData.sexo || '').fullName
+        : (String(rawProfName || '').trim() || 'Profesional');
     const patientName = config.patientName || '';
     const studyType   = config.studyType   || 'Informe médico';
     const reportNum   = config.reportNum   || '';
