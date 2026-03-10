@@ -61,10 +61,10 @@ window.emailFromPreview = async function () {
             Ante cualquier consulta sobre los resultados, no dude en comunicarse con nosotros${wpPhone ? ' al <strong>' + _escHtml(wpPhone) + '</strong>' : ''}.
         </p>
         <hr style="border:none;border-top:1px solid #ddd;margin:16px 0;">
-        <p style="font-size:13px;color:#666;margin:0;line-height:1.5;text-transform:uppercase;">
+        <p style="font-size:13px;color:#666;margin:0;line-height:1.5;">
             Atentamente,<br>
-            <strong>${_escHtml(profDisplay).toUpperCase()}</strong><br>
-            ${_escHtml(wpName).toUpperCase()}
+            <strong>${_escHtml(profDisplay)}</strong><br>
+            ${_escHtml(wpName)}
         </p>
     </div>
     <p style="font-size:11px;color:#999;text-align:center;margin-top:12px;">

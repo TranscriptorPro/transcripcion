@@ -237,7 +237,11 @@ window.openPrintPreview = async function () {
     const rawProfName    = activePro?.nombre || profData.nombre || '';
     const profDisplayObj = (typeof window.getProfessionalDisplay === 'function')
         ? window.getProfessionalDisplay(rawProfName, activePro?.sexo || profData.sexo || '')
-        : { fullName: (String(rawProfName || '').trim() || 'Profesional Médico'), title: 'Dr.' };
+        : {
+            fullName: (String(rawProfName || '').trim() || 'Profesional Médico'),
+            name: (String(rawProfName || '').trim() || 'Profesional Médico'),
+            title: 'Dr.'
+        };
     const profName       = escName(profDisplayObj.fullName) || 'Profesional Médico';
     const profDisplayTitle = profDisplayObj.title || 'Dr.';
     const matricula      = esc(activePro?.matricula  || profData.matricula || '');
@@ -247,15 +251,22 @@ window.openPrintPreview = async function () {
             : (profData.especialidad || ''));
     const especialidad    = escSentence(especialidadRaw);
     const especialidadDisplay = esc((especialidadRaw || '').replace(/^ALL$/i, '').replace(/^General$/i, 'Medicina General').trim());
-    const profDisplayName = profName;
-    // Contacto del profesional
+    const profDisplayName = escName(profDisplayObj.name || rawProfName || 'Profesional Médico');
+    const profDisplayFullName = escName(profDisplayObj.fullName || `${profDisplayTitle} ${profDisplayName}`);
+    // Contacto del profesional (con fallback socialMedia para clones)
+    const sm = (activePro?.socialMedia && typeof activePro.socialMedia === 'object')
+        ? activePro.socialMedia
+        : ((profData?.socialMedia && typeof profData.socialMedia === 'object') ? profData.socialMedia : {});
     const pvTelefono  = esc(activePro?.telefono  || profData.telefono  || '');
     const pvEmail     = esc(activePro?.email     || profData.email     || '');
-    const pvWhatsapp  = esc(activePro?.whatsapp  || '');
-    const pvInstagram = esc(activePro?.instagram || '');
-    const pvFacebook  = esc(activePro?.facebook  || '');
-    const pvXSocial   = esc(activePro?.x         || '');
-    const pvYoutube   = esc(activePro?.youtube   || '');
+    const pvWhatsapp  = esc(activePro?.whatsapp  || profData.whatsapp  || sm.whatsapp  || sm.WhatsApp  || '');
+    const pvInstagram = esc(activePro?.instagram || profData.instagram || sm.instagram || sm.Instagram || '');
+    const pvFacebook  = esc(activePro?.facebook  || profData.facebook  || sm.facebook  || sm.Facebook  || '');
+    const pvXSocial   = esc(activePro?.x         || profData.x         || sm.x || sm.X || sm.twitter || sm.Twitter || '');
+    const pvYoutube   = esc(activePro?.youtube   || profData.youtube   || sm.youtube   || sm.YouTube   || '');
+    const showPhone   = (activePro?.showPhone ?? config.showPhone ?? true) !== false;
+    const showEmail   = (activePro?.showEmail ?? config.showEmail ?? true) !== false;
+    const showSocial  = (activePro?.showSocial ?? config.showSocial ?? false) === true;
     const profLogoSize = config.logoSizePx || parseInt(localStorage.getItem('prof_logo_size_px') || '60');
     const firmaSize   = config.firmaSizePx || parseInt(localStorage.getItem('firma_size_px') || '60');
     const instLogoSize = config.instLogoSizePx || parseInt(localStorage.getItem('inst_logo_size_px') || '60');
@@ -382,20 +393,20 @@ window.openPrintPreview = async function () {
             const pvBadgesHtml = pvEspArr.map(s => `<span class="pvh-badge">${esc(s)}</span>`).join('');
             // Contact right column
             const pvCItems = [];
-            if (pvTelefono)  pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#9742;</span>${pvTelefono}</div>`);
-            if (pvEmail)     pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#9993;</span>${pvEmail}</div>`);
-            if (pvWhatsapp)  pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#128241;</span>${pvWhatsapp}</div>`);
-            if (pvInstagram) pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">@</span>${pvInstagram}</div>`);
-            if (pvFacebook)  pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">f</span>${pvFacebook}</div>`);
-            if (pvXSocial)   pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#120143;</span>${pvXSocial}</div>`);
-            if (pvYoutube)   pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#9654;</span>${pvYoutube}</div>`);
+            if (showPhone && pvTelefono)  pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#9742;</span>${pvTelefono}</div>`);
+            if (showEmail && pvEmail)     pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#9993;</span>${pvEmail}</div>`);
+            if (showSocial && pvWhatsapp)  pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#128241;</span>${pvWhatsapp}</div>`);
+            if (showSocial && pvInstagram) pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">@</span>${pvInstagram}</div>`);
+            if (showSocial && pvFacebook)  pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">f</span>${pvFacebook}</div>`);
+            if (showSocial && pvXSocial)   pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#120143;</span>${pvXSocial}</div>`);
+            if (showSocial && pvYoutube)   pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#9654;</span>${pvYoutube}</div>`);
             const pvContactHtml = pvCItems.length ? `<div class="pvh-contact">${pvCItems.join('')}</div>` : '';
             headerEl.innerHTML = `
                 <div class="pvh-body" style="display:flex;align-items:center;gap:12px;">
                     ${hasProfLogo ? `<img src="${profLogoSrc}" alt="Logo Prof" style="height:40px;max-height:40px;width:auto;object-fit:contain;flex-shrink:0;background:transparent;border:none;border-radius:0;">` : ''}
                     <div class="pvh-info" style="flex:1;min-width:0;">
                         <div>
-                            <span class="pvh-name">Estudio realizado por: ${profDisplayName}</span>
+                            <span class="pvh-name">Estudio realizado por: ${profDisplayFullName}</span>
                         </div>
                         ${pvBadgesHtml ? `<div class="pvh-badges">${pvBadgesHtml}</div>` : ''}
                         ${matricula ? `<div class="pvh-mat">Mat. ${matricula}</div>` : ''}
@@ -469,7 +480,7 @@ window.openPrintPreview = async function () {
             // Imagen de firma va ENCIMA de la línea
             if (showSignImage && hasSig) sigHtml += `<img src="${sigSrc}" class="pvsig-img" alt="Firma" style="max-height:${firmaSize}px;">`;
             if (showSignLine) sigHtml += `<div class="pvsig-line"></div>`;
-            if (showSignName && profName) sigHtml += `<div class="pvsig-name">${profDisplayTitle} ${profDisplayName}</div>`;
+            if (showSignName && profName) sigHtml += `<div class="pvsig-name">${profDisplayFullName}</div>`;
             if (showSignMat  && matricula) sigHtml += `<div class="pvsig-mat">Mat. ${matricula}</div>`;
             if (especialidad) sigHtml += `<div class="pvsig-spec">${especialidad}</div>`;
             sigHtml += '</div>';

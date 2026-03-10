@@ -73,16 +73,19 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const wpPhone   = config.workplacePhone   || activeWp?.phone   || '';
         const wpName    = activeWp?.name || '';
         const wpEmail   = activeWp?.email || config.workplaceEmail || '';
-        const showPhone = config.showPhone !== false;
-        const showEmail = config.showEmail !== false;
-        const showSocial = config.showSocial === true;
+        const showPhone = (activePro?.showPhone ?? config.showPhone ?? true) !== false;
+        const showEmail = (activePro?.showEmail ?? config.showEmail ?? true) !== false;
+        const showSocial = (activePro?.showSocial ?? config.showSocial ?? false) === true;
+        const sm = (activePro?.socialMedia && typeof activePro.socialMedia === 'object')
+            ? activePro.socialMedia
+            : ((profData?.socialMedia && typeof profData.socialMedia === 'object') ? profData.socialMedia : {});
         const profPhone = activePro?.telefono || profData.telefono || '';
         const profEmail = activePro?.email || profData.email || '';
-        const profWhatsapp = activePro?.whatsapp || profData.whatsapp || '';
-        const profInstagram = activePro?.instagram || profData.instagram || '';
-        const profFacebook = activePro?.facebook || profData.facebook || '';
-        const profX = activePro?.x || profData.x || '';
-        const profYoutube = activePro?.youtube || profData.youtube || '';
+        const profWhatsapp = activePro?.whatsapp || profData.whatsapp || sm.whatsapp || sm.WhatsApp || '';
+        const profInstagram = activePro?.instagram || profData.instagram || sm.instagram || sm.Instagram || '';
+        const profFacebook = activePro?.facebook || profData.facebook || sm.facebook || sm.Facebook || '';
+        const profX = activePro?.x || profData.x || sm.x || sm.X || sm.twitter || sm.Twitter || '';
+        const profYoutube = activePro?.youtube || profData.youtube || sm.youtube || sm.YouTube || '';
         const _reqVal = (id) => { try { return document.getElementById(id)?.value?.trim() || ''; } catch(_) { return ''; } };
         const _edEl = typeof window !== 'undefined' ? (window.editor || document.getElementById('editor')) : null;
         const _extracted = (_edEl && typeof extractPatientDataFromText === 'function')
