@@ -5324,6 +5324,15 @@ test('userGuide — filtra pasos con targets visibles y recalcula en resize', ()
     assertIncludes(guideCode, "window.addEventListener('resize'");
 });
 
+test('userGuide — guarda y reanuda progreso por perfil', () => {
+    assertIncludes(guideCode, 'TOUR_PROGRESS_PREFIX');
+    assertIncludes(guideCode, 'getTourProfileId');
+    assertIncludes(guideCode, 'saveTourProgress');
+    assertIncludes(guideCode, 'getSavedTourProgress');
+    assertIncludes(guideCode, 'clearTourProgress');
+    assertIncludes(guideCode, 'const savedStepId = getSavedTourProgress');
+});
+
 // Validar carga de archivos de texto enriquecidos en Modo Pro
 const proSourceModeCode = fs.readFileSync(path.join(root, 'src/js/features/proSidebarSourceMode.js'), 'utf-8');
 

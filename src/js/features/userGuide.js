@@ -3,6 +3,7 @@
 (function initUserGuide() {
 
     const AUTO_TOUR_KEY = 'auto_tour_enabled';
+    const TOUR_PROGRESS_PREFIX = 'tour_last_step';
 
     async function getAutoTourEnabled() {
         try {
@@ -124,6 +125,43 @@
     let tourElements = {};
     let activeTourSteps = [];
     let activeTourContext = null;
+
+    function getTourProfileId(ctx) {
+        const context = ctx || getTourContext();
+        const type = String(context.type || 'NORMAL').toUpperCase();
+        const planCode = String(context.planCode || '').toLowerCase() || 'base';
+        return `${type}:${planCode}`;
+    }
+
+    function getTourProgressKey(ctx) {
+        return `${TOUR_PROGRESS_PREFIX}:${getTourProfileId(ctx)}`;
+    }
+
+    function saveTourProgress(stepId, ctx) {
+        if (!stepId) return;
+        const key = getTourProgressKey(ctx || activeTourContext || getTourContext());
+        try { localStorage.setItem(key, String(stepId)); } catch (_) {}
+        if (typeof appDB !== 'undefined') {
+            try { appDB.set(key, String(stepId)); } catch (_) {}
+        }
+    }
+
+    function getSavedTourProgress(ctx) {
+        const key = getTourProgressKey(ctx || activeTourContext || getTourContext());
+        try {
+            const fromLs = localStorage.getItem(key);
+            if (fromLs) return fromLs;
+        } catch (_) {}
+        return '';
+    }
+
+    function clearTourProgress(ctx) {
+        const key = getTourProgressKey(ctx || activeTourContext || getTourContext());
+        try { localStorage.removeItem(key); } catch (_) {}
+        if (typeof appDB !== 'undefined') {
+            try { appDB.remove(key); } catch (_) {}
+        }
+    }
 
     function getTourContext() {
         const cfg = window.CLIENT_CONFIG || {};
@@ -358,9 +396,9 @@
             `<div class="tour-dot ${i === 0 ? 'active' : ''}" data-step="${i}"></div>`
         ).join('');
 
-        tourElements.skipBtn.addEventListener('click', endTour);
+        tourElements.skipBtn.addEventListener('click', () => endTour(false));
         tourElements.nextBtn.addEventListener('click', nextStep);
-        tourElements.backdrop.addEventListener('click', endTour);
+        tourElements.backdrop.addEventListener('click', () => endTour(false));
     }
 
     function showStep(index) {
@@ -372,6 +410,7 @@
         currentStep = index;
         const step = activeTourSteps[index];
         const target = findTarget(step.target);
+        if (step && step.id) saveTourProgress(step.id, activeTourContext || getTourContext());
 
         // Update text
         tourElements.title.textContent = step.title;
@@ -458,6 +497,10 @@
     }
 
     function nextStep() {
+        if (currentStep >= activeTourSteps.length - 1) {
+            endTour(true);
+            return;
+        }
         showStep(currentStep + 1);
     }
 
@@ -471,6 +514,13 @@
             return;
         }
 
+        const savedStepId = getSavedTourProgress(activeTourContext);
+        let startIndex = 0;
+        if (savedStepId) {
+            const found = activeTourSteps.findIndex((s) => s && s.id === savedStepId);
+            if (found >= 0) startIndex = found;
+        }
+
         tourActive = true;
 
         // Close help modal first
@@ -479,26 +529,35 @@
         setTimeout(() => {
             createTourUI();
             currentStep = -1;
-            showStep(0);
+            showStep(startIndex);
         }, 300);
     }
 
-    function endTour() {
+    function endTour(completed) {
         tourActive = false;
         currentStep = -1;
         document.getElementById('tourContainer')?.remove();
         tourElements = {};
 
-        // Mark tour as seen
-        if (typeof appDB !== 'undefined') {
-            appDB.set('tour_completed', true); // fire-and-forget
-        } else {
-            localStorage.setItem('tour_completed', 'true');
+        const done = !!completed;
+        if (done) {
+            clearTourProgress(activeTourContext || getTourContext());
         }
 
-        if (typeof showToast === 'function') {
+        // Mark tour as seen
+        if (done) {
+            if (typeof appDB !== 'undefined') {
+                appDB.set('tour_completed', true); // fire-and-forget
+            } else {
+                localStorage.setItem('tour_completed', 'true');
+            }
+        }
+
+        if (done && typeof showToast === 'function') {
             showToast('✅ Tour completado. Podés acceder a la ayuda desde el botón ❓', 'success', 3000);
         }
+
+        activeTourContext = null;
     }
 
     // Global access
@@ -612,7 +671,7 @@
     // Handle ESC key to close tour
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && tourActive) {
-            endTour();
+            endTour(false);
         }
     });
 
