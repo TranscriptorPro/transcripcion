@@ -181,12 +181,86 @@
 
     function buildTourSteps() {
         const ctx = getTourContext();
-        return TOUR_STEPS_BASE.filter((step) => {
+        const filtered = TOUR_STEPS_BASE.filter((step) => {
             if (typeof step.when === 'function') {
                 try { return !!step.when(ctx); } catch (_) { return false; }
             }
             return true;
         });
+
+        return reorderTourSteps(filtered, ctx);
+    }
+
+    function reorderTourSteps(steps, ctx) {
+        const list = Array.isArray(steps) ? steps.slice() : [];
+        const context = ctx || {};
+
+        let preferredOrder = [
+            'record',
+            'drop-zone',
+            'transcribe',
+            'pro-activation',
+            'pro-input',
+            'editor',
+            'export',
+            'admin-panel'
+        ];
+
+        if (context.isAdmin) {
+            preferredOrder = [
+                'admin-panel',
+                'record',
+                'drop-zone',
+                'transcribe',
+                'pro-input',
+                'editor',
+                'export'
+            ];
+        } else if (context.isClinic) {
+            preferredOrder = [
+                'record',
+                'drop-zone',
+                'transcribe',
+                'pro-input',
+                'editor',
+                'export'
+            ];
+        } else if (context.isGift) {
+            preferredOrder = [
+                'record',
+                'transcribe',
+                'pro-input',
+                'editor',
+                'export',
+                'drop-zone'
+            ];
+        } else if (context.isPro) {
+            preferredOrder = [
+                'record',
+                'drop-zone',
+                'transcribe',
+                'pro-input',
+                'editor',
+                'export'
+            ];
+        }
+
+        const byId = new Map();
+        list.forEach((step) => {
+            if (step && step.id) byId.set(step.id, step);
+        });
+
+        const ordered = [];
+        preferredOrder.forEach((id) => {
+            const step = byId.get(id);
+            if (step) {
+                ordered.push(step);
+                byId.delete(id);
+            }
+        });
+
+        byId.forEach((step) => ordered.push(step));
+        return ordered;
     }
 
     function findTarget(selector) {

@@ -5312,6 +5312,12 @@ test('userGuide — adapta textos por perfil (PRO/GIFT/CLINIC/ADMIN)', () => {
     assertIncludes(guideCode, 'planCode');
 });
 
+test('userGuide — reordena pasos por perfil', () => {
+    assertIncludes(guideCode, 'reorderTourSteps');
+    assertIncludes(guideCode, 'preferredOrder');
+    assertIncludes(guideCode, 'admin-panel');
+});
+
 // Validar carga de archivos de texto enriquecidos en Modo Pro
 const proSourceModeCode = fs.readFileSync(path.join(root, 'src/js/features/proSidebarSourceMode.js'), 'utf-8');
 
