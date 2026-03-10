@@ -6317,7 +6317,7 @@ test('Struct-5 — Prompt fija OROFARINGE sin tilde incorrecta', () => {
 
 test('Struct-6 — Postproceso ortográfico médico está activo', () => {
     assert(structCodeSec.includes('function _postProcessStructuredMarkdown') &&
-           structCodeSec.includes('return _postProcessStructuredMarkdown(content)'),
+           (structCodeSec.includes('return _postProcessStructuredMarkdown(content)') || structCodeSec.includes('return _postProcessStructuredMarkdown(cleaned)')),
         'Structurer debe aplicar postproceso ortográfico al contenido de IA');
 });
 
@@ -6810,6 +6810,15 @@ test('Modal-4 — onboarding y acciones destructivas usan clases coherentes', ()
         'Botón de borrar datos debe usar clase danger temática');
     assert(indexCodeSec.includes('id="btnDeleteFieldSection"') && indexCodeSec.includes('edit-field-danger-btn'),
         'Botón eliminar campo debe usar clase danger temática');
+});
+
+test('Struct-NonMedical-1 — fallback general sin conclusion + advertencia fija', () => {
+    assert(structCodeSec.includes('NON_MEDICAL_STRUCT_WARNING'),
+        'structurer.js debe definir advertencia fija para texto no medico');
+    assert(structCodeSec.includes('forceGeneralNoConclusion'),
+        'structurer.js debe activar modo general sin conclusion para texto no medico');
+    assert(structCodeSec.includes('NO agregues ninguna seccion de conclusion') || structCodeSec.includes('NO agregues ninguna sección de conclusión'),
+        'prompt no medico debe prohibir seccion de conclusion');
 });
 
 // Limpiar estado después de tests

@@ -41,7 +41,37 @@ const GROQ_MODELS = [
 ];
 if (typeof window !== 'undefined') window.GROQ_MODELS = GROQ_MODELS;
 
-async function structureTranscription(text, templateKey, temperature = 0.1, model = GROQ_MODELS[0]) {
+const NON_MEDICAL_STRUCT_WARNING = 'ADEVERTENCIA: El texto obtenido (si es extraido de audio) o el texto cargado si es subido de archivo, o el texto copiado si es copiado, no se puede estructurar como informe medico porque no reune las caracteristicas apropiadas para su estructuracion. De todos modos, si lo desea, igualmente puede editar el texto';
+
+function _isLikelyMedicalText(text) {
+    const src = String(text || '');
+    if (!src.trim()) return false;
+    const sample = src.toLowerCase();
+    const cues = [
+        'paciente', 'diagnostico', 'ecografia', 'eco doppler', 'radiografia', 'tomografia', 'resonancia',
+        'colonoscopia', 'gastroscopia', 'laringoscopia', 'broncoscopia', 'cinecoronariografia',
+        'presion arterial', 'frecuencia cardiaca', 'saturacion', 'hallazgo', 'informe medico',
+        'orofaringe', 'ventriculo', 'auricula', 'arteria', 'lesion', 'mmhg', 'mm', 'cm', 'ml'
+    ];
+    let hits = 0;
+    for (const cue of cues) {
+        if (sample.includes(cue)) {
+            hits += 1;
+            if (hits >= 2) return true;
+        }
+    }
+    return false;
+}
+
+function _stripGeneralConclusionSections(md) {
+    let out = String(md || '');
+    if (!out) return out;
+    // En modo no médico se prohíbe conclusión: eliminar bloques de conclusión/diagnóstico al final.
+    out = out.replace(/(?:^|\n)##+\s*(?:conclusi[oó]n(?:es)?|diagn[oó]stico|impresi[oó]n diagn[oó]stica)\s*\n[\s\S]*?(?=\n##+\s|\s*$)/gi, '\n');
+    return out.trim();
+}
+
+async function structureTranscription(text, templateKey, temperature = 0.1, model = GROQ_MODELS[0], options = {}) {
     if (!GROQ_API_KEY) {
         throw new Error('HTTP_401: API Key no configurada');
     }
@@ -53,27 +83,31 @@ async function structureTranscription(text, templateKey, temperature = 0.1, mode
         text = text.slice(0, MAX_STRUCTURE_CHARS);
     }
 
+    const forceGeneralNoConclusion = !!options.forceGeneralNoConclusion;
+
     // Find prompt in flat MEDICAL_TEMPLATES
     // Checking if MEDICAL_TEMPLATES is globally available
     let prompt = '';
-    if (typeof MEDICAL_TEMPLATES !== 'undefined') {
+    if (forceGeneralNoConclusion) {
+        prompt = 'Actua como editor profesional. Estructura el contenido en formato general claro y ordenado, con titulos y subtitulos cuando correspondan, sin agregar informacion nueva.';
+    } else if (typeof MEDICAL_TEMPLATES !== 'undefined') {
         prompt = MEDICAL_TEMPLATES[templateKey]?.prompt || MEDICAL_TEMPLATES.generico?.prompt || 'Estructura este texto médico de forma profesional, corrigiendo terminología, organizándolo en párrafos coherentes y mejorando la sintaxis sin perder información:';
     } else {
         console.warn('MEDICAL_TEMPLATES no está definido globalmente.');
         prompt = 'Estructura este texto médico de forma profesional, corrigiendo terminología, y agregando las secciones clínicas apropiadas que detectes:';
     }
 
-    try {
-        const res = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${GROQ_API_KEY}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                model: model,
-                messages: [
-                    { role: "system", content: prompt + `
+    const systemContent = forceGeneralNoConclusion
+        ? `${prompt}
+
+REGLAS ABSOLUTAS — cumplirlas todas sin excepcion:
+1. PRESERVA TODO EL CONTENIDO del texto original, sin omitir datos.
+2. NO inventes informacion ni agregues interpretaciones tecnicas que no esten en el texto.
+3. Estructura en markdown con titulos y subtitulos (maximo hasta ###), seguido de parrafos claros.
+4. NO agregues ninguna seccion de conclusion, conclusiones, diagnostico o impresion diagnostica.
+5. NO des recomendaciones, conducta, tratamiento ni cierre medico.
+6. Devuelve UNICAMENTE el contenido estructurado en markdown, sin texto introductorio ni final.`
+        : prompt + `
 
 REGLAS ABSOLUTAS — cumplirlas todas sin excepción:
 1. PRESERVA TODO EL CONTENIDO: cada hallazgo, medición, valor y dato de la transcripción DEBE aparecer en el informe. Nunca descartes información clínica, aunque no encaje perfectamente en la plantilla.
@@ -90,7 +124,19 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepción:
 12. NUNCA conviertas entre unidades de medida. Si el médico dice "10 mm", escribe "10 mm", NO "1 cm". Si dice "500 ml", escribe "500 ml", NO "0.5 L". Preserva la unidad exacta que usó el profesional.
 13. CORRECCIÓN DE ERRORES ASR: El texto fue generado por reconocimiento de voz y puede contener errores fonéticos. Corrige silenciosamente los errores evidentes de transcripción de voz: anglicismos incorrectos ("laryngoscopy" → "laringoscopía"), palabras partidas ("o dinofagia" → "odinofagia"), fonemas confundidos ("bujales" → "bucales"), y falta de tildes en términos médicos. NO señales las correcciones, simplemente usa la forma correcta en español.
 14. ORTOGRAFÍA, REDACCIÓN Y GRAMÁTICA: Redacta con español médico formal impecable. PROHIBIDO devolver errores ortográficos, gramaticales o de concordancia. Antes de responder, revisa y corrige todo el texto final.
-15. ENCABEZADOS ANATÓMICOS EN MAYÚSCULAS: Evita tildes incorrectas en títulos anatómicos. Ejemplo obligatorio: escribir "OROFARINGE" (correcto) y NO "ORÓFARINGE".` },
+15. ENCABEZADOS ANATÓMICOS EN MAYÚSCULAS: Evita tildes incorrectas en títulos anatómicos. Ejemplo obligatorio: escribir "OROFARINGE" (correcto) y NO "ORÓFARINGE".`;
+
+    try {
+        const res = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${GROQ_API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: model,
+                messages: [
+                    { role: "system", content: systemContent },
                     { role: "user", content: `Transcripción a estructurar:\n\n${text}` }
                 ],
                 temperature: temperature
@@ -107,7 +153,8 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepción:
         if (!content) throw new Error('La respuesta de la IA no contiene texto válido');
         // RB-6: Trackear uso de API de estructuración
         if (window.apiUsageTracker) window.apiUsageTracker.trackStructuring();
-        return _postProcessStructuredMarkdown(content);
+        const cleaned = forceGeneralNoConclusion ? _stripGeneralConclusionSections(content) : content;
+        return _postProcessStructuredMarkdown(cleaned);
     } catch (error) {
         if (error.name === 'AbortError') {
             throw new Error('HTTP_TIMEOUT: El servidor no respondió en 2 minutos');
@@ -251,7 +298,7 @@ function _postProcessStructuredMarkdown(md) {
 }
 
 // ── 4-attempt retry wrapper con fallback inteligente de modelos y backup keys ───
-async function structureWithRetry(text, templateKey) {
+async function structureWithRetry(text, templateKey, options = {}) {
     const strategy = [
         { model: GROQ_MODELS[0], temperature: 0.1  },
         { model: GROQ_MODELS[0], temperature: 0.15 },
@@ -274,7 +321,7 @@ async function structureWithRetry(text, templateKey) {
                     showToast('⏳ Reintentando estructuración...', 'info');
                 }
             }
-            const result = await structureTranscription(text, templateKey, temperature, model);
+            const result = await structureTranscription(text, templateKey, temperature, model, options);
             if (result.length < 80 && text.length > 300) {
                 throw new Error('Respuesta del LLM muy corta o incompleta');
             }
@@ -302,7 +349,7 @@ async function structureWithRetry(text, templateKey) {
                     window.GROQ_API_KEY = backupKeys[bi];
                     if (typeof showToast === 'function' && _isStructurerAdmin()) showToast(`🔑 Intentando con Backup Key ${bi + 1}...`, 'info');
                     try {
-                        const resultBackup = await structureTranscription(text, templateKey, temperature, model);
+                        const resultBackup = await structureTranscription(text, templateKey, temperature, model, options);
                         if (resultBackup.length < 80 && text.length > 300) throw new Error('Respuesta muy corta');
                         // Backup funcionó — persistir como key activa temporalmente
                         console.info(`[Structurer] Backup Key ${bi + 1} OK`);
@@ -596,6 +643,7 @@ async function _doAutoStructure(options) {
 
     try {
         let currentTemplate = typeof selectedTemplate !== 'undefined' ? selectedTemplate : 'generico';
+        let isGeneralNonMedicalFallback = false;
         if (!currentTemplate || currentTemplate === 'generico') {
             const detected = autoDetectTemplateKey(structInput);
             if (detected !== 'generico') {
@@ -603,9 +651,12 @@ async function _doAutoStructure(options) {
                 currentTemplate = detected;
             } else {
                 currentTemplate = 'generico';
+                isGeneralNonMedicalFallback = !_isLikelyMedicalText(structInput);
             }
         }
-        const rawMarkdown = await structureWithRetry(structInput, currentTemplate);
+        const rawMarkdown = await structureWithRetry(structInput, currentTemplate, {
+            forceGeneralNoConclusion: isGeneralNonMedicalFallback
+        });
         const { body, note } = parseAIResponse(rawMarkdown);
         editor.innerHTML = body;
         window._lastStructuredHTML = body;
@@ -617,7 +668,13 @@ async function _doAutoStructure(options) {
         if (btnM) btnM.style.display = '';
         if (typeof updateWordCount === 'function') updateWordCount();
         if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURED');
-        if (typeof showToast === 'function') showToast('✅ Texto estructurado con IA', 'success');
+        if (typeof showToast === 'function') {
+            if (isGeneralNonMedicalFallback) {
+                showToast(NON_MEDICAL_STRUCT_WARNING, 'warning', 12000);
+            } else {
+                showToast('✅ Texto estructurado con IA', 'success');
+            }
+        }
         triggerPatientDataCheck(rawText);
 
         // Notificación desktop si la ventana no está enfocada
@@ -673,7 +730,10 @@ window.initStructurer = function () {
             try {
                 const templateSelect = document.getElementById('templateSelect');
                 const templateKey = templateSelect ? templateSelect.value : 'generico';
-                const rawMarkdown = await structureWithRetry(structInput, templateKey);
+                const isGeneralNonMedicalFallback = templateKey === 'generico' && !_isLikelyMedicalText(structInput);
+                const rawMarkdown = await structureWithRetry(structInput, templateKey, {
+                    forceGeneralNoConclusion: isGeneralNonMedicalFallback
+                });
                 const { body, note } = parseAIResponse(rawMarkdown);
                 editor.innerHTML = body;
                 window._lastStructuredHTML = body;
@@ -685,7 +745,13 @@ window.initStructurer = function () {
                 const btnM2 = document.getElementById('btnMedicalCheck');
                 if (btnM2) btnM2.style.display = '';
                 if (typeof updateWordCount === 'function') updateWordCount();
-                if (typeof showToast === 'function') showToast('Informe estructurado ✓', 'success');
+                if (typeof showToast === 'function') {
+                    if (isGeneralNonMedicalFallback) {
+                        showToast(NON_MEDICAL_STRUCT_WARNING, 'warning', 12000);
+                    } else {
+                        showToast('Informe estructurado ✓', 'success');
+                    }
+                }
 
                 const wizardTemplateCard = document.getElementById('wizardTemplateCard');
                 if (wizardTemplateCard) wizardTemplateCard.style.display = 'none';
