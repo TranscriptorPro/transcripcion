@@ -41,7 +41,18 @@ const GROQ_MODELS = [
 ];
 if (typeof window !== 'undefined') window.GROQ_MODELS = GROQ_MODELS;
 
-const NON_MEDICAL_STRUCT_WARNING = 'ADEVERTENCIA: El texto obtenido (si es extraido de audio) o el texto cargado si es subido de archivo, o el texto copiado si es copiado, no se puede estructurar como informe medico porque no reune las caracteristicas apropiadas para su estructuracion. De todos modos, si lo desea, igualmente puede editar el texto';
+function _getNonMedicalWarning() {
+    const suffix = ' no se puede estructurar como informe médico porque no reúne las características apropiadas para su estructuración. De todos modos, si lo desea, igualmente puede editar el texto';
+    const entry = Array.isArray(window.transcriptions) && window.transcriptions[window.activeTabIndex || 0];
+    const fn = entry && entry.fileName ? String(entry.fileName) : '';
+    if (fn === 'Texto pegado' || fn === 'Texto manual') {
+        return 'ADVERTENCIA: El texto copiado/pegado' + suffix;
+    }
+    if (window.appState === 'TRANSCRIBED' || /\.(mp3|wav|ogg|m4a|webm|mp4|flac|aac)$/i.test(fn)) {
+        return 'ADVERTENCIA: El texto obtenido a partir de los audios' + suffix;
+    }
+    return 'ADVERTENCIA: El texto cargado del archivo' + suffix;
+}
 
 function _isLikelyMedicalText(text) {
     const src = String(text || '');
@@ -699,7 +710,7 @@ async function _doAutoStructure(options) {
         if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURED');
         if (typeof showToast === 'function') {
             if (isGeneralNonMedicalFallback) {
-                showToast(NON_MEDICAL_STRUCT_WARNING, 'warning', 12000);
+                showToast(_getNonMedicalWarning(), 'warning', 5000);
             } else {
                 showToast('✅ Texto estructurado con IA', 'success');
             }
@@ -775,7 +786,7 @@ window.initStructurer = function () {
                 if (typeof updateWordCount === 'function') updateWordCount();
                 if (typeof showToast === 'function') {
                     if (isGeneralNonMedicalFallback) {
-                        showToast(NON_MEDICAL_STRUCT_WARNING, 'warning', 12000);
+                        showToast(_getNonMedicalWarning(), 'warning', 5000);
                     } else {
                         showToast('Informe estructurado ✓', 'success');
                     }

@@ -6861,9 +6861,9 @@ test('Modal-4 — onboarding y acciones destructivas usan clases coherentes', ()
         'Botón eliminar campo debe usar clase danger temática');
 });
 
-test('Struct-NonMedical-1 — fallback general sin conclusion + advertencia fija', () => {
-    assert(structCodeSec.includes('NON_MEDICAL_STRUCT_WARNING'),
-        'structurer.js debe definir advertencia fija para texto no medico');
+test('Struct-NonMedical-1 — fallback general sin conclusion + advertencia contextual', () => {
+    assert(structCodeSec.includes('_getNonMedicalWarning'),
+        'structurer.js debe definir funcion de advertencia contextual para texto no medico');
     assert(structCodeSec.includes('forceGeneralNoConclusion'),
         'structurer.js debe activar modo general sin conclusion para texto no medico');
     assert(structCodeSec.includes('NO agregues ninguna seccion de conclusion') || structCodeSec.includes('NO agregues ninguna sección de conclusión'),
