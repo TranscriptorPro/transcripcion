@@ -31,6 +31,7 @@ window.CLIENT_CONFIG = {
 // URL backend por defecto (Apps Script productivo).
 const DEFAULT_BACKEND_URL = 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec';
 const DEFAULT_EMAIL_SENDER_NAME = 'Transcriptor Pro | Soporte';
+const DEFAULT_SUPPORT_CONTACT_EMAIL = 'aldowagner78@gmail.com';
 
 function _isValidBackendUrl(url) {
     return /^https?:\/\//i.test(String(url || '').trim());
@@ -122,6 +123,46 @@ window.getResolvedEmailSenderName = function () {
     const sender = String(runtime || _readStoredSenderName() || DEFAULT_EMAIL_SENDER_NAME).trim();
     _persistSenderNameEverywhere(sender);
     return sender;
+};
+
+function _readStoredSupportEmail() {
+    try {
+        const fromCfg = _readStoredClientConfig().contactEmail;
+        if (fromCfg && String(fromCfg).trim()) return String(fromCfg).trim();
+    } catch (_) {}
+
+    try {
+        const fromLs = localStorage.getItem('contact_email');
+        if (fromLs && String(fromLs).trim()) return String(fromLs).trim();
+    } catch (_) {}
+
+    return '';
+}
+
+function _persistSupportEmailEverywhere(email) {
+    const safeEmail = String(email || '').trim();
+    if (!safeEmail) return;
+
+    if (window.CLIENT_CONFIG) window.CLIENT_CONFIG.contactEmail = safeEmail;
+
+    try {
+        const storedCfg = _readStoredClientConfig();
+        storedCfg.contactEmail = safeEmail;
+        localStorage.setItem('client_config_stored', JSON.stringify(storedCfg));
+    } catch (_) {}
+
+    try { localStorage.setItem('contact_email', safeEmail); } catch (_) {}
+
+    if (typeof appDB !== 'undefined') {
+        try { appDB.set('contact_email', safeEmail); } catch (_) {}
+    }
+}
+
+window.getResolvedSupportContactEmail = function () {
+    const runtime = window.CLIENT_CONFIG && window.CLIENT_CONFIG.contactEmail;
+    const email = String(runtime || _readStoredSupportEmail() || DEFAULT_SUPPORT_CONTACT_EMAIL).trim();
+    _persistSupportEmailEverywhere(email);
+    return email;
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -219,6 +260,12 @@ window.getResolvedEmailSenderName = function () {
 (function _hydrateSenderNameAtBoot() {
     try {
         window.getResolvedEmailSenderName();
+    } catch (_) {}
+})();
+
+(function _hydrateSupportEmailAtBoot() {
+    try {
+        window.getResolvedSupportContactEmail();
     } catch (_) {}
 })();
 

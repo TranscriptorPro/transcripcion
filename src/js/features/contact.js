@@ -28,7 +28,9 @@ window._retryPendingContacts = async function () {
         return String(name || 'Profesional').trim() || 'Profesional';
     };
 
-    const defaultSupportEmail = 'aldowagner78@gmail.com';
+    const defaultSupportEmail = (typeof window.getResolvedSupportContactEmail === 'function')
+        ? window.getResolvedSupportContactEmail()
+        : 'aldowagner78@gmail.com';
 
     for (const msg of pending) {
         try {
@@ -170,9 +172,11 @@ window.initContact = function () {
             const medicoId = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.medicoId) || '—';
             const plan     = (typeof CLIENT_CONFIG !== 'undefined' && (CLIENT_CONFIG.plan || CLIENT_CONFIG.type)) || '—';
 
-            const contactEmail = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.contactEmail)
-                ? CLIENT_CONFIG.contactEmail
-                : 'aldowagner78@gmail.com';
+            const contactEmail = (typeof window.getResolvedSupportContactEmail === 'function')
+                ? window.getResolvedSupportContactEmail()
+                : ((typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.contactEmail)
+                    ? CLIENT_CONFIG.contactEmail
+                    : 'aldowagner78@gmail.com');
             const senderName = (typeof window.getProfessionalDisplay === 'function')
                 ? window.getProfessionalDisplay(nombre, profData.sexo).fullName
                 : (String(nombre || 'Profesional').trim() || 'Profesional');

@@ -5990,8 +5990,13 @@ test('Contact-Formato-3 — email de contacto evita emoji en cabecera', () => {
 });
 
 test('Contact-Formato-4 — fallback de soporte usa dominio válido .com', () => {
-    assert(contactCodeSec.includes("'aldowagner78@gmail.com'"),
-        'contact.js debe usar un correo de soporte operativo como fallback');
+    const configCodeContact = fs.readFileSync(path.join(root, 'src/js/config/config.js'), 'utf-8');
+    assert(contactCodeSec.includes('getResolvedSupportContactEmail'),
+        'contact.js debe resolver email de soporte desde helper central');
+    assert(configCodeContact.includes('DEFAULT_SUPPORT_CONTACT_EMAIL'),
+        'config.js debe declarar default de email de soporte');
+    assert(configCodeContact.includes("'aldowagner78@gmail.com'"),
+        'El default de soporte debe ser un correo operativo');
     assert(!contactCodeSec.includes("'soporte@transcriptorpro.app'"),
         'contact.js no debe usar dominio .app inexistente para soporte');
 });

@@ -167,7 +167,7 @@
             sigSection = '<div class="preview-signature"><div class="pvsig-block">';
             if (showSignImage && hasSig) sigSection += `<img src="${sigSrc}" class="pvsig-img" style="max-height:${firmaSize}px;">`;
             if (showSignLine) sigSection += '<div class="pvsig-line"></div>';
-            if (showSignName && profName) sigSection += `<div class="pvsig-name">${profTitle} ${profDispName}</div>`;
+            if (showSignName && profName) sigSection += `<div class="pvsig-name">${profDispName}</div>`;
             if (showSignMat && matricula) sigSection += `<div class="pvsig-mat">Mat. ${matricula}</div>`;
             if (especialidad) sigSection += `<div class="pvsig-spec">${especialidad}</div>`;
             sigSection += '</div></div>';
