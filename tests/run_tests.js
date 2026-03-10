@@ -5333,6 +5333,19 @@ test('userGuide — guarda y reanuda progreso por perfil', () => {
     assertIncludes(guideCode, 'const savedStepId = getSavedTourProgress');
 });
 
+test('userGuide — permite reiniciar tour desde el inicio', () => {
+    assertIncludes(guideCode, 'forceRestart');
+    assertIncludes(guideCode, 'window.restartGuideTour');
+    assertIncludes(guideCode, 'btnRestartTour');
+});
+
+const settingsActionsCode = fs.readFileSync(path.join(root, 'src/js/features/settingsModalActionsUtils.js'), 'utf-8');
+
+test('settings actions — botón reiniciar tutorial disponible', () => {
+    assertIncludes(settingsActionsCode, 'settingsRestartTourNow');
+    assertIncludes(settingsActionsCode, 'restartGuideTour');
+});
+
 // Validar carga de archivos de texto enriquecidos en Modo Pro
 const proSourceModeCode = fs.readFileSync(path.join(root, 'src/js/features/proSidebarSourceMode.js'), 'utf-8');
 

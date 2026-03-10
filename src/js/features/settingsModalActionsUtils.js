@@ -103,6 +103,19 @@
                 }
             });
         }
+
+        const restartTourNowBtn = document.getElementById('settingsRestartTourNow');
+        if (restartTourNowBtn) {
+            restartTourNowBtn.addEventListener('click', () => {
+                const overlay = document.getElementById('settingsModalOverlay');
+                if (overlay) overlay.classList.remove('active');
+                if (typeof window.restartGuideTour === 'function') {
+                    setTimeout(() => window.restartGuideTour(), 150);
+                } else if (typeof window.startGuideTour === 'function') {
+                    setTimeout(() => window.startGuideTour(), 150);
+                }
+            });
+        }
     }
 
     window.SettingsModalActionsUtils = {

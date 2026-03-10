@@ -504,10 +504,16 @@
         showStep(currentStep + 1);
     }
 
-    function startTour() {
+    function startTour(options) {
         if (tourActive) return;
 
+        const opts = options || {};
+        const forceRestart = !!opts.forceRestart;
+
         activeTourContext = getTourContext();
+        if (forceRestart) {
+            clearTourProgress(activeTourContext);
+        }
         activeTourSteps = buildTourSteps();
         if (!Array.isArray(activeTourSteps) || activeTourSteps.length === 0) {
             if (typeof showToast === 'function') showToast('No hay pasos de guía disponibles para este perfil.', 'info');
@@ -516,7 +522,7 @@
 
         const savedStepId = getSavedTourProgress(activeTourContext);
         let startIndex = 0;
-        if (savedStepId) {
+        if (savedStepId && !forceRestart) {
             const found = activeTourSteps.findIndex((s) => s && s.id === savedStepId);
             if (found >= 0) startIndex = found;
         }
@@ -562,6 +568,7 @@
 
     // Global access
     window.startGuideTour = startTour;
+    window.restartGuideTour = () => startTour({ forceRestart: true });
     window.setAutoTourEnabled = setAutoTourEnabled;
     window.getAutoTourEnabled = getAutoTourEnabled;
 
@@ -569,6 +576,11 @@
     const btnStartTour = document.getElementById('btnStartTour');
     if (btnStartTour) {
         btnStartTour.addEventListener('click', startTour);
+    }
+
+    const btnRestartTour = document.getElementById('btnRestartTour');
+    if (btnRestartTour) {
+        btnRestartTour.addEventListener('click', () => startTour({ forceRestart: true }));
     }
 
     const tourAutoToggle = document.getElementById('tourAutoToggle');
