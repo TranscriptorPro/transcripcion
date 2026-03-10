@@ -28,6 +28,8 @@ window._retryPendingContacts = async function () {
         return String(name || 'Profesional').trim() || 'Profesional';
     };
 
+    const defaultSupportEmail = 'aldowagner78@gmail.com';
+
     for (const msg of pending) {
         try {
             const senderDisplay = resolveProfessionalName(msg.nombre, msg.sexo);
@@ -36,7 +38,7 @@ window._retryPendingContacts = async function () {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     action: 'send_email',
-                    to: 'soporte@transcriptorpro.com',
+                    to: msg.to || defaultSupportEmail,
                     subject: `[Contacto pendiente] ${msg.motivo}`,
                     htmlBody: `<p><b>Motivo:</b> ${(msg.motivo||"").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</p><p>${(msg.detalle||"").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</p><p><small>${senderDisplay.replace(/</g,"&lt;")} - Mat. ${(msg.mat||"").replace(/</g,"&lt;")} - ${msg.date}</small></p>`,
                     senderName: msg.senderName || senderDisplay,
@@ -170,7 +172,7 @@ window.initContact = function () {
 
             const contactEmail = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.contactEmail)
                 ? CLIENT_CONFIG.contactEmail
-                : 'soporte@transcriptorpro.com';
+                : 'aldowagner78@gmail.com';
             const senderName = (typeof window.getProfessionalDisplay === 'function')
                 ? window.getProfessionalDisplay(nombre, profData.sexo).fullName
                 : (String(nombre || 'Profesional').trim() || 'Profesional');
@@ -254,7 +256,7 @@ window.initContact = function () {
                     try {
                         const pending = (typeof appDB !== 'undefined' ? await appDB.get('pending_contacts') : null)
                             || JSON.parse(localStorage.getItem('pending_contacts') || '[]');
-                        pending.push({ motivo, detalle, nombre, mat, date: new Date().toISOString(), senderName, replyTo });
+                        pending.push({ motivo, detalle, nombre, mat, date: new Date().toISOString(), senderName, replyTo, to: contactEmail });
                         if (typeof appDB !== 'undefined') await appDB.set('pending_contacts', pending);
                         else localStorage.setItem('pending_contacts', JSON.stringify(pending));
                     } catch (_) {}
@@ -270,7 +272,7 @@ window.initContact = function () {
             try {
                 const pending = (typeof appDB !== 'undefined' ? await appDB.get('pending_contacts') : null)
                     || JSON.parse(localStorage.getItem('pending_contacts') || '[]');
-                pending.push({ motivo, detalle, nombre, mat, date: new Date().toISOString(), senderName, replyTo });
+                pending.push({ motivo, detalle, nombre, mat, date: new Date().toISOString(), senderName, replyTo, to: contactEmail });
                 if (typeof appDB !== 'undefined') await appDB.set('pending_contacts', pending);
                 else localStorage.setItem('pending_contacts', JSON.stringify(pending));
             } catch (_) {}

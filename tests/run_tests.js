@@ -5990,8 +5990,8 @@ test('Contact-Formato-3 — email de contacto evita emoji en cabecera', () => {
 });
 
 test('Contact-Formato-4 — fallback de soporte usa dominio válido .com', () => {
-    assert(contactCodeSec.includes("'soporte@transcriptorpro.com'"),
-        'contact.js debe usar soporte@transcriptorpro.com como fallback');
+    assert(contactCodeSec.includes("'aldowagner78@gmail.com'"),
+        'contact.js debe usar un correo de soporte operativo como fallback');
     assert(!contactCodeSec.includes("'soporte@transcriptorpro.app'"),
         'contact.js no debe usar dominio .app inexistente para soporte');
 });
