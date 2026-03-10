@@ -5320,6 +5320,12 @@ test('proSidebarSourceMode — tiene extractores para PDF y DOCX', () => {
     assertIncludes(proSourceModeCode, 'extractTextFromFile');
 });
 
+test('proSidebarSourceMode — mejora calidad de extracción .doc', () => {
+    assertIncludes(proSourceModeCode, 'scoreReadableText');
+    assertIncludes(proSourceModeCode, 'detectLikelyCorruptedExtraction');
+    assertIncludes(proSourceModeCode, 'Convertí a .docx para mejor compatibilidad');
+});
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // Bloque 88: Integridad archivos CSS y assets
 // ═══════════════════════════════════════════════════════════════════════════════

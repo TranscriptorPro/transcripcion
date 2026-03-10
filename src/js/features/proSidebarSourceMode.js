@@ -77,6 +77,22 @@
             .trim();
     }
 
+    function scoreReadableText(raw) {
+        const text = String(raw || '');
+        if (!text) return 0;
+
+        const letters = (text.match(/[A-Za-z\u00C0-\u017F]/g) || []).length;
+        const spaces = (text.match(/\s/g) || []).length;
+        const weird = (text.match(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFD]/g) || []).length;
+        const len = text.length;
+
+        const letterRatio = letters / Math.max(len, 1);
+        const spaceRatio = spaces / Math.max(len, 1);
+        const weirdRatio = weird / Math.max(len, 1);
+
+        return (letterRatio * 0.7) + (spaceRatio * 0.2) - (weirdRatio * 1.2);
+    }
+
     function loadExternalScript(url, globalKey) {
         return new Promise((resolve, reject) => {
             if (globalKey && window[globalKey]) {
@@ -150,15 +166,45 @@
     }
 
     function extractDocTextFallback(arrayBuffer) {
-        try {
-            const decoder = new TextDecoder('latin1');
-            const raw = decoder.decode(arrayBuffer);
-            const cleaned = raw
-                .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, ' ')
-                .replace(/[^\x20-\x7E\xA0-\xFF\n\r\t]/g, ' ');
-            return normalizeExtractedText(cleaned);
-        } catch (_) {
+        const decoders = [];
+        try { decoders.push(new TextDecoder('latin1')); } catch (_) {}
+        try { decoders.push(new TextDecoder('windows-1252')); } catch (_) {}
+        try { decoders.push(new TextDecoder('utf-8')); } catch (_) {}
+
+        let best = '';
+        let bestScore = -999;
+
+        const postClean = (value) => String(value || '')
+            .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, ' ')
+            .replace(/[^\x20-\x7E\xA0-\xFF\n\r\t]/g, ' ');
+
+        decoders.forEach((decoder) => {
+            try {
+                const raw = decoder.decode(arrayBuffer);
+                const cleaned = normalizeExtractedText(postClean(raw));
+                const score = scoreReadableText(cleaned);
+                if (score > bestScore) {
+                    bestScore = score;
+                    best = cleaned;
+                }
+            } catch (_) {}
+        });
+
+        if (bestScore < 0.08 || best.length < 20) {
             return '';
+        }
+
+        return best;
+    }
+
+    function detectLikelyCorruptedExtraction(text) {
+        try {
+            const normalized = normalizeExtractedText(text);
+            if (!normalized) return true;
+            const score = scoreReadableText(normalized);
+            return score < 0.12;
+        } catch (_) {
+            return true;
         }
     }
 
@@ -172,7 +218,10 @@
             const buffer = await readAsArrayBuffer(file);
             const text = extractDocTextFallback(buffer);
             if (!text) {
-                throw new Error('No se pudo extraer texto del archivo .doc');
+                throw new Error('No se pudo extraer texto del .doc. Convertí a .docx para mejor compatibilidad.');
+            }
+            if (detectLikelyCorruptedExtraction(text)) {
+                throw new Error('El .doc parece dañado o poco legible. Guardalo como .docx y volvé a subirlo.');
             }
             if (typeof showToast === 'function') {
                 showToast('ℹ️ Archivo .doc importado con extracción compatible', 'info', 2800);
