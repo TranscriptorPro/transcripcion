@@ -1114,6 +1114,13 @@ test('extractPatientDataFromText evita nombre invalido y extrae nombre real tras
     assertEqual(data.age, 58, 'Debe extraer edad 58');
 });
 
+test('extractPatientDataFromText extrae mujer + nombre en minúsculas', () => {
+    const data = global.extractPatientDataFromText('Mujer de 65 años, ana rojas, realiza prueba de caminata de seis minutos.');
+    assertEqual(data.name, 'Ana Rojas', `Debe normalizar nombre en minúsculas, obtuvo: ${data.name}`);
+    assertEqual(data.sex, 'F', 'Debe extraer sexo desde encabezado "Mujer"');
+    assertEqual(data.age, 65, 'Debe extraer edad 65');
+});
+
 test('generateReportNumber genera formato XX-NNNNN-ddmmaa', () => {
     localStorage.clear();
     const fn = global.generateReportNumber;

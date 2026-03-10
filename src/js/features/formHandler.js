@@ -106,12 +106,14 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ---- Extract patient data from transcription ----
-const PATIENT_NAME_REGEX = /(?:nombre(?:\s+del\s+paciente)?\s*(?::|-)?\s*|paciente\s+(?:de\s+nombre\s+)?)([A-ZÁÉÍÓÚÑ][A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑ][A-Za-zÁÉÍÓÚÑáéíóúñ]+){1,3})/i;
-const PATIENT_NAME_AFTER_COMMA_REGEX = /paciente\s+(?:masculino|femenino)[^,.;\n]{0,60},\s*([A-ZÁÉÍÓÚÑ][A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑ][A-Za-zÁÉÍÓÚÑáéíóúñ]+){1,3})/i;
+const PATIENT_NAME_REGEX = /(?:nombre(?:\s+del\s+paciente)?\s*(?::|-)?\s*|paciente\s+(?:de\s+nombre\s+)?)([A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+){1,3})/i;
+const PATIENT_NAME_AFTER_COMMA_REGEX = /paciente\s+(?:masculino|femenino)[^,.;\n]{0,60},\s*([A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+){1,3})/i;
+const PATIENT_NAME_LEAD_SEX_REGEX = /\b(?:mujer|hombre)\s+de\s+\d{1,3}\s*años,\s*([A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+){1,3})/i;
 const DNI_REGEX = /(?:DNI|documento|D\.N\.I\.?)[:\s]*(?:N[°º]?\s*)?(\d{1,3}\.?\d{3}\.?\d{3})/i;
 const AGE_REGEX = /(\d{1,3})\s*años/i;
 const SEX_REGEX = /(?:sexo|género)\s*(?::|,)?\s*(masculino|femenino|masc|fem)/i;
 const SEX_FROM_PATIENT_REGEX = /\bpaciente\s+(masculino|femenino)\b/i;
+const SEX_LEAD_REGEX = /^\s*(mujer|hombre)\b/i;
 const INSURANCE_REGEX = /(?:obra\s+social|prepaga)\s*(?::|-)?\s*([^,.;\n]+)/i;
 const AFFILIATE_REGEX = /(?:n[°º]\s*afiliado|afiliad[oa]|nro\.?\s*afiliado)\s*(?::|-)?\s*([A-Za-z0-9.-]{3,30})/i;
 
@@ -130,7 +132,10 @@ function _cleanPatientNameCandidate(raw) {
     const meaningful = tokens.filter(t => t.length > 2);
     if (meaningful.length < 2) return '';
     if (tokens.some(t => _NAME_BLOCKLIST.has(t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()))) return '';
-    return c;
+    return c
+        .split(/\s+/)
+        .map(w => w ? (w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()) : w)
+        .join(' ');
 }
 
 window.extractPatientDataFromText = function (text) {
@@ -139,15 +144,20 @@ window.extractPatientDataFromText = function (text) {
     const normalized = String(text).replace(/\s+/g, ' ').trim();
     const nameMatchDirect = normalized.match(PATIENT_NAME_REGEX);
     const nameMatchComma = normalized.match(PATIENT_NAME_AFTER_COMMA_REGEX);
+    const nameMatchLeadSex = normalized.match(PATIENT_NAME_LEAD_SEX_REGEX);
     const candidateName = _cleanPatientNameCandidate(nameMatchDirect && nameMatchDirect[1])
-        || _cleanPatientNameCandidate(nameMatchComma && nameMatchComma[1]);
+        || _cleanPatientNameCandidate(nameMatchComma && nameMatchComma[1])
+        || _cleanPatientNameCandidate(nameMatchLeadSex && nameMatchLeadSex[1]);
     if (candidateName) data.name = candidateName;
     const dniMatch = text.match(DNI_REGEX);
     if (dniMatch) data.dni = dniMatch[1];
     const ageMatch = text.match(AGE_REGEX);
     if (ageMatch) data.age = parseInt(ageMatch[1]);
-    const sexMatch = text.match(SEX_REGEX) || text.match(SEX_FROM_PATIENT_REGEX);
-    if (sexMatch) data.sex = /^m/i.test(sexMatch[1]) ? 'M' : 'F';
+    const sexMatch = text.match(SEX_REGEX) || text.match(SEX_FROM_PATIENT_REGEX) || text.match(SEX_LEAD_REGEX);
+    if (sexMatch) {
+        const sx = String(sexMatch[1] || '').toLowerCase();
+        data.sex = (sx.startsWith('h') || sx.startsWith('masc')) ? 'M' : 'F';
+    }
     const insuranceMatch = text.match(INSURANCE_REGEX);
     if (insuranceMatch && insuranceMatch[1]) data.insurance = insuranceMatch[1].trim().replace(/[.,;:]+$/g, '');
     const affiliateMatch = text.match(AFFILIATE_REGEX);

@@ -122,7 +122,11 @@ window.initPatientDataModalHandlers = function () {
 
     window._refreshPatientHeader = function () {
         const cfg = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
-        if (cfg.patientName) {
+        const hasAnyPatientData = !!(
+            cfg.patientName || cfg.patientDni || cfg.patientAge || cfg.patientSex ||
+            cfg.patientInsurance || cfg.patientAffiliateNum
+        );
+        if (hasAnyPatientData) {
             window._insertPatientDataInEditor({
                 name: cfg.patientName,
                 dni: cfg.patientDni,
