@@ -5299,6 +5299,27 @@ test('userGuide — tiene findTarget', () => {
     assertIncludes(guideCode, 'findTarget');
 });
 
+test('userGuide — construye pasos adaptativos por contexto', () => {
+    assertIncludes(guideCode, 'buildTourSteps');
+    assertIncludes(guideCode, 'showProActivationStep');
+    assertIncludes(guideCode, 'activeTourSteps');
+});
+
+// Validar carga de archivos de texto enriquecidos en Modo Pro
+const proSourceModeCode = fs.readFileSync(path.join(root, 'src/js/features/proSidebarSourceMode.js'), 'utf-8');
+
+test('proSidebarSourceMode — soporta TXT/DOC/DOCX/PDF para estructurar texto', () => {
+    assertIncludes(proSourceModeCode, '.doc');
+    assertIncludes(proSourceModeCode, '.docx');
+    assertIncludes(proSourceModeCode, '.pdf');
+});
+
+test('proSidebarSourceMode — tiene extractores para PDF y DOCX', () => {
+    assertIncludes(proSourceModeCode, 'extractPdfText');
+    assertIncludes(proSourceModeCode, 'extractDocxText');
+    assertIncludes(proSourceModeCode, 'extractTextFromFile');
+});
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // Bloque 88: Integridad archivos CSS y assets
 // ═══════════════════════════════════════════════════════════════════════════════

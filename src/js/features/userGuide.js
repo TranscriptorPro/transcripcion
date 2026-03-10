@@ -56,7 +56,7 @@
     }
 
     // ── Interactive Tour (Spotlight) ──
-    const TOUR_STEPS = [
+    const TOUR_STEPS_BASE = [
         {
             target: '#recordBtn',
             title: '🎙️ Paso 1: Grabá o subí tu audio',
@@ -78,8 +78,24 @@
         {
             target: '#proToggleContainer',
             title: '✨ Modo Pro',
-            text: 'Activá el Modo Pro para que la app estructure automáticamente tus informes con plantillas médicas especializadas.',
+            text: 'Si activás el Modo Pro, la app puede estructurar automáticamente tus informes con IA y plantillas médicas especializadas.',
+            position: 'bottom',
+            when: (ctx) => !!ctx.showProActivationStep
+        },
+        {
+            target: '#proInputSourceSwitch',
+            title: '🧠 Entrada de texto estructurada',
+            text: 'En contexto Pro podés estructurar directamente desde texto sin grabar audio.',
+            position: 'bottom',
+            when: (ctx) => !!ctx.isProLike
+        },
+        {
+            target: '#btnAdminAccess',
+            title: '🛡️ Panel de administración',
+            text: 'Desde acá gestionás usuarios, planes y configuración avanzada de la plataforma.',
             position: 'bottom'
+            ,
+            when: (ctx) => !!ctx.isAdmin
         },
         {
             target: '#editor',
@@ -98,6 +114,37 @@
     let currentStep = -1;
     let tourActive = false;
     let tourElements = {};
+    let activeTourSteps = [];
+
+    function getTourContext() {
+        const cfg = window.CLIENT_CONFIG || {};
+        const type = String(cfg.type || 'NORMAL').toUpperCase();
+        const mode = String(window.currentMode || 'normal').toLowerCase();
+        const proToggleContainer = document.getElementById('proToggleContainer');
+        const proToggleVisible = !!(proToggleContainer && proToggleContainer.offsetParent !== null);
+        const isAdmin = type === 'ADMIN';
+        const isNormal = type === 'NORMAL';
+        const isProLike = (type === 'PRO') || !!cfg.hasProMode || mode === 'pro';
+
+        return {
+            type,
+            mode,
+            isAdmin,
+            isNormal,
+            isProLike,
+            showProActivationStep: isNormal && proToggleVisible && mode !== 'pro'
+        };
+    }
+
+    function buildTourSteps() {
+        const ctx = getTourContext();
+        return TOUR_STEPS_BASE.filter((step) => {
+            if (typeof step.when === 'function') {
+                try { return !!step.when(ctx); } catch (_) { return false; }
+            }
+            return true;
+        });
+    }
 
     function findTarget(selector) {
         // Support comma-separated selectors (pick first visible)
@@ -147,7 +194,7 @@
         };
 
         // Build dots
-        tourElements.dots.innerHTML = TOUR_STEPS.map((_, i) =>
+        tourElements.dots.innerHTML = activeTourSteps.map((_, i) =>
             `<div class="tour-dot ${i === 0 ? 'active' : ''}" data-step="${i}"></div>`
         ).join('');
 
@@ -157,19 +204,19 @@
     }
 
     function showStep(index) {
-        if (index < 0 || index >= TOUR_STEPS.length) {
+        if (index < 0 || index >= activeTourSteps.length) {
             endTour();
             return;
         }
 
         currentStep = index;
-        const step = TOUR_STEPS[index];
+        const step = activeTourSteps[index];
         const target = findTarget(step.target);
 
         // Update text
         tourElements.title.textContent = step.title;
         tourElements.text.textContent = step.text;
-        tourElements.nextBtn.textContent = index === TOUR_STEPS.length - 1 ? '✅ Finalizar' : 'Siguiente →';
+        tourElements.nextBtn.textContent = index === activeTourSteps.length - 1 ? '✅ Finalizar' : 'Siguiente →';
 
         // Update dots
         tourElements.dots.querySelectorAll('.tour-dot').forEach((dot, i) => {
@@ -196,7 +243,7 @@
             }, 350);
         } else {
             // Target not found — skip to next
-            if (index < TOUR_STEPS.length - 1) {
+            if (index < activeTourSteps.length - 1) {
                 showStep(index + 1);
             } else {
                 endTour();
@@ -256,6 +303,13 @@
 
     function startTour() {
         if (tourActive) return;
+
+        activeTourSteps = buildTourSteps();
+        if (!Array.isArray(activeTourSteps) || activeTourSteps.length === 0) {
+            if (typeof showToast === 'function') showToast('No hay pasos de guía disponibles para este perfil.', 'info');
+            return;
+        }
+
         tourActive = true;
 
         // Close help modal first
