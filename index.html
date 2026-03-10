@@ -251,7 +251,7 @@
         </div>
 
         <!-- Onboarding / Welcome Modal — Spectacular multi-step -->
-        <div class="modal-overlay" id="onboardingOverlay" style="background: linear-gradient(135deg, rgba(15,118,110,0.15), rgba(0,0,0,0.85));">
+        <div class="modal-overlay onboarding-overlay" id="onboardingOverlay">
             <div class="modal onboarding-modal" style="max-width: 520px; overflow: hidden; border: 2px solid var(--primary); position: relative;">
                 <!-- Animated particles background -->
                 <div class="onboarding-particles" id="onboardingParticles"></div>
@@ -850,7 +850,7 @@
                                 </label>
                             </div>
                             <hr style="border: none; border-top: 1px solid var(--border); margin: 0.75rem 0;">
-                            <button class="btn btn-outline btn-full stg-action-btn" id="settingsClearData" style="color: #ef4444; border-color: #ef4444;">
+                            <button class="btn btn-outline btn-full stg-action-btn stg-action-btn-danger" id="settingsClearData">
                                 🗑️ Borrar todos mis datos locales
                             </button>
                         </div>
@@ -1475,7 +1475,7 @@
                         </div>
                     </div>
                     <div class="field-group">
-                        <label>Nombre y Apellido <span style="color:#ef4444;">*</span></label>
+                        <label>Nombre y Apellido <span class="field-required">*</span></label>
                         <input type="text" id="reqPatientName" class="toolbar-input" style="width:100%;" placeholder="Nombre completo del paciente">
                     </div>
                     <div style="display:flex; gap:0.75rem; margin-top:0.5rem;">
@@ -1588,7 +1588,7 @@
                 </div>
                 <div class="modal-footer" style="padding:0.9rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:0.5rem;align-items:center;">
                     <button class="btn btn-outline" id="btnBlankEditField" style="font-size:0.8rem;color:var(--text-secondary);border-color:var(--border);">🗑️ Dejar en blanco</button>
-                    <button class="btn btn-outline" id="btnDeleteFieldSection" style="font-size:0.8rem;color:#ef4444;border-color:#ef4444;" title="Eliminar esta sección completa del informe">🗑️ Eliminar campo</button>
+                    <button class="btn btn-outline edit-field-danger-btn" id="btnDeleteFieldSection" title="Eliminar esta sección completa del informe">🗑️ Eliminar campo</button>
                     <span style="flex:1;"></span>
                     <button class="btn btn-outline" id="btnCancelEditField">Cancelar</button>
                     <button class="btn btn-primary" id="btnConfirmEditField">✅ Aplicar</button>

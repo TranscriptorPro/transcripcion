@@ -290,23 +290,23 @@ function _lmShowBlockedUI(result) {
     overlay.id = 'licenseBlockOverlay';
     overlay.style.cssText = `
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.85); z-index: 99999;
+        background: rgba(0,0,0,0.82); z-index: 99999;
         display: flex; align-items: center; justify-content: center;
-        font-family: -apple-system, 'Inter', sans-serif;
+        font-family: inherit;
     `;
 
     overlay.innerHTML = `
-        <div style="background: white; border-radius: 16px; padding: 2.5rem; max-width: 440px; width: 90%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.4);">
-            <h2 style="font-size: 1.5rem; margin-bottom: 1rem; color: #0f172a;">${title}</h2>
-            <p style="color: #475569; line-height: 1.6; margin-bottom: 1.5rem;">${message}</p>
+        <div style="background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); border-radius: 16px; padding: 2.5rem; max-width: 440px; width: 90%; text-align: center; box-shadow: var(--shadow);">
+            <h2 style="font-size: 1.5rem; margin-bottom: 1rem; color: var(--text-primary);">${title}</h2>
+            <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">${message}</p>
             ${showContact ? `
                 <button onclick="if(typeof window.openContactModal==='function'){document.getElementById('licenseBlockOverlay').remove();window.openContactModal('${_contactMotivo}');}else{window.location.href='mailto:soporte@transcriptorpro.com?subject=Problema+de+licencia';}" 
-                    style="background: linear-gradient(135deg, #0f766e, #14b8a6); color: white; border: none; padding: 0.75rem 2rem; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer;">
+                    style="background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; border: none; padding: 0.75rem 2rem; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer;">
                     Contactar soporte
                 </button>
             ` : `
                 <button onclick="window.location.reload();"
-                    style="background: #0f766e; color: white; border: none; padding: 0.75rem 2rem; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer;">
+                    style="background: var(--primary); color: white; border: none; padding: 0.75rem 2rem; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer;">
                     Reintentar
                 </button>
             `}

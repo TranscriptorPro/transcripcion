@@ -1851,6 +1851,10 @@
             overflow-y: auto;
         }
 
+        .onboarding-overlay {
+            background: linear-gradient(135deg, rgba(15, 118, 110, 0.18), rgba(0, 0, 0, 0.85));
+        }
+
         .modal-overlay.active {
             display: grid;
         }
@@ -2012,6 +2016,17 @@
         .reset-btn-danger {
             background: linear-gradient(135deg, var(--danger), var(--danger-dark));
             color: #fff;
+            border-color: var(--danger);
+        }
+
+        .stg-action-btn-danger {
+            color: var(--danger);
+            border-color: var(--danger);
+        }
+
+        .edit-field-danger-btn {
+            font-size: 0.8rem;
+            color: var(--danger);
             border-color: var(--danger);
         }
 

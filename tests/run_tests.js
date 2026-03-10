@@ -6802,6 +6802,16 @@ test('Modal-3 — banner API y modales clave usan clases temáticas', () => {
     assert(indexCodeSec.includes('class="contact-input contact-textarea"'), 'Textarea de contacto debe usar clase temática');
 });
 
+test('Modal-4 — onboarding y acciones destructivas usan clases coherentes', () => {
+    assert(indexCodeSec.includes('class="modal-overlay onboarding-overlay" id="onboardingOverlay"'),
+        'Onboarding overlay debe usar clase temática propia');
+    assert(indexCodeSec.includes('id="settingsClearData" class="btn btn-outline btn-full stg-action-btn stg-action-btn-danger"')
+        || indexCodeSec.includes('id="settingsClearData"') && indexCodeSec.includes('stg-action-btn-danger'),
+        'Botón de borrar datos debe usar clase danger temática');
+    assert(indexCodeSec.includes('id="btnDeleteFieldSection"') && indexCodeSec.includes('edit-field-danger-btn'),
+        'Botón eliminar campo debe usar clase danger temática');
+});
+
 // Limpiar estado después de tests
 global.localStorage.clear();
 global._reportHistCache = null;
