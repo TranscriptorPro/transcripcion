@@ -6477,6 +6477,7 @@ const configCodeSec = fs.readFileSync(path.join(root, 'src/js/config/config.js')
 const businessCodeSec = fs.readFileSync(path.join(root, 'src/js/features/business.js'), 'utf-8');
 const indexCodeSec = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
 const fixedTipsCodeSec = fs.readFileSync(path.join(root, 'src/js/features/fixedTooltips.js'), 'utf-8');
+const userGuideCodeSec = fs.readFileSync(path.join(root, 'src/js/features/userGuide.js'), 'utf-8');
 
 test('AdminBase-1 — config.js detecta URL oficial /transcripcion', () => {
     assert(configCodeSec.includes("/transcripcion") && configCodeSec.includes('isOfficialAdminBase'),
@@ -6506,6 +6507,11 @@ test('Tooltips-2 — admin panel carga fixedTooltips.js', () => {
 test('Tooltips-3 — fixed tooltips evita duplicar tooltips nativos', () => {
     assert(fixedTipsCodeSec.includes('hasNativeTooltip') && fixedTipsCodeSec.includes("getAttribute('title')"),
         'fixedTooltips.js debe omitir elementos que ya tienen tooltip nativo');
+});
+
+test('Guide-1 — tutorial automático configurable (on/off)', () => {
+    assert(indexCodeSec.includes('tourAutoToggle') && userGuideCodeSec.includes('auto_tour_enabled'),
+        'Debe existir toggle persistente para activar/desactivar tutorial automático');
 });
 
 // Limpiar estado después de tests

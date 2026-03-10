@@ -2,6 +2,32 @@
 
 (function initUserGuide() {
 
+    const AUTO_TOUR_KEY = 'auto_tour_enabled';
+
+    async function getAutoTourEnabled() {
+        try {
+            if (typeof appDB !== 'undefined') {
+                const fromDb = await appDB.get(AUTO_TOUR_KEY);
+                if (fromDb === true || fromDb === false) return fromDb;
+            }
+            const fromLs = localStorage.getItem(AUTO_TOUR_KEY);
+            if (fromLs === null) return true; // default: activado
+            return fromLs === 'true';
+        } catch (_) {
+            return true;
+        }
+    }
+
+    function setAutoTourEnabled(enabled) {
+        const value = !!enabled;
+        try {
+            localStorage.setItem(AUTO_TOUR_KEY, value ? 'true' : 'false');
+        } catch (_) {}
+        if (typeof appDB !== 'undefined') {
+            try { appDB.set(AUTO_TOUR_KEY, value); } catch (_) {}
+        }
+    }
+
     // ── Help Modal Tab Switching ──
     document.querySelectorAll('.help-tab').forEach(tab => {
         tab.addEventListener('click', () => {
@@ -262,11 +288,43 @@
 
     // Global access
     window.startGuideTour = startTour;
+    window.setAutoTourEnabled = setAutoTourEnabled;
+    window.getAutoTourEnabled = getAutoTourEnabled;
 
     // Button in help modal
     const btnStartTour = document.getElementById('btnStartTour');
     if (btnStartTour) {
         btnStartTour.addEventListener('click', startTour);
+    }
+
+    const tourAutoToggle = document.getElementById('tourAutoToggle');
+    const tourAutoHint = document.getElementById('tourAutoHint');
+    if (tourAutoToggle) {
+        getAutoTourEnabled().then((enabled) => {
+            tourAutoToggle.checked = !!enabled;
+            if (tourAutoHint) {
+                tourAutoHint.textContent = enabled
+                    ? 'El tour se mostrará automáticamente en primeros usos.'
+                    : 'Tour automático desactivado. Podés iniciarlo manualmente con el botón de arriba.';
+            }
+        });
+
+        tourAutoToggle.addEventListener('change', () => {
+            const enabled = !!tourAutoToggle.checked;
+            setAutoTourEnabled(enabled);
+            if (tourAutoHint) {
+                tourAutoHint.textContent = enabled
+                    ? 'El tour se mostrará automáticamente en primeros usos.'
+                    : 'Tour automático desactivado. Podés iniciarlo manualmente con el botón de arriba.';
+            }
+            if (typeof showToast === 'function') {
+                showToast(
+                    enabled ? '✅ Tutorial automático activado' : 'ℹ️ Tutorial automático desactivado',
+                    'success',
+                    2200
+                );
+            }
+        });
     }
 
     // ── Botón Guía Rápida (header) — abre helpModal en tab Guía ──
@@ -315,6 +373,9 @@
 
     // ── Auto-show tour on first visit ──
     async function maybeAutoTour() {
+        const autoTourEnabled = await getAutoTourEnabled();
+        if (!autoTourEnabled) return;
+
         const tourDone = typeof appDB !== 'undefined'
             ? await appDB.get('tour_completed')
             : localStorage.getItem('tour_completed');
