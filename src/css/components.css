@@ -2014,20 +2014,33 @@
         }
 
         .reset-btn-danger {
-            background: linear-gradient(135deg, var(--danger), var(--danger-dark));
+            /* Color crítico fijo: acciones destructivas no cambian con el tema */
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
             color: #fff;
-            border-color: var(--danger);
+            border-color: #b91c1c;
         }
 
         .stg-action-btn-danger {
-            color: var(--danger);
-            border-color: var(--danger);
+            color: #dc2626;
+            border-color: #dc2626;
+        }
+
+        .stg-action-btn-danger:hover {
+            background: #dc2626;
+            color: #fff;
+            border-color: #b91c1c;
         }
 
         .edit-field-danger-btn {
             font-size: 0.8rem;
-            color: var(--danger);
-            border-color: var(--danger);
+            color: #dc2626;
+            border-color: #dc2626;
+        }
+
+        .edit-field-danger-btn:hover {
+            background: #dc2626;
+            color: #fff;
+            border-color: #b91c1c;
         }
 
         .contact-modal {

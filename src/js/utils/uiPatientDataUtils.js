@@ -45,7 +45,7 @@ window.initPatientDataModalHandlers = function () {
             if (!name) {
                 if (typeof showToast === 'function') showToast('El nombre del paciente es obligatorio', 'error');
                 const nameEl = document.getElementById('reqPatientName');
-                if (nameEl) { nameEl.style.borderColor = 'var(--danger)'; nameEl.focus(); }
+                if (nameEl) { nameEl.style.borderColor = '#dc2626'; nameEl.focus(); }
                 return;
             }
 
