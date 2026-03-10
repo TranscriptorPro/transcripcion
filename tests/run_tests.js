@@ -5367,6 +5367,18 @@ test('proSidebarSourceMode — mejora calidad de extracción .doc', () => {
     assertIncludes(proSourceModeCode, 'Convertí a .docx para mejor compatibilidad');
 });
 
+test('proSidebarSourceMode — valida tamaño y tipo de archivo para estructurar', () => {
+    assertIncludes(proSourceModeCode, 'MAX_TEXT_IMPORT_BYTES');
+    assertIncludes(proSourceModeCode, 'validateSelectedFile');
+    assertIncludes(proSourceModeCode, 'ALLOWED_TEXT_EXTENSIONS');
+});
+
+test('proSidebarSourceMode — limita extracción para documentos extensos', () => {
+    assertIncludes(proSourceModeCode, 'MAX_EXTRACTED_TEXT_CHARS');
+    assertIncludes(proSourceModeCode, 'MAX_PDF_PAGES_TO_EXTRACT');
+    assertIncludes(proSourceModeCode, 'truncateTextIfNeeded');
+});
+
 const factorySetupCode = fs.readFileSync(path.join(root, 'src/js/features/businessFactorySetupUtils.js'), 'utf-8');
 
 test('factory setup — persiste planCode en CLIENT_CONFIG', () => {

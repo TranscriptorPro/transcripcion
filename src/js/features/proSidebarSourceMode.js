@@ -5,6 +5,10 @@
     const PDFJS_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
     const PDFJS_WORKER_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     const MAMMOTH_CDN = 'https://unpkg.com/mammoth/mammoth.browser.min.js';
+    const MAX_TEXT_IMPORT_BYTES = 12 * 1024 * 1024; // 12 MB
+    const MAX_EXTRACTED_TEXT_CHARS = 600000;
+    const MAX_PDF_PAGES_TO_EXTRACT = 180;
+    const ALLOWED_TEXT_EXTENSIONS = new Set(['txt', 'text', 'md', 'rtf', 'csv', 'json', 'doc', 'docx', 'pdf']);
 
     function isNormalUser() {
         const type = String((window.CLIENT_CONFIG && window.CLIENT_CONFIG.type) || 'ADMIN').toUpperCase();
@@ -47,6 +51,32 @@
         const name = String(fileName || '').toLowerCase();
         const idx = name.lastIndexOf('.');
         return idx >= 0 ? name.slice(idx + 1) : '';
+    }
+
+    function truncateTextIfNeeded(text) {
+        const raw = String(text || '');
+        if (raw.length <= MAX_EXTRACTED_TEXT_CHARS) return raw;
+        if (typeof showToast === 'function') {
+            showToast('ℹ️ El texto importado es muy extenso. Se usará un recorte para estructurar más rápido.', 'info', 3200);
+        }
+        return raw.slice(0, MAX_EXTRACTED_TEXT_CHARS);
+    }
+
+    function validateSelectedFile(file) {
+        if (!file) throw new Error('Archivo inválido');
+
+        const ext = getExtension(file.name);
+        if (!ALLOWED_TEXT_EXTENSIONS.has(ext)) {
+            throw new Error('Formato no compatible. Usá TXT, DOC, DOCX o PDF.');
+        }
+
+        const size = Number(file.size || 0);
+        if (size <= 0) throw new Error('El archivo está vacío');
+        if (size > MAX_TEXT_IMPORT_BYTES) {
+            throw new Error('Archivo demasiado grande (máx. 12 MB para estructuración de texto).');
+        }
+
+        return ext;
     }
 
     function readAsText(file, encoding) {
@@ -145,14 +175,19 @@
         const pdf = await lib.getDocument({ data }).promise;
         const pages = [];
 
-        for (let i = 1; i <= pdf.numPages; i += 1) {
+        const maxPages = Math.min(pdf.numPages, MAX_PDF_PAGES_TO_EXTRACT);
+        for (let i = 1; i <= maxPages; i += 1) {
             const page = await pdf.getPage(i);
             const content = await page.getTextContent();
             const line = (content.items || []).map((it) => it && it.str ? it.str : '').join(' ').trim();
             if (line) pages.push(line);
         }
 
-        return normalizeExtractedText(pages.join('\n\n'));
+        if (pdf.numPages > MAX_PDF_PAGES_TO_EXTRACT && typeof showToast === 'function') {
+            showToast(`ℹ️ PDF extenso: se extrajeron las primeras ${MAX_PDF_PAGES_TO_EXTRACT} páginas.`, 'info', 3200);
+        }
+
+        return truncateTextIfNeeded(normalizeExtractedText(pages.join('\n\n')));
     }
 
     async function extractDocxText(file) {
@@ -162,7 +197,7 @@
         }
         const buffer = await readAsArrayBuffer(file);
         const result = await mammoth.extractRawText({ arrayBuffer: buffer });
-        return normalizeExtractedText(result && result.value);
+        return truncateTextIfNeeded(normalizeExtractedText(result && result.value));
     }
 
     function extractDocTextFallback(arrayBuffer) {
@@ -209,8 +244,7 @@
     }
 
     async function extractTextFromFile(file) {
-        const ext = getExtension(file && file.name);
-        if (!file) throw new Error('Archivo inválido');
+        const ext = validateSelectedFile(file);
 
         if (ext === 'pdf') return extractPdfText(file);
         if (ext === 'docx') return extractDocxText(file);
@@ -226,10 +260,10 @@
             if (typeof showToast === 'function') {
                 showToast('ℹ️ Archivo .doc importado con extracción compatible', 'info', 2800);
             }
-            return text;
+            return truncateTextIfNeeded(text);
         }
 
-        return normalizeExtractedText(await readAsText(file, 'utf-8'));
+        return truncateTextIfNeeded(normalizeExtractedText(await readAsText(file, 'utf-8')));
     }
 
     function setEditorRawText(text, sourceLabel) {
