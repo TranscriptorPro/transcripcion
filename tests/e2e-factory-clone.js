@@ -21,6 +21,34 @@ const MIME = {
     '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.gif': 'image/gif',
 };
 
+const FACTORY_SCENARIOS = [
+    {
+        id: 'E2E_TRIAL_001',
+        plan: 'trial',
+        expected: { type: 'TRIAL', hasProMode: false, canGenerateApps: false, maxDevices: 1, formats: ['txt'] }
+    },
+    {
+        id: 'E2E_NORMAL_001',
+        plan: 'normal',
+        expected: { type: 'NORMAL', hasProMode: false, canGenerateApps: false, maxDevices: 1, formats: ['pdf', 'txt'] }
+    },
+    {
+        id: 'E2E_PRO_001',
+        plan: 'pro',
+        expected: { type: 'PRO', hasProMode: true, canGenerateApps: false, maxDevices: 3, formats: ['pdf', 'rtf', 'txt', 'html'] }
+    },
+    {
+        id: 'E2E_GIFT_001',
+        plan: 'gift',
+        expected: { type: 'PRO', hasProMode: true, canGenerateApps: false, maxDevices: 3, formats: ['pdf', 'rtf', 'txt', 'html'] }
+    },
+    {
+        id: 'E2E_CLINIC_001',
+        plan: 'clinic',
+        expected: { type: 'PRO', hasProMode: true, canGenerateApps: true, maxDevices: 5, formats: ['pdf', 'rtf', 'txt', 'html'] }
+    }
+];
+
 function startServer(port) {
     return new Promise((resolve) => {
         const srv = http.createServer((req, res) => {
@@ -99,38 +127,40 @@ async function runTests() {
         await page.close();
 
         // ═══════════════════════════════════════════════════════════════
-        // E2E 2: Fábrica de clones — ?id= simulado
+        // E2E 2: Fábrica de clones — matriz por tipo de plan
         // ═══════════════════════════════════════════════════════════════
-        console.log('\n── E2E: Fábrica de clones ────────────────────');
-        const clonePage = await context.newPage();
+        console.log('\n── E2E: Fábrica de clones (matriz) ────────────────────');
 
         // Interceptar fetch al backend para mockear respuesta
-        await clonePage.route('**/exec**', async (route) => {
+        await context.route('**/exec**', async (route) => {
             const url = route.request().url();
             if (url.includes('action=validate')) {
+                const idMatch = /[?&]id=([^&]+)/.exec(url);
+                const medicoId = idMatch ? decodeURIComponent(idMatch[1]) : 'E2E_UNKNOWN';
+                const scenario = FACTORY_SCENARIOS.find(s => s.id === medicoId)
+                    || FACTORY_SCENARIOS.find(s => s.id === 'E2E_PRO_001');
+                const devicesMax = scenario.expected.maxDevices;
+
                 await route.fulfill({
                     status: 200,
                     contentType: 'application/json',
                     body: JSON.stringify({
-                        success: true,
-                        doctor: {
-                            ID_Medico: 'E2E_TEST_001',
-                            Nombre: 'Dr. E2E Test',
-                            Matricula: 'MP-E2E',
-                            Plan: 'pro',
-                            Estado: 'active',
-                            Especialidad: 'Cardiología',
-                            Devices_Max: 3,
-                            API_Key: 'gsk_e2e_test_key_12345',
-                            Allowed_Templates: '',
-                            Registro_Datos: JSON.stringify({
-                                firma: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==',
-                                proLogo: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==',
-                                headerColor: '#e91e63',
-                                footerText: 'Footer E2E Test',
-                                workplace: { name: 'Clínica E2E', address: 'Test 123', phone: '555-E2E' }
-                            })
-                        }
+                        ID_Medico: medicoId,
+                        Nombre: `Dr. ${scenario.plan.toUpperCase()} E2E`,
+                        Matricula: `MP-${scenario.plan.toUpperCase()}`,
+                        Plan: scenario.plan,
+                        Estado: 'active',
+                        Especialidad: 'Cardiología',
+                        Devices_Max: devicesMax,
+                        API_Key: 'gsk_e2e_test_key_12345',
+                        Allowed_Templates: '',
+                        Registro_Datos: JSON.stringify({
+                            firma: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==',
+                            proLogo: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==',
+                            headerColor: '#e91e63',
+                            footerText: `Footer E2E ${scenario.plan}`,
+                            workplace: { name: `Clínica ${scenario.plan}`, address: 'Test 123', phone: '555-E2E' }
+                        })
                     })
                 });
             } else {
@@ -138,57 +168,76 @@ async function runTests() {
             }
         });
 
-        // Navegar con ?id= para trigger factory
-        await clonePage.goto(`${BASE}/?id=E2E_TEST_001`, { waitUntil: 'domcontentloaded', timeout: 15000 });
-        await clonePage.waitForTimeout(3000); // Esperar a que factory se ejecute
+        for (const scenario of FACTORY_SCENARIOS) {
+            const clonePage = await context.newPage();
+            await clonePage.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 15000 });
+            await clonePage.evaluate(() => localStorage.clear());
 
-        // Verificar que se detectó el ?id=
-        const pendingSetupId = await clonePage.evaluate(() => window._PENDING_SETUP_ID || null);
-        // El factory puede limpiar _PENDING_SETUP_ID después de usarlo, así que verificamos lado effects
-        const storedConfig = await clonePage.evaluate(() => {
-            try { return JSON.parse(localStorage.getItem('client_config_stored')); } catch(_) { return null; }
-        });
-        const storedProf = await clonePage.evaluate(() => {
-            try { return JSON.parse(localStorage.getItem('prof_data')); } catch(_) { return null; }
-        });
+            await clonePage.goto(`${BASE}/?id=${encodeURIComponent(scenario.id)}`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+            await clonePage.waitForTimeout(3200);
 
-        if (storedConfig && storedConfig.type) {
-            log('pass', 'Factory: client_config_stored guardado', `type: ${storedConfig.type}`);
-        } else {
-            log('info', 'Factory: client_config_stored', 'No guardado (puede requerir backend real o el mock no matcheó)');
+            const snapshot = await clonePage.evaluate(() => {
+                const parse = (k) => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch(_) { return null; } };
+                const cfg = parse('client_config_stored');
+                const prof = parse('prof_data');
+
+                if (typeof window.initContact === 'function') {
+                    window.initContact();
+                }
+                const btnContacto = document.getElementById('btnContacto');
+
+                const btnPreview = document.getElementById('btnDownloadFromPreview');
+                if (typeof window.initPreviewDownloadDropdown === 'function' && btnPreview) {
+                    window.initPreviewDownloadDropdown(btnPreview);
+                }
+                const dd = document.getElementById('previewDownloadDropdown');
+                const visibleFormats = dd
+                    ? Array.from(dd.querySelectorAll('button[data-format]'))
+                        .filter((b) => b.style.display !== 'none')
+                        .map((b) => b.dataset.format)
+                    : [];
+
+                return {
+                    cfg,
+                    prof,
+                    hasApiKey: !!localStorage.getItem('groq_api_key'),
+                    hasSignature: String(localStorage.getItem('pdf_signature') || '').startsWith('data:image/'),
+                    contactVisible: !!btnContacto && btnContacto.style.display !== 'none',
+                    visibleFormats
+                };
+            });
+
+            const sc = snapshot.cfg || {};
+            const okType = sc.type === scenario.expected.type;
+            const okPro = !!sc.hasProMode === scenario.expected.hasProMode;
+            const okGen = !!sc.canGenerateApps === scenario.expected.canGenerateApps;
+            const okDevices = Number(sc.maxDevices) === scenario.expected.maxDevices;
+            const okPlanCode = String(sc.planCode || '').toLowerCase() === scenario.plan;
+            const okFormats = JSON.stringify(snapshot.visibleFormats) === JSON.stringify(scenario.expected.formats);
+
+            if (okType && okPro && okGen && okDevices && okPlanCode) {
+                log('pass', `Factory ${scenario.plan}: client_config mapeado`, `type=${sc.type}, pro=${!!sc.hasProMode}, apps=${!!sc.canGenerateApps}, maxDevices=${sc.maxDevices}`);
+            } else {
+                log('fail', `Factory ${scenario.plan}: client_config mapeado`, `recibido=${JSON.stringify({ type: sc.type, hasProMode: sc.hasProMode, canGenerateApps: sc.canGenerateApps, maxDevices: sc.maxDevices, planCode: sc.planCode })}`);
+            }
+
+            if (snapshot.prof && snapshot.prof.nombre) log('pass', `Factory ${scenario.plan}: prof_data guardado`, snapshot.prof.nombre);
+            else log('fail', `Factory ${scenario.plan}: prof_data guardado`, 'Sin nombre en prof_data');
+
+            if (snapshot.hasApiKey) log('pass', `Factory ${scenario.plan}: API key guardada`);
+            else log('fail', `Factory ${scenario.plan}: API key guardada`);
+
+            if (snapshot.hasSignature) log('pass', `Factory ${scenario.plan}: firma guardada`);
+            else log('fail', `Factory ${scenario.plan}: firma guardada`);
+
+            if (snapshot.contactVisible) log('pass', `Factory ${scenario.plan}: botón contacto visible para no-ADMIN`);
+            else log('fail', `Factory ${scenario.plan}: botón contacto visible para no-ADMIN`);
+
+            if (okFormats) log('pass', `Factory ${scenario.plan}: formatos descarga`, snapshot.visibleFormats.join(','));
+            else log('fail', `Factory ${scenario.plan}: formatos descarga`, `esperado=${scenario.expected.formats.join(',')} recibido=${snapshot.visibleFormats.join(',')}`);
+
+            await clonePage.close();
         }
-
-        if (storedProf && storedProf.nombre) {
-            log('pass', 'Factory: prof_data guardado', `nombre: ${storedProf.nombre}`);
-        } else {
-            log('info', 'Factory: prof_data', 'No guardado (depende del backend mock)');
-        }
-
-        // Verificar API key
-        const storedKey = await clonePage.evaluate(() => localStorage.getItem('groq_api_key'));
-        if (storedKey) {
-            log('pass', 'Factory: API key guardada', storedKey.substring(0, 10) + '...');
-        } else {
-            log('info', 'Factory: API key', 'No guardada (depende del backend mock)');
-        }
-
-        // Verificar firma
-        const storedFirma = await clonePage.evaluate(() => localStorage.getItem('pdf_signature'));
-        if (storedFirma && storedFirma.startsWith('data:image/')) {
-            log('pass', 'Factory: firma guardada en pdf_signature');
-        } else {
-            log('info', 'Factory: firma', 'No guardada');
-        }
-
-        // Verificar color tema
-        const storedColor = await clonePage.evaluate(() => localStorage.getItem('customPrimaryColor'));
-        if (storedColor) {
-            log('pass', 'Factory: color tema guardado', storedColor);
-        } else {
-            log('info', 'Factory: color tema', 'No aplicado');
-        }
-
-        await clonePage.close();
 
         // ═══════════════════════════════════════════════════════════════
         // E2E 3: Botón descargar — dropdown formatos
