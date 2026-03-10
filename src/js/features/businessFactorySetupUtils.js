@@ -314,6 +314,7 @@ window.handleFactorySetupCore = async function (medicoId) {
             if (typeof window.setGroqApiKey === 'function') {
                 window.setGroqApiKey(apiKey, { source: 'factory-setup' });
             } else {
+                // Fallback defensivo: state.js deberia exponer setGroqApiKey.
                 if (typeof appDB !== 'undefined') appDB.set('groq_api_key', apiKey);
                 localStorage.setItem('groq_api_key', apiKey);
                 window.GROQ_API_KEY = apiKey;

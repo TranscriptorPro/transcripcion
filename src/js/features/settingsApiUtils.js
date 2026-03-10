@@ -44,6 +44,7 @@
                 if (typeof window.setGroqApiKey === 'function') {
                     window.setGroqApiKey(key, { source: 'settings-save' });
                 } else {
+                    // Fallback defensivo: state.js deberia exponer setGroqApiKey.
                     localStorage.setItem('groq_api_key', key);
                     if (typeof appDB !== 'undefined') appDB.set('groq_api_key', key);
                     window.GROQ_API_KEY = key;

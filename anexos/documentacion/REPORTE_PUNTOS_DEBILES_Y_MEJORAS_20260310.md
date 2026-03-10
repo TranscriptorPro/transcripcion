@@ -57,7 +57,14 @@ Riesgo:
 Mejora sugerida:
 - Migrar todo acceso a key al helper central y prohibir writes directos por regla de lint/review.
 Estado:
-- En progreso. Se migro lectura de key a helper central en `ui.js`, `business.js`, `businessClientAdminUtils.js`, `businessOnboardingUtils.js`, `settingsApiUtils.js`, `uiApiManagementUtils.js` y `transcriptor.js`.
+- Cerrado en bloque no-seguridad. Se estandarizo patron helper-first en lectura y escritura en modulos de UI/onboarding/factory/settings/transcripcion, manteniendo fallback defensivo para no romper escenarios legacy.
+
+## Cierre operativo (no-seguridad)
+
+- Deriva local/produccion: controlada con smoke postdeploy (`PASS` en produccion, `APP_VERSION=v58`).
+- Version visible: sincronizada a runtime (`window.APP_VERSION` + `app_version`).
+- Consistencia API key: flujo principal unificado en helper central, sin regresiones en suite.
+- Puntos de seguridad: explicitamente postergados para revision final separada.
 
 6. Medio - Contacto de soporte centralizado, pero dependiente de un mailbox personal unico.
 Evidencia:

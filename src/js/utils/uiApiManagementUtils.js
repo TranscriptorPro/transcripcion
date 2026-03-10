@@ -69,6 +69,7 @@ window.initApiManagement = function () {
                     if (typeof window.setGroqApiKey === 'function') {
                         window.setGroqApiKey(key, { source: 'ui-api-save-verified' });
                     } else {
+                        // Fallback defensivo: state.js deberia exponer setGroqApiKey.
                         if (typeof appDB !== 'undefined') appDB.set('groq_api_key', key);
                         localStorage.setItem('groq_api_key', key);
                         window.GROQ_API_KEY = key;
@@ -91,6 +92,7 @@ window.initApiManagement = function () {
                     if (typeof window.setGroqApiKey === 'function') {
                         window.setGroqApiKey(key, { source: 'ui-api-save-offline' });
                     } else {
+                        // Fallback defensivo: state.js deberia exponer setGroqApiKey.
                         if (typeof appDB !== 'undefined') appDB.set('groq_api_key', key);
                         localStorage.setItem('groq_api_key', key);
                         window.GROQ_API_KEY = key;

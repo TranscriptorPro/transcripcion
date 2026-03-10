@@ -329,6 +329,7 @@ function _showClientOnboarding() {
                     if (typeof window.setGroqApiKey === 'function') {
                         window.setGroqApiKey(finalKey, { source: 'onboarding-submit' });
                     } else {
+                        // Fallback defensivo: state.js deberia exponer setGroqApiKey.
                         if (typeof appDB !== 'undefined') appDB.set('groq_api_key', finalKey);
                         localStorage.setItem('groq_api_key', finalKey);
                         window.GROQ_API_KEY = finalKey;
