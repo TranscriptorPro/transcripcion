@@ -2650,6 +2650,40 @@
             box-shadow: 0 0 20px rgba(245, 158, 11, 0.6), 0 0 40px rgba(245, 158, 11, 0.3);
         }
 
+        /* Sidebar: Source selector (Audio / Texto) needs strong contrast on light cards */
+        #proInputSourceSwitch .pro-toggle-switch {
+            width: 52px;
+            height: 28px;
+        }
+
+        #proInputSourceSwitch .pro-toggle-slider {
+            background: #e2e8f0;
+            border: 2px solid #94a3b8;
+            box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.12);
+        }
+
+        #proInputSourceSwitch .pro-toggle-slider:before {
+            width: 20px;
+            height: 20px;
+            left: 2px;
+            bottom: 2px;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.22);
+        }
+
+        #proInputSourceSwitch #proSourceToggle:checked + .pro-toggle-slider {
+            background: linear-gradient(135deg, #0ea5e9, #3b82f6);
+            border-color: #1d4ed8;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.18);
+            animation: none;
+        }
+
+        #proInputSourceSwitch #proSourceToggle:checked + .pro-toggle-slider:before {
+            transform: translateX(24px);
+            border-color: #93c5fd;
+        }
+
         .template-selector {
             margin-bottom: 1.5rem;
             background: white;
