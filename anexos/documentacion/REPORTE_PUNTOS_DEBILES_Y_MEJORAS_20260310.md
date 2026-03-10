@@ -28,7 +28,7 @@ Mejora sugerida:
 - Agregar gate post-push: smoke E2E contra URL productiva antes de dar por cerrado un bloque.
 - Publicar hash/version visible en UI para comparar rapidamente local vs deploy.
 Estado:
-- En progreso. Ya se implemento exposicion runtime de version y smoke postdeploy; falta confirmar deploy remoto actualizado.
+- En seguimiento. Smoke postdeploy validado en produccion: PASS (`APP_VERSION=v58`).
 
 3. Alto - Superficie XSS por restauracion HTML sin sanitizar en autosave.
 Evidencia:
@@ -56,6 +56,8 @@ Riesgo:
 - Condiciones de carrera y comportamientos distintos entre pestañas/modulos.
 Mejora sugerida:
 - Migrar todo acceso a key al helper central y prohibir writes directos por regla de lint/review.
+Estado:
+- En progreso. Se migro lectura de key a helper central en `ui.js`, `business.js`, `businessClientAdminUtils.js`, `businessOnboardingUtils.js`, `settingsApiUtils.js`, `uiApiManagementUtils.js` y `transcriptor.js`.
 
 6. Medio - Contacto de soporte centralizado, pero dependiente de un mailbox personal unico.
 Evidencia:

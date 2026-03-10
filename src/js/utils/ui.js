@@ -53,7 +53,9 @@ window.showBlocker = function (msg, isContactRequired) {
 window.updateApiStatus = function (apiKey) {
     // If no argument was passed, read from window or localStorage instead of assuming no key
     if (apiKey === undefined) {
-        apiKey = window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '';
+        apiKey = (typeof window.getResolvedGroqApiKey === 'function')
+            ? window.getResolvedGroqApiKey()
+            : (window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '');
     }
 
     const apiStatus = document.getElementById('apiStatus');

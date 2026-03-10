@@ -19,7 +19,9 @@ function _showClientOnboarding() {
     // K1: Si la API key ya fue precargada por el admin, ocultar el paso.
     const apiStep = document.getElementById('onboardingApiKeyStep');
     if (apiStep) {
-        const hasKey = !!(localStorage.getItem('groq_api_key'));
+        const hasKey = !!((typeof window.getResolvedGroqApiKey === 'function')
+            ? window.getResolvedGroqApiKey()
+            : localStorage.getItem('groq_api_key'));
         apiStep.style.display = hasKey ? 'none' : '';
     }
 

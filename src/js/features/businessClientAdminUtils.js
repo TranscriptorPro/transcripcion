@@ -79,7 +79,9 @@ function _initClient() {
 
     // Ya acepto T&C: inicializar con los datos precargados por el admin
     const profData = window._profDataCache || JSON.parse(localStorage.getItem('prof_data') || '{}');
-    window.GROQ_API_KEY = window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '';
+    window.GROQ_API_KEY = (typeof window.getResolvedGroqApiKey === 'function')
+        ? window.getResolvedGroqApiKey()
+        : (window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '');
     _initCommonModules();
 
     try {
@@ -108,7 +110,9 @@ function _initClient() {
 // Modulos comunes (admin + cliente)
 function _initCommonModules() {
     // SIEMPRE cargar API Key desde localStorage (puede haber sido guardada por factory setup)
-    const storedKey = localStorage.getItem('groq_api_key') || '';
+    const storedKey = (typeof window.getResolvedGroqApiKey === 'function')
+        ? window.getResolvedGroqApiKey()
+        : (localStorage.getItem('groq_api_key') || '');
     if (storedKey && !window.GROQ_API_KEY) {
         window.GROQ_API_KEY = storedKey;
     }

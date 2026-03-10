@@ -568,7 +568,9 @@ function _initAdmin() {
     localStorage.setItem('onboarding_date', new Date().toISOString());
 
     // Admin siempre ve el card de API Key
-    window.GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
+    window.GROQ_API_KEY = (typeof window.getResolvedGroqApiKey === 'function')
+        ? window.getResolvedGroqApiKey()
+        : (localStorage.getItem('groq_api_key') || '');
 
     // Cargar datos de prueba ANTES de inicializar módulos (para que los dropdowns se pueblen)
     _loadAdminTestData();
