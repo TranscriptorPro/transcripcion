@@ -52,7 +52,7 @@
         const profData = (context && context.profData) || {};
         const onProfileChanged = context && context.onProfileChanged;
 
-        const card = document.querySelector('[data-stg="account"] .stg-card');
+        const card = document.querySelector('[data-stg="cuenta"] .stg-card, [data-stg="account"] .stg-card');
         if (!card) return;
 
         const existing = document.getElementById(ADMIN_EDITOR_ID);
