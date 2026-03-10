@@ -34,6 +34,7 @@
             textInput: document.getElementById('proTextInput'),
             fileInput: document.getElementById('proTextFileInput'),
             fileBtn: document.getElementById('btnAttachTextFile'),
+            clearBtn: document.getElementById('btnClearTextSource'),
             structureBtn: document.getElementById('btnStructureTextPro'),
             fileName: document.getElementById('proTextFileName')
         };
@@ -396,6 +397,22 @@
                     await window.autoStructure({ silent: false });
                 } else if (typeof showToast === 'function') {
                     showToast('No se encontró la función de estructuración IA', 'error');
+                }
+            });
+        }
+
+        if (els.clearBtn && !els.clearBtn._bound) {
+            els.clearBtn._bound = true;
+            els.clearBtn.addEventListener('click', () => {
+                // Reusar la misma lógica de limpieza del panel de audio.
+                const resetBtn = document.getElementById('resetBtn');
+                if (resetBtn) {
+                    resetBtn.click();
+                } else {
+                    if (els.textInput) els.textInput.value = '';
+                    if (els.fileInput) els.fileInput.value = '';
+                    if (els.fileName) els.fileName.textContent = '';
+                    if (typeof showToast === 'function') showToast('Pantalla limpiada', 'success');
                 }
             });
         }
