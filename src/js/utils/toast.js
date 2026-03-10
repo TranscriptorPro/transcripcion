@@ -27,7 +27,6 @@ window.showToastWithAction = function(msg, type = 'error', actionText = 'Ver', a
         const btn = document.createElement('button');
         btn.className = 'toast-action-btn';
         btn.textContent = actionText;
-        btn.style.cssText = 'margin-left:8px;background:rgba(255,255,255,0.9);color:#1a1a1a;border:none;border-radius:4px;padding:2px 10px;cursor:pointer;font-size:0.78rem;font-weight:700;flex-shrink:0;';
         btn.onclick = () => { toast.classList.remove('show'); actionFn(); };
         toast.appendChild(btn);
     }

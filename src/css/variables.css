@@ -12,6 +12,8 @@
             --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
             --radius: 16px;
             --radius-sm: 10px;
+            --danger: #ef4444;
+            --danger-dark: #dc2626;
         }
 
         [data-theme="dark"] {
@@ -22,5 +24,7 @@
             --text-secondary: #94a3b8;
             --border: #334155;
             --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            --danger: #f87171;
+            --danger-dark: #ef4444;
         }
 

@@ -122,7 +122,7 @@
                     </div>
                     <div class="modal-body" id="snapshotPanelBody" style="max-height:400px;overflow-y:auto;"></div>
                     <div class="modal-footer" style="justify-content:space-between;">
-                        <button class="btn btn-outline" id="btnClearSnapshots" style="font-size:0.8rem;color:#ef4444;border-color:#ef4444;">🗑️ Borrar todo</button>
+                        <button class="btn btn-outline" id="btnClearSnapshots" style="font-size:0.8rem;color:var(--danger,#ef4444);border-color:var(--danger,#ef4444);">🗑️ Borrar todo</button>
                         <button class="btn btn-outline" id="btnCloseSnapPanel">Cerrar</button>
                     </div>
                 </div>`;
