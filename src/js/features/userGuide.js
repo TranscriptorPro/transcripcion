@@ -188,7 +188,18 @@
             return true;
         });
 
-        return reorderTourSteps(filtered, ctx);
+        const ordered = reorderTourSteps(filtered, ctx);
+        return ordered.filter((step) => hasVisibleTarget(step && step.target));
+    }
+
+    function hasVisibleTarget(selector) {
+        if (!selector) return false;
+        const selectors = String(selector).split(',').map((s) => s.trim()).filter(Boolean);
+        for (const sel of selectors) {
+            const el = document.querySelector(sel);
+            if (el && el.offsetParent !== null) return true;
+        }
+        return false;
     }
 
     function reorderTourSteps(steps, ctx) {
@@ -270,8 +281,40 @@
             const el = document.querySelector(sel);
             if (el && el.offsetParent !== null) return el;
         }
-        // Fallback: first found even if hidden
-        return document.querySelector(selectors[0]);
+        return null;
+    }
+
+    function refreshActiveTourStepsLive() {
+        if (!tourActive) return;
+
+        const prevStep = (currentStep >= 0 && currentStep < activeTourSteps.length)
+            ? activeTourSteps[currentStep]
+            : null;
+        const prevId = prevStep && prevStep.id;
+
+        activeTourContext = getTourContext();
+        const rebuilt = buildTourSteps();
+        if (!Array.isArray(rebuilt) || rebuilt.length === 0) {
+            return;
+        }
+
+        activeTourSteps = rebuilt;
+
+        if (tourElements.dots) {
+            tourElements.dots.innerHTML = activeTourSteps.map((_, i) =>
+                `<div class="tour-dot ${i === 0 ? 'active' : ''}" data-step="${i}"></div>`
+            ).join('');
+        }
+
+        let nextIndex = 0;
+        if (prevId) {
+            const found = activeTourSteps.findIndex((s) => s && s.id === prevId);
+            if (found >= 0) nextIndex = found;
+        } else if (currentStep >= 0) {
+            nextIndex = Math.min(currentStep, activeTourSteps.length - 1);
+        }
+
+        showStep(nextIndex);
     }
 
     function createTourUI() {
@@ -576,7 +619,7 @@
     // Handle window resize during tour
     window.addEventListener('resize', () => {
         if (tourActive && currentStep >= 0) {
-            showStep(currentStep);
+            refreshActiveTourStepsLive();
         }
     });
 

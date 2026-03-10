@@ -5318,6 +5318,12 @@ test('userGuide — reordena pasos por perfil', () => {
     assertIncludes(guideCode, 'admin-panel');
 });
 
+test('userGuide — filtra pasos con targets visibles y recalcula en resize', () => {
+    assertIncludes(guideCode, 'hasVisibleTarget');
+    assertIncludes(guideCode, 'refreshActiveTourStepsLive');
+    assertIncludes(guideCode, "window.addEventListener('resize'");
+});
+
 // Validar carga de archivos de texto enriquecidos en Modo Pro
 const proSourceModeCode = fs.readFileSync(path.join(root, 'src/js/features/proSidebarSourceMode.js'), 'utf-8');
 
