@@ -2097,14 +2097,19 @@
             position: relative;
         }
 
+        .fixed-tip-anchor.fixed-tip-anchor--safe {
+            padding-right: 22px;
+        }
+
         .fixed-tip-anchor.fixed-tip-anchor--button {
             overflow: visible;
         }
 
         .fixed-tip-btn {
             position: absolute;
-            top: 4px;
+            top: 50%;
             right: 4px;
+            transform: translateY(-50%);
             width: 14px;
             height: 14px;
             border: 1.5px solid #60a5fa;
@@ -2126,6 +2131,13 @@
         .fixed-tip-anchor--button > .fixed-tip-btn {
             top: -7px;
             right: -7px;
+            transform: none;
+        }
+
+        .fixed-tip-anchor--outside > .fixed-tip-btn {
+            top: -7px;
+            right: -7px;
+            transform: none;
         }
 
         .fixed-tip-btn:hover {
