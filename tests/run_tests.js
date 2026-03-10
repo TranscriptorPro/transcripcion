@@ -5655,6 +5655,11 @@ test('G1 — DEFAULT_PLANS clinic maxDevices=5', () => {
     assert(match, 'admin clinic debe tener maxDevices: 5');
 });
 
+test('G1 — Admin header usa logo sin círculo (logo-superhero2)', () => {
+    assert(adminCode.includes('logo-superhero2.png'), 'admin debe usar logo-superhero2.png');
+    assert(!adminCode.includes('logo-superhero.png"'), 'admin no debe usar logo-superhero.png con círculo');
+});
+
 // ══════════════════════════════════════════════════════════════════════════════
 // Bloque 92: G2 — Tests límites por plan (B1-B4)
 // ══════════════════════════════════════════════════════════════════════════════
