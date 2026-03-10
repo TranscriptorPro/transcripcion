@@ -212,7 +212,7 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
     naso: {
         name: "Videonaso / Laringoscopía",
         category: "ORL",
-        keywords: ["videonasofibrolaringoscopía", "nasofibroscopía", "fosas nasales", "rinofaringe", "laringe", "cuerdas vocales"],
+        keywords: ["videonasofibrolaringoscopía", "nasofibroscopía", "fosas nasales", "rinofaringe", "laringe", "cuerdas vocales", "videonasolaringoscopía", "cornetes", "septum nasal", "meato medio", "nasofaringe"],
         prompt: `Actúa como especialista ORL. Estructura este informe de videonasofibrolaringoscopía.
 
 REGLAS OBLIGATORIAS:
@@ -258,7 +258,7 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
     endoscopia_otologica: {
         name: "Endoscopía Otológica",
         category: "ORL",
-        keywords: ["endoscopía otológica", "oído", "tímpano", "conducto auditivo", "OD", "OI"],
+        keywords: ["endoscopía otológica", "oído", "tímpano", "conducto auditivo", "membrana timpánica", "oído medio"],
         prompt: `Actúa como especialista ORL. Estructura este informe de endoscopía otológica:
 
 # INFORME DE ENDOSCOPÍA OTOLÓGICA

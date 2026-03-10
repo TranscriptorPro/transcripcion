@@ -6870,6 +6870,189 @@ test('Struct-NonMedical-1 — fallback general sin conclusion + advertencia fija
         'prompt no medico debe prohibir seccion de conclusion');
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bloque 114: _stripRedundantEmptyMarkers — badges inteligentes
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 114: _stripRedundantEmptyMarkers (badges inteligentes) ──');
+
+const _stripFn = StructurerCoreUtils._stripRedundantEmptyMarkers;
+
+test('Badge-1 — conserva [No especificado] cuando es el único contenido', () => {
+    const md = '**Fonación:** [No especificado]';
+    const out = _stripFn(md);
+    assertIncludes(out, '[No especificado]', 'Debe conservar badge en campo vacío');
+});
+
+test('Badge-2 — conserva badge en línea con solo label + marker', () => {
+    const md = '**Pares craneales:** [No especificado].';
+    const out = _stripFn(md);
+    assertIncludes(out, '[No especificado]', 'Debe conservar badge cuando label + marker');
+});
+
+test('Badge-3 — elimina badge cuando la línea tiene frase completa (>30 chars)', () => {
+    const md = 'Se observan focos de hiperintensidad esparcidos en la sustancia blanca subcortical [No especificado].';
+    const out = _stripFn(md);
+    assert(!out.includes('[No especificado]'), `Badge debe eliminarse en frase completa, obtuvo: ${out}`);
+});
+
+test('Badge-4 — elimina badge en frase de hallazgo completo', () => {
+    const md = 'El eco muestra un quiste pineal simple de 8 mm sin significado clínico [No especificado].';
+    const out = _stripFn(md);
+    assert(!out.includes('[No especificado]'), 'No debe haber badge en frase completa de hallazgo');
+});
+
+test('Badge-5 — markdownToHtml no genera badge en frase completa', () => {
+    const md = '## HALLAZGOS\n\nSe observan focos de hiperintensidad esparcidos en la sustancia blanca subcortical compatibles con enfermedad isquémica [No especificado].';
+    const html = markdownToHtml(md);
+    assert(!html.includes('no-data-field'), 'No debe generar badge en frase completa');
+});
+
+test('Badge-6 — markdownToHtml genera badge en campo vacío', () => {
+    const md = '## HALLAZGOS\n\n**Fonación:** [No especificado]';
+    const html = markdownToHtml(md);
+    assertIncludes(html, 'no-data-field', 'Debe generar badge en campo vacío');
+});
+
+test('Badge-7 — conserva badge en línea corta sin frase coherente', () => {
+    const md = 'Cornetes: [No especificado]';
+    const out = _stripFn(md);
+    assertIncludes(out, '[No especificado]', 'Línea corta debe conservar badge');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bloque 115: Extracción paciente — 41 casos clínicos
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 115: Extracción paciente — 41 casos clínicos ─────────');
+
+const CLINICAL_CASES = [
+    { id: 1,  text: 'Paciente masculino de 58 años, Carlos Mendoza, acude por disnea de esfuerzo; se realiza espirometría forzada basal', name: 'Carlos Mendoza', age: 58, sex: 'M' },
+    { id: 2,  text: 'Mujer de 65 años, Ana Rojas, realiza prueba de caminata de seis minutos en pasillo', name: 'Ana Rojas', age: 65, sex: 'F' },
+    { id: 3,  text: 'Juan Pérez de 45 años es evaluado en el laboratorio de función pulmonar por sospecha de patología intersticial', name: 'Juan Pérez', age: 45 },
+    { id: 4,  text: 'Paciente de 52 años, Luis Torres, evaluado por obesidad y ronquidos', name: 'Luis Torres', age: 52 },
+    { id: 5,  text: 'María Gómez, femenina de 60 años con sospecha de glaucoma, realiza campimetría', name: 'María Gómez', age: 60, sex: 'F' },
+    { id: 6,  text: 'Carlos López, diabético de 62 años, presenta en la tomografía de coherencia óptica de la mácula un marcado engrosamiento', name: 'Carlos López', age: 62 },
+    { id: 7,  text: 'Sofía Ramírez de 24 años muestra en la topografía corneal un encurvamiento inferior asimétrico bilateral', name: 'Sofía Ramírez', age: 24 },
+    { id: 8,  text: 'Hombre de 70 años, Roberto Fernández, hipertenso crónico, en la exploración del fondo de ojo bajo midriasis', name: 'Roberto Fernández', age: 70, sex: 'M' },
+    { id: 9,  text: 'Lucía Martínez de 55 años, evaluada por cefalea, se le realiza tomografía axial computarizada de cráneo', name: 'Lucía Martínez', age: 55 },
+    { id: 10, text: 'Miguel Sánchez de 64 años, el estudio de resonancia magnética cerebral en equipo de tres Tesla', name: 'Miguel Sánchez', age: 64 },
+    { id: 11, text: 'Femenina de 50 años, Elena Castro, acude a tamizaje donde se observan mamas de composición', name: 'Elena Castro', age: 50, sex: 'F' },
+    { id: 12, text: 'Rosa Silva, mujer posmenopáusica de 68 años, se realiza densitometría ósea', name: 'Rosa Silva', age: 68, sex: 'F' },
+    { id: 13, text: 'Hombre de 61 años, Andrés Fuentes, con carcinoma pulmonar, recibe cero punto catorce megabequerelios', name: 'Andrés Fuentes', age: 61, sex: 'M' },
+    { id: 14, text: 'Paciente de 34 años, José Domínguez, sufre traumatismo en miembro inferior derecho', name: 'José Domínguez', age: 34 },
+    { id: 15, text: 'Carmen Ruiz de 48 años con dolor abdominal, la ecografía reporta hígado de morfología normal', name: 'Carmen Ruiz', age: 48 },
+    { id: 16, text: 'Fernando Gómez de 59 años por cólico nefrítico, se observan riñones de situación y tamaño habitual', name: 'Fernando Gómez', age: 59 },
+    { id: 17, text: 'Mujer de 35 años, Patricia Vega, se explora glándula tiroides observando en el lóbulo derecho', name: 'Patricia Vega', age: 35, sex: 'F' },
+    { id: 18, text: 'Femenina de 28 años, Laura Méndez, presenta nódulo palpable en mama derecha', name: 'Laura Méndez', age: 28, sex: 'F' },
+    { id: 19, text: 'Hombre de 66 años, Luis Castro, el eco doppler vascular de troncos supraaórticos muestra engrosamiento', name: 'Luis Castro', age: 66, sex: 'M' },
+    { id: 20, text: 'Paciente masculino de 42 años, Javier Blanco, con dispepsia, el esófago presenta mucosa normal', name: 'Javier Blanco', age: 42, sex: 'M' },
+    { id: 21, text: 'Mujer de 54 años, Silvia Ortiz, la preparación para la colonoscopía fue adecuada', name: 'Silvia Ortiz', age: 54, sex: 'F' },
+    { id: 22, text: 'Hombre de 65 años, Ricardo Morales, la exploración por broncoscopía muestra cuerdas vocales', name: 'Ricardo Morales', age: 65, sex: 'M' },
+    { id: 23, text: 'Femenina de 40 años, Mónica Herrera, con disfonía persistente, la laringoscopía permite visualizar', name: 'Mónica Herrera', age: 40, sex: 'F' },
+    { id: 24, text: 'Paciente de 68 años, Tomás Aguilar, tras la inyección del radiotrazador la gammagrafía cardíaca', name: 'Tomás Aguilar', age: 68 },
+    { id: 25, text: 'Femenina de 72 años, Beatriz Guzmán, el monitoreo holter electrocardiográfico de veinticuatro horas', name: 'Beatriz Guzmán', age: 72, sex: 'F' },
+    { id: 26, text: 'Hombre de 55 años, Hugo Navarro, el monitoreo ambulatorio de presión arterial', name: 'Hugo Navarro', age: 55, sex: 'M' },
+    { id: 27, text: 'Paciente masculino de 60 años, Mario Santos, el abordaje de cinecoronariografía por arteria radial', name: 'Mario Santos', age: 60, sex: 'M' },
+    { id: 28, text: 'Mujer de 45 años, Rosa Mendoza, el trazado del electrocardiograma muestra un ritmo sinusal', name: 'Rosa Mendoza', age: 45, sex: 'F' },
+    { id: 29, text: 'Hombre de 58 años, Carlos Vega, realiza prueba de eco stress en banda sinfín', name: 'Carlos Vega', age: 58, sex: 'M' },
+    { id: 30, text: 'Femenina de 67 años, Inés Peña, en el ecocardiograma transtorácico los diámetros cavitarios', name: 'Inés Peña', age: 67, sex: 'F' },
+    { id: 31, text: 'Mujer de 32 años, Andrea Ríos, la citología exfoliativa cervicovaginal evaluada bajo el sistema Bethesda', name: 'Andrea Ríos', age: 32, sex: 'F' },
+    { id: 32, text: 'Paciente de 38 años, Valeria Montes, durante la colposcopía y tras la aplicación de ácido acético', name: 'Valeria Montes', age: 38 },
+    { id: 33, text: 'Femenina de 28 años, Daniela Torres, cursando gestación única con feto en presentación cefálica', name: 'Daniela Torres', age: 28, sex: 'F' },
+    { id: 34, text: 'Hombre de 45 años, Jorge Ruiz, el estudio de electromiografía y velocidad de conducción nerviosa', name: 'Jorge Ruiz', age: 45, sex: 'M' },
+    { id: 35, text: 'Paciente masculino de 50 años, Felipe Ortega, el registro de polisomnografía evidencia una arquitectura', name: 'Felipe Ortega', age: 50, sex: 'M' },
+    { id: 36, text: 'Mujer de 29 años, Clara Guzmán, la videonasolaringoscopía revela cornetes inferiores hipertróficos', name: 'Clara Guzmán', age: 29, sex: 'F' },
+    { id: 37, text: 'Hombre de 34 años, Martín Suárez, la exploración mediante endoscopía otológica muestra', name: 'Martín Suárez', age: 34, sex: 'M' },
+    { id: 38, text: 'Paciente femenina de 41 años, Lorena Páez, durante el protocolo quirúrgico de colecistectomía', name: 'Lorena Páez', age: 41, sex: 'F' },
+    { id: 39, text: 'Hombre de 56 años, Arturo Blanco, en su segundo día de internación cursa lúcido y afebril', name: 'Arturo Blanco', age: 56, sex: 'M' },
+    { id: 40, text: 'Mujer de 60 años, Carmen Paredes, ingresó por dolor precordial opresivo constatándose infarto agudo', name: 'Carmen Paredes', age: 60, sex: 'F' },
+    { id: 41, text: 'Paciente masculino de 48 años, Ernesto Gómez, acude para evaluación general donde el examen físico', name: 'Ernesto Gómez', age: 48, sex: 'M' },
+];
+
+CLINICAL_CASES.forEach(c => {
+    test(`Caso ${c.id} — extrae nombre "${c.name}" y edad ${c.age}`, () => {
+        const data = global.extractPatientDataFromText(c.text);
+        assertEqual(data.name, c.name, `Caso ${c.id}: nombre esperado "${c.name}", obtuvo "${data.name}"`);
+        assertEqual(data.age, c.age, `Caso ${c.id}: edad esperada ${c.age}, obtuvo ${data.age}`);
+        if (c.sex) {
+            assertEqual(data.sex, c.sex, `Caso ${c.id}: sexo esperado ${c.sex}, obtuvo ${data.sex}`);
+        }
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bloque 116: autoDetectTemplateKey — 41 casos clínicos
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 116: autoDetectTemplateKey — 41 casos clínicos ──────');
+
+const TEMPLATE_CASES = [
+    { id: 1,  text: 'espirometría forzada basal y posterior a cuatrocientos microgramos de salbutamol evidenciando una capacidad vital forzada', expected: 'espirometria' },
+    { id: 2,  text: 'prueba de caminata de seis minutos en pasillo de treinta metros logrando recorrer trescientos veinte metros con una saturación de oxígeno basal', expected: 'test_marcha' },
+    { id: 3,  text: 'pletismografía una capacidad pulmonar total disminuida por debajo del límite inferior de la normalidad', expected: 'pletismografia' },
+    { id: 4,  text: 'oximetría nocturna un índice de desaturación elevado con múltiples caídas de la saturación por debajo del ochenta y cinco por ciento', expected: 'oximetria_nocturna' },
+    { id: 5,  text: 'campimetría con analizador Humphrey evaluando los treinta grados centrales mediante estímulo blanco sobre blanco', expected: 'campimetria' },
+    { id: 6,  text: 'tomografía de coherencia óptica de la mácula un marcado engrosamiento retiniano', expected: 'oct_retinal' },
+    { id: 7,  text: 'topografía corneal un encurvamiento inferior asimétrico bilateral con valor queratométrico', expected: 'topografia_corneal' },
+    { id: 8,  text: 'exploración del fondo de ojo bajo midriasis disco óptico de forma redonda y bordes regulares', expected: 'fondo_ojo' },
+    { id: 9,  text: 'tomografía axial computarizada de cráneo evidenciándose parénquima de densidad normal sin colecciones hemáticas', expected: 'tac' },
+    { id: 10, text: 'resonancia magnética cerebral en equipo de tres Tesla con secuencias sagital T uno axial T dos y FLAIR', expected: 'resonancia' },
+    { id: 11, text: 'tamizaje donde se observan mamas de composición heterogéneamente densa tipo C con microcalcificaciones birads cinco', expected: 'mamografia' },
+    { id: 12, text: 'densitometría ósea reportando un T score de menos dos punto ocho en el cuello femoral izquierdo', expected: 'densitometria' },
+    { id: 13, text: 'PET CT tras sesenta minutos una masa en el lóbulo superior derecho con un valor estandarizado de captación', expected: 'pet_ct' },
+    { id: 14, text: 'radiografía convencional muestra una solución de continuidad ósea diáfisis tibial con trazo oblicuo', expected: 'radiografia' },
+    { id: 15, text: 'ecografía reporta hígado de morfología normal vesícula biliar imágenes ecogénicas sombra acústica posterior colédoco', expected: 'ecografia_abdominal' },
+    { id: 16, text: 'riñones de situación y tamaño habitual conservando el parénquima hidronefrosis moderada cálculo obstructivo unión ureteropélica', expected: 'ecografia_renal' },
+    { id: 17, text: 'explora glándula tiroides lóbulo derecho nódulo sólido hipoecoico bordes irregulares microcalcificaciones internas', expected: 'ecografia_tiroidea' },
+    { id: 18, text: 'ecografía revela mama derecha masa sólida ovalada circunscrita tejido fibroadenomatoso birads tres', expected: 'ecografia_mamaria' },
+    { id: 19, text: 'eco doppler vascular de troncos supraaórticos engrosamiento miointimal placa de ateroma calcificada estenosis', expected: 'eco_doppler' },
+    { id: 20, text: 'gastroscopía esófago mucosa normal antro gástrico eritema parcheado biopsias bulbo duodenal', expected: 'gastroscopia' },
+    { id: 21, text: 'colonoscopía preparación adecuada equipo hasta el ciego colon sigmoides pólipo sésil resecado asa fría', expected: 'colonoscopia' },
+    { id: 22, text: 'broncoscopía cuerdas vocales móviles tráquea normal bronquio lóbulo superior lesión exofítica biopsias cepillado citología', expected: 'broncoscopia' },
+    { id: 23, text: 'laringoscopía permite visualizar tercio medio cuerda vocal verdadera nódulo base sésil movilidad cordal fonación', expected: 'laringoscopia' },
+    { id: 24, text: 'gammagrafía cardíaca en reposo y esfuerzo ventrícolo izquierdo defecto de captación reversible isquemia miocárdica', expected: 'gammagrafia_cardiaca' },
+    { id: 25, text: 'holter electrocardiográfico de veinticuatro horas ritmo sinusal extrasístoles ventriculares pausas segmento ST', expected: 'holter' },
+    { id: 26, text: 'monitoreo ambulatorio de presión arterial veinticuatro horas promedios diurnos elevados patrón non dipper', expected: 'mapa' },
+    { id: 27, text: 'cinecoronariografía por arteria radial descendente anterior estenosis severa angioplastia stent circunfleja', expected: 'cinecoro' },
+    { id: 28, text: 'electrocardiograma ritmo sinusal regular intervalo PR complejo QRS eje eléctrico repolarización ventricular', expected: 'ecg' },
+    { id: 29, text: 'eco stress en banda sinfín contractilidad basal normal esfuerzo máximo hipocinesia segmentos apicales isquemia miocárdica', expected: 'eco_stress' },
+    { id: 30, text: 'ecocardiograma transtorácico diámetros cavitarios válvula aórtica calcificación gradiente transvalvular estenosis aórtica fracción eyección', expected: 'ett' },
+    { id: 31, text: 'citología exfoliativa cervicovaginal sistema Bethesda células escamosas atípicas ascus virus papiloma humano', expected: 'pap' },
+    { id: 32, text: 'colposcopía ácido acético unión escamocolumnar zona acetoblanca mosaico punteado lésión intraepitelial biopsia dirigida', expected: 'colposcopia' },
+    { id: 33, text: 'ecografía obstétrica biometría fetal diámetro biparietal longitud fémur treinta y dos semanas placenta líquido amniótico', expected: 'ecografia_obstetrica' },
+    { id: 34, text: 'electromiografía velocidad de conducción nerviosa latencia distal prolongada nervio mediano túnel del carpo neuropático', expected: 'electromiografia' },
+    { id: 35, text: 'polisomnografía arquitectura de sueño fragmentada índice apneas hipopneas obstructivas desaturaciones oxígeno', expected: 'polisomnografia' },
+    { id: 36, text: 'videonasolaringoscopía cornetes inferiores hipertróficos septum nasal desviado meato medio pólipos fosas nasales nasofaringe', expected: 'naso' },
+    { id: 37, text: 'endoscopía otológica conducto auditivo externo membrana timpánica retracción derrame oído medio', expected: 'endoscopia_otologica' },
+    { id: 38, text: 'protocolo quirúrgico colecistectomía laparoscópica vesícula biliar triángulo anatómico arteria conducto cístico', expected: 'protocolo_quirurgico' },
+    { id: 39, text: 'nota de evolución internación lúcido afebril mejoría disnea auscultación crepitantes antibiótico intravenoso', expected: 'nota_evolucion' },
+    { id: 40, text: 'epicrisis ingresó dolor precordial infarto agudo miocardio revascularización percutánea alta hospitalaria', expected: 'epicrisis' },
+    { id: 41, text: 'evaluación general examen físico normal índice masa corporal sobrepeso informe médico recomendaciones dieta ejercicio', expected: 'generico' },
+];
+
+TEMPLATE_CASES.forEach(c => {
+    test(`Template caso ${c.id} — detecta "${c.expected}"`, () => {
+        const key = autoDetectTemplateKey(c.text);
+        assertEqual(key, c.expected, `Caso ${c.id}: esperado "${c.expected}", obtuvo "${key}"`);
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bloque 117: Editor — inserción de tabla (código structural)
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 117: Editor — tabla y herramientas ───────────────────');
+
+test('Editor-Table — index.html tiene botón insertTableBtn', () => {
+    assertIncludes(indexCode, 'id="insertTableBtn"', 'Debe existir botón de insertar tabla');
+});
+
+test('Editor-Table — handler usa DOM (no execCommand insertHTML)', () => {
+    const fmtCode = fs.readFileSync(path.join(root, 'src/js/features/editorFormattingFindUtils.js'), 'utf-8');
+    assertIncludes(fmtCode, 'insertTableBtn', 'Handler de tabla debe existir');
+    assertIncludes(fmtCode, 'insertRow', 'Debe usar DOM table API (insertRow)');
+    assertIncludes(fmtCode, 'insertCell', 'Debe usar DOM table API (insertCell)');
+    assert(!fmtCode.includes("execCommand('insertHTML'") && !fmtCode.includes('execCommand("insertHTML"'),
+        'No debe usar execCommand insertHTML para tablas');
+});
+
 // Limpiar estado después de tests
 global.localStorage.clear();
 global._reportHistCache = null;

@@ -89,8 +89,34 @@ function autoDetectTemplateKey(text) {
 }
 
 // ============ MARKDOWN → HTML CONVERTER ============
+
+// Limpia marcadores [No especificado] de líneas que ya tienen contenido completo.
+// Solo mantiene el marcador en líneas donde realmente falta información.
+function _stripRedundantEmptyMarkers(md) {
+    const MARKER = /\[No especificado\]/g;
+    const MARKERS_ALL = /\[No especificado\]|\bNo se evaluó\.?|\bNo fue evaluad[ao]\.?|\bNo evaluad[ao]\.?|\bNo se realizó\.?|\bSin datos disponibles\.?/gi;
+    return md.split('\n').map(line => {
+        if (!MARKER.test(line)) return line;
+        // Strip markdown heading markers, bold labels, and every empty-field marker
+        const stripped = line
+            .replace(/^#{1,3}\s*/, '')
+            .replace(/\*\*[^*]+\*\*:?\s*/g, '')
+            .replace(MARKERS_ALL, '')
+            .replace(/[.,;:\s]+/g, ' ')
+            .trim();
+        // If meaningful content remains (≥30 chars) → it's a complete phrase, remove markers
+        if (stripped.length >= 30) {
+            return line.replace(MARKER, '').replace(/\s{2,}/g, ' ').replace(/\s+([.,;:])/g, '$1');
+        }
+        return line;
+    }).join('\n');
+}
+
 function markdownToHtml(md) {
     if (!md) return '';
+
+    // Pre-process: remove redundant [No especificado] from complete phrases
+    md = _stripRedundantEmptyMarkers(md);
 
     const inlineFormat = (text) => text
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
@@ -294,5 +320,6 @@ function promptTemplateSelection(detectedKey) {
         markdownToHtml,
         parseAIResponse,
         promptTemplateSelection,
+        _stripRedundantEmptyMarkers,
     };
 })();

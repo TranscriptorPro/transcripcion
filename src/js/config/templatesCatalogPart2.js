@@ -43,7 +43,7 @@ REGLA DE CONCLUSIÓN: Párrafo conciso con todos los hallazgos relevantes y la F
     ecografia_renal: {
         name: "Ecografía Renal",
         category: "Imágenes",
-        keywords: ["ecografía renal", "ecografía renovesical", "ultrasonido renal", "ecografía de riñones", "ecografía vesical", "riñón derecho", "riñón izquierdo", "ectasia piélica", "litiasis renal", "hidronefrosis", "parénquima renal", "ecografía de vías urinarias"],
+        keywords: ["ecografía renal", "ecografía renovesical", "ultrasonido renal", "ecografía de riñones", "ecografía vesical", "riñón derecho", "riñón izquierdo", "ectasia piélica", "litiasis renal", "hidronefrosis", "parénquima renal", "ecografía de vías urinarias", "cólico nefrítico", "ureteropélica", "riñones"],
         prompt: `Actúa como radiólogo/nefrólogo. Estructura este informe de ecografía renal:
 
 # INFORME DE ECOGRAFÍA RENAL / RENOVESICAL
@@ -70,7 +70,7 @@ IMPORTANTE: No inventes datos. Solo estructura lo dictado. Si no se evaluó una 
     ecografia_tiroidea: {
         name: "Ecografía Tiroidea",
         category: "Imágenes",
-        keywords: ["ecografía tiroidea", "ecografía de tiroides", "ultrasonido tiroideo", "nódulo tiroideo", "lóbulo tiroideo", "istmo tiroideo", "tiroides", "TIRADS", "nódulo coloide", "bocio", "tiroiditis"],
+        keywords: ["ecografía tiroidea", "ecografía de tiroides", "ultrasonido tiroideo", "nódulo tiroideo", "lóbulo tiroideo", "istmo tiroideo", "tiroides", "TIRADS", "nódulo coloide", "bocio", "tiroiditis", "glándula tiroides"],
         prompt: `Actúa como radiólogo/endocrinólogo. Estructura este informe de ecografía tiroidea:
 
 # INFORME DE ECOGRAFÍA TIROIDEA

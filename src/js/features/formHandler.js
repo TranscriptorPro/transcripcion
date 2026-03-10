@@ -107,15 +107,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ---- Extract patient data from transcription ----
 const PATIENT_NAME_REGEX = /(?:nombre(?:\s+del\s+paciente)?\s*(?::|-)?\s*|paciente\s+(?:de\s+nombre\s+)?)([A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+){1,3})/i;
-const PATIENT_NAME_AFTER_COMMA_REGEX = /paciente\s+(?:masculino|femenino)[^,.;\n]{0,60},\s*([A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+){1,3})/i;
-const PATIENT_NAME_LEAD_SEX_REGEX = /\b(?:mujer|hombre)\s+de\s+\d{1,3}\s*años,\s*([A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+){1,3})/i;
-const PATIENT_NAME_AT_START_REGEX = /^\s*([A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+){1,3}?)\s*(?:,\s*(?:(?:femenina|femenino|masculina|masculino|mujer|hombre)\s+(?:de\s+)?)?|\s+de\s+)\d{1,3}\s*años/i;
+const PATIENT_NAME_AFTER_COMMA_REGEX = /paciente\s+(?:masculino|femenino|femenina|masculina)[^,.;\n]{0,60},\s*([A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+){1,3})/i;
+const PATIENT_NAME_AFTER_AGE_REGEX = /\b(?:(?:paciente\s+)?(?:femenina|masculino|femenino|masculina|mujer|hombre)\s+(?:(?:posmenop[aá]usic[ao]|cr[oó]nic[ao]|diab[eé]tic[ao])\s+)?(?:de\s+)?|paciente\s+de\s+)\d{1,3}\s*años\s*,\s*([A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+){1,3})/i;
+const PATIENT_NAME_AT_START_REGEX = /^\s*([A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+){1,3}?)\s*(?:,\s*(?:[^\s,]+\s+){0,4}(?:de\s+)?|\s+de\s+)\d{1,3}\s*años/i;
 const DNI_REGEX = /(?:DNI|documento|D\.N\.I\.?)[:\s]*(?:N[°º]?\s*)?(\d{1,3}\.?\d{3}\.?\d{3})/i;
 const AGE_REGEX = /(\d{1,3})\s*años/i;
 const SEX_REGEX = /(?:sexo|género)\s*(?::|,)?\s*(masculino|femenino|masculina|femenina|masc|fem)/i;
 const SEX_FROM_PATIENT_REGEX = /\bpaciente\s+(masculino|femenino)\b/i;
 const SEX_LEAD_REGEX = /^\s*(mujer|hombre)\b/i;
-const SEX_STANDALONE_REGEX = /\b(femenina|femenino|masculina|masculino)\b/i;
+const SEX_STANDALONE_REGEX = /\b(femenina|femenino|masculina|masculino|mujer|hombre)\b/i;
 const INSURANCE_REGEX = /(?:obra\s+social|prepaga)\s*(?::|-)?\s*([^,.;\n]+)/i;
 const AFFILIATE_REGEX = /(?:n[°º]\s*afiliado|afiliad[oa]|nro\.?\s*afiliado)\s*(?::|-)?\s*([A-Za-z0-9.-]{3,30})/i;
 const WEIGHT_REGEX = /(?:peso)\s*(?::|-)?\s*(\d{2,3}(?:[.,]\d{1,2})?)\s*(?:kg|kilogramos?)?/i;
@@ -165,10 +165,10 @@ window.extractPatientDataFromText = function (text) {
     const normalized = String(text).replace(/\s+/g, ' ').trim();
     const nameMatchDirect = normalized.match(PATIENT_NAME_REGEX);
     const nameMatchComma = normalized.match(PATIENT_NAME_AFTER_COMMA_REGEX);
-    const nameMatchLeadSex = normalized.match(PATIENT_NAME_LEAD_SEX_REGEX);
+    const nameMatchAfterAge = normalized.match(PATIENT_NAME_AFTER_AGE_REGEX);
     const nameMatchStart = normalized.match(PATIENT_NAME_AT_START_REGEX);
     const candidateName = _cleanPatientNameCandidate(nameMatchStart && nameMatchStart[1])
-        || _cleanPatientNameCandidate(nameMatchLeadSex && nameMatchLeadSex[1])
+        || _cleanPatientNameCandidate(nameMatchAfterAge && nameMatchAfterAge[1])
         || _cleanPatientNameCandidate(nameMatchComma && nameMatchComma[1])
         || _cleanPatientNameCandidate(nameMatchDirect && nameMatchDirect[1]);
     if (candidateName) data.name = candidateName;

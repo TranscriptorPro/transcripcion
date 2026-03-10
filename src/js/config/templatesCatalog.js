@@ -199,7 +199,7 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
     tac: {
         name: "TAC / Tomografía",
         category: "Imágenes",
-        keywords: ["TAC", "tomografía", "TC", "cortes axiales", "contraste", "Hounsfield"],
+        keywords: ["TAC", "tomografía", "TC", "cortes axiales", "contraste", "Hounsfield", "tomografía axial", "tomografía computarizada", "tomografía computada", "colecciones hemáticas"],
         prompt: `Actúa como radiólogo especializado. Estructura este informe de TAC:
 
 # INFORME DE TOMOGRAFÍA AXIAL COMPUTARIZADA
@@ -265,7 +265,7 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
     densitometria: {
         name: "Densitometría Ósea (DXA)",
         category: "Imágenes",
-        keywords: ["densitometría", "DXA", "T-score", "Z-score", "osteoporosis", "osteopenia", "densidad mineral ósea"],
+        keywords: ["densitometría", "DXA", "T-score", "Z-score", "osteoporosis", "osteopenia", "densidad mineral ósea", "cuello femoral", "T score", "columna lumbar"],
         prompt: `Actúa como radiólogo especializado. Estructura este informe de densitometría ósea:
 
 # INFORME DE DENSITOMETRÍA ÓSEA (DXA)
