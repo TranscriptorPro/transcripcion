@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
 const PATIENT_NAME_REGEX = /(?:nombre(?:\s+del\s+paciente)?\s*(?::|-)?\s*|paciente\s+(?:de\s+nombre\s+)?)([A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+){1,3})/i;
 const PATIENT_NAME_AFTER_COMMA_REGEX = /paciente\s+(?:masculino|femenino)[^,.;\n]{0,60},\s*([A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+){1,3})/i;
 const PATIENT_NAME_LEAD_SEX_REGEX = /\b(?:mujer|hombre)\s+de\s+\d{1,3}\s*años,\s*([A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+){1,3})/i;
-const PATIENT_NAME_AT_START_REGEX = /^\s*([A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+){1,3})\s*,\s*(?:femenina|femenino|masculina|masculino|mujer|hombre|sexo|\d{1,3}\s*años)/i;
+const PATIENT_NAME_AT_START_REGEX = /^\s*([A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+){1,3}?)\s*(?:,\s*(?:(?:femenina|femenino|masculina|masculino|mujer|hombre)\s+(?:de\s+)?)?|\s+de\s+)\d{1,3}\s*años/i;
 const DNI_REGEX = /(?:DNI|documento|D\.N\.I\.?)[:\s]*(?:N[°º]?\s*)?(\d{1,3}\.?\d{3}\.?\d{3})/i;
 const AGE_REGEX = /(\d{1,3})\s*años/i;
 const SEX_REGEX = /(?:sexo|género)\s*(?::|,)?\s*(masculino|femenino|masculina|femenina|masc|fem)/i;
@@ -126,6 +126,13 @@ const _NAME_BLOCKLIST = new Set([
     'edad', 'anos', 'obra', 'social', 'afiliado', 'afiliada'
 ]);
 
+const _NAME_STOPWORDS = new Set([
+    'que', 'por', 'para', 'con', 'sin', 'se', 'su', 'sus',
+    'un', 'una', 'el', 'en', 'es', 'como', 'pero', 'no',
+    'ya', 'ha', 'muy', 'hay', 'ante', 'sobre', 'entre',
+    'realiza', 'presenta', 'refiere', 'acude', 'consulta', 'ingresa'
+]);
+
 function _cleanPatientNameCandidate(raw) {
     let c = String(raw || '').replace(/[.,;:]/g, ' ').replace(/\s+/g, ' ').trim();
     if (!c) return '';
@@ -133,11 +140,21 @@ function _cleanPatientNameCandidate(raw) {
     if (!c) return '';
     const tokens = c.split(/\s+/).filter(Boolean);
     if (tokens.length < 2) return '';
-    const meaningful = tokens.filter(t => t.length > 2);
-    if (meaningful.length < 2) return '';
+    // Reject if any token is a medical/form term
     if (tokens.some(t => _NAME_BLOCKLIST.has(t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()))) return '';
-    return c
-        .split(/\s+/)
+    // Truncate at first stopword (que, por, se, con, ...)
+    const nameTokens = [];
+    for (const t of tokens) {
+        const norm = t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        if (_NAME_STOPWORDS.has(norm)) break;
+        nameTokens.push(t);
+    }
+    // Strip trailing prepositions (artifacts of greedy capture)
+    while (nameTokens.length && /^(?:de|del|y)$/i.test(nameTokens[nameTokens.length - 1])) nameTokens.pop();
+    if (nameTokens.length < 2) return '';
+    const meaningful = nameTokens.filter(t => t.length > 2);
+    if (meaningful.length < 2) return '';
+    return nameTokens
         .map(w => w ? (w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()) : w)
         .join(' ');
 }
@@ -150,10 +167,10 @@ window.extractPatientDataFromText = function (text) {
     const nameMatchComma = normalized.match(PATIENT_NAME_AFTER_COMMA_REGEX);
     const nameMatchLeadSex = normalized.match(PATIENT_NAME_LEAD_SEX_REGEX);
     const nameMatchStart = normalized.match(PATIENT_NAME_AT_START_REGEX);
-    const candidateName = _cleanPatientNameCandidate(nameMatchDirect && nameMatchDirect[1])
-        || _cleanPatientNameCandidate(nameMatchComma && nameMatchComma[1])
+    const candidateName = _cleanPatientNameCandidate(nameMatchStart && nameMatchStart[1])
         || _cleanPatientNameCandidate(nameMatchLeadSex && nameMatchLeadSex[1])
-        || _cleanPatientNameCandidate(nameMatchStart && nameMatchStart[1]);
+        || _cleanPatientNameCandidate(nameMatchComma && nameMatchComma[1])
+        || _cleanPatientNameCandidate(nameMatchDirect && nameMatchDirect[1]);
     if (candidateName) data.name = candidateName;
     const dniMatch = text.match(DNI_REGEX);
     if (dniMatch) data.dni = dniMatch[1];

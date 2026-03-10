@@ -1128,6 +1128,20 @@ test('extractPatientDataFromText extrae nombre al inicio + sexo femenina', () =>
     assertEqual(data.age, 60, 'Debe extraer edad 60');
 });
 
+test('extractPatientDataFromText extrae nombre al inicio + de X años sin sexo', () => {
+    const txt = 'Miguel sánchez de 64 años, obra social IAPOS, DNI 26716975, nro de afiliado 267169795, paciente que por cefalea se realiza resonancia magnética cerebral';
+    const data = global.extractPatientDataFromText(txt);
+    assertEqual(data.name, 'Miguel Sánchez', `Debe extraer nombre al inicio (no "que por cefalea"), obtuvo: ${data.name}`);
+    assertEqual(data.age, 64, 'Debe extraer edad 64');
+    assertEqual(data.dni, '26716975', 'Debe extraer DNI');
+    assert(data.insurance && data.insurance.includes('IAPOS'), `Debe extraer obra social IAPOS, obtuvo: ${data.insurance}`);
+});
+
+test('extractPatientDataFromText no confunde "paciente que" con nombre', () => {
+    const data = global.extractPatientDataFromText('paciente que por cefalea se realiza una resonancia');
+    assert(!data.name, `No debe extraer nombre falso, obtuvo: ${data.name}`);
+});
+
 test('extractPatientDataFromText extrae peso y altura', () => {
     const data = global.extractPatientDataFromText('Paciente masculino de 55 años, Juan Pérez. Peso: 82 kg. Altura: 1.74 m.');
     assertEqual(data.weight, '82', `Debe extraer peso, obtuvo: ${data.weight}`);
