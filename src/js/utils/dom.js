@@ -38,7 +38,7 @@ window.fetchWithTimeout = function(url, options, timeoutMs = 120000) {
         'FEVI','TAPSE','PSAP','FOP','CIA','CIV','DAP','VCS','VCI','AP','TP','AR','IT','EM',
         'NYHA','KPS','ECOG','ASA','PEEP','FIO2','CPAP','BIPAP','IV','VO','IM','SC','SL','EV',
         'DNI','NHC','HC','ID','OSDE','IAPOS','IOMA','PAMI','SOS',
-        'DR','DRA','LIC','ING','MP','MN'
+        'LIC','ING','MP','MN'
     ]);
 
     // Palabras pequeñas que van en minúscula (salvo inicio de oración)
@@ -75,8 +75,17 @@ window.fetchWithTimeout = function(url, options, timeoutMs = 120000) {
         return false;
     }
 
+    function _normalizeProfessionalTitleToken(word) {
+        const m = String(word || '').match(/^([dD][rR][aA]?)(\.?)([,:;!?)]*)$/);
+        if (!m) return null;
+        const base = m[1].toLowerCase() === 'dra' ? 'Dra.' : 'Dr.';
+        return base + (m[3] || '');
+    }
+
     function _capitalizeWord(word) {
         if (!word) return '';
+        const profTitle = _normalizeProfessionalTitleToken(word);
+        if (profTitle) return profTitle;
         if (_isUpperSigla(word)) return word.toUpperCase();
         return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
     }
