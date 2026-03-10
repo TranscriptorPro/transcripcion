@@ -536,6 +536,8 @@ window.triggerPatientDataCheck = function(rawText) {
     delete savedConfig.patientDni;
     delete savedConfig.patientAge;
     delete savedConfig.patientSex;
+    delete savedConfig.patientWeight;
+    delete savedConfig.patientHeight;
     delete savedConfig.patientInsurance;
     delete savedConfig.patientAffiliateNum;
     window._pdfConfigCache = savedConfig;
@@ -546,13 +548,15 @@ window.triggerPatientDataCheck = function(rawText) {
     const extracted = typeof extractPatientDataFromText === 'function'
         ? extractPatientDataFromText(rawText) : {};
 
-    const hasPatientData = !!(extracted.name || extracted.dni || extracted.age || extracted.sex || extracted.insurance || extracted.affiliateNum);
+    const hasPatientData = !!(extracted.name || extracted.dni || extracted.age || extracted.sex || extracted.weight || extracted.height || extracted.insurance || extracted.affiliateNum);
     if (hasPatientData) {
         // Encontrado en el audio/texto — guardar y notificar
         if (extracted.name) savedConfig.patientName = extracted.name;
         if (extracted.dni) savedConfig.patientDni = extracted.dni;
         if (extracted.age) savedConfig.patientAge = extracted.age;
         if (extracted.sex) savedConfig.patientSex = extracted.sex;
+        if (extracted.weight) savedConfig.patientWeight = extracted.weight;
+        if (extracted.height) savedConfig.patientHeight = extracted.height;
         if (extracted.insurance) savedConfig.patientInsurance = extracted.insurance;
         if (extracted.affiliateNum) savedConfig.patientAffiliateNum = extracted.affiliateNum;
         window._pdfConfigCache = savedConfig;
@@ -648,6 +652,9 @@ async function _doAutoStructure(options) {
     const savedHTML = editor.innerHTML;
     if (!checkStructurePrerequisites()) return false;
 
+    // Regla: extraer y poblar datos de paciente antes de estructurar.
+    triggerPatientDataCheck(rawText);
+
     window._lastRawTranscription = rawText;
 
     const aiProgressBar = document.getElementById('aiProgressBar');
@@ -697,8 +704,6 @@ async function _doAutoStructure(options) {
                 showToast('✅ Texto estructurado con IA', 'success');
             }
         }
-        triggerPatientDataCheck(rawText);
-
         // Notificación desktop si la ventana no está enfocada
         if (document.hidden && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
             new Notification('Transcriptor Pro', {
@@ -745,6 +750,7 @@ window.initStructurer = function () {
             const savedHTML = editor.innerHTML;
             window._lastRawTranscription = rawText;
             if (!checkStructurePrerequisites()) return;
+            triggerPatientDataCheck(rawText);
             const oldText = btnApplyStructure.textContent;
             btnApplyStructure.disabled = true;
             btnApplyStructure.textContent = "✨ Estructurando...";
@@ -778,7 +784,6 @@ window.initStructurer = function () {
                 const wizardTemplateCard = document.getElementById('wizardTemplateCard');
                 if (wizardTemplateCard) wizardTemplateCard.style.display = 'none';
                 if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURED');
-                triggerPatientDataCheck(rawText);
             } catch (e) {
                 editor.innerHTML = savedHTML;
                 _showStructurerFailureToast(e);

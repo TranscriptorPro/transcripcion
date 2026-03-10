@@ -1121,6 +1121,19 @@ test('extractPatientDataFromText extrae mujer + nombre en minúsculas', () => {
     assertEqual(data.age, 65, 'Debe extraer edad 65');
 });
 
+test('extractPatientDataFromText extrae nombre al inicio + sexo femenina', () => {
+    const data = global.extractPatientDataFromText('María Gómez, femenina de 60 años con sospecha de glaucoma, realiza campimetría.');
+    assertEqual(data.name, 'María Gómez', `Debe extraer nombre al inicio, obtuvo: ${data.name}`);
+    assertEqual(data.sex, 'F', 'Debe mapear femenina a F');
+    assertEqual(data.age, 60, 'Debe extraer edad 60');
+});
+
+test('extractPatientDataFromText extrae peso y altura', () => {
+    const data = global.extractPatientDataFromText('Paciente masculino de 55 años, Juan Pérez. Peso: 82 kg. Altura: 1.74 m.');
+    assertEqual(data.weight, '82', `Debe extraer peso, obtuvo: ${data.weight}`);
+    assertEqual(data.height, '1.74', `Debe extraer altura, obtuvo: ${data.height}`);
+});
+
 test('generateReportNumber genera formato XX-NNNNN-ddmmaa', () => {
     localStorage.clear();
     const fn = global.generateReportNumber;

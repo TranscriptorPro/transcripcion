@@ -92,6 +92,8 @@ window.initPatientDataModalHandlers = function () {
         if (data.dni) lines.push(`<strong>DNI:</strong> ${data.dni}`);
         if (data.age) lines.push(`<strong>Edad:</strong> ${data.age} años`);
         if (data.sex) lines.push(`<strong>Sexo:</strong> ${data.sex}`);
+        if (data.weight) lines.push(`<strong>Peso:</strong> ${data.weight} kg`);
+        if (data.height) lines.push(`<strong>Altura:</strong> ${data.height}`);
         if (data.insurance) lines.push(`<strong>Obra Social:</strong> ${data.insurance}`);
         if (data.affiliateNum) lines.push(`<strong>Nº Afiliado:</strong> ${data.affiliateNum}`);
         if (lines.length === 0) return;
@@ -124,7 +126,7 @@ window.initPatientDataModalHandlers = function () {
         const cfg = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
         const hasAnyPatientData = !!(
             cfg.patientName || cfg.patientDni || cfg.patientAge || cfg.patientSex ||
-            cfg.patientInsurance || cfg.patientAffiliateNum
+            cfg.patientWeight || cfg.patientHeight || cfg.patientInsurance || cfg.patientAffiliateNum
         );
         if (hasAnyPatientData) {
             window._insertPatientDataInEditor({
@@ -132,6 +134,8 @@ window.initPatientDataModalHandlers = function () {
                 dni: cfg.patientDni,
                 age: cfg.patientAge,
                 sex: cfg.patientSex,
+                weight: cfg.patientWeight,
+                height: cfg.patientHeight,
                 insurance: cfg.patientInsurance,
                 affiliateNum: cfg.patientAffiliateNum
             });
