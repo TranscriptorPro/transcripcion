@@ -1,7 +1,7 @@
 # 📘 Manual de Usuario — Transcriptor Médico Pro
 
-> **Versión:** 2.0.0  
-> **Última actualización:** 28 de febrero de 2026  
+> **Versión:** 2.1.0  
+> **Última actualización:** 10 de marzo de 2026  
 > **Plataforma:** Aplicación web progresiva (PWA)
 
 ---
@@ -12,12 +12,14 @@
 2. [Requisitos del sistema](#2-requisitos-del-sistema)
 3. [Instalación y acceso](#3-instalación-y-acceso)
 4. [Primer uso (Onboarding)](#4-primer-uso-onboarding)
-5. [Interfaz principal](#5-interfaz-principal)
-6. [Grabación de audio](#6-grabación-de-audio)
-7. [Carga de archivos de audio](#7-carga-de-archivos-de-audio)
-8. [Transcripción automática](#8-transcripción-automática)
-9. [Modo Normal vs Modo Pro](#9-modo-normal-vs-modo-pro)
-10. [Estructuración inteligente (Modo Pro)](#10-estructuración-inteligente-modo-pro)
+5. [Tour guiado (adaptativo)](#5-tour-guiado-adaptativo)
+6. [Interfaz principal](#6-interfaz-principal)
+7. [Grabación de audio](#7-grabación-de-audio)
+8. [Carga de archivos de audio](#8-carga-de-archivos-de-audio)
+9. [Transcripción automática](#9-transcripción-automática)
+10. [Modo Normal vs Modo Pro](#10-modo-normal-vs-modo-pro)
+11. [Estructuración inteligente (Modo Pro)](#11-estructuración-inteligente-modo-pro)
+12. [Estructuración desde texto y archivos](#12-estructuración-desde-texto-y-archivos)
 11. [Editor de informes](#11-editor-de-informes)
 12. [Datos del paciente](#12-datos-del-paciente)
 13. [Registro de pacientes](#13-registro-de-pacientes)
@@ -101,7 +103,23 @@ Después del onboarding, se inicia un **tour interactivo** que te guía por las 
 
 ---
 
-## 5. Interfaz principal
+## 5. Tour guiado (adaptativo)
+
+El tour interactivo ahora se adapta al perfil de usuario y al estado real de la interfaz.
+
+- **Por perfil:** muestra pasos diferentes para ADMIN, PRO, GIFT, CLINIC y NORMAL.
+- **Paso Modo Pro:** solo aparece cuando realmente aplica (ej: usuario NORMAL en contexto normal).
+- **Responsive:** omite automáticamente pasos cuyo elemento esté oculto en ese layout.
+- **Reanudación por perfil:** si cerrás el tour antes de terminar, continúa desde el último paso al volver a abrirlo.
+- **Reinicio manual:** podés forzar inicio desde el paso 1 con:
+   - Ayuda -> **♻ Reiniciar desde el inicio**
+   - Configuración -> Herramientas -> **♻ Reiniciar tutorial desde el inicio**
+
+Si finalizás todos los pasos, el tour se marca como completado para ese usuario.
+
+---
+
+## 6. Interfaz principal
 
 La interfaz se divide en:
 
@@ -139,9 +157,13 @@ Pulsá el botón **⚙️** en el encabezado para abrir el modal de Configuraci�
 | **💾 Respaldo** | Exportar/importar configuración y datos |
 | **ℹ️ Info de la app** | Versión, estado de la licencia, ID del dispositivo |
 
+### Comportamiento por tipo de usuario en "Mi Cuenta"
+- **App ADMIN:** podés editar nombre, matrícula y especialidad desde Configuración.
+- **Clones/usuarios finales:** "Mi Cuenta" es solo lectura; esos datos se administran desde el panel admin.
+
 ---
 
-## 6. Grabación de audio
+## 7. Grabación de audio
 
 ### Grabar en vivo
 1. Pulsá **🎙️ Grabar Audio**
@@ -159,7 +181,7 @@ Pulsá el botón **⚙️** en el encabezado para abrir el modal de Configuraci�
 
 ---
 
-## 7. Carga de archivos de audio
+## 8. Carga de archivos de audio
 
 ### Formatos soportados
 MP3, WAV, OGG, M4A, WebM — máximo 25 MB por archivo
@@ -179,7 +201,7 @@ MP3, WAV, OGG, M4A, WebM — máximo 25 MB por archivo
 
 ---
 
-## 8. Transcripción automática
+## 9. Transcripción automática
 
 1. Una vez cargado(s) el/los audio(s), pulsá **⚡ Transcribir Todo**
 2. Aparece una barra de progreso con el estado de cada archivo
@@ -199,7 +221,7 @@ La transcripción usa **Whisper** de Groq, un modelo de IA de última generació
 
 ---
 
-## 9. Modo Normal vs Modo Pro
+## 10. Modo Normal vs Modo Pro
 
 ### Modo Normal
 - Transcripción directa de audio a texto
@@ -220,7 +242,7 @@ Usá el toggle **Pro/Normal** en el encabezado de la app.
 
 ---
 
-## 10. Estructuración inteligente (Modo Pro)
+## 11. Estructuración inteligente (Modo Pro)
 
 ### Cómo funciona
 1. Tras la transcripción, la app analiza el texto y detecta el tipo de estudio
@@ -252,6 +274,29 @@ Organizadas por especialidad:
 - Al recibir el toast de detección, pulsá **Cambiar**
 - Seleccioná manualmente desde el selector de plantillas en la barra lateral
 - Re-estructurá con el botón **🤖 Estructurar con IA** o el atajo **Ctrl+Shift+R**
+
+---
+
+## 12. Estructuración desde texto y archivos
+
+Además de audio, podés estructurar directamente desde texto en contexto Pro.
+
+### Dónde está
+- En el panel de entrada, cambiá la fuente a **Texto**.
+
+### Formatos soportados para adjuntar
+- **TXT**
+- **DOCX**
+- **PDF** (con texto seleccionable)
+- **DOC** (compatibilidad extendida)
+
+### Flujo recomendado
+1. Pegá texto manual o adjuntá archivo.
+2. Revisá que el contenido cargado sea correcto.
+3. Pulsá **Estructurar texto**.
+
+### Nota sobre archivos DOC
+- Si un `.doc` antiguo viene dañado o con codificación extraña, la app puede pedir convertirlo a `.docx` para mejor compatibilidad.
 
 ---
 

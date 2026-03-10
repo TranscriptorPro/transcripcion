@@ -1,4 +1,4 @@
-# ⚡ Guía Rápida — Transcriptor Médico Pro v2.0
+# ⚡ Guía Rápida — Transcriptor Médico Pro v2.1
 
 > **Empezá a usar la app en 3 minutos**
 
@@ -24,6 +24,13 @@ Al iniciar, el **Asistente de sesión** te pide:
 
 > 💡 **Configuración:** Pulsá el ícono **⚙️** en el encabezado para abrir el panel de Configuración. Desde ahí podés cambiar el skin visual (🎭 Skins), ajustar la apariencia, gestionar tu cuenta y más.
 
+### Tour guiado rápido
+- Iniciar: **Ayuda -> Iniciar tour interactivo**
+- Reanudar: si lo cerrás, continúa desde el último paso del perfil actual
+- Reiniciar desde cero:
+	- **Ayuda -> Reiniciar desde el inicio**
+	- **Configuración -> Herramientas -> Reiniciar tutorial desde el inicio**
+
 ---
 
 ## 3. Cargá o grabá el audio
@@ -46,6 +53,12 @@ Al iniciar, el **Asistente de sesión** te pide:
 Pulsá ⚡ **Transcribir Todo**. La IA (Whisper) convierte el audio a texto en segundos.
 
 **¿Usás Modo Pro?** Pulsá el botón arcoíris ✨ **Transcribir + Estructurar**. Hace todo en un solo paso: transcribe → detecta el tipo de estudio → estructura el informe automáticamente.
+
+### Alternativa en Modo Pro: estructurar desde texto/archivo
+- Cambiá la fuente de entrada a **Texto**.
+- Podés pegar texto o adjuntar: **TXT, DOC, DOCX, PDF**.
+- Luego pulsá **Estructurar texto**.
+- Si un `.doc` antiguo falla, convertí a `.docx` y reintentá.
 
 ---
 
@@ -102,6 +115,7 @@ En la barra lateral, completá:
 - 🕒 **Versiones:** Botón 🕒 en la barra del editor para ver y restaurar versiones anteriores del informe
 - 🎨 **Colores personalizados:** En Configuración → Apariencia, usá el selector de color corporativo para adaptar la paleta a tu institución
 - ✉️ **Soporte:** Botón de contacto en el encabezado para reportar problemas o sugerencias
+- 👤 **Mi Cuenta:** en app ADMIN es editable; en clones se muestra solo lectura
 
 ---
 
