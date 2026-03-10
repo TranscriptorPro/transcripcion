@@ -5255,6 +5255,8 @@ console.log('\n── Bloque 86: settingsPanel + pricingCart — estructura ─�
 
 const settingsCode = fs.readFileSync(path.join(root, 'src/js/features/settingsPanel.js'), 'utf-8');
 const pricingCode  = fs.readFileSync(path.join(root, 'src/js/features/pricingCart.js'), 'utf-8');
+const bizClientFlowCode = fs.readFileSync(path.join(root, 'src/js/features/businessClientAdminUtils.js'), 'utf-8');
+const bizUiHelpersCode = fs.readFileSync(path.join(root, 'src/js/features/businessUiHelpers.js'), 'utf-8');
 
 test('settingsPanel — tiene initSettingsPanel', () => {
     assertIncludes(settingsCode, 'initSettingsPanel');
@@ -5303,6 +5305,23 @@ test('pricingCart — resumen usa displayPrice convertido', () => {
 test('pricingCart — payload incluye currency y exchangeRate', () => {
     assertIncludes(pricingCode, 'currency: _currency');
     assertIncludes(pricingCode, "exchangeRate: _currency === 'ARS' ? _getExchangeRate() : null");
+});
+
+test('PWA client flow — _initClient invoca _tryPwaInstall', () => {
+    assertIncludes(bizClientFlowCode, 'function _initClient()');
+    assertIncludes(bizClientFlowCode, '_tryPwaInstall(3)');
+});
+
+test('PWA helper — escucha beforeinstallprompt y muestra banner', () => {
+    assertIncludes(bizUiHelpersCode, "window.addEventListener('beforeinstallprompt'");
+    assertIncludes(bizUiHelpersCode, '_showPwaInstallBanner()');
+});
+
+test('PDF logos — institución y profesional se renderizan en bloques separados', () => {
+    assertIncludes(pdfMakerCode, 'function drawWorkplaceBanner()');
+    assertIncludes(pdfMakerCode, 'if (instLogoB64)');
+    assertIncludes(pdfMakerCode, 'function drawHeader()');
+    assertIncludes(pdfMakerCode, 'if (profLogoB64 && profLogoB64 !== instLogoB64)');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
