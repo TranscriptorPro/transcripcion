@@ -5305,6 +5305,13 @@ test('userGuide — construye pasos adaptativos por contexto', () => {
     assertIncludes(guideCode, 'activeTourSteps');
 });
 
+test('userGuide — adapta textos por perfil (PRO/GIFT/CLINIC/ADMIN)', () => {
+    assertIncludes(guideCode, 'resolveStepText');
+    assertIncludes(guideCode, 'isClinic');
+    assertIncludes(guideCode, 'isGift');
+    assertIncludes(guideCode, 'planCode');
+});
+
 // Validar carga de archivos de texto enriquecidos en Modo Pro
 const proSourceModeCode = fs.readFileSync(path.join(root, 'src/js/features/proSidebarSourceMode.js'), 'utf-8');
 
@@ -5324,6 +5331,12 @@ test('proSidebarSourceMode — mejora calidad de extracción .doc', () => {
     assertIncludes(proSourceModeCode, 'scoreReadableText');
     assertIncludes(proSourceModeCode, 'detectLikelyCorruptedExtraction');
     assertIncludes(proSourceModeCode, 'Convertí a .docx para mejor compatibilidad');
+});
+
+const factorySetupCode = fs.readFileSync(path.join(root, 'src/js/features/businessFactorySetupUtils.js'), 'utf-8');
+
+test('factory setup — persiste planCode en CLIENT_CONFIG', () => {
+    assertIncludes(factorySetupCode, 'planCode');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════

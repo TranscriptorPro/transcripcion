@@ -58,24 +58,28 @@
     // ── Interactive Tour (Spotlight) ──
     const TOUR_STEPS_BASE = [
         {
+            id: 'record',
             target: '#recordBtn',
             title: '🎙️ Paso 1: Grabá o subí tu audio',
             text: 'Tocá este botón para dictar en vivo. También podés arrastrar archivos de audio a la zona de carga que está debajo.',
             position: 'right'
         },
         {
+            id: 'drop-zone',
             target: '#dropZone',
             title: '📁 Zona de carga',
             text: 'Arrastrá archivos MP3, WAV, M4A u OGG acá. Podés subir varios a la vez.',
             position: 'right'
         },
         {
+            id: 'transcribe',
             target: '#transcribeBtn',
             title: '⚡ Paso 2: Transcribí',
             text: 'Una vez cargado el audio, pulsá este botón. La IA convierte tu dictado a texto en segundos.',
             position: 'right'
         },
         {
+            id: 'pro-activation',
             target: '#proToggleContainer',
             title: '✨ Modo Pro',
             text: 'Si activás el Modo Pro, la app puede estructurar automáticamente tus informes con IA y plantillas médicas especializadas.',
@@ -83,6 +87,7 @@
             when: (ctx) => !!ctx.showProActivationStep
         },
         {
+            id: 'pro-input',
             target: '#proInputSourceSwitch',
             title: '🧠 Entrada de texto estructurada',
             text: 'En contexto Pro podés estructurar directamente desde texto sin grabar audio.',
@@ -90,6 +95,7 @@
             when: (ctx) => !!ctx.isProLike
         },
         {
+            id: 'admin-panel',
             target: '#btnAdminAccess',
             title: '🛡️ Panel de administración',
             text: 'Desde acá gestionás usuarios, planes y configuración avanzada de la plataforma.',
@@ -98,12 +104,14 @@
             when: (ctx) => !!ctx.isAdmin
         },
         {
+            id: 'editor',
             target: '#editor',
             title: '📝 Paso 3: Editá el informe',
             text: 'Acá aparece tu texto transcrito y estructurado. Podés editar directamente, usar negrita, cursiva, listas y tablas.',
             position: 'left'
         },
         {
+            id: 'export',
             target: '#btnConfigPdfMain, #downloadBtnContainer',
             title: '📄 Paso 4: Exportá',
             text: 'Configurá tus datos profesionales, previsualizá y descargá tu informe como PDF, Word, TXT o HTML.',
@@ -115,25 +123,60 @@
     let tourActive = false;
     let tourElements = {};
     let activeTourSteps = [];
+    let activeTourContext = null;
 
     function getTourContext() {
         const cfg = window.CLIENT_CONFIG || {};
         const type = String(cfg.type || 'NORMAL').toUpperCase();
+        const planCode = String(cfg.planCode || '').toLowerCase();
         const mode = String(window.currentMode || 'normal').toLowerCase();
         const proToggleContainer = document.getElementById('proToggleContainer');
         const proToggleVisible = !!(proToggleContainer && proToggleContainer.offsetParent !== null);
         const isAdmin = type === 'ADMIN';
         const isNormal = type === 'NORMAL';
         const isProLike = (type === 'PRO') || !!cfg.hasProMode || mode === 'pro';
+        const isClinic = !!cfg.canGenerateApps || planCode === 'clinic';
+        const isGift = planCode === 'gift';
+        const isPro = type === 'PRO' && !isClinic && !isGift;
 
         return {
             type,
+            planCode,
             mode,
             isAdmin,
             isNormal,
             isProLike,
+            isClinic,
+            isGift,
+            isPro,
             showProActivationStep: isNormal && proToggleVisible && mode !== 'pro'
         };
+    }
+
+    function resolveStepText(step, ctx) {
+        const id = step && step.id;
+        const context = ctx || {};
+
+        if (id === 'pro-input') {
+            if (context.isClinic) {
+                return 'Modo clínica: estructurá textos por profesional y mantené un flujo consistente para todo el equipo.';
+            }
+            if (context.isGift) {
+                return 'Tu clon GIFT ya viene listo para estructurar desde texto sin grabar audio.';
+            }
+            if (context.isAdmin) {
+                return 'Como admin podés validar la estructuración desde texto para testear plantillas y flujo IA.';
+            }
+            if (context.isPro) {
+                return 'Tu plan Pro permite estructurar directamente desde texto sin depender del audio.';
+            }
+        }
+
+        if (id === 'admin-panel' && context.isAdmin) {
+            return 'Desde este panel administrás usuarios, planes, licencias y configuración de clones.';
+        }
+
+        return step.text;
     }
 
     function buildTourSteps() {
@@ -215,7 +258,7 @@
 
         // Update text
         tourElements.title.textContent = step.title;
-        tourElements.text.textContent = step.text;
+        tourElements.text.textContent = resolveStepText(step, activeTourContext || getTourContext());
         tourElements.nextBtn.textContent = index === activeTourSteps.length - 1 ? '✅ Finalizar' : 'Siguiente →';
 
         // Update dots
@@ -304,6 +347,7 @@
     function startTour() {
         if (tourActive) return;
 
+        activeTourContext = getTourContext();
         activeTourSteps = buildTourSteps();
         if (!Array.isArray(activeTourSteps) || activeTourSteps.length === 0) {
             if (typeof showToast === 'function') showToast('No hay pasos de guía disponibles para este perfil.', 'info');

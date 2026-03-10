@@ -17,6 +17,7 @@
 
 window.CLIENT_CONFIG = {
     type: 'ADMIN',        // ADMIN, TRIAL, NORMAL, PRO
+    planCode: 'admin',
     status: 'active',
     specialties: ['ALL'], // ALL = todas las especialidades
     maxDevices: Infinity,

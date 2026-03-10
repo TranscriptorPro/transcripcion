@@ -63,6 +63,7 @@ window.handleFactorySetupCore = async function (medicoId) {
         const clientConfig = {
             medicoId:         medicoId,
             type:             pc.type,
+            planCode:         plan,
             status:           String(doctor.Estado || 'active'),
             specialties:      specialties,
             maxDevices:       Number(doctor.Devices_Max) || 2,
