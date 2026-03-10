@@ -376,11 +376,11 @@ function _postProcessStructuredMarkdown(md) {
         out = out.replace(pattern, replacement);
     });
 
-    // Eliminar secciones markdown vacías (heading sin contenido debajo)
+    // Eliminar secciones markdown vacías (solo subtítulos H2/H3, nunca el título principal H1)
     // Ej: "## Datos Demográficos\n\n## Siguiente Sección" → elimina "## Datos Demográficos"
-    out = out.replace(/^(#{1,3}\s+[^\n]+)\n+(?=#{1,3}\s)/gm, '');
-    // Heading vacío al final del documento
-    out = out.replace(/\n#{1,3}\s+[^\n]+\s*$/g, '');
+    out = out.replace(/^(#{2,3}\s+[^\n]+)\n+(?=#{1,3}\s)/gm, '');
+    // Heading H2/H3 vacío al final del documento
+    out = out.replace(/\n#{2,3}\s+[^\n]+\s*$/g, '');
 
     return out.trim();
 }
