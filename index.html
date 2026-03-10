@@ -49,9 +49,16 @@
                 if (savedSkin) try { localStorage.setItem('app_skin', savedSkin); } catch(_) {}
                 window.location.replace(window.location.pathname);
             });
-            // Bloquear el resto de la carga
-            document.write('<body style="font-family:Inter,sans-serif;padding:3rem;text-align:center;background:#f8fafc"><h2 style="color:#1a56a0">Actualizando...</h2><p style="color:#666">Se detect\u00f3 una nueva versi\u00f3n. La app se recargar\u00e1 en un instante.</p></body>');
-            document.close();
+            // Mostrar una pantalla de actualizacion sin usar document.write
+            var _renderUpdatingScreen = function() {
+                if (!document.body) return;
+                document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f8fafc;padding:3rem;text-align:center;font-family:Inter,sans-serif"><div><h2 style="color:#1a56a0;margin:0 0 .5rem 0">Actualizando...</h2><p style="color:#666;margin:0">Se detecto una nueva version. La app se recargara en un instante.</p></div></div>';
+            };
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', _renderUpdatingScreen, { once: true });
+            } else {
+                _renderUpdatingScreen();
+            }
             return;
         }
         // Primera visita o misma versión → guardar versión actual
