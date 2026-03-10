@@ -476,7 +476,7 @@ window.initBusinessSuite = async function () {
                     '⚠️ Atención',
                     'Estás abriendo un link de usuario en tu sesión de ADMINISTRADOR.\n\nSi continúas, tu sesión admin se convertirá en la del usuario "' + window._PENDING_SETUP_ID + '".\n\n¿Querés continuar?'
                 )
-                : confirm('⚠️ ATENCIÓN: ¿Querés convertir tu sesión admin en la del usuario "' + window._PENDING_SETUP_ID + '"?');
+                : false;
             if (!confirmar) {
                 // Limpiar y seguir como admin
                 delete window._PENDING_SETUP_ID;

@@ -134,7 +134,7 @@
             document.getElementById('btnClearSnapshots').addEventListener('click', async () => {
                 const ok = typeof window.showCustomConfirm === 'function'
                     ? await window.showCustomConfirm('🗑️ Borrar historial', '¿Eliminar todas las versiones guardadas?')
-                    : confirm('¿Eliminar todas las versiones guardadas?');
+                    : false;
                 if (ok) {
                     clearEditorSnapshots();
                     overlay.classList.remove('active');

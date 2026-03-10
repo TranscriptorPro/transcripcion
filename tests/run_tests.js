@@ -6728,6 +6728,9 @@ const indexCodeSec = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
 const fixedTipsCodeSec = fs.readFileSync(path.join(root, 'src/js/features/fixedTooltips.js'), 'utf-8');
 const userGuideCodeSec = fs.readFileSync(path.join(root, 'src/js/features/userGuide.js'), 'utf-8');
 const settingsPopulateCodeSec = fs.readFileSync(path.join(root, 'src/js/features/settingsModalPopulateUtils.js'), 'utf-8');
+const editorDialogCodeSec = fs.readFileSync(path.join(root, 'src/js/features/editorDialogUtils.js'), 'utf-8');
+const snapshotsCodeSec = fs.readFileSync(path.join(root, 'src/js/features/editorSnapshotsUtils.js'), 'utf-8');
+const settingsBackupActionsCodeSec = fs.readFileSync(path.join(root, 'src/js/features/settingsBackupActionsUtils.js'), 'utf-8');
 
 test('AdminBase-1 — config.js detecta URL oficial /transcripcion', () => {
     assert(configCodeSec.includes("/transcripcion") && configCodeSec.includes('isOfficialAdminBase'),
@@ -6774,6 +6777,19 @@ test('Version-2 — settings usa APP_VERSION/app_version y no hardcode 2.0 fijo'
         'settingsModalPopulateUtils debe leer version en runtime');
     assert(!settingsPopulateCodeSec.includes("textContent = '2.0'"),
         'settingsModalPopulateUtils no debe hardcodear 2.0 en labels de version');
+});
+
+test('Modal-1 — editorDialogUtils no usa window.confirm/window.prompt nativos', () => {
+    assert(!editorDialogCodeSec.includes('window.confirm('), 'No debe usar window.confirm en dialogs de la app');
+    assert(!editorDialogCodeSec.includes('window.prompt('), 'No debe usar window.prompt en dialogs de la app');
+    assert(editorDialogCodeSec.includes('ensureConfirmModal') && editorDialogCodeSec.includes('ensurePromptModal'),
+        'Debe construir scaffolding de modales propios si faltan en DOM');
+});
+
+test('Modal-2 — no hay fallback a confirm() nativo en módulos críticos', () => {
+    assert(!businessCodeSec.includes(': confirm('), 'business.js no debe fallbackear a confirm()');
+    assert(!snapshotsCodeSec.includes(': confirm('), 'editorSnapshotsUtils.js no debe fallbackear a confirm()');
+    assert(!settingsBackupActionsCodeSec.includes(': confirm('), 'settingsBackupActionsUtils.js no debe fallbackear a confirm()');
 });
 
 // Limpiar estado después de tests

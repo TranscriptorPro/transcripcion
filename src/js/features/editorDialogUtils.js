@@ -1,20 +1,62 @@
 // ============ EDITOR: CUSTOM DIALOGS ============
 
 (function initEditorDialogUtils() {
+    function ensureConfirmModal() {
+        let overlay = document.getElementById('customConfirmModal');
+        if (overlay) return overlay;
+
+        overlay = document.createElement('div');
+        overlay.id = 'customConfirmModal';
+        overlay.className = 'modal-overlay';
+        overlay.style.zIndex = '10050';
+        overlay.innerHTML = `
+            <div class="modal" style="max-width:380px;">
+                <div class="modal-header" style="padding:1rem 1.5rem 0.5rem;">
+                    <h2 id="customConfirmTitle" style="font-size:1rem;">Confirmar</h2>
+                </div>
+                <div class="modal-body" style="padding:0.5rem 1.5rem 1rem;">
+                    <p id="customConfirmMessage" style="font-size:0.9rem;color:var(--text-primary);line-height:1.5;white-space:pre-line;"></p>
+                </div>
+                <div class="modal-footer" style="padding:0.75rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:0.5rem;justify-content:flex-end;">
+                    <button class="btn btn-outline" id="customConfirmCancel">Cancelar</button>
+                    <button class="btn btn-primary" id="customConfirmAccept">Aceptar</button>
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+        return overlay;
+    }
+
+    function ensurePromptModal() {
+        let overlay = document.getElementById('customPromptModal');
+        if (overlay) return overlay;
+
+        overlay = document.createElement('div');
+        overlay.id = 'customPromptModal';
+        overlay.className = 'modal-overlay';
+        overlay.style.zIndex = '10050';
+        overlay.innerHTML = `
+            <div class="modal" style="max-width:400px;">
+                <div class="modal-header" style="padding:1rem 1.5rem 0.5rem;">
+                    <h2 id="customPromptTitle" style="font-size:1rem;">Ingrese un valor</h2>
+                </div>
+                <div class="modal-body" style="padding:0.5rem 1.5rem 1rem;">
+                    <input type="text" id="customPromptInput" style="width:100%;padding:0.6rem 0.75rem;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;background:var(--bg-card);color:var(--text-primary);outline:none;" />
+                </div>
+                <div class="modal-footer" style="padding:0.75rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:0.5rem;justify-content:flex-end;">
+                    <button class="btn btn-outline" id="customPromptCancel">Cancelar</button>
+                    <button class="btn btn-primary" id="customPromptAccept">Aceptar</button>
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+        return overlay;
+    }
+
     function showCustomConfirm(title, message, onAccept) {
-        const overlay = document.getElementById('customConfirmModal');
+        const overlay = ensureConfirmModal();
         const titleEl = document.getElementById('customConfirmTitle');
         const msgEl = document.getElementById('customConfirmMessage');
         const acceptBtn = document.getElementById('customConfirmAccept');
         const cancelBtn = document.getElementById('customConfirmCancel');
-
-        if (!overlay) {
-            if (onAccept) {
-                if (window.confirm(message)) onAccept();
-                return Promise.resolve(false);
-            }
-            return Promise.resolve(window.confirm(message));
-        }
 
         titleEl.textContent = title;
         msgEl.textContent = message;
@@ -42,13 +84,11 @@
     }
 
     function showCustomPrompt(title, placeholder, defaultValue) {
-        const overlay = document.getElementById('customPromptModal');
+        const overlay = ensurePromptModal();
         const titleEl = document.getElementById('customPromptTitle');
         const input = document.getElementById('customPromptInput');
         const acceptBtn = document.getElementById('customPromptAccept');
         const cancelBtn = document.getElementById('customPromptCancel');
-
-        if (!overlay) return Promise.resolve(window.prompt(title, defaultValue || ''));
 
         titleEl.textContent = title;
         input.placeholder = placeholder || '';
