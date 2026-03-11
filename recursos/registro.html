@@ -1217,7 +1217,7 @@
                         <div id="paymentPortalStatus" style="font-size:.85rem;font-weight:600;margin-bottom:.5rem;">Estado: —</div>
                         <div id="paymentPortalMeta" style="font-size:.8rem;color:var(--text-light);margin-bottom:.7rem;"></div>
                         <div id="paymentTransferData" style="font-size:.78rem;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:.65rem;margin-bottom:.7rem;color:#334155;"></div>
-                        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+                        <div id="paymentExtraFields" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
                             <input type="number" id="paymentAmountInput" step="0.01" min="0" placeholder="Monto (opcional)" style="max-width:180px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:.82rem;">
                             <input type="text" id="paymentNoteInput" placeholder="Nota (opcional)" style="flex:1;min-width:180px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:.82rem;">
                         </div>
@@ -1227,7 +1227,9 @@
                             <button type="button" class="btn btn-primary" id="btnSendReceipt" disabled>📨 Enviar comprobante</button>
                             <span id="paymentUploadStatus" style="font-size:.78rem;color:var(--text-light);display:block;flex:1 1 100%;line-height:1.45;"></span>
                         </div>
-                        <div id="paymentHistoryList" style="margin-top:.8rem;font-size:.8rem;"></div>
+                        <div id="paymentHistorySection" style="margin-top:.8rem;font-size:.8rem;">
+                            <div id="paymentHistoryList"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1608,8 +1610,14 @@
             el.innerHTML = '<div style="font-weight:600;margin-bottom:.35rem;">Historial de comprobantes</div>' + rows.join('');
         }
 
-        function _paymentStateLabel(status) {
+        function _paymentStateLabel(status, kind) {
             const s = String(status || '').toLowerCase();
+            if (kind === 'registro') {
+                if (s === 'comprobante_recibido' || s === 'en_revision') return '📨 Comprobante enviado';
+                if (s === 'pago_confirmado' || s === 'aprobado') return '✅ Verificación completada';
+                if (s === 'rechazado') return '❌ Requiere revisión';
+                return '⏳ Pendiente de comprobante';
+            }
             if (s === 'pago_confirmado') return '💳 Pago confirmado';
             if (s === 'aprobado') return '✅ Aprobado';
             if (s === 'rechazado') return '❌ Rechazado';
@@ -1622,6 +1630,10 @@
             const metaEl = document.getElementById('paymentPortalMeta');
             const transferEl = document.getElementById('paymentTransferData');
             const uploadStatus = document.getElementById('paymentUploadStatus');
+            const extrasEl = document.getElementById('paymentExtraFields');
+            const historySection = document.getElementById('paymentHistorySection');
+            const amountInput = document.getElementById('paymentAmountInput');
+            const noteInput = document.getElementById('paymentNoteInput');
             if (!panel || !statusEl || !metaEl) return;
             panel.style.display = 'block';
             if (uploadStatus) uploadStatus.textContent = '';
@@ -1632,7 +1644,8 @@
                 if (data.error) throw new Error(data.error);
 
                 _paymentPortalId = id;
-                statusEl.textContent = `Estado: ${_paymentStateLabel(data.estado)}`;
+                const isInitialRegistration = data.kind === 'registro';
+                statusEl.textContent = `Estado: ${_paymentStateLabel(data.estado, data.kind)}`;
                 const metaParts = [];
                 if (data.nombre) metaParts.push(`Profesional: ${data.nombre}`);
                 if (data.email) metaParts.push(`Email: ${data.email}`);
@@ -1640,6 +1653,11 @@
                 if (data.monthlyAmount) metaParts.push(`Renovación estimada: ${Number(data.monthlyAmount).toFixed(2)} USD/mes`);
                 if (data.fechaVencimiento) metaParts.push(`Vencimiento: ${String(data.fechaVencimiento).split('T')[0]}`);
                 metaEl.textContent = metaParts.join(' · ');
+
+                if (extrasEl) extrasEl.style.display = isInitialRegistration ? 'none' : 'flex';
+                if (historySection) historySection.style.display = isInitialRegistration ? 'none' : 'block';
+                if (amountInput && isInitialRegistration) amountInput.value = '';
+                if (noteInput && isInitialRegistration) noteInput.value = '';
 
                 if (transferEl) {
                     const p = data.paymentData || {};
@@ -1657,12 +1675,13 @@
                         ${p.destinationNote ? `<div style="margin-top:.3rem;color:#0f766e;">ℹ️ ${p.destinationNote}</div>` : ''}
                     `;
                 }
-                _renderPaymentHistory(data.history || []);
+                if (!isInitialRegistration) {
+                    _renderPaymentHistory(data.history || []);
+                }
 
-                const amountInput = document.getElementById('paymentAmountInput');
                 if (amountInput && !amountInput.value && data.totalHoy) {
                     const n = Number(data.totalHoy);
-                    if (Number.isFinite(n) && n > 0) amountInput.value = n.toFixed(2);
+                    if (Number.isFinite(n) && n > 0 && !isInitialRegistration) amountInput.value = n.toFixed(2);
                 }
             } catch (err) {
                 statusEl.textContent = 'Estado: Error al cargar';
@@ -1704,7 +1723,7 @@
                     const data = await res.json();
                     if (data.error) throw new Error(data.error);
                     if (statusEl) {
-                        statusEl.textContent = '✅ Comprobante enviado correctamente. Tu pago será procesado en breve. Si se verifica, recibirás tu app en el correo que ingresaste en el formulario de registro, junto con instrucciones precisas para el primer uso. Gracias por tu compra. Esperamos que disfrutes tu producto.';
+                        statusEl.textContent = '✅ Comprobante enviado correctamente. Tu pago será procesado en breve. Si se verifica, recibirás tu app en el correo que ingresaste en el formulario de registro, junto con instrucciones precisas para el primer uso. Gracias por tu compra.';
                     }
                     input.value = '';
                     if (sendBtn) sendBtn.disabled = true;
@@ -2629,7 +2648,7 @@
                 const title = document.getElementById('step7Title');
                 const msg = document.getElementById('step7Message');
                 if (title) title.textContent = 'Portal de pagos';
-                if (msg) msg.innerHTML = 'Podés subir comprobantes cuando quieras. Te avisaremos aquí apenas validemos tu pago.';
+                if (msg) msg.innerHTML = 'Este portal es de único uso para tu pago inicial. Adjuntá tu comprobante y presioná Enviar comprobante. Luego procesaremos la verificación y recibirás tu app por correo con instrucciones de primer uso.';
                 const summary = document.getElementById('successPlanSummary');
                 if (summary) summary.style.display = 'none';
                 goStep(7, { force: true });
