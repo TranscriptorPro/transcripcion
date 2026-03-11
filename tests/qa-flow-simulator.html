@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QA Flow Simulator - Standalone</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .card {
+      background: #111827;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 1.5rem;
+      color: #93c5fd;
+    }
+    .sub {
+      margin: 0;
+      color: #94a3b8;
+      font-size: 0.92rem;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .row3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 900px) {
+      .row, .row3 { grid-template-columns: 1fr; }
+    }
+    label {
+      display: block;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+    input, select, textarea, button {
+      font: inherit;
+    }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid #475569;
+      background: #0b1220;
+      color: #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+    textarea { min-height: 76px; resize: vertical; }
+    .btns {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    button {
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 8px 12px;
+      background: #1f2937;
+      color: #e2e8f0;
+      cursor: pointer;
+    }
+    button:hover { filter: brightness(1.1); }
+    .pri { background: #1d4ed8; border-color: #1e40af; }
+    .ok { background: #047857; border-color: #065f46; }
+    .warn { background: #b45309; border-color: #92400e; }
+    .danger { background: #b91c1c; border-color: #991b1b; }
+    .muted { color: #94a3b8; font-size: 0.86rem; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 900px) {
+      .stats { grid-template-columns: 1fr 1fr; }
+    }
+    .stat {
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 10px;
+      background: #0b1220;
+      text-align: center;
+    }
+    .stat b {
+      display: block;
+      font-size: 1.2rem;
+      color: #bfdbfe;
+    }
+
+    .progress {
+      height: 10px;
+      border-radius: 999px;
+      background: #1f2937;
+      overflow: hidden;
+      border: 1px solid #334155;
+      margin-top: 10px;
+    }
+    .bar {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #2563eb, #10b981);
+      transition: width 0.2s ease;
+    }
+
+    .step {
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 10px;
+      background: #0b1220;
+    }
+    .step-head {
+      display: grid;
+      grid-template-columns: 1fr 160px 260px;
+      gap: 8px;
+      align-items: center;
+    }
+    @media (max-width: 1000px) {
+      .step-head { grid-template-columns: 1fr; }
+    }
+    .status-pending { color: #94a3b8; }
+    .status-running { color: #fcd34d; }
+    .status-pass { color: #86efac; }
+    .status-fail { color: #fca5a5; }
+    .status-skip { color: #c4b5fd; }
+    .small { font-size: 0.78rem; }
+    .hr { border-top: 1px solid #334155; margin: 10px 0; }
+    .right { text-align: right; }
+    .inline {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .chip {
+      display: inline-block;
+      border: 1px solid #334155;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 0.75rem;
+      color: #cbd5e1;
+      background: #1f2937;
+    }
+    .mono { font-family: Consolas, monospace; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>QA Flow Simulator (Standalone)</h1>
+      <p class="sub">Herramienta separada de la app. Guarda tu avance local, exporta/importa estado y te deja retomar sin repetir todo.</p>
+    </div>
+
+    <div class="card">
+      <div class="row3">
+        <div>
+          <label>Nombre de la sesion</label>
+          <input id="sessionName" placeholder="Ej: Gift critico - 2026-03-11">
+        </div>
+        <div>
+          <label>Preset de flujo</label>
+          <select id="presetSelect">
+            <option value="gift-critical">Gift critico (recomendado)</option>
+            <option value="admin-perf">Admin performance smoke</option>
+            <option value="blank">Vacio</option>
+          </select>
+        </div>
+        <div>
+          <label>Scope</label>
+          <input id="scopeInput" placeholder="Local, staging o prod">
+        </div>
+      </div>
+      <div class="btns" style="margin-top:10px;">
+        <button class="pri" id="btnLoadPreset">Cargar preset</button>
+        <button id="btnAddStep">Agregar paso</button>
+        <button id="btnSaveNow">Guardar ahora</button>
+        <button id="btnDuplicate">Duplicar sesion</button>
+        <button class="warn" id="btnResetProgress">Reset progreso</button>
+        <button class="danger" id="btnClearAll">Borrar todo</button>
+      </div>
+      <div style="margin-top:10px;" class="small muted">
+        Clave localStorage: <span class="mono">qa_flow_simulator_v1</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="stats">
+        <div class="stat"><b id="stTotal">0</b>Total</div>
+        <div class="stat"><b id="stPending">0</b>Pendiente</div>
+        <div class="stat"><b id="stRunning">0</b>En curso</div>
+        <div class="stat"><b id="stPass">0</b>Pass</div>
+        <div class="stat"><b id="stFail">0</b>Fail</div>
+      </div>
+      <div class="progress"><div class="bar" id="bar"></div></div>
+      <div class="small muted" style="margin-top:8px;">
+        Ultimo guardado: <span id="lastSaved">-</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <div>
+          <label>URL admin</label>
+          <input id="urlAdmin" placeholder="https://transcriptorpro.github.io/transcripcion/">
+        </div>
+        <div>
+          <label>URL clon (ejemplo)</label>
+          <input id="urlClone" placeholder="https://transcriptorpro.github.io/transcripcion/?id=GIFT...">
+        </div>
+      </div>
+      <div class="btns" style="margin-top:10px;">
+        <button id="btnOpenAdmin">Abrir admin</button>
+        <button id="btnOpenClone">Abrir clon</button>
+      </div>
+      <div class="small muted" style="margin-top:8px;">
+        Nota: una ventana privada/incognito debe abrirse manualmente en el navegador.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="btns" style="margin-bottom:8px;">
+        <button class="ok" id="btnExport">Exportar JSON</button>
+        <button id="btnImport">Importar JSON</button>
+      </div>
+      <textarea id="jsonArea" placeholder="Aqui aparece JSON exportado o pega uno para importar."></textarea>
+    </div>
+
+    <div class="card">
+      <div class="inline">
+        <h3 style="margin:0;">Checklist</h3>
+        <span class="chip" id="sessionChip">sesion sin nombre</span>
+      </div>
+      <div class="hr"></div>
+      <div id="stepsContainer"></div>
+      <div class="right">
+        <button id="btnAddStepBottom">Agregar paso</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const STORAGE_KEY = 'qa_flow_simulator_v1';
+
+      const STATUS = [
+        { v: 'pending', t: 'Pendiente' },
+        { v: 'running', t: 'En curso' },
+        { v: 'pass', t: 'Pass' },
+        { v: 'fail', t: 'Fail' },
+        { v: 'skip', t: 'Skip' }
+      ];
+
+      const PRESETS = {
+        'gift-critical': [
+          'Abrir admin y validar sesion',
+          'Abrir modal Crear Usuario Regalo',
+          'Paso 1: cargar nombre sin prefijo y sexo',
+          'Paso 2: cargar lugares de trabajo',
+          'Paso 3: cargar firma/logo y revisar preview',
+          'Paso 4: verificar defaults (plan/modo/devices/duracion)',
+          'Paso 5: revisar imagenes y resultado',
+          'Paso 6: crear usuario y copiar link',
+          'Abrir link en ventana privada',
+          'Confirmar que abre clon y no admin base',
+          'Probar transcripcion + estructurado con API activa',
+          'Generar PDF y validar Dr./Dra. + firma centrada'
+        ],
+        'admin-perf': [
+          'Login admin y medir tiempo de carga',
+          'Cambiar entre tabs y medir respuesta',
+          'Validar refresco solo en tab activa',
+          'Validar pausa en background tab',
+          'Crear usuario y verificar invalidacion cache',
+          'Editar usuario y verificar datos frescos',
+          'Revisar logs y tiempos de respuesta'
+        ],
+        'blank': []
+      };
+
+      const el = (id) => document.getElementById(id);
+
+      let state = {
+        sessionName: '',
+        scope: '',
+        preset: 'gift-critical',
+        urlAdmin: 'https://transcriptorpro.github.io/transcripcion/',
+        urlClone: '',
+        steps: [],
+        lastSavedAt: null,
+        createdAt: new Date().toISOString()
+      };
+
+      function nowIso() { return new Date().toISOString(); }
+
+      function load() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return false;
+          const parsed = JSON.parse(raw);
+          if (!parsed || typeof parsed !== 'object') return false;
+          state = Object.assign({}, state, parsed);
+          if (!Array.isArray(state.steps)) state.steps = [];
+          return true;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      function save() {
+        state.lastSavedAt = nowIso();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        el('lastSaved').textContent = new Date(state.lastSavedAt).toLocaleString();
+      }
+
+      function newStep(title) {
+        return {
+          id: 'st_' + Math.random().toString(36).slice(2, 10),
+          title: title || 'Nuevo paso',
+          status: 'pending',
+          notes: '',
+          evidence: '',
+          updatedAt: nowIso()
+        };
+      }
+
+      function applyPreset(key) {
+        const list = PRESETS[key] || [];
+        state.steps = list.map((t) => newStep(t));
+        state.preset = key;
+        save();
+        render();
+      }
+
+      function bindTopFields() {
+        el('sessionName').addEventListener('input', (e) => {
+          state.sessionName = e.target.value;
+          el('sessionChip').textContent = state.sessionName || 'sesion sin nombre';
+          save();
+        });
+        el('scopeInput').addEventListener('input', (e) => {
+          state.scope = e.target.value;
+          save();
+        });
+        el('presetSelect').addEventListener('change', (e) => {
+          state.preset = e.target.value;
+          save();
+        });
+        el('urlAdmin').addEventListener('input', (e) => {
+          state.urlAdmin = e.target.value;
+          save();
+        });
+        el('urlClone').addEventListener('input', (e) => {
+          state.urlClone = e.target.value;
+          save();
+        });
+      }
+
+      function setTopFields() {
+        el('sessionName').value = state.sessionName || '';
+        el('scopeInput').value = state.scope || '';
+        el('presetSelect').value = state.preset || 'gift-critical';
+        el('urlAdmin').value = state.urlAdmin || '';
+        el('urlClone').value = state.urlClone || '';
+        el('sessionChip').textContent = state.sessionName || 'sesion sin nombre';
+        el('lastSaved').textContent = state.lastSavedAt ? new Date(state.lastSavedAt).toLocaleString() : '-';
+      }
+
+      function moveStep(idx, dir) {
+        const ni = idx + dir;
+        if (ni < 0 || ni >= state.steps.length) return;
+        const tmp = state.steps[idx];
+        state.steps[idx] = state.steps[ni];
+        state.steps[ni] = tmp;
+        save();
+        render();
+      }
+
+      function deleteStep(idx) {
+        state.steps.splice(idx, 1);
+        save();
+        render();
+      }
+
+      function classByStatus(st) {
+        if (st === 'pass') return 'status-pass';
+        if (st === 'fail') return 'status-fail';
+        if (st === 'running') return 'status-running';
+        if (st === 'skip') return 'status-skip';
+        return 'status-pending';
+      }
+
+      function renderStats() {
+        const total = state.steps.length;
+        const by = { pending: 0, running: 0, pass: 0, fail: 0, skip: 0 };
+        state.steps.forEach((s) => { by[s.status] = (by[s.status] || 0) + 1; });
+
+        el('stTotal').textContent = String(total);
+        el('stPending').textContent = String(by.pending || 0);
+        el('stRunning').textContent = String(by.running || 0);
+        el('stPass').textContent = String(by.pass || 0);
+        el('stFail').textContent = String(by.fail || 0);
+
+        const done = (by.pass || 0) + (by.skip || 0);
+        const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+        el('bar').style.width = pct + '%';
+      }
+
+      function render() {
+        const c = el('stepsContainer');
+        c.innerHTML = '';
+
+        state.steps.forEach((s, idx) => {
+          const wrap = document.createElement('div');
+          wrap.className = 'step';
+
+          const statusOpts = STATUS.map((x) => `<option value="${x.v}" ${s.status === x.v ? 'selected' : ''}>${x.t}</option>`).join('');
+
+          wrap.innerHTML = [
+            '<div class="step-head">',
+              `<input data-k="title" data-i="${idx}" value="${escapeHtml(s.title)}" placeholder="Titulo del paso">`,
+              `<select data-k="status" data-i="${idx}" class="${classByStatus(s.status)}">${statusOpts}</select>`,
+              '<div class="btns">',
+                `<button data-a="up" data-i="${idx}">Subir</button>`,
+                `<button data-a="down" data-i="${idx}">Bajar</button>`,
+                `<button data-a="dup" data-i="${idx}">Duplicar</button>`,
+                `<button class="danger" data-a="del" data-i="${idx}">Eliminar</button>`,
+              '</div>',
+            '</div>',
+            '<div class="hr"></div>',
+            '<div class="row">',
+              '<div>',
+                '<label>Notas</label>',
+                `<textarea data-k="notes" data-i="${idx}" placeholder="Que paso, que validar, resultado esperado">${escapeHtml(s.notes || '')}</textarea>`,
+              '</div>',
+              '<div>',
+                '<label>Evidencia (URL, path, id)</label>',
+                `<textarea data-k="evidence" data-i="${idx}" placeholder="Ej: screenshot_2026-03-11_01.png o URL">${escapeHtml(s.evidence || '')}</textarea>`,
+              '</div>',
+            '</div>',
+            `<div class="small muted">Actualizado: ${new Date(s.updatedAt || state.createdAt).toLocaleString()}</div>`
+          ].join('');
+
+          c.appendChild(wrap);
+        });
+
+        wireStepEvents();
+        renderStats();
+      }
+
+      function wireStepEvents() {
+        document.querySelectorAll('[data-k]').forEach((node) => {
+          node.addEventListener('input', (e) => {
+            const i = Number(e.target.getAttribute('data-i'));
+            const k = e.target.getAttribute('data-k');
+            if (!state.steps[i]) return;
+            state.steps[i][k] = e.target.value;
+            state.steps[i].updatedAt = nowIso();
+            save();
+            if (k === 'status') renderStats();
+          });
+          if (node.tagName === 'SELECT') {
+            node.addEventListener('change', (e) => {
+              const i = Number(e.target.getAttribute('data-i'));
+              const k = e.target.getAttribute('data-k');
+              if (!state.steps[i]) return;
+              state.steps[i][k] = e.target.value;
+              state.steps[i].updatedAt = nowIso();
+              save();
+              render();
+            });
+          }
+        });
+
+        document.querySelectorAll('[data-a]').forEach((node) => {
+          node.addEventListener('click', () => {
+            const a = node.getAttribute('data-a');
+            const i = Number(node.getAttribute('data-i'));
+            if (a === 'up') moveStep(i, -1);
+            if (a === 'down') moveStep(i, +1);
+            if (a === 'del') deleteStep(i);
+            if (a === 'dup') {
+              const src = state.steps[i];
+              if (!src) return;
+              const cp = Object.assign({}, src, { id: 'st_' + Math.random().toString(36).slice(2, 10), updatedAt: nowIso() });
+              state.steps.splice(i + 1, 0, cp);
+              save();
+              render();
+            }
+          });
+        });
+      }
+
+      function escapeHtml(s) {
+        return String(s || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function exportJson() {
+        el('jsonArea').value = JSON.stringify(state, null, 2);
+      }
+
+      function importJson() {
+        try {
+          const raw = el('jsonArea').value;
+          const parsed = JSON.parse(raw);
+          if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.steps)) {
+            alert('JSON invalido: falta estructura esperada');
+            return;
+          }
+          state = Object.assign({}, state, parsed);
+          if (!state.createdAt) state.createdAt = nowIso();
+          save();
+          setTopFields();
+          render();
+        } catch (e) {
+          alert('No se pudo importar JSON: ' + e.message);
+        }
+      }
+
+      function resetProgress() {
+        state.steps = state.steps.map((s) => Object.assign({}, s, { status: 'pending', notes: '', evidence: '', updatedAt: nowIso() }));
+        save();
+        render();
+      }
+
+      function clearAll() {
+        if (!confirm('Borrar toda la sesion guardada localmente?')) return;
+        localStorage.removeItem(STORAGE_KEY);
+        state = {
+          sessionName: '',
+          scope: '',
+          preset: 'gift-critical',
+          urlAdmin: 'https://transcriptorpro.github.io/transcripcion/',
+          urlClone: '',
+          steps: [],
+          lastSavedAt: null,
+          createdAt: nowIso()
+        };
+        applyPreset('gift-critical');
+        setTopFields();
+        render();
+      }
+
+      function duplicateSession() {
+        const stamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+        state.sessionName = (state.sessionName || 'sesion') + ' (copy ' + stamp + ')';
+        state.steps = state.steps.map((s) => Object.assign({}, s, { id: 'st_' + Math.random().toString(36).slice(2, 10), status: 'pending', updatedAt: nowIso() }));
+        save();
+        setTopFields();
+        render();
+      }
+
+      function openUrl(value) {
+        const u = String(value || '').trim();
+        if (!u) return;
+        window.open(u, '_blank');
+      }
+
+      function wireTopButtons() {
+        el('btnLoadPreset').addEventListener('click', () => applyPreset(el('presetSelect').value));
+
+        const add = () => {
+          state.steps.push(newStep('Nuevo paso'));
+          save();
+          render();
+        };
+
+        el('btnAddStep').addEventListener('click', add);
+        el('btnAddStepBottom').addEventListener('click', add);
+        el('btnSaveNow').addEventListener('click', () => { save(); alert('Guardado local listo.'); });
+        el('btnDuplicate').addEventListener('click', duplicateSession);
+        el('btnResetProgress').addEventListener('click', resetProgress);
+        el('btnClearAll').addEventListener('click', clearAll);
+
+        el('btnExport').addEventListener('click', exportJson);
+        el('btnImport').addEventListener('click', importJson);
+
+        el('btnOpenAdmin').addEventListener('click', () => openUrl(state.urlAdmin));
+        el('btnOpenClone').addEventListener('click', () => openUrl(state.urlClone));
+      }
+
+      function init() {
+        bindTopFields();
+        wireTopButtons();
+
+        const hasStored = load();
+        if (!hasStored) {
+          applyPreset('gift-critical');
+        }
+
+        setTopFields();
+        render();
+      }
+
+      init();
+    })();
+  </script>
+</body>
+</html>
