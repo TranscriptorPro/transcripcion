@@ -2,13 +2,14 @@
     'use strict';
 
     const DEFAULT_PLANS = {
-        trial:  { key: 'trial', label: 'Trial', icon: '🧪', price: 'Gratis', period: '15 días', monthly: 0, annual: 0, features: ['Todo de Pro por 15 días'], type: 'TRIAL', hasProMode: true, hasDashboard: false, canGenerateApps: false, maxDevices: 3, durationDays: 15, historial: 30, workplaces: 2, outputProfiles: 3, maxProfessionals: 1, templateMode: 'manual', templateLimit: 3, packLimit: 0, specialtyExtraLimit: 0, pdfLogo: true, pdfColor: false },
-        normal: { key: 'normal', label: 'Normal', icon: '📝', price: '$102.99', period: 'pago único + $10/mes', monthly: 10, annual: 100, features: ['Transcripción de audio'], type: 'NORMAL', hasProMode: false, hasDashboard: false, canGenerateApps: false, maxDevices: 1, durationDays: 30, historial: 10, workplaces: 1, outputProfiles: 1, maxProfessionals: 1, templateMode: 'manual', templateLimit: 3, packLimit: 0, specialtyExtraLimit: 0, pdfLogo: false, pdfColor: false },
-        pro:    { key: 'pro', label: 'Pro', icon: '⚡', price: '$152.99', period: 'pago único + $15/mes', monthly: 15, annual: 150, features: ['Estructuración automática con IA'], type: 'PRO', hasProMode: true, hasDashboard: true, canGenerateApps: false, maxDevices: 3, durationDays: 30, historial: 30, workplaces: 2, outputProfiles: 3, maxProfessionals: 1, templateMode: 'specialty', templateLimit: -1, packLimit: 0, specialtyExtraLimit: 10, pdfLogo: true, pdfColor: false },
-        clinic: { key: 'clinic', label: 'Clínica', icon: '🏥', price: '$352.99', period: 'pago único + $30/mes', monthly: 30, annual: 300, features: ['Todo de Pro más:'], type: 'PRO', hasProMode: true, hasDashboard: true, canGenerateApps: true, maxDevices: 5, durationDays: 365, historial: -1, workplaces: 1, outputProfiles: -1, maxProfessionals: 5, templateMode: 'packs', templateLimit: -1, packLimit: 3, specialtyExtraLimit: 0, pdfLogo: true, pdfColor: true },
-        gift:   { key: 'gift', label: 'Gift', icon: '🎁', price: '$0', period: 'regalo', monthly: 0, annual: 0, features: ['Acceso total'], type: 'PRO', hasProMode: true, hasDashboard: true, canGenerateApps: false, maxDevices: 10, durationDays: 365, historial: -1, workplaces: 3, outputProfiles: -1, maxProfessionals: 1, templateMode: 'all', templateLimit: -1, packLimit: 0, specialtyExtraLimit: 0, pdfLogo: true, pdfColor: true },
-        enterprise: { key: 'enterprise', label: 'Enterprise', icon: '🏢', price: '$999', period: 'mensual', monthly: 999, annual: 9999, features: ['Configuración corporativa'], type: 'PRO', hasProMode: true, hasDashboard: true, canGenerateApps: true, maxDevices: 999, durationDays: 365, historial: -1, workplaces: 999, outputProfiles: -1, maxProfessionals: 999, templateMode: 'all', templateLimit: -1, packLimit: 0, specialtyExtraLimit: 0, pdfLogo: true, pdfColor: true }
+        normal: { key: 'normal', label: 'Normal', icon: '📝', price: '$102.99', period: 'pago único + $10/mes', monthly: 10, annual: 100, features: ['Transcripción de audio'], type: 'NORMAL', hasProMode: false, canGenerateApps: false, maxDevices: 1, durationDays: 30, historial: 10, workplaces: 1, outputProfiles: 1, maxProfessionals: 1, templateMode: 'manual', templateLimit: 3, packLimit: 0, specialtyExtraLimit: 0, pdfLogo: false, pdfColor: false },
+        pro:    { key: 'pro', label: 'Pro', icon: '⚡', price: '$152.99', period: 'pago único + $15/mes', monthly: 15, annual: 150, features: ['Estructuración automática con IA'], type: 'PRO', hasProMode: true, canGenerateApps: false, maxDevices: 3, durationDays: 30, historial: 30, workplaces: 2, outputProfiles: 3, maxProfessionals: 1, templateMode: 'specialty', templateLimit: -1, packLimit: 0, specialtyExtraLimit: 10, pdfLogo: true, pdfColor: false },
+        clinic: { key: 'clinic', label: 'Clínica', icon: '🏥', price: '$352.99', period: 'pago único + $30/mes', monthly: 30, annual: 300, features: ['Todo de Pro más:'], type: 'PRO', hasProMode: true, canGenerateApps: true, maxDevices: 5, durationDays: 365, historial: -1, workplaces: 1, outputProfiles: -1, maxProfessionals: 5, templateMode: 'packs', templateLimit: -1, packLimit: 3, specialtyExtraLimit: 0, pdfLogo: true, pdfColor: true },
+        gift:   { key: 'gift', label: 'Gift', icon: '🎁', price: '$0', period: 'regalo', monthly: 0, annual: 0, features: ['Acceso total'], type: 'PRO', hasProMode: true, canGenerateApps: false, maxDevices: 10, durationDays: 365, historial: -1, workplaces: 3, outputProfiles: -1, maxProfessionals: 1, templateMode: 'all', templateLimit: -1, packLimit: 0, specialtyExtraLimit: 0, pdfLogo: true, pdfColor: true }
     };
+
+    const PLAN_KEYS = ['normal', 'pro', 'clinic', 'gift'];
+    function _esc(v) { return String(v || '').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
 
     let _plansInitialized = false;
     let _plansCache = null;
@@ -164,87 +165,93 @@
 
     function _renderPlansEditor(grid, plans) {
         grid.innerHTML = '';
-        for (const [key, plan] of Object.entries(plans)) {
+        grid.style.gridTemplateColumns = 'repeat(4, 1fr)';
+        grid.style.gap = '1rem';
+
+        if (!document.getElementById('plans-acc-css')) {
+            const st = document.createElement('style');
+            st.id = 'plans-acc-css';
+            st.textContent = `
+                .pa-s{border:1px solid var(--border,#334155);border-radius:8px;margin-bottom:.4rem;overflow:hidden}
+                .pa-s summary{cursor:pointer;padding:7px 10px;font-weight:600;font-size:.82rem;color:var(--accent,#38bdf8);user-select:none;list-style:none;display:flex;align-items:center;gap:6px}
+                .pa-s summary::before{content:'▸';transition:transform .2s;display:inline-block}
+                .pa-s[open] summary::before{transform:rotate(90deg)}
+                .pa-s summary::-webkit-details-marker{display:none}
+                .pa-s .pa-b{padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+                .pf{font-size:.8rem;color:var(--text-secondary);display:block}
+                .pf input,.pf select,.pf textarea{width:100%;padding:4px 8px;border:1px solid var(--border,#334155);border-radius:5px;background:var(--bg-main,#0f172a);color:var(--text-primary);margin-top:2px;font-size:.8rem;box-sizing:border-box}
+                .pf textarea{resize:vertical;font-family:inherit}
+                .pc{font-size:.8rem;color:var(--text-secondary);display:flex;align-items:center;gap:5px}
+            `;
+            document.head.appendChild(st);
+        }
+
+        for (const key of PLAN_KEYS) {
+            const plan = plans[key];
+            if (!plan) continue;
             const card = document.createElement('div');
-            card.style.cssText = 'background:var(--bg-card,#1e293b);border:1px solid var(--border,#334155);border-radius:12px;padding:1.5rem;';
+            card.style.cssText = 'background:var(--bg-card,#1e293b);border:1px solid var(--border,#334155);border-radius:12px;padding:1rem;';
             card.innerHTML = `
-                <h3 style="margin:0 0 1rem;color:var(--text-primary);">${plan.icon || '📌'} ${plan.label || key}</h3>
-                <div style="display:flex;flex-direction:column;gap:0.75rem;">
-                    <label style="font-size:.85rem;color:var(--text-secondary);">Nombre visible
-                        <input type="text" data-plan="${key}" data-field="label" value="${plan.label || ''}" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-main,#0f172a);color:var(--text-primary);margin-top:4px;">
-                    </label>
-                    <label style="font-size:.85rem;color:var(--text-secondary);">Ícono
-                        <input type="text" data-plan="${key}" data-field="icon" value="${plan.icon || ''}" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-main,#0f172a);color:var(--text-primary);margin-top:4px;">
-                    </label>
-                    <label style="font-size:.85rem;color:var(--text-secondary);">Tipo técnico (TRIAL/NORMAL/PRO)
-                        <input type="text" data-plan="${key}" data-field="type" value="${plan.type || ''}" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-main,#0f172a);color:var(--text-primary);margin-top:4px;">
-                    </label>
-                    <label style="font-size:.85rem;color:var(--text-secondary);">Precio principal
-                        <input type="text" data-plan="${key}" data-field="price" value="${plan.price || ''}" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-main,#0f172a);color:var(--text-primary);margin-top:4px;">
-                    </label>
-                    <label style="font-size:.85rem;color:var(--text-secondary);">Período texto
-                        <input type="text" data-plan="${key}" data-field="period" value="${plan.period || ''}" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-main,#0f172a);color:var(--text-primary);margin-top:4px;">
-                    </label>
-                    <label style="font-size:.85rem;color:var(--text-secondary);">Mensual (USD)
-                        <input type="number" step="0.01" data-plan="${key}" data-field="monthly" value="${plan.monthly ?? 0}" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-main,#0f172a);color:var(--text-primary);margin-top:4px;">
-                    </label>
-                    <label style="font-size:.85rem;color:var(--text-secondary);">Anual (USD)
-                        <input type="number" step="0.01" data-plan="${key}" data-field="annual" value="${plan.annual ?? 0}" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-main,#0f172a);color:var(--text-primary);margin-top:4px;">
-                    </label>
-                    <label style="font-size:.85rem;color:var(--text-secondary);">Max dispositivos
-                        <input type="number" data-plan="${key}" data-field="maxDevices" value="${plan.maxDevices ?? 1}" min="1" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-main,#0f172a);color:var(--text-primary);margin-top:4px;">
-                    </label>
-                    <label style="font-size:.85rem;color:var(--text-secondary);">Duración (días)
-                        <input type="number" data-plan="${key}" data-field="durationDays" value="${plan.durationDays ?? 30}" min="1" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-main,#0f172a);color:var(--text-primary);margin-top:4px;">
-                    </label>
-                    <label style="font-size:.85rem;color:var(--text-secondary);">Historial (-1 = ilimitado)
-                        <input type="number" data-plan="${key}" data-field="historial" value="${plan.historial ?? 10}" min="-1" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-main,#0f172a);color:var(--text-primary);margin-top:4px;">
-                    </label>
-                    <label style="font-size:.85rem;color:var(--text-secondary);">Lugares de trabajo
-                        <input type="number" data-plan="${key}" data-field="workplaces" value="${plan.workplaces ?? 1}" min="1" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-main,#0f172a);color:var(--text-primary);margin-top:4px;">
-                    </label>
-                    <label style="font-size:.85rem;color:var(--text-secondary);">Perfiles de salida (-1 = ilimitado)
-                        <input type="number" data-plan="${key}" data-field="outputProfiles" value="${plan.outputProfiles ?? 1}" min="-1" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-main,#0f172a);color:var(--text-primary);margin-top:4px;">
-                    </label>
-                    <label style="font-size:.85rem;color:var(--text-secondary);">Máx profesionales
-                        <input type="number" data-plan="${key}" data-field="maxProfessionals" value="${plan.maxProfessionals ?? 1}" min="1" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-main,#0f172a);color:var(--text-primary);margin-top:4px;">
-                    </label>
-                    <label style="font-size:.85rem;color:var(--text-secondary);">Modo templates
-                        <select data-plan="${key}" data-field="templateMode" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-main,#0f172a);color:var(--text-primary);margin-top:4px;">
-                            <option value="manual" ${plan.templateMode === 'manual' ? 'selected' : ''}>manual (selección directa)</option>
-                            <option value="specialty" ${plan.templateMode === 'specialty' ? 'selected' : ''}>specialty (por especialidad)</option>
-                            <option value="packs" ${plan.templateMode === 'packs' ? 'selected' : ''}>packs (categorías)</option>
-                            <option value="all" ${plan.templateMode === 'all' ? 'selected' : ''}>all (todas)</option>
-                        </select>
-                    </label>
-                    <label style="font-size:.85rem;color:var(--text-secondary);">Límite templates directos (-1 = ilimitado)
-                        <input type="number" data-plan="${key}" data-field="templateLimit" value="${plan.templateLimit ?? -1}" min="-1" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-main,#0f172a);color:var(--text-primary);margin-top:4px;">
-                    </label>
-                    <label style="font-size:.85rem;color:var(--text-secondary);">Límite packs
-                        <input type="number" data-plan="${key}" data-field="packLimit" value="${plan.packLimit ?? 0}" min="0" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-main,#0f172a);color:var(--text-primary);margin-top:4px;">
-                    </label>
-                    <label style="font-size:.85rem;color:var(--text-secondary);">Extras sobre especialidad
-                        <input type="number" data-plan="${key}" data-field="specialtyExtraLimit" value="${plan.specialtyExtraLimit ?? 0}" min="0" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-main,#0f172a);color:var(--text-primary);margin-top:4px;">
-                    </label>
-                    <label style="font-size:.85rem;color:var(--text-secondary);display:flex;align-items:center;gap:6px;">
-                        <input type="checkbox" data-plan="${key}" data-field="hasProMode" ${plan.hasProMode ? 'checked' : ''}> Incluye Modo Pro
-                    </label>
-                    <label style="font-size:.85rem;color:var(--text-secondary);display:flex;align-items:center;gap:6px;">
-                        <input type="checkbox" data-plan="${key}" data-field="hasDashboard" ${plan.hasDashboard ? 'checked' : ''}> Incluye Dashboard
-                    </label>
-                    <label style="font-size:.85rem;color:var(--text-secondary);display:flex;align-items:center;gap:6px;">
-                        <input type="checkbox" data-plan="${key}" data-field="canGenerateApps" ${plan.canGenerateApps ? 'checked' : ''}> Puede generar apps clone
-                    </label>
-                    <label style="font-size:.85rem;color:var(--text-secondary);display:flex;align-items:center;gap:6px;">
-                        <input type="checkbox" data-plan="${key}" data-field="pdfLogo" ${plan.pdfLogo !== false ? 'checked' : ''}> PDF con logo
-                    </label>
-                    <label style="font-size:.85rem;color:var(--text-secondary);display:flex;align-items:center;gap:6px;">
-                        <input type="checkbox" data-plan="${key}" data-field="pdfColor" ${plan.pdfColor ? 'checked' : ''}> PDF con color personalizado
-                    </label>
-                    <label style="font-size:.85rem;color:var(--text-secondary);">Features (una por línea)
-                        <textarea data-plan="${key}" data-field="features" rows="5" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-main,#0f172a);color:var(--text-primary);margin-top:4px;resize:vertical;font-family:inherit;font-size:.85rem;">${(plan.features || []).join('\n')}</textarea>
-                    </label>
-                </div>
+                <h3 style="margin:0 0 .75rem;color:var(--text-primary);font-size:1.1rem;text-align:center;">${_esc(plan.icon)} ${_esc(plan.label)}</h3>
+                <details class="pa-s">
+                    <summary>🏷️ Identidad</summary>
+                    <div class="pa-b">
+                        <label class="pf">Nombre <input type="text" data-plan="${key}" data-field="label" value="${_esc(plan.label)}"></label>
+                        <label class="pf">Ícono <input type="text" data-plan="${key}" data-field="icon" value="${_esc(plan.icon)}"></label>
+                        <label class="pf">Tipo (NORMAL/PRO) <input type="text" data-plan="${key}" data-field="type" value="${_esc(plan.type)}"></label>
+                    </div>
+                </details>
+                <details class="pa-s">
+                    <summary>💰 Precios</summary>
+                    <div class="pa-b">
+                        <label class="pf">Precio visible <input type="text" data-plan="${key}" data-field="price" value="${_esc(plan.price)}"></label>
+                        <label class="pf">Período <input type="text" data-plan="${key}" data-field="period" value="${_esc(plan.period)}"></label>
+                        <label class="pf">Mensual USD <input type="number" step="0.01" data-plan="${key}" data-field="monthly" value="${plan.monthly??0}"></label>
+                        <label class="pf">Anual USD <input type="number" step="0.01" data-plan="${key}" data-field="annual" value="${plan.annual??0}"></label>
+                    </div>
+                </details>
+                <details class="pa-s">
+                    <summary>📊 Límites</summary>
+                    <div class="pa-b">
+                        <label class="pf">Dispositivos <input type="number" data-plan="${key}" data-field="maxDevices" value="${plan.maxDevices??1}" min="1"></label>
+                        <label class="pf">Duración (días) <input type="number" data-plan="${key}" data-field="durationDays" value="${plan.durationDays??30}" min="1"></label>
+                        <label class="pf">Historial (-1=∞) <input type="number" data-plan="${key}" data-field="historial" value="${plan.historial??10}" min="-1"></label>
+                        <label class="pf">Lugares trabajo <input type="number" data-plan="${key}" data-field="workplaces" value="${plan.workplaces??1}" min="1"></label>
+                        <label class="pf">Perfiles salida (-1=∞) <input type="number" data-plan="${key}" data-field="outputProfiles" value="${plan.outputProfiles??1}" min="-1"></label>
+                        <label class="pf">Máx profesionales <input type="number" data-plan="${key}" data-field="maxProfessionals" value="${plan.maxProfessionals??1}" min="1"></label>
+                    </div>
+                </details>
+                <details class="pa-s">
+                    <summary>📑 Templates</summary>
+                    <div class="pa-b">
+                        <label class="pf">Modo
+                            <select data-plan="${key}" data-field="templateMode">
+                                <option value="manual" ${plan.templateMode==='manual'?'selected':''}>manual</option>
+                                <option value="specialty" ${plan.templateMode==='specialty'?'selected':''}>specialty</option>
+                                <option value="packs" ${plan.templateMode==='packs'?'selected':''}>packs</option>
+                                <option value="all" ${plan.templateMode==='all'?'selected':''}>all</option>
+                            </select>
+                        </label>
+                        <label class="pf">Límite directo (-1=∞) <input type="number" data-plan="${key}" data-field="templateLimit" value="${plan.templateLimit??-1}" min="-1"></label>
+                        <label class="pf">Límite packs <input type="number" data-plan="${key}" data-field="packLimit" value="${plan.packLimit??0}" min="0"></label>
+                        <label class="pf">Extras especialidad <input type="number" data-plan="${key}" data-field="specialtyExtraLimit" value="${plan.specialtyExtraLimit??0}" min="0"></label>
+                    </div>
+                </details>
+                <details class="pa-s">
+                    <summary>⚡ Funcionalidades</summary>
+                    <div class="pa-b">
+                        <label class="pc"><input type="checkbox" data-plan="${key}" data-field="hasProMode" ${plan.hasProMode?'checked':''}> Modo Pro</label>
+                        <label class="pc"><input type="checkbox" data-plan="${key}" data-field="canGenerateApps" ${plan.canGenerateApps?'checked':''}> Generar apps clone</label>
+                        <label class="pc"><input type="checkbox" data-plan="${key}" data-field="pdfLogo" ${plan.pdfLogo!==false?'checked':''}> PDF con logo</label>
+                        <label class="pc"><input type="checkbox" data-plan="${key}" data-field="pdfColor" ${plan.pdfColor?'checked':''}> PDF color custom</label>
+                    </div>
+                </details>
+                <details class="pa-s">
+                    <summary>📝 Features</summary>
+                    <div class="pa-b">
+                        <label class="pf"><textarea data-plan="${key}" data-field="features" rows="3">${(plan.features||[]).join('\n')}</textarea></label>
+                    </div>
+                </details>
             `;
             grid.appendChild(card);
         }
@@ -270,32 +277,34 @@
     }
 
     function _collectPlansFromForm() {
-        const plans = _getAdminPlansConfig();
-        Object.keys(plans).forEach((key) => {
-            plans[key].label = _str(key, 'label', plans[key].label || key);
-            plans[key].icon = _str(key, 'icon', plans[key].icon || '📌');
-            plans[key].type = _str(key, 'type', plans[key].type || 'NORMAL').toUpperCase();
-            plans[key].price = _str(key, 'price', plans[key].price || '');
-            plans[key].period = _str(key, 'period', plans[key].period || '');
-            plans[key].monthly = _num(key, 'monthly', plans[key].monthly || 0);
-            plans[key].annual = _num(key, 'annual', plans[key].annual || 0);
-            plans[key].maxDevices = _num(key, 'maxDevices', plans[key].maxDevices || 1);
-            plans[key].durationDays = _num(key, 'durationDays', plans[key].durationDays || 30);
-            plans[key].historial = _num(key, 'historial', plans[key].historial || 10);
-            plans[key].workplaces = _num(key, 'workplaces', plans[key].workplaces || 1);
-            plans[key].outputProfiles = _num(key, 'outputProfiles', plans[key].outputProfiles || 1);
-            plans[key].maxProfessionals = _num(key, 'maxProfessionals', plans[key].maxProfessionals || 1);
-            plans[key].templateMode = _str(key, 'templateMode', plans[key].templateMode || 'manual').toLowerCase();
-            plans[key].templateLimit = _num(key, 'templateLimit', plans[key].templateLimit ?? -1);
-            plans[key].packLimit = _num(key, 'packLimit', plans[key].packLimit || 0);
-            plans[key].specialtyExtraLimit = _num(key, 'specialtyExtraLimit', plans[key].specialtyExtraLimit || 0);
-            plans[key].hasProMode = _bool(key, 'hasProMode', !!plans[key].hasProMode);
-            plans[key].hasDashboard = _bool(key, 'hasDashboard', !!plans[key].hasDashboard);
-            plans[key].canGenerateApps = _bool(key, 'canGenerateApps', !!plans[key].canGenerateApps);
-            plans[key].pdfLogo = _bool(key, 'pdfLogo', plans[key].pdfLogo !== false);
-            plans[key].pdfColor = _bool(key, 'pdfColor', !!plans[key].pdfColor);
+        const base = _getAdminPlansConfig();
+        const plans = {};
+        PLAN_KEYS.forEach((key) => {
+            const p = base[key] || DEFAULT_PLANS[key] || {};
+            plans[key] = { key: key };
+            plans[key].label = _str(key, 'label', p.label || key);
+            plans[key].icon = _str(key, 'icon', p.icon || '📌');
+            plans[key].type = _str(key, 'type', p.type || 'NORMAL').toUpperCase();
+            plans[key].price = _str(key, 'price', p.price || '');
+            plans[key].period = _str(key, 'period', p.period || '');
+            plans[key].monthly = _num(key, 'monthly', p.monthly || 0);
+            plans[key].annual = _num(key, 'annual', p.annual || 0);
+            plans[key].maxDevices = _num(key, 'maxDevices', p.maxDevices || 1);
+            plans[key].durationDays = _num(key, 'durationDays', p.durationDays || 30);
+            plans[key].historial = _num(key, 'historial', p.historial || 10);
+            plans[key].workplaces = _num(key, 'workplaces', p.workplaces || 1);
+            plans[key].outputProfiles = _num(key, 'outputProfiles', p.outputProfiles || 1);
+            plans[key].maxProfessionals = _num(key, 'maxProfessionals', p.maxProfessionals || 1);
+            plans[key].templateMode = _str(key, 'templateMode', p.templateMode || 'manual').toLowerCase();
+            plans[key].templateLimit = _num(key, 'templateLimit', p.templateLimit ?? -1);
+            plans[key].packLimit = _num(key, 'packLimit', p.packLimit || 0);
+            plans[key].specialtyExtraLimit = _num(key, 'specialtyExtraLimit', p.specialtyExtraLimit || 0);
+            plans[key].hasProMode = _bool(key, 'hasProMode', !!p.hasProMode);
+            plans[key].canGenerateApps = _bool(key, 'canGenerateApps', !!p.canGenerateApps);
+            plans[key].pdfLogo = _bool(key, 'pdfLogo', p.pdfLogo !== false);
+            plans[key].pdfColor = _bool(key, 'pdfColor', !!p.pdfColor);
             const featEl = document.querySelector(`[data-plan="${key}"][data-field="features"]`);
-            plans[key].features = featEl ? featEl.value.split('\n').map(s => s.trim()).filter(Boolean) : (plans[key].features || []);
+            plans[key].features = featEl ? featEl.value.split('\n').map(s => s.trim()).filter(Boolean) : (p.features || []);
         });
         return plans;
     }
