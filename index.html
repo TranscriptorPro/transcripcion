@@ -679,8 +679,8 @@
                             <div class="stg-opt-row">
                                 <span class="stg-opt-label">Tema</span>
                                 <div class="stg-theme-btns">
-                                    <button class="stg-theme-btn" id="settingsThemeLight" title="Tema claro">☀️ Claro</button>
-                                    <button class="stg-theme-btn" id="settingsThemeDark" title="Tema oscuro">🌙 Oscuro</button>
+                                    <button class="stg-theme-btn theme-btn" id="settingsThemeLight" data-theme="light" title="Tema claro">☀️ Claro</button>
+                                    <button class="stg-theme-btn theme-btn" id="settingsThemeDark" data-theme="dark" title="Tema oscuro">🌙 Oscuro</button>
                                 </div>
                             </div>
                             <div class="stg-opt-row">
@@ -952,7 +952,8 @@
         </div>
 
         <!-- Config Informe Modal (Tabs) -->
-        <div class="modal-overlay" id="pdfModalOverlay">
+        <div class="modal-overlay pdf-config-modal" id="pdfModalOverlay">
+            <div id="pdfConfigOverlay" style="display:none" aria-hidden="true"></div>
             <div class="modal" style="max-width: 680px; display: flex; flex-direction: column; max-height: 92vh;">
                 <div class="modal-header">
                     <h2>⚙️ Configurar Informe</h2>
@@ -984,6 +985,7 @@
                             <div class="field-group locked">
                                 <label>🔒 Profesional</label>
                                 <input type="text" id="pdfProfName" readonly disabled placeholder="[Sin datos profesionales]">
+                                <input type="hidden" id="doctorName" aria-hidden="true">
                             </div>
                             <div class="field-row">
                                 <div class="field-group locked">
@@ -993,6 +995,7 @@
                                 <div class="field-group locked">
                                     <label>🔒 Especialidad</label>
                                     <input type="text" id="pdfProfEspecialidad" readonly disabled placeholder="---">
+                                    <input type="hidden" id="doctorSpecialty" aria-hidden="true">
                                 </div>
                             </div>
                             <div class="field-group has-btn">
@@ -1032,6 +1035,7 @@
                                 <div class="field-group" id="logoUploadGroup">
                                     <label>🖼️ Logo (opcional)</label>
                                     <input type="file" id="pdfLogoUpload" accept="image/*">
+                                    <input type="hidden" id="logoUpload" aria-hidden="true">
                                     <div id="pdfLogoPreview" class="logo-preview"></div>
                                 </div>
                                 <div class="field-group" id="logoSizeGroup">

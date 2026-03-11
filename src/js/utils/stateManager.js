@@ -154,8 +154,9 @@ if (proModeToggle) {
     proModeToggle.addEventListener('change', (e) => {
         const mode = e.target.checked ? 'pro' : 'normal';
         setMode(mode, true);
+        // Persist sync first so initializeMode can read it immediately on reload.
+        localStorage.setItem('last_profile_type', mode);
         if (typeof appDB !== 'undefined') appDB.set('last_profile_type', mode);
-        else localStorage.setItem('last_profile_type', mode);
         window._lastProfileTypeCache = mode;
 
         if (proToggleContainer) {
@@ -200,7 +201,7 @@ function initializeMode() {
         return;
     }
 
-    const savedMode = window._lastProfileTypeCache || localStorage.getItem('last_profile_type');
+    const savedMode = localStorage.getItem('last_profile_type') || window._lastProfileTypeCache;
     if (savedMode) {
         setMode(savedMode);
         return;
