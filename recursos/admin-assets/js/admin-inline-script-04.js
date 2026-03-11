@@ -1503,7 +1503,39 @@
             }
         }
 
-        // ========== EDITAR USUARIO ==========
+        // ========== EDITAR USUARIO (WIZARD AVANZADO) ==========
+
+        function _loadScriptOnce(src) {
+            return new Promise((resolve, reject) => {
+                const existing = document.querySelector(`script[data-dynamic-src="${src}"]`);
+                if (existing) {
+                    if (existing.dataset.loaded === 'true') {
+                        resolve();
+                        return;
+                    }
+                    existing.addEventListener('load', () => resolve(), { once: true });
+                    existing.addEventListener('error', () => reject(new Error('No se pudo cargar: ' + src)), { once: true });
+                    return;
+                }
+
+                const script = document.createElement('script');
+                script.src = src;
+                script.async = true;
+                script.dataset.dynamicSrc = src;
+                script.addEventListener('load', () => {
+                    script.dataset.loaded = 'true';
+                    resolve();
+                }, { once: true });
+                script.addEventListener('error', () => reject(new Error('No se pudo cargar: ' + src)), { once: true });
+                document.body.appendChild(script);
+            });
+        }
+
+        async function _ensureAdvancedEditWizard() {
+            if (window.AdminUserConfigWizard && window.AdminUserConfigRules) return;
+            await _loadScriptOnce('admin-assets/js/admin-user-config-rules.js');
+            await _loadScriptOnce('admin-assets/js/admin-user-config-wizard.js');
+        }
 
         async function openEditUserModal(userId) {
             try {
@@ -1513,138 +1545,45 @@
                     return;
                 }
 
-                document.getElementById('editUserId2').value = user.ID_Medico;
-                document.getElementById('editUserTitle').textContent = user.Nombre;
-                document.getElementById('editNombre').value = user.Nombre || '';
-                document.getElementById('editMatricula').value = user.Matricula || '';
-                document.getElementById('editEmail').value = user.Email || '';
-                document.getElementById('editTelefono').value = user.Telefono || '';
-                document.getElementById('editPlanEdit').value = user.Plan || 'trial';
-                document.getElementById('editEstado').value = user.Estado || 'trial';
-                document.getElementById('editDevicesMaxEdit').value = user.Devices_Max || 2;
-                document.getElementById('editNotasEdit').value = user.Notas_Admin || '';
-                document.getElementById('editLugaresTrabajo').value = user.Lugares_Trabajo || '';
-
-                if (user.Fecha_Vencimiento) {
-                    document.getElementById('editFechaVencimiento').value = user.Fecha_Vencimiento.split('T')[0];
+                await _ensureAdvancedEditWizard();
+                if (!window.AdminUserConfigWizard) {
+                    throw new Error('No se pudo inicializar el editor avanzado');
                 }
 
-                const selectedEsp = user.Especialidad
-                    ? user.Especialidad.split(',').map(s => s.trim())
-                    : [];
-                initEditEspecialidadesGrid(selectedEsp);
-
-                document.getElementById('editUserModal').style.display = 'flex';
+                const planConfig = _resolvePlanCfg(user.Plan || 'NORMAL');
+                window.AdminUserConfigWizard.open({
+                    user,
+                    planConfig,
+                    especialidades: ESPECIALIDADES,
+                    estudiosPorEspecialidad: ESTUDIOS_POR_ESPECIALIDAD,
+                    saveUser: async (updates) => updateUser(user.ID_Medico, updates),
+                    onSaved: (updates) => {
+                        const idx = allUsers.findIndex(u => String(u.ID_Medico) === String(user.ID_Medico));
+                        if (idx !== -1) {
+                            allUsers[idx] = { ...allUsers[idx], ...updates };
+                        }
+                        updateStats(allUsers);
+                        applyFilters();
+                    },
+                    toast: showToast
+                });
             } catch (error) {
-                console.error('Error loading user for edit:', error);
-                showToast('Error al cargar usuario', 'error');
+                console.error('Error loading advanced editor:', error);
+                showToast('No se pudo abrir el editor avanzado: ' + error.message, 'error');
             }
-        }
-
-        function initEditEspecialidadesGrid(selectedEsp = []) {
-            const grid = document.getElementById('editEspecialidadesGrid');
-            grid.innerHTML = ESPECIALIDADES.map(esp => {
-                const isChecked = selectedEsp.includes(esp) ? 'checked' : '';
-                return `
-                    <div class="checkbox-item">
-                        <input type="checkbox" id="editesp_${esp.replace(/\s+/g, '_')}" value="${esp}" ${isChecked}>
-                        <label for="editesp_${esp.replace(/\s+/g, '_')}">${esp}</label>
-                    </div>
-                `;
-            }).join('');
-
-            grid.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-                cb.addEventListener('change', updateEditEstudiosGrid);
-            });
-
-            updateEditEstudiosGrid();
-        }
-
-        function updateEditEstudiosGrid() {
-            const selectedEspecialidades = Array.from(
-                document.querySelectorAll('#editEspecialidadesGrid input:checked')
-            ).map(cb => cb.value);
-
-            const estudiosGrid = document.getElementById('editEstudiosGrid');
-
-            if (selectedEspecialidades.length === 0) {
-                estudiosGrid.innerHTML = '<p style="color:var(--text-secondary);font-style:italic;">Seleccione al menos una especialidad</p>';
-                return;
-            }
-
-            const estudios = selectedEspecialidades.flatMap(esp =>
-                (ESTUDIOS_POR_ESPECIALIDAD[esp] || []).map(estudio => ({ esp, estudio }))
-            );
-
-            estudiosGrid.innerHTML = estudios.map(({ esp, estudio }) => `
-                <div class="checkbox-item">
-                    <input type="checkbox" id="editest_${estudio.replace(/\s+/g, '_')}" value="${estudio}" data-especialidad="${esp}">
-                    <label for="editest_${estudio.replace(/\s+/g, '_')}">${estudio} <small style="color:var(--text-secondary);">(${esp})</small></label>
-                </div>
-            `).join('');
         }
 
         function closeEditUserModal() {
-            const modal = document.getElementById('editUserModal');
-            if (modal) modal.style.display = 'none';
+            const legacyModal = document.getElementById('editUserModal');
+            if (legacyModal) legacyModal.style.display = 'none';
+            if (window.AdminUserConfigWizard && typeof window.AdminUserConfigWizard.close === 'function') {
+                window.AdminUserConfigWizard.close();
+            }
         }
 
         async function handleEditUserSubmit(e) {
-            e.preventDefault();
-
-            const userId = document.getElementById('editUserId2').value;
-
-            const selectedEspecialidades = Array.from(
-                document.querySelectorAll('#editEspecialidadesGrid input:checked')
-            ).map(cb => cb.value);
-
-            const selectedEstudios = Array.from(
-                document.querySelectorAll('#editEstudiosGrid input:checked')
-            ).map(cb => ({ nombre: cb.value, especialidad: cb.dataset.especialidad }));
-
-            const userData = {
-                Nombre: document.getElementById('editNombre').value,
-                Matricula: document.getElementById('editMatricula').value,
-                Email: document.getElementById('editEmail').value,
-                Telefono: document.getElementById('editTelefono').value,
-                Especialidad: selectedEspecialidades.join(', '),
-                Plan: document.getElementById('editPlanEdit').value,
-                Estado: document.getElementById('editEstado').value,
-                Fecha_Vencimiento: document.getElementById('editFechaVencimiento').value,
-                Devices_Max: parseInt(document.getElementById('editDevicesMaxEdit').value, 10) || 2,
-                Notas_Admin: document.getElementById('editNotasEdit').value,
-                Lugares_Trabajo: document.getElementById('editLugaresTrabajo').value,
-                Estudios_JSON: JSON.stringify(selectedEstudios)
-            };
-
-            const btnSave = document.getElementById('btnSaveEditUser');
-            btnSave.disabled = true;
-            btnSave.textContent = '⏳ Guardando...';
-
-            try {
-                const result = await updateUser(userId, userData);
-
-                if (result.error) {
-                    throw new Error(result.error);
-                }
-
-                // Update local state
-                const idx = allUsers.findIndex(u => String(u.ID_Medico) === String(userId));
-                if (idx !== -1) {
-                    allUsers[idx] = { ...allUsers[idx], ...userData };
-                }
-
-                updateStats(allUsers);
-                applyFilters();
-                closeEditUserModal();
-                showToast('✅ Usuario actualizado correctamente', 'success');
-            } catch (error) {
-                console.error('Error updating user:', error);
-                showToast('Error: ' + error.message, 'error');
-            } finally {
-                btnSave.disabled = false;
-                btnSave.textContent = '💾 Guardar Cambios';
-            }
+            if (e && typeof e.preventDefault === 'function') e.preventDefault();
+            showToast('Usá el editor avanzado para guardar cambios de configuración.', 'info');
         }
 
         // ========== FIN EDITAR USUARIO ==========
