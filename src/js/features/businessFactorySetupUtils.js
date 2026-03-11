@@ -70,8 +70,8 @@ window.handleFactorySetupCore = async function (medicoId) {
             trialDays:        plan === 'trial' ? 7 : 0,
             // regDatos.hasProMode puede venir del admin para override del plan
             hasProMode:       regDatos.hasProMode !== undefined ? !!regDatos.hasProMode : pc.hasProMode,
-            hasDashboard:     pc.hasDashboard,
-            canGenerateApps:  pc.canGenerateApps,
+            hasDashboard:     regDatos.hasDashboard !== undefined ? !!regDatos.hasDashboard : pc.hasDashboard,
+            canGenerateApps:  regDatos.canGenerateApps !== undefined ? !!regDatos.canGenerateApps : pc.canGenerateApps,
             allowedTemplates: allowedTemplates,
             backendUrl:       backendUrl
         };

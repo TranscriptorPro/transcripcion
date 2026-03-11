@@ -104,6 +104,8 @@ window.fetchWithTimeout = function(url, options, timeoutMs = 120000) {
         return sentences.map(sent => {
             const words = sent.split(/\s+/);
             return words.map((w, i) => {
+                const profTitle = _normalizeProfessionalTitleToken(w);
+                if (profTitle) return profTitle;
                 if (_isUpperSigla(w)) return w.toUpperCase();
                 if (i === 0) return _capitalizeWord(w);
                 if (LOWER_WORDS.has(w.toLowerCase())) return w.toLowerCase();

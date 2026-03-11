@@ -1,0 +1,423 @@
+{
+  "timestamp": "2026-03-11T01:40:29.098Z",
+  "giftUser": {
+    "id": "GIFTTEST_E2E_MMLDG64B",
+    "plan": "gift",
+    "maxDevices": 2
+  },
+  "summary": {
+    "total": 68,
+    "passed": 67,
+    "failed": 0,
+    "skipped": 1
+  },
+  "results": [
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "clientConfig.type = PRO (plan gift→PRO)",
+      "detail": "got: PRO"
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "clientConfig.hasProMode = true",
+      "detail": "got: true"
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "clientConfig.canGenerateApps = false (gift≠clinic)",
+      "detail": "got: false"
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "clientConfig.maxDevices = 2",
+      "detail": "got: 2"
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "clientConfig.planCode = gift",
+      "detail": "got: gift"
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "clientConfig.medicoId correcto",
+      "detail": "got: GIFTTEST_E2E_MMLDG64B"
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "allowedTemplates incluye eco_doppler",
+      "detail": "[\"eco_doppler\",\"ecg\",\"holter\"]"
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "allowedTemplates incluye ecg",
+      "detail": "[\"eco_doppler\",\"ecg\",\"holter\"]"
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "allowedTemplates incluye holter",
+      "detail": "[\"eco_doppler\",\"ecg\",\"holter\"]"
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "allowedTemplates NO incluye rx_torax (no asignada)",
+      "detail": "[\"eco_doppler\",\"ecg\",\"holter\"]"
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "prof_data.nombre correcto",
+      "detail": "got: \"Dra. Ana María Fernández López\""
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "prof_data.matricula correcta",
+      "detail": "got: \"MN 87654\""
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "prof_data.especialidad correcta",
+      "detail": "got: \"Cardiología\""
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "prof_data.headerColor = #1a56a0",
+      "detail": "got: \"#1a56a0\""
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "prof_data.workplace tiene nombre",
+      "detail": "got: \"Centro Cardiológico Fernández\""
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "prof_data.socialMedia es un objeto",
+      "detail": "true"
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "socialMedia.whatsapp correcto",
+      "detail": "got: \"+54 11 4321-5678\""
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "socialMedia.instagram correcto",
+      "detail": "got: \"@dra.anafernandez\""
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "socialMedia.facebook correcto",
+      "detail": "got: \"Centro Cardiológico Fernández\""
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "socialMedia.x (twitter) correcto",
+      "detail": "got: \"@AnaFCardio\""
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "pdf_signature guardada como data:image/",
+      "detail": "data:image/png;base64,iVBORw0K"
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "pdf_logo guardado como data:image/",
+      "detail": "data:image/png;base64,iVBORw0K"
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "prof_logo_size_px = 80",
+      "detail": "got: 80"
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "workplace_profiles tiene 2 entries",
+      "detail": "got: 2"
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "WP[0].name correcto",
+      "detail": "got: \"Centro Cardiológico Fernández\""
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "WP[0].address contiene Santa Fe",
+      "detail": "got: \"Av. Santa Fe 3450, Piso 6°, CABA\""
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "WP[0].logo institucional es imagen",
+      "detail": "presente"
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "WP[0].prof[0].nombre correcto",
+      "detail": "got: \"Dra. Ana María Fernández López\""
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "WP[0].prof[0].firma presente",
+      "detail": "sí"
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "WP[0].prof[0].logo presente",
+      "detail": "sí"
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "WP[0].prof[0].showSocial = true",
+      "detail": "got: true"
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "WP[0].prof[0].showPhone = true",
+      "detail": "got: true"
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "WP[0].prof[0].showEmail = true",
+      "detail": "got: true"
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "WP[0].prof[0].whatsapp correcto",
+      "detail": "got: \"+54 11 4321-5678\""
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "WP[0].prof[0].instagram correcto",
+      "detail": "got: \"@dra.anafernandez\""
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "WP[1].name contiene Ramos Mejía",
+      "detail": "got: \"Hospital Municipal Dr. Ramos Mejía\""
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "groq_api_key guardada correctamente",
+      "detail": "presente"
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "groq_api_key_b1 guardada correctamente",
+      "detail": "presente"
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "pdf_config.footerText tiene datos",
+      "detail": "got: \"Centro Cardiológico Fernández — Av. Santa Fe 3450 \""
+    },
+    {
+      "status": "pass",
+      "section": "A",
+      "name": "medico_id guardado correctamente",
+      "detail": "got: \"GIFTTEST_E2E_MMLDG64B\""
+    },
+    {
+      "status": "pass",
+      "section": "B",
+      "name": "Editor contentEditable presente y editable"
+    },
+    {
+      "status": "pass",
+      "section": "B",
+      "name": "Título contiene Transcriptor",
+      "detail": "Transcriptor Médico Pro | Audio a Texto"
+    },
+    {
+      "status": "pass",
+      "section": "B",
+      "name": "hasProMode activo para GIFT user",
+      "detail": "got: true"
+    },
+    {
+      "status": "pass",
+      "section": "B",
+      "name": "Formato PDF disponible",
+      "detail": "[\"pdf\",\"rtf\",\"txt\",\"html\"]"
+    },
+    {
+      "status": "pass",
+      "section": "B",
+      "name": "Formato TXT disponible",
+      "detail": "[\"pdf\",\"rtf\",\"txt\",\"html\"]"
+    },
+    {
+      "status": "pass",
+      "section": "B",
+      "name": "Formato RTF disponible (PRO)",
+      "detail": "[\"pdf\",\"rtf\",\"txt\",\"html\"]"
+    },
+    {
+      "status": "pass",
+      "section": "B",
+      "name": "Formato HTML disponible (PRO)",
+      "detail": "[\"pdf\",\"rtf\",\"txt\",\"html\"]"
+    },
+    {
+      "status": "pass",
+      "section": "C",
+      "name": "Texto escrito en editor contiene JUAN CARLOS",
+      "detail": "435 chars"
+    },
+    {
+      "status": "pass",
+      "section": "C",
+      "name": "Texto contiene CONCLUSIÓN con tilde",
+      "detail": ""
+    },
+    {
+      "status": "pass",
+      "section": "C",
+      "name": "Acento en RODRÍGUEZ preservado",
+      "detail": ""
+    },
+    {
+      "status": "pass",
+      "section": "C",
+      "name": "Acento en \"número\" preservado",
+      "detail": ""
+    },
+    {
+      "status": "pass",
+      "section": "C",
+      "name": "autoDetectTemplateKey existe",
+      "detail": "detectó: \"ett\""
+    },
+    {
+      "status": "pass",
+      "section": "C",
+      "name": "Formato negrita funciona en editor",
+      "detail": ""
+    },
+    {
+      "status": "skip",
+      "section": "D",
+      "name": "Botón de preview no encontrado",
+      "detail": "El test puede requerir otro selector"
+    },
+    {
+      "status": "pass",
+      "section": "E",
+      "name": "Solo 3 templates accesibles de 41",
+      "detail": "allowed: [\"eco_doppler\",\"ecg\",\"holter\"]"
+    },
+    {
+      "status": "pass",
+      "section": "E",
+      "name": "canGenerateApps = false (GIFT no es CLINIC)",
+      "detail": "got: false"
+    },
+    {
+      "status": "pass",
+      "section": "E",
+      "name": "maxDevices = 2",
+      "detail": "got: 2"
+    },
+    {
+      "status": "pass",
+      "section": "E",
+      "name": "Botón contacto visible para usuario NO-admin",
+      "detail": ""
+    },
+    {
+      "status": "pass",
+      "section": "E",
+      "name": "Panel admin NO visible para GIFT user",
+      "detail": ""
+    },
+    {
+      "status": "pass",
+      "section": "F",
+      "name": "Segundo dispositivo se configuró correctamente",
+      "detail": "type: PRO"
+    },
+    {
+      "status": "pass",
+      "section": "F",
+      "name": "Tercer dispositivo bloqueado por maxDevices=2",
+      "detail": "error visible: true, config type: none"
+    },
+    {
+      "status": "pass",
+      "section": "G",
+      "name": "Buscar/Reemplazar disponible",
+      "detail": ""
+    },
+    {
+      "status": "pass",
+      "section": "G",
+      "name": "Botón copiar existe",
+      "detail": ""
+    },
+    {
+      "status": "pass",
+      "section": "G",
+      "name": "Barra de tabs presente",
+      "detail": ""
+    },
+    {
+      "status": "pass",
+      "section": "G",
+      "name": "Botón de configuración existe",
+      "detail": ""
+    },
+    {
+      "status": "pass",
+      "section": "G",
+      "name": "41 plantillas médicas cargadas",
+      "detail": "esperado: ≥30"
+    },
+    {
+      "status": "pass",
+      "section": "G",
+      "name": "app_skin = default",
+      "detail": "got: default"
+    },
+    {
+      "status": "pass",
+      "section": "H",
+      "name": "0 errores JS relevantes en consola"
+    }
+  ],
+  "failDetails": []
+}

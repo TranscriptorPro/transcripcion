@@ -69,7 +69,7 @@
     font-size: 11pt;
     font-weight: 700;
     letter-spacing: 0.06em;
-    text-transform: uppercase;
+    text-transform: none;
 }
 .pvw-details {
     font-size: 8pt;
@@ -299,7 +299,7 @@
 .a4-page .preview-content h1 {
     font-size: 13pt;
     font-weight: 700;
-    text-transform: uppercase;
+    text-transform: none;
     letter-spacing: 0.08em;
     color: var(--pa, #1a56a0);
     border-bottom: 2px solid var(--pa, #1a56a0);
@@ -376,7 +376,7 @@
 .a4-page .report-h1 {
     font-size: 13pt;
     font-weight: 700;
-    text-transform: uppercase;
+    text-transform: none;
     letter-spacing: 0.10em;
     border-bottom: 2px solid var(--pa, #1a56a0);
     padding-bottom: 4px;
@@ -387,7 +387,7 @@
 .a4-page .report-h2 {
     font-size: 11pt;
     font-weight: 700;
-    text-transform: uppercase;
+    text-transform: none;
     letter-spacing: 0.07em;
     color: var(--pa, #1a56a0);
     margin: 14px 0 6px;

@@ -1247,20 +1247,20 @@
             CLINIC: { license: 352.99, monthly: 30, annual: 300, devices: 5, templates: '3_packs', historial: Infinity, workplaces: 1, outputProfiles: Infinity, pdfLogo: true, pdfColor: true, maxProfessionals: 5, label: 'Clínica' }
         };
 
-        // ── Sincronizar con config del admin (mismo dominio → mismo localStorage) ──
-        (function _syncAdminPlanConfig() {
+        function _syncAdminPlanConfigFromObject(adminPlans) {
             try {
-                const stored = localStorage.getItem('admin_plans_config');
-                if (!stored) return;
-                const adminPlans = JSON.parse(stored);
+                if (!adminPlans || typeof adminPlans !== 'object') return;
                 const map = { normal: 'NORMAL', pro: 'PRO', clinic: 'CLINIC' };
                 for (const [adminKey, pricingKey] of Object.entries(map)) {
                     const ap = adminPlans[adminKey];
                     if (!ap || !PRICING[pricingKey]) continue;
                     if (ap.price) {
-                        const num = parseFloat(ap.price.replace(/[^0-9.]/g, ''));
+                        const num = parseFloat(String(ap.price).replace(/[^0-9.]/g, ''));
                         if (!isNaN(num)) PRICING[pricingKey].license = num;
                     }
+                    if (ap.monthly != null) PRICING[pricingKey].monthly = Number(ap.monthly) || PRICING[pricingKey].monthly;
+                    if (ap.annual != null) PRICING[pricingKey].annual = Number(ap.annual) || PRICING[pricingKey].annual;
+                    if (ap.label) PRICING[pricingKey].label = ap.label;
                     if (ap.maxDevices != null) PRICING[pricingKey].devices = ap.maxDevices;
                     if (ap.historial != null) PRICING[pricingKey].historial = ap.historial === -1 ? Infinity : ap.historial;
                     if (ap.workplaces != null) PRICING[pricingKey].workplaces = ap.workplaces;
@@ -1270,7 +1270,30 @@
                     if (ap.maxProfessionals != null) PRICING[pricingKey].maxProfessionals = ap.maxProfessionals;
                 }
             } catch(_) {}
-        })();
+        }
+
+        async function _loadPricingConfig() {
+            try {
+                const res = await fetch(`${BACKEND_URL}?action=public_get_plans_config`, { method: 'GET' });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.plans) {
+                        localStorage.setItem('admin_plans_config', JSON.stringify(data.plans));
+                        _syncAdminPlanConfigFromObject(data.plans);
+                    }
+                    if (data && data.addons) {
+                        localStorage.setItem('admin_addons_config', JSON.stringify(data.addons));
+                        _syncAdminAddonsConfigFromObject(data.addons);
+                    }
+                    return;
+                }
+            } catch(_) {}
+
+            try {
+                const stored = localStorage.getItem('admin_plans_config');
+                if (stored) _syncAdminPlanConfigFromObject(JSON.parse(stored));
+            } catch(_) {}
+        }
 
         const ADDON_PRICES = {
             template_individual: 3,
@@ -1283,15 +1306,21 @@
             branding_pro: 9.99       // color para PRO (ya tiene logo)
         };
 
+        function _syncAdminAddonsConfigFromObject(cfg) {
+            try {
+                if (!cfg || typeof cfg !== 'object') return;
+                for (const key of Object.keys(ADDON_PRICES)) {
+                    if (cfg[key] && cfg[key].price != null) ADDON_PRICES[key] = cfg[key].price;
+                }
+            } catch(_) {}
+        }
+
         // ── Sync with admin_addons_config (D3) ──
         (function _syncAdminAddonsConfig() {
             try {
                 const raw = localStorage.getItem('admin_addons_config');
                 if (!raw) return;
-                const cfg = JSON.parse(raw);
-                for (const key of Object.keys(ADDON_PRICES)) {
-                    if (cfg[key] && cfg[key].price != null) ADDON_PRICES[key] = cfg[key].price;
-                }
+                _syncAdminAddonsConfigFromObject(JSON.parse(raw));
             } catch(_) {}
         })();
 
@@ -2381,7 +2410,9 @@
         }
 
         // ── Init ────────────────────────────────────────────────────────────────
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            await _loadPricingConfig();
+            _refreshAllPrices();
             renderEspecialidades();
             renderWorkplace(0, false);
             renderProfessional(0); // Primer profesional (visible solo en CLINIC)

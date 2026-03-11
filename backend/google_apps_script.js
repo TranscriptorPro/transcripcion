@@ -18,6 +18,8 @@ const SHEET_ADMIN_USERS  = 'Admin_Users';
 const SHEET_REGISTROS       = 'Registros_Pendientes';
 const SHEET_PROFESIONALES   = 'Profesionales_Clinica';
 const SHEET_SOPORTE         = 'Solicitudes_Soporte';
+const PROP_PLANS_CONFIG     = 'PLANS_CONFIG_JSON';
+const PROP_ADDONS_CONFIG    = 'ADDONS_CONFIG_JSON';
 
 // SECURITY: Read from Apps Script Script Properties (not hardcoded).
 // In Apps Script editor: File > Project Properties > Script Properties > Add: ADMIN_KEY = <your-secret>
@@ -29,8 +31,234 @@ const ADMIN_KEY = (function() {
   }
 })();
 
+function _defaultPlansConfig() {
+  return {
+    trial: {
+      key: 'trial',
+      label: 'Trial',
+      icon: '🧪',
+      price: 'Gratis',
+      period: '15 días',
+      monthly: 0,
+      annual: 0,
+      features: ['Todo de Pro por 15 días'],
+      type: 'TRIAL',
+      hasProMode: true,
+      hasDashboard: false,
+      canGenerateApps: false,
+      maxDevices: 3,
+      durationDays: 15,
+      historial: 30,
+      workplaces: 2,
+      outputProfiles: 3,
+      maxProfessionals: 1,
+      templateMode: 'manual',
+      templateLimit: 3,
+      packLimit: 0,
+      specialtyExtraLimit: 0,
+      pdfLogo: true,
+      pdfColor: false
+    },
+    normal: {
+      key: 'normal',
+      label: 'Normal',
+      icon: '📝',
+      price: '$102.99',
+      period: 'pago único + $10/mes',
+      monthly: 10,
+      annual: 100,
+      features: ['Transcripción de audio'],
+      type: 'NORMAL',
+      hasProMode: false,
+      hasDashboard: false,
+      canGenerateApps: false,
+      maxDevices: 1,
+      durationDays: 30,
+      historial: 10,
+      workplaces: 1,
+      outputProfiles: 1,
+      maxProfessionals: 1,
+      templateMode: 'manual',
+      templateLimit: 3,
+      packLimit: 0,
+      specialtyExtraLimit: 0,
+      pdfLogo: false,
+      pdfColor: false
+    },
+    pro: {
+      key: 'pro',
+      label: 'Pro',
+      icon: '⚡',
+      price: '$152.99',
+      period: 'pago único + $15/mes',
+      monthly: 15,
+      annual: 150,
+      features: ['Estructuración automática con IA'],
+      type: 'PRO',
+      hasProMode: true,
+      hasDashboard: true,
+      canGenerateApps: false,
+      maxDevices: 3,
+      durationDays: 30,
+      historial: 30,
+      workplaces: 2,
+      outputProfiles: 3,
+      maxProfessionals: 1,
+      templateMode: 'specialty',
+      templateLimit: -1,
+      packLimit: 0,
+      specialtyExtraLimit: 10,
+      pdfLogo: true,
+      pdfColor: false
+    },
+    clinic: {
+      key: 'clinic',
+      label: 'Clínica',
+      icon: '🏥',
+      price: '$352.99',
+      period: 'pago único + $30/mes',
+      monthly: 30,
+      annual: 300,
+      features: ['Todo de Pro más:'],
+      type: 'PRO',
+      hasProMode: true,
+      hasDashboard: true,
+      canGenerateApps: true,
+      maxDevices: 5,
+      durationDays: 365,
+      historial: -1,
+      workplaces: 1,
+      outputProfiles: -1,
+      maxProfessionals: 5,
+      templateMode: 'packs',
+      templateLimit: -1,
+      packLimit: 3,
+      specialtyExtraLimit: 0,
+      pdfLogo: true,
+      pdfColor: true
+    },
+    gift: {
+      key: 'gift',
+      label: 'Gift',
+      icon: '🎁',
+      price: '$0',
+      period: 'regalo',
+      monthly: 0,
+      annual: 0,
+      features: ['Acceso total'],
+      type: 'PRO',
+      hasProMode: true,
+      hasDashboard: true,
+      canGenerateApps: false,
+      maxDevices: 10,
+      durationDays: 365,
+      historial: -1,
+      workplaces: 3,
+      outputProfiles: -1,
+      maxProfessionals: 1,
+      templateMode: 'all',
+      templateLimit: -1,
+      packLimit: 0,
+      specialtyExtraLimit: 0,
+      pdfLogo: true,
+      pdfColor: true
+    },
+    enterprise: {
+      key: 'enterprise',
+      label: 'Enterprise',
+      icon: '🏢',
+      price: '$999',
+      period: 'mensual',
+      monthly: 999,
+      annual: 9999,
+      features: ['Configuración corporativa'],
+      type: 'PRO',
+      hasProMode: true,
+      hasDashboard: true,
+      canGenerateApps: true,
+      maxDevices: 999,
+      durationDays: 365,
+      historial: -1,
+      workplaces: 999,
+      outputProfiles: -1,
+      maxProfessionals: 999,
+      templateMode: 'all',
+      templateLimit: -1,
+      packLimit: 0,
+      specialtyExtraLimit: 0,
+      pdfLogo: true,
+      pdfColor: true
+    }
+  };
+}
+
+function _defaultAddonsConfig() {
+  return {
+    device_extra:        { key: 'device_extra',        label: 'Dispositivo extra',           price: 8.99,  icon: '💻' },
+    workplace_extra:     { key: 'workplace_extra',     label: 'Lugar de trabajo extra',      price: 12.99, icon: '🏥' },
+    professional_extra:  { key: 'professional_extra',  label: 'Profesional extra',           price: 19.99, icon: '👨‍⚕️' },
+    branding_normal:     { key: 'branding_normal',     label: 'Branding (plan Normal)',      price: 14.99, icon: '🎨' },
+    branding_pro:        { key: 'branding_pro',        label: 'Branding (plan Pro)',         price: 9.99,  icon: '🎨' },
+    template_individual: { key: 'template_individual', label: 'Plantilla individual',        price: 3,     icon: '📄' },
+    pack_small:          { key: 'pack_small',          label: 'Pack pequeño (5 plantillas)', price: 7,     icon: '📦' },
+    pack_large:          { key: 'pack_large',          label: 'Pack grande (todas)',         price: 12,    icon: '📦' }
+  };
+}
+
+function _mergeConfig(defaultObj, inputObj) {
+  const out = JSON.parse(JSON.stringify(defaultObj));
+  if (!inputObj || typeof inputObj !== 'object') return out;
+  Object.keys(inputObj).forEach(function(key) {
+    if (!out[key]) out[key] = {};
+    if (typeof inputObj[key] === 'object' && inputObj[key] !== null && !Array.isArray(inputObj[key])) {
+      out[key] = Object.assign({}, out[key], inputObj[key]);
+    } else {
+      out[key] = inputObj[key];
+    }
+  });
+  return out;
+}
+
+function _readJsonProperty(propKey, fallbackObj) {
+  try {
+    const raw = PropertiesService.getScriptProperties().getProperty(propKey);
+    if (!raw) return JSON.parse(JSON.stringify(fallbackObj));
+    return _mergeConfig(fallbackObj, JSON.parse(raw));
+  } catch (e) {
+    return JSON.parse(JSON.stringify(fallbackObj));
+  }
+}
+
+function _writeJsonProperty(propKey, valueObj, fallbackObj) {
+  const normalized = _mergeConfig(fallbackObj, valueObj || {});
+  PropertiesService.getScriptProperties().setProperty(propKey, JSON.stringify(normalized));
+  return normalized;
+}
+
+function _getPlansConfig() {
+  return _readJsonProperty(PROP_PLANS_CONFIG, _defaultPlansConfig());
+}
+
+function _getAddonsConfig() {
+  return _readJsonProperty(PROP_ADDONS_CONFIG, _defaultAddonsConfig());
+}
+
+function _resolvePlanConfig(planCode) {
+  const plans = _getPlansConfig();
+  const key = String(planCode || 'trial').toLowerCase();
+  return plans[key] || plans.trial || _defaultPlansConfig().trial;
+}
+
 function doGet(e) {
   const action = e.parameter.action;
+
+  if (action === 'public_get_plans_config') {
+    return createResponse({
+      success: true,
+      plans: _getPlansConfig(),
+      addons: _getAddonsConfig()
+    });
+  }
 
   // EXISTING: user validation — enhanced with trial/device enforcement
   if (!action || action === 'validate') {
@@ -700,17 +928,10 @@ function doGet(e) {
         const user = {};
         headers.forEach((h, idx) => { user[h] = data[i][idx]; });
 
-        // Mapear Plan → tipo de config
         const plan = String(user.Plan || 'trial').toLowerCase();
-        const planMap = {
-          'trial':      { type: 'TRIAL',  hasProMode: false, hasDashboard: false, canGenerateApps: false },
-          'normal':     { type: 'NORMAL', hasProMode: false, hasDashboard: false, canGenerateApps: false },
-          'pro':        { type: 'PRO',    hasProMode: true,  hasDashboard: true,  canGenerateApps: false },
-          'enterprise': { type: 'PRO',    hasProMode: true,  hasDashboard: true,  canGenerateApps: false },
-          'gift':       { type: 'PRO',    hasProMode: true,  hasDashboard: true,  canGenerateApps: false },
-          'clinic':     { type: 'PRO',    hasProMode: true,  hasDashboard: true,  canGenerateApps: true  }
-        };
-        const planConfig = planMap[plan] || planMap['trial'];
+        let regDatos = {};
+        try { regDatos = JSON.parse(user.Registro_Datos || '{}'); } catch(_) {}
+        const planConfig = _resolvePlanConfig(plan);
 
         // Parsear specialties y allowedTemplates
         let specialties = ['ALL'];
@@ -728,17 +949,18 @@ function doGet(e) {
         } catch(e) {}
 
         const trialDays = plan === 'trial' ? (Number(user.Devices_Max) > 0 ? 7 : 0) : 0;
+        const resolvedType = String(planConfig.type || '').trim() || (planConfig.hasProMode ? 'PRO' : (plan === 'normal' ? 'NORMAL' : 'TRIAL'));
 
         const config = {
           medicoId: userId,
-          type: planConfig.type,
+          type: resolvedType,
           status: String(user.Estado || 'active'),
           specialties: specialties,
-          maxDevices: Number(user.Devices_Max) || 2,
+          maxDevices: Number(user.Devices_Max) || Number(planConfig.maxDevices) || 2,
           trialDays: trialDays,
-          hasProMode: planConfig.hasProMode,
-          hasDashboard: planConfig.hasDashboard,
-          canGenerateApps: planConfig.canGenerateApps,
+          hasProMode: regDatos.hasProMode !== undefined ? !!regDatos.hasProMode : !!planConfig.hasProMode,
+          hasDashboard: regDatos.hasDashboard !== undefined ? !!regDatos.hasDashboard : !!planConfig.hasDashboard,
+          canGenerateApps: regDatos.canGenerateApps !== undefined ? !!regDatos.canGenerateApps : !!planConfig.canGenerateApps,
           allowedTemplates: allowedTemplates,
           doctorName: user.Nombre || '',
           matricula: user.Matricula || '',
@@ -850,6 +1072,15 @@ function doGet(e) {
     const editedHeaderColor = e.parameter.editedHeaderColor ? decodeURIComponent(e.parameter.editedHeaderColor)     : null;
     const editedFooterText  = e.parameter.editedFooterText  ? decodeURIComponent(e.parameter.editedFooterText)      : null;
     const editedWorkplace   = e.parameter.editedWorkplace   ? decodeURIComponent(e.parameter.editedWorkplace)       : null;
+    const editedHasProMode = e.parameter.editedHasProMode !== undefined
+      ? String(e.parameter.editedHasProMode).toLowerCase() === 'true'
+      : null;
+    const editedHasDashboard = e.parameter.editedHasDashboard !== undefined
+      ? String(e.parameter.editedHasDashboard).toLowerCase() === 'true'
+      : null;
+    const editedCanGenerateApps = e.parameter.editedCanGenerateApps !== undefined
+      ? String(e.parameter.editedCanGenerateApps).toLowerCase() === 'true'
+      : null;
 
     if (!regId) return createResponse({ error: 'Falta regId' });
 
@@ -924,6 +1155,9 @@ function doGet(e) {
           notas:           editedNotas || regData.Notas || '',
           estudios:        regData.Estudios        || '',
           profesionales:   regData.Profesionales   || '',
+          hasProMode:      editedHasProMode,
+          hasDashboard:    editedHasDashboard,
+          canGenerateApps: editedCanGenerateApps,
           apiKeyB1:        apiKeyB1,
           apiKeyB2:        apiKeyB2
         })
@@ -1037,6 +1271,18 @@ function doGet(e) {
     }
   }
 
+  if (action === 'admin_get_plans_config') {
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
+    return createResponse({ success: true, plans: _getPlansConfig() });
+  }
+
+  if (action === 'admin_get_addons_config') {
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
+    return createResponse({ success: true, addons: _getAddonsConfig() });
+  }
+
   return createResponse({ error: 'Acción no válida' });
 }
 
@@ -1047,6 +1293,20 @@ function doPost(e) {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
+
+  if (action === 'admin_save_plans_config') {
+    const auth = _verifyAdminAuth(payload);
+    if (!auth.authorized) return createResponse({ error: auth.error });
+    const saved = _writeJsonProperty(PROP_PLANS_CONFIG, payload.plans || {}, _defaultPlansConfig());
+    return createResponse({ success: true, plans: saved });
+  }
+
+  if (action === 'admin_save_addons_config') {
+    const auth = _verifyAdminAuth(payload);
+    if (!auth.authorized) return createResponse({ error: auth.error });
+    const saved = _writeJsonProperty(PROP_ADDONS_CONFIG, payload.addons || {}, _defaultAddonsConfig());
+    return createResponse({ success: true, addons: saved });
+  }
 
   // ── admin_approve_registration via POST (soporta payloads grandes con imágenes base64) ──
   if (action === 'admin_approve_registration') {
@@ -1072,6 +1332,9 @@ function doPost(e) {
     const editedExtraWps    = payload.editedExtraWorkplaces || null;
     const editedFirma       = payload.editedFirma       || null;
     const editedProLogo     = payload.editedProLogo     || null;
+    const editedHasProMode = payload.editedHasProMode !== undefined ? !!payload.editedHasProMode : null;
+    const editedHasDashboard = payload.editedHasDashboard !== undefined ? !!payload.editedHasDashboard : null;
+    const editedCanGenerateApps = payload.editedCanGenerateApps !== undefined ? !!payload.editedCanGenerateApps : null;
 
     if (!regId) return createResponse({ error: 'Falta regId' });
 
@@ -1148,6 +1411,9 @@ function doPost(e) {
           notas:           editedNotas || regData.Notas || '',
           estudios:        regData.Estudios        || '',
           profesionales:   regData.Profesionales   || '',
+          hasProMode:      editedHasProMode,
+          hasDashboard:    editedHasDashboard,
+          canGenerateApps: editedCanGenerateApps,
           apiKeyB1:        apiKeyB1,
           apiKeyB2:        apiKeyB2
         })

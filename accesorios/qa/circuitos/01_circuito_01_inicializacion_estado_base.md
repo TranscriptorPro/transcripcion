@@ -3,6 +3,13 @@
 Objetivo:
 Probar en Firefox que la app arranca limpia en IDLE, sin errores JS, con botones correctos y persistencia basica de modo.
 
+Modo de ejecucion (interactivo por chat):
+- Este circuito se ejecuta una accion por interaccion para ahorrar tokens.
+- En cada interaccion: 1 orden operativa + 1 pregunta con opciones para marcar.
+- El usuario responde seleccionando la opcion que mejor describe el resultado observado.
+- Luego se pasa al siguiente paso del circuito.
+- Formato de referencia de cada paso: C01-1a, C01-1b, C01-2c, etc.
+
 Como reportarme fallas:
 - Usa este formato: `C01-1a`, `C01-1b`, `C01-2c`, etc.
 - Ejemplo: `Falla C01-3b: el boton Transcribir aparece habilitado sin archivos`.

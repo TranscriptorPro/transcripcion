@@ -33,6 +33,26 @@
     // PLANS se carga lazy cada vez que se abre el modal
     let PLANS = _loadDynamicPlans();
 
+    async function _refreshPlansFromBackend() {
+        try {
+            const cfg = window.CLIENT_CONFIG || JSON.parse(localStorage.getItem('client_config_stored') || '{}');
+            const backendUrl = cfg.backendUrl
+                || (typeof appDB !== 'undefined' ? await appDB.get('backend_url') : null)
+                || localStorage.getItem('backend_url');
+            if (!backendUrl) return;
+
+            const res = await fetch(`${backendUrl}?action=public_get_plans_config`, { method: 'GET' });
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data && data.plans) {
+                localStorage.setItem('admin_plans_config', JSON.stringify(data.plans));
+                PLANS = _loadDynamicPlans();
+            }
+        } catch (_) {
+            // Fallback silencioso: localStorage/defaults
+        }
+    }
+
     // ── Templates disponibles como addons ─────────────────────────────
     function _getTemplateAddons() {
         const templates = window.MEDICAL_TEMPLATES || {};
@@ -334,7 +354,8 @@
     }
 
     // ── API pública ──────────────────────────────────────────────────
-    window.openPricingCart = function () {
+    window.openPricingCart = async function () {
+        await _refreshPlansFromBackend();
         PLANS = _loadDynamicPlans(); // Refrescar precios dinámicos
         _cart = { upgradePlan: null, addonTemplates: new Set() };
         _renderPricingModal();

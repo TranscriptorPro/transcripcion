@@ -1472,8 +1472,31 @@
             'Urología': []
         };
 
-        // ── Dispositivos por plan ──
-        const DEVICES_POR_PLAN = { NORMAL: 1, PRO: 3, CLINIC: 5, TRIAL: 3, GIFT: 10 };
+        // ── Dispositivos por plan (fallback) ──
+        const DEVICES_POR_PLAN = { NORMAL: 1, PRO: 3, CLINIC: 5, TRIAL: 3, GIFT: 10, ENTERPRISE: 999 };
+
+        function _resolvePlanCfg(planCode) {
+            const key = String(planCode || 'NORMAL').toLowerCase();
+            const fallback = {
+                maxDevices: DEVICES_POR_PLAN[String(planCode || 'NORMAL').toUpperCase()] || 2,
+                templateMode: (key === 'gift' ? 'all' : (key === 'clinic' ? 'packs' : (key === 'pro' ? 'specialty' : 'manual'))),
+                templateLimit: (key === 'normal' || key === 'trial') ? 3 : -1,
+                packLimit: key === 'clinic' ? 3 : 0,
+                specialtyExtraLimit: key === 'pro' ? 10 : 0,
+                hasProMode: ['pro', 'clinic', 'gift', 'enterprise'].includes(key),
+                hasDashboard: ['pro', 'clinic', 'gift', 'enterprise'].includes(key),
+                canGenerateApps: ['clinic', 'enterprise'].includes(key)
+            };
+            try {
+                const all = (typeof window._getAdminPlansConfig === 'function')
+                    ? window._getAdminPlansConfig()
+                    : JSON.parse(localStorage.getItem('admin_plans_config') || '{}');
+                const cfg = all && all[key];
+                return cfg ? Object.assign({}, fallback, cfg) : fallback;
+            } catch(_) {
+                return fallback;
+            }
+        }
 
         // ========== EDITAR USUARIO ==========
 
@@ -4068,13 +4091,18 @@
             const plan = document.getElementById('approvePlan').value;
             const section = document.getElementById('approveTemplateSection');
             const devicesInfo = document.getElementById('approveDevicesInfo');
-            const devices = DEVICES_POR_PLAN[plan] || 2;
+            const planCfg = _resolvePlanCfg(plan);
+            const devices = Number(planCfg.maxDevices) || 2;
             devicesInfo.textContent = devices >= 999 ? '∞ (ilimitados)' : devices;
+            const templateMode = String(planCfg.templateMode || '').toLowerCase();
+            const templateLimit = Number(planCfg.templateLimit);
+            const packLimit = Number(planCfg.packLimit) || 0;
+            const specialtyExtraLimit = Number(planCfg.specialtyExtraLimit) || 0;
 
             const doctorCats = _getDoctorTemplateCategories();
             const allCats = Object.keys(TEMPLATE_MAP);
 
-            if (plan === 'GIFT') {
+            if (templateMode === 'all') {
                 // GIFT: todas las plantillas, sin selección
                 const allTemplates = [];
                 allCats.forEach(cat => {
@@ -4084,17 +4112,18 @@
                     <div style="background:linear-gradient(135deg,#fef3c7,#fde68a);border:2px solid #f59e0b;border-radius:10px;padding:.8rem 1rem;text-align:center;">
                         <span style="font-size:1.5rem;">🎁</span>
                         <p style="font-weight:600;font-size:.88rem;color:#92400e;margin:.3rem 0 .2rem;">Plan REGALO — TODAS las plantillas incluidas</p>
-                        <p style="font-size:.75rem;color:#a16207;margin:0;">${allTemplates.length} plantillas · 10 dispositivos · Funcionalidades PRO</p>
+                        <p style="font-size:.75rem;color:#a16207;margin:0;">${allTemplates.length} plantillas · ${devices >= 999 ? '∞' : devices} dispositivos · Funcionalidades PRO</p>
                         <div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:.5rem;justify-content:center;">
                             ${allTemplates.map(n => `<span style="padding:2px 6px;background:#fff7ed;border:1px solid #fed7aa;border-radius:4px;font-size:.7rem;color:#9a3412;">${escapeHtml(n)}</span>`).join('')}
                         </div>
                     </div>
                 `;
-            } else if (plan === 'CLINIC') {
-                // CLINIC: seleccionar packs (categorías completas), máx 3
+            } else if (templateMode === 'packs') {
+                // Packs por categoría (límite configurable)
+                const maxPacks = packLimit > 0 ? packLimit : 3;
                 let html = `
-                    <label style="font-weight:600;font-size:.85rem;">📦 Packs de especialidad <span style="color:#94a3b8;font-weight:400;">(máx. 3)</span></label>
-                    <div id="approvePackCounter" style="font-size:.78rem;color:#64748b;margin:.3rem 0;">0/3 packs seleccionados</div>
+                    <label style="font-weight:600;font-size:.85rem;">📦 Packs de especialidad <span style="color:#94a3b8;font-weight:400;">(máx. ${maxPacks})</span></label>
+                    <div id="approvePackCounter" data-max="${maxPacks}" style="font-size:.78rem;color:#64748b;margin:.3rem 0;">0/${maxPacks} packs seleccionados</div>
                     <div class="tpl-pack-grid" style="display:grid;gap:.4rem;margin-top:.4rem;">
                 `;
                 allCats.forEach(cat => {
@@ -4128,7 +4157,7 @@
                         }
                     }
                 } catch(_) {}
-            } else if (plan === 'PRO') {
+            } else if (templateMode === 'specialty') {
                 // PRO: todas las plantillas de sus especialidades (auto), + extras opcionales
                 const autoKeys = [];
                 const autoNames = [];
@@ -4151,7 +4180,7 @@
                 const otherCats = allCats.filter(c => !doctorCats.has(c));
                 if (otherCats.length > 0) {
                     html += `
-                        <label style="font-weight:600;font-size:.85rem;">➕ Plantillas extra <span style="color:#94a3b8;font-weight:400;">(opcional, de otras especialidades)</span></label>
+                        <label style="font-weight:600;font-size:.85rem;">➕ Plantillas extra <span style="color:#94a3b8;font-weight:400;">(opcional, de otras especialidades${specialtyExtraLimit > 0 ? ', máx. ' + specialtyExtraLimit : ''})</span></label>
                         <div class="tpl-extras-grid" style="margin-top:.4rem;">
                     `;
                     otherCats.forEach(cat => {
@@ -4169,8 +4198,8 @@
                 }
                 section.innerHTML = html;
             } else {
-                // NORMAL / TRIAL: elegir hasta 3 plantillas individuales de sus especialidades
-                const maxTpl = 3;
+                // Modo manual: elegir hasta N plantillas de sus especialidades
+                const maxTpl = templateLimit > 0 ? templateLimit : 3;
                 let html = `
                     <label style="font-weight:600;font-size:.85rem;">📋 Plantillas permitidas <span style="color:#94a3b8;font-weight:400;">(máx. ${maxTpl})</span></label>
                     <div id="approveTplCounter" style="font-size:.78rem;color:#64748b;margin:.3rem 0;">0/${maxTpl} seleccionadas</div>
@@ -4265,10 +4294,10 @@
 
         /** Maneja cambio en checkboxes de packs (CLINIC) */
         function onPackChange() {
-            const max = 3;
+            const counter = document.getElementById('approvePackCounter');
+            const max = Number(counter?.dataset?.max || 3);
             const cbs = document.querySelectorAll('.approve-pack-cb');
             const checked = Array.from(cbs).filter(cb => cb.checked);
-            const counter = document.getElementById('approvePackCounter');
             if (counter) counter.textContent = `${checked.length}/${max} packs seleccionados`;
 
             cbs.forEach(cb => {
@@ -4299,7 +4328,12 @@
             const apiKey  = document.getElementById('approveApiKey').value.trim();
             const apiKeyB1 = document.getElementById('approveApiKeyB1').value.trim();
             const apiKeyB2 = document.getElementById('approveApiKeyB2').value.trim();
-            const maxDevices = DEVICES_POR_PLAN[plan] || 2;
+            const planCfg = _resolvePlanCfg(plan);
+            const maxDevices = Number(planCfg.maxDevices) || 2;
+            const templateMode = String(planCfg.templateMode || '').toLowerCase();
+            const templateLimit = Number(planCfg.templateLimit);
+            const packLimit = Number(planCfg.packLimit) || 0;
+            const specialtyExtraLimit = Number(planCfg.specialtyExtraLimit) || 0;
 
             // Leer campos editados en la sección de verificación
             const _editNombre      = (document.getElementById('approveEditNombre')?.value      || '').trim();
@@ -4353,21 +4387,25 @@
             // Recopilar plantillas según plan
             let selectedTemplates = [];
 
-            if (plan === 'GIFT') {
+            if (templateMode === 'all') {
                 // GIFT: todas las plantillas
                 Object.values(TEMPLATE_MAP).forEach(cat => {
                     cat.forEach(t => selectedTemplates.push(t.key));
                 });
-            } else if (plan === 'CLINIC') {
+            } else if (templateMode === 'packs') {
                 const packs = Array.from(document.querySelectorAll('.approve-pack-cb:checked')).map(cb => cb.value);
                 if (packs.length === 0) {
                     await dashAlert('Seleccioná al menos 1 pack de especialidad', '📦');
                     return;
                 }
+                if (packLimit > 0 && packs.length > packLimit) {
+                    await dashAlert(`Este plan permite máximo ${packLimit} packs`, '📦');
+                    return;
+                }
                 packs.forEach(cat => {
                     (TEMPLATE_MAP[cat] || []).forEach(t => selectedTemplates.push(t.key));
                 });
-            } else if (plan === 'PRO') {
+            } else if (templateMode === 'specialty') {
                 // Auto: todas las de sus especialidades
                 const doctorCats = _getDoctorTemplateCategories();
                 doctorCats.forEach(cat => {
@@ -4375,12 +4413,20 @@
                 });
                 // + extras
                 const extras = Array.from(document.querySelectorAll('.approve-extra-cb:checked')).map(cb => cb.value);
+                if (specialtyExtraLimit > 0 && extras.length > specialtyExtraLimit) {
+                    await dashAlert(`Este plan permite máximo ${specialtyExtraLimit} plantillas extras`, '📋');
+                    return;
+                }
                 selectedTemplates.push(...extras);
             } else {
                 // NORMAL / TRIAL
                 selectedTemplates = Array.from(document.querySelectorAll('.approve-tpl-cb:checked')).map(cb => cb.value);
                 if (selectedTemplates.length === 0) {
                     await dashAlert('Seleccioná al menos 1 plantilla', '📋');
+                    return;
+                }
+                if (templateLimit > 0 && selectedTemplates.length > templateLimit) {
+                    await dashAlert(`Este plan permite máximo ${templateLimit} plantillas`, '📋');
                     return;
                 }
             }
@@ -4401,6 +4447,9 @@
                     regId, plan, apiKey, apiKeyB1, apiKeyB2,
                     maxDevices: String(maxDevices),
                     allowedTemplates: templatesStr,
+                    editedHasProMode: !!planCfg.hasProMode,
+                    editedHasDashboard: !!planCfg.hasDashboard,
+                    editedCanGenerateApps: !!planCfg.canGenerateApps,
                     editedNombre: _editNombre,
                     editedMatricula: _editMatricula,
                     editedEmail: _editEmail,
