@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Límite de Dispositivos</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 18px;
+    }
+    .wrap { max-width: 920px; margin: 0 auto; }
+    .card {
+      background: #111827;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    h1 { margin: 0 0 6px; color: #93c5fd; font-size: 1.45rem; }
+    p { margin: 0 0 8px; color: #94a3b8; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 860px) { .row { grid-template-columns: 1fr; } }
+    label { display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; }
+    input, button, textarea { font: inherit; }
+    input {
+      width: 100%;
+      border: 1px solid #475569;
+      background: #0b1220;
+      color: #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+    .btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    button {
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 8px 12px;
+      background: #1f2937;
+      color: #e2e8f0;
+      cursor: pointer;
+    }
+    button:hover { filter: brightness(1.1); }
+    .pri { background: #1d4ed8; border-color: #1e40af; }
+    .warn { background: #b45309; border-color: #92400e; }
+    .ok { background: #047857; border-color: #065f46; }
+    .log {
+      margin-top: 10px;
+      background: #0b1220;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 10px;
+      max-height: 420px;
+      overflow: auto;
+      font-family: Consolas, monospace;
+      font-size: 0.82rem;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .line-pass { color: #86efac; }
+    .line-fail { color: #fca5a5; }
+    .line-info { color: #93c5fd; }
+    .line-warn { color: #fcd34d; }
+    .mono { font-family: Consolas, monospace; }
+    .badge {
+      display: inline-block;
+      border: 1px solid #334155;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 0.75rem;
+      color: #cbd5e1;
+      background: #1f2937;
+      margin-right: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Test de Límite de Dispositivos</h1>
+      <p>Verifica que el backend bloquee correctamente cuando se supera <span class="mono">Devices_Max</span>.</p>
+      <p><span class="badge">Modo seguro</span> consulta sin registrar nuevo dispositivo.</p>
+      <p><span class="badge">Modo simulación</span> prueba 3 devices QA fijos para confirmar bloqueo en el tercero.</p>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <div>
+          <label>Backend URL (Apps Script)</label>
+          <input id="backendUrl" value="https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec">
+        </div>
+        <div>
+          <label>ID del usuario (ej: GIFTMMMFY4I7)</label>
+          <input id="medicoId" placeholder="GIFT...">
+        </div>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <div>
+          <label>Máximo esperado de dispositivos</label>
+          <input id="expectedMax" type="number" value="2" min="1" step="1">
+        </div>
+        <div>
+          <label>Prefijo QA de deviceId (estable para reintentos)</label>
+          <input id="qaPrefix" value="qa_dev_limit">
+        </div>
+      </div>
+
+      <div class="btns">
+        <button class="pri" id="btnSafe">Chequeo seguro (sin registrar device)</button>
+        <button class="warn" id="btnSim">Simular 3 dispositivos QA</button>
+        <button class="ok" id="btnClear">Limpiar log</button>
+      </div>
+
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+
+  <script>
+    const el = (id) => document.getElementById(id);
+    const logEl = el('log');
+
+    function log(msg, cls) {
+      const d = document.createElement('div');
+      d.textContent = msg;
+      if (cls) d.className = cls;
+      logEl.appendChild(d);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function getCfg() {
+      const backendUrl = String(el('backendUrl').value || '').trim();
+      const medicoId = String(el('medicoId').value || '').trim();
+      const expectedMax = Number(el('expectedMax').value || 0);
+      const qaPrefix = String(el('qaPrefix').value || 'qa_dev_limit').trim();
+      return { backendUrl, medicoId, expectedMax, qaPrefix };
+    }
+
+    function makeUrl(base, id, deviceId) {
+      let u = base + '?action=validate&id=' + encodeURIComponent(id);
+      if (deviceId) u += '&deviceId=' + encodeURIComponent(deviceId);
+      return u;
+    }
+
+    async function callValidate(base, id, deviceId) {
+      const url = makeUrl(base, id, deviceId);
+      const res = await fetch(url);
+      const json = await res.json();
+      return { url, json };
+    }
+
+    function ensureCfg() {
+      const cfg = getCfg();
+      if (!cfg.backendUrl || !cfg.medicoId) {
+        log('Completa Backend URL e ID del usuario.', 'line-fail');
+        return null;
+      }
+      return cfg;
+    }
+
+    async function safeCheck() {
+      const cfg = ensureCfg();
+      if (!cfg) return;
+      log('--- CHEQUEO SEGURO ---', 'line-info');
+      try {
+        const { url, json } = await callValidate(cfg.backendUrl, cfg.medicoId, '');
+        log('URL: ' + url, 'line-info');
+
+        if (json.error) {
+          log('Error backend: ' + (json.code || 'N/A') + ' - ' + json.error, 'line-fail');
+          return;
+        }
+
+        const devicesMax = Number(json.devices_max || json.Devices_Max || 0);
+        const devicesCount = Number(json.devices_count || 0);
+        const row = [
+          'Resultado:',
+          'devices_count=' + devicesCount,
+          'devices_max=' + devicesMax,
+          'plan=' + (json.Plan || json.plan || '-')
+        ].join(' ');
+        log(row, 'line-pass');
+
+        if (cfg.expectedMax > 0) {
+          if (devicesMax === cfg.expectedMax) {
+            log('OK: max configurado coincide con esperado (' + cfg.expectedMax + ').', 'line-pass');
+          } else {
+            log('ATENCION: max backend=' + devicesMax + ' pero esperado=' + cfg.expectedMax + '.', 'line-warn');
+          }
+        }
+      } catch (e) {
+        log('Fallo de red/parse: ' + e.message, 'line-fail');
+      }
+    }
+
+    async function simulate3Devices() {
+      const cfg = ensureCfg();
+      if (!cfg) return;
+
+      log('--- SIMULACION 3 DISPOSITIVOS QA ---', 'line-info');
+      log('Aviso: esta prueba puede registrar devices QA en la licencia. Usar usuario de prueba.', 'line-warn');
+
+      const baseKey = (cfg.qaPrefix + '_' + cfg.medicoId).replace(/[^a-zA-Z0-9_\-]/g, '_');
+      const ids = [baseKey + '_A', baseKey + '_B', baseKey + '_C'];
+
+      let thirdBlocked = false;
+
+      for (let i = 0; i < ids.length; i++) {
+        const did = ids[i];
+        try {
+          const { url, json } = await callValidate(cfg.backendUrl, cfg.medicoId, did);
+          const code = json.code || 'OK';
+          const err = json.error || '';
+          const max = Number(json.devices_max || json.Devices_Max || 0);
+          const cnt = Number(json.devices_logged || json.devices_count || 0);
+
+          log('[' + (i + 1) + '/3] ' + did + ' => code=' + code + ' err=' + err + ' count=' + cnt + ' max=' + max, code === 'DEVICE_LIMIT' ? 'line-pass' : 'line-info');
+          log('URL: ' + url, 'line-info');
+
+          if (i === 2 && code === 'DEVICE_LIMIT') {
+            thirdBlocked = true;
+          }
+        } catch (e) {
+          log('[' + (i + 1) + '/3] ' + did + ' => fallo: ' + e.message, 'line-fail');
+        }
+      }
+
+      if (thirdBlocked) {
+        log('PASS: el 3er dispositivo fue bloqueado (DEVICE_LIMIT).', 'line-pass');
+      } else {
+        log('FAIL: el 3er dispositivo no fue bloqueado. Revisar Devices_Max o flujo de validacion.', 'line-fail');
+      }
+    }
+
+    el('btnSafe').addEventListener('click', safeCheck);
+    el('btnSim').addEventListener('click', simulate3Devices);
+    el('btnClear').addEventListener('click', () => { logEl.innerHTML = ''; });
+  </script>
+</body>
+</html>
