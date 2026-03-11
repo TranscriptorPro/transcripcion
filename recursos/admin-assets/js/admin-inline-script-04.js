@@ -4,6 +4,11 @@
             sessionTimeout: 8 * 60 * 60 * 1000 // 8 hours in ms
         };
 
+        // Exponer configuración para scripts auxiliares (planes/extras) que la leen desde window.
+        if (typeof window !== 'undefined') {
+            window.CONFIG = CONFIG;
+        }
+
         /* Helper: obtener credenciales de la sesión para API calls */
         function _getSessionAuthParams() {
             try {
