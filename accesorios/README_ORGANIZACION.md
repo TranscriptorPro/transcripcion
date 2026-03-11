@@ -3,6 +3,7 @@
 Esta carpeta contiene material NO esencial para la ejecucion de la app.
 
 ## Estructura
+- `archivos_sueltos_raiz/`: recursos sueltos movidos desde la carpeta principal para mantener la raiz limpia.
 - `logs/`: salidas de pruebas recientes para diagnostico rapido.
 - `reportes/`: reportes consolidados y documentacion ejecutiva.
 - `qa/circuitos/`: matriz y circuitos de QA utiles para regresion manual.
