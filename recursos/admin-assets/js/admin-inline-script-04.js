@@ -1704,6 +1704,52 @@
         // ========== FÁBRICA DE CLONES ==========
         const CF_APP_BASE_URL = 'https://transcriptorpro.github.io/transcripcion/';
 
+        function _normalizeGiftSexo(rawSexo) {
+            const sx = String(rawSexo || '').trim().toUpperCase();
+            if (sx === 'F' || sx === 'M') return sx;
+            return 'M';
+        }
+
+        function _formatGiftProfessionalDisplay(rawName, rawSexo) {
+            const original = String(rawName || '').trim();
+            const cleaned = original
+                .replace(/^(?:\s*(?:dr\.?\s*\/\s*dra\.?|dra\.?|dr\.?))\s+/i, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+            const baseName = cleaned || 'Profesional';
+            const sexo = _normalizeGiftSexo(rawSexo);
+            const title = sexo === 'F' ? 'Dra.' : 'Dr.';
+            return {
+                sexo,
+                title,
+                name: baseName,
+                fullName: `${title} ${baseName}`
+            };
+        }
+
+        window._formatGiftProfessionalDisplay = _formatGiftProfessionalDisplay;
+
+        function _ensureGiftSexoField() {
+            if (document.getElementById('giftSexo')) return;
+            const especialidadGroup = document.getElementById('giftEspecialidad')?.closest('.gw-field-group');
+            if (!especialidadGroup || !especialidadGroup.parentElement) return;
+
+            const row = especialidadGroup.parentElement;
+            if (row.classList && row.classList.contains('gw-field-row')) {
+                const sexoGroup = document.createElement('div');
+                sexoGroup.className = 'gw-field-group';
+                sexoGroup.innerHTML = `
+                    <label>Sexo <span class="gw-req">*</span></label>
+                    <select id="giftSexo">
+                        <option value="M" selected>Masculino</option>
+                        <option value="F">Femenino</option>
+                    </select>
+                    <small style="font-size:.68rem;color:#94a3b8;">Se usa para aplicar automaticamente Dr. o Dra. en informes y vista previa.</small>
+                `;
+                row.insertBefore(sexoGroup, especialidadGroup);
+            }
+        }
+
         let _cfCurrentUser = null;
         let _cfMode = 'normal'; // 'normal' | 'gift'
 
@@ -1772,6 +1818,7 @@
         function openGiftFactory() {
             _cfCurrentUser = null;
             _cfMode = 'gift';
+            _ensureGiftSexoField();
 
             // Título
             document.getElementById('cfModalTitle').textContent = '🎁 Crear Usuario Regalo';
@@ -1783,6 +1830,7 @@
 
             // Reset campos gift — Paso 1
             document.getElementById('giftNombre').value = '';
+            document.getElementById('giftSexo').value = 'M';
             document.getElementById('giftEmail').value = '';
             document.getElementById('giftMatricula').value = '';
             document.getElementById('giftTelefono').value = '';
@@ -1817,8 +1865,8 @@
             // Reset campos gift — Paso 4 (Licencia y Permisos)
             document.getElementById('giftPlan').value = 'GIFT';
             document.getElementById('giftProMode').value = 'true';
-            document.getElementById('giftDevices').value = '10';
-            document.getElementById('giftDuration').value = '365';
+            document.getElementById('giftDevices').value = '2';
+            document.getElementById('giftDuration').value = '90';
             const allTplCheck = document.getElementById('giftAllTemplates');
             if (allTplCheck) { allTplCheck.checked = true; }
             const tplGrid = document.getElementById('giftTemplatesGrid');
@@ -1943,7 +1991,7 @@
                 TRIAL:  { devices: '3',  pro: 'true',  duration: '15' },
                 NORMAL: { devices: '1',  pro: 'false', duration: '365' },
                 PRO:    { devices: '3',  pro: 'true',  duration: '365' },
-                GIFT:   { devices: '10', pro: 'true',  duration: '365' },
+                GIFT:   { devices: '2',  pro: 'true',  duration: '90' },
                 CLINIC: { devices: '5',  pro: 'true', duration: '365' }
             };
             const d = defaults[plan] || defaults.GIFT;
@@ -2001,7 +2049,11 @@
             const durMap = { '7': '7 días', '15': '15 días', '30': '1 mes', '90': '3 meses', '180': '6 meses', '365': '1 año', '0': 'Sin vencimiento' };
 
             // Datos del paso 1
-            const nombre = document.getElementById('giftNombre')?.value || '—';
+            const nombreRaw = document.getElementById('giftNombre')?.value || '';
+            const sexo = document.getElementById('giftSexo')?.value || 'M';
+            const nombre = nombreRaw
+                ? _formatGiftProfessionalDisplay(nombreRaw, sexo).fullName
+                : '—';
             const matricula = document.getElementById('giftMatricula')?.value || '—';
             const email = document.getElementById('giftEmail')?.value || '—';
             const telefono = document.getElementById('giftTelefono')?.value || '';
@@ -2356,7 +2408,10 @@
 
                 if (_cfMode === 'gift') {
                     // ── GIFT MODE: Crear usuario nuevo (wizard completo) ──
-                    const nombre = document.getElementById('giftNombre').value.trim();
+                    const nombreInput = document.getElementById('giftNombre').value.trim();
+                    const sexo = _normalizeGiftSexo(document.getElementById('giftSexo')?.value);
+                    const nombreFmt = _formatGiftProfessionalDisplay(nombreInput, sexo);
+                    const nombre = nombreFmt.fullName;
                     const email = document.getElementById('giftEmail').value.trim();
                     const matricula = document.getElementById('giftMatricula').value.trim();
                     const telefono = document.getElementById('giftTelefono').value.trim();
@@ -2395,7 +2450,7 @@
                     const showEmail  = document.getElementById('giftShowEmail')?.checked  ?? true;
                     const showSocial = document.getElementById('giftShowSocial')?.checked ?? false;
 
-                    if (!nombre) {
+                    if (!nombreInput) {
                         dashAlert('Ingresá el nombre del usuario', '⚠️');
                         btn.disabled = false;
                         btn.textContent = originalText;
@@ -2434,6 +2489,7 @@
                     const registroDatos = {
                         workplace: allWorkplaces[0] || {},
                         extraWorkplaces: allWorkplaces.slice(1),
+                        sexo: sexo,
                         headerColor: headerColor,
                         footerText: allWorkplaces[0]?.footer || '',
                         firma: firma,
@@ -2454,6 +2510,7 @@
                     const userData = {
                         ID_Medico: newId,
                         Nombre: nombre,
+                        Sexo: sexo,
                         Email: email,
                         Matricula: matricula,
                         Telefono: telefono,

@@ -598,7 +598,11 @@
             if (!simBox) return;
 
             // Leer datos dinámicos del wizard
-            const nombre     = (document.getElementById('giftNombre') || {}).value?.trim() || 'Dr. Nombre';
+            const rawNombre  = (document.getElementById('giftNombre') || {}).value?.trim() || 'Nombre';
+            const sexoSel    = (document.getElementById('giftSexo') || {}).value || 'M';
+            const nombre     = (typeof window._formatGiftProfessionalDisplay === 'function')
+                ? window._formatGiftProfessionalDisplay(rawNombre, sexoSel).fullName
+                : (((String(sexoSel).toUpperCase() === 'F') ? 'Dra.' : 'Dr.') + ' ' + rawNombre);
             const matricula  = (document.getElementById('giftMatricula') || {}).value?.trim() || 'MP-000';
             const especialidad = (document.getElementById('giftEspecialidad') || {}).value || '';
             const wpIdx      = _giftActiveInstWp;

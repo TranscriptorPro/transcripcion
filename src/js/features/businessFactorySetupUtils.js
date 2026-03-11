@@ -85,6 +85,7 @@ window.handleFactorySetupCore = async function (medicoId) {
         // prof_data (nombre, matrícula, especialidad)
         const profData = {
             nombre:       doctor.Nombre      || 'Profesional',
+            sexo:         regDatos.sexo || doctor.Sexo || doctor.sexo || '',
             matricula:    doctor.Matricula    || '',
             workplace:    '',
             specialties:  specialties,

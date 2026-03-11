@@ -456,7 +456,7 @@ window.initBusinessSuite = async function () {
             && (path === '/transcripcion' || path === '/transcripcion/index.html')
         );
 
-        if (isOfficialAdminBase && !params.get('id')) {
+        if (isOfficialAdminBase && !params.get('id') && !window._PENDING_SETUP_ID) {
             try { localStorage.removeItem('client_config_stored'); } catch (_) {}
             try { sessionStorage.removeItem('pending_setup_id'); } catch (_) {}
             if (typeof window.CLIENT_CONFIG === 'object' && window.CLIENT_CONFIG) {
