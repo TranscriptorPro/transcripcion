@@ -33,6 +33,7 @@ const _LM_PAYMENT_REMINDER_KEY = 'payment_due_reminder_last_ts';
 let _lmValidated   = false;
 let _lmLicenseData = null;
 let _lmMetricsTimer = null;
+let _lmInitialized = false;
 
 let _lmDeviceCache  = null;    // device_id en memoria
 let _lmCacheCache   = null;    // license_cache en memoria
@@ -273,6 +274,7 @@ function _lmShowBlockedUI(result) {
     let message = _esc(result.error || 'No se pudo verificar la licencia.');
     let showContact = true;
     let _contactMotivo = '';
+    let actionsHtml = '';
 
     switch (code) {
         case 'EXPIRED':
@@ -292,8 +294,20 @@ function _lmShowBlockedUI(result) {
             break;
         case 'DEVICE_LIMIT':
             title = '📱 Límite de dispositivos';
-            message = `Ha alcanzado el máximo de ${result.devices_max} dispositivo(s) permitido(s). Contacte al administrador para liberar dispositivos.`;
+            message = `Ha alcanzado el máximo de ${result.devices_max} dispositivo(s) permitido(s). No puede abrir la app en más dispositivos con su plan actual. Si desea, puede comprar más dispositivos ahora.`;
             _contactMotivo = 'Límite de dispositivos alcanzado';
+            actionsHtml = `
+                <div style="display:flex;gap:0.6rem;flex-wrap:wrap;justify-content:center;">
+                    <button onclick="document.getElementById('licenseBlockOverlay')?.remove();if(typeof window.openPricingCart==='function'){window.openPricingCart();}else if(typeof window.openContactModal==='function'){window.openContactModal('Quiero comprar más dispositivos');}else{window.location.href='mailto:soporte@transcriptorpro.com?subject=Compra+de+mas+dispositivos';}"
+                        style="background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; border: none; padding: 0.75rem 1.2rem; border-radius: 10px; font-size: 0.96rem; font-weight: 600; cursor: pointer;">
+                        Comprar más dispositivos
+                    </button>
+                    <button onclick="document.getElementById('licenseBlockOverlay')?.remove();if(typeof window.openContactModal==='function'){window.openContactModal('${_contactMotivo}');}else{window.location.href='mailto:soporte@transcriptorpro.com?subject=Problema+de+licencia';}"
+                        style="background: transparent; color: var(--text-primary); border: 1px solid var(--border); padding: 0.75rem 1.2rem; border-radius: 10px; font-size: 0.96rem; font-weight: 600; cursor: pointer;">
+                        Contactar soporte
+                    </button>
+                </div>
+            `;
             break;
         case 'NOT_FOUND':
             title = '❓ Usuario no encontrado';
@@ -316,21 +330,25 @@ function _lmShowBlockedUI(result) {
         font-family: inherit;
     `;
 
+    if (!actionsHtml) {
+        actionsHtml = showContact ? `
+            <button onclick="if(typeof window.openContactModal==='function'){document.getElementById('licenseBlockOverlay').remove();window.openContactModal('${_contactMotivo}');}else{window.location.href='mailto:soporte@transcriptorpro.com?subject=Problema+de+licencia';}" 
+                style="background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; border: none; padding: 0.75rem 2rem; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer;">
+                Contactar soporte
+            </button>
+        ` : `
+            <button onclick="window.location.reload();"
+                style="background: var(--primary); color: white; border: none; padding: 0.75rem 2rem; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer;">
+                Reintentar
+            </button>
+        `;
+    }
+
     overlay.innerHTML = `
         <div style="background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); border-radius: 16px; padding: 2.5rem; max-width: 440px; width: 90%; text-align: center; box-shadow: var(--shadow);">
             <h2 style="font-size: 1.5rem; margin-bottom: 1rem; color: var(--text-primary);">${title}</h2>
             <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">${message}</p>
-            ${showContact ? `
-                <button onclick="if(typeof window.openContactModal==='function'){document.getElementById('licenseBlockOverlay').remove();window.openContactModal('${_contactMotivo}');}else{window.location.href='mailto:soporte@transcriptorpro.com?subject=Problema+de+licencia';}" 
-                    style="background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; border: none; padding: 0.75rem 2rem; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer;">
-                    Contactar soporte
-                </button>
-            ` : `
-                <button onclick="window.location.reload();"
-                    style="background: var(--primary); color: white; border: none; padding: 0.75rem 2rem; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer;">
-                    Reintentar
-                </button>
-            `}
+            ${actionsHtml}
         </div>
     `;
 
@@ -550,6 +568,9 @@ function _lmSealFunctions() {
  * Llamar después de que config.js esté cargado.
  */
 window.initLicenseManager = function () {
+    if (_lmInitialized) return;
+    _lmInitialized = true;
+
     // ADMIN → no hacer nada
     if (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'ADMIN') {
         console.info('[licenseManager] Modo ADMIN — license manager desactivado');
