@@ -38,11 +38,19 @@
         return base;
     }
 
+    function _getScriptUrl() {
+        const cfg = (typeof window !== 'undefined' && window.CONFIG) ? window.CONFIG : null;
+        const url = cfg && typeof cfg.scriptUrl === 'string' ? cfg.scriptUrl.trim() : '';
+        if (!url || url === 'PASTE_APPS_SCRIPT_URL_HERE') return '';
+        return url;
+    }
+
     async function _fetchAddonsFromBackend() {
         try {
-            if (!window.CONFIG || !CONFIG.scriptUrl || CONFIG.scriptUrl === 'PASTE_APPS_SCRIPT_URL_HERE') return null;
+            const scriptUrl = _getScriptUrl();
+            if (!scriptUrl) return null;
             const auth = (typeof _getSessionAuthParams === 'function') ? _getSessionAuthParams() : 'adminKey=ADMIN_SECRET_2026';
-            const res = await fetch(`${CONFIG.scriptUrl}?action=admin_get_addons_config&${auth}`);
+            const res = await fetch(`${scriptUrl}?action=admin_get_addons_config&${auth}`);
             if (!res.ok) return null;
             const data = await res.json();
             if (data && !data.error && data.addons) return data.addons;
@@ -51,18 +59,23 @@
     }
 
     async function _saveAddonsToBackend(addons) {
-        if (!window.CONFIG || !CONFIG.scriptUrl || CONFIG.scriptUrl === 'PASTE_APPS_SCRIPT_URL_HERE') return false;
+        const scriptUrl = _getScriptUrl();
+        if (!scriptUrl) return { ok: false, reason: 'config' };
         try {
             const payload = Object.assign({ action: 'admin_save_addons_config', addons }, _authPayloadBase());
-            const res = await fetch(CONFIG.scriptUrl, {
+            const res = await fetch(scriptUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
+            if (!res.ok) return { ok: false, reason: `http_${res.status}` };
             const data = await res.json();
-            return !!(data && !data.error);
-        } catch(_) {
-            return false;
+            if (data && !data.error) return { ok: true };
+            const err = String((data && data.error) || '').toLowerCase();
+            if (err.includes('unauthorized') || err.includes('session') || err.includes('token')) return { ok: false, reason: 'auth' };
+            return { ok: false, reason: data && data.error ? String(data.error) : 'backend' };
+        } catch(e) {
+            return { ok: false, reason: e && e.message ? String(e.message) : 'network' };
         }
     }
 
@@ -101,12 +114,16 @@
             localStorage.setItem('admin_addons_config', JSON.stringify(addonsToSave));
             _addonsCache = _clone(addonsToSave);
 
-            const backendOk = await _saveAddonsToBackend(addonsToSave);
-            if (backendOk) {
+            const backend = await _saveAddonsToBackend(addonsToSave);
+            if (backend.ok) {
                 if (typeof dashAlert === 'function') dashAlert('✅ Extras guardados en backend y local');
                 else alert('Extras guardados');
             } else {
-                if (typeof dashAlert === 'function') dashAlert('⚠️ Extras guardados solo en este navegador (backend no disponible)');
+                let msg = '⚠️ Extras guardados solo en este navegador';
+                if (backend.reason === 'auth') msg += ' (sesión admin expirada/no autorizada)';
+                else if (backend.reason === 'config') msg += ' (scriptUrl no configurada)';
+                else msg += ' (error backend/red)';
+                if (typeof dashAlert === 'function') dashAlert(msg);
                 else alert('Extras guardados localmente');
             }
         });
