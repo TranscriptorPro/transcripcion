@@ -400,6 +400,99 @@ function _resolvePlanConfig(planCode) {
   return plans[key] || plans.trial || _defaultPlansConfig().trial;
 }
 
+function _calculateExpirationIso(durationDays) {
+  const days = Number(durationDays) || 30;
+  const exp = new Date();
+  exp.setDate(exp.getDate() + days);
+  return exp.toISOString().split('T')[0];
+}
+
+function _autoActivateRegistrationFromPayment(regSheet, regHeaders, regRowIndex, regRowObj) {
+  const existingMedicoId = String(regRowObj.ID_Medico_Asignado || '').trim();
+  if (existingMedicoId) {
+    return { created: false, medicoId: existingMedicoId };
+  }
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const userSheet = ss.getSheetByName(SHEET_NAME);
+  if (!userSheet) {
+    return { created: false, error: 'Hoja de usuarios no encontrada' };
+  }
+
+  _ensureUsuariosHeaders(userSheet);
+  const userHeaders = userSheet.getDataRange().getValues()[0];
+
+  const planKey = String(regRowObj.Plan_Solicitado || 'normal').toLowerCase();
+  const planCfg = _resolvePlanConfig(planKey);
+  const nowIso = new Date().toISOString();
+  const medicoId = 'MED' + Date.now().toString(36).toUpperCase();
+
+  let driveImages = {};
+  const firmaVal = String(regRowObj.Firma || '');
+  if (firmaVal.indexOf('drive:') === 0) {
+    driveImages = _getImagesFromDrive(firmaVal.replace('drive:', ''));
+  }
+
+  const userData = {
+    ID_Medico: medicoId,
+    Nombre: String(regRowObj.Nombre || '').trim(),
+    Email: String(regRowObj.Email || '').trim().toLowerCase(),
+    Telefono: String(regRowObj.Telefono || '').trim(),
+    Matricula: String(regRowObj.Matricula || '').trim(),
+    Especialidad: String(regRowObj.Especialidades || 'ALL').trim() || 'ALL',
+    Plan: planKey,
+    Estado: 'active',
+    Fecha_Registro: nowIso,
+    Fecha_Vencimiento: _calculateExpirationIso(planCfg.durationDays),
+    API_Key: '',
+    API_Key_B1: '',
+    API_Key_B2: '',
+    Devices_Max: Number(planCfg.maxDevices) || 1,
+    Allowed_Templates: '',
+    Usage_Count: 0,
+    Devices_Logged: '[]',
+    Diagnostico_Pendiente: 'false',
+    Purchase_Message: '✅ Pago validado. Tu app ya está activa. Si ya tenés tu link del clon, podés ingresar ahora.',
+    Payment_History: String(regRowObj.Payment_History || '[]'),
+    Last_Receipt_Ref: String(regRowObj.Last_Receipt_Ref || ''),
+    Last_Receipt_At: String(regRowObj.Last_Receipt_At || ''),
+    Registro_Datos: JSON.stringify({
+      workplace: String(regRowObj.Workplace_Data || ''),
+      headerColor: String(regRowObj.Header_Color || '#1a56a0'),
+      footerText: String(regRowObj.Footer_Text || ''),
+      extraWorkplaces: String(regRowObj.Extra_Workplaces || ''),
+      proLogo: driveImages.proLogo || '',
+      firma: driveImages.firma || '',
+      logo: regRowObj.Workplace_Logo ? 'yes' : '',
+      notas: String(regRowObj.Notas || ''),
+      estudios: String(regRowObj.Estudios || ''),
+      profesionales: String(regRowObj.Profesionales || ''),
+      hasProMode: !!planCfg.hasProMode,
+      hasDashboard: !!planCfg.hasDashboard,
+      canGenerateApps: !!planCfg.canGenerateApps,
+      paymentPortalUrl: String(regRowObj.Payment_Link || '').split('?id=')[0] || '',
+      apiKeyB1: '',
+      apiKeyB2: ''
+    })
+  };
+
+  const userRow = userHeaders.map(function(h) {
+    return userData[h] !== undefined ? userData[h] : '';
+  });
+  userSheet.appendRow(userRow);
+
+  const estadoCol = regHeaders.indexOf('Estado');
+  const medicoIdCol = regHeaders.indexOf('ID_Medico_Asignado');
+  if (estadoCol !== -1) regSheet.getRange(regRowIndex, estadoCol + 1).setValue('aprobado');
+  if (medicoIdCol !== -1) regSheet.getRange(regRowIndex, medicoIdCol + 1).setValue(medicoId);
+
+  try { _approveProfesionalesClinica(String(regRowObj.ID_Registro || ''), medicoId, String(regRowObj.Profesionales || '')); } catch (_) {}
+  _sendWelcomeEmail(userData.Email, userData.Nombre, medicoId, planKey);
+  appendAdminLog('system', 'auto_activate_registration', medicoId, 'Reg: ' + String(regRowObj.ID_Registro || ''));
+
+  return { created: true, medicoId: medicoId };
+}
+
 function doGet(e) {
   const action = e.parameter.action;
 
@@ -655,6 +748,7 @@ function doGet(e) {
         doctor.validated = true;
         doctor.devices_count = devices.length;
         doctor.devices_max = maxDevices;
+        doctor.purchase_message = doctor.Purchase_Message || '';
 
         return createResponse(doctor);
       }
@@ -1657,6 +1751,8 @@ function doPost(e) {
 
         for (let i = 1; i < rData.length; i++) {
           if (String(rData[i][idCol]) !== id) continue;
+          const rowObj = {};
+          rh.forEach(function(h, idx) { rowObj[h] = rData[i][idx]; });
           let history = [];
           try { history = JSON.parse(String(rData[i][histCol] || '[]')); } catch (_) {}
           history.push({
@@ -1679,6 +1775,12 @@ function doPost(e) {
             regSheet.getRange(i + 1, notasCol + 1).setValue((prev + extra).trim());
           }
 
+          rowObj.Payment_History = JSON.stringify(history);
+          rowObj.Last_Receipt_Ref = receiptTag;
+          rowObj.Last_Receipt_At = now;
+
+          const autoActivation = _autoActivateRegistrationFromPayment(regSheet, rh, i + 1, rowObj);
+
           try {
             const adminEmail = Session.getEffectiveUser().getEmail();
             if (adminEmail) {
@@ -1690,7 +1792,15 @@ function doPost(e) {
             }
           } catch (_) {}
 
-          return createResponse({ success: true, id: id, status: 'pago_confirmado', receiptRef: receiptTag, uploadedAt: now });
+          return createResponse({
+            success: true,
+            id: id,
+            status: 'pago_confirmado',
+            receiptRef: receiptTag,
+            uploadedAt: now,
+            autoActivated: !!(autoActivation && autoActivation.created),
+            medicoId: autoActivation && autoActivation.medicoId ? autoActivation.medicoId : ''
+          });
         }
         return createResponse({ error: 'Registro no encontrado: ' + id });
       }
