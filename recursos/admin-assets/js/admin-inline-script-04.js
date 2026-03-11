@@ -222,6 +222,8 @@
         let registrosLoaded = false;
         let soporteLoaded = false;
         let allRegistrations = [];
+        let currentActiveTab = 'usuarios';
+        let activeRefreshInFlight = false;
 
         /* ── API ─────────────────────────────────────────────────────────────── */
         async function fetchUsers() {
@@ -400,6 +402,8 @@
 
         /* ── Tab Navigation ─────────────────────────────────────────────────── */
         function showTab(tabName) {
+            currentActiveTab = tabName;
+
             // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
@@ -1281,9 +1285,36 @@
             if (refreshInterval) clearInterval(refreshInterval);
 
             refreshInterval = setInterval(async () => {
-                console.log('Auto-refreshing dashboard...');
-                await loadDashboard(true);
+                if (document.hidden || activeRefreshInFlight) return;
+                activeRefreshInFlight = true;
+                try {
+                    await refreshActiveTabData(true);
+                } finally {
+                    activeRefreshInFlight = false;
+                }
             }, intervalMinutes * 60 * 1000);
+        }
+
+        async function refreshActiveTabData(silent = true) {
+            if (currentActiveTab === 'usuarios') {
+                await loadDashboard(silent);
+                return;
+            }
+            if (currentActiveTab === 'registros') {
+                await loadRegistrations();
+                return;
+            }
+            if (currentActiveTab === 'metricas') {
+                await loadGlobalStats();
+                return;
+            }
+            if (currentActiveTab === 'logs') {
+                await loadLogs();
+                return;
+            }
+            if (currentActiveTab === 'soporte') {
+                await loadSupportRequests();
+            }
         }
 
         /* ── Event Listeners ─────────────────────────────────────────────────── */
@@ -1369,6 +1400,12 @@
             ensureRegQuickLinkButton();
             ensureLogsClearButton();
 
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) {
+                    refreshActiveTabData(true);
+                }
+            });
+
             // Limpiar el buscador (el browser puede autocompletar con la última búsqueda)
             document.getElementById('searchInput').value = '';
 
@@ -1381,7 +1418,7 @@
             } catch (_) {}
 
             await loadDashboard();
-            startAutoRefresh(5);
+            startAutoRefresh(2);
 
             // Cargar API Keys guardadas en el tab Mis Keys
             loadAdminKeys();

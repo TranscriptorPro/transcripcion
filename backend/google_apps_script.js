@@ -22,6 +22,7 @@ const SHEET_COMPRAS         = 'Compras_Pendientes';
 const PROP_PLANS_CONFIG     = 'PLANS_CONFIG_JSON';
 const PROP_ADDONS_CONFIG    = 'ADDONS_CONFIG_JSON';
 const PROP_PAYMENT_CONFIG   = 'PAYMENT_CONFIG_JSON';
+const ADMIN_CACHE_TTL_SEC   = 25;
 
 // SECURITY: Read from Apps Script Script Properties (not hardcoded).
 // In Apps Script editor: File > Project Properties > Script Properties > Add: ADMIN_KEY = <your-secret>
@@ -400,6 +401,53 @@ function _resolvePlanConfig(planCode) {
   return plans[key] || plans.trial || _defaultPlansConfig().trial;
 }
 
+function _adminReadCacheKeys() {
+  return [
+    'admin_list_users:all',
+    'admin_get_global_stats:all',
+    'admin_list_registrations:all'
+  ];
+}
+
+function _adminCacheGet(key) {
+  try {
+    const raw = CacheService.getScriptCache().get(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function _adminCachePut(key, value, ttlSec) {
+  try {
+    CacheService.getScriptCache().put(key, JSON.stringify(value), ttlSec || ADMIN_CACHE_TTL_SEC);
+  } catch (_) {}
+}
+
+function _adminCacheRemoveByPrefix(prefix) {
+  try {
+    const cache = CacheService.getScriptCache();
+    const candidates = [
+      prefix + ':all',
+      prefix + ':none:none',
+      prefix + '::',
+      prefix + ':pendiente',
+      prefix + ':aprobado',
+      prefix + ':rechazado',
+      prefix + ':todos'
+    ];
+    cache.removeAll(candidates);
+  } catch (_) {}
+}
+
+function _invalidateAdminReadCaches() {
+  try {
+    const cache = CacheService.getScriptCache();
+    cache.removeAll(_adminReadCacheKeys());
+    _adminCacheRemoveByPrefix('admin_get_logs');
+  } catch (_) {}
+}
+
 function doGet(e) {
   const action = e.parameter.action;
 
@@ -669,6 +717,9 @@ function doGet(e) {
     const auth = _verifyAdminAuth(e.parameter);
     if (!auth.authorized) return createResponse({ error: auth.error });
 
+    const cached = _adminCacheGet('admin_list_users:all');
+    if (cached) return createResponse(cached);
+
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
     const data = sheet.getDataRange().getValues();
     const headers = data[0];
@@ -682,13 +733,16 @@ function doGet(e) {
       users.push(user);
     }
 
-    return createResponse({ users: users, total: users.length });
+    const payload = { users: users, total: users.length };
+    _adminCachePut('admin_list_users:all', payload);
+    return createResponse(payload);
   }
 
   // FIX B3: admin_update_user como GET (admin.html usa fetch GET con query params)
   if (action === 'admin_update_user') {
     const auth = _verifyAdminAuth(e.parameter);
     if (!auth.authorized) return createResponse({ error: auth.error });
+    _invalidateAdminReadCaches();
 
     const userId = e.parameter.userId;
     let updates = {};
@@ -716,6 +770,7 @@ function doGet(e) {
   if (action === 'admin_create_user') {
     const auth = _verifyAdminAuth(e.parameter);
     if (!auth.authorized) return createResponse({ error: auth.error });
+    _invalidateAdminReadCaches();
 
     let userData = {};
     try { userData = JSON.parse(decodeURIComponent(e.parameter.updates || '{}')); } catch(ex) {}
@@ -753,6 +808,7 @@ function doGet(e) {
   if (action === 'admin_delete_user') {
     const auth = _verifyAdminAuth(e.parameter);
     if (!auth.authorized) return createResponse({ error: auth.error });
+    _invalidateAdminReadCaches();
 
     const userId = e.parameter.userId;
     if (!userId) return createResponse({ error: 'userId requerido' });
@@ -776,6 +832,7 @@ function doGet(e) {
   if (action === 'admin_delete_test_users') {
     const auth = _verifyAdminAuth(e.parameter);
     if (!auth.authorized) return createResponse({ error: auth.error });
+    _invalidateAdminReadCaches();
 
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
     const data = sheet.getDataRange().getValues();
@@ -802,6 +859,12 @@ function doGet(e) {
     if (!auth.authorized) return createResponse({ error: auth.error });
 
     try {
+      const filterDate = String(e.parameter.date || '').trim();
+      const filterType = String(e.parameter.type || '').toLowerCase().trim();
+      const cacheKey = 'admin_get_logs:' + (filterDate || 'none') + ':' + (filterType || 'none');
+      const cached = _adminCacheGet(cacheKey);
+      if (cached) return createResponse(cached);
+
       const logSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_LOGS);
       if (!logSheet) return createResponse({ logs: [], message: 'Hoja Admin_Logs no encontrada' });
 
@@ -809,8 +872,6 @@ function doGet(e) {
       if (data.length <= 1) return createResponse({ logs: [] });
 
       const headers = data[0];
-      const filterDate = e.parameter.date || '';
-      const filterType = (e.parameter.type || '').toLowerCase();
 
       const logs = [];
       for (let i = data.length - 1; i >= 1; i--) { // más recientes primero
@@ -834,7 +895,9 @@ function doGet(e) {
         if (logs.length >= 200) break; // límite de seguridad
       }
 
-      return createResponse({ logs: logs, total: logs.length });
+      const payload = { logs: logs, total: logs.length };
+      _adminCachePut(cacheKey, payload);
+      return createResponse(payload);
     } catch(err) {
       return createResponse({ error: 'Error leyendo logs: ' + err.message });
     }
@@ -844,6 +907,7 @@ function doGet(e) {
   if (action === 'admin_clear_logs') {
     const auth = _verifyAdminAuth(e.parameter);
     if (!auth.authorized) return createResponse({ error: auth.error });
+    _invalidateAdminReadCaches();
 
     try {
       const deleted = _clearAdminLogsKeepHeader();
@@ -908,6 +972,7 @@ function doGet(e) {
   if (action === 'admin_resolve_support') {
     const auth = _verifyAdminAuth(e.parameter);
     if (!auth.authorized) return createResponse({ error: auth.error });
+    _invalidateAdminReadCaches();
     try {
       const sSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_SOPORTE);
       if (!sSheet) return createResponse({ error: 'Hoja no encontrada' });
@@ -936,6 +1001,7 @@ function doGet(e) {
   if (action === 'admin_release_devices') {
     const auth = _verifyAdminAuth(e.parameter);
     if (!auth.authorized) return createResponse({ error: auth.error });
+    _invalidateAdminReadCaches();
     const userId = e.parameter.userId;
     if (!userId) return createResponse({ error: 'Falta userId' });
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
@@ -997,6 +1063,9 @@ function doGet(e) {
     const auth = _verifyAdminAuth(e.parameter);
     if (!auth.authorized) return createResponse({ error: auth.error });
 
+    const cached = _adminCacheGet('admin_get_global_stats:all');
+    if (cached) return createResponse(cached);
+
     try {
       const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
       const data = sheet.getDataRange().getValues();
@@ -1035,14 +1104,16 @@ function doGet(e) {
         if (fecha && fecha >= oneWeekAgo) newThisWeek++;
       }
 
-      return createResponse({
+      const payload = {
         stats: {
           totalUsers, active, inactive, expired, banned,
           trial, pro, enterprise,
           totalTranscripciones: totalUsage,
           newThisWeek
         }
-      });
+      };
+      _adminCachePut('admin_get_global_stats:all', payload);
+      return createResponse(payload);
     } catch(err) {
       return createResponse({ error: 'Error calculando estadísticas: ' + err.message });
     }
@@ -1109,6 +1180,7 @@ function doGet(e) {
           const expiry = Date.now() + (8 * 60 * 60 * 1000); // 8 horas
           const sessionToken = _signSessionToken(username, nivel, expiry);
 
+          _invalidateAdminReadCaches();
           const deletedLogs = _clearAdminLogsKeepHeader();
           appendAdminLog(username, 'login_success', username, 'Nueva sesión. Logs previos eliminados: ' + deletedLogs);
 
@@ -1282,6 +1354,9 @@ function doGet(e) {
     const auth = _verifyAdminAuth(e.parameter);
     if (!auth.authorized) return createResponse({ error: auth.error });
 
+    const cached = _adminCacheGet('admin_list_registrations:all');
+    if (cached) return createResponse(cached);
+
     try {
       const regSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_REGISTROS);
       if (!regSheet) return createResponse({ registrations: [], total: 0, message: 'Hoja ' + SHEET_REGISTROS + ' no existe aún' });
@@ -1298,7 +1373,9 @@ function doGet(e) {
         registrations.push(reg);
       }
 
-      return createResponse({ registrations: registrations, total: registrations.length });
+      const payload = { registrations: registrations, total: registrations.length };
+      _adminCachePut('admin_list_registrations:all', payload);
+      return createResponse(payload);
     } catch(err) {
       return createResponse({ error: 'Error leyendo registros: ' + err.message });
     }
@@ -1330,6 +1407,7 @@ function doGet(e) {
   if (action === 'admin_mark_registration_paid') {
     const auth = _verifyAdminAuth(e.parameter);
     if (!auth.authorized) return createResponse({ error: auth.error });
+    _invalidateAdminReadCaches();
 
     const regId = String(e.parameter.regId || '').trim();
     if (!regId) return createResponse({ error: 'Falta regId' });
@@ -1372,6 +1450,7 @@ function doGet(e) {
   if (action === 'admin_approve_registration') {
     const auth = _verifyAdminAuth(e.parameter);
     if (!auth.authorized) return createResponse({ error: auth.error });
+    _invalidateAdminReadCaches();
 
     const regId = e.parameter.regId;
     const plan = e.parameter.plan || 'NORMAL';
@@ -1562,6 +1641,7 @@ function doGet(e) {
   if (action === 'admin_reject_registration') {
     const auth = _verifyAdminAuth(e.parameter);
     if (!auth.authorized) return createResponse({ error: auth.error });
+    _invalidateAdminReadCaches();
 
     const regId = e.parameter.regId;
     const motivo = decodeURIComponent(e.parameter.motivo || 'Rechazado por el administrador');
@@ -1639,6 +1719,25 @@ function doGet(e) {
 function doPost(e) {
   const payload = JSON.parse(e.postData.contents);
   const action = payload.action; // 'update_usage' o 'admin_update_user'
+
+  const invalidateCacheActions = {
+    public_upload_payment_receipt: true,
+    update_usage: true,
+    register_doctor: true,
+    admin_update_user: true,
+    admin_create_user: true,
+    admin_mark_purchase_paid: true,
+    admin_approve_purchase: true,
+    admin_approve_registration: true,
+    admin_resolve_support: true,
+    admin_release_devices: true,
+    admin_mark_registration_paid: true,
+    admin_reject_registration: true,
+    admin_clear_logs: true
+  };
+  if (invalidateCacheActions[action]) {
+    _invalidateAdminReadCaches();
+  }
 
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
   _ensureUsuariosHeaders(sheet);
