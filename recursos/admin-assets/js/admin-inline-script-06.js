@@ -14,6 +14,7 @@
 
     let _extrasInitialized = false;
     let _addonsCache = null;
+    let _purchasesInitialized = false;
 
     function _clone(v) { return JSON.parse(JSON.stringify(v)); }
     function _merge(base, ext) {
@@ -84,6 +85,123 @@
         }
     }
 
+    async function _postBackend(payload) {
+        const scriptUrl = _getScriptUrl();
+        if (!scriptUrl) return { error: 'scriptUrl no configurada' };
+        const body = Object.assign({}, payload, _authPayloadBase());
+        const res = await fetch(scriptUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(body)
+        });
+        if (!res.ok) return { error: `HTTP ${res.status}` };
+        return await res.json();
+    }
+
+    async function _fetchPurchasesFromBackend() {
+        const scriptUrl = _getScriptUrl();
+        if (!scriptUrl) return [];
+        const auth = (typeof _getSessionAuthParams === 'function') ? _getSessionAuthParams() : 'adminKey=ADMIN_SECRET_2026';
+        const res = await fetch(`${scriptUrl}?action=admin_list_purchases&${auth}`);
+        if (!res.ok) return [];
+        const data = await res.json();
+        if (data && !data.error && Array.isArray(data.purchases)) return data.purchases;
+        return [];
+    }
+
+    function _renderPurchases(container, purchases) {
+        const pending = purchases.filter(p => String(p.Estado || '').toLowerCase() !== 'aplicado');
+        container.innerHTML = `
+            <div style="margin-top:2rem;border-top:1px dashed var(--border);padding-top:1.2rem;">
+                <h3 style="margin:0 0 .4rem;color:var(--text-primary);">🧾 Compras desde clones</h3>
+                <p style="color:var(--text-secondary);margin:0 0 .8rem;font-size:.88rem;">Solicitudes de upgrade/add-ons. Flujo: pendiente pago → pago confirmado → aplicado.</p>
+                <div id="extrasPurchasesList" style="display:flex;flex-direction:column;gap:.6rem;"></div>
+            </div>
+        `;
+
+        const list = container.querySelector('#extrasPurchasesList');
+        if (!list) return;
+
+        if (!pending.length) {
+            list.innerHTML = '<div style="padding:.8rem;border:1px solid var(--border);border-radius:10px;color:var(--text-secondary);">Sin compras pendientes por gestionar.</div>';
+            return;
+        }
+
+        list.innerHTML = pending.map((p) => {
+            const estado = String(p.Estado || '').toLowerCase();
+            const canMarkPaid = estado === 'pendiente_pago';
+            const canApprove = estado === 'pago_confirmado';
+            const amount = Number(p.Importe_Estimado || 0);
+            const estLabel = estado === 'pago_confirmado' ? '💳 Pago confirmado' : '⏳ Pendiente de pago';
+            const date = p.Fecha_Solicitud ? new Date(p.Fecha_Solicitud).toLocaleString('es-AR') : '—';
+            return `
+                <div style="border:1px solid var(--border);border-radius:10px;padding:.75rem;background:var(--bg-secondary);">
+                    <div style="display:flex;justify-content:space-between;gap:.5rem;align-items:center;">
+                        <div>
+                            <strong style="color:var(--text-primary);">${p.Nombre || p.ID_Medico || 'Usuario'}</strong>
+                            <span style="font-size:.78rem;color:var(--text-secondary);margin-left:.5rem;">${estLabel}</span>
+                        </div>
+                        <div style="font-weight:700;color:var(--text-primary);">${amount.toFixed(2)} ${p.Moneda || 'USD'}</div>
+                    </div>
+                    <div style="font-size:.8rem;color:var(--text-secondary);margin-top:.35rem;">${p.ID_Compra || '—'} · ${date} · ${String(p.Plan_Actual || '').toUpperCase()} → ${String(p.Plan_Solicitado || '').toUpperCase()}</div>
+                    <div style="display:flex;gap:.45rem;margin-top:.6rem;flex-wrap:wrap;">
+                        ${canMarkPaid ? `<button class="btn-secondary" data-action="paid" data-purchase="${p.ID_Compra}" style="padding:6px 10px;">💳 Marcar pagado</button>` : ''}
+                        ${canApprove ? `<button class="btn-primary" data-action="approve" data-purchase="${p.ID_Compra}" style="padding:6px 10px;">✅ Aprobar y aplicar</button>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async function _initPurchasesPanel() {
+        if (_purchasesInitialized) return;
+        _purchasesInitialized = true;
+        const extrasTabContainer = document.querySelector('#tab-extras .container');
+        if (!extrasTabContainer) return;
+
+        let holder = document.getElementById('extrasPurchasesSection');
+        if (!holder) {
+            holder = document.createElement('div');
+            holder.id = 'extrasPurchasesSection';
+            extrasTabContainer.appendChild(holder);
+        }
+
+        const refresh = async () => {
+            try {
+                const purchases = await _fetchPurchasesFromBackend();
+                _renderPurchases(holder, purchases);
+            } catch (e) {
+                holder.innerHTML = `<div style="margin-top:1rem;color:#ef4444;">Error cargando compras: ${String(e.message || e)}</div>`;
+            }
+        };
+
+        holder.addEventListener('click', async (ev) => {
+            const btn = ev.target && ev.target.closest ? ev.target.closest('button[data-action]') : null;
+            if (!btn) return;
+            const action = btn.getAttribute('data-action');
+            const purchaseId = btn.getAttribute('data-purchase');
+            if (!purchaseId) return;
+            btn.disabled = true;
+            try {
+                let data = null;
+                if (action === 'paid') {
+                    data = await _postBackend({ action: 'admin_mark_purchase_paid', purchaseId });
+                } else if (action === 'approve') {
+                    data = await _postBackend({ action: 'admin_approve_purchase', purchaseId });
+                }
+                if (data && data.error) throw new Error(data.error);
+                if (typeof dashAlert === 'function') dashAlert('✅ Acción aplicada en compra');
+                await refresh();
+            } catch (e) {
+                if (typeof dashAlert === 'function') dashAlert('❌ ' + String(e.message || e));
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        await refresh();
+    }
+
     async function _loadAddons() {
         const server = await _fetchAddonsFromBackend();
         if (server) {
@@ -113,6 +231,7 @@
 
         const addons = await _loadAddons();
         _renderExtrasEditor(grid, addons);
+        await _initPurchasesPanel();
 
         document.getElementById('btnSaveExtras')?.addEventListener('click', async () => {
             const addonsToSave = _collectAddonsFromForm();

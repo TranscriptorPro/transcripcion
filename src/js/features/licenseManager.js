@@ -220,6 +220,24 @@ window.validateLicense = async function () {
         _lmShowTrialWarning(result.days_remaining);
     }
 
+    // Aviso de compra aplicada (one-shot)
+    if (result.purchase_message) {
+        if (typeof showToast === 'function') {
+            showToast(String(result.purchase_message), 'success', 7000);
+        }
+        try {
+            const ackPayload = {
+                action: 'purchase_ack_message',
+                medicoId: _lmGetMedicoId()
+            };
+            fetch(_LM_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(ackPayload)
+            }).catch(function() {});
+        } catch (_) {}
+    }
+
     // Iniciar envío periódico de métricas
     _lmStartMetricsSync();
 

@@ -18,8 +18,10 @@ const SHEET_ADMIN_USERS  = 'Admin_Users';
 const SHEET_REGISTROS       = 'Registros_Pendientes';
 const SHEET_PROFESIONALES   = 'Profesionales_Clinica';
 const SHEET_SOPORTE         = 'Solicitudes_Soporte';
+const SHEET_COMPRAS         = 'Compras_Pendientes';
 const PROP_PLANS_CONFIG     = 'PLANS_CONFIG_JSON';
 const PROP_ADDONS_CONFIG    = 'ADDONS_CONFIG_JSON';
+const PROP_PAYMENT_CONFIG   = 'PAYMENT_CONFIG_JSON';
 
 // SECURITY: Read from Apps Script Script Properties (not hardcoded).
 // In Apps Script editor: File > Project Properties > Script Properties > Add: ADMIN_KEY = <your-secret>
@@ -205,6 +207,15 @@ function _defaultAddonsConfig() {
   };
 }
 
+function _defaultPaymentConfig() {
+  return {
+    cbu: '0000003100000000000000',
+    alias: 'transcriptor.pro',
+    titular: 'Transcriptor Pro',
+    banco: 'Banco de ejemplo'
+  };
+}
+
 function _mergeConfig(defaultObj, inputObj) {
   const out = JSON.parse(JSON.stringify(defaultObj));
   if (!inputObj || typeof inputObj !== 'object') return out;
@@ -243,6 +254,94 @@ function _getAddonsConfig() {
   return _readJsonProperty(PROP_ADDONS_CONFIG, _defaultAddonsConfig());
 }
 
+function _getPaymentConfig() {
+  return _readJsonProperty(PROP_PAYMENT_CONFIG, _defaultPaymentConfig());
+}
+
+const COMPRAS_HEADERS = [
+  'ID_Compra', 'ID_Medico', 'Email', 'Nombre',
+  'Plan_Actual', 'Plan_Solicitado', 'Templates_Solicitados',
+  'Addons_Cart', 'Moneda', 'Importe_Estimado',
+  'Estado', 'Fecha_Solicitud', 'Fecha_Pago', 'Fecha_Aprobacion',
+  'Notas_Admin', 'Applied_At', 'Applied_Message_Sent'
+];
+
+function _ensureSheetHeaders(sheet, requiredHeaders) {
+  const values = sheet.getDataRange().getValues();
+  const existing = values[0] || [];
+  const firstCell = String(existing[0] || '').trim();
+
+  if (!firstCell) {
+    sheet.clearContents();
+    sheet.appendRow(requiredHeaders);
+    sheet.setFrozenRows(1);
+    return requiredHeaders.slice();
+  }
+
+  requiredHeaders.forEach(function(h) {
+    if (!existing.includes(h)) {
+      sheet.getRange(1, existing.length + 1).setValue(h);
+      existing.push(h);
+    }
+  });
+
+  return existing;
+}
+
+function _getOrCreateSheetWithHeaders(sheetName, headers) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(sheetName);
+  if (!sheet) {
+    sheet = ss.insertSheet(sheetName);
+    sheet.appendRow(headers);
+    sheet.setFrozenRows(1);
+  } else {
+    _ensureSheetHeaders(sheet, headers);
+  }
+  return sheet;
+}
+
+function _safeNumber(n, fallback) {
+  const parsed = Number(n);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function _formatMoney(amount) {
+  const n = _safeNumber(amount, 0);
+  return n.toFixed(2);
+}
+
+function _sendTransferEmail(toEmail, personName, subjectPrefix, amount, currency, referenceId) {
+  try {
+    if (!toEmail) return;
+    const pay = _getPaymentConfig();
+    const subject = 'Transcriptor Pro | ' + subjectPrefix + ' #' + referenceId;
+    const body = [
+      'Hola ' + (personName || 'profesional') + ',',
+      '',
+      'Recibimos tu solicitud en Transcriptor Pro.',
+      'Para continuar, realizá la transferencia y luego enviá comprobante para validación manual.',
+      '',
+      'Referencia: ' + referenceId,
+      'Importe: ' + _formatMoney(amount) + ' ' + (currency || 'USD'),
+      '',
+      'Datos de transferencia:',
+      'CBU: ' + (pay.cbu || ''),
+      'Alias: ' + (pay.alias || ''),
+      'Titular: ' + (pay.titular || ''),
+      'Banco: ' + (pay.banco || ''),
+      '',
+      'Importante: la activación de la app/compra se realiza solo cuando se confirme el pago.',
+      '',
+      'Equipo Transcriptor Pro'
+    ].join('\n');
+
+    GmailApp.sendEmail(toEmail, subject, body);
+  } catch (e) {
+    Logger.log('⚠️ Error enviando mail de transferencia: ' + e.message);
+  }
+}
+
 function _resolvePlanConfig(planCode) {
   const plans = _getPlansConfig();
   const key = String(planCode || 'trial').toLowerCase();
@@ -268,6 +367,7 @@ function doGet(e) {
     if (!id) return createResponse({ error: 'Falta ID de Médico' });
 
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    _ensureUsuariosHeaders(sheet);
     const data = sheet.getDataRange().getValues();
     const headers = data[0];
     const idCol = headers.indexOf('ID_Medico');
@@ -1050,6 +1150,70 @@ function doGet(e) {
     }
   }
 
+  if (action === 'admin_list_purchases') {
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
+
+    try {
+      const sheet = _getOrCreateSheetWithHeaders(SHEET_COMPRAS, COMPRAS_HEADERS);
+      const data = sheet.getDataRange().getValues();
+      if (data.length <= 1) return createResponse({ purchases: [], total: 0 });
+
+      const headers = data[0];
+      const purchases = [];
+      for (let i = 1; i < data.length; i++) {
+        if (!data[i][0]) continue;
+        const row = {};
+        headers.forEach(function(h, idx) { row[h] = data[i][idx]; });
+        purchases.push(row);
+      }
+      return createResponse({ purchases: purchases, total: purchases.length });
+    } catch (err) {
+      return createResponse({ error: 'Error leyendo compras: ' + err.message });
+    }
+  }
+
+  if (action === 'admin_mark_registration_paid') {
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
+
+    const regId = String(e.parameter.regId || '').trim();
+    if (!regId) return createResponse({ error: 'Falta regId' });
+
+    try {
+      const regSheet = _getOrCreateSheetWithHeaders(SHEET_REGISTROS, [
+        'ID_Registro', 'Nombre', 'Matricula', 'Email', 'Telefono',
+        'Especialidades', 'Estudios', 'Workplace_Data', 'Workplace_Logo',
+        'Extra_Workplaces', 'Header_Color', 'Footer_Text', 'Firma', 'Pro_Logo',
+        'Social_Media', 'Show_Phone', 'Show_Email', 'Show_Social',
+        'Billing_Cycle', 'License_Amount', 'Subscription_Amount', 'Total_Hoy',
+        'Notas', 'Fecha_Registro', 'Estado', 'Origen', 'ID_Medico_Asignado', 'Motivo_Rechazo',
+        'Plan_Solicitado', 'Addons_Cart', 'Profesionales'
+      ]);
+      const data = regSheet.getDataRange().getValues();
+      const headers = data[0];
+      const idCol = headers.indexOf('ID_Registro');
+      const estadoCol = headers.indexOf('Estado');
+      const notasCol = headers.indexOf('Notas');
+
+      for (let i = 1; i < data.length; i++) {
+        if (String(data[i][idCol]) !== regId) continue;
+        regSheet.getRange(i + 1, estadoCol + 1).setValue('pago_confirmado');
+        if (notasCol !== -1) {
+          const prev = String(data[i][notasCol] || '');
+          const extra = '\n[PAGO CONFIRMADO ' + new Date().toISOString() + ']';
+          regSheet.getRange(i + 1, notasCol + 1).setValue((prev + extra).trim());
+        }
+        appendAdminLog(auth.username, 'mark_registration_paid', regId, 'Pago confirmado');
+        return createResponse({ success: true, regId: regId, status: 'pago_confirmado' });
+      }
+
+      return createResponse({ error: 'Registro no encontrado: ' + regId });
+    } catch (err) {
+      return createResponse({ error: 'Error marcando pago: ' + err.message });
+    }
+  }
+
   // ── admin_approve_registration — aprueba un registro y crea el usuario ──
   if (action === 'admin_approve_registration') {
     const auth = _verifyAdminAuth(e.parameter);
@@ -1107,6 +1271,9 @@ function doGet(e) {
       if (!regData) return createResponse({ error: 'Registro no encontrado: ' + regId });
       if (String(regData.Estado).toLowerCase() === 'aprobado') {
         return createResponse({ error: 'Este registro ya fue aprobado' });
+      }
+      if (String(regData.Estado || '').toLowerCase() !== 'pago_confirmado') {
+        return createResponse({ error: 'Registro no pagado. Confirmá transferencia antes de aprobar.' });
       }
 
       // Generar ID_Medico (MED + timestamp corto)
@@ -1291,6 +1458,7 @@ function doPost(e) {
   const action = payload.action; // 'update_usage' o 'admin_update_user'
 
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  _ensureUsuariosHeaders(sheet);
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
 
@@ -1306,6 +1474,285 @@ function doPost(e) {
     if (!auth.authorized) return createResponse({ error: auth.error });
     const saved = _writeJsonProperty(PROP_ADDONS_CONFIG, payload.addons || {}, _defaultAddonsConfig());
     return createResponse({ success: true, addons: saved });
+  }
+
+  if (action === 'admin_save_payment_config') {
+    const auth = _verifyAdminAuth(payload);
+    if (!auth.authorized) return createResponse({ error: auth.error });
+    const saved = _writeJsonProperty(PROP_PAYMENT_CONFIG, payload.payment || {}, _defaultPaymentConfig());
+    return createResponse({ success: true, payment: saved });
+  }
+
+  if (action === 'upgrade_request') {
+    try {
+      const comprasSheet = _getOrCreateSheetWithHeaders(SHEET_COMPRAS, COMPRAS_HEADERS);
+      const headers = comprasSheet.getDataRange().getValues()[0];
+
+      const compraId = 'CMP_' + Date.now();
+      const medicoId = String(payload.medicoId || '').trim();
+      const requestedPlan = String(payload.requestedPlan || payload.currentPlan || '').toLowerCase();
+      const currentPlan = String(payload.currentPlan || '').toLowerCase();
+      const templates = Array.isArray(payload.requestedTemplates) ? payload.requestedTemplates : [];
+      const addonsCart = payload.requestedAddons || { templates: templates };
+      const estimatedAmount = _safeNumber(payload.estimatedAmount, 0);
+      const currency = String(payload.currency || 'USD').toUpperCase();
+
+      let userEmail = String(payload.email || '').trim();
+      let userName = String(payload.nombre || '').trim();
+
+      // Intentar completar email/nombre desde Usuarios por medicoId
+      if (medicoId) {
+        try {
+          const usersData = sheet.getDataRange().getValues();
+          const userHeaders = usersData[0];
+          const idCol = userHeaders.indexOf('ID_Medico');
+          const emailCol = userHeaders.indexOf('Email');
+          const nameCol = userHeaders.indexOf('Nombre');
+          for (let i = 1; i < usersData.length; i++) {
+            if (String(usersData[i][idCol]) !== medicoId) continue;
+            if (!userEmail && emailCol !== -1) userEmail = String(usersData[i][emailCol] || '').trim();
+            if (!userName && nameCol !== -1) userName = String(usersData[i][nameCol] || '').trim();
+            break;
+          }
+        } catch (_) {}
+      }
+
+      const rowData = {
+        ID_Compra: compraId,
+        ID_Medico: medicoId,
+        Email: userEmail,
+        Nombre: userName,
+        Plan_Actual: currentPlan,
+        Plan_Solicitado: requestedPlan,
+        Templates_Solicitados: JSON.stringify(templates),
+        Addons_Cart: JSON.stringify(addonsCart || {}),
+        Moneda: currency,
+        Importe_Estimado: _formatMoney(estimatedAmount),
+        Estado: 'pendiente_pago',
+        Fecha_Solicitud: new Date().toISOString(),
+        Fecha_Pago: '',
+        Fecha_Aprobacion: '',
+        Notas_Admin: 'Solicitud desde clon',
+        Applied_At: '',
+        Applied_Message_Sent: 'false'
+      };
+
+      const row = headers.map(function(h) { return rowData[h] !== undefined ? rowData[h] : ''; });
+      comprasSheet.appendRow(row);
+
+      _sendTransferEmail(
+        userEmail,
+        userName,
+        'Solicitud de compra recibida',
+        estimatedAmount,
+        currency,
+        compraId
+      );
+
+      return createResponse({
+        ok: true,
+        success: true,
+        purchaseId: compraId,
+        status: 'pendiente_pago'
+      });
+    } catch (err) {
+      return createResponse({ error: 'Error creando solicitud de compra: ' + err.message });
+    }
+  }
+
+  if (action === 'admin_mark_purchase_paid') {
+    const auth = _verifyAdminAuth(payload);
+    if (!auth.authorized) return createResponse({ error: auth.error });
+
+    const purchaseId = String(payload.purchaseId || '').trim();
+    if (!purchaseId) return createResponse({ error: 'Falta purchaseId' });
+
+    try {
+      const comprasSheet = _getOrCreateSheetWithHeaders(SHEET_COMPRAS, COMPRAS_HEADERS);
+      const data = comprasSheet.getDataRange().getValues();
+      const headers = data[0];
+      const idCol = headers.indexOf('ID_Compra');
+      const estadoCol = headers.indexOf('Estado');
+      const fechaPagoCol = headers.indexOf('Fecha_Pago');
+      const notasCol = headers.indexOf('Notas_Admin');
+
+      for (let i = 1; i < data.length; i++) {
+        if (String(data[i][idCol]) !== purchaseId) continue;
+        comprasSheet.getRange(i + 1, estadoCol + 1).setValue('pago_confirmado');
+        if (fechaPagoCol !== -1) comprasSheet.getRange(i + 1, fechaPagoCol + 1).setValue(new Date().toISOString());
+        if (notasCol !== -1) {
+          const prev = String(data[i][notasCol] || '');
+          const next = (prev + '\n[PAGO CONFIRMADO ' + auth.username + ']').trim();
+          comprasSheet.getRange(i + 1, notasCol + 1).setValue(next);
+        }
+        appendAdminLog(auth.username, 'mark_purchase_paid', purchaseId, 'Pago confirmado');
+        return createResponse({ success: true, purchaseId: purchaseId, status: 'pago_confirmado' });
+      }
+
+      return createResponse({ error: 'Compra no encontrada: ' + purchaseId });
+    } catch (err) {
+      return createResponse({ error: 'Error marcando compra como pagada: ' + err.message });
+    }
+  }
+
+  if (action === 'admin_approve_purchase') {
+    const auth = _verifyAdminAuth(payload);
+    if (!auth.authorized) return createResponse({ error: auth.error });
+
+    const purchaseId = String(payload.purchaseId || '').trim();
+    if (!purchaseId) return createResponse({ error: 'Falta purchaseId' });
+
+    try {
+      const comprasSheet = _getOrCreateSheetWithHeaders(SHEET_COMPRAS, COMPRAS_HEADERS);
+      const comprasData = comprasSheet.getDataRange().getValues();
+      const ch = comprasData[0];
+      const idCol = ch.indexOf('ID_Compra');
+      const estadoCol = ch.indexOf('Estado');
+      const medicoCol = ch.indexOf('ID_Medico');
+      const planCol = ch.indexOf('Plan_Solicitado');
+      const tplCol = ch.indexOf('Templates_Solicitados');
+      const notesCol = ch.indexOf('Notas_Admin');
+      const fechaAprobCol = ch.indexOf('Fecha_Aprobacion');
+      const appliedAtCol = ch.indexOf('Applied_At');
+      const msgSentCol = ch.indexOf('Applied_Message_Sent');
+      const emailCol = ch.indexOf('Email');
+      const nameCol = ch.indexOf('Nombre');
+
+      let purchase = null;
+      let purchaseRow = -1;
+      for (let i = 1; i < comprasData.length; i++) {
+        if (String(comprasData[i][idCol]) !== purchaseId) continue;
+        purchase = {};
+        ch.forEach(function(h, idx) { purchase[h] = comprasData[i][idx]; });
+        purchaseRow = i + 1;
+        break;
+      }
+
+      if (!purchase) return createResponse({ error: 'Compra no encontrada: ' + purchaseId });
+      if (String(purchase.Estado || '').toLowerCase() !== 'pago_confirmado') {
+        return createResponse({ error: 'La compra debe estar en estado pago_confirmado para aprobarse' });
+      }
+
+      const medicoId = String(purchase.ID_Medico || '').trim();
+      if (!medicoId) return createResponse({ error: 'Compra sin ID_Medico' });
+
+      const usersData = sheet.getDataRange().getValues();
+      const uh = usersData[0];
+      const uidCol = uh.indexOf('ID_Medico');
+      const uPlanCol = uh.indexOf('Plan');
+      const uEstadoCol = uh.indexOf('Estado');
+      const uFechaVencCol = uh.indexOf('Fecha_Vencimiento');
+      const uTplCol = uh.indexOf('Allowed_Templates');
+      const uNotasCol = uh.indexOf('Notas_Admin');
+      const uRegDatosCol = uh.indexOf('Registro_Datos');
+      const uPurchaseMsgCol = uh.indexOf('Purchase_Message');
+
+      let userRow = -1;
+      for (let i = 1; i < usersData.length; i++) {
+        if (String(usersData[i][uidCol]) === medicoId) {
+          userRow = i + 1;
+          break;
+        }
+      }
+      if (userRow === -1) return createResponse({ error: 'Usuario no encontrado para compra: ' + medicoId });
+
+      const targetPlan = String(purchase.Plan_Solicitado || '').toLowerCase();
+      const planCfg = _resolvePlanConfig(targetPlan || 'normal');
+      if (targetPlan && uPlanCol !== -1) {
+        sheet.getRange(userRow, uPlanCol + 1).setValue(targetPlan);
+      }
+      if (uEstadoCol !== -1) {
+        sheet.getRange(userRow, uEstadoCol + 1).setValue('active');
+      }
+      if (uFechaVencCol !== -1) {
+        const cur = String(sheet.getRange(userRow, uFechaVencCol + 1).getValue() || '').trim();
+        if (!cur) {
+          const exp = new Date();
+          exp.setDate(exp.getDate() + (Number(planCfg.durationDays) || 365));
+          sheet.getRange(userRow, uFechaVencCol + 1).setValue(exp.toISOString().split('T')[0]);
+        }
+      }
+
+      // Merge de templates compradas
+      if (uTplCol !== -1) {
+        let existing = [];
+        try {
+          const raw = String(sheet.getRange(userRow, uTplCol + 1).getValue() || '');
+          if (raw && raw !== 'ALL') existing = JSON.parse(raw);
+        } catch (_) {}
+        let requested = [];
+        try { requested = JSON.parse(String(purchase.Templates_Solicitados || '[]')); } catch (_) {}
+        const merged = Array.from(new Set([].concat(existing || [], requested || [])));
+        sheet.getRange(userRow, uTplCol + 1).setValue(merged.length ? JSON.stringify(merged) : '');
+      }
+
+      // Override de flags en Registro_Datos según plan
+      if (uRegDatosCol !== -1) {
+        let rd = {};
+        try { rd = JSON.parse(String(sheet.getRange(userRow, uRegDatosCol + 1).getValue() || '{}')); } catch (_) {}
+        rd.hasProMode = !!planCfg.hasProMode;
+        rd.hasDashboard = !!planCfg.hasDashboard;
+        rd.canGenerateApps = !!planCfg.canGenerateApps;
+        sheet.getRange(userRow, uRegDatosCol + 1).setValue(JSON.stringify(rd));
+      }
+
+      const purchaseMessage = '✅ Tu compra fue aprobada y aplicada. Plan: ' + String(targetPlan || purchase.Plan_Actual || 'actual').toUpperCase();
+      if (uPurchaseMsgCol !== -1) {
+        sheet.getRange(userRow, uPurchaseMsgCol + 1).setValue(purchaseMessage);
+      }
+      if (uNotasCol !== -1) {
+        const prevNotes = String(sheet.getRange(userRow, uNotasCol + 1).getValue() || '');
+        const nextNotes = (prevNotes + '\n[COMPRA APLICADA ' + purchaseId + ']').trim();
+        sheet.getRange(userRow, uNotasCol + 1).setValue(nextNotes);
+      }
+
+      // Actualizar estado de compra
+      comprasSheet.getRange(purchaseRow, estadoCol + 1).setValue('aplicado');
+      if (fechaAprobCol !== -1) comprasSheet.getRange(purchaseRow, fechaAprobCol + 1).setValue(new Date().toISOString());
+      if (appliedAtCol !== -1) comprasSheet.getRange(purchaseRow, appliedAtCol + 1).setValue(new Date().toISOString());
+      if (msgSentCol !== -1) comprasSheet.getRange(purchaseRow, msgSentCol + 1).setValue('true');
+      if (notesCol !== -1) {
+        const pn = String(purchase.Notas_Admin || '');
+        const nn = (pn + '\n[APROBADA ' + auth.username + ']').trim();
+        comprasSheet.getRange(purchaseRow, notesCol + 1).setValue(nn);
+      }
+
+      _sendTransferEmail(
+        emailCol !== -1 ? String(purchase.Email || '') : '',
+        nameCol !== -1 ? String(purchase.Nombre || '') : '',
+        'Compra aprobada y aplicada',
+        _safeNumber(purchase.Importe_Estimado, 0),
+        String(purchase.Moneda || 'USD'),
+        purchaseId
+      );
+
+      appendAdminLog(auth.username, 'approve_purchase', medicoId, 'Compra ' + purchaseId + ' aplicada');
+      return createResponse({ success: true, purchaseId: purchaseId, status: 'aplicado', userId: medicoId });
+    } catch (err) {
+      return createResponse({ error: 'Error aprobando compra: ' + err.message });
+    }
+  }
+
+  if (action === 'purchase_ack_message') {
+    try {
+      const medicoId = String(payload.medicoId || '').trim();
+      if (!medicoId) return createResponse({ error: 'Falta medicoId' });
+      const dataUsers = sheet.getDataRange().getValues();
+      const uh = dataUsers[0];
+      const uidCol = uh.indexOf('ID_Medico');
+      const msgCol = uh.indexOf('Purchase_Message');
+      if (uidCol === -1 || msgCol === -1) return createResponse({ ok: true, skipped: true });
+
+      for (let i = 1; i < dataUsers.length; i++) {
+        if (String(dataUsers[i][uidCol]) !== medicoId) continue;
+        sheet.getRange(i + 1, msgCol + 1).setValue('');
+        return createResponse({ ok: true, success: true });
+      }
+
+      return createResponse({ ok: true, success: true, notFound: true });
+    } catch (err) {
+      return createResponse({ error: 'Error confirmando mensaje de compra: ' + err.message });
+    }
   }
 
   // ── admin_approve_registration via POST (soporta payloads grandes con imágenes base64) ──
@@ -1361,6 +1808,9 @@ function doPost(e) {
       if (!regData) return createResponse({ error: 'Registro no encontrado: ' + regId });
       if (String(regData.Estado).toLowerCase() === 'aprobado') {
         return createResponse({ error: 'Este registro ya fue aprobado' });
+      }
+      if (String(regData.Estado || '').toLowerCase() !== 'pago_confirmado') {
+        return createResponse({ error: 'Registro no pagado. Confirmá transferencia antes de aprobar.' });
       }
 
       const medicoId = 'MED' + Date.now().toString(36).toUpperCase();
@@ -1638,7 +2088,7 @@ function doPost(e) {
         Total_Hoy:          payload.totalHoy || '',
         Notas:              payload.notas || '',
         Fecha_Registro:     payload.fechaRegistro || new Date().toISOString(),
-        Estado:             'pendiente',
+        Estado:             'pendiente_pago',
         Origen:             payload.origen || 'formulario_web',
         ID_Medico_Asignado: '',
         Motivo_Rechazo:     '',
@@ -1649,6 +2099,15 @@ function doPost(e) {
       const row = workingHeaders.map(function(h) { return rowData[h] !== undefined ? rowData[h] : ''; });
 
       regSheet.appendRow(row);
+
+      _sendTransferEmail(
+        email,
+        payload.nombre || '',
+        'Registro recibido',
+        _safeNumber(payload.totalHoy, 0),
+        'USD',
+        regId
+      );
 
       // Si es plan CLINIC con profesionales, guardarlos en hoja separada
       if (payload.profesionales) {
@@ -2088,7 +2547,7 @@ const USUARIOS_HEADERS = [
   'Plan','Estado','Fecha_Registro','Fecha_Vencimiento',
   'API_Key','API_Key_B1','API_Key_B2',
   'Devices_Max','Devices_Logged','Allowed_Templates',
-  'Usage_Count','Diagnostico_Pendiente','Notas_Admin','Registro_Datos'
+  'Usage_Count','Diagnostico_Pendiente','Notas_Admin','Purchase_Message','Registro_Datos'
 ];
 
 /**
@@ -2186,6 +2645,18 @@ function _setupAllSheets() {
     s.setFrozenRows(1);
     result.push('Solicitudes_Soporte: creada');
   } else { result.push('Solicitudes_Soporte: OK'); }
+
+  // Compras_Pendientes
+  const buySheet = ss.getSheetByName(SHEET_COMPRAS);
+  if (!buySheet) {
+    const s = ss.insertSheet(SHEET_COMPRAS);
+    s.appendRow(COMPRAS_HEADERS);
+    s.setFrozenRows(1);
+    result.push('Compras_Pendientes: creada');
+  } else {
+    _ensureSheetHeaders(buySheet, COMPRAS_HEADERS);
+    result.push('Compras_Pendientes: OK');
+  }
 
   return result;
 }
