@@ -150,6 +150,11 @@ function ensure(cond, name, detail) {
         await page.waitForSelector('#tableBody [data-action="edit"]', { timeout: 20000 });
         ok('ADMIN-LOAD', 'tabla de usuarios renderizada');
 
+        const hasReqDiag = await page.locator('#tableBody [data-action="reqdiag"]').count();
+        ensure(hasReqDiag === 0, 'NO-REQDIAG-ACTION', 'accion de solicitar diagnostico eliminada en admin');
+        const hasDiagView = await page.locator('#tableBody [data-action="diag"]').count();
+        ensure(hasDiagView > 0, 'DIAG-VIEW-ACTION', 'accion de ver diagnostico permanece disponible');
+
         await page.click('#tableBody [data-action="edit"]');
         await page.waitForSelector('#adminUserCfgOverlay', { state: 'visible', timeout: 15000 });
         ok('WIZARD-OPEN', 'editor avanzado visible');

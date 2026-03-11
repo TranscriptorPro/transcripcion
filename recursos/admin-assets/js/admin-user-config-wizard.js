@@ -62,6 +62,9 @@
             '.auc-review-line{font-size:.8rem;color:#334155;}',
             '.auc-review-before{color:#b91c1c;}',
             '.auc-review-after{color:#065f46;}',
+            '.auc-review-delta{font-size:.76rem;margin-top:4px;display:flex;gap:10px;flex-wrap:wrap;}',
+            '.auc-review-added{color:#166534;font-weight:700;}',
+            '.auc-review-removed{color:#b91c1c;font-weight:700;}',
             '#aucReviewFoot{padding:12px 14px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:8px;}',
             '@media (max-width:800px){.auc-row{grid-template-columns:1fr}.auc-check-grid{grid-template-columns:1fr}}'
         ].join('');
@@ -227,6 +230,16 @@
         list.push({ section: section, label: label, before: String(before), after: String(after) });
     }
 
+    function deltaOf(beforeArr, afterArr) {
+        const b = new Set((beforeArr || []).filter(Boolean));
+        const a = new Set((afterArr || []).filter(Boolean));
+        const added = [];
+        const removed = [];
+        a.forEach(function(x) { if (!b.has(x)) added.push(x); });
+        b.forEach(function(x) { if (!a.has(x)) removed.push(x); });
+        return { added: added, removed: removed };
+    }
+
     function buildChanges(initial, now) {
         const changes = [];
         pushChange(changes, 'Datos', 'Nombre', initial.nombre, now.nombre);
@@ -236,16 +249,30 @@
         pushChange(changes, 'Datos', 'Estado', initial.estado, now.estado);
         pushChange(changes, 'Datos', 'Dispositivos máximos', initial.devicesMax, now.devicesMax);
 
-        pushChange(changes, 'Especialidades', 'Especialidades', strList(initial.especialidades), strList(now.especialidades));
-        pushChange(
-            changes,
-            'Especialidades',
-            'Estudios',
-            strList(initial.estudios.map(function(x) { return x.nombre; })),
-            strList(now.estudios.map(function(x) { return x.nombre; }))
-        );
+        const espDelta = deltaOf(initial.especialidades, now.especialidades);
+        const espBefore = strList(initial.especialidades);
+        const espAfter = strList(now.especialidades);
+        if (String(espBefore) !== String(espAfter)) {
+            changes.push({ section: 'Especialidades', label: 'Especialidades', before: espBefore, after: espAfter, added: espDelta.added, removed: espDelta.removed });
+        }
 
-        pushChange(changes, 'Trabajo', 'Lugares de trabajo', workplacesSummary(initial.workplaces), workplacesSummary(now.workplaces));
+        const estBeforeArr = initial.estudios.map(function(x) { return x.nombre; });
+        const estAfterArr = now.estudios.map(function(x) { return x.nombre; });
+        const estDelta = deltaOf(estBeforeArr, estAfterArr);
+        const estBefore = strList(estBeforeArr);
+        const estAfter = strList(estAfterArr);
+        if (String(estBefore) !== String(estAfter)) {
+            changes.push({ section: 'Especialidades', label: 'Estudios', before: estBefore, after: estAfter, added: estDelta.added, removed: estDelta.removed });
+        }
+
+        const wpBeforeArr = initial.workplaces.map(function(wp) { return wp.name || '(sin nombre)'; });
+        const wpAfterArr = now.workplaces.map(function(wp) { return wp.name || '(sin nombre)'; });
+        const wpDelta = deltaOf(wpBeforeArr, wpAfterArr);
+        const wpBefore = workplacesSummary(initial.workplaces);
+        const wpAfter = workplacesSummary(now.workplaces);
+        if (String(wpBefore) !== String(wpAfter)) {
+            changes.push({ section: 'Trabajo', label: 'Lugares de trabajo', before: wpBefore, after: wpAfter, added: wpDelta.added, removed: wpDelta.removed });
+        }
 
         pushChange(changes, 'PDF', 'Color encabezado', initial.headerColor, now.headerColor);
         pushChange(changes, 'PDF', 'Firma', initial.firma ? 'Cargada' : 'Vacía', now.firma ? 'Cargada' : 'Vacía');
@@ -262,12 +289,27 @@
         const list = document.getElementById('aucReviewList');
         if (!box || !list) return;
 
+        function renderDelta(c) {
+            const added = Array.isArray(c.added) ? c.added.filter(Boolean) : [];
+            const removed = Array.isArray(c.removed) ? c.removed.filter(Boolean) : [];
+            if (!added.length && !removed.length) return '';
+            const parts = [];
+            if (added.length) {
+                parts.push('<span class="auc-review-added">+ ' + esc(added.join(', ')) + '</span>');
+            }
+            if (removed.length) {
+                parts.push('<span class="auc-review-removed">- ' + esc(removed.join(', ')) + '</span>');
+            }
+            return '<div class="auc-review-delta">' + parts.join('') + '</div>';
+        }
+
         list.innerHTML = changes.map(function(c) {
             return [
                 '<div class="auc-review-item">',
                 '  <div class="auc-review-section">' + esc(c.section) + ' - ' + esc(c.label) + '</div>',
                 '  <div class="auc-review-line"><span class="auc-review-before">Antes:</span> ' + esc(c.before || '—') + '</div>',
                 '  <div class="auc-review-line"><span class="auc-review-after">Después:</span> ' + esc(c.after || '—') + '</div>',
+                '  ' + renderDelta(c),
                 '</div>'
             ].join('');
         }).join('');

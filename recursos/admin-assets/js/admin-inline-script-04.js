@@ -191,10 +191,6 @@
                 return await this.call(`?action=admin_get_diagnostic&userId=${encodeURIComponent(userId)}`);
             },
 
-            async requestDiagnostic(userId) {
-                return await this.call(`?action=admin_request_diagnostic&userId=${encodeURIComponent(userId)}`);
-            },
-
             async deleteUser(userId) {
                 return await this.call(`?action=admin_delete_user&userId=${encodeURIComponent(userId)}`);
             },
@@ -661,7 +657,7 @@
 
         function renderDiagReport(diag, container) {
             if (!diag || !diag.report) {
-                container.innerHTML = '<p style="color:var(--text-secondary);">Sin diagnóstico disponible. Use 📡 para solicitar uno.</p>';
+                container.innerHTML = '<p style="color:var(--text-secondary);">Sin diagnóstico disponible. El reporte se envía desde la app del usuario al panel admin.</p>';
                 return;
             }
             const r   = diag.report;
@@ -714,15 +710,6 @@
                 </div>`;
         }
 
-        async function requestDiagFromAdmin(userId) {
-            try {
-                await API.requestDiagnostic(userId);
-                showToast(`📡 Diagnóstico solicitado para ${userId}`, 'success');
-                await logAdminAction('request_diagnostic', userId, 'Solicitud de diagnóstico remoto');
-            } catch (err) {
-                showToast(`❌ Error: ${err.message}`, 'error');
-            }
-        }
         async function loadGlobalStats() {
             try {
                 const resp = await API.getGlobalStats();
@@ -896,7 +883,6 @@
                         ${isTrial ? `<button class="btn-action" data-action="extendtrial" data-user-id="${id}" title="Extender Trial +15 días">⏳</button>` : ''}
                         ${isTrial || isExpired ? `<button class="btn-action" data-action="activate" data-user-id="${id}" title="Activar PRO">✅</button>` : ''}
                         <button class="btn-action" data-action="diag" data-user-id="${id}" title="Ver último diagnóstico">🔍</button>
-                        <button class="btn-action" data-action="reqdiag" data-user-id="${id}" title="Solicitar diagnóstico remoto">📡</button>
                         <button class="btn-action" data-action="ban" data-user-id="${id}" title="${isBanned ? 'Desbloquear' : 'Bloquear'}">${isBanned ? '🔓' : '🚫'}</button>
                         <button class="btn-action" data-action="delete" data-user-id="${id}" title="Eliminar usuario" style="color:#ef4444;">🗑️</button>
                     </td>
@@ -1237,7 +1223,6 @@
             else if (btn.dataset.action === 'activate') activateUser(userId);
             else if (btn.dataset.action === 'extendtrial') extendTrial(userId);
             else if (btn.dataset.action === 'diag') openDiagModal(userId);
-            else if (btn.dataset.action === 'reqdiag') requestDiagFromAdmin(userId);
             else if (btn.dataset.action === 'mail') {
                 openDirectEmail(userId);
             }
