@@ -1,30 +1,129 @@
 // ============ EDITOR: EXPORT RENDER HELPERS ============
 
 (function initEditorExportRenderUtils() {
-    function createRTF(text, fecha) {
-        const cleaned = text
+    async function _loadExportContext(text) {
+        const editorEl = document.getElementById('editor');
+        const rawEditorText = editorEl?.innerText || '';
+        const sourceText = String(text || rawEditorText || '').trim();
+
+        const getCfg = async () => {
+            try {
+                if (window._pdfConfigCache && typeof window._pdfConfigCache === 'object') return window._pdfConfigCache;
+                if (typeof appDB !== 'undefined' && appDB && typeof appDB.get === 'function') {
+                    const fromDb = await appDB.get('pdf_config');
+                    if (fromDb && typeof fromDb === 'object') return fromDb;
+                }
+                return JSON.parse(localStorage.getItem('pdf_config') || '{}');
+            } catch (_) {
+                return {};
+            }
+        };
+
+        const cfg = await getCfg();
+        const extracted = (typeof extractPatientDataFromText === 'function') ? extractPatientDataFromText(sourceText) : {};
+        const reqVal = (id) => document.getElementById(id)?.value?.trim() || '';
+
+        const tplKey = window.selectedTemplate || cfg.selectedTemplate || '';
+        const tplName = (tplKey && window.MEDICAL_TEMPLATES?.[tplKey]?.name) || '';
+        const rawDate = cfg.studyDate || '';
+        const studyDate = rawDate
+            ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
+            : new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+        return {
+            text: sourceText,
+            patientName: extracted.name || cfg.patientName || reqVal('reqPatientName') || reqVal('pdfPatientName') || '',
+            patientDni: extracted.dni || cfg.patientDni || reqVal('reqPatientDni') || reqVal('pdfPatientDni') || '',
+            patientAge: extracted.age || cfg.patientAge || reqVal('reqPatientAge') || reqVal('pdfPatientAge') || '',
+            patientSex: extracted.sex || cfg.patientSex || reqVal('reqPatientSex') || reqVal('pdfPatientSex') || '',
+            patientInsurance: extracted.insurance || cfg.patientInsurance || reqVal('reqPatientInsurance') || reqVal('pdfPatientInsurance') || '',
+            patientAffiliateNum: extracted.affiliateNum || cfg.patientAffiliateNum || reqVal('reqPatientAffiliateNum') || reqVal('pdfPatientAffiliateNum') || '',
+            studyType: cfg.studyType || tplName || '',
+            studyDate,
+            studyTime: cfg.studyTime || reqVal('pdfStudyTime') || '',
+            studyReason: cfg.studyReason || reqVal('pdfStudyReason') || '',
+            referringDoctor: cfg.referringDoctor || reqVal('pdfReferringDoctor') || '',
+            reportNum: cfg.reportNum || reqVal('pdfReportNumber') || ''
+        };
+    }
+
+    function _rtfEscapeLine(line) {
+        let escaped = String(line || '')
+            .replace(/\\/g, '\\\\')
+            .replace(/\{/g, '\\{')
+            .replace(/\}/g, '\\}');
+
+        escaped = escaped.replace(/[^\x20-\x7E]/g, (ch) => {
+            const code = ch.charCodeAt(0);
+            if (code <= 255) return "\\'" + code.toString(16).padStart(2, '0');
+            const signed = code > 32767 ? code - 65536 : code;
+            return '\\u' + signed + '?';
+        });
+
+        return escaped;
+    }
+
+    async function createRTF(text, _fecha) {
+        const ctx = await _loadExportContext(text);
+        const cleaned = ctx.text
             .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
             .replace(/[\u{2600}-\u{27BF}]/gu, '')
             .replace(/[\u{FE00}-\u{FE0F}]/gu, '')
             .replace(/[\u{200B}-\u{200D}\u{FEFF}]/gu, '')
             .replace(/✏️?/g, '');
 
+        const addField = (arr, label, value) => {
+            const v = String(value || '').trim();
+            if (!v) return;
+            arr.push(`\\b ${_rtfEscapeLine(label)}:\\b0 ${_rtfEscapeLine(v)}\\par`);
+        };
+
+        const meta = [];
+        addField(meta, 'Fecha', `${ctx.studyDate}${ctx.studyTime ? ' ' + ctx.studyTime : ''}`);
+        addField(meta, 'Estudio', ctx.studyType);
+        addField(meta, 'Informe N', ctx.reportNum);
+        addField(meta, 'Paciente', ctx.patientName);
+        addField(meta, 'DNI', ctx.patientDni);
+        addField(meta, 'Edad', ctx.patientAge ? `${ctx.patientAge} años` : '');
+        addField(meta, 'Sexo', ctx.patientSex === 'M' ? 'Masculino' : ctx.patientSex === 'F' ? 'Femenino' : ctx.patientSex);
+        addField(meta, 'Cobertura', ctx.patientInsurance);
+        addField(meta, 'N Afiliado', ctx.patientAffiliateNum);
+        addField(meta, 'Medico solicitante', ctx.referringDoctor);
+        addField(meta, 'Motivo de consulta', ctx.studyReason);
+
         const lines = cleaned.split('\n');
-        let body = '';
-        for (const line of lines) {
-            let escaped = line
-                .replace(/\\/g, '\\\\')
-                .replace(/\{/g, '\\{')
-                .replace(/\}/g, '\\}');
-            escaped = escaped.replace(/[^\x20-\x7E]/g, (ch) => {
-                const code = ch.charCodeAt(0);
-                if (code <= 255) return "\\'" + code.toString(16).padStart(2, '0');
-                const signed = code > 32767 ? code - 65536 : code;
-                return '\\u' + signed + '?';
-            });
-            body += escaped + '\\par\n';
-        }
-        return `{\\rtf1\\ansi\\ansicpg1252\\deff0{\\fonttbl{\\f0 Arial;}}\\paperw12240\\paperh15840\\margl1440\\margr1440\\margt1440\\margb1440\\qc\\f0\\fs36\\b INFORME M\\'c9DICO\\b0\\par\\fs24\\i Fecha: ${fecha}\\i0\\par\\par\\ql\\fs24${body}}`;
+        const body = lines.map((line) => `${_rtfEscapeLine(line)}\\par`).join('\n');
+
+        return `{\\rtf1\\ansi\\ansicpg1252\\deff0{\\fonttbl{\\f0 Arial;}}\\paperw12240\\paperh15840\\margl1080\\margr1080\\margt1080\\margb1080\\f0\\fs22\\sl276\\slmult1\\qc\\b INFORME M\\'c9DICO\\b0\\par\\ql\\par${meta.join('\n')}\\par\\b CONTENIDO DEL INFORME\\b0\\par${body}}`;
+    }
+
+    async function createTXT(text) {
+        const ctx = await _loadExportContext(text);
+        const lines = ['INFORME MEDICO'];
+
+        const pushField = (label, value) => {
+            const v = String(value || '').trim();
+            if (!v) return;
+            lines.push(`${label}: ${v}`);
+        };
+
+        pushField('Fecha', `${ctx.studyDate}${ctx.studyTime ? ' ' + ctx.studyTime : ''}`);
+        pushField('Estudio', ctx.studyType);
+        pushField('Informe N', ctx.reportNum);
+        pushField('Paciente', ctx.patientName);
+        pushField('DNI', ctx.patientDni);
+        pushField('Edad', ctx.patientAge ? `${ctx.patientAge} años` : '');
+        pushField('Sexo', ctx.patientSex === 'M' ? 'Masculino' : ctx.patientSex === 'F' ? 'Femenino' : ctx.patientSex);
+        pushField('Cobertura', ctx.patientInsurance);
+        pushField('N Afiliado', ctx.patientAffiliateNum);
+        pushField('Medico solicitante', ctx.referringDoctor);
+        pushField('Motivo de consulta', ctx.studyReason);
+
+        lines.push('');
+        lines.push('CONTENIDO DEL INFORME');
+        lines.push('');
+        lines.push(ctx.text || '');
+        return lines.join('\n');
     }
 
     async function createHTML() {
@@ -272,5 +371,6 @@ ${footerSection}
     }
 
     window.createRTF = createRTF;
+    window.createTXT = createTXT;
     window.createHTML = createHTML;
 })();

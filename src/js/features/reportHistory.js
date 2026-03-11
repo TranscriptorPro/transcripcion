@@ -315,39 +315,33 @@ window.viewReport = function (reportId) {
     // Botón re-exportar PDF
     const btnReExport = document.getElementById('btnReExportPdf');
     btnReExport.onclick = async () => {
-        if (typeof downloadPDFWrapper !== 'function') {
-            if (typeof showToast === 'function') showToast('Motor PDF no disponible', 'error');
+        const htmlDoc = String(report.htmlContent || '').trim();
+        if (!htmlDoc) {
+            if (typeof showToast === 'function') showToast('No hay contenido para re-exportar', 'error');
             return;
         }
-        // Cargar temporalmente los datos del paciente para el PDF
-        const pdfConfig = (typeof appDB !== 'undefined' ? await appDB.get('pdf_config') : null)
-            || window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
-        const origConfig = { ...pdfConfig };
 
-        if (report.patientData) {
-            if (report.patientData.name)    pdfConfig.patientName         = report.patientData.name;
-            if (report.patientData.dni)     pdfConfig.patientDni          = report.patientData.dni;
-            if (report.patientData.age)     pdfConfig.patientAge          = report.patientData.age;
-            if (report.patientData.sex)     pdfConfig.patientSex          = report.patientData.sex;
-            if (report.patientData.insurance)    pdfConfig.patientInsurance    = report.patientData.insurance;
-            if (report.patientData.affiliateNum) pdfConfig.patientAffiliateNum = report.patientData.affiliateNum;
-            window._pdfConfigCache = pdfConfig;
-            if (typeof appDB !== 'undefined') appDB.set('pdf_config', pdfConfig);
-            else localStorage.setItem('pdf_config', JSON.stringify(pdfConfig));
+        const printWin = window.open('', '_blank');
+        if (!printWin) {
+            if (typeof showToast === 'function') {
+                showToast('El navegador bloqueo la ventana de impresion. Permiti popups para exportar PDF exacto.', 'error');
+            }
+            return;
         }
 
-        try {
-            const fecha = new Date(report.date).toLocaleDateString('es-ES');
-            const fDate = report.date.split('T')[0];
-            window._skipReportSave = true; // evitar guardar duplicado al re-exportar
-            await downloadPDFWrapper(report.htmlContent, report.fileName + '_copia', fecha, fDate);
-            if (typeof showToast === 'function') showToast('PDF re-exportado ✓', 'success');
-        } finally {
-            window._skipReportSave = false;
-            // Restaurar config original
-            window._pdfConfigCache = origConfig;
-            if (typeof appDB !== 'undefined') appDB.set('pdf_config', origConfig);
-            else localStorage.setItem('pdf_config', JSON.stringify(origConfig));
+        printWin.document.open();
+        printWin.document.write(htmlDoc);
+        printWin.document.close();
+
+        setTimeout(() => {
+            try {
+                printWin.focus();
+                printWin.print();
+            } catch (_) {}
+        }, 300);
+
+        if (typeof showToast === 'function') {
+            showToast('Vista de impresion exacta abierta. Elegi "Guardar como PDF".', 'info');
         }
     };
 

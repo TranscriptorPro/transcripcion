@@ -392,7 +392,10 @@ window.initModals = function () {
                 if (typeof showToast === 'function') showToast('No hay contenido en el editor', 'error');
                 return;
             }
-            if (typeof downloadPDFWrapper === 'function') {
+            // Priorizar SIEMPRE el flujo exacto HTML->Print para que PDF y vista previa coincidan.
+            if (typeof window.downloadFile === 'function') {
+                await window.downloadFile('pdf');
+            } else if (typeof downloadPDFWrapper === 'function') {
                 const safeT = typeof transcriptions !== 'undefined' ? transcriptions : [];
                 const safeI = typeof activeTabIndex !== 'undefined' ? activeTabIndex : 0;
                 const fName = (safeT[safeI]?.fileName || 'informe').replace(/\.[^/.]+$/, '');

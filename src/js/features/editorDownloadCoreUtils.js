@@ -125,8 +125,18 @@
         let blob;
         let ext;
         switch (format) {
-            case 'rtf': blob = new Blob([createRTF(text, date)], { type: 'application/rtf' }); ext = 'rtf'; break;
-            case 'txt': blob = new Blob([`INFORME MEDICO\nFecha: ${date}\n\n${text}`], { type: 'text/plain;charset=utf-8' }); ext = 'txt'; break;
+            case 'rtf': {
+                const rtfContent = (typeof createRTF === 'function') ? await createRTF(text, date) : text;
+                blob = new Blob([rtfContent], { type: 'application/rtf' });
+                ext = 'rtf';
+                break;
+            }
+            case 'txt': {
+                const txtContent = (typeof createTXT === 'function') ? await createTXT(text) : `INFORME MEDICO\nFecha: ${date}\n\n${text}`;
+                blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
+                ext = 'txt';
+                break;
+            }
             case 'html': blob = new Blob([await createHTML()], { type: 'text/html;charset=utf-8' }); ext = 'html'; break;
             default: break;
         }

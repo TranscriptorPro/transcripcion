@@ -118,6 +118,80 @@ window.generatePDFBase64 = function () {
     _pdfBase64Queue = _pdfBase64Queue.then(() => _generatePDFBase64Impl()).catch(() => null);
     return _pdfBase64Queue;
 };
+async function _blobToBase64(blob) {
+    return new Promise((resolve) => {
+        try {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result || '').split(',')[1] || null);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(blob);
+        } catch (_) {
+            resolve(null);
+        }
+    });
+}
+
+async function _generatePDFBase64FromHtmlSnapshot() {
+    if (typeof jspdf === 'undefined') return null;
+    if (typeof createHTML !== 'function') return null;
+
+    try {
+        const htmlDoc = await createHTML();
+        if (!htmlDoc) return null;
+
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'position:fixed;left:-99999px;top:0;width:794px;background:#fff;z-index:-1;';
+
+        const sandbox = document.createElement('iframe');
+        sandbox.style.cssText = 'width:794px;height:1123px;border:0;background:#fff;';
+        wrapper.appendChild(sandbox);
+        document.body.appendChild(wrapper);
+
+        const ready = new Promise((resolve) => {
+            sandbox.onload = () => resolve(true);
+        });
+        sandbox.srcdoc = htmlDoc;
+        await ready;
+
+        const sdoc = sandbox.contentDocument;
+        if (!sdoc) {
+            wrapper.remove();
+            return null;
+        }
+
+        await new Promise(r => setTimeout(r, 220));
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
+        const bodyEl = sdoc.body;
+        if (!bodyEl) {
+            wrapper.remove();
+            return null;
+        }
+
+        await doc.html(bodyEl, {
+            x: 0,
+            y: 0,
+            margin: [0, 0, 0, 0],
+            autoPaging: 'text',
+            width: 210,
+            windowWidth: 794,
+            html2canvas: {
+                scale: 1,
+                useCORS: true,
+                backgroundColor: '#ffffff'
+            }
+        });
+
+        const blob = doc.output('blob');
+        wrapper.remove();
+        return await _blobToBase64(blob);
+    } catch (_) {
+        return null;
+    }
+}
+
 async function _generatePDFBase64Impl() {
     if (typeof jspdf === 'undefined') {
         await new Promise(r => setTimeout(r, 600));
@@ -125,6 +199,10 @@ async function _generatePDFBase64Impl() {
     try {
         const editorEl  = window.editor || document.getElementById('editor');
         if (!editorEl || !editorEl.innerHTML.trim()) return null;
+
+        // Ruta preferida: renderizar desde HTML completo para máxima similitud con la vista previa.
+        const exactLike = await _generatePDFBase64FromHtmlSnapshot();
+        if (exactLike) return exactLike;
 
         return new Promise((resolve) => {
             const origSave = window.saveToDisk;
