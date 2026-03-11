@@ -418,6 +418,7 @@
 
             // Load data lazily
             if (tabName === 'registros' && !registrosLoaded) {
+                ensureRegQuickLinkButton();
                 loadRegistrations();
                 registrosLoaded = true;
             } else if (tabName === 'metricas' && !metricsLoaded) {
@@ -433,6 +434,28 @@
             } else if (tabName === 'soporte' && !soporteLoaded) {
                 loadSupportRequests();
                 soporteLoaded = true;
+            }
+        }
+
+        function ensureRegQuickLinkButton() {
+            const controls = document.getElementById('regFilterEstado')?.parentElement;
+            if (!controls) return;
+
+            let quickBtn = document.getElementById('btnCopyRegLinkQuick');
+            if (!quickBtn) {
+                quickBtn = document.createElement('button');
+                quickBtn.id = 'btnCopyRegLinkQuick';
+                quickBtn.type = 'button';
+                quickBtn.className = 'btn-outline';
+                quickBtn.title = 'Copiar link del formulario de registro';
+                quickBtn.style.padding = '6px 10px';
+                quickBtn.style.fontSize = '.82rem';
+                quickBtn.textContent = '🔗 Copiar formulario';
+                quickBtn.addEventListener('click', copyRegLink);
+            }
+
+            if (!controls.contains(quickBtn)) {
+                controls.appendChild(quickBtn);
             }
         }
 
@@ -1303,6 +1326,8 @@
 
         /* ── Init ────────────────────────────────────────────────────────────── */
         document.addEventListener('DOMContentLoaded', async () => {
+            ensureRegQuickLinkButton();
+
             // Limpiar el buscador (el browser puede autocompletar con la última búsqueda)
             document.getElementById('searchInput').value = '';
 
