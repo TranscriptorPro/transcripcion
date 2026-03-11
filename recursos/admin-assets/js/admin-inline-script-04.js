@@ -1729,6 +1729,37 @@
 
         window._formatGiftProfessionalDisplay = _formatGiftProfessionalDisplay;
 
+        function _stripGiftProfessionalPrefix(rawName) {
+            return String(rawName || '')
+                .replace(/^(?:\s*(?:dr\.?\s*\/\s*dra\.?|dra\.?|dr\.?))\s+/i, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function _sanitizeGiftNameField() {
+            const input = document.getElementById('giftNombre');
+            if (!input) return;
+            const cleaned = _stripGiftProfessionalPrefix(input.value);
+            if (input.value !== cleaned) input.value = cleaned;
+            if (typeof window._updatePdfSim === 'function') window._updatePdfSim();
+        }
+
+        function _bindGiftNameSanitizer() {
+            const input = document.getElementById('giftNombre');
+            if (!input) return;
+            input.placeholder = 'Juan Perez';
+            if (input.dataset.sanitizerBound === '1') return;
+            input.addEventListener('blur', _sanitizeGiftNameField);
+            input.addEventListener('change', _sanitizeGiftNameField);
+            input.addEventListener('input', () => {
+                const v = String(input.value || '');
+                if (/^\s*(dr\.?\s*\/\s*dra\.?|dra\.?|dr\.?)\s+/i.test(v)) {
+                    _sanitizeGiftNameField();
+                }
+            });
+            input.dataset.sanitizerBound = '1';
+        }
+
         function _ensureGiftSexoField() {
             if (document.getElementById('giftSexo')) return;
             const especialidadGroup = document.getElementById('giftEspecialidad')?.closest('.gw-field-group');
@@ -1819,6 +1850,7 @@
             _cfCurrentUser = null;
             _cfMode = 'gift';
             _ensureGiftSexoField();
+            _bindGiftNameSanitizer();
 
             // Título
             document.getElementById('cfModalTitle').textContent = '🎁 Crear Usuario Regalo';
@@ -2409,8 +2441,9 @@
                 if (_cfMode === 'gift') {
                     // ── GIFT MODE: Crear usuario nuevo (wizard completo) ──
                     const nombreInput = document.getElementById('giftNombre').value.trim();
+                    const nombreLimpio = _stripGiftProfessionalPrefix(nombreInput);
                     const sexo = _normalizeGiftSexo(document.getElementById('giftSexo')?.value);
-                    const nombreFmt = _formatGiftProfessionalDisplay(nombreInput, sexo);
+                    const nombreFmt = _formatGiftProfessionalDisplay(nombreLimpio, sexo);
                     const nombre = nombreFmt.fullName;
                     const email = document.getElementById('giftEmail').value.trim();
                     const matricula = document.getElementById('giftMatricula').value.trim();
@@ -2450,7 +2483,7 @@
                     const showEmail  = document.getElementById('giftShowEmail')?.checked  ?? true;
                     const showSocial = document.getElementById('giftShowSocial')?.checked ?? false;
 
-                    if (!nombreInput) {
+                    if (!nombreLimpio) {
                         dashAlert('Ingresá el nombre del usuario', '⚠️');
                         btn.disabled = false;
                         btn.textContent = originalText;

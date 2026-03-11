@@ -153,22 +153,27 @@ window.PdfMakerSectionUtils.drawSignatureSection = function(ctx) {
     const sigStartX = PAGE_W - MR - sigBlockW;
     const sigCenterX = sigStartX + sigBlockW / 2;
     const lineX = sigCenterX - sigLineW / 2;
+    const signW = 40;
+    const signH = 16;
+
+    // Referencia unica: la linea de firma es el ancla.
+    // La firma siempre queda centrada respecto a esa linea y 3px por encima.
+    const lineY = cy + (sigB64 ? (signH + 3) : 0);
 
     if (sigB64) {
         try {
             const imgType = sigB64.includes('data:image/png') ? 'PNG' : 'JPEG';
             const b64data = sigB64.includes(',') ? sigB64.split(',')[1] : sigB64;
-            doc.addImage(b64data, imgType, sigCenterX - 20, cy, 40, 16);
-            cy += 16;
+            doc.addImage(b64data, imgType, sigCenterX - (signW / 2), lineY - signH - 3, signW, signH);
         } catch (_) {}
     }
     if (showSignLine) {
         doc.setDrawColor(51, 51, 51);
         doc.setLineWidth(0.4);
-        doc.line(lineX, cy, lineX + sigLineW, cy);
+        doc.line(lineX, lineY, lineX + sigLineW, lineY);
         doc.setDrawColor(0);
-        cy += 3;
     }
+    cy = lineY + 3;
     if (showSignName && profName) {
         doc.setFontSize(10);
         doc.setFont(mainFont, 'bold');
