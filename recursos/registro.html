@@ -1216,6 +1216,7 @@
                     <div id="paymentPortalPanel" style="display:none;margin-top:1rem;padding:1rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;text-align:left;">
                         <div id="paymentPortalStatus" style="font-size:.85rem;font-weight:600;margin-bottom:.5rem;">Estado: —</div>
                         <div id="paymentPortalMeta" style="font-size:.8rem;color:var(--text-light);margin-bottom:.7rem;"></div>
+                        <div id="paymentTransferData" style="font-size:.78rem;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:.65rem;margin-bottom:.7rem;color:#334155;"></div>
                         <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
                             <input type="number" id="paymentAmountInput" step="0.01" min="0" placeholder="Monto (opcional)" style="max-width:180px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:.82rem;">
                             <input type="text" id="paymentNoteInput" placeholder="Nota (opcional)" style="flex:1;min-width:180px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:.82rem;">
@@ -1618,6 +1619,7 @@
             const panel = document.getElementById('paymentPortalPanel');
             const statusEl = document.getElementById('paymentPortalStatus');
             const metaEl = document.getElementById('paymentPortalMeta');
+            const transferEl = document.getElementById('paymentTransferData');
             const uploadStatus = document.getElementById('paymentUploadStatus');
             if (!panel || !statusEl || !metaEl) return;
             panel.style.display = 'block';
@@ -1637,6 +1639,23 @@
                 if (data.monthlyAmount) metaParts.push(`Renovación estimada: ${Number(data.monthlyAmount).toFixed(2)} USD/mes`);
                 if (data.fechaVencimiento) metaParts.push(`Vencimiento: ${String(data.fechaVencimiento).split('T')[0]}`);
                 metaEl.textContent = metaParts.join(' · ');
+
+                if (transferEl) {
+                    const p = data.paymentData || {};
+                    transferEl.innerHTML = `
+                        <div style="font-weight:700;margin-bottom:.35rem;">Datos de transferencia</div>
+                        <div><b>Para pagos en pesos argentinos:</b></div>
+                        <div>Alias: ${p.arsAlias || '—'}</div>
+                        <div>CVU: ${p.arsCvu || '—'}</div>
+                        <div>Nombre: ${p.arsNombre || '—'}</div>
+                        <div style="margin-top:.35rem;"><b>Para pagos en dolares:</b></div>
+                        <div>Alias: ${p.usdAlias || '—'}</div>
+                        <div>CBU: ${p.usdCbu || '—'}</div>
+                        <div>Nombre: ${p.usdNombre || '—'}</div>
+                        ${p.bank ? `<div>Banco: ${p.bank}</div>` : ''}
+                        ${p.destinationNote ? `<div style="margin-top:.3rem;color:#0f766e;">ℹ️ ${p.destinationNote}</div>` : ''}
+                    `;
+                }
                 _renderPaymentHistory(data.history || []);
 
                 const amountInput = document.getElementById('paymentAmountInput');

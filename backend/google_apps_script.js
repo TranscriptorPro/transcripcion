@@ -209,10 +209,17 @@ function _defaultAddonsConfig() {
 
 function _defaultPaymentConfig() {
   return {
-    cbu: '0000003100000000000000',
-    alias: 'transcriptor.pro',
-    titular: 'Transcriptor Pro',
-    banco: 'Banco de ejemplo'
+    cbu: '3220001888028622160018',
+    alias: 'plan.prima.despierto',
+    titular: 'Aldo Jesus Wagner',
+    banco: 'Banco Industrial (BIND)',
+    arsAlias: 'aldo.jesus.wagner',
+    arsCvu: '0000003100057706429095',
+    arsNombre: 'Aldo Jesus Wagner',
+    usdAlias: 'plan.prima.despierto',
+    usdCbu: '3220001888028622160018',
+    usdNombre: 'Aldo Jesus Wagner',
+    destinationNote: 'Cuando transfieras, verás como destino al Banco Industrial (BIND).'
   };
 }
 
@@ -337,10 +344,18 @@ function _sendTransferEmail(toEmail, personName, subjectPrefix, amount, currency
       'Importe: ' + _formatMoney(amount) + ' ' + (currency || 'USD'),
       '',
       'Datos de transferencia:',
-      'CBU: ' + (pay.cbu || ''),
-      'Alias: ' + (pay.alias || ''),
-      'Titular: ' + (pay.titular || ''),
+      '',
+      'Para pagos en pesos argentinos:',
+      'Alias: ' + (pay.arsAlias || pay.alias || ''),
+      'CVU: ' + (pay.arsCvu || ''),
+      'Nombre: ' + (pay.arsNombre || pay.titular || ''),
+      '',
+      'Para pagos en dolares:',
+      'Alias: ' + (pay.usdAlias || pay.alias || ''),
+      'CBU: ' + (pay.usdCbu || pay.cbu || ''),
+      'Nombre: ' + (pay.usdNombre || pay.titular || ''),
       'Banco: ' + (pay.banco || ''),
+      pay.destinationNote ? 'ℹ️ ' + pay.destinationNote : '',
       portalUrl ? '' : '',
       portalUrl ? 'Portal de pagos para adjuntar comprobante:' : '',
       portalUrl ? portalUrl : '',
@@ -402,6 +417,7 @@ function doGet(e) {
 
     try {
       const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const pay = _getPaymentConfig();
 
       if (id.toUpperCase().startsWith('REG_')) {
         const regSheet = _getOrCreateSheetWithHeaders(SHEET_REGISTROS, REGISTROS_HEADERS);
@@ -429,6 +445,16 @@ function doGet(e) {
             fechaRegistro: row.Fecha_Registro || '',
             medicoIdAsignado: row.ID_Medico_Asignado || '',
             paymentLink: row.Payment_Link || '',
+            paymentData: {
+              arsAlias: pay.arsAlias || pay.alias || '',
+              arsCvu: pay.arsCvu || '',
+              arsNombre: pay.arsNombre || pay.titular || '',
+              usdAlias: pay.usdAlias || pay.alias || '',
+              usdCbu: pay.usdCbu || pay.cbu || '',
+              usdNombre: pay.usdNombre || pay.titular || '',
+              bank: pay.banco || '',
+              destinationNote: pay.destinationNote || ''
+            },
             lastReceiptAt: row.Last_Receipt_At || '',
             history: Array.isArray(history) ? history : []
           });
@@ -479,6 +505,16 @@ function doGet(e) {
               return rd.paymentPortalUrl || '';
             } catch (_) { return ''; }
           })(),
+          paymentData: {
+            arsAlias: pay.arsAlias || pay.alias || '',
+            arsCvu: pay.arsCvu || '',
+            arsNombre: pay.arsNombre || pay.titular || '',
+            usdAlias: pay.usdAlias || pay.alias || '',
+            usdCbu: pay.usdCbu || pay.cbu || '',
+            usdNombre: pay.usdNombre || pay.titular || '',
+            bank: pay.banco || '',
+            destinationNote: pay.destinationNote || ''
+          },
           lastReceiptAt: row.Last_Receipt_At || '',
           history: Array.isArray(history) ? history : []
         });
