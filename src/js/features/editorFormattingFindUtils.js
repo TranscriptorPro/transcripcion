@@ -223,6 +223,14 @@
             findReplacePanel.classList.toggle('active');
             if (findReplacePanel.classList.contains('active')) findInput.focus();
         });
+
+        // Compatibilidad E2E: API global para abrir la barra Buscar/Reemplazar.
+        window.openFindReplace = function () {
+            if (!findReplacePanel.classList.contains('active')) {
+                toggleFindReplace.click();
+            }
+            findInput.focus();
+        };
     }
 
     if (closeFindReplace && findReplacePanel) {

@@ -65,12 +65,50 @@ window._retryPendingContacts = async function () {
 };
 
 window.initContact = function () {
-    // No mostrar para ADMIN
-    const isAdmin = (typeof CLIENT_CONFIG === 'undefined' || CLIENT_CONFIG.type === 'ADMIN');
     const btn = document.getElementById('btnContacto');
     if (!btn) return;
-    if (isAdmin) { btn.style.display = 'none'; return; }
-    btn.style.display = '';
+
+    // Resolver rol de forma robusta (runtime + config persistida)
+    // para evitar falsos ADMIN durante hidratacion inicial.
+    const resolveClientType = () => {
+        if (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG && CLIENT_CONFIG.type) {
+            return CLIENT_CONFIG.type;
+        }
+        try {
+            const raw = localStorage.getItem('client_config_stored');
+            if (!raw) return 'ADMIN';
+            const parsed = JSON.parse(raw);
+            return parsed && parsed.type ? parsed.type : 'ADMIN';
+        } catch (_) {
+            return 'ADMIN';
+        }
+    };
+
+    const applyContactVisibility = () => {
+        const isAdmin =
+            (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'ADMIN') ||
+            resolveClientType() === 'ADMIN';
+        btn.style.display = isAdmin ? 'none' : '';
+        return !isAdmin;
+    };
+
+    // Evitar listeners duplicados si initContact se llama más de una vez.
+    if (btn.dataset.contactInitialized === '1') {
+        applyContactVisibility();
+        return;
+    }
+
+    if (!applyContactVisibility()) {
+        let retries = 0;
+        const retryTimer = setInterval(() => {
+            retries += 1;
+            const visible = applyContactVisibility();
+            if (visible || retries >= 10) clearInterval(retryTimer);
+        }, 250);
+        return;
+    }
+
+    btn.dataset.contactInitialized = '1';
 
     // Intentar reenviar contactos pendientes de sesiones anteriores
     // Reintento inicial a los 10s, luego cada 5 minutos si quedaron pendientes (máximo 10 reintentos)

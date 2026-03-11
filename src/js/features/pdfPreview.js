@@ -222,6 +222,15 @@ window.openPrintPreview = async function () {
     // para que los cambios del formulario sean visibles ANTES de guardar en IndexedDB
     const config   = window._pdfConfigCache || (await safeGet('pdf_config', {})) || {};
 
+    // Check de robustez para debugging: confirma datos clave usados por preview.
+    console.log('[PDFPreview] Datos fuente:', {
+        hasProfName: !!((config.activeProfessional && config.activeProfessional.nombre) || (await safeGet('prof_data', {}))?.nombre),
+        hasMatricula: !!((config.activeProfessional && config.activeProfessional.matricula) || (await safeGet('prof_data', {}))?.matricula),
+        hasFirma: !!(await safeGet('pdf_signature', '')),
+        hasLogo: !!(await safeGet('pdf_logo', '')),
+        hasFooterText: !!(config.footerText || '')
+    });
+
     const esc = (t) => t != null ? String(t)
         .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
         .replace(/"/g,'&quot;').replace(/'/g,'&#039;') : '';

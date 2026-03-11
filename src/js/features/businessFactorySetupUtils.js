@@ -273,15 +273,6 @@ window.handleFactorySetupCore = async function (medicoId) {
             // es independiente del color primario de la app
         }
 
-        // Skin siempre arranca en 'default' en el primer uso — cada usuario parte
-        // de la app original. Si después quiere cambiar a cyberpunk, etc., ese
-        // cambio queda solo en SU dispositivo y no afecta a ningún otro clone.
-        localStorage.setItem('app_skin', 'default');
-        if (typeof appDB !== 'undefined') appDB.set('app_skin', 'default');
-        if (window.ThemeManager && typeof window.ThemeManager.apply === 'function') {
-            window.ThemeManager.apply('default', { save: false });
-        }
-
         // Estudios seleccionados
         if (regDatos.estudios) {
             try {
@@ -333,8 +324,27 @@ window.handleFactorySetupCore = async function (medicoId) {
         if (typeof appDB !== 'undefined') appDB.set('medico_id', medicoId);
         localStorage.setItem('medico_id', medicoId);
 
+        // Skin siempre arranca en 'default' en el primer uso — cada usuario parte
+        // de la app original. Si después quiere cambiar a cyberpunk, etc., ese
+        // cambio queda solo en SU dispositivo y no afecta a ningún otro clone.
+        // Se ejecuta al final del setup exitoso para asegurar persistencia.
+        localStorage.setItem('app_skin', 'default');
+        if (typeof appDB !== 'undefined') appDB.set('app_skin', 'default');
+        if (window.ThemeManager && typeof window.ThemeManager.apply === 'function') {
+            window.ThemeManager.apply('default', { save: false });
+        }
+
         // Limpiar la marca de setup pendiente
         delete window._PENDING_SETUP_ID;
+
+        console.log('[FactorySetup] Setup completado:', {
+            medicoId: localStorage.getItem('medico_id'),
+            type: JSON.parse(localStorage.getItem('client_config_stored') || '{}').type,
+            skin: localStorage.getItem('app_skin'),
+            workplaces: JSON.parse(localStorage.getItem('workplace_profiles') || '[]').length,
+            hasFirma: !!localStorage.getItem('pdf_signature'),
+            hasLogo: !!localStorage.getItem('pdf_logo')
+        });
 
         console.info('[Factory] Setup completado para', doctor.Nombre || medicoId, '— Plan:', plan);
 

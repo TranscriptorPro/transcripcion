@@ -69,6 +69,9 @@ function _initClient() {
     const btnAdminAccess = document.getElementById('btnAdminAccess');
     if (btnAdminAccess) btnAdminAccess.style.display = 'none';
 
+    // Contacto debe estar disponible para no-admin incluso antes de aceptar onboarding.
+    if (typeof initContact === 'function') initContact();
+
     // K1: el criterio de primer uso es la aceptacion de T&C, NO la ausencia de datos.
     // Los datos (nombre, matricula, API key) los precarga el admin antes de entregar la app.
     const accepted = localStorage.getItem('onboarding_accepted');

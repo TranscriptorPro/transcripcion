@@ -275,12 +275,25 @@
 
     function _init() {
         // Read saved skin
+        let hadStoredSkin = true;
         let savedSkin = 'default';
-        try { savedSkin = localStorage.getItem(LS_KEY) || 'default'; } catch (_) {}
+        try {
+            const rawSkin = localStorage.getItem(LS_KEY);
+            hadStoredSkin = rawSkin !== null;
+            savedSkin = rawSkin || 'default';
+        } catch (_) {}
 
         // Validate that saved skin exists in registry
         if (!SKIN_REGISTRY.find(s => s.id === savedSkin)) {
             savedSkin = 'default';
+        }
+
+        // Si falta la clave, persistir default para consistencia de tests y UI.
+        if (!hadStoredSkin) {
+            try { localStorage.setItem(LS_KEY, savedSkin); } catch (_) {}
+            if (typeof appDB !== 'undefined') {
+                try { appDB.set(LS_KEY, savedSkin); } catch (_) {}
+            }
         }
 
         // Apply on load (no save needed, it's already saved)
