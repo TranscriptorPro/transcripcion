@@ -6,6 +6,7 @@
   "scripts": {
     "build": "node build.js",
     "test": "node tests/run_tests.js",
+    "test:e2e:admin-edit": "node tests/e2e-admin-user-edit-wizard.js",
     "test:e2e:full": "node tests/e2e-full-qa-playwright.js",
     "test:smoke:postdeploy": "node tests/smoke-postdeploy-version.js"
   },

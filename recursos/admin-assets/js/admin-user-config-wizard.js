@@ -53,6 +53,16 @@
             '.auc-btn.primary{background:#0ea5e9;color:#fff;border-color:#0284c7;}',
             '.auc-btn.danger{background:#fff1f2;border-color:#fecdd3;color:#be123c;}',
             '#aucWarn{display:none;border:1px solid #fca5a5;background:#fff1f2;color:#991b1b;padding:8px 10px;border-radius:8px;margin-bottom:10px;font-size:.8rem;}',
+            '#aucReviewOverlay{position:fixed;inset:0;background:rgba(15,23,42,.58);display:none;z-index:3200;padding:16px;overflow:auto;}',
+            '#aucReviewModal{max-width:760px;margin:30px auto;background:#fff;border-radius:12px;border:1px solid #e2e8f0;box-shadow:0 12px 36px rgba(0,0,0,.25);}',
+            '#aucReviewHead{padding:12px 14px;border-bottom:1px solid #e2e8f0;font-weight:800;color:#0f172a;}',
+            '#aucReviewBody{padding:12px 14px;max-height:58vh;overflow:auto;}',
+            '.auc-review-item{border:1px solid #e2e8f0;border-radius:8px;padding:8px;margin-bottom:8px;background:#f8fafc;}',
+            '.auc-review-section{font-size:.78rem;font-weight:800;color:#0f172a;margin-bottom:4px;}',
+            '.auc-review-line{font-size:.8rem;color:#334155;}',
+            '.auc-review-before{color:#b91c1c;}',
+            '.auc-review-after{color:#065f46;}',
+            '#aucReviewFoot{padding:12px 14px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:8px;}',
             '@media (max-width:800px){.auc-row{grid-template-columns:1fr}.auc-check-grid{grid-template-columns:1fr}}'
         ].join('');
         document.head.appendChild(style);
@@ -92,6 +102,20 @@
         ].join('');
         document.body.appendChild(overlay);
 
+        const review = document.createElement('div');
+        review.id = 'aucReviewOverlay';
+        review.innerHTML = [
+            '<div id="aucReviewModal">',
+            '  <div id="aucReviewHead">Revisar cambios antes de guardar</div>',
+            '  <div id="aucReviewBody"><div id="aucReviewList"></div></div>',
+            '  <div id="aucReviewFoot">',
+            '    <button class="auc-btn" id="aucReviewBack">Volver a editar</button>',
+            '    <button class="auc-btn primary" id="aucReviewConfirm">Confirmar guardado</button>',
+            '  </div>',
+            '</div>'
+        ].join('');
+        document.body.appendChild(review);
+
         overlay.addEventListener('click', function(e) {
             if (e.target === overlay) close();
         });
@@ -112,6 +136,148 @@
             if (!current) return;
             await save();
         });
+        document.getElementById('aucReviewBack').addEventListener('click', function() {
+            hideReview();
+        });
+        document.getElementById('aucReviewConfirm').addEventListener('click', async function() {
+            if (!current || !current.pendingPayload) return;
+            await commitSave(current.pendingPayload);
+        });
+    }
+
+    function cloneSnapshot(state) {
+        return {
+            nombre: state.nombre || '',
+            matricula: state.matricula || '',
+            email: state.email || '',
+            telefono: state.telefono || '',
+            estado: state.estado || 'active',
+            devicesMax: Number(state.devicesMax) || 1,
+            especialidades: (state.especialidades || []).slice(),
+            estudios: (state.estudios || []).map(function(x) {
+                return { nombre: x.nombre || '', especialidad: x.especialidad || '' };
+            }),
+            workplaces: (state.workplaces || []).map(function(wp) {
+                return {
+                    name: wp.name || '',
+                    address: wp.address || '',
+                    phone: wp.phone || '',
+                    email: wp.email || '',
+                    footer: wp.footer || ''
+                };
+            }),
+            headerColor: state.headerColor || '#1a56a0',
+            firma: !!state.firma,
+            proLogo: !!state.proLogo,
+            showPhone: !!state.showPhone,
+            showEmail: !!state.showEmail,
+            showSocial: !!state.showSocial
+        };
+    }
+
+    function buildPayloadFromState() {
+        const s = current.state;
+        const workplaceMain = s.workplaces[0] || {};
+        const extraWorkplaces = s.workplaces.slice(1);
+
+        const nextReg = Object.assign({}, current.rd || {});
+        nextReg.workplace = workplaceMain;
+        nextReg.extraWorkplaces = extraWorkplaces;
+        nextReg.headerColor = s.headerColor || '#1a56a0';
+        nextReg.firma = s.firma || null;
+        if (current.rules.allowPdfLogo) {
+            nextReg.proLogo = s.proLogo || null;
+        }
+        nextReg.showPhone = !!s.showPhone;
+        nextReg.showEmail = !!s.showEmail;
+        nextReg.showSocial = current.rules.allowSocial ? !!s.showSocial : false;
+        nextReg.estudios = s.estudios;
+
+        return {
+            updates: {
+                Nombre: s.nombre,
+                Matricula: s.matricula,
+                Email: s.email,
+                Telefono: s.telefono,
+                Especialidad: s.especialidades.join(', '),
+                Estado: s.estado,
+                Devices_Max: s.devicesMax,
+                Lugares_Trabajo: s.workplaces.map(function(wp) { return wp.name; }).filter(Boolean).join(' | '),
+                Estudios_JSON: JSON.stringify(s.estudios),
+                Registro_Datos: JSON.stringify(nextReg)
+            },
+            nextReg: nextReg
+        };
+    }
+
+    function strList(arr) {
+        return (arr || []).join(', ');
+    }
+
+    function workplacesSummary(workplaces) {
+        return (workplaces || []).map(function(wp, i) {
+            const name = wp.name || '(sin nombre)';
+            const addr = wp.address ? ' - ' + wp.address : '';
+            return (i + 1) + ') ' + name + addr;
+        }).join(' | ');
+    }
+
+    function pushChange(list, section, label, before, after) {
+        if (String(before) === String(after)) return;
+        list.push({ section: section, label: label, before: String(before), after: String(after) });
+    }
+
+    function buildChanges(initial, now) {
+        const changes = [];
+        pushChange(changes, 'Datos', 'Nombre', initial.nombre, now.nombre);
+        pushChange(changes, 'Datos', 'Matrícula', initial.matricula, now.matricula);
+        pushChange(changes, 'Datos', 'Email', initial.email, now.email);
+        pushChange(changes, 'Datos', 'Teléfono', initial.telefono, now.telefono);
+        pushChange(changes, 'Datos', 'Estado', initial.estado, now.estado);
+        pushChange(changes, 'Datos', 'Dispositivos máximos', initial.devicesMax, now.devicesMax);
+
+        pushChange(changes, 'Especialidades', 'Especialidades', strList(initial.especialidades), strList(now.especialidades));
+        pushChange(
+            changes,
+            'Especialidades',
+            'Estudios',
+            strList(initial.estudios.map(function(x) { return x.nombre; })),
+            strList(now.estudios.map(function(x) { return x.nombre; }))
+        );
+
+        pushChange(changes, 'Trabajo', 'Lugares de trabajo', workplacesSummary(initial.workplaces), workplacesSummary(now.workplaces));
+
+        pushChange(changes, 'PDF', 'Color encabezado', initial.headerColor, now.headerColor);
+        pushChange(changes, 'PDF', 'Firma', initial.firma ? 'Cargada' : 'Vacía', now.firma ? 'Cargada' : 'Vacía');
+        pushChange(changes, 'PDF', 'Logo profesional', initial.proLogo ? 'Cargado' : 'Vacío', now.proLogo ? 'Cargado' : 'Vacío');
+        pushChange(changes, 'PDF', 'Mostrar teléfono', initial.showPhone ? 'Sí' : 'No', now.showPhone ? 'Sí' : 'No');
+        pushChange(changes, 'PDF', 'Mostrar email', initial.showEmail ? 'Sí' : 'No', now.showEmail ? 'Sí' : 'No');
+        pushChange(changes, 'PDF', 'Mostrar redes', initial.showSocial ? 'Sí' : 'No', now.showSocial ? 'Sí' : 'No');
+
+        return changes;
+    }
+
+    function showReview(changes) {
+        const box = document.getElementById('aucReviewOverlay');
+        const list = document.getElementById('aucReviewList');
+        if (!box || !list) return;
+
+        list.innerHTML = changes.map(function(c) {
+            return [
+                '<div class="auc-review-item">',
+                '  <div class="auc-review-section">' + esc(c.section) + ' - ' + esc(c.label) + '</div>',
+                '  <div class="auc-review-line"><span class="auc-review-before">Antes:</span> ' + esc(c.before || '—') + '</div>',
+                '  <div class="auc-review-line"><span class="auc-review-after">Después:</span> ' + esc(c.after || '—') + '</div>',
+                '</div>'
+            ].join('');
+        }).join('');
+
+        box.style.display = 'block';
+    }
+
+    function hideReview() {
+        const box = document.getElementById('aucReviewOverlay');
+        if (box) box.style.display = 'none';
     }
 
     function readInitialWorkplaces(user, rd) {
@@ -380,53 +546,21 @@
     async function save() {
         const saveBtn = document.getElementById('aucSaveBtn');
         saveBtn.disabled = true;
-        saveBtn.textContent = 'Guardando...';
+        saveBtn.textContent = 'Revisando...';
 
         try {
             collectDatosPanel();
-            const s = current.state;
-
-            const workplaceMain = s.workplaces[0] || {};
-            const extraWorkplaces = s.workplaces.slice(1);
-
-            const nextReg = Object.assign({}, current.rd || {});
-            nextReg.workplace = workplaceMain;
-            nextReg.extraWorkplaces = extraWorkplaces;
-            nextReg.headerColor = s.headerColor || '#1a56a0';
-            nextReg.firma = s.firma || null;
-            if (current.rules.allowPdfLogo) {
-                nextReg.proLogo = s.proLogo || null;
+            const payload = buildPayloadFromState();
+            const nowSnapshot = cloneSnapshot(current.state);
+            const changes = buildChanges(current.initialSnapshot, nowSnapshot);
+            if (!changes.length) {
+                if (typeof current.toast === 'function') {
+                    current.toast('No hay cambios para guardar.', 'info');
+                }
+                return;
             }
-            nextReg.showPhone = !!s.showPhone;
-            nextReg.showEmail = !!s.showEmail;
-            nextReg.showSocial = current.rules.allowSocial ? !!s.showSocial : false;
-            nextReg.estudios = s.estudios;
-
-            const updates = {
-                Nombre: s.nombre,
-                Matricula: s.matricula,
-                Email: s.email,
-                Telefono: s.telefono,
-                Especialidad: s.especialidades.join(', '),
-                Estado: s.estado,
-                Devices_Max: s.devicesMax,
-                Lugares_Trabajo: s.workplaces.map(function(wp) { return wp.name; }).filter(Boolean).join(' | '),
-                Estudios_JSON: JSON.stringify(s.estudios),
-                Registro_Datos: JSON.stringify(nextReg)
-            };
-
-            const result = await current.saveUser(updates);
-            if (!result || result.error) {
-                throw new Error(result && result.error ? result.error : 'No se pudieron guardar los cambios');
-            }
-
-            if (typeof current.onSaved === 'function') {
-                current.onSaved(updates);
-            }
-            if (typeof current.toast === 'function') {
-                current.toast('✅ Configuración actualizada', 'success');
-            }
-            close();
+            current.pendingPayload = payload;
+            showReview(changes);
         } catch (err) {
             if (typeof current.toast === 'function') {
                 current.toast('Error al guardar: ' + err.message, 'error');
@@ -437,9 +571,43 @@
         }
     }
 
+    async function commitSave(payload) {
+        const btn = document.getElementById('aucReviewConfirm');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Guardando...';
+        }
+
+        try {
+            const result = await current.saveUser(payload.updates);
+            if (!result || result.error) {
+                throw new Error(result && result.error ? result.error : 'No se pudieron guardar los cambios');
+            }
+
+            if (typeof current.onSaved === 'function') {
+                current.onSaved(payload.updates);
+            }
+            if (typeof current.toast === 'function') {
+                current.toast('✅ Configuración actualizada', 'success');
+            }
+            hideReview();
+            close();
+        } catch (err) {
+            if (typeof current.toast === 'function') {
+                current.toast('Error al guardar: ' + err.message, 'error');
+            }
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Confirmar guardado';
+            }
+        }
+    }
+
     function close() {
         const overlay = document.getElementById('adminUserCfgOverlay');
         if (overlay) overlay.style.display = 'none';
+        hideReview();
         current = null;
     }
 
@@ -495,6 +663,9 @@
                 showSocial: !!rd.showSocial
             }
         };
+
+        current.initialSnapshot = cloneSnapshot(current.state);
+        current.pendingPayload = null;
 
         render();
     }
