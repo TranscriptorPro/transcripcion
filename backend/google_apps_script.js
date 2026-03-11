@@ -266,6 +266,17 @@ const COMPRAS_HEADERS = [
   'Notas_Admin', 'Applied_At', 'Applied_Message_Sent'
 ];
 
+const REGISTROS_HEADERS = [
+  'ID_Registro', 'Nombre', 'Matricula', 'Email', 'Telefono',
+  'Especialidades', 'Estudios', 'Workplace_Data', 'Workplace_Logo',
+  'Extra_Workplaces', 'Header_Color', 'Footer_Text', 'Firma', 'Pro_Logo',
+  'Social_Media', 'Show_Phone', 'Show_Email', 'Show_Social',
+  'Billing_Cycle', 'License_Amount', 'Subscription_Amount', 'Total_Hoy',
+  'Notas', 'Fecha_Registro', 'Estado', 'Origen', 'ID_Medico_Asignado', 'Motivo_Rechazo',
+  'Plan_Solicitado', 'Addons_Cart', 'Profesionales',
+  'Payment_Link', 'Payment_History', 'Last_Receipt_Ref', 'Last_Receipt_At'
+];
+
 function _ensureSheetHeaders(sheet, requiredHeaders) {
   const values = sheet.getDataRange().getValues();
   const existing = values[0] || [];
@@ -311,7 +322,7 @@ function _formatMoney(amount) {
   return n.toFixed(2);
 }
 
-function _sendTransferEmail(toEmail, personName, subjectPrefix, amount, currency, referenceId) {
+function _sendTransferEmail(toEmail, personName, subjectPrefix, amount, currency, referenceId, portalUrl) {
   try {
     if (!toEmail) return;
     const pay = _getPaymentConfig();
@@ -330,6 +341,9 @@ function _sendTransferEmail(toEmail, personName, subjectPrefix, amount, currency
       'Alias: ' + (pay.alias || ''),
       'Titular: ' + (pay.titular || ''),
       'Banco: ' + (pay.banco || ''),
+      portalUrl ? '' : '',
+      portalUrl ? 'Portal de pagos para adjuntar comprobante:' : '',
+      portalUrl ? portalUrl : '',
       '',
       'Importante: la activación de la app/compra se realiza solo cuando se confirme el pago.',
       '',
@@ -339,6 +353,29 @@ function _sendTransferEmail(toEmail, personName, subjectPrefix, amount, currency
     GmailApp.sendEmail(toEmail, subject, body);
   } catch (e) {
     Logger.log('⚠️ Error enviando mail de transferencia: ' + e.message);
+  }
+}
+
+function _sendWelcomeEmail(toEmail, personName, medicoId, planCode) {
+  try {
+    if (!toEmail) return;
+    const subject = 'Transcriptor Pro | Cuenta activada ✅';
+    const body = [
+      'Hola ' + (personName || 'profesional') + ',',
+      '',
+      'Tu cuenta ya fue activada en Transcriptor Pro.',
+      'ID de acceso: ' + (medicoId || '—'),
+      'Plan: ' + String(planCode || '').toUpperCase(),
+      '',
+      'Si recibiste un link del clon, ya podés ingresar y comenzar a usar la app.',
+      'Si necesitás ayuda, respondé este correo.',
+      '',
+      'Equipo Transcriptor Pro'
+    ].join('\n');
+
+    GmailApp.sendEmail(toEmail, subject, body);
+  } catch (e) {
+    Logger.log('⚠️ Error enviando welcome email: ' + e.message);
   }
 }
 
@@ -357,6 +394,100 @@ function doGet(e) {
       plans: _getPlansConfig(),
       addons: _getAddonsConfig()
     });
+  }
+
+  if (action === 'public_get_payment_portal') {
+    const id = String(e.parameter.id || '').trim();
+    if (!id) return createResponse({ error: 'Falta id' });
+
+    try {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+      if (id.toUpperCase().startsWith('REG_')) {
+        const regSheet = _getOrCreateSheetWithHeaders(SHEET_REGISTROS, REGISTROS_HEADERS);
+        const data = regSheet.getDataRange().getValues();
+        const headers = data[0];
+        const idCol = headers.indexOf('ID_Registro');
+
+        for (let i = 1; i < data.length; i++) {
+          if (String(data[i][idCol]) !== id) continue;
+          const row = {};
+          headers.forEach(function(h, idx) { row[h] = data[i][idx]; });
+          let history = [];
+          try { history = JSON.parse(String(row.Payment_History || '[]')); } catch (_) {}
+
+          return createResponse({
+            success: true,
+            kind: 'registro',
+            id: id,
+            nombre: row.Nombre || '',
+            email: row.Email || '',
+            plan: row.Plan_Solicitado || '',
+            estado: row.Estado || 'pendiente_pago',
+            totalHoy: row.Total_Hoy || '',
+            moneda: 'USD',
+            fechaRegistro: row.Fecha_Registro || '',
+            medicoIdAsignado: row.ID_Medico_Asignado || '',
+            paymentLink: row.Payment_Link || '',
+            lastReceiptAt: row.Last_Receipt_At || '',
+            history: Array.isArray(history) ? history : []
+          });
+        }
+
+        return createResponse({ error: 'Registro no encontrado' });
+      }
+
+      const userSheet = ss.getSheetByName(SHEET_NAME);
+      if (!userSheet) return createResponse({ error: 'Hoja usuarios no encontrada' });
+      _ensureUsuariosHeaders(userSheet);
+      const usersData = userSheet.getDataRange().getValues();
+      const uh = usersData[0];
+      const uidCol = uh.indexOf('ID_Medico');
+
+      for (let i = 1; i < usersData.length; i++) {
+        if (String(usersData[i][uidCol]) !== id) continue;
+        const row = {};
+        uh.forEach(function(h, idx) { row[h] = usersData[i][idx]; });
+        let history = [];
+        try { history = JSON.parse(String(row.Payment_History || '[]')); } catch (_) {}
+        let daysRemaining = null;
+        try {
+          if (row.Fecha_Vencimiento) {
+            const now = new Date();
+            const fv = new Date(row.Fecha_Vencimiento);
+            if (!isNaN(fv.getTime())) {
+              daysRemaining = Math.ceil((fv.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+            }
+          }
+        } catch (_) {}
+
+        const planCfg = _resolvePlanConfig(String(row.Plan || 'normal').toLowerCase());
+        return createResponse({
+          success: true,
+          kind: 'medico',
+          id: id,
+          nombre: row.Nombre || '',
+          email: row.Email || '',
+          plan: row.Plan || '',
+          estado: row.Estado || 'active',
+          fechaVencimiento: row.Fecha_Vencimiento || '',
+          daysRemaining: daysRemaining,
+          monthlyAmount: Number(planCfg.monthly || 0),
+          paymentLink: (function() {
+            try {
+              const rd = JSON.parse(String(row.Registro_Datos || '{}'));
+              return rd.paymentPortalUrl || '';
+            } catch (_) { return ''; }
+          })(),
+          lastReceiptAt: row.Last_Receipt_At || '',
+          history: Array.isArray(history) ? history : []
+        });
+      }
+
+      return createResponse({ error: 'Usuario no encontrado' });
+    } catch (err) {
+      return createResponse({ error: 'Error consultando portal de pagos: ' + err.message });
+    }
   }
 
   // EXISTING: user validation — enhanced with trial/device enforcement
@@ -1296,6 +1427,7 @@ function doGet(e) {
           hasProMode:      editedHasProMode,
           hasDashboard:    editedHasDashboard,
           canGenerateApps: editedCanGenerateApps,
+          paymentPortalUrl: String(regData.Payment_Link || '').split('?id=')[0] || '',
           apiKeyB1:        apiKeyB1,
           apiKeyB2:        apiKeyB2
         })
@@ -1319,6 +1451,8 @@ function doGet(e) {
       catch(profErr) { Logger.log('⚠️ Error actualizando profesionales: ' + profErr.message); }
 
       appendAdminLog(auth.username, 'approve_registration', medicoId, 'Reg: ' + regId + ' Plan: ' + plan);
+
+      _sendWelcomeEmail(userData.Email, userData.Nombre, medicoId, plan);
 
       return createResponse({
         success: true,
@@ -1344,6 +1478,31 @@ function doGet(e) {
     const fileId = driveRef.replace('drive:', '');
     const images = _getImagesFromDrive(fileId);
     return createResponse({ success: true, images: images });
+  }
+
+  if (action === 'admin_get_payment_receipt') {
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
+
+    const driveRef = String(e.parameter.driveRef || '');
+    if (!driveRef.startsWith('drive:')) return createResponse({ error: 'driveRef inválido' });
+
+    try {
+      const fileId = driveRef.replace('drive:', '');
+      const file = DriveApp.getFileById(fileId);
+      const blob = file.getBlob();
+      const mimeType = blob.getContentType() || 'application/octet-stream';
+      const base64 = Utilities.base64Encode(blob.getBytes());
+      const dataUrl = 'data:' + mimeType + ';base64,' + base64;
+      return createResponse({
+        success: true,
+        mimeType: mimeType,
+        name: file.getName(),
+        dataUrl: dataUrl
+      });
+    } catch (err) {
+      return createResponse({ error: 'No se pudo leer comprobante: ' + err.message });
+    }
   }
 
   // ── admin_reject_registration — rechaza un registro pendiente ──
@@ -1432,6 +1591,113 @@ function doPost(e) {
   _ensureUsuariosHeaders(sheet);
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
+
+  if (action === 'public_upload_payment_receipt') {
+    const id = String(payload.id || '').trim();
+    const receiptDataUrl = String(payload.receiptDataUrl || '').trim();
+    const amount = _safeNumber(payload.amount, 0);
+    const currency = String(payload.currency || 'USD').toUpperCase();
+    const note = String(payload.note || '').trim();
+    if (!id) return createResponse({ error: 'Falta id' });
+    if (!receiptDataUrl || receiptDataUrl.indexOf('data:') !== 0) return createResponse({ error: 'Falta comprobante válido' });
+
+    try {
+      const now = new Date().toISOString();
+      const receiptRef = _saveDataUrlToDrive(id + '_receipt', receiptDataUrl);
+      const receiptTag = 'drive:' + receiptRef;
+
+      if (id.toUpperCase().startsWith('REG_')) {
+        const regSheet = _getOrCreateSheetWithHeaders(SHEET_REGISTROS, REGISTROS_HEADERS);
+        const rData = regSheet.getDataRange().getValues();
+        const rh = rData[0];
+        const idCol = rh.indexOf('ID_Registro');
+        const estadoCol = rh.indexOf('Estado');
+        const histCol = rh.indexOf('Payment_History');
+        const refCol = rh.indexOf('Last_Receipt_Ref');
+        const atCol = rh.indexOf('Last_Receipt_At');
+        const notasCol = rh.indexOf('Notas');
+        const nombreCol = rh.indexOf('Nombre');
+        const emailCol = rh.indexOf('Email');
+
+        for (let i = 1; i < rData.length; i++) {
+          if (String(rData[i][idCol]) !== id) continue;
+          let history = [];
+          try { history = JSON.parse(String(rData[i][histCol] || '[]')); } catch (_) {}
+          history.push({
+            id: 'PAY_' + Date.now(),
+            kind: 'registro',
+            amount: amount,
+            currency: currency,
+            note: note,
+            receiptRef: receiptTag,
+            createdAt: now,
+            status: 'subido_cliente'
+          });
+          if (histCol !== -1) regSheet.getRange(i + 1, histCol + 1).setValue(JSON.stringify(history));
+          if (refCol !== -1) regSheet.getRange(i + 1, refCol + 1).setValue(receiptTag);
+          if (atCol !== -1) regSheet.getRange(i + 1, atCol + 1).setValue(now);
+          if (estadoCol !== -1) regSheet.getRange(i + 1, estadoCol + 1).setValue('pago_confirmado');
+          if (notasCol !== -1) {
+            const prev = String(rData[i][notasCol] || '');
+            const extra = '\n[COMPROBANTE CLIENTE ' + now + ']';
+            regSheet.getRange(i + 1, notasCol + 1).setValue((prev + extra).trim());
+          }
+
+          try {
+            const adminEmail = Session.getEffectiveUser().getEmail();
+            if (adminEmail) {
+              GmailApp.sendEmail(
+                adminEmail,
+                '💳 Comprobante recibido: ' + (String(rData[i][nombreCol] || '') || id),
+                'Se subió un nuevo comprobante de pago.\n\nID: ' + id + '\nNombre: ' + String(rData[i][nombreCol] || '') + '\nEmail: ' + String(rData[i][emailCol] || '') + '\nFecha: ' + now + '\n\nRevisá el panel de administración.'
+              );
+            }
+          } catch (_) {}
+
+          return createResponse({ success: true, id: id, status: 'pago_confirmado', receiptRef: receiptTag, uploadedAt: now });
+        }
+        return createResponse({ error: 'Registro no encontrado: ' + id });
+      }
+
+      _ensureUsuariosHeaders(sheet);
+      const userData = sheet.getDataRange().getValues();
+      const uh = userData[0];
+      const uidCol = uh.indexOf('ID_Medico');
+      const histCol = uh.indexOf('Payment_History');
+      const refCol = uh.indexOf('Last_Receipt_Ref');
+      const atCol = uh.indexOf('Last_Receipt_At');
+      const notesCol = uh.indexOf('Notas_Admin');
+
+      for (let i = 1; i < userData.length; i++) {
+        if (String(userData[i][uidCol]) !== id) continue;
+        let history = [];
+        try { history = JSON.parse(String(userData[i][histCol] || '[]')); } catch (_) {}
+        history.push({
+          id: 'PAY_' + Date.now(),
+          kind: 'renovacion',
+          amount: amount,
+          currency: currency,
+          note: note,
+          receiptRef: receiptTag,
+          createdAt: now,
+          status: 'subido_cliente'
+        });
+        if (histCol !== -1) sheet.getRange(i + 1, histCol + 1).setValue(JSON.stringify(history));
+        if (refCol !== -1) sheet.getRange(i + 1, refCol + 1).setValue(receiptTag);
+        if (atCol !== -1) sheet.getRange(i + 1, atCol + 1).setValue(now);
+        if (notesCol !== -1) {
+          const prev = String(userData[i][notesCol] || '');
+          const extra = '\n[PAGO SUBIDO CLIENTE ' + now + ']';
+          sheet.getRange(i + 1, notesCol + 1).setValue((prev + extra).trim());
+        }
+        return createResponse({ success: true, id: id, status: 'receipt_uploaded', receiptRef: receiptTag, uploadedAt: now });
+      }
+
+      return createResponse({ error: 'Usuario no encontrado: ' + id });
+    } catch (err) {
+      return createResponse({ error: 'Error subiendo comprobante: ' + err.message });
+    }
+  }
 
   if (action === 'admin_save_plans_config') {
     const auth = _verifyAdminAuth(payload);
@@ -1835,6 +2101,7 @@ function doPost(e) {
           hasProMode:      editedHasProMode,
           hasDashboard:    editedHasDashboard,
           canGenerateApps: editedCanGenerateApps,
+          paymentPortalUrl: String(regData.Payment_Link || '').split('?id=')[0] || '',
           apiKeyB1:        apiKeyB1,
           apiKeyB2:        apiKeyB2
         })
@@ -1852,6 +2119,8 @@ function doPost(e) {
       catch(profErr) { Logger.log('⚠️ Error actualizando profesionales: ' + profErr.message); }
 
       appendAdminLog(auth.username, 'approve_registration', regId, medicoId + ' / ' + plan);
+
+      _sendWelcomeEmail(userData.Email, userData.Nombre, medicoId, plan);
 
       return createResponse({
         success: true, medicoId: medicoId,
@@ -1939,15 +2208,7 @@ function doPost(e) {
       // Auto-crear la hoja si no existe
       if (!regSheet) {
         regSheet = ss.insertSheet(SHEET_REGISTROS);
-        regSheet.appendRow([
-          'ID_Registro', 'Nombre', 'Matricula', 'Email', 'Telefono',
-          'Especialidades', 'Estudios', 'Workplace_Data', 'Workplace_Logo',
-          'Extra_Workplaces', 'Header_Color', 'Footer_Text', 'Firma', 'Pro_Logo',
-          'Social_Media', 'Show_Phone', 'Show_Email', 'Show_Social',
-          'Billing_Cycle', 'License_Amount', 'Subscription_Amount', 'Total_Hoy',
-          'Notas', 'Fecha_Registro', 'Estado', 'Origen', 'ID_Medico_Asignado', 'Motivo_Rechazo',
-          'Plan_Solicitado', 'Addons_Cart', 'Profesionales'
-        ]);
+        regSheet.appendRow(REGISTROS_HEADERS);
         regSheet.setFrozenRows(1);
       }
 
@@ -1972,7 +2233,7 @@ function doPost(e) {
 
       // Agregar columnas nuevas si no existen (sheets pre-existentes)
       const workingHeaders = existingHeaders.slice();
-      ['Social_Media','Show_Phone','Show_Email','Show_Social','Billing_Cycle','License_Amount','Subscription_Amount','Total_Hoy','Plan_Solicitado','Addons_Cart','Profesionales'].forEach(function(col) {
+      ['Social_Media','Show_Phone','Show_Email','Show_Social','Billing_Cycle','License_Amount','Subscription_Amount','Total_Hoy','Plan_Solicitado','Addons_Cart','Profesionales','Payment_Link','Payment_History','Last_Receipt_Ref','Last_Receipt_At'].forEach(function(col) {
         if (!workingHeaders.includes(col)) {
           regSheet.getRange(1, workingHeaders.length + 1).setValue(col);
           workingHeaders.push(col);
@@ -1980,6 +2241,8 @@ function doPost(e) {
       });
 
       const regId = 'REG_' + Date.now();
+      const paymentPortalUrl = String(payload.paymentPortalUrl || '').trim();
+      const paymentLink = paymentPortalUrl ? (paymentPortalUrl + '?id=' + encodeURIComponent(regId)) : '';
       const especialidades = Array.isArray(payload.especialidades) ? payload.especialidades.join(', ') : '';
       const estudios = JSON.stringify(payload.estudios || []);
 
@@ -2065,7 +2328,11 @@ function doPost(e) {
         Motivo_Rechazo:     '',
         Plan_Solicitado:    payload.planSeleccionado || '',
         Addons_Cart:        payload.addons || '',
-        Profesionales:      payload.profesionales || ''
+        Profesionales:      payload.profesionales || '',
+        Payment_Link:       paymentLink,
+        Payment_History:    '[]',
+        Last_Receipt_Ref:   '',
+        Last_Receipt_At:    ''
       };
       const row = workingHeaders.map(function(h) { return rowData[h] !== undefined ? rowData[h] : ''; });
 
@@ -2077,7 +2344,8 @@ function doPost(e) {
         'Registro recibido',
         _safeNumber(payload.totalHoy, 0),
         'USD',
-        regId
+        regId,
+        paymentLink
       );
 
       // Si es plan CLINIC con profesionales, guardarlos en hoja separada
@@ -2102,7 +2370,7 @@ function doPost(e) {
         }
       } catch(emailErr) { /* no bloquear si falla el email */ }
 
-      return createResponse({ success: true, regId: regId, message: 'Registro recibido correctamente' });
+      return createResponse({ success: true, regId: regId, paymentLink: paymentLink, message: 'Registro recibido correctamente' });
     } catch(err) {
       return createResponse({ error: 'Error guardando registro: ' + err.message });
     }
@@ -2452,6 +2720,28 @@ function _saveImagesToDrive(regId, images) {
   return file.getId();
 }
 
+function _saveDataUrlToDrive(prefix, dataUrl) {
+  const folder = _getDataFolder();
+  const match = String(dataUrl || '').match(/^data:([^;]+);base64,(.+)$/);
+  if (!match) throw new Error('Formato de comprobante inválido');
+
+  const mimeType = match[1];
+  const base64 = match[2];
+  const bytes = Utilities.base64Decode(base64);
+  const extMap = {
+    'image/png': 'png',
+    'image/jpeg': 'jpg',
+    'image/webp': 'webp',
+    'application/pdf': 'pdf'
+  };
+  const ext = extMap[mimeType] || 'bin';
+  const safePrefix = String(prefix || 'receipt').replace(/[^a-zA-Z0-9_-]/g, '_');
+  const filename = safePrefix + '_' + Date.now() + '.' + ext;
+  const blob = Utilities.newBlob(bytes, mimeType, filename);
+  const file = folder.createFile(blob);
+  return file.getId();
+}
+
 /**
  * Lee el JSON de imágenes de un registro desde Drive.
  * @param {string} fileId - ID del archivo de Drive
@@ -2518,7 +2808,8 @@ const USUARIOS_HEADERS = [
   'Plan','Estado','Fecha_Registro','Fecha_Vencimiento',
   'API_Key','API_Key_B1','API_Key_B2',
   'Devices_Max','Devices_Logged','Allowed_Templates',
-  'Usage_Count','Diagnostico_Pendiente','Notas_Admin','Purchase_Message','Registro_Datos'
+  'Usage_Count','Diagnostico_Pendiente','Notas_Admin','Purchase_Message','Registro_Datos',
+  'Payment_History','Last_Receipt_Ref','Last_Receipt_At'
 ];
 
 /**
@@ -2597,16 +2888,13 @@ function _setupAllSheets() {
   const regSheet = ss.getSheetByName(SHEET_REGISTROS);
   if (!regSheet) {
     const s = ss.insertSheet(SHEET_REGISTROS);
-    s.appendRow([
-      'ID_Registro','Nombre','Matricula','Email','Telefono',
-      'Especialidades','Estudios','Workplace_Data','Workplace_Logo',
-      'Extra_Workplaces','Header_Color','Footer_Text','Firma','Pro_Logo',
-      'Notas','Fecha_Registro','Estado','Origen','ID_Medico_Asignado','Motivo_Rechazo',
-      'Plan_Solicitado','Addons_Cart'
-    ]);
+    s.appendRow(REGISTROS_HEADERS);
     s.setFrozenRows(1);
     result.push('Registros_Pendientes: creada');
-  } else { result.push('Registros_Pendientes: OK'); }
+  } else {
+    _ensureSheetHeaders(regSheet, REGISTROS_HEADERS);
+    result.push('Registros_Pendientes: OK');
+  }
 
   // Solicitudes_Soporte
   const supSheet = ss.getSheetByName(SHEET_SOPORTE);

@@ -73,6 +73,7 @@ window.handleFactorySetupCore = async function (medicoId) {
             hasDashboard:     regDatos.hasDashboard !== undefined ? !!regDatos.hasDashboard : pc.hasDashboard,
             canGenerateApps:  regDatos.canGenerateApps !== undefined ? !!regDatos.canGenerateApps : pc.canGenerateApps,
             allowedTemplates: allowedTemplates,
+            paymentPortalUrl: String(regDatos.paymentPortalUrl || '').trim(),
             backendUrl:       backendUrl
         };
 

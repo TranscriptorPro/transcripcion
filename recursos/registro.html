@@ -1206,14 +1206,27 @@
             <div class="form-step" id="step7">
                 <div class="card success-card">
                     <div class="check-icon">✅</div>
-                    <h2>¡Registro enviado!</h2>
-                    <p>
+                    <h2 id="step7Title">¡Registro enviado!</h2>
+                    <p id="step7Message">
                         Tus datos fueron recibidos correctamente.<br>
-                        El administrador los revisará y te enviará el link de instalación<br>
-                        de tu app personalizada por email o WhatsApp.<br>
-                        <span style="font-size:.82rem;color:var(--text-light);">(Este proceso puede tardar entre 24 y 48 hs)</span>
+                        Revisá tu email para los datos de transferencia.<br>
+                        Una vez confirmada, activaremos tu cuenta en un máximo de 48 horas.<br>
                     </p>
                     <div id="successPlanSummary" style="margin-top:1.2rem;padding:1rem;background:#f0fdfa;border-radius:10px;border:1px solid #bbf7d0;text-align:left;font-size:.82rem;"></div>
+                    <div id="paymentPortalPanel" style="display:none;margin-top:1rem;padding:1rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;text-align:left;">
+                        <div id="paymentPortalStatus" style="font-size:.85rem;font-weight:600;margin-bottom:.5rem;">Estado: —</div>
+                        <div id="paymentPortalMeta" style="font-size:.8rem;color:var(--text-light);margin-bottom:.7rem;"></div>
+                        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+                            <input type="number" id="paymentAmountInput" step="0.01" min="0" placeholder="Monto (opcional)" style="max-width:180px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:.82rem;">
+                            <input type="text" id="paymentNoteInput" placeholder="Nota (opcional)" style="flex:1;min-width:180px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:.82rem;">
+                        </div>
+                        <div style="margin-top:.6rem;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+                            <input type="file" id="paymentReceiptInput" accept="image/*,application/pdf" style="display:none;">
+                            <button type="button" class="btn btn-primary" id="btnUploadReceipt">📎 Subir comprobante</button>
+                            <span id="paymentUploadStatus" style="font-size:.78rem;color:var(--text-light);"></span>
+                        </div>
+                        <div id="paymentHistoryList" style="margin-top:.8rem;font-size:.8rem;"></div>
+                    </div>
                 </div>
             </div>
 
@@ -1544,6 +1557,8 @@
         let wpCounter = 0;
         let selectedHeaderColor = '#1a56a0';
         let _modalResolve = null;
+        let _lastRegistrationId = '';
+        let _paymentPortalId = '';
 
         // ── Plan & Cart State ──
         let selectedPlan = null;
@@ -1558,6 +1573,123 @@
             extraProfessionals: 0,
             branding: false
         };
+
+        function _resolvePaymentPortalBaseUrl() {
+            const path = String(window.location.pathname || '');
+            if (path.toLowerCase().includes('/recursos/registro.html')) return window.location.origin + path;
+            const base = path.replace(/\/[^/]*$/, '/');
+            return window.location.origin + base + 'recursos/registro.html';
+        }
+
+        function _setStep7DefaultMessage() {
+            const title = document.getElementById('step7Title');
+            const msg = document.getElementById('step7Message');
+            if (title) title.textContent = '¡Registro enviado!';
+            if (msg) {
+                msg.innerHTML = 'Tus datos fueron recibidos correctamente.<br>Revisá tu email para los datos de transferencia.<br>Una vez confirmada, activaremos tu cuenta en un máximo de 48 horas.';
+            }
+        }
+
+        function _renderPaymentHistory(history) {
+            const el = document.getElementById('paymentHistoryList');
+            if (!el) return;
+            if (!Array.isArray(history) || history.length === 0) {
+                el.innerHTML = '<div style="color:var(--text-light);">Sin comprobantes cargados todavía.</div>';
+                return;
+            }
+            const rows = history.slice().reverse().slice(0, 6).map((item) => {
+                const ts = item.createdAt ? new Date(item.createdAt).toLocaleString('es-AR') : '—';
+                const amount = Number(item.amount || 0);
+                const amountLabel = amount > 0 ? `${amount.toFixed(2)} ${item.currency || 'USD'}` : 'Monto no informado';
+                return `<div style="padding:.45rem .55rem;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:.35rem;background:#fff;">🧾 ${amountLabel} · ${ts}</div>`;
+            });
+            el.innerHTML = '<div style="font-weight:600;margin-bottom:.35rem;">Historial de comprobantes</div>' + rows.join('');
+        }
+
+        function _paymentStateLabel(status) {
+            const s = String(status || '').toLowerCase();
+            if (s === 'pago_confirmado') return '💳 Pago confirmado';
+            if (s === 'aprobado') return '✅ Aprobado';
+            if (s === 'rechazado') return '❌ Rechazado';
+            return '⏳ Pendiente de pago';
+        }
+
+        async function _loadPaymentPortal(id) {
+            const panel = document.getElementById('paymentPortalPanel');
+            const statusEl = document.getElementById('paymentPortalStatus');
+            const metaEl = document.getElementById('paymentPortalMeta');
+            const uploadStatus = document.getElementById('paymentUploadStatus');
+            if (!panel || !statusEl || !metaEl) return;
+            panel.style.display = 'block';
+            if (uploadStatus) uploadStatus.textContent = '';
+
+            try {
+                const res = await fetch(`${BACKEND_URL}?action=public_get_payment_portal&id=${encodeURIComponent(id)}`);
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                _paymentPortalId = id;
+                statusEl.textContent = `Estado: ${_paymentStateLabel(data.estado)}`;
+                const metaParts = [];
+                if (data.nombre) metaParts.push(`Profesional: ${data.nombre}`);
+                if (data.email) metaParts.push(`Email: ${data.email}`);
+                if (data.totalHoy) metaParts.push(`Importe inicial: ${data.totalHoy}`);
+                if (data.monthlyAmount) metaParts.push(`Renovación estimada: ${Number(data.monthlyAmount).toFixed(2)} USD/mes`);
+                if (data.fechaVencimiento) metaParts.push(`Vencimiento: ${String(data.fechaVencimiento).split('T')[0]}`);
+                metaEl.textContent = metaParts.join(' · ');
+                _renderPaymentHistory(data.history || []);
+
+                const amountInput = document.getElementById('paymentAmountInput');
+                if (amountInput && !amountInput.value && data.totalHoy) {
+                    const n = Number(data.totalHoy);
+                    if (Number.isFinite(n) && n > 0) amountInput.value = n.toFixed(2);
+                }
+            } catch (err) {
+                statusEl.textContent = 'Estado: Error al cargar';
+                metaEl.textContent = String(err.message || err);
+            }
+        }
+
+        async function _uploadPaymentReceipt() {
+            const input = document.getElementById('paymentReceiptInput');
+            const statusEl = document.getElementById('paymentUploadStatus');
+            const amountInput = document.getElementById('paymentAmountInput');
+            const noteInput = document.getElementById('paymentNoteInput');
+            if (!input || !input.files || !input.files[0]) {
+                if (statusEl) statusEl.textContent = 'Seleccioná un archivo primero.';
+                return;
+            }
+            if (!_paymentPortalId) {
+                if (statusEl) statusEl.textContent = 'No se encontró ID de pago.';
+                return;
+            }
+
+            const file = input.files[0];
+            if (statusEl) statusEl.textContent = 'Subiendo comprobante...';
+
+            const reader = new FileReader();
+            reader.onload = async (ev) => {
+                try {
+                    const payload = {
+                        action: 'public_upload_payment_receipt',
+                        id: _paymentPortalId,
+                        receiptDataUrl: ev.target.result,
+                        amount: Number((amountInput && amountInput.value) || 0),
+                        currency: selectedCurrency || 'USD',
+                        note: (noteInput && noteInput.value) ? noteInput.value.trim() : ''
+                    };
+                    const res = await fetch(BACKEND_URL, { method: 'POST', body: JSON.stringify(payload) });
+                    const data = await res.json();
+                    if (data.error) throw new Error(data.error);
+                    if (statusEl) statusEl.textContent = '✅ Comprobante enviado correctamente.';
+                    input.value = '';
+                    _loadPaymentPortal(_paymentPortalId);
+                } catch (err) {
+                    if (statusEl) statusEl.textContent = '❌ ' + String(err.message || err);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
 
         // ── Currency (E1-E3) ────────────────────────────────────────────────────
         async function _fetchArsRate() {
@@ -2416,6 +2548,14 @@
             renderEspecialidades();
             renderWorkplace(0, false);
             renderProfessional(0); // Primer profesional (visible solo en CLINIC)
+            _setStep7DefaultMessage();
+
+            const uploadBtn = document.getElementById('btnUploadReceipt');
+            const uploadInput = document.getElementById('paymentReceiptInput');
+            if (uploadBtn && uploadInput) {
+                uploadBtn.addEventListener('click', () => uploadInput.click());
+                uploadInput.addEventListener('change', _uploadPaymentReceipt);
+            }
 
             // Delegated drag & drop for all upload zones (present and future)
             document.addEventListener('dragover', (e) => {
@@ -2443,6 +2583,21 @@
             document.getElementById('customModalOverlay').addEventListener('click', (e) => {
                 if (e.target === e.currentTarget) closeModal(false);
             });
+
+            const params = new URLSearchParams(window.location.search);
+            const portalId = params.get('id');
+            if (portalId) {
+                const stepsBar = document.getElementById('stepsBar');
+                if (stepsBar) stepsBar.style.display = 'none';
+                const title = document.getElementById('step7Title');
+                const msg = document.getElementById('step7Message');
+                if (title) title.textContent = 'Portal de pagos';
+                if (msg) msg.innerHTML = 'Podés subir comprobantes cuando quieras. Al recibirlos, el panel de administración se actualiza automáticamente.';
+                const summary = document.getElementById('successPlanSummary');
+                if (summary) summary.style.display = 'none';
+                goStep(7, { force: true });
+                _loadPaymentPortal(portalId);
+            }
         });
 
         // ── Especialidades ──────────────────────────────────────────────────────
@@ -2562,9 +2717,10 @@
         // ── Steps navigation ────────────────────────────────────────────────────
         let currentStep = 0;
 
-        function goStep(n) {
+        function goStep(n, opts) {
+            const force = !!(opts && opts.force);
             // Validación antes de avanzar
-            if (n > currentStep) {
+            if (!force && n > currentStep) {
                 if (currentStep === 0 && !validateStep0()) return;
                 if (currentStep === 1 && !validateStep1()) return;
                 if (currentStep === 2 && !validateStep2()) return;
@@ -2742,6 +2898,7 @@
                 totalHoy: todayTotal,
                 fechaRegistro: new Date().toISOString(),
                 origen: 'formulario_web',
+                paymentPortalUrl: _resolvePaymentPortalBaseUrl(),
                 profesionales: selectedPlan === 'CLINIC' ? JSON.stringify(_collectProfessionals()) : null
             };
 
@@ -2754,7 +2911,23 @@
                 const result = await response.json();
 
                 if (result.success) {
+                    _lastRegistrationId = String(result.regId || '');
+                    _setStep7DefaultMessage();
+                    const summary = document.getElementById('successPlanSummary');
+                    if (summary) summary.style.display = 'block';
                     goStep(7);
+                    if (_lastRegistrationId) {
+                        const status = document.getElementById('paymentUploadStatus');
+                        if (status) status.textContent = '';
+                        const paymentPanel = document.getElementById('paymentPortalPanel');
+                        if (paymentPanel) paymentPanel.style.display = 'block';
+                        const msg = document.getElementById('step7Message');
+                        const portalLink = result.paymentLink || (_resolvePaymentPortalBaseUrl() + '?id=' + encodeURIComponent(_lastRegistrationId));
+                        if (msg) {
+                            msg.innerHTML = 'Revisá tu email para los datos de transferencia.<br>Si pagás más tarde, podés retomar desde este link:<br><a href="' + portalLink + '">' + portalLink + '</a><br>Una vez confirmada, activaremos tu cuenta en un máximo de 48 horas.';
+                        }
+                        _loadPaymentPortal(_lastRegistrationId);
+                    }
                 } else {
                     throw new Error(result.error || 'Error al enviar');
                 }

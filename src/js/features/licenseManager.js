@@ -27,6 +27,7 @@ const _LM_CACHE_KEY      = 'license_cache';
 const _LM_CACHE_TTL      = 4 * 60 * 60 * 1000; // 4 horas — revalidar cada 4h
 const _LM_METRICS_KEY    = 'pending_metrics';
 const _LM_METRICS_INTERVAL = 15 * 60 * 1000; // Enviar métricas cada 15 min
+const _LM_PAYMENT_REMINDER_KEY = 'payment_due_reminder_last_ts';
 
 /* ── Estado interno ───────────────────────────────────────────────────────── */
 let _lmValidated   = false;
@@ -220,6 +221,8 @@ window.validateLicense = async function () {
         _lmShowTrialWarning(result.days_remaining);
     }
 
+    _lmMaybeShowPaymentReminder(result);
+
     // Aviso de compra aplicada (one-shot)
     if (result.purchase_message) {
         if (typeof showToast === 'function') {
@@ -342,6 +345,26 @@ function _lmShowTrialWarning(daysRemaining) {
     if (typeof showToast === 'function') {
         showToast(msg, 'warning');
     }
+}
+
+function _lmMaybeShowPaymentReminder(result) {
+    try {
+        const daysRemaining = Number(result && result.days_remaining);
+        if (!Number.isFinite(daysRemaining) || daysRemaining > 1) return;
+
+        const plan = String((result && result.Plan) || (result && result.plan) || '').toLowerCase();
+        if (plan === 'trial') return;
+
+        const now = Date.now();
+        const last = Number(localStorage.getItem(_LM_PAYMENT_REMINDER_KEY) || 0);
+        // Limitar a 1 aviso cada 18h para que no sea intrusivo.
+        if (last && (now - last) < (18 * 60 * 60 * 1000)) return;
+
+        if (typeof showToast === 'function') {
+            showToast('⏰ Recordatorio: tu vencimiento de pago es dentro de 24 horas. Revisalo en Configuración → Gestión de pagos.', 'info', 6500);
+        }
+        localStorage.setItem(_LM_PAYMENT_REMINDER_KEY, String(now));
+    } catch (_) {}
 }
 
 /* ── Métricas de Uso ──────────────────────────────────────────────────────── */

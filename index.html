@@ -653,6 +653,9 @@
                             <button class="btn btn-outline btn-full stg-action-btn" id="settingsOpenShortcuts" style="margin-top: 0.4rem;">
                                 ⌨️ Atajos de teclado
                             </button>
+                            <button class="btn btn-outline btn-full stg-action-btn" id="settingsOpenPaymentsPortal" style="margin-top: 0.4rem;">
+                                💳 Gestión de pagos
+                            </button>
                             <div class="stg-opt-row" style="margin-top:0.6rem;">
                                 <span class="stg-opt-label">🎯 Tutorial automático</span>
                                 <label class="stg-switch">
@@ -1697,6 +1700,13 @@
                                     <p>Descargá como <strong>PDF profesional</strong> con encabezado, firma y logo, o exportá en Word (RTF), TXT o HTML.</p>
                                 </div>
                             </div>
+                            <div class="guide-step">
+                                <div class="guide-step-number">6</div>
+                                <div class="guide-step-body">
+                                    <h4>💳 Gestioná tus pagos</h4>
+                                    <p>Desde <strong>⚙️ Configuración → Gestión de pagos</strong> podés subir comprobantes cuando quieras. Si tu vencimiento está próximo, verás un recordatorio suave 24h antes.</p>
+                                </div>
+                            </div>
                         </div>
                         <div class="help-tip" style="margin-top:1rem;">
                             <strong>💡 Consejo:</strong> Configurá tus datos profesionales y lugar de trabajo en el botón <strong>🖨️ Configurar Impresión</strong> para que tus PDFs salgan completos desde el primer uso.
@@ -1829,6 +1839,21 @@
                     </div>
                 </div>
                 <iframe id="manualFrame" style="flex:1;border:none;width:100%;" src=""></iframe>
+            </div>
+        </div>
+
+        <div id="paymentsPortalOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.55);">
+            <div style="position:absolute;inset:12px;background:var(--bg-card,#fff);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.3);">
+                <div class="manual-overlay-header">
+                    <span class="manual-overlay-title">💳 Gestión de pagos</span>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <button id="paymentsPortalOpenNewTab" class="manual-newtab-btn" title="Abrir en pestaña nueva">
+                            Nueva pestaña
+                        </button>
+                        <button id="paymentsPortalCloseBtn" class="manual-close-btn" title="Cerrar">&times;</button>
+                    </div>
+                </div>
+                <iframe id="paymentsPortalFrame" style="flex:1;border:none;width:100%;" src=""></iframe>
             </div>
         </div>
 

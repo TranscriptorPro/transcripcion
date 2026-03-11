@@ -3141,14 +3141,17 @@
 
             const isPendientePago = estado === 'pendiente' || estado === 'pendiente_pago';
             const isPagoConfirmado = estado === 'pago_confirmado';
+            const hasReceipt = !!((reg.Last_Receipt_Ref && String(reg.Last_Receipt_Ref).startsWith('drive:')) || _extractLastReceiptRef(reg));
             const actionsHtml = (isPendientePago || isPagoConfirmado) ? `
                 <button class="btn-view-details" onclick="viewRegDetail('${reg.ID_Registro}')">📋 Detalle</button>
+                ${hasReceipt ? `<button class="btn-secondary" style="padding:8px 10px;" onclick="viewRegReceipt('${reg.ID_Registro}')">🧾 Ver comprobante</button>` : ''}
                 <button class="btn-reject" onclick="rejectRegistration('${reg.ID_Registro}')">❌ Rechazar</button>
                 ${isPendientePago
                     ? `<button class="btn-secondary" style="padding:8px 10px;" onclick="markRegistrationPaid('${reg.ID_Registro}')">💳 Marcar pagado</button>`
                     : `<button class="btn-approve" onclick="openApproveModal('${reg.ID_Registro}')">✅ Aprobar</button>`}
             ` : `
                 <button class="btn-view-details" onclick="viewRegDetail('${reg.ID_Registro}')">📋 Detalle</button>
+                ${hasReceipt ? `<button class="btn-secondary" style="padding:8px 10px;" onclick="viewRegReceipt('${reg.ID_Registro}')">🧾 Ver comprobante</button>` : ''}
                 ${estado === 'aprobado' && reg.ID_Medico_Asignado ? `<span style="font-size:.8rem;color:#64748b;">ID: ${escapeHtml(reg.ID_Medico_Asignado)}</span>` : ''}
             `;
 
@@ -3174,6 +3177,61 @@
                     <div class="reg-card-actions">${actionsHtml}</div>
                 </div>
             `;
+        }
+
+        function _extractLastReceiptRef(reg) {
+            if (!reg) return '';
+            try {
+                const history = JSON.parse(reg.Payment_History || '[]');
+                if (!Array.isArray(history) || history.length === 0) return '';
+                for (let i = history.length - 1; i >= 0; i--) {
+                    const ref = String(history[i] && history[i].receiptRef || '');
+                    if (ref.startsWith('drive:')) return ref;
+                }
+                return '';
+            } catch (_) {
+                return '';
+            }
+        }
+
+        async function viewRegReceipt(regId) {
+            const reg = allRegistrations.find(r => r.ID_Registro === regId);
+            if (!reg) return;
+
+            const driveRef = (reg.Last_Receipt_Ref && String(reg.Last_Receipt_Ref).startsWith('drive:'))
+                ? String(reg.Last_Receipt_Ref)
+                : _extractLastReceiptRef(reg);
+            if (!driveRef) {
+                await dashAlert('Este registro no tiene comprobante cargado todavía.', 'ℹ️');
+                return;
+            }
+
+            try {
+                const url = `${CONFIG.scriptUrl}?action=admin_get_payment_receipt&driveRef=${encodeURIComponent(driveRef)}&${_getSessionAuthParams()}`;
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                const mime = String(data.mimeType || '');
+                let body = '';
+                if (mime.startsWith('image/')) {
+                    body = `<img src="${data.dataUrl}" alt="Comprobante" style="max-width:100%;max-height:68vh;display:block;margin:0 auto;border-radius:8px;border:1px solid #e2e8f0;">`;
+                } else if (mime === 'application/pdf') {
+                    body = `<iframe src="${data.dataUrl}" style="width:100%;height:68vh;border:1px solid #e2e8f0;border-radius:8px;background:#fff;"></iframe>`;
+                } else {
+                    body = `<p style="margin-bottom:.8rem;">Formato no previsualizable (${escapeHtml(mime || 'desconocido')}).</p><a href="${data.dataUrl}" download="${escapeHtml(data.name || 'comprobante')}" class="btn-primary" style="display:inline-block;padding:7px 12px;border-radius:8px;text-decoration:none;color:#fff;background:#2563eb;">⬇️ Descargar comprobante</a>`;
+                }
+
+                await dashAlert(
+                    `<div style="text-align:left;">
+                        <div style="font-size:.86rem;color:#64748b;margin-bottom:.5rem;"><b>${escapeHtml(reg.Nombre || reg.ID_Registro)}</b> · ${escapeHtml(reg.ID_Registro || '')}</div>
+                        ${body}
+                    </div>`,
+                    '🧾'
+                );
+            } catch (err) {
+                await dashAlert('No se pudo abrir el comprobante: ' + escapeHtml(err.message), '❌');
+            }
         }
 
         function viewRegDetail(regId) {
