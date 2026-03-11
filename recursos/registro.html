@@ -1654,6 +1654,9 @@
                 if (data.fechaVencimiento) metaParts.push(`Vencimiento: ${String(data.fechaVencimiento).split('T')[0]}`);
                 metaEl.textContent = metaParts.join(' · ');
 
+                statusEl.style.display = isInitialRegistration ? 'none' : 'block';
+                metaEl.style.display = isInitialRegistration ? 'none' : 'block';
+
                 if (extrasEl) extrasEl.style.display = isInitialRegistration ? 'none' : 'flex';
                 if (historySection) historySection.style.display = isInitialRegistration ? 'none' : 'block';
                 if (amountInput && isInitialRegistration) amountInput.value = '';
