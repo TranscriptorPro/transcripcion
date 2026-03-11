@@ -143,7 +143,7 @@ function _showClientOnboarding() {
         const socialBadge = document.getElementById('onbSocialBadge');
         if (socialToggle) {
             if (_isProUser) {
-                socialToggle.checked = false;
+                socialToggle.checked = true;
             } else {
                 socialToggle.checked = false;
                 socialToggle.disabled = true;
@@ -239,7 +239,7 @@ function _showClientOnboarding() {
         pdfCfg.showQR = document.getElementById('onbToggleQR')?.checked ?? false;
         pdfCfg.showPhone = document.getElementById('onbTogglePhone')?.checked ?? true;
         pdfCfg.showEmail = document.getElementById('onbToggleEmail')?.checked ?? true;
-        pdfCfg.showSocial = document.getElementById('onbToggleSocial')?.checked ?? false;
+        pdfCfg.showSocial = document.getElementById('onbToggleSocial')?.checked ?? true;
         const activeMarginBtn = document.querySelector('.onb-margin-btn.active');
         if (activeMarginBtn) pdfCfg.margins = activeMarginBtn.dataset.margin;
         localStorage.setItem('pdf_config', JSON.stringify(pdfCfg));

@@ -102,7 +102,7 @@
             text: 'Desde acá gestionás usuarios, planes y configuración avanzada de la plataforma.',
             position: 'bottom'
             ,
-            when: (ctx) => !!ctx.isAdmin
+            when: (ctx) => !!ctx.isAdmin && !!ctx.adminButtonVisible
         },
         {
             id: 'editor',
@@ -167,10 +167,14 @@
         const cfg = window.CLIENT_CONFIG || {};
         const type = String(cfg.type || 'NORMAL').toUpperCase();
         const planCode = String(cfg.planCode || '').toLowerCase();
+        const medicoId = String(cfg.medicoId || '').trim();
         const mode = String(window.currentMode || 'normal').toLowerCase();
         const proToggleContainer = document.getElementById('proToggleContainer');
         const proToggleVisible = !!(proToggleContainer && proToggleContainer.offsetParent !== null);
-        const isAdmin = type === 'ADMIN';
+        const adminBtn = document.getElementById('btnAdminAccess');
+        const adminButtonVisible = !!(adminBtn && adminBtn.offsetParent !== null);
+        // Admin real = tipo ADMIN sin medicoId asignado (clones siempre tienen medicoId).
+        const isAdmin = type === 'ADMIN' && !medicoId;
         const isNormal = type === 'NORMAL';
         const isProLike = (type === 'PRO') || !!cfg.hasProMode || mode === 'pro';
         const isClinic = !!cfg.canGenerateApps || planCode === 'clinic';
@@ -187,6 +191,7 @@
             isClinic,
             isGift,
             isPro,
+            adminButtonVisible,
             showProActivationStep: isNormal && proToggleVisible && mode !== 'pro'
         };
     }
