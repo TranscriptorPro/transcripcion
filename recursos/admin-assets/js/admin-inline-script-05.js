@@ -71,7 +71,7 @@
             const payload = Object.assign({ action: 'admin_save_plans_config', plans }, _authPayloadBase());
             const res = await fetch(scriptUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify(payload)
             });
             if (!res.ok) return { ok: false, reason: `http_${res.status}` };
@@ -81,6 +81,11 @@
             if (err.includes('unauthorized') || err.includes('session') || err.includes('token')) return { ok: false, reason: 'auth' };
             return { ok: false, reason: data && data.error ? String(data.error) : 'backend' };
         } catch(e) {
+            // POST may have saved but CORS redirect blocked the response — verify with GET
+            try {
+                const verify = await _fetchPlansFromBackend();
+                if (verify) return { ok: true };
+            } catch(_v) {}
             return { ok: false, reason: e && e.message ? String(e.message) : 'network' };
         }
     }

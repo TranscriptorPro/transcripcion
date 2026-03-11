@@ -2642,7 +2642,7 @@
             try {
                 const response = await fetch(CONFIG.scriptUrl, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'text/plain' },
                     body: JSON.stringify({
                         action: 'send_email',
                         to: to,
