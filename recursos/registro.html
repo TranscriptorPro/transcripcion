@@ -1723,7 +1723,7 @@
                     const data = await res.json();
                     if (data.error) throw new Error(data.error);
                     if (statusEl) {
-                        statusEl.textContent = '✅ Comprobante enviado correctamente. Tu pago será revisado dentro de las próximas 48 horas hábiles. Si el pago es aprobado, te enviaremos por correo el vínculo de acceso a tu app, junto con instrucciones claras para el primer uso. Gracias por tu compra.';
+                        statusEl.textContent = '✅ Comprobante enviado. Revisaremos tu pago dentro de las próximas 48 horas hábiles. Si se aprueba, te enviaremos por mail el vínculo de tu app con instrucciones de primer uso.';
                     }
                     input.value = '';
                     if (sendBtn) sendBtn.disabled = true;
@@ -2648,7 +2648,7 @@
                 const title = document.getElementById('step7Title');
                 const msg = document.getElementById('step7Message');
                 if (title) title.textContent = 'Portal de pagos';
-                if (msg) msg.innerHTML = 'Este portal es de único uso para tu pago inicial. Adjuntá tu comprobante y presioná Enviar comprobante. Revisaremos tu pago dentro de las próximas 48 horas hábiles y, si es aprobado, te enviaremos por mail el vínculo de acceso a tu app con instrucciones de primer uso.';
+                if (msg) msg.innerHTML = 'Este portal es solo para tu pago inicial.<br>Enviá tu comprobante y te responderemos por mail dentro de 48 horas hábiles con el vínculo de tu app si el pago se aprueba.';
                 const summary = document.getElementById('successPlanSummary');
                 if (summary) summary.style.display = 'none';
                 goStep(7, { force: true });
