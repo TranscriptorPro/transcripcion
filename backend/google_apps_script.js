@@ -374,7 +374,7 @@ function _sendTransferEmail(toEmail, personName, subjectPrefix, amount, currency
 function _sendWelcomeEmail(toEmail, personName, medicoId, planCode) {
   try {
     if (!toEmail) return;
-    const subject = 'Transcriptor Pro | Cuenta activada ✅';
+    const subject = 'Transcriptor Pro | Cuenta activada';
     const body = [
       'Hola ' + (personName || 'profesional') + ',',
       '',
@@ -1686,7 +1686,7 @@ function doPost(e) {
             if (adminEmail) {
               GmailApp.sendEmail(
                 adminEmail,
-                '💳 Comprobante recibido: ' + (String(rData[i][nombreCol] || '') || id),
+                'Comprobante recibido: ' + (String(rData[i][nombreCol] || '') || id),
                 'Se subió un nuevo comprobante de pago.\n\nID: ' + id + '\nNombre: ' + String(rData[i][nombreCol] || '') + '\nEmail: ' + String(rData[i][emailCol] || '') + '\nFecha: ' + now + '\n\nRevisá el panel de administración.'
               );
             }
@@ -2404,7 +2404,7 @@ function doPost(e) {
         const adminEmail = Session.getEffectiveUser().getEmail();
         if (adminEmail) {
           GmailApp.sendEmail(adminEmail,
-            '📋 Nuevo registro: ' + (payload.nombre || 'Sin nombre'),
+            'Nuevo registro: ' + (payload.nombre || 'Sin nombre'),
             'Nuevo profesional registrado:\n' +
             'Nombre: ' + (payload.nombre || '') + '\n' +
             'Email: ' + email + '\n' +

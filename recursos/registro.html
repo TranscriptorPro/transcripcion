@@ -2591,12 +2591,30 @@
 
         // ── Init ────────────────────────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', async () => {
+            const params = new URLSearchParams(window.location.search);
+            const portalId = params.get('id');
+            const isPortalMode = !!portalId;
+
+            if (isPortalMode) {
+                const stepsBar = document.getElementById('stepsBar');
+                if (stepsBar) stepsBar.style.display = 'none';
+                const title = document.getElementById('step7Title');
+                const msg = document.getElementById('step7Message');
+                if (title) title.textContent = 'Portal de pagos';
+                if (msg) msg.innerHTML = 'Este portal es solo para tu pago inicial.<br>Enviá tu comprobante y te responderemos por mail dentro de 48 horas hábiles con el vínculo de tu app si el pago se aprueba.';
+                const summary = document.getElementById('successPlanSummary');
+                if (summary) summary.style.display = 'none';
+                goStep(7, { force: true });
+            }
+
             await _loadPricingConfig();
             _refreshAllPrices();
             renderEspecialidades();
             renderWorkplace(0, false);
             renderProfessional(0); // Primer profesional (visible solo en CLINIC)
-            _setStep7DefaultMessage();
+            if (!isPortalMode) {
+                _setStep7DefaultMessage();
+            }
 
             const uploadBtn = document.getElementById('btnUploadReceipt');
             const sendBtn = document.getElementById('btnSendReceipt');
@@ -2643,18 +2661,7 @@
                 if (e.target === e.currentTarget) closeModal(false);
             });
 
-            const params = new URLSearchParams(window.location.search);
-            const portalId = params.get('id');
             if (portalId) {
-                const stepsBar = document.getElementById('stepsBar');
-                if (stepsBar) stepsBar.style.display = 'none';
-                const title = document.getElementById('step7Title');
-                const msg = document.getElementById('step7Message');
-                if (title) title.textContent = 'Portal de pagos';
-                if (msg) msg.innerHTML = 'Este portal es solo para tu pago inicial.<br>Enviá tu comprobante y te responderemos por mail dentro de 48 horas hábiles con el vínculo de tu app si el pago se aprueba.';
-                const summary = document.getElementById('successPlanSummary');
-                if (summary) summary.style.display = 'none';
-                goStep(7, { force: true });
                 _loadPaymentPortal(portalId);
             }
         });

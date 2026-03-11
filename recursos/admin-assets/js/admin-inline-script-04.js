@@ -851,6 +851,7 @@
             tbody.innerHTML = users.map(user => {
                 const plan    = user.Plan || 'trial';
                 const id      = escapeHtml(String(user.ID_Medico));
+                const safeName = escapeHtml(normalizeDisplayText(user.Nombre || ''));
                 const isBanned  = user.Estado === 'banned';
                 const isTrial   = user.Estado === 'trial';
                 const isExpired = user.Estado === 'expired';
@@ -861,10 +862,16 @@
                 const lastActivityMs = lastActivity ? new Date(lastActivity).getTime() : NaN;
                 const isActiveToday = !isNaN(lastActivityMs) && (now - lastActivityMs) < oneDayMs;
                 const activityDisplay = lastActivity ? formatDate(lastActivity.split('T')[0]) : '—';
+                const specialtyBadges = (user.Especialidad || '')
+                    .split(',')
+                    .map(s => normalizeDisplayText(s.trim()))
+                    .filter(Boolean)
+                    .map(s => `<span class="badge badge-specialty">${escapeHtml(s)}</span>`)
+                    .join('');
                 return `
                 <tr data-user-id="${id}" class="${isBanned ? 'row-banned' : ''}">
-                    <td data-label="Nombre" class="user-name-cell"><div class="user-name-wrap"><span class="user-full-name"><strong>${escapeHtml(user.Nombre)}</strong>${isActiveToday ? '<span class="active-indicator" title="Activo hoy">🔥</span>' : ''}</span><span class="user-matricula">${escapeHtml(user.Matricula || '')}</span></div></td>
-                    <td data-label="Especialidad"><div class="specialty-cell">${(user.Especialidad||'').split(',').map(s=>s.trim()).filter(Boolean).map(s=>`<span class="badge badge-specialty">${escapeHtml(s)}</span>`).join('')}</div></td>
+                    <td data-label="Nombre" class="user-name-cell"><div class="user-name-wrap"><span class="user-full-name"><strong>${safeName}</strong>${isActiveToday ? '<span class="active-indicator" title="Activo hoy">🔥</span>' : ''}</span><span class="user-matricula">${escapeHtml(user.Matricula || '')}</span></div></td>
+                    <td data-label="Especialidad"><div class="specialty-cell">${specialtyBadges}</div></td>
                     <td data-label="Plan"><span class="badge badge-plan badge-${escapeHtml(plan)}">${escapeHtml(plan.toUpperCase())}</span></td>
                     <td data-label="Estado"><span class="status-badge status-${escapeHtml(user.Estado)}">${getStatusText(user.Estado)}</span></td>
                     <td data-label="Vencimiento" class="col-expiration">${formatDate(user.Fecha_Vencimiento)}</td>
@@ -888,6 +895,24 @@
                     </td>
                 </tr>`;
             }).join('');
+        }
+
+        function normalizeDisplayText(value) {
+            let text = String(value || '');
+            if (!text) return '';
+
+            if (/[ÃÂâ]/.test(text)) {
+                const replacements = {
+                    'Ã¡': 'á', 'Ã©': 'é', 'Ã­': 'í', 'Ã³': 'ó', 'Ãº': 'ú',
+                    'Ã': 'Á', 'Ã‰': 'É', 'Ã': 'Í', 'Ã“': 'Ó', 'Ãš': 'Ú',
+                    'Ã±': 'ñ', 'Ã‘': 'Ñ', 'Ã¼': 'ü', 'Ãœ': 'Ü',
+                    'â€“': '-', 'â€”': '-'
+                };
+                text = text.replace(/Ã¡|Ã©|Ã­|Ã³|Ãº|Ã|Ã‰|Ã|Ã“|Ãš|Ã±|Ã‘|Ã¼|Ãœ|â€“|â€”/g, m => replacements[m] || m);
+                text = text.replace(/Â/g, '');
+            }
+
+            return text.normalize('NFC');
         }
 
         function escapeHtml(str) {
