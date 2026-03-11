@@ -39,3 +39,6 @@ test_run_output.txt
 Informe Combinado*.pdf
 Informe Combinado*.rtf
 informe_*.rtf
+
+# Local assistant/worklog artifacts
+accesorios/
