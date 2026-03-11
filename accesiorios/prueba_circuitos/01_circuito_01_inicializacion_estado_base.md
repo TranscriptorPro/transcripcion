@@ -1,60 +1,93 @@
-# C01 - Inicializacion y estado base (IDLE)
+# C01 - Inicializacion y Estado Base (IDLE) - Formato Operativo
 
 Objetivo:
-Validar que la app inicia en estado estable, con visibilidad/habilitacion correcta de controles y sin errores JS.
+Probar en Firefox que la app arranca limpia en IDLE, sin errores JS, con botones correctos y persistencia basica de modo.
 
-Alcance:
-- Carga inicial de UI
-- Estado global inicial
-- Botones y acciones visibles/no visibles
-- Cambio de modo y persistencia basica
-- Sin transcripcion ni estructuracion
+Como reportarme fallas:
+- Usa este formato: `C01-1a`, `C01-1b`, `C01-2c`, etc.
+- Ejemplo: `Falla C01-3b: el boton Transcribir aparece habilitado sin archivos`.
 
-Precondiciones:
-1. Abrir la app en una ventana nueva.
-2. Abrir DevTools (Console + Application).
-3. Recomendado para prueba limpia:
-   - localStorage: limpiar claves de sesion
-   - IndexedDB: limpiar DB de app
-4. Tener internet activo (solo para descartar errores de carga de assets).
+## URLs de prueba (Firefox)
 
-Elementos involucrados:
-- index.html
-- src/js/core/state.js
-- src/js/utils/stateManager.js
-- src/js/utils/ui.js
+1. URL principal (produccion):
+   - `https://transcriptorpro.github.io/transcripcion/`
+2. Si no abre o no refleja cambios, usar local:
+   - `file:///C:/Users/kengy/Desktop/Transcriptor-pro/index.html`
 
-## Pasos QA
+## Circuito C01 - Ordenes paso a paso
 
-| Paso | Accion | Resultado esperado | Resultado real | Evidencia |
-|---|---|---|---|---|
-| 1 | Cargar la app por primera vez | La pantalla abre sin bloqueos ni pantallas rotas | Pendiente | Captura home inicial |
-| 2 | Revisar consola al cargar | 0 errores rojos de JS en carga | Pendiente | Captura consola |
-| 3 | Verificar editor | Editor visible y editable, sin contenido residual | Pendiente | Captura editor |
-| 4 | Verificar botones de transcripcion/estructura | Transcribir deshabilitado si no hay archivo; Estructurar oculto o no habilitado en IDLE | Pendiente | Captura barra acciones |
-| 5 | Verificar botones de salida | Preview/Imprimir/Descargar no disponibles en IDLE | Pendiente | Captura barra acciones |
-| 6 | Cambiar toggle Normal/Pro | El modo cambia visualmente sin refrescar la app | Pendiente | Captura antes/despues |
-| 7 | Recargar pagina | El modo seleccionado se conserva tras reload | Pendiente | Captura toggle post-reload |
-| 8 | Verificar estado vacio tras reload | No aparecen tabs basura, ni texto, ni paciente anterior | Pendiente | Captura area central |
-| 9 | Probar click en botones no habilitados | No debe ejecutar acciones invalidas ni tirar error | Pendiente | Nota + captura consola |
-| 10 | Revisar performance basica | Carga inicial razonable y sin freeze visible | Pendiente | Nota de tiempo aprox |
+### Bloque 1 - Apertura limpia
 
-## Criterios de aprobacion
-- A1: Carga limpia sin errores JS bloqueantes.
-- A2: Estado IDLE consistente (sin elementos de estados avanzados visibles).
-- A3: Persistencia correcta del toggle de modo.
-- A4: Ningun boton ejecuta flujo invalido en IDLE.
+1a. Abre Firefox.
+1b. Abre una ventana privada nueva (Ctrl+Shift+P).
+1c. Pega la URL principal y presiona Enter.
+1d. Verifica que la app carga completa (sin pantalla blanca, sin bloqueo).
+Resultado esperado:
+- Interfaz visible completa.
+- No crash al cargar.
 
-## Severidad de fallas
-- Critica: crash, pantalla en blanco, errores JS que bloquean uso.
-- Alta: botones habilitados cuando no corresponde en IDLE.
-- Media: inconsistencias visuales o de estado que se recuperan con reload.
-- Baja: detalles de estilo/texto sin impacto funcional.
+### Bloque 2 - Consola y estado inicial
 
-## Registro de incidencias (completar durante prueba)
-| ID | Paso | Severidad | Descripcion | Reproducible | Estado |
-|---|---|---|---|---|---|
-| C01-BUG-001 |  |  |  |  | Abierto |
+2a. Presiona F12 y abre pestaña Console.
+2b. Recarga la pagina (Ctrl+R).
+2c. Verifica que no aparezcan errores rojos bloqueantes.
+Resultado esperado:
+- 0 errores JS criticos de inicio.
 
-## Nota para siguiente circuito
-Si C01 queda aprobado, continuar con C02 (persistencia de preferencias locales).
+### Bloque 3 - Controles en IDLE
+
+3a. Sin cargar archivos ni pegar texto, revisa boton Transcribir.
+3b. Revisa boton Estructurar IA.
+3c. Revisa boton Vista previa/Imprimir/Descargar.
+3d. Revisa que el editor este visible y editable.
+Resultado esperado:
+- Transcribir deshabilitado sin contenido.
+- Estructurar no operativo en IDLE.
+- Preview/Imprimir/Descargar no disponibles.
+- Editor visible y vacio.
+
+### Bloque 4 - Modo Normal/Pro y persistencia
+
+4a. Cambia el toggle de modo (Normal <-> Pro).
+4b. Confirma que el cambio visual es inmediato.
+4c. Recarga la pagina (Ctrl+R).
+4d. Verifica que el modo elegido se conserva.
+Resultado esperado:
+- El modo persiste tras recarga.
+
+### Bloque 5 - Robustez basica de UI
+
+5a. Intenta hacer clic en botones que deberian estar deshabilitados en IDLE.
+5b. Verifica que no ejecuten acciones invalidas.
+5c. Verifica que no aparezcan errores nuevos en consola.
+Resultado esperado:
+- Sin accion indebida.
+- Sin errores JS nuevos.
+
+## Checklist rapido (marca manual)
+
+- [ ] C01-1d OK
+- [ ] C01-2c OK
+- [ ] C01-3a OK
+- [ ] C01-3b OK
+- [ ] C01-3c OK
+- [ ] C01-3d OK
+- [ ] C01-4d OK
+- [ ] C01-5c OK
+
+## Criterio de aprobado C01
+
+Se aprueba C01 solo si:
+1. No hay errores JS criticos al inicio.
+2. Estado IDLE consistente (botones correctos).
+3. Persistencia de modo funciona.
+4. Ningun boton invalido dispara flujo.
+
+## Plantilla de reporte para vos
+
+Usa este formato al pasarme hallazgos:
+
+`C01-<paso>: <que hiciste> -> <que paso> -> <que esperabas>`
+
+Ejemplo:
+`C01-2c: recargue con F12 abierto -> error TypeError en consola -> esperaba 0 errores`.
