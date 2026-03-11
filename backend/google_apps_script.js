@@ -840,6 +840,20 @@ function doGet(e) {
     }
   }
 
+  // admin_clear_logs — vacía logs (conserva cabecera)
+  if (action === 'admin_clear_logs') {
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
+
+    try {
+      const deleted = _clearAdminLogsKeepHeader();
+      appendAdminLog(auth.username, 'clear_logs', 'system', 'Registros eliminados: ' + deleted);
+      return createResponse({ success: true, deleted: deleted });
+    } catch (err) {
+      return createResponse({ error: 'Error vaciando logs: ' + err.message });
+    }
+  }
+
   // admin_log_action — escribe una acción de admin en Admin_Logs
   if (action === 'admin_log_action') {
     const auth = _verifyAdminAuth(e.parameter);
@@ -1095,7 +1109,8 @@ function doGet(e) {
           const expiry = Date.now() + (8 * 60 * 60 * 1000); // 8 horas
           const sessionToken = _signSessionToken(username, nivel, expiry);
 
-          appendAdminLog(username, 'login_success', username, '');
+          const deletedLogs = _clearAdminLogsKeepHeader();
+          appendAdminLog(username, 'login_success', username, 'Nueva sesión. Logs previos eliminados: ' + deletedLogs);
 
           return createResponse({
             success: true,
@@ -2654,6 +2669,25 @@ function appendAdminLog(adminUser, accion, usuarioAfectado, detalles) {
     });
     logSheet.appendRow(row);
   } catch(e) { /* no interrumpir flujo principal si falla el log */ }
+}
+
+function _clearAdminLogsKeepHeader() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let logSheet = ss.getSheetByName(SHEET_LOGS);
+
+  if (!logSheet) {
+    logSheet = ss.insertSheet(SHEET_LOGS);
+    logSheet.appendRow(['ID_Log','Admin_User','Accion','Usuario_Afectado','Detalles','Timestamp']);
+    logSheet.setFrozenRows(1);
+    return 0;
+  }
+
+  const lastRow = logSheet.getLastRow();
+  if (lastRow <= 1) return 0;
+
+  const toDelete = lastRow - 1;
+  logSheet.deleteRows(2, toDelete);
+  return toDelete;
 }
 
 // ── Helpers de Google Drive ──────────────────────────────────────────────────

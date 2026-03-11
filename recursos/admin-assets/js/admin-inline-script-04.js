@@ -178,6 +178,10 @@
                 return await this.call(qs);
             },
 
+            async clearLogs() {
+                return await this.call('?action=admin_clear_logs');
+            },
+
             async logAction(action, userId, details) {
                 try {
                     const raw = sessionStorage.getItem('adminSession');
@@ -456,6 +460,42 @@
 
             if (!controls.contains(quickBtn)) {
                 controls.appendChild(quickBtn);
+            }
+        }
+
+        function ensureLogsClearButton() {
+            const refreshBtn = document.getElementById('btnRefreshLogs');
+            const controls = refreshBtn?.parentElement;
+            if (!controls) return;
+
+            let clearBtn = document.getElementById('btnClearLogs');
+            if (!clearBtn) {
+                clearBtn = document.createElement('button');
+                clearBtn.id = 'btnClearLogs';
+                clearBtn.type = 'button';
+                clearBtn.className = 'btn-outline';
+                clearBtn.style.padding = '6px 10px';
+                clearBtn.style.fontSize = '.82rem';
+                clearBtn.textContent = '🧹 Vaciar logs';
+                clearBtn.addEventListener('click', clearLogs);
+            }
+
+            if (!controls.contains(clearBtn)) {
+                controls.appendChild(clearBtn);
+            }
+        }
+
+        async function clearLogs() {
+            const ok = await dashConfirm('¿Vaciar todos los logs y dejar solo los de esta sesión?', '🧹');
+            if (!ok) return;
+
+            try {
+                const result = await API.clearLogs();
+                showNotification('🧹 Logs vaciados' + (result && typeof result.deleted === 'number' ? ` (${result.deleted})` : ''), 'success');
+                logsLoaded = false;
+                loadLogs();
+            } catch (err) {
+                await dashAlert('Error al vaciar logs: ' + err.message, '❌');
             }
         }
 
@@ -1327,6 +1367,7 @@
         /* ── Init ────────────────────────────────────────────────────────────── */
         document.addEventListener('DOMContentLoaded', async () => {
             ensureRegQuickLinkButton();
+            ensureLogsClearButton();
 
             // Limpiar el buscador (el browser puede autocompletar con la última búsqueda)
             document.getElementById('searchInput').value = '';
