@@ -866,35 +866,6 @@ function doGet(e) {
     }
   }
 
-  // admin_request_diagnostic — marca Diagnostico_Pendiente=true para un usuario
-  if (action === 'admin_request_diagnostic') {
-    const auth = _verifyAdminAuth(e.parameter);
-    if (!auth.authorized) return createResponse({ error: auth.error });
-
-    const userId = e.parameter.userId || '';
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-    const data = sheet.getDataRange().getValues();
-    const headers = data[0];
-    const idCol = headers.indexOf('ID_Medico');
-    let diagPendCol = headers.indexOf('Diagnostico_Pendiente');
-
-    // Si la columna no existe aún, crearla al final
-    if (diagPendCol === -1) {
-      const lastCol = headers.length;
-      sheet.getRange(1, lastCol + 1).setValue('Diagnostico_Pendiente');
-      diagPendCol = lastCol;
-    }
-
-    for (let i = 1; i < data.length; i++) {
-      if (String(data[i][idCol]) === String(userId)) {
-        sheet.getRange(i + 1, diagPendCol + 1).setValue('true');
-        appendAdminLog('admin', 'request_diagnostic', userId, 'Solicitud de diagnóstico remoto');
-        return createResponse({ success: true, message: 'Diagnóstico solicitado para ' + userId });
-      }
-    }
-    return createResponse({ error: 'Usuario no encontrado: ' + userId });
-  }
-
   // ── admin_login — autenticación del panel de administración ───────────────
   if (action === 'admin_login') {
     const adminKey = e.parameter.adminKey;
