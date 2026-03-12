@@ -348,17 +348,31 @@ window.savePdfConfiguration = function () {
     if (existing.activeProfessionalIndex !== undefined) config.activeProfessionalIndex = existing.activeProfessionalIndex;
     if (existing.activeWorkplaceIndex    !== undefined) config.activeWorkplaceIndex    = existing.activeWorkplaceIndex;
 
+    // El lugar seleccionado en el modal debe gobernar la vista previa/export.
+    if (config.selectedWorkplace !== undefined && config.selectedWorkplace !== null && String(config.selectedWorkplace) !== '') {
+        config.activeWorkplaceIndex = String(config.selectedWorkplace);
+    } else {
+        delete config.activeWorkplaceIndex;
+    }
+
     // Si hay profesional activo, sincronizar los campos visibles del modal para evitar drift
-    if (config.activeProfessional && typeof config.activeProfessional === 'object') {
+    {
         const profName = (val('pdfProfName') || '').trim();
         const profMat = (val('pdfProfMatricula') || '').trim();
         const profEsp = (val('pdfProfEspecialidad') || '').trim();
         const colEl = document.getElementById('pdfHeaderColor');
         const hdrColor = colEl?.dataset?.selectedColor || colEl?.value || '';
-        if (profName) config.activeProfessional.nombre = profName;
-        if (profMat) config.activeProfessional.matricula = profMat;
-        if (profEsp) config.activeProfessional.especialidades = profEsp;
-        if (hdrColor) config.activeProfessional.headerColor = hdrColor;
+        const hasAnyProfField = !!(profName || profMat || profEsp || hdrColor);
+        if (hasAnyProfField) {
+            const mergedPro = (config.activeProfessional && typeof config.activeProfessional === 'object')
+                ? { ...config.activeProfessional }
+                : {};
+            if (profName) mergedPro.nombre = profName;
+            if (profMat) mergedPro.matricula = profMat;
+            if (profEsp) mergedPro.especialidades = profEsp;
+            if (hdrColor) mergedPro.headerColor = hdrColor;
+            config.activeProfessional = mergedPro;
+        }
     }
 
     window._pdfConfigCache = config;

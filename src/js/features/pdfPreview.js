@@ -69,6 +69,15 @@ window.openPdfConfigModal = async function () {
                 el.closest('.field-group')?.classList.remove('locked');
             }
         });
+    } else {
+        ['pdfProfName', 'pdfProfMatricula', 'pdfProfEspecialidad'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.readOnly = true;
+                el.disabled = true;
+                el.closest('.field-group')?.classList.add('locked');
+            }
+        });
     }
 
     const headerColorEl = document.getElementById('pdfHeaderColor');

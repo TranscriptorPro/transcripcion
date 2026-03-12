@@ -335,11 +335,24 @@ window.initWorkplaceManagement = function () {
 
     document.getElementById('pdfWorkplace')?.addEventListener('change', (e) => {
         if (e.target.value !== '') {
-            loadWorkplaceProfile(parseInt(e.target.value));
+            const wpIndex = parseInt(e.target.value);
+            loadWorkplaceProfile(wpIndex);
+
+            // Sincronizar selección de lugar para preview/export aunque no cambie profesional.
+            const cfg = getProfConfig();
+            cfg.activeWorkplaceIndex = String(wpIndex);
+            // Al cambiar de lugar, el profesional seleccionado deja de ser confiable hasta nueva selección.
+            delete cfg.activeProfessionalIndex;
+            setProfConfig(cfg);
         } else {
             // Si se deselecciona el lugar, ocultar el grupo de profesionales
             const group = document.getElementById('pdfProfessionalGroup');
             if (group) group.style.display = 'none';
+
+            const cfg = getProfConfig();
+            delete cfg.activeWorkplaceIndex;
+            delete cfg.activeProfessionalIndex;
+            setProfConfig(cfg);
         }
     });
 

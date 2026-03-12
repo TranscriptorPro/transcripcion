@@ -339,16 +339,42 @@ window.initModals = function () {
                 if (existing.activeProfessional)                       config.activeProfessional      = existing.activeProfessional;
                 if (existing.activeProfessionalIndex !== undefined)     config.activeProfessionalIndex = existing.activeProfessionalIndex;
                 if (existing.activeWorkplaceIndex    !== undefined)     config.activeWorkplaceIndex    = existing.activeWorkplaceIndex;
-                if (config.activeProfessional && typeof config.activeProfessional === 'object') {
-                    const pName = (val('pdfProfName') || '').trim();
-                    const pMat = (val('pdfProfMatricula') || '').trim();
-                    const pEsp = (val('pdfProfEspecialidad') || '').trim();
-                    const cEl = document.getElementById('pdfHeaderColor');
-                    const hColor = cEl?.dataset?.selectedColor || cEl?.value || '';
-                    if (pName) config.activeProfessional.nombre = pName;
-                    if (pMat) config.activeProfessional.matricula = pMat;
-                    if (pEsp) config.activeProfessional.especialidades = pEsp;
-                    if (hColor) config.activeProfessional.headerColor = hColor;
+
+                // El workplace elegido en el modal debe ser el que vea la vista previa.
+                if (config.selectedWorkplace !== undefined && config.selectedWorkplace !== null && String(config.selectedWorkplace) !== '') {
+                    config.activeWorkplaceIndex = String(config.selectedWorkplace);
+                } else {
+                    delete config.activeWorkplaceIndex;
+                }
+
+                // Sincronizar datos visibles de profesional aunque no exista activo previo.
+                const pName = (val('pdfProfName') || '').trim();
+                const pMat = (val('pdfProfMatricula') || '').trim();
+                const pEsp = (val('pdfProfEspecialidad') || '').trim();
+                const cEl = document.getElementById('pdfHeaderColor');
+                const hColor = cEl?.dataset?.selectedColor || cEl?.value || '';
+                const hasAnyProfField = !!(pName || pMat || pEsp || hColor);
+                if (hasAnyProfField) {
+                    const mergedPro = (config.activeProfessional && typeof config.activeProfessional === 'object')
+                        ? { ...config.activeProfessional }
+                        : {};
+                    if (pName) mergedPro.nombre = pName;
+                    if (pMat) mergedPro.matricula = pMat;
+                    if (pEsp) mergedPro.especialidades = pEsp;
+                    if (hColor) mergedPro.headerColor = hColor;
+                    config.activeProfessional = mergedPro;
+                }
+
+                // Si es ADMIN, persistir también en prof_data para que al reabrir modal conserve matrícula/especialidad.
+                if (typeof isAdminUser === 'function' && isAdminUser()) {
+                    const profD = window._profDataCache || JSON.parse(localStorage.getItem('prof_data') || '{}');
+                    if (pName) profD.nombre = pName;
+                    if (pMat) profD.matricula = pMat;
+                    if (pEsp) profD.especialidad = pEsp;
+                    if (hColor) profD.headerColor = hColor;
+                    window._profDataCache = profD;
+                    if (typeof appDB !== 'undefined') appDB.set('prof_data', profD);
+                    localStorage.setItem('prof_data', JSON.stringify(profD));
                 }
                 window._pdfConfigCache = config;
                 if (typeof appDB !== 'undefined') appDB.set('pdf_config', config);

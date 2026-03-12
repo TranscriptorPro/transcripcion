@@ -152,7 +152,9 @@ window.fetchWithTimeout = function(url, options, timeoutMs = 120000) {
     // Campos que se normalizan como NOMBRE (cada palabra capitalizada)
     const NAME_FIELDS = new Set([
         'reqPatientName', 'profName', 'profNombre', 'nombreProfesional',
-        'workplace', 'lugarTrabajo'
+        'workplace', 'lugarTrabajo',
+        'pdfProfName', 'proNombre', 'pdfPatientName',
+        'wpName'
     ]);
 
     // Campos que se fuerzan a MAYÚSCULAS completas
