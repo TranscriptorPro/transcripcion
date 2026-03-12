@@ -1042,6 +1042,7 @@
                                         <button type="button" class="btn btn-outline btn-sm" id="btnReplaceInstLogo">Cambiar</button>
                                         <input type="file" id="pdfInstLogoUpload" accept="image/*" style="display:none;">
                                     </div>
+                                    <label style="margin-top:8px;display:block;"><input type="checkbox" id="pdfShowInstLogo" checked> Incluir logo institucional en el encabezado (si está disponible)</label>
                                     <div id="pdfInstLogoOptions" style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;"></div>
                                     <small style="color:var(--text-secondary);">Puedes agregar varios y elegir uno. El tamaño de salida se mantiene.</small>
                                 </div>
@@ -1180,8 +1181,8 @@
                                     <label>Tamaño fuente</label>
                                     <select id="pdfFontSize">
                                         <option value="9">9 pt</option>
-                                        <option value="10" selected>10 pt</option>
-                                        <option value="11">11 pt</option>
+                                        <option value="10">10 pt</option>
+                                        <option value="11" selected>11 pt</option>
                                         <option value="12">12 pt</option>
                                         <option value="14">14 pt</option>
                                     </select>
@@ -1189,8 +1190,8 @@
                                 <div class="field-group">
                                     <label>Interlineado</label>
                                     <select id="pdfLineSpacing">
-                                        <option value="1" selected>Simple</option>
-                                        <option value="1.15">1.15</option>
+                                        <option value="1">Simple</option>
+                                        <option value="1.15" selected>1.15</option>
                                         <option value="1.5">1.5</option>
                                         <option value="2">Doble</option>
                                     </select>

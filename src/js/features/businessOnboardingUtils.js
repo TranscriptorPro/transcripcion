@@ -234,8 +234,10 @@ function _showClientOnboarding() {
         }
         const pdfCfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
         pdfCfg.showSignImage = document.getElementById('onbToggleFirma')?.checked ?? true;
-        pdfCfg.showHeader = document.getElementById('onbToggleLogoInst')?.checked ?? true;
-        pdfCfg.showLogoProfessional = document.getElementById('onbToggleLogoProf')?.checked ?? true;
+        pdfCfg.showInstLogo = document.getElementById('onbToggleLogoInst')?.checked ?? true;
+        pdfCfg.showProfLogo = document.getElementById('onbToggleLogoProf')?.checked ?? true;
+        // Compatibilidad con versiones previas que leian esta key legacy.
+        pdfCfg.showLogoProfessional = pdfCfg.showProfLogo;
         pdfCfg.showQR = document.getElementById('onbToggleQR')?.checked ?? false;
         pdfCfg.showPhone = document.getElementById('onbTogglePhone')?.checked ?? true;
         pdfCfg.showEmail = document.getElementById('onbToggleEmail')?.checked ?? true;

@@ -121,6 +121,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const showSignLine = config.showSignLine !== false;
         const showSignName = config.showSignName !== false;
         const showSignMat  = config.showSignMatricula !== false;
+        const showInstLogo = (config.showInstLogo ?? true) === true;
         const showProfLogo = (config.showProfLogo ?? true) === true;
         let cy      = 10;
         let pageNum = 1;
@@ -186,21 +187,23 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         function drawWorkplaceBanner() {
             if (!cfgShowHeader) { cy = 10; return; }
             const hasWpData = wpName || wpAddress || wpPhone || wpEmail;
-            if (!hasWpData && !instLogoB64) { cy = 10; return; }
+            if (!hasWpData && !(showInstLogo && instLogoB64)) { cy = 10; return; }
             const bannerH = 16;
             doc.setFillColor(accent.r, accent.g, accent.b);
             doc.rect(0, 0, PAGE_W, bannerH, 'F');
             let contentX = ML;
             if (instLogoB64) {
-                try {
-                    const instSizePx = parseInt(config.instLogoSizePx || localStorage.getItem('inst_logo_size_px') || '60');
-                    const instScale = instSizePx / 60;
-                    const imgW = Math.round(12 * instScale), imgH = Math.round(10 * instScale);
-                    const imgType = instLogoB64.includes('data:image/png') ? 'PNG' : 'JPEG';
-                    const b64data = instLogoB64.includes(',') ? instLogoB64.split(',')[1] : instLogoB64;
-                    doc.addImage(b64data, imgType, ML, (bannerH - imgH) / 2, imgW, imgH);
-                    contentX = ML + imgW + 4;
-                } catch (e) { /* imagen inválida */ }
+                if (showInstLogo) {
+                    try {
+                        const instSizePx = parseInt(config.instLogoSizePx || localStorage.getItem('inst_logo_size_px') || '60');
+                        const instScale = instSizePx / 60;
+                        const imgW = Math.round(12 * instScale), imgH = Math.round(10 * instScale);
+                        const imgType = instLogoB64.includes('data:image/png') ? 'PNG' : 'JPEG';
+                        const b64data = instLogoB64.includes(',') ? instLogoB64.split(',')[1] : instLogoB64;
+                        doc.addImage(b64data, imgType, ML, (bannerH - imgH) / 2, imgW, imgH);
+                        contentX = ML + imgW + 4;
+                    } catch (e) { /* imagen inválida */ }
+                }
             }
             doc.setTextColor(255, 255, 255);
             const wpDetails = [wpAddress, wpPhone ? 'Tel: ' + wpPhone : '', wpEmail].filter(Boolean);

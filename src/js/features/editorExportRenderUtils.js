@@ -269,6 +269,7 @@
         const sigSrc = (activePro?.firma && activePro.firma.startsWith('data:')) ? activePro.firma : (typeof appDB !== 'undefined' ? (await appDB.get('pdf_signature')) || '' : '');
         const hasInstLogo = !!(instLogoSrc && instLogoSrc.startsWith('data:image/'));
         const hasProfLogo = !!(profLogoSrc && profLogoSrc.startsWith('data:image/'));
+        const showInstLogo = (config.showInstLogo ?? true) === true;
         const showProfLogo = (config.showProfLogo ?? true) === true;
         const hasSig = !!(sigSrc && sigSrc.startsWith('data:image/'));
         const instLogoSize = config.instLogoSizePx || 60;
@@ -318,7 +319,7 @@
         if (hasWpData) {
             const wpDetails = [wkAddr, wkPhone ? 'Tel: ' + wkPhone : '', wpEmail].filter(Boolean);
             wpSection = `<div class="preview-workplace"><div class="pvw-block">`
-                + (hasInstLogo ? `<img class="pvw-logo" src="${instLogoSrc}" style="max-height:${instLogoSize}px;">` : '')
+                + ((showInstLogo && hasInstLogo) ? `<img class="pvw-logo" src="${instLogoSrc}" style="max-height:${instLogoSize}px;">` : '')
                 + `<div class="pvw-text">`
                 + (wpName ? `<div class="pvw-name">${wpName}</div>` : '')
                 + (wpDetails.length ? `<div class="pvw-details">${wpDetails.join(' &nbsp;•&nbsp; ')}</div>` : '')

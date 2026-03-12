@@ -467,6 +467,8 @@ window.openPdfConfigModal = async function () {
 
     const showSignImageChk = document.getElementById('pdfShowSignImage');
     if (showSignImageChk) showSignImageChk.checked = pdfCfgRestore.showSignImage ?? true;
+    const showInstLogoChk = document.getElementById('pdfShowInstLogo');
+    if (showInstLogoChk) showInstLogoChk.checked = pdfCfgRestore.showInstLogo ?? true;
     const showProfLogoChk = document.getElementById('pdfShowProfLogo');
     if (showProfLogoChk) showProfLogoChk.checked = pdfCfgRestore.showProfLogo ?? true;
 
@@ -618,8 +620,9 @@ window.openPrintPreview = async function () {
     const sigSrc  = (activePro?.firma && activePro.firma.startsWith('data:')) ? activePro.firma : ((await safeGet('pdf_signature', '')) || '');
     const hasInstLogo = !!(instLogoSrc && instLogoSrc.startsWith('data:image/'));
     const hasProfLogo = !!(profLogoSrc && profLogoSrc.startsWith('data:image/'));
+    const showInstLogo = (config.showInstLogo ?? true) === true;
     const showProfLogo = (config.showProfLogo ?? true) === true;
-    const hasLogo = hasInstLogo; // alias para compat. interna
+    const hasLogo = showInstLogo && hasInstLogo; // alias para compat. interna
     const hasSig  = !!(sigSrc && sigSrc.startsWith('data:image/'));
 
     // Aplicar color de acento a la página
@@ -651,7 +654,7 @@ window.openPrintPreview = async function () {
             wpHeaderEl.style.display = '';
             let wpHtml = '<div class="pvw-block">';
             // Logo institucional (a la izquierda del nombre de la institución)
-            if (hasInstLogo) wpHtml += `<img class="pvw-logo" src="${instLogoSrc}" alt="Logo" style="max-height:${instLogoSize}px;width:auto;object-fit:contain;border:none;border-radius:0;background:transparent;box-shadow:none;">`;
+            if (showInstLogo && hasInstLogo) wpHtml += `<img class="pvw-logo" src="${instLogoSrc}" alt="Logo" style="max-height:${instLogoSize}px;width:auto;object-fit:contain;border:none;border-radius:0;background:transparent;box-shadow:none;">`;
             wpHtml += '<div class="pvw-text">';
             if (wpName)  wpHtml += `<div class="pvw-name">${wpName}</div>`;
             const wpDetails = [wkAddr, wkPhone ? 'Tel: ' + wkPhone : '', wpEmail].filter(Boolean);

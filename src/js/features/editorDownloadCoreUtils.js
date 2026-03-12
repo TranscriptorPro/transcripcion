@@ -173,14 +173,15 @@
         _cfgDirty |= _syncSelect('orientation', 'pdfOrientation', 'portrait');
         _cfgDirty |= _syncSelect('margins', 'pdfMargins', 'normal');
         _cfgDirty |= _syncSelect('font', 'pdfFont', 'helvetica');
-        _cfgDirty |= _syncSelect('fontSize', 'pdfFontSize', '10');
-        _cfgDirty |= _syncSelect('lineSpacing', 'pdfLineSpacing', '1');
+        _cfgDirty |= _syncSelect('fontSize', 'pdfFontSize', '11');
+        _cfgDirty |= _syncSelect('lineSpacing', 'pdfLineSpacing', '1.15');
         _cfgDirty |= _syncCheck('showHeader', 'pdfShowHeader', true);
         _cfgDirty |= _syncCheck('showFooter', 'pdfShowFooter', true);
         _cfgDirty |= _syncCheck('showPageNum', 'pdfShowPageNum', true);
         _cfgDirty |= _syncCheck('showDate', 'pdfShowDate', true);
         _cfgDirty |= _syncCheck('showStudyDate', 'reqShowStudyDate', true);
         _cfgDirty |= _syncCheck('showQR', 'pdfShowQR', true);
+        _cfgDirty |= _syncCheck('showInstLogo', 'pdfShowInstLogo', true);
         _cfgDirty |= _syncCheck('showProfLogo', 'pdfShowProfLogo', true);
         _cfgDirty |= _syncCheck('showSignLine', 'pdfShowSignLine', true);
         _cfgDirty |= _syncCheck('showSignName', 'pdfShowSignName', true);
