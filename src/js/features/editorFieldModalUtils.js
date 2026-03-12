@@ -282,6 +282,46 @@
         return out;
     }
 
+    function _getTemplateSpecificReviewRules(templateKey) {
+        const k = String(templateKey || '').toLowerCase();
+        if (!k || k === 'generico') return '';
+
+        if (k === 'gonioscopia') {
+            return [
+                'Reglas específicas de gonioscopía:',
+                '- No inventar hallazgos (Shaffer, pigmentación, dinámica/indentación, iris) si no están en el contexto.',
+                '- Prohibido dejar frases truncadas tipo "... es." o "...:.", y prohibido agregar "o no se especificó".',
+                '- Si el dato no está explícito, devolver [No especificado].'
+            ].join('\n');
+        }
+
+        if (k === 'cinecoro' || k === 'ecg' || k === 'holter' || k === 'mapa') {
+            return [
+                'Reglas específicas cardiológicas:',
+                '- Conservar números, unidades, porcentajes y lateralidad exactamente como aparecen.',
+                '- No convertir unidades ni reinterpretar el diagnóstico.'
+            ].join('\n');
+        }
+
+        if (k.includes('eco') || k.includes('ecografia') || k.includes('doppler')) {
+            return [
+                'Reglas específicas de ecografía/Doppler:',
+                '- Mantener descripciones objetivas por estructura, sin inferencias.',
+                '- No agregar conclusiones nuevas ni recomendaciones.'
+            ].join('\n');
+        }
+
+        if (k === 'tac' || k === 'resonancia' || k === 'mamografia' || k === 'pet_ct') {
+            return [
+                'Reglas específicas de imágenes:',
+                '- No agregar topografía anatómica no mencionada.',
+                '- Mantener terminología radiológica formal y objetiva.'
+            ].join('\n');
+        }
+
+        return '';
+    }
+
     async function _runFieldAIReview() {
         if (!_targetSpan) return;
         const key = _resolveGroqApiKey();
@@ -301,6 +341,9 @@
         const fieldLabel = titleEl ? titleEl.textContent.replace(/^[▶✏️]\s*/, '').trim() : '';
         const draft = String(input.value || '').trim();
         const rawSource = String(window._lastRawTranscription || '').slice(0, 4000);
+        const templateKey = String(window.selectedTemplate || 'generico');
+        const templateName = window.MEDICAL_TEMPLATES?.[templateKey]?.name || templateKey;
+        const templateRules = _getTemplateSpecificReviewRules(templateKey);
 
         _fieldReviewAttempt += 1;
         if (btn) {
@@ -317,12 +360,16 @@
                 'Reglas absolutas:',
                 '1) No inventar, no inferir, no agregar datos no presentes.',
                 '2) No usar muletillas ni mezclar idiomas. Solo español médico formal.',
-                '3) Corregir ortografía, gramática y puntuación.',
-                '4) Si el dato no está explícito: responder exactamente [No especificado].',
-                '5) Responder solo el texto final del campo, sin encabezados ni explicaciones.'
+                '3) Corregir ortografía, gramática y puntuación. Escribir en modo oración.',
+                '4) No alterar números, unidades, porcentajes, lateralidad ni negaciones.',
+                '5) Prohibido usar puntos suspensivos, frases incompletas o placeholders inventados.',
+                '6) Si el dato no está explícito: responder exactamente [No especificado].',
+                '7) Responder solo el texto final del campo, sin encabezados ni explicaciones.',
+                templateRules
             ].join('\n');
 
             const userContent = [
+                `Plantilla activa: ${templateName}`,
                 `Campo objetivo: ${fieldLabel || '[Sin etiqueta]'}`,
                 `Borrador actual del campo: ${draft || '[Vacío]'}`,
                 `Párrafo de contexto: ${paragraph || '[Sin contexto]'}`,
