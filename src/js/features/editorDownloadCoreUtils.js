@@ -99,7 +99,7 @@
         if (!editor) return;
 
         const _clone = editor.cloneNode(true);
-        _clone.querySelectorAll('.patient-data-header, .patient-placeholder-banner, .btn-append-inline, .original-text-banner, .no-print, .ai-note-panel, .no-data-edit-btn, #aiNotePanel').forEach(el => el.remove());
+        _clone.querySelectorAll('.patient-data-header, .patient-placeholder-banner, .btn-append-inline, .original-text-banner, .no-print, .ai-note-panel, .no-data-edit-btn, .inline-review-btn, #aiNotePanel').forEach(el => el.remove());
         // Replace badge spans with text marker for content check (don't remove entirely)
         _clone.querySelectorAll('.no-data-field').forEach(el => el.replaceWith('[No especificado]'));
         const rawText = _clone.innerText || '';

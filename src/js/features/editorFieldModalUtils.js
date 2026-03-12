@@ -282,6 +282,43 @@
         return out;
     }
 
+    function _normalizeEditorVerticalRhythm() {
+        if (!editor) return;
+        editor.querySelectorAll('p.report-p, li').forEach((n) => {
+            const txt = String(n.textContent || '').replace(/[\u00A0\s]+/g, '').trim();
+            const hasField = !!n.querySelector('.no-data-field');
+            if (!txt && !hasField) n.remove();
+        });
+        editor.querySelectorAll('h2.report-h2, h3.report-h3').forEach((h) => {
+            const prev = h.previousElementSibling;
+            if (prev && /^H[23]$/.test(prev.tagName)) prev.remove();
+        });
+    }
+
+    function _decorateInlineReviewButtons() {
+        if (!editor) return;
+        editor.querySelectorAll('p.report-p, li').forEach((node) => {
+            const already = Array.from(node.children || []).some(ch => ch.classList && ch.classList.contains('inline-review-btn'));
+            if (already) return;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'inline-review-btn';
+            btn.title = '2da/3ra revisión del párrafo';
+            btn.textContent = '▶';
+            btn.setAttribute('contenteditable', 'false');
+            node.appendChild(btn);
+        });
+    }
+
+    function _createEmptyFieldBadge() {
+        const span = document.createElement('span');
+        span.className = 'no-data-field';
+        span.setAttribute('contenteditable', 'false');
+        span.setAttribute('data-field-empty', '1');
+        span.innerHTML = '<span class="no-data-text">— campo vacío —</span><button class="no-data-edit-btn" tabindex="0" title="Editar campo vacío" type="button">✏️</button>';
+        return span;
+    }
+
     function _getTemplateSpecificReviewRules(templateKey) {
         const k = String(templateKey || '').toLowerCase();
         if (!k || k === 'generico') return '';
@@ -520,10 +557,96 @@
         }
 
         removeOrphanSectionHeadings();
+        _normalizeEditorVerticalRhythm();
+        _decorateInlineReviewButtons();
 
         editor.dispatchEvent(new Event('input', { bubbles: true }));
         closeEditFieldModal();
         if (typeof showToast === 'function') showToast('🗑️ Campo eliminado del informe', 'info');
+    }
+
+    async function _runInlineParagraphReview(targetNode) {
+        if (!targetNode || !editor) return;
+        const key = _resolveGroqApiKey();
+        if (!key) {
+            if (typeof showToast === 'function') showToast('🔑 API Key requerida para Revisión IA', 'info');
+            return;
+        }
+
+        const btn = targetNode.querySelector('.inline-review-btn');
+        const clone = targetNode.cloneNode(true);
+        clone.querySelectorAll('.inline-review-btn, .no-data-edit-btn').forEach(el => el.remove());
+        const paragraph = String(clone.textContent || '').replace(/[\u00A0]+/g, ' ').trim();
+        if (!paragraph) return;
+
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = '⏳';
+        }
+
+        try {
+            const model = (Array.isArray(window.GROQ_MODELS) && window.GROQ_MODELS[0]) || 'llama-3.1-8b-instant';
+            const rawSource = String(window._lastRawTranscription || '').slice(0, 4000);
+            const templateKey = String(window.selectedTemplate || 'generico');
+            const templateName = window.MEDICAL_TEMPLATES?.[templateKey]?.name || templateKey;
+            const templateRules = _getTemplateSpecificReviewRules(templateKey);
+            const systemContent = [
+                'Eres un asistente de redacción médica.',
+                'Tarea: revisar y mejorar SOLO el párrafo dado, sin alterar hechos clínicos.',
+                'Reglas absolutas:',
+                '1) No inventar, no inferir, no agregar datos.',
+                '2) No incluir acciones/estudios no realizados ni no especificados dentro del párrafo.',
+                '3) Prohibido usar puntos suspensivos, frases truncadas o muletillas.',
+                '4) Si falta dato indispensable del párrafo, devolver [No especificado].',
+                '5) Solo español médico formal.',
+                '6) Responder SOLO el párrafo final, sin encabezados.',
+                templateRules
+            ].join('\n');
+            const userContent = [
+                `Plantilla activa: ${templateName}`,
+                `Párrafo actual: ${paragraph}`,
+                `Fuente transcripta: ${rawSource || '[No disponible]'}`
+            ].join('\n\n');
+
+            const res = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${key}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model,
+                    messages: [
+                        { role: 'system', content: systemContent },
+                        { role: 'user', content: userContent }
+                    ],
+                    temperature: 0.1
+                })
+            });
+            if (!res.ok) throw new Error(`HTTP_${res.status}`);
+            const data = await res.json();
+            const rawOut = data?.choices?.[0]?.message?.content || '';
+            const revised = _cleanFieldReviewOutput(rawOut);
+            if (!revised) throw new Error('EMPTY_REVIEW');
+
+            targetNode.innerHTML = '';
+            if (/^\[No especificado\]$/i.test(revised)) {
+                targetNode.appendChild(_createEmptyFieldBadge());
+            } else {
+                targetNode.appendChild(document.createTextNode(revised));
+            }
+            _decorateInlineReviewButtons();
+            editor.dispatchEvent(new Event('input', { bubbles: true }));
+            if (typeof showToast === 'function') showToast('✅ Párrafo revisado', 'success');
+        } catch (err) {
+            if (typeof showToast === 'function') showToast('❌ Error en revisión del párrafo', 'error');
+            console.warn('Inline paragraph review error:', err);
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = '▶';
+            }
+        }
     }
 
     document.getElementById('btnDeleteFieldSection')?.addEventListener('click', () => {
@@ -560,7 +683,16 @@
     });
 
     if (editor) {
+        _decorateInlineReviewButtons();
         editor.addEventListener('click', (e) => {
+            const reviewBtn = e.target.closest('.inline-review-btn');
+            if (reviewBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                const container = reviewBtn.closest('p.report-p, li');
+                if (container) _runInlineParagraphReview(container);
+                return;
+            }
             const btn = e.target.closest('.no-data-edit-btn');
             if (btn) {
                 e.preventDefault();
@@ -568,6 +700,10 @@
                 const span = btn.closest('.no-data-field');
                 if (span) openEditFieldModal(span);
             }
+        });
+        editor.addEventListener('input', () => {
+            _decorateInlineReviewButtons();
+            _normalizeEditorVerticalRhythm();
         });
     }
 

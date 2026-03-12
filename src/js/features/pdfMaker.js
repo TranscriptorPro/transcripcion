@@ -354,6 +354,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             if (node.classList.contains('no-print')                  ) return;
             if (node.classList.contains('ai-note-panel')             ) return;
             if (node.classList.contains('no-data-edit-btn')          ) return;
+            if (node.classList.contains('inline-review-btn')         ) return;
             if (node.classList.contains('patient-data-header')       ) return;
             if (node.classList.contains('patient-placeholder-banner')) return;
             if (node.classList.contains('btn-append-inline')         ) return;

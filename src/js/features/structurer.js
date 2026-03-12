@@ -173,6 +173,7 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepción (ordenadas por prioridad):
 12. CORRECCIÓN ASR: el texto proviene de reconocimiento de voz. Corrige silenciosamente errores fonéticos ("o dinofagia" → "odinofagia", "bujales" → "bucales"), anglicismos ("laryngoscopy" → "laringoscopía") y palabras partidas. NO señales las correcciones.
 13. Español médico formal impecable. Corrige errores ortográficos, gramaticales y de concordancia. Encabezados anatómicos sin tildes incorrectas: "OROFARINGE" (correcto), NO "ORÓFARINGE".
 14. PROHIBIDO usar muletillas, rellenos o inicios vagos en CUALQUIER idioma: "Generalmente,", "Generally,", "Usually,", "Typically,", "Normally,", "Basically,", "En general,", "Habitualmente,", "Cabe destacar que", "Es importante mencionar que", "It should be noted that", etc. Redacta directo, preciso y objetivo. Escribe SIEMPRE en español médico formal. NUNCA mezcles idiomas ni uses inglés.
+15. PROHIBIDO usar puntos suspensivos (...) o frases incompletas. Si un campo no se realizó/no se especificó y no es vital para la estructura, NO lo menciones. Si la estructura exige el campo, colócalo como campo independiente con [No especificado], nunca incrustado en un párrafo con texto clínico.
 
 >>> RECORDATORIO FINAL >>>
 Antes de responder, verifica: ¿preservé TODOS los datos? ¿Usé [No especificado] (no variantes)? ¿La conclusión incluye todos los hallazgos patológicos? ¿No inventé nada?`;
@@ -407,6 +408,7 @@ function _normalizeGonioscopyNarrativeQuality(markdown) {
         [/la\s+pigmentaci[oó]n\s+trabecular\s+es\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, ''],
         [/la\s+configuraci[oó]n\s+del\s+iris\s+es\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, ''],
         [/la\s+gonioscop[ií]a\s+din[aá]mica(?:\/indentaci[oó]n)?\s*(?:es|:)\s*(?:\.\.+|…|[.,;:]+)?\s*(?:o\s+no\s+se\s+especific[oó])?\s*,?/gi, ''],
+        [/(?:la\s+)?gonioscop[ií]a\s+din[aá]mica(?:\/indentaci[oó]n)?\s+no\s+se\s+realiz[oó]\s+o\s+no\s+se\s+especific[oó]\.?,?/gi, ''],
         [/No\s+se\s+realiz(?:o|ó|aron)\s+gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\.?/gi, ''],
         [/Gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\s*:\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, ''],
         [/,\s*,/g, ','],
@@ -418,6 +420,7 @@ function _normalizeGonioscopyNarrativeQuality(markdown) {
     });
 
     out = out
+        .replace(/\.\.{2,}/g, '. ')
         .replace(/\.\s*\./g, '. ')
         .replace(/:\s*\./g, '.')
         .replace(/\s{2,}/g, ' ')
@@ -464,6 +467,7 @@ function _sanitizeGrammarArtifacts(text) {
         .replace(/\bla\s+pigmentaci[oó]n\s+trabecular\s+es\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, '')
         .replace(/\bla\s+configuraci[oó]n\s+del\s+iris\s+es\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, '')
         .replace(/\bla\s+gonioscop[ií]a\s+din[aá]mica(?:\/indentaci[oó]n)?\s*(?:es|:)\s*(?:\.\.+|…|[.,;:]+)?\s*(?:o\s+no\s+se\s+especific[oó])?\s*,?/gi, '')
+        .replace(/(?:la\s+)?gonioscop[ií]a\s+din[aá]mica(?:\/indentaci[oó]n)?\s+no\s+se\s+realiz[oó]\s+o\s+no\s+se\s+especific[oó]\.?,?/gi, '')
         .replace(/\bGonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\s*:\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, '')
         .replace(/\bNo\s+se\s+realiz(?:o|ó|aron)\s+gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\.?/gi, '')
         // Eliminar textos de placeholder genéricos
@@ -473,6 +477,7 @@ function _sanitizeGrammarArtifacts(text) {
         .replace(/(##\s*[^\n]*)\s*\(\s*(?:si\s+est[aá]\s+reportado|si\s+aplica|si\s+corresponde|si\s+se\s+report[oó])\s*\)/gi, '$1')
         .replace(/,\s*,/g, ',')
         .replace(/,\s*\./g, '.')
+        .replace(/\.\.{2,}/g, '. ')
         .replace(/\.\s*\./g, '. ')
         .replace(/…+/g, '. ')
         .replace(/:\s*\./g, '.')

@@ -830,7 +830,7 @@ window.openPrintPreview = async function () {
     if (contentEl) {
         contentEl.innerHTML = editorEl ? editorEl.innerHTML : '';
         // Eliminar elementos de UI que no deben aparecer en la vista previa
-        contentEl.querySelectorAll('.patient-data-header, .patient-placeholder-banner, .btn-append-inline, .original-text-banner, .no-print, .ai-note-panel, #aiNotePanel').forEach(el => {
+        contentEl.querySelectorAll('.patient-data-header, .patient-placeholder-banner, .btn-append-inline, .original-text-banner, .no-print, .ai-note-panel, .inline-review-btn, #aiNotePanel').forEach(el => {
             el.remove();
         });
         // Evitar doble título: si el contenido arranca con "INFORME DE ...",

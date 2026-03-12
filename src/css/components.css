@@ -1180,6 +1180,44 @@
             pointer-events: auto;
         }
         .no-data-edit-btn:hover { background: #115e59; }
+
+        .report-p .inline-review-btn,
+        li .inline-review-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 6px;
+            width: 18px;
+            height: 18px;
+            border: none;
+            border-radius: 999px;
+            background: #0f766e;
+            color: #fff;
+            font-size: 0.62rem;
+            line-height: 1;
+            cursor: pointer;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.15s ease;
+            vertical-align: middle;
+        }
+
+        .report-p:hover .inline-review-btn,
+        .report-p:focus-within .inline-review-btn,
+        li:hover .inline-review-btn,
+        li:focus-within .inline-review-btn {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .inline-review-btn:hover {
+            background: #115e59;
+        }
+
+        @media print {
+            .btn-append-inline,
+            .inline-review-btn { display: none !important; }
+        }
         /* Dark mode: editor text and background */
         [data-theme="dark"] .editor-content,
         [data-theme="dark"] #editor {

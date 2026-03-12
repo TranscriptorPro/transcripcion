@@ -210,8 +210,11 @@ function markdownToHtml(md) {
     const EMPTY_FIELD_HTML =
         '<span class="no-data-field" contenteditable="false" data-field-empty="1">'
         + '<span class="no-data-text">— campo vacío —</span>'
-        + '<button class="no-data-edit-btn" tabindex="0" title="Revisión" type="button">▶</button>'
+        + '<button class="no-data-edit-btn" tabindex="0" title="Editar campo vacío" type="button">✏️</button>'
         + '</span>';
+
+    const INLINE_REVIEW_BTN_HTML =
+        '<button class="inline-review-btn" contenteditable="false" tabindex="0" title="2da/3ra revisión del párrafo" type="button">▶</button>';
 
     // Patrones que el AI puede generar cuando una estructura no fue evaluada
     const NO_EVAL_PATTERNS = [
@@ -235,6 +238,16 @@ function markdownToHtml(md) {
     result = result
         .replace(rxLabelField, `$1${EMPTY_FIELD_HTML}`)
         .replace(rxBareField, `$1${EMPTY_FIELD_HTML}`);
+
+    // Añadir botón de revisión directa en TODOS los párrafos/campos editables.
+    // No se agrega dentro de headings ni en bloques ya vacíos con badge.
+    const wrapReview = document.createElement('div');
+    wrapReview.innerHTML = result;
+    wrapReview.querySelectorAll('p.report-p, li').forEach((node) => {
+        if (node.querySelector('.inline-review-btn')) return;
+        node.insertAdjacentHTML('beforeend', INLINE_REVIEW_BTN_HTML);
+    });
+    result = wrapReview.innerHTML;
 
     // Limpiar fragmentos huérfanos adyacentes al badge (ej: "s.", ".s", puntuación suelta)
     // que quedan cuando la IA genera variantes como "[No especificado]s." o "Sin datos."

@@ -418,6 +418,7 @@
     font-style: italic;
 }
 .a4-page .no-data-edit-btn { display: none !important; }
+.a4-page .inline-review-btn { display: none !important; }
 
 /* ── Firma (centrada, fluye después del contenido) ── */
 .preview-signature { margin-top: 72px; margin-bottom: 8px; }
