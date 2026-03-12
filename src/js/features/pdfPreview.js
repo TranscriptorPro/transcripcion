@@ -92,8 +92,11 @@ window.openPdfConfigModal = async function () {
         if (previewBar) previewBar.style.background = savedColor;
     }
 
+    const canManageWorkplaces = isPro || isAdmin;
     const btnAdd = document.getElementById('btnAddWorkplace');
-    if (btnAdd) btnAdd.style.display = isPro ? '' : 'none';
+    if (btnAdd) btnAdd.style.display = canManageWorkplaces ? '' : 'none';
+    const btnEdit = document.getElementById('btnEditWorkplace');
+    if (btnEdit) btnEdit.style.display = canManageWorkplaces ? '' : 'none';
 
     const detailsPanel = document.getElementById('workplaceDetailsPanel');
     if (detailsPanel) detailsPanel.style.display = 'none';

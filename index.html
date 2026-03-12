@@ -1009,6 +1009,7 @@
                                     </select>
                                 </div>
                                 <button class="btn-sm btn-pro-only-feature" id="btnAddWorkplace" title="Agregar nuevo lugar (solo Pro)" style="display:none;">+ Agregar</button>
+                                <button class="btn-sm" id="btnEditWorkplace" title="Editar lugar seleccionado" style="display:none;">✏️ Editar</button>
                             </div>
                             <div class="field-group has-btn" id="pdfProfessionalGroup" style="display:none;">
                                 <div style="flex:1">
@@ -1226,7 +1227,7 @@
         <div class="modal-overlay" id="workplaceModalOverlay">
             <div class="modal" style="max-width: 500px;">
                 <div class="modal-header">
-                    <h3 style="margin:0;">🏥 Agregar Lugar de Trabajo</h3>
+                    <h3 id="workplaceModalTitle" style="margin:0;">🏥 Agregar Lugar de Trabajo</h3>
                     <button class="modal-close" id="btnCancelWorkplace">&times;</button>
                 </div>
                 <div class="modal-body">

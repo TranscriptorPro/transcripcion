@@ -20,6 +20,58 @@ window.initWorkplaceManagement = function () {
         localStorage.setItem('pdf_config', JSON.stringify(cfg));
     }
 
+    let _editingWorkplaceIndex = null;
+
+    function _resetWorkplaceForm() {
+        ['wpName', 'wpAddress', 'wpPhone', 'wpEmail', 'wpFooter', 'wpLogo'].forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (el.tagName === 'INPUT' && el.type === 'file') {
+                el.value = '';
+            } else {
+                el.value = '';
+            }
+        });
+        const title = document.getElementById('workplaceModalTitle');
+        if (title) title.textContent = '🏥 Agregar Lugar de Trabajo';
+        const saveBtn = document.getElementById('btnSaveWorkplace');
+        if (saveBtn) saveBtn.textContent = '💾 Guardar lugar';
+        _editingWorkplaceIndex = null;
+    }
+
+    function openWorkplaceModalForCreate() {
+        _resetWorkplaceForm();
+        document.getElementById('workplaceModalOverlay')?.classList.add('active');
+    }
+
+    function openWorkplaceModalForEdit(index) {
+        const wpIndex = Number(index);
+        const profile = workplaceProfiles[wpIndex];
+        if (!profile) {
+            if (typeof showToast === 'function') showToast('Seleccioná un lugar válido para editar', 'warning');
+            return;
+        }
+        _editingWorkplaceIndex = wpIndex;
+        const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+        setVal('wpName', profile.name);
+        setVal('wpAddress', profile.address);
+        setVal('wpPhone', profile.phone);
+        setVal('wpEmail', profile.email);
+        setVal('wpFooter', profile.footer);
+        const wpLogoInput = document.getElementById('wpLogo');
+        if (wpLogoInput) wpLogoInput.value = '';
+
+        const title = document.getElementById('workplaceModalTitle');
+        if (title) title.textContent = '🏥 Editar Lugar de Trabajo';
+        const saveBtn = document.getElementById('btnSaveWorkplace');
+        if (saveBtn) saveBtn.textContent = '💾 Guardar cambios';
+        document.getElementById('workplaceModalOverlay')?.classList.add('active');
+    }
+
+    window.openWorkplaceModalForCreate = openWorkplaceModalForCreate;
+    window.openWorkplaceModalForEdit = openWorkplaceModalForEdit;
+    window.resetWorkplaceModalForm = _resetWorkplaceForm;
+
     // ── dropdown de lugares ──────────────────────────────────────────────────
     function populateWorkplaceDropdown() {
         const sel   = document.getElementById('pdfWorkplace');
@@ -426,30 +478,48 @@ window.initWorkplaceManagement = function () {
         if (!name) { showToast('Ingrese un nombre para el lugar', 'error'); return; }
 
         const logoInput = document.getElementById('wpLogo');
+        const isEditing = _editingWorkplaceIndex !== null;
+        const currentProfile = isEditing ? workplaceProfiles[_editingWorkplaceIndex] : null;
         const profile = {
             name,
             address:       document.getElementById('wpAddress')?.value?.trim() || '',
             phone:         document.getElementById('wpPhone')?.value?.trim()   || '',
             email:         document.getElementById('wpEmail')?.value?.trim()   || '',
             footer:        document.getElementById('wpFooter')?.value?.trim()  || '',
-            logo:          null,
-            professionals: [],
+            logo:          currentProfile?.logo || null,
+            professionals: Array.isArray(currentProfile?.professionals) ? currentProfile.professionals : [],
         };
 
-        const save = () => {
-            workplaceProfiles.push(profile);
+        const save = (savedLogo) => {
+            if (savedLogo !== undefined) profile.logo = savedLogo;
+            let selectedIdx;
+            if (isEditing) {
+                workplaceProfiles[_editingWorkplaceIndex] = profile;
+                selectedIdx = _editingWorkplaceIndex;
+            } else {
+                workplaceProfiles.push(profile);
+                selectedIdx = workplaceProfiles.length - 1;
+            }
             saveProfiles();
             populateWorkplaceDropdown();
+
+            const wpSelect = document.getElementById('pdfWorkplace');
+            if (wpSelect) {
+                wpSelect.value = String(selectedIdx);
+                wpSelect.dispatchEvent(new Event('change'));
+            }
+
             document.getElementById('workplaceModalOverlay')?.classList.remove('active');
-            showToast('Lugar guardado ✓', 'success');
+            _resetWorkplaceForm();
+            showToast(isEditing ? 'Lugar actualizado ✓' : 'Lugar guardado ✓', 'success');
         };
 
         if (logoInput?.files?.[0]) {
             const reader = new FileReader();
-            reader.onload = (e) => { profile.logo = e.target.result; save(); };
+            reader.onload = (e) => { save(e.target.result); };
             reader.readAsDataURL(logoInput.files[0]);
         } else {
-            save();
+            save(profile.logo);
         }
     });
 

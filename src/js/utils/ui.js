@@ -144,12 +144,31 @@ window.initModals = function () {
 
     // Workplace Modal — abrir
     document.getElementById('btnAddWorkplace')?.addEventListener('click', () => {
-        document.getElementById('workplaceModalOverlay')?.classList.add('active');
+        if (typeof window.openWorkplaceModalForCreate === 'function') {
+            window.openWorkplaceModalForCreate();
+        } else {
+            document.getElementById('workplaceModalOverlay')?.classList.add('active');
+        }
+    });
+
+    // Workplace Modal — editar lugar seleccionado
+    document.getElementById('btnEditWorkplace')?.addEventListener('click', () => {
+        const wpIdx = document.getElementById('pdfWorkplace')?.value;
+        if (wpIdx === '' || wpIdx == null) {
+            if (typeof showToast === 'function') showToast('Seleccioná un lugar primero', 'warning');
+            return;
+        }
+        if (typeof window.openWorkplaceModalForEdit === 'function') {
+            window.openWorkplaceModalForEdit(wpIdx);
+        }
     });
 
     // Workplace Modal — cerrar (X en header Y botón Cancelar en footer)
     const closeWorkplaceModal = () =>
+    {
         document.getElementById('workplaceModalOverlay')?.classList.remove('active');
+        if (typeof window.resetWorkplaceModalForm === 'function') window.resetWorkplaceModalForm();
+    };
     document.getElementById('btnCancelWorkplace')?.addEventListener('click', closeWorkplaceModal);
     document.getElementById('btnCancelWorkplaceBtn')?.addEventListener('click', closeWorkplaceModal);
     // Cerrar al click fuera del modal
