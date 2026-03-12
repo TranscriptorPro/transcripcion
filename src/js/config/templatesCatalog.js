@@ -204,27 +204,32 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
 # INFORME DE GONIOSCOPÍA
 
 ## OJO DERECHO (OD)
-Redactar un párrafo continuo y fluido describiendo: ángulo iridocorneal (extensión visible, grado Shaffer, condición abierto/estrecho/cerrado), estructuras visualizadas (línea de Schwalbe, malla trabecular, espolón escleral, banda del cuerpo ciliar), pigmentación trabecular, configuración del iris, gonioscopía dinámica/indentación, y hallazgos patológicos (sinequias anteriores periféricas, neovasos, línea de Sampaolesi). Si un dato no fue dictado, omitirlo del párrafo (no dejarlo como frase incompleta).
+Redactar 2-3 oraciones fluidas que cubran TODOS los campos obligatorios de una gonioscopía estándar. Campos obligatorios (siempre incluirlos; si no fueron dictados, usar [No especificado]):
+1. Ángulo iridocorneal: extensión visible y condición (abierto/estrecho/cerrado).
+2. Grado de Shaffer (I a IV) — SIEMPRE reportar.
+3. Estructuras angulares: línea de Schwalbe, malla trabecular, espolón escleral, banda del cuerpo ciliar.
+4. Pigmentación trabecular: grado (0 a 4+) — SIEMPRE reportar.
+5. Configuración del iris (plana, convexa, cóncava, plateau) — SIEMPRE reportar.
+6. Gonioscopía dinámica/indentación: resultado o si no se realizó.
+7. Hallazgos patológicos: sinequias anteriores periféricas (PAS), neovasos, línea de Sampaolesi.
+
+Formato ejemplo: "El ángulo iridocorneal es abierto en toda su extensión, grado Shaffer IV, con línea de Schwalbe bien definida, malla trabecular pigmentada grado 2+, espolón escleral visible y banda del cuerpo ciliar identificable. La configuración del iris es plana. Pigmentación trabecular grado 2+. Gonioscopía dinámica: ángulo se abre completamente a la indentación. No se observan sinequias anteriores periféricas, neovasos ni línea de Sampaolesi."
 
 ## OJO IZQUIERDO (OI)
-Mismo formato que OD.
+Mismo formato y campos obligatorios que OD.
 
 ## SISTEMA SPAETH
-Solo incluir esta sección si el médico dictó datos del sistema Spaeth. Si no se mencionó Spaeth, NO incluir esta sección en absoluto.
+Solo incluir si el médico dictó datos del sistema Spaeth. Si no se mencionó → NO incluir esta sección.
 
 ## IMPRESIÓN DIAGNÓSTICA
-Síntesis clínica objetiva de los hallazgos.
+Síntesis clínica breve y objetiva.
 
-REGLAS INTERNAS (NO INCLUIR EN LA SALIDA FINAL):
-- Si la transcripción dice "AO", "ambos ojos" o "bilateral" y no detalla diferencias entre OD/OI, reflejar los mismos hallazgos clínicos en ambos ojos.
-- NO escribas secciones de metainstrucciones ("Reglas", "Instrucciones", "Notas del sistema").
-- Redacción objetiva, directa, en párrafo fluido. PROHIBIDO dejar frases incompletas como "la configuración del iris es..." o "Gonioscopía dinámica/indentación:...". Si un dato no fue dictado, simplemente no lo menciones.
-- PROHIBIDO usar descripciones genéricas como "Información sobre el sistema Spaeth" o "Descripción de la configuración". Solo datos clínicos concretos.
-- PROHIBIDO incluir texto condicional como "(si está reportado)" o "(si aplica)" en encabezados o en el cuerpo.
-- Si la transcripción dice "no se observan sinequias", redactar: "No se observan sinequias anteriores periféricas, neovasos ni línea de Sampaolesi."
-- Cada oración debe ser gramaticalmente completa: sujeto + verbo + predicado. Nunca terminar con "es..." o con dos puntos sin contenido.
-
-IMPORTANTE: No inventes datos. Solo estructura lo dictado. Si falta información puntual, usa [No especificado].`
+REGLAS (NO incluir en la salida):
+- Si dice "AO", "ambos ojos" o "bilateral" sin diferenciar OD/OI: duplicar los mismos hallazgos en ambos ojos.
+- PROHIBIDO: frases incompletas ("la configuración del iris es..."), texto condicional ("(si está reportado)"), descripciones genéricas ("Información sobre el sistema Spaeth"), muletillas ("Generalmente,", "Generally,", "En general,").
+- Cada oración: sujeto + verbo + predicado. Nunca terminar con "es..." ni con dos puntos sin contenido.
+- NO inventes datos. Si un campo obligatorio no fue dictado → [No especificado].
+- NO incluir datos identificatorios del paciente (nombre, DNI, obra social).`
     },
 
     tac: {

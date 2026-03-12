@@ -169,7 +169,7 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepción (ordenadas por prioridad):
 >>> CALIDAD LINGÜÍSTICA >>>
 11. CORRECCIÓN ASR: el texto proviene de reconocimiento de voz. Corrige silenciosamente errores fonéticos ("o dinofagia" → "odinofagia", "bujales" → "bucales"), anglicismos ("laryngoscopy" → "laringoscopía") y palabras partidas. NO señales las correcciones.
 12. Español médico formal impecable. Corrige errores ortográficos, gramaticales y de concordancia. Encabezados anatómicos sin tildes incorrectas: "OROFARINGE" (correcto), NO "ORÓFARINGE".
-13. PROHIBIDO usar muletillas o inicios vagos como "Generalmente,", "En general," o "Habitualmente,". Redacta directo, preciso y objetivo.
+13. PROHIBIDO usar muletillas o inicios vagos como "Generalmente,", "Generally,", "Usually,", "En general," o "Habitualmente,". Redacta directo, preciso y objetivo. Escribe SIEMPRE en español médico formal.
 
 >>> RECORDATORIO FINAL >>>
 Antes de responder, verifica: ¿preservé TODOS los datos? ¿Usé [No especificado] (no variantes)? ¿La conclusión incluye todos los hallazgos patológicos? ¿No inventé nada?`;
@@ -564,10 +564,13 @@ function _postProcessStructuredMarkdown(md) {
         out = out.replace(pattern, replacement);
     });
 
-    // Limpieza discursiva: quitar muletillas al inicio de línea y de oración.
+    // Limpieza discursiva: quitar muletillas al inicio de línea y de oración (ES + EN).
+    const muletillas = 'Generalmente|En general|Habitualmente|Generally|Usually|Typically|Commonly|In general|Overall';
+    const rxMulStart = new RegExp(`(^|\\n)\\s*(?:\\*\\*)?\\s*(?:${muletillas})\\s*,\\s+`, 'gim');
+    const rxMulMid   = new RegExp(`([.!?]\\s+)(?:\\*\\*)?\\s*(?:${muletillas})\\s*,\\s+`, 'gim');
     out = out
-        .replace(/(^|\n)\s*(?:\*\*)?\s*(Generalmente|En general|Habitualmente)\s*,\s+/gim, '$1')
-        .replace(/([.!?]\s+)(?:\*\*)?\s*(Generalmente|En general|Habitualmente)\s*,\s+/gim, '$1');
+        .replace(rxMulStart, '$1')
+        .replace(rxMulMid, '$1');
 
     // Corrige artefactos de mayúsculas en artículos al inicio de oración (p.ej. "LA papila").
     out = out.replace(/(^|[\n.!?]\s+)(LA|EL|LOS|LAS)\s+([a-záéíóúñ])/g, (m, p1, art, p3) => {
