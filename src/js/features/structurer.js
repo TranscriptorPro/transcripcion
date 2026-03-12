@@ -444,6 +444,26 @@ function _stripPromptLeakSections(markdown) {
     return out.trim();
 }
 
+function _sanitizeGrammarArtifacts(text) {
+    let out = String(text || '');
+    if (!out) return out;
+
+    // Artefactos recurrentes reportados por usuarios en salida clínica.
+    out = out
+        .replace(/\bcon\s+un\s+con\b/gi, 'con')
+        .replace(/\bcon\s+con\b/gi, 'con')
+        .replace(/\bla\s+configuraci[oó]n\s+del\s+iris\s+es\s*(?:[.,;:]+)?/gi, 'La configuración del iris es [No especificado]. ')
+        .replace(/\bGonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\s*:\s*(?:[.,;:]+)?/gi, 'Gonioscopía dinámica/indentación: [No especificado]. ')
+        .replace(/\bNo\s+se\s+realiz(?:o|ó|aron)\s+gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\.?/gi, 'Gonioscopía dinámica/indentación: [No especificado]. ')
+        .replace(/\.\s*\./g, '. ')
+        .replace(/:\s*\./g, ': [No especificado].')
+        // No colapsar saltos de línea para preservar estructura markdown.
+        .replace(/[ \t]{2,}/g, ' ')
+        .replace(/([.!?]\s+)([a-záéíóúñ])/g, (_, p1, p2) => p1 + p2.toUpperCase());
+
+    return out.trim();
+}
+
 function _postProcessStructuredMarkdown(md) {
     let out = String(md || '');
     if (!out) return out;
@@ -512,6 +532,8 @@ function _postProcessStructuredMarkdown(md) {
     out = out.replace(/^(#{2,3}\s+[^\n]+)\n+(?=#{1,3}\s)/gm, '');
     // Heading H2/H3 vacío al final del documento
     out = out.replace(/\n#{2,3}\s+[^\n]+\s*$/g, '');
+
+    out = _sanitizeGrammarArtifacts(out);
 
     return out.trim();
 }

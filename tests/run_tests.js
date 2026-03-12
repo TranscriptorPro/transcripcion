@@ -6991,6 +6991,18 @@ test('Gonio-Quality-3 — normaliza abreviatura r.e. a R. E.', () => {
     assert(!out.includes('R.E.'), 'No debe quedar formato R.E. sin espacio');
 });
 
+test('Gonio-Quality-4 — limpia artefactos gramaticales severos del caso real', () => {
+    const md = 'El ángulo iridocorneal es visible en toda su extensión, con un con grado Shaffer y condición abierto, se visualizan la línea de Schwalbe bien definida, la malla trabecular pigmentada, el espolón escleral definido y la banda del cuerpo ciliar visible. La pigmentación trabecular está presente. la configuración del iris es.. Gonioscopía dinámica/indentación:. No se observan hallazgos patológicos.';
+    const out = _postProcessStructuredMarkdown(md);
+    assert(!out.includes('con un con'), 'No debe persistir la duplicación "con un con"');
+    assert(!out.includes('..'), 'No debe persistir doble punto');
+    assert(!out.includes(':.') && !out.includes(' :.'), 'No debe persistir artefacto ":."');
+    assert(out.includes('La configuración del iris es [No especificado].'),
+        'Debe completar frase truncada de configuración del iris');
+    assert(out.includes('Gonioscopía dinámica/indentación: [No especificado].'),
+        'Debe completar frase truncada de dinámica/indentación');
+});
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // Bloque 115: Extracción paciente — 41 casos clínicos
 // ═══════════════════════════════════════════════════════════════════════════════
