@@ -125,6 +125,14 @@ function markdownToHtml(md) {
     md = _stripRedundantEmptyMarkers(md);
     // Limpieza final de inicios vagos introducidos por el LLM.
     md = _stripWeakLeadIns(md);
+    // Fallback defensivo: eliminar elipsis y frases de procedimiento no realizado/no especificado.
+    md = String(md || '')
+        .replace(/\.{3,}|…+/g, '. ')
+        .replace(/(?:la\s+)?gonioscop[ií]a\s+din[aá]mica(?:\/indentaci[oó]n)?\s+no\s+se\s+realiz[oó]\s+o\s+no\s+se\s+especific[oó]\.?(?:\s+|$)/gi, ' ')
+        .replace(/\s+([,.;:])/g, '$1')
+        .replace(/([,;:])\s*\./g, '.')
+        .replace(/[ \t]{2,}/g, ' ')
+        .trim();
 
     const inlineFormat = (text) => text
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')

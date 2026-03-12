@@ -281,10 +281,20 @@
             .replace(/```$/i, '')
             .replace(/^[-*]\s+/, '')
             .replace(/^"|"$/g, '')
+            .replace(/\.{3,}|…+/g, '. ')
+            .replace(/(?:la\s+)?gonioscop[ií]a\s+din[aá]mica(?:\/indentaci[oó]n)?\s+no\s+se\s+realiz[oó]\s+o\s+no\s+se\s+especific[oó]\.?(?:\s+|$)/gi, ' ')
             .replace(/\s+/g, ' ')
             .trim();
         // Evitar que la IA devuelva encabezados o prefijos explicativos.
         out = out.replace(/^(?:Campo|Resultado|Revisi[oó]n)\s*:\s*/i, '').trim();
+        // Normalizar residuos de puntuación tras limpiezas agresivas.
+        out = out
+            .replace(/\s+([,.;:])/g, '$1')
+            .replace(/([,;:])\s*\./g, '.')
+            .replace(/\.{2,}/g, '.')
+            .replace(/,\s*,/g, ',')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
         // Unificar variantes de no evaluado.
         if (/^(?:no se evalu[oó]|no fue evaluad[ao]|sin datos disponibles|no evaluad[ao])\.?$/i.test(out)) {
             return '[No especificado]';
