@@ -28,6 +28,34 @@ function setRegistry(arr) {
     }
 }
 
+function _nameTokens(name) {
+    return _normStr(name || '')
+        .split(/\s+/)
+        .map(t => t.trim())
+        .filter(Boolean);
+}
+
+function _areEquivalentNames(a, b) {
+    const ta = _nameTokens(a);
+    const tb = _nameTokens(b);
+    if (!ta.length || !tb.length) return false;
+    if (ta.join(' ') === tb.join(' ')) return true;
+    if (ta.length !== tb.length) return false;
+    const sa = [...ta].sort().join(' ');
+    const sb = [...tb].sort().join(' ');
+    return sa === sb;
+}
+
+function _surnameStartsWith(patientName, queryNorm) {
+    const tokens = _nameTokens(patientName);
+    if (!tokens.length || !queryNorm) return false;
+
+    // Soportar registros en formato "Apellido Nombre" y "Nombre Apellido".
+    const first = tokens[0];
+    const last = tokens[tokens.length - 1];
+    return first.startsWith(queryNorm) || last.startsWith(queryNorm);
+}
+
 // ---- Guardar paciente ----
 // Si ya existe un paciente con el mismo DNI → actualizar; si no → agregar.
 window.savePatientToRegistry = function(patient) {
@@ -40,7 +68,7 @@ window.savePatientToRegistry = function(patient) {
         idx = reg.findIndex(p => p.dni && p.dni.replace(/\D/g, '') === normDni);
     }
     if (idx === -1) {
-        idx = reg.findIndex(p => _normStr(p.name) === _normStr(patient.name));
+        idx = reg.findIndex(p => _areEquivalentNames(p.name, patient.name));
     }
 
     const entry = {
@@ -89,6 +117,19 @@ window.searchPatientRegistry = function(query) {
                 return tokens.every(t => pName.includes(t));
             }
             return false;
+        })
+        .slice(0, 20);
+};
+
+window.searchPatientRegistryBySurnamePrefix = function(query) {
+    if (!query || query.length < 2) return [];
+    const normQ = _normStr(query);
+    const dniQ = query.replace(/\D/g, '');
+
+    return getRegistry()
+        .filter(p => {
+            if (dniQ && p.dni && p.dni.replace(/\D/g, '').startsWith(dniQ)) return true;
+            return _surnameStartsWith(p.name, normQ);
         })
         .slice(0, 20);
 };
@@ -172,7 +213,9 @@ window.initPatientRegistrySearch = function() {
         const query = searchInput.value.trim();
         if (query.length < 2) { hideDropdown(); return; }
         debounceTimer = setTimeout(() => {
-            const results = searchPatientRegistry(query);
+            const results = (typeof searchPatientRegistryBySurnamePrefix === 'function')
+                ? searchPatientRegistryBySurnamePrefix(query)
+                : searchPatientRegistry(query);
             showResults(results);
         }, 120);
     });

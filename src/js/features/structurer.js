@@ -464,11 +464,44 @@ function _sanitizeGrammarArtifacts(text) {
     return out.trim();
 }
 
+function _normalizeMarkdownHeadingLayout(text) {
+    let out = String(text || '');
+    if (!out) return out;
+
+    // Si un heading quedó incrustado en la misma línea, lo separa en bloque markdown.
+    out = out.replace(/([^\n])\s+(#{1,3}\s*[A-ZÁÉÍÓÚÑ].*)/g, '$1\n\n$2');
+    // Evita spacing excesivo entre bloques sin perder estructura.
+    out = out.replace(/\n{3,}/g, '\n\n');
+
+    return out;
+}
+
+function _keepSingleReportTitle(text) {
+    const out = String(text || '');
+    if (!out) return out;
+
+    const lines = out.split('\n');
+    let seenPrimaryTitle = false;
+    const filtered = [];
+
+    for (const line of lines) {
+        const isPrimary = /^#\s+INFORME\s+DE\b/i.test(line.trim());
+        if (isPrimary) {
+            if (seenPrimaryTitle) continue;
+            seenPrimaryTitle = true;
+        }
+        filtered.push(line);
+    }
+
+    return filtered.join('\n').trim();
+}
+
 function _postProcessStructuredMarkdown(md) {
     let out = String(md || '');
     if (!out) return out;
 
     out = _stripPromptLeakSections(out);
+    out = _normalizeMarkdownHeadingLayout(out);
 
     // Correcciones ortográficas médicas frecuentes (fallback defensivo post-LLM).
     const replacements = [
@@ -534,6 +567,8 @@ function _postProcessStructuredMarkdown(md) {
     out = out.replace(/\n#{2,3}\s+[^\n]+\s*$/g, '');
 
     out = _sanitizeGrammarArtifacts(out);
+    out = _normalizeMarkdownHeadingLayout(out);
+    out = _keepSingleReportTitle(out);
 
     return out.trim();
 }

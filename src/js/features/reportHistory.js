@@ -265,7 +265,7 @@ window.viewReport = function (reportId) {
     if (!overlay) {
         overlay = document.createElement('div');
         overlay.id = 'reportViewerOverlay';
-        overlay.className = 'overlay';
+        overlay.className = 'modal-overlay';
         overlay.innerHTML = `
             <div class="modal" style="max-width:900px;width:95%;max-height:92vh;display:flex;flex-direction:column;">
                 <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;border-bottom:1px solid var(--border);">
@@ -514,7 +514,7 @@ window.viewPatientReportHistory = function (patientName, patientDni) {
     if (!modal) {
         modal = document.createElement('div');
         modal.id = 'patientReportsModal';
-        modal.className = 'overlay';
+        modal.className = 'modal-overlay';
         modal.innerHTML = `
             <div class="modal" style="max-width:650px;width:90%;">
                 <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;border-bottom:1px solid var(--border);">
