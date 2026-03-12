@@ -3,6 +3,15 @@
 (function initEditorDownloadCoreUtils() {
     const editor = document.getElementById('editor');
 
+    async function _ensureJsPdfReady(timeoutMs = 2600) {
+        const start = Date.now();
+        while (Date.now() - start < timeoutMs) {
+            if (window.jspdf?.jsPDF) return true;
+            await new Promise((r) => setTimeout(r, 120));
+        }
+        return !!window.jspdf?.jsPDF;
+    }
+
     async function _getPdfConfigSafe() {
         try {
             if (window._pdfConfigCache && typeof window._pdfConfigCache === 'object') {
@@ -19,7 +28,8 @@
     }
 
     async function _buildPdfBlobFromHtml(htmlDoc) {
-        if (typeof window.jspdf === 'undefined' || !window.jspdf?.jsPDF) return null;
+        const hasJsPdf = await _ensureJsPdfReady();
+        if (!hasJsPdf) return null;
         if (!htmlDoc) return null;
 
         const pdfConfig = await _getPdfConfigSafe();
@@ -54,6 +64,14 @@
             const sdoc = sandbox.contentDocument;
             if (!sdoc || !sdoc.body) return null;
 
+            // Expandir altura del sandbox al contenido real para evitar cortes artificiales.
+            const fullHeight = Math.max(
+                viewportH,
+                (sdoc.documentElement?.scrollHeight || 0) + 16,
+                (sdoc.body?.scrollHeight || 0) + 16
+            );
+            sandbox.style.height = `${fullHeight}px`;
+
             // Esperar fuentes e imagenes para capturar un layout igual al preview.
             try {
                 if (sdoc.fonts && typeof sdoc.fonts.ready?.then === 'function') {
@@ -77,7 +95,7 @@
                 x: 0,
                 y: 0,
                 margin: [0, 0, 0, 0],
-                autoPaging: 'slice',
+                autoPaging: 'text',
                 width: pageWmm,
                 windowWidth: viewportW,
                 html2canvas: {
@@ -259,19 +277,8 @@
                 }
             }
 
-            // Fallback robusto: generador PDF clásico si falla el render fiel HTML->blob.
-            if (typeof window.downloadPDFWrapper === 'function') {
-                try {
-                    await window.downloadPDFWrapper(editor.innerHTML, fileName, date, fileDate);
-                    if (typeof showToast === 'function') showToast('PDF descargado', 'success');
-                    return;
-                } catch (err) {
-                    console.warn('Fallback downloadPDFWrapper fallo:', err);
-                }
-            }
-
             if (typeof showToast === 'function') {
-                showToast('No se pudo generar PDF fiel desde la vista previa. Reintentá en unos segundos.', 'error');
+                showToast('No se pudo generar el PDF fiel a la vista previa. Reintentá.', 'error');
             }
             return;
         }
