@@ -139,11 +139,34 @@ async function _generatePDFBase64FromHtmlSnapshot() {
         const htmlDoc = await createHTML();
         if (!htmlDoc) return null;
 
+        let cfg = {};
+        try {
+            cfg = window._pdfConfigCache
+                || (typeof appDB !== 'undefined' ? (await appDB.get('pdf_config')) : null)
+                || JSON.parse(localStorage.getItem('pdf_config') || '{}')
+                || {};
+        } catch (_) {
+            cfg = {};
+        }
+        const pageFormat = String(cfg.pageSize || 'a4').toLowerCase();
+        const orientation = String(cfg.orientation || 'portrait').toLowerCase();
+        const fmtSizes = {
+            a4: { w: 210, h: 297 },
+            letter: { w: 215.9, h: 279.4 },
+            legal: { w: 215.9, h: 355.6 }
+        };
+        const sz = fmtSizes[pageFormat] || fmtSizes.a4;
+        const pageWmm = orientation === 'landscape' ? sz.h : sz.w;
+        const pageHmm = orientation === 'landscape' ? sz.w : sz.h;
+        const pxPerMm = 96 / 25.4;
+        const viewportW = Math.round(pageWmm * pxPerMm);
+        const viewportH = Math.round(pageHmm * pxPerMm);
+
         const wrapper = document.createElement('div');
-        wrapper.style.cssText = 'position:fixed;left:-99999px;top:0;width:794px;background:#fff;z-index:-1;';
+        wrapper.style.cssText = `position:fixed;left:-99999px;top:0;width:${viewportW}px;background:#fff;z-index:-1;`;
 
         const sandbox = document.createElement('iframe');
-        sandbox.style.cssText = 'width:794px;height:1123px;border:0;background:#fff;';
+        sandbox.style.cssText = `width:${viewportW}px;height:${viewportH}px;border:0;background:#fff;`;
         wrapper.appendChild(sandbox);
         document.body.appendChild(wrapper);
 
@@ -162,7 +185,7 @@ async function _generatePDFBase64FromHtmlSnapshot() {
         await new Promise(r => setTimeout(r, 220));
 
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+        const doc = new jsPDF({ unit: 'mm', format: pageFormat, orientation });
 
         const bodyEl = sdoc.body;
         if (!bodyEl) {
@@ -174,11 +197,11 @@ async function _generatePDFBase64FromHtmlSnapshot() {
             x: 0,
             y: 0,
             margin: [0, 0, 0, 0],
-            autoPaging: 'text',
-            width: 210,
-            windowWidth: 794,
+            autoPaging: 'slice',
+            width: pageWmm,
+            windowWidth: viewportW,
             html2canvas: {
-                scale: 1,
+                scale: 2,
                 useCORS: true,
                 backgroundColor: '#ffffff'
             }
@@ -204,31 +227,8 @@ async function _generatePDFBase64Impl() {
         const exactLike = await _generatePDFBase64FromHtmlSnapshot();
         if (exactLike) return exactLike;
 
-        return new Promise((resolve) => {
-            const origSave = window.saveToDisk;
-            let restored = false;
-            const restore = () => { if (!restored) { restored = true; window.saveToDisk = origSave; } };
-
-            window.saveToDisk = async (blob, name) => {
-                restore();
-                try {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result.split(',')[1]);
-                    reader.onerror = () => resolve(null);
-                    reader.readAsDataURL(blob);
-                } catch(_) { resolve(null); }
-            };
-
-            // Timeout de seguridad: si saveToDisk nunca es llamado, resolver null
-            const timeout = setTimeout(() => { restore(); resolve(null); }, 30000);
-
-            const fName = 'informe';
-            const fecha = new Date().toLocaleDateString('es-ES');
-            const fDate = new Date().toISOString().split('T')[0];
-            downloadPDFWrapper(editorEl.innerHTML, fName, fecha, fDate)
-                .then(() => { /* saveToDisk ya fue llamado */ })
-                .catch(() => { clearTimeout(timeout); restore(); resolve(null); });
-        });
+        // Sin fallback al renderer nativo para mantener fidelidad 1:1 con preview/export HTML.
+        return null;
     } catch (e) {
         console.error('Error generando PDF base64:', e);
         return null;

@@ -354,6 +354,7 @@ function _postProcessStructuredMarkdown(md) {
         [/\bdis\s+fagía?\b/gi, 'disfagia'],
         [/\bdis\s+fonía?\b/gi, 'disfonía'],
         [/\bdis\s+neá?\b/gi, 'disnea'],
+        [/\br\.e\.?\b/gi, 'R.E.'],
         [/\btaqui\s+cardía?\b/gi, 'taquicardia'],
         [/\bbradi\s+cardía?\b/gi, 'bradicardia'],
         [/\bhepato\s+megalia\b/gi, 'hepatomegalia'],

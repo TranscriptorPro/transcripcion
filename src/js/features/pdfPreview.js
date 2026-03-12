@@ -45,6 +45,235 @@ async function _pdfPreviewSafeGet(key, fallback) {
     }
 }
 
+async function _pdfPreviewSaveRaw(key, value) {
+    try {
+        if (typeof appDB !== 'undefined' && appDB && typeof appDB.set === 'function') {
+            await appDB.set(key, value);
+        }
+    } catch (_) { /* ignore */ }
+    try {
+        localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
+    } catch (_) { /* ignore */ }
+}
+
+async function _pdfPreviewSaveJson(key, value) {
+    try {
+        if (typeof appDB !== 'undefined' && appDB && typeof appDB.set === 'function') {
+            await appDB.set(key, value);
+        }
+    } catch (_) { /* ignore */ }
+    try {
+        localStorage.setItem(key, JSON.stringify(value));
+    } catch (_) { /* ignore */ }
+}
+
+function _pdfReadImageAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+        if (!file) return resolve('');
+        if (!/^image\//i.test(file.type || '')) return reject(new Error('Archivo invalido'));
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result || ''));
+        r.onerror = () => reject(new Error('No se pudo leer la imagen'));
+        r.readAsDataURL(file);
+    });
+}
+
+function _uniqDataUrls(list) {
+    const out = [];
+    (Array.isArray(list) ? list : []).forEach((v) => {
+        const s = String(v || '');
+        if (!s.startsWith('data:image/')) return;
+        if (!out.includes(s)) out.push(s);
+    });
+    return out;
+}
+
+function _assetOptionButton(src, selected, onClick) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-sm';
+    btn.style.cssText = 'padding:4px;border:1px solid ' + (selected ? 'var(--primary,#1a56a0)' : 'var(--border,#cbd5e1)') + ';background:' + (selected ? 'var(--primary-soft,#eff6ff)' : 'var(--bg-card,#fff)') + ';';
+    btn.title = selected ? 'Seleccionado' : 'Seleccionar';
+    btn.innerHTML = `<img src="${src}" alt="Asset" style="height:34px;width:auto;display:block;">`;
+    btn.addEventListener('click', onClick);
+    return btn;
+}
+
+function _resolveActiveIndexes(cfg) {
+    const wpSel = document.getElementById('pdfWorkplace');
+    const proSel = document.getElementById('pdfProfessional');
+    const wpIndex = Number.isFinite(Number(wpSel?.value)) ? Number(wpSel.value) : Number(cfg.activeWorkplaceIndex);
+    const proIndex = Number.isFinite(Number(proSel?.value)) ? Number(proSel.value) : Number(cfg.activeProfessionalIndex);
+    return { wpIndex, proIndex };
+}
+
+async function _selectInstitutionLogo(dataUrl) {
+    const cfg = window._pdfConfigCache || (await _pdfPreviewSafeGet('pdf_config', {})) || {};
+    const { wpIndex } = _resolveActiveIndexes(cfg);
+    if (Number.isNaN(wpIndex)) {
+        if (typeof showToast === 'function') showToast('Selecciona un lugar de trabajo para elegir su logo', 'warning');
+        return false;
+    }
+
+    const profiles = (await _pdfPreviewSafeGet('workplace_profiles', [])) || [];
+    const wp = profiles[wpIndex];
+    if (!wp) {
+        if (typeof showToast === 'function') showToast('No se encontro el lugar de trabajo seleccionado', 'error');
+        return false;
+    }
+
+    wp.logoOptions = _uniqDataUrls([...(wp.logoOptions || []), wp.logo, dataUrl]);
+    wp.logo = dataUrl;
+    cfg.activeWorkplaceIndex = String(wpIndex);
+    window._pdfConfigCache = cfg;
+
+    await _pdfPreviewSaveJson('workplace_profiles', profiles);
+    await _pdfPreviewSaveJson('pdf_config', cfg);
+    await _pdfPreviewSaveRaw('pdf_logo', dataUrl);
+    await _refreshAssetSelectors();
+    return true;
+}
+
+async function _addInstitutionLogo(dataUrl) {
+    return _selectInstitutionLogo(dataUrl);
+}
+
+async function _selectProfessionalAsset(kind, dataUrl) {
+    const isSign = kind === 'firma';
+    const optionsKey = isSign ? 'firmaOptions' : 'logoOptions';
+    const cfg = window._pdfConfigCache || (await _pdfPreviewSafeGet('pdf_config', {})) || {};
+    const { wpIndex, proIndex } = _resolveActiveIndexes(cfg);
+
+    if (Number.isNaN(wpIndex) || Number.isNaN(proIndex)) {
+        if (typeof showToast === 'function') showToast('Selecciona primero un profesional activo para elegir su archivo', 'warning');
+        return false;
+    }
+
+    const profiles = (await _pdfPreviewSafeGet('workplace_profiles', [])) || [];
+    const prof = profiles?.[wpIndex]?.professionals?.[proIndex];
+    if (!prof) {
+        if (typeof showToast === 'function') showToast('No se encontro el profesional seleccionado', 'error');
+        return false;
+    }
+
+    prof[optionsKey] = _uniqDataUrls([...(prof[optionsKey] || []), prof[kind], dataUrl]);
+    prof[kind] = dataUrl;
+    await _pdfPreviewSaveJson('workplace_profiles', profiles);
+
+    cfg.activeWorkplaceIndex = String(wpIndex);
+    cfg.activeProfessionalIndex = String(proIndex);
+    cfg.activeProfessional = {
+        ...(cfg.activeProfessional || {}),
+        [kind]: dataUrl,
+        logo: prof.logo || cfg.activeProfessional?.logo || '',
+        firma: prof.firma || cfg.activeProfessional?.firma || ''
+    };
+    window._pdfConfigCache = cfg;
+    await _pdfPreviewSaveJson('pdf_config', cfg);
+
+    if (isSign) await _pdfPreviewSaveRaw('pdf_signature', dataUrl);
+    else await _pdfPreviewSaveRaw('pdf_logo', dataUrl);
+
+    await _refreshAssetSelectors();
+    return true;
+}
+
+async function _addProfessionalAsset(kind, dataUrl) {
+    return _selectProfessionalAsset(kind, dataUrl);
+}
+
+async function _refreshAssetSelectors() {
+    const cfg = window._pdfConfigCache || (await _pdfPreviewSafeGet('pdf_config', {})) || {};
+    const profiles = (await _pdfPreviewSafeGet('workplace_profiles', [])) || [];
+    const { wpIndex, proIndex } = _resolveActiveIndexes(cfg);
+
+    const wp = !Number.isNaN(wpIndex) ? profiles[wpIndex] : null;
+    const prof = (wp && !Number.isNaN(proIndex)) ? wp?.professionals?.[proIndex] : null;
+
+    const instCurrent = String(wp?.logo || '').startsWith('data:image/') ? wp.logo : '';
+    const instOptions = _uniqDataUrls([...(wp?.logoOptions || []), instCurrent]);
+    const instPreview = document.getElementById('pdfLogoPreview');
+    if (instPreview) {
+        instPreview.innerHTML = instCurrent
+            ? `<img src="${instCurrent}" alt="Logo institucional" style="max-height:80px;">`
+            : '<span style="color:var(--text-secondary);font-size:0.8rem;">Sin logo institucional</span>';
+    }
+    const instOptionsEl = document.getElementById('pdfInstLogoOptions');
+    if (instOptionsEl) {
+        instOptionsEl.innerHTML = '';
+        instOptions.forEach((src) => {
+            instOptionsEl.appendChild(_assetOptionButton(src, src === instCurrent, () => { _selectInstitutionLogo(src); }));
+        });
+    }
+
+    const profCurrent = String(prof?.logo || '').startsWith('data:image/') ? prof.logo : '';
+    const profOptions = _uniqDataUrls([...(prof?.logoOptions || []), profCurrent]);
+    const profPreview = document.getElementById('pdfProfLogoPreview');
+    if (profPreview) {
+        profPreview.innerHTML = profCurrent
+            ? `<img src="${profCurrent}" alt="Logo profesional" style="max-height:70px;">`
+            : '<span style="color:var(--text-secondary);font-size:0.8rem;">Sin logo profesional</span>';
+    }
+    const profOptionsEl = document.getElementById('pdfProfLogoOptions');
+    if (profOptionsEl) {
+        profOptionsEl.innerHTML = '';
+        profOptions.forEach((src) => {
+            profOptionsEl.appendChild(_assetOptionButton(src, src === profCurrent, () => { _selectProfessionalAsset('logo', src); }));
+        });
+    }
+
+    const sigCurrent = String(prof?.firma || '').startsWith('data:image/') ? prof.firma : '';
+    const sigOptions = _uniqDataUrls([...(prof?.firmaOptions || []), sigCurrent]);
+    const sigPreview = document.getElementById('pdfSignaturePreview');
+    if (sigPreview) {
+        sigPreview.innerHTML = sigCurrent
+            ? `<img src="${sigCurrent}" alt="Firma" style="max-height:70px;">`
+            : '<span style="color:var(--text-secondary);font-size:0.8rem;">Sin firma digital</span>';
+    }
+    const sigOptionsEl = document.getElementById('pdfSignatureOptions');
+    if (sigOptionsEl) {
+        sigOptionsEl.innerHTML = '';
+        sigOptions.forEach((src) => {
+            sigOptionsEl.appendChild(_assetOptionButton(src, src === sigCurrent, () => { _selectProfessionalAsset('firma', src); }));
+        });
+    }
+}
+
+function _initPdfAssetReplacementHandlers() {
+    if (window._pdfAssetReplaceHandlersBound) return;
+    window._pdfAssetReplaceHandlersBound = true;
+
+    const bindPicker = (btnId, inputId, onFile) => {
+        const btn = document.getElementById(btnId);
+        const input = document.getElementById(inputId);
+        if (!btn || !input) return;
+        btn.addEventListener('click', () => input.click());
+        input.addEventListener('change', async (e) => {
+            const file = e.target?.files?.[0];
+            if (!file) return;
+            try {
+                const dataUrl = await _pdfReadImageAsDataUrl(file);
+                if (!dataUrl.startsWith('data:image/')) throw new Error('Formato no valido');
+                const ok = await onFile(dataUrl);
+                if (ok && typeof showToast === 'function') showToast('Archivo reemplazado correctamente', 'success');
+            } catch (err) {
+                if (typeof showToast === 'function') showToast(String(err?.message || 'No se pudo reemplazar el archivo'), 'error');
+            } finally {
+                input.value = '';
+            }
+        });
+    };
+
+    bindPicker('btnReplaceInstLogo', 'pdfInstLogoUpload', _addInstitutionLogo);
+    bindPicker('btnReplaceProfLogo', 'pdfProfLogoUpload', (d) => _addProfessionalAsset('logo', d));
+    bindPicker('btnReplaceSignature', 'pdfSignUpload', (d) => _addProfessionalAsset('firma', d));
+
+    const wpSel = document.getElementById('pdfWorkplace');
+    if (wpSel) wpSel.addEventListener('change', () => { setTimeout(() => { _refreshAssetSelectors(); }, 80); });
+    const proSel = document.getElementById('pdfProfessional');
+    if (proSel) proSel.addEventListener('change', () => { setTimeout(() => { _refreshAssetSelectors(); }, 80); });
+}
+
 function _stripAccentsForCompare(text) {
     return String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
@@ -73,6 +302,7 @@ function _extractStudyTypeFromEditorHeading(editorEl) {
 }
 
 window.openPdfConfigModal = async function () {
+    _initPdfAssetReplacementHandlers();
     if (typeof loadPdfConfiguration === 'function') loadPdfConfiguration();
     const dataUtils = window.PdfDataAccessUtils || {};
     const safeGet = (typeof dataUtils.safeGet === 'function') ? dataUtils.safeGet : async (_k, fallback) => fallback;
@@ -206,11 +436,6 @@ window.openPdfConfigModal = async function () {
     if (studyDateEl && !studyDateEl.value) {
         studyDateEl.value = new Date().toISOString().split('T')[0];
     }
-    const studyTimeEl = document.getElementById('pdfStudyTime');
-    if (studyTimeEl && !studyTimeEl.value) {
-        const now = new Date();
-        studyTimeEl.value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    }
 
     updatePdfModalByMode();
     if (typeof populateWorkplaceDropdown === 'function') populateWorkplaceDropdown();
@@ -245,26 +470,6 @@ window.openPdfConfigModal = async function () {
     const showProfLogoChk = document.getElementById('pdfShowProfLogo');
     if (showProfLogoChk) showProfLogoChk.checked = pdfCfgRestore.showProfLogo ?? true;
 
-    const profLogoPreviewEl = document.getElementById('pdfProfLogoPreview');
-    const sigPreviewEl = document.getElementById('pdfSignaturePreview');
-    const logoSrc = (activeProRestore?.logo && String(activeProRestore.logo).startsWith('data:image/'))
-        ? activeProRestore.logo
-        : ((profData.logo && String(profData.logo).startsWith('data:image/')) ? profData.logo : '');
-    const sigSrc = (activeProRestore?.firma && String(activeProRestore.firma).startsWith('data:image/'))
-        ? activeProRestore.firma
-        : ((await safeGet('pdf_signature', '')) || '');
-
-    if (profLogoPreviewEl) {
-        profLogoPreviewEl.innerHTML = logoSrc
-            ? `<img src="${logoSrc}" alt="Logo profesional" style="max-height:70px;">`
-            : '<span style="color:var(--text-secondary);font-size:0.8rem;">No hay logo profesional disponible</span>';
-    }
-    if (sigPreviewEl) {
-        sigPreviewEl.innerHTML = (sigSrc && String(sigSrc).startsWith('data:image/'))
-            ? `<img src="${sigSrc}" alt="Firma" style="max-height:70px;">`
-            : '<span style="color:var(--text-secondary);font-size:0.8rem;">No hay firma digital disponible</span>';
-    }
-
     // No se oculta globalmente aquí porque el panel entero ya está oculto
 
     if (studyTypeSelect && pdfCfgRestore.studyType) {
@@ -274,6 +479,8 @@ window.openPdfConfigModal = async function () {
             studyTypeSelect.value = pdfCfgRestore.studyType;
         }
     }
+
+    await _refreshAssetSelectors();
 
     document.getElementById('pdfModalOverlay')?.classList.add('active');
 }
@@ -388,9 +595,10 @@ window.openPrintPreview = async function () {
         : baseStudyType;
     const studyType    = escSentence(effectiveStudyType);
     const rawDate      = config.studyDate || document.getElementById('reqStudyDate')?.value || '';
+    const showStudyDate = (document.getElementById('reqShowStudyDate')?.checked ?? config.showStudyDate ?? true) !== false;
     const studyDate    = rawDate
         ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'})
-        : new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'});
+        : '';
     const studyReason  = escSentence(config.studyReason || document.getElementById('reqStudyReason')?.value || '');
     const refDoctor    = escName(config.referringDoctor || document.getElementById('reqReferringDoctor')?.value || '');
     const reportNum    = esc(document.getElementById('pdfReportNumber')?.value || config.reportNum || '');
@@ -522,7 +730,9 @@ window.openPrintPreview = async function () {
         let row1 = '';
         row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">ESTUDIO:</span><span class="pvs-val">${studyType || '—'}</span></div>`;
         row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">INFORME Nº:</span><span class="pvs-val">${reportNum || '—'}</span></div>`;
-        row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">FECHA:</span><span class="pvs-val">${studyDate}${studyTime ? ' ' + studyTime : ''}</span></div>`;
+        if (showStudyDate && (studyDate || studyTime)) {
+            row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">FECHA:</span><span class="pvs-val">${studyDate}${studyTime ? ' ' + studyTime : ''}</span></div>`;
+        }
         let row2 = '';
         if (refDoctor)   row2 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">SOLICITANTE:</span><span class="pvs-val">${refDoctor}</span></div>`;
         if (studyReason) row2 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">MOTIVO:</span><span class="pvs-val">${studyReason}</span></div>`;

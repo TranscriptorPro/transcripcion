@@ -314,6 +314,7 @@ window.initModals = function () {
                 const config = {
                     studyType: val('pdfStudyType') || existing.studyType || '',
                     studyDate: val('pdfStudyDate') || existing.studyDate || '',
+                    showStudyDate: document.getElementById('reqShowStudyDate')?.checked ?? existing.showStudyDate ?? true,
                     reportNum: val('pdfReportNumber') || existing.reportNum || '',
                     studyTime: val('pdfStudyTime') || existing.studyTime || '',
                     studyReason: val('pdfStudyReason') || existing.studyReason || '',

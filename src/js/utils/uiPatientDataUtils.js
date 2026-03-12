@@ -11,7 +11,6 @@ window.initPatientDataModalHandlers = function () {
         const extracted = (typeof extractPatientDataFromText === 'function')
             ? extractPatientDataFromText((document.getElementById('editor')?.innerText || ''))
             : {};
-        const today = new Date().toISOString().split('T')[0];
         const prefill = {
             reqPatientName: cfg.patientName || extracted.name || '',
             reqPatientDni: cfg.patientDni || extracted.dni || '',
@@ -19,7 +18,7 @@ window.initPatientDataModalHandlers = function () {
             reqPatientSex: cfg.patientSex || extracted.sex || '',
             reqPatientInsurance: cfg.patientInsurance || extracted.insurance || '',
             reqPatientAffiliateNum: cfg.patientAffiliateNum || extracted.affiliateNum || '',
-            reqStudyDate: cfg.studyDate || extracted.studyDate || today,
+            reqStudyDate: cfg.studyDate || extracted.studyDate || '',
             reqStudyTime: cfg.studyTime || extracted.studyTime || '',
             reqReferringDoctor: cfg.referringDoctor || extracted.referringDoctor || '',
             reqStudyReason: cfg.studyReason || extracted.studyReason || '',
@@ -30,6 +29,8 @@ window.initPatientDataModalHandlers = function () {
             const el = document.getElementById(id);
             if (el) { el.value = val; el.style.borderColor = ''; }
         });
+        const showDateChk = document.getElementById('reqShowStudyDate');
+        if (showDateChk) showDateChk.checked = cfg.showStudyDate !== false;
         patientOverlay?.classList.add('active');
         if (typeof initPatientRegistrySearch === 'function') initPatientRegistrySearch();
     };
@@ -60,7 +61,8 @@ window.initPatientDataModalHandlers = function () {
             const sex = document.getElementById('reqPatientSex')?.value;
             const insurance = document.getElementById('reqPatientInsurance')?.value?.trim();
             const affiliateNum = document.getElementById('reqPatientAffiliateNum')?.value?.trim();
-            const studyDate = document.getElementById('reqStudyDate')?.value?.trim() || new Date().toISOString().split('T')[0];
+            const showStudyDate = document.getElementById('reqShowStudyDate')?.checked !== false;
+            const studyDate = document.getElementById('reqStudyDate')?.value?.trim() || '';
             const studyTime = document.getElementById('reqStudyTime')?.value?.trim();
             const referringDoctor = document.getElementById('reqReferringDoctor')?.value?.trim();
             const studyReason = document.getElementById('reqStudyReason')?.value?.trim();
@@ -71,7 +73,9 @@ window.initPatientDataModalHandlers = function () {
             if (sex) config.patientSex = sex;
             if (insurance) config.patientInsurance = insurance;
             if (affiliateNum) config.patientAffiliateNum = affiliateNum;
-            config.studyDate = studyDate;
+            config.showStudyDate = showStudyDate;
+            if (showStudyDate && studyDate) config.studyDate = studyDate;
+            else delete config.studyDate;
             if (studyTime) config.studyTime = studyTime; else delete config.studyTime;
             if (referringDoctor) config.referringDoctor = referringDoctor; else delete config.referringDoctor;
             if (studyReason) config.studyReason = studyReason; else delete config.studyReason;
@@ -91,6 +95,7 @@ window.initPatientDataModalHandlers = function () {
                 sex,
                 insurance,
                 affiliateNum,
+                showStudyDate,
                 studyDate,
                 studyTime,
                 referringDoctor,
@@ -124,10 +129,10 @@ window.initPatientDataModalHandlers = function () {
         if (data.affiliateNum) lines.push(`<strong>Nº Afiliado:</strong> ${data.affiliateNum}`);
 
         const studyLines = [];
-        const dateForDisplay = data.studyDate
-            ? new Date(data.studyDate + 'T12:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
-            : new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        studyLines.push(`<strong>Fecha:</strong> ${dateForDisplay}${data.studyTime ? ' ' + data.studyTime : ''}`);
+        if (data.showStudyDate !== false && data.studyDate) {
+            const dateForDisplay = new Date(data.studyDate + 'T12:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            studyLines.push(`<strong>Fecha:</strong> ${dateForDisplay}${data.studyTime ? ' ' + data.studyTime : ''}`);
+        }
         if (data.studyType) studyLines.push(`<strong>Estudio:</strong> ${data.studyType}`);
         if (data.referringDoctor) studyLines.push(`<strong>Médico solicitante:</strong> ${data.referringDoctor}`);
         if (data.studyReason) studyLines.push(`<strong>Motivo:</strong> ${data.studyReason}`);
@@ -178,6 +183,7 @@ window.initPatientDataModalHandlers = function () {
                 height: cfg.patientHeight,
                 insurance: cfg.patientInsurance,
                 affiliateNum: cfg.patientAffiliateNum,
+                showStudyDate: cfg.showStudyDate,
                 studyDate: cfg.studyDate,
                 studyTime: cfg.studyTime,
                 referringDoctor: cfg.referringDoctor,

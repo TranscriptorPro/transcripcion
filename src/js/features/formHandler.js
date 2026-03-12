@@ -343,6 +343,7 @@ window.savePdfConfiguration = function () {
         reportNum: val('pdfReportNumber') || existing.reportNum || '',
         studyDate: val('pdfStudyDate') || existing.studyDate || '',
         studyTime: val('pdfStudyTime') || existing.studyTime || '',
+        showStudyDate: document.getElementById('reqShowStudyDate')?.checked ?? existing.showStudyDate ?? true,
         studyReason: val('pdfStudyReason') || existing.studyReason || '',
         referringDoctor: val('pdfReferringDoctor') || existing.referringDoctor || '',
         equipment: val('pdfEquipment') || existing.equipment || '',
@@ -434,6 +435,10 @@ window.loadPdfConfiguration = async function () {
     set('pdfReportNumber', config.reportNum);
     set('pdfStudyDate', config.studyDate);
     set('pdfStudyTime', config.studyTime);
+    {
+        const chkShowDate = document.getElementById('reqShowStudyDate');
+        if (chkShowDate) chkShowDate.checked = config.showStudyDate !== false;
+    }
     set('pdfStudyReason', config.studyReason);
     set('pdfReferringDoctor', config.referringDoctor);
     set('pdfEquipment', config.equipment);

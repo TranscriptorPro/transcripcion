@@ -59,6 +59,33 @@
         };
 
         const cfg = await getCfg();
+        const profData = (typeof appDB !== 'undefined' && appDB && typeof appDB.get === 'function')
+            ? ((await appDB.get('prof_data')) || {})
+            : (() => {
+                try { return JSON.parse(localStorage.getItem('prof_data') || '{}') || {}; }
+                catch (_) { return {}; }
+            })();
+        const activePro = cfg.activeProfessional || null;
+        const rawProfName = activePro?.nombre || profData.nombre || '';
+        const profDisplayObj = (typeof window.getProfessionalDisplay === 'function')
+            ? window.getProfessionalDisplay(rawProfName, activePro?.sexo || profData.sexo || '')
+            : { fullName: String(rawProfName || '').trim() };
+        const professionalName = String(profDisplayObj.fullName || rawProfName || '').trim();
+        const professionalMatricula = String(activePro?.matricula || profData.matricula || '').trim();
+        const professionalSpecialtyRaw = activePro?.especialidades
+            || (Array.isArray(profData.specialties)
+                ? profData.specialties.filter(s => s && s !== 'Todas').join(' / ')
+                : (profData.especialidad || ''));
+        const professionalSpecialty = String(professionalSpecialtyRaw || '').trim();
+        const wpProfiles = (typeof appDB !== 'undefined' && appDB && typeof appDB.get === 'function')
+            ? ((await appDB.get('workplace_profiles')) || [])
+            : (() => {
+                try { return JSON.parse(localStorage.getItem('workplace_profiles') || '[]') || []; }
+                catch (_) { return []; }
+            })();
+        const wpIdx = cfg.activeWorkplaceIndex;
+        const activeWp = (wpIdx !== undefined && wpIdx !== null) ? wpProfiles[Number(wpIdx)] : wpProfiles[0];
+        const workplaceName = String(activeWp?.name || '').trim();
         const extracted = (typeof extractPatientDataFromText === 'function') ? extractPatientDataFromText(sourceText) : {};
         const reqVal = (id) => document.getElementById(id)?.value?.trim() || '';
 
@@ -67,7 +94,7 @@
         const rawDate = cfg.studyDate || '';
         const studyDate = rawDate
             ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
-            : new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            : '';
 
         const effectiveStudyType = _computeEffectiveStudyType(
             cfg.studyType,
@@ -86,10 +113,16 @@
             patientAffiliateNum: extracted.affiliateNum || cfg.patientAffiliateNum || reqVal('reqPatientAffiliateNum') || reqVal('pdfPatientAffiliateNum') || '',
             studyType: effectiveStudyType || reqVal('reqStudyType') || '',
             studyDate,
+            showStudyDate: (document.getElementById('reqShowStudyDate')?.checked ?? cfg.showStudyDate ?? true) !== false,
             studyTime: cfg.studyTime || reqVal('reqStudyTime') || reqVal('pdfStudyTime') || '',
             studyReason: cfg.studyReason || reqVal('reqStudyReason') || reqVal('pdfStudyReason') || '',
             referringDoctor: cfg.referringDoctor || reqVal('reqReferringDoctor') || reqVal('pdfReferringDoctor') || '',
-            reportNum: cfg.reportNum || reqVal('pdfReportNumber') || ''
+            reportNum: cfg.reportNum || reqVal('pdfReportNumber') || '',
+            professionalName,
+            professionalMatricula,
+            professionalSpecialty,
+            workplaceName,
+            lineSpacing: parseFloat(cfg.lineSpacing) || 1
         };
     }
 
@@ -111,12 +144,14 @@
 
     async function createRTF(text, _fecha) {
         const ctx = await _loadExportContext(text);
-        const cleaned = ctx.text
+        const cleaned = String(ctx.text || '')
             .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
             .replace(/[\u{2600}-\u{27BF}]/gu, '')
             .replace(/[\u{FE00}-\u{FE0F}]/gu, '')
             .replace(/[\u{200B}-\u{200D}\u{FEFF}]/gu, '')
             .replace(/✏️?/g, '');
+        const lineSpacing = Math.max(1, Math.min(2, parseFloat(ctx.lineSpacing) || 1));
+        const rtfSl = Math.round(240 * lineSpacing);
 
         const addField = (arr, label, value) => {
             const v = String(value || '').trim();
@@ -125,7 +160,7 @@
         };
 
         const meta = [];
-        addField(meta, 'Fecha', `${ctx.studyDate}${ctx.studyTime ? ' ' + ctx.studyTime : ''}`);
+        if (ctx.showStudyDate) addField(meta, 'Fecha', `${ctx.studyDate}${ctx.studyTime ? ' ' + ctx.studyTime : ''}`);
         addField(meta, 'Estudio', ctx.studyType);
         addField(meta, 'Informe N', ctx.reportNum);
         addField(meta, 'Paciente', ctx.patientName);
@@ -136,11 +171,21 @@
         addField(meta, 'N Afiliado', ctx.patientAffiliateNum);
         addField(meta, 'Medico solicitante', ctx.referringDoctor);
         addField(meta, 'Motivo de consulta', ctx.studyReason);
+        addField(meta, 'Profesional', ctx.professionalName);
+        addField(meta, 'Matricula profesional', ctx.professionalMatricula);
+        addField(meta, 'Especialidad', ctx.professionalSpecialty);
+        addField(meta, 'Lugar de trabajo', ctx.workplaceName);
 
-        const lines = cleaned.split('\n');
-        const body = lines.map((line) => `${_rtfEscapeLine(line)}\\par`).join('\n');
+        const lines = cleaned.split(/\r?\n/);
+        const body = lines.map((line) => {
+            const t = String(line || '');
+            if (!t.trim()) return '\\par';
+            const isHeading = t.trim().length <= 80 && t.trim() === t.trim().toUpperCase() && /[A-ZÁÉÍÓÚÑ]/.test(t);
+            if (isHeading) return `\\par\\b ${_rtfEscapeLine(t.trim())}\\b0\\par`;
+            return `${_rtfEscapeLine(t)}\\par`;
+        }).join('\n');
 
-        return `{\\rtf1\\ansi\\ansicpg1252\\deff0{\\fonttbl{\\f0 Arial;}}\\paperw12240\\paperh15840\\margl1080\\margr1080\\margt1080\\margb1080\\f0\\fs22\\sl276\\slmult1\\qc\\b INFORME M\\'c9DICO\\b0\\par\\ql\\par${meta.join('\n')}\\par\\b CONTENIDO DEL INFORME\\b0\\par${body}}`;
+        return `{\\rtf1\\ansi\\ansicpg1252\\deff0{\\fonttbl{\\f0 Arial;}}\\paperw12240\\paperh15840\\margl1080\\margr1080\\margt1080\\margb1080\\f0\\fs22\\sa100\\sl${rtfSl}\\slmult1\\qc\\b INFORME M\\'c9DICO\\b0\\par\\ql\\par${meta.join('\n')}\\par\\b CONTENIDO DEL INFORME\\b0\\par\\par${body}}`;
     }
 
     async function createTXT(text) {
@@ -153,7 +198,7 @@
             lines.push(`${label}: ${v}`);
         };
 
-        pushField('Fecha', `${ctx.studyDate}${ctx.studyTime ? ' ' + ctx.studyTime : ''}`);
+        if (ctx.showStudyDate) pushField('Fecha', `${ctx.studyDate}${ctx.studyTime ? ' ' + ctx.studyTime : ''}`);
         pushField('Estudio', ctx.studyType);
         pushField('Informe N', ctx.reportNum);
         pushField('Paciente', ctx.patientName);
@@ -164,6 +209,10 @@
         pushField('N Afiliado', ctx.patientAffiliateNum);
         pushField('Medico solicitante', ctx.referringDoctor);
         pushField('Motivo de consulta', ctx.studyReason);
+        pushField('Profesional', ctx.professionalName);
+        pushField('Matricula profesional', ctx.professionalMatricula);
+        pushField('Especialidad', ctx.professionalSpecialty);
+        pushField('Lugar de trabajo', ctx.workplaceName);
 
         lines.push('');
         lines.push('CONTENIDO DEL INFORME');
@@ -244,7 +293,8 @@
             editorEl?.innerText || ''
         ));
         const rawDate = config.studyDate || '';
-        const studyDate = rawDate ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const showStudyDate = config.showStudyDate !== false;
+        const studyDate = rawDate ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
         const studyTime = esc(document.getElementById('reqStudyTime')?.value || document.getElementById('pdfStudyTime')?.value || config.studyTime || '');
         const studyReason = escSentence(config.studyReason || document.getElementById('reqStudyReason')?.value || '');
         const refDoctor = escName(config.referringDoctor || document.getElementById('reqReferringDoctor')?.value || '');
@@ -310,7 +360,9 @@
         let row1 = '';
         row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">ESTUDIO:</span><span class="pvs-val">${studyType || '—'}</span></div>`;
         row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">INFORME Nº:</span><span class="pvs-val">${reportNum || '—'}</span></div>`;
-        row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">FECHA:</span><span class="pvs-val">${studyDate}${studyTime ? ' ' + studyTime : ''}</span></div>`;
+        if (showStudyDate && (studyDate || studyTime)) {
+            row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">FECHA:</span><span class="pvs-val">${studyDate}${studyTime ? ' ' + studyTime : ''}</span></div>`;
+        }
         let row2 = '';
         if (refDoctor) row2 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">SOLICITANTE:</span><span class="pvs-val">${refDoctor}</span></div>`;
         if (studyReason) row2 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">MOTIVO:</span><span class="pvs-val">${studyReason}</span></div>`;
@@ -358,6 +410,7 @@
         const cfgFont = (config.font || 'helvetica').toLowerCase();
         const fontFamily = fontMap[cfgFont] || fontMap.helvetica;
         const fontSize = parseInt(config.fontSize, 10) || 10;
+        const lineSpacing = Math.max(1, Math.min(2, parseFloat(config.lineSpacing) || 1));
         const marginCSS = { narrow: '10mm', normal: '18mm', wide: '28mm' }[config.margins] || '18mm';
 
         const _hexToRgb = (hex) => {
@@ -377,7 +430,7 @@
 :root { --pa: ${accentColor}; }
 @page { size: A4; margin: ${marginCSS}; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: ${fontFamily}; font-size: ${fontSize}pt; line-height: 1.5; color: #111; background: #fff; max-width: 210mm; margin: 0 auto; padding: 0 ${marginCSS} ${marginCSS}; border-top: 5px solid var(--pa); }
+body { font-family: ${fontFamily}; font-size: ${fontSize}pt; line-height: ${lineSpacing}; color: #111; background: #fff; max-width: 210mm; margin: 0 auto; padding: 0 ${marginCSS} ${marginCSS}; border-top: 5px solid var(--pa); }
 .preview-workplace { background: var(--pa); color: white; margin: 0 -${marginCSS}; padding: 8px ${marginCSS} 7px; font-family: Helvetica, Arial, sans-serif; }
 .pvw-block { display: flex; align-items: center; justify-content: flex-start; gap: 14px; }
 .pvw-logo { max-height: 52px; max-width: 90px; object-fit: contain; flex-shrink: 0; border: none; border-radius: 0; background: transparent; }
@@ -414,9 +467,9 @@ body { font-family: ${fontFamily}; font-size: ${fontSize}pt; line-height: 1.5; c
 .report-h2 { text-transform: uppercase; letter-spacing: 0.07em; margin: 14px 0 6px; }
 .preview-content h3,.report-h3 { font-size: 10.5pt; font-weight: 600; font-style: italic; color: #333; margin: 12px 0 5px; }
 .report-h3 { color: #222; margin: 10px 0 5px; font-style: normal; }
-.preview-content p,.report-p { margin: 2px 0 6px; line-height: 1.5; text-align: justify; }
+.preview-content p,.report-p { margin: 2px 0 6px; line-height: ${lineSpacing}; text-align: justify; }
 .preview-content ul,.preview-content ol { padding-left: 1.5em; margin: 4px 0 8px; }
-.preview-content li { margin-bottom: 4px; line-height: 1.5; }
+.preview-content li { margin-bottom: 4px; line-height: ${lineSpacing}; }
 .preview-content hr { border: none; border-top: 1px solid #ddd; margin: 14px 0; }
 .preview-content table { width: 100%; border-collapse: collapse; font-size: 9.5pt; margin: 10px 0 16px; }
 .preview-content thead th { background: var(--pa); color: white; font-weight: 700; padding: 6px 10px; text-align: center; font-family: Helvetica, Arial, sans-serif; font-size: 8.5pt; }

@@ -3,15 +3,45 @@
 (function initEditorDownloadCoreUtils() {
     const editor = document.getElementById('editor');
 
+    async function _getPdfConfigSafe() {
+        try {
+            if (window._pdfConfigCache && typeof window._pdfConfigCache === 'object') {
+                return { ...window._pdfConfigCache };
+            }
+            if (typeof appDB !== 'undefined' && appDB && typeof appDB.get === 'function') {
+                const fromDb = await appDB.get('pdf_config');
+                if (fromDb && typeof fromDb === 'object') return { ...fromDb };
+            }
+            return JSON.parse(localStorage.getItem('pdf_config') || '{}') || {};
+        } catch (_) {
+            return {};
+        }
+    }
+
     async function _buildPdfBlobFromHtml(htmlDoc) {
         if (typeof window.jspdf === 'undefined' || !window.jspdf?.jsPDF) return null;
         if (!htmlDoc) return null;
 
+        const pdfConfig = await _getPdfConfigSafe();
+        const pageFormat = String(pdfConfig.pageSize || 'a4').toLowerCase();
+        const orientation = String(pdfConfig.orientation || 'portrait').toLowerCase();
+        const fmtSizes = {
+            a4: { w: 210, h: 297 },
+            letter: { w: 215.9, h: 279.4 },
+            legal: { w: 215.9, h: 355.6 }
+        };
+        const sz = fmtSizes[pageFormat] || fmtSizes.a4;
+        const pageWmm = orientation === 'landscape' ? sz.h : sz.w;
+        const pageHmm = orientation === 'landscape' ? sz.w : sz.h;
+        const pxPerMm = 96 / 25.4;
+        const viewportW = Math.round(pageWmm * pxPerMm);
+        const viewportH = Math.round(pageHmm * pxPerMm);
+
         const wrapper = document.createElement('div');
-        wrapper.style.cssText = 'position:fixed;left:-99999px;top:0;width:794px;background:#fff;z-index:-1;';
+        wrapper.style.cssText = `position:fixed;left:-99999px;top:0;width:${viewportW}px;background:#fff;z-index:-1;`;
 
         const sandbox = document.createElement('iframe');
-        sandbox.style.cssText = 'width:794px;height:1123px;border:0;background:#fff;';
+        sandbox.style.cssText = `width:${viewportW}px;height:${viewportH}px;border:0;background:#fff;`;
         wrapper.appendChild(sandbox);
         document.body.appendChild(wrapper);
 
@@ -24,19 +54,32 @@
             const sdoc = sandbox.contentDocument;
             if (!sdoc || !sdoc.body) return null;
 
-            // Esperar fuentes/imagenes para capturar un layout igual al preview.
-            await new Promise(r => setTimeout(r, 300));
+            // Esperar fuentes e imagenes para capturar un layout igual al preview.
+            try {
+                if (sdoc.fonts && typeof sdoc.fonts.ready?.then === 'function') {
+                    await sdoc.fonts.ready;
+                }
+            } catch (_) { /* ignore */ }
+            const images = Array.from(sdoc.images || []);
+            await Promise.all(images.map((img) => {
+                if (img.complete) return Promise.resolve();
+                return new Promise((resolve) => {
+                    img.addEventListener('load', resolve, { once: true });
+                    img.addEventListener('error', resolve, { once: true });
+                });
+            }));
+            await new Promise(r => setTimeout(r, 180));
 
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+            const doc = new jsPDF({ unit: 'mm', format: pageFormat, orientation });
 
             await doc.html(sdoc.body, {
                 x: 0,
                 y: 0,
                 margin: [0, 0, 0, 0],
-                autoPaging: 'text',
-                width: 210,
-                windowWidth: 794,
+                autoPaging: 'slice',
+                width: pageWmm,
+                windowWidth: viewportW,
                 html2canvas: {
                     scale: 2,
                     useCORS: true,
@@ -58,22 +101,60 @@
         const _clone = editor.cloneNode(true);
         _clone.querySelectorAll('.patient-data-header, .patient-placeholder-banner, .btn-append-inline, .original-text-banner, .no-print, .ai-note-panel, .no-data-edit-btn, .no-data-field, #aiNotePanel').forEach(el => el.remove());
         const rawText = _clone.innerText || '';
-        const text = rawText.replace(/\n{3,}/g, '\n\n').trim();
-        if (!text) return showToast('No hay texto para descargar', 'error');
+        const text = rawText.trimEnd();
+        if (!String(text).trim()) return showToast('No hay texto para descargar', 'error');
 
         if (typeof validateBeforeDownload === 'function' && !validateBeforeDownload(format)) return;
 
-        const pdfConfig = window._pdfConfigCache
-            || (typeof appDB !== 'undefined' ? await appDB.get('pdf_config') : null)
-            || JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        const pdfConfig = await _getPdfConfigSafe();
 
         const _vf = (id) => document.getElementById(id)?.value?.trim() || '';
-        const _syncField = (cfgKey, ...ids) => {
-            if (!pdfConfig[cfgKey]) {
-                const v = ids.reduce((acc, id) => acc || _vf(id), '');
-                if (v) { pdfConfig[cfgKey] = v; return true; }
+        const _fieldEl = (id) => document.getElementById(id);
+        const _syncText = (cfgKey, ...ids) => {
+            const hasAnyInput = ids.some(id => !!_fieldEl(id));
+            if (!hasAnyInput) return false;
+            const v = ids.reduce((acc, id) => acc || _vf(id), '');
+            const before = String(pdfConfig[cfgKey] || '');
+            if (v) {
+                if (before !== v) {
+                    pdfConfig[cfgKey] = v;
+                    return true;
+                }
+                return false;
+            }
+            if (before) {
+                delete pdfConfig[cfgKey];
+                return true;
             }
             return false;
+        };
+        const _syncSelect = (cfgKey, id, fallback) => {
+            const el = _fieldEl(id);
+            if (!el) return false;
+            const v = String(el.value || fallback || '').trim();
+            if (!v) return false;
+            if (String(pdfConfig[cfgKey] || '') !== v) {
+                pdfConfig[cfgKey] = v;
+                return true;
+            }
+            return false;
+        };
+        const _syncCheck = (cfgKey, id, fallback = true) => {
+            const el = _fieldEl(id);
+            if (!el) return false;
+            const v = !!el.checked;
+            const curr = (pdfConfig[cfgKey] === undefined || pdfConfig[cfgKey] === null)
+                ? !!fallback
+                : !!pdfConfig[cfgKey];
+            if (curr !== v) {
+                pdfConfig[cfgKey] = v;
+                return true;
+            }
+            return false;
+        };
+
+        const _syncField = (cfgKey, ...ids) => {
+            return _syncText(cfgKey, ...ids);
         };
 
         let _cfgDirty = false;
@@ -88,6 +169,23 @@
         _cfgDirty |= _syncField('referringDoctor', 'reqReferringDoctor', 'pdfReferringDoctor');
         _cfgDirty |= _syncField('studyReason', 'reqStudyReason', 'pdfStudyReason');
         _cfgDirty |= _syncField('studyType', 'reqStudyType', 'pdfStudyType');
+        _cfgDirty |= _syncSelect('pageSize', 'pdfPageSize', 'a4');
+        _cfgDirty |= _syncSelect('orientation', 'pdfOrientation', 'portrait');
+        _cfgDirty |= _syncSelect('margins', 'pdfMargins', 'normal');
+        _cfgDirty |= _syncSelect('font', 'pdfFont', 'helvetica');
+        _cfgDirty |= _syncSelect('fontSize', 'pdfFontSize', '10');
+        _cfgDirty |= _syncSelect('lineSpacing', 'pdfLineSpacing', '1');
+        _cfgDirty |= _syncCheck('showHeader', 'pdfShowHeader', true);
+        _cfgDirty |= _syncCheck('showFooter', 'pdfShowFooter', true);
+        _cfgDirty |= _syncCheck('showPageNum', 'pdfShowPageNum', true);
+        _cfgDirty |= _syncCheck('showDate', 'pdfShowDate', true);
+        _cfgDirty |= _syncCheck('showStudyDate', 'reqShowStudyDate', true);
+        _cfgDirty |= _syncCheck('showQR', 'pdfShowQR', true);
+        _cfgDirty |= _syncCheck('showProfLogo', 'pdfShowProfLogo', true);
+        _cfgDirty |= _syncCheck('showSignLine', 'pdfShowSignLine', true);
+        _cfgDirty |= _syncCheck('showSignName', 'pdfShowSignName', true);
+        _cfgDirty |= _syncCheck('showSignMatricula', 'pdfShowSignMatricula', true);
+        _cfgDirty |= _syncCheck('showSignImage', 'pdfShowSignImage', true);
 
         if (!pdfConfig.studyDate) {
             pdfConfig.studyDate = new Date().toISOString().split('T')[0];
@@ -156,13 +254,9 @@
                 }
             }
 
-            if (typeof downloadPDFWrapper !== 'undefined') {
-                const htmlContent = editor.innerHTML || text;
-                await downloadPDFWrapper(htmlContent, fileName, date, fileDate);
-                return;
+            if (typeof showToast === 'function') {
+                showToast('No se pudo generar PDF fiel desde la vista previa. Reintentá en unos segundos.', 'error');
             }
-
-            if (typeof showToast === 'function') showToast('No se pudo generar PDF', 'error');
             return;
         }
 
