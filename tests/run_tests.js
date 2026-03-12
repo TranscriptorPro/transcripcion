@@ -6984,6 +6984,13 @@ test('Gonio-Quality-2 — normaliza heading de Spaeth', () => {
         'Debe estandarizar el título de Spaeth');
 });
 
+test('Gonio-Quality-3 — normaliza abreviatura r.e. a R. E.', () => {
+    const md = 'Papila en r.e. de bordes netos.';
+    const out = _postProcessStructuredMarkdown(md);
+    assert(out.includes('R. E.'), 'Debe mostrar la abreviatura como R. E.');
+    assert(!out.includes('R.E.'), 'No debe quedar formato R.E. sin espacio');
+});
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // Bloque 115: Extracción paciente — 41 casos clínicos
 // ═══════════════════════════════════════════════════════════════════════════════
