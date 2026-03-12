@@ -332,6 +332,27 @@
         footerParts.push(`<span style="margin-left:auto;">Fecha: ${new Date().toLocaleDateString('es-ES')}</span>`);
         const footerSection = `<div class="preview-footer"><div class="pvf-wrap">${footerParts.join('')}</div></div>`;
 
+        let qrSection = '';
+        const showQR = config.showQR ?? false;
+        if (showQR && typeof generateQRCode === 'function') {
+            const qrParts = [
+                'TPRO-VERIFY',
+                `ID:${reportNum || 'TPRO-' + Date.now()}`,
+                `Fecha:${new Date().toLocaleDateString('es-ES')}`,
+                profName ? `Prof:${profName.replace(/<[^>]+>/g, '')}` : '',
+                matricula ? `Mat:${matricula.replace(/<[^>]+>/g, '')}` : '',
+                patientName ? `Pac:${patientName.replace(/<[^>]+>/g, '')}` : '',
+                patientDni ? `DNI:${patientDni.replace(/<[^>]+>/g, '')}` : '',
+                studyType ? `Estudio:${studyType.replace(/<[^>]+>/g, '')}` : '',
+                wpName ? `Inst:${wpName.replace(/<[^>]+>/g, '')}` : ''
+            ].filter(Boolean);
+            const qrData = qrParts.join('|');
+            const qrImgSrc = generateQRCode(qrData || 'Transcriptor Medico Pro');
+            if (qrImgSrc) {
+                qrSection = `<div class="preview-qr"><img src="${qrImgSrc}" alt="QR"><span class="pvqr-label">Codigo de verificacion</span></div>`;
+            }
+        }
+
         const fontMap = { helvetica: 'Helvetica, Arial, sans-serif', times: "'Times New Roman', Times, serif", courier: "'Courier New', Courier, monospace" };
         const cfgFont = (config.font || 'helvetica').toLowerCase();
         const fontFamily = fontMap[cfgFont] || fontMap.helvetica;
@@ -408,6 +429,9 @@ body { font-family: ${fontFamily}; font-size: ${fontSize}pt; line-height: 1.5; c
 .pvsig-name { font-size: 10pt; font-weight: 700; margin-top: 9px; text-align: center; }
 .pvsig-mat { font-size: 9pt; color: #555; margin-top: 2px; text-align: center; }
 .pvsig-spec { font-size: 8.5pt; color: #666; font-style: italic; margin-top: 1px; text-align: center; }
+.preview-qr { text-align: center; margin-top: 12px; }
+.preview-qr img { width: 64px; height: 64px; image-rendering: pixelated; }
+.pvqr-label { font-size: 6pt; color: #999; display: block; text-align: center; font-family: Helvetica, Arial, sans-serif; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
 .preview-footer { margin-top: 20px; border-top: 1.5px solid #ccc; padding-top: 8px; }
 .pvf-wrap { display: flex; flex-wrap: wrap; justify-content: space-between; font-size: 7.5pt; color: #888; font-family: Helvetica, Arial, sans-serif; gap: 4px; }
 @media print { body { border-top: none; padding: 0; margin: 0; max-width: none; } .preview-workplace { margin: 0; } h1,h2,h3,.report-h1,.report-h2,.report-h3 { break-after: avoid; page-break-after: avoid; } .preview-signature,.pvsig-block { break-inside: avoid; page-break-inside: avoid; } }
@@ -420,6 +444,7 @@ ${patientSection}
 ${studySection}
 <div class="preview-content">${bodyContent}</div>
 ${sigSection}
+${qrSection}
 ${footerSection}
 </body>
 </html>`;

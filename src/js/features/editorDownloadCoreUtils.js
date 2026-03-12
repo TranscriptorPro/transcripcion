@@ -3,6 +3,55 @@
 (function initEditorDownloadCoreUtils() {
     const editor = document.getElementById('editor');
 
+    async function _buildPdfBlobFromHtml(htmlDoc) {
+        if (typeof window.jspdf === 'undefined' || !window.jspdf?.jsPDF) return null;
+        if (!htmlDoc) return null;
+
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'position:fixed;left:-99999px;top:0;width:794px;background:#fff;z-index:-1;';
+
+        const sandbox = document.createElement('iframe');
+        sandbox.style.cssText = 'width:794px;height:1123px;border:0;background:#fff;';
+        wrapper.appendChild(sandbox);
+        document.body.appendChild(wrapper);
+
+        try {
+            await new Promise((resolve) => {
+                sandbox.onload = () => resolve(true);
+                sandbox.srcdoc = htmlDoc;
+            });
+
+            const sdoc = sandbox.contentDocument;
+            if (!sdoc || !sdoc.body) return null;
+
+            // Esperar fuentes/imagenes para capturar un layout igual al preview.
+            await new Promise(r => setTimeout(r, 300));
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
+            await doc.html(sdoc.body, {
+                x: 0,
+                y: 0,
+                margin: [0, 0, 0, 0],
+                autoPaging: 'text',
+                width: 210,
+                windowWidth: 794,
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff'
+                }
+            });
+
+            return doc.output('blob');
+        } catch (_) {
+            return null;
+        } finally {
+            if (document.body.contains(wrapper)) document.body.removeChild(wrapper);
+        }
+    }
+
     async function downloadFile(format) {
         if (!editor) return;
 
@@ -87,38 +136,23 @@
 
         if (format === 'pdf') {
             const htmlDoc = (typeof createHTML === 'function') ? await createHTML() : null;
-            if (!htmlDoc) {
-                if (typeof downloadPDFWrapper !== 'undefined') {
-                    const htmlContent = editor.innerHTML || text;
-                    await downloadPDFWrapper(htmlContent, fileName, date, fileDate);
+            if (htmlDoc) {
+                const pdfBlob = await _buildPdfBlobFromHtml(htmlDoc);
+                if (pdfBlob) {
+                    const saveHandler = (typeof window.saveToDisk === 'function') ? window.saveToDisk : saveToDisk;
+                    await saveHandler(pdfBlob, `${fileName}_${fileDate}.pdf`);
+                    if (typeof showToast === 'function') showToast('PDF descargado', 'success');
                     return;
                 }
-                if (typeof showToast === 'function') showToast('No se pudo generar PDF', 'error');
+            }
+
+            if (typeof downloadPDFWrapper !== 'undefined') {
+                const htmlContent = editor.innerHTML || text;
+                await downloadPDFWrapper(htmlContent, fileName, date, fileDate);
                 return;
             }
 
-            const printWin = window.open('', '_blank');
-            if (!printWin) {
-                if (typeof showToast === 'function') {
-                    showToast('El navegador bloqueo la ventana de impresion. Permiti popups para exportar PDF exacto.', 'error');
-                }
-                return;
-            }
-
-            printWin.document.open();
-            printWin.document.write(htmlDoc);
-            printWin.document.close();
-
-            setTimeout(() => {
-                try {
-                    printWin.focus();
-                    printWin.print();
-                } catch (_) {}
-            }, 300);
-
-            if (typeof showToast === 'function') {
-                showToast('Vista de impresion exacta abierta. Elegi "Guardar como PDF".', 'info');
-            }
+            if (typeof showToast === 'function') showToast('No se pudo generar PDF', 'error');
             return;
         }
 
