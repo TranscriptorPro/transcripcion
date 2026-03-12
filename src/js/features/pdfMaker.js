@@ -32,10 +32,15 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const mainFont     = config.font || 'helvetica';
         const mainFontSize = parseInt(config.fontSize) || 10;
         const mainLineH    = mainFontSize * 0.5;
-        const cfgShowHeader  = config.showHeader  !== false;
+        const clientType = String(CLIENT_CONFIG?.type || '').toUpperCase();
+        const planCode = String(CLIENT_CONFIG?.planCode || '').toUpperCase();
+        const isClinicProfile = clientType === 'CLINIC' || planCode === 'CLINIC';
+        const cfgHideReportHeader = !isClinicProfile && config.hideReportHeader === true;
+        const cfgShowHeader  = !cfgHideReportHeader && config.showHeader !== false;
         const cfgShowFooter  = config.showFooter  !== false;
         const cfgShowPageNum = config.showPageNum !== false;
         const cfgShowDate    = config.showDate    === true;
+        const cfgShowReportNumber = config.showReportNumber !== false;
         const wpProfiles = (await appDB.get('workplace_profiles')) || [];
         const wpIdx = config.activeWorkplaceIndex;
         const activeWp = (wpIdx !== undefined && wpIdx !== null) ? wpProfiles[Number(wpIdx)] : wpProfiles[0];
@@ -330,7 +335,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             const api = window.PdfMakerSectionUtils;
             if (api && typeof api.drawStudyInfoSection === 'function') {
                 const ensureSpaceAt = (cyIn, needed) => { cy = cyIn; ensureSpace(needed); return cy; };
-                cy = api.drawStudyInfoSection({ studyType, reportNum, pDate, studyTime, refDoctor, studyReason, CW, ML, cyStart: cy, doc, accent, ensureSpace: ensureSpaceAt, setBlack });
+                cy = api.drawStudyInfoSection({ studyType, reportNum, showReportNumber: cfgShowReportNumber, pDate, studyTime, refDoctor, studyReason, CW, ML, cyStart: cy, doc, accent, ensureSpace: ensureSpaceAt, setBlack });
             }
         }
         function drawPatientBlock() {
@@ -596,7 +601,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             try {
                 const qrParts = [
                     'TPRO-VERIFY',
-                    `ID:${reportNum || 'TPRO-' + Date.now()}`,
+                    `ID:${(cfgShowReportNumber && reportNum) ? reportNum : 'TPRO-' + Date.now()}`,
                     `Fecha:${pDate}`,
                     profName ? `Prof:${profName}` : '',
                     matricula ? `Mat:${matricula}` : '',

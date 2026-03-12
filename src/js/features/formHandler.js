@@ -363,10 +363,12 @@ window.savePdfConfiguration = function () {
         fontSize: val('pdfFontSize') || '11',
         lineSpacing: val('pdfLineSpacing') || '1.15',
         showHeader: chk('pdfShowHeader', true),
+        hideReportHeader: chk('pdfHideReportHeader', false),
         showFooter: chk('pdfShowFooter', true),
         showPageNum: chk('pdfShowPageNum', true),
         showDate: chk('pdfShowDate', true),
         showQR: chk('pdfShowQR', true),
+        showReportNumber: chk('pdfShowReportNumber', true),
         showInstLogo: chk('pdfShowInstLogo', true),
         showProfLogo: chk('pdfShowProfLogo', true),
         showSignLine: chk('pdfShowSignLine', true),
@@ -459,10 +461,12 @@ window.loadPdfConfiguration = async function () {
     set('pdfFontSize', config.fontSize || '11');
     set('pdfLineSpacing', config.lineSpacing || '1.15');
     setChk('pdfShowHeader', config.showHeader, true);
+    setChk('pdfHideReportHeader', config.hideReportHeader, false);
     setChk('pdfShowFooter', config.showFooter, true);
     setChk('pdfShowPageNum', config.showPageNum, true);
     setChk('pdfShowDate', config.showDate, true);
     setChk('pdfShowQR', config.showQR, true);
+    setChk('pdfShowReportNumber', config.showReportNumber, true);
     setChk('pdfShowInstLogo', config.showInstLogo, true);
     setChk('pdfShowProfLogo', config.showProfLogo, true);
     setChk('pdfShowSignLine', config.showSignLine, true);

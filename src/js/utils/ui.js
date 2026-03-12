@@ -323,10 +323,12 @@ window.initModals = function () {
 
             // Checkboxes ON por defecto (incluye logos y firma)
             setChk('pdfShowHeader', true);
+            setChk('pdfHideReportHeader', false);
             setChk('pdfShowFooter', true);
             setChk('pdfShowPageNum', true);
             setChk('pdfShowDate', true);
             setChk('pdfShowQR', true);
+            setChk('pdfShowReportNumber', true);
             setChk('pdfShowInstLogo', true);
             setChk('pdfShowProfLogo', true);
             setChk('pdfShowSignLine', true);
@@ -369,8 +371,9 @@ window.initModals = function () {
                     font: val('pdfFont') || 'helvetica', fontSize: val('pdfFontSize') || '11',
                     lineSpacing: val('pdfLineSpacing') || '1.15',
                     showHeader: chk('pdfShowHeader', true), showFooter: chk('pdfShowFooter', true),
+                    hideReportHeader: chk('pdfHideReportHeader', false),
                     showPageNum: chk('pdfShowPageNum', true), showDate: chk('pdfShowDate', true),
-                    showQR: chk('pdfShowQR', true), showInstLogo: chk('pdfShowInstLogo', true), showProfLogo: chk('pdfShowProfLogo', true), showSignLine: chk('pdfShowSignLine', true),
+                    showQR: chk('pdfShowQR', true), showReportNumber: chk('pdfShowReportNumber', true), showInstLogo: chk('pdfShowInstLogo', true), showProfLogo: chk('pdfShowProfLogo', true), showSignLine: chk('pdfShowSignLine', true),
                     showSignName: chk('pdfShowSignName', true), showSignMatricula: chk('pdfShowSignMatricula', true),
                     showSignImage: chk('pdfShowSignImage', true),
                     showPhone: chk('pdfShowPhone', true), showEmail: chk('pdfShowEmail', true), showSocial: chk('pdfShowSocial', true),

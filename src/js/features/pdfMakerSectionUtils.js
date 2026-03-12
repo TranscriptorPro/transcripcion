@@ -1,10 +1,10 @@
 window.PdfMakerSectionUtils = window.PdfMakerSectionUtils || {};
 
 window.PdfMakerSectionUtils.drawStudyInfoSection = function(ctx) {
-    const { studyType, reportNum, pDate, studyTime, refDoctor, studyReason, CW, ML, cyStart, doc, accent, ensureSpace, setBlack } = ctx;
+    const { studyType, reportNum, showReportNumber = true, pDate, studyTime, refDoctor, studyReason, CW, ML, cyStart, doc, accent, ensureSpace, setBlack } = ctx;
     const row1 = [];
     row1.push({ label: 'ESTUDIO:', value: studyType || '—' });
-    row1.push({ label: 'INFORME Nº:', value: reportNum || '—' });
+    if (showReportNumber) row1.push({ label: 'INFORME Nº:', value: reportNum || '—' });
     row1.push({ label: 'FECHA:', value: `${pDate}${studyTime ? ' ' + studyTime : ''}` });
 
     const row2 = [];
@@ -38,7 +38,7 @@ window.PdfMakerSectionUtils.drawStudyInfoSection = function(ctx) {
     doc.setLineWidth(0.25);
     doc.roundedRect(ML, cy, CW, boxH, 1.2, 1.2, 'FD');
 
-    const col3W = innerW / 3;
+    const col3W = row1.length ? (innerW / row1.length) : innerW;
     let ry = cy + padY + 3.5;
     for (let i = 0; i < row1.length; i++) {
         const cx = ML + padX + i * col3W;

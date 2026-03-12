@@ -33,6 +33,12 @@
         return (m && m[1]) ? m[1].trim() : '';
     }
 
+    function _isClinicProfile() {
+        const type = String(window.CLIENT_CONFIG?.type || '').toUpperCase();
+        const planCode = String(window.CLIENT_CONFIG?.planCode || '').toUpperCase();
+        return type === 'CLINIC' || planCode === 'CLINIC';
+    }
+
     function _computeEffectiveStudyType(baseStudyType, fallbackTemplateName, editorHtml, plainText) {
         const base = String(baseStudyType || fallbackTemplateName || '').trim();
         const headingStudy = _extractStudyTypeFromHtmlHeading(editorHtml) || _extractStudyTypeFromPlainText(plainText);
@@ -118,6 +124,8 @@
             studyReason: cfg.studyReason || reqVal('reqStudyReason') || reqVal('pdfStudyReason') || '',
             referringDoctor: cfg.referringDoctor || reqVal('reqReferringDoctor') || reqVal('pdfReferringDoctor') || '',
             reportNum: cfg.reportNum || reqVal('pdfReportNumber') || '',
+            showReportNumber: (cfg.showReportNumber ?? true) === true,
+            hideReportHeader: !_isClinicProfile() && (cfg.hideReportHeader === true),
             professionalName,
             professionalMatricula,
             professionalSpecialty,
@@ -162,7 +170,7 @@
         const meta = [];
         if (ctx.showStudyDate) addField(meta, 'Fecha', `${ctx.studyDate}${ctx.studyTime ? ' ' + ctx.studyTime : ''}`);
         addField(meta, 'Estudio', ctx.studyType);
-        addField(meta, 'Informe N', ctx.reportNum);
+        if (ctx.showReportNumber) addField(meta, 'Informe N', ctx.reportNum);
         addField(meta, 'Paciente', ctx.patientName);
         addField(meta, 'DNI', ctx.patientDni);
         addField(meta, 'Edad', ctx.patientAge ? `${ctx.patientAge} años` : '');
@@ -171,10 +179,12 @@
         addField(meta, 'N Afiliado', ctx.patientAffiliateNum);
         addField(meta, 'Medico solicitante', ctx.referringDoctor);
         addField(meta, 'Motivo de consulta', ctx.studyReason);
-        addField(meta, 'Profesional', ctx.professionalName);
-        addField(meta, 'Matricula profesional', ctx.professionalMatricula);
-        addField(meta, 'Especialidad', ctx.professionalSpecialty);
-        addField(meta, 'Lugar de trabajo', ctx.workplaceName);
+        if (!ctx.hideReportHeader) {
+            addField(meta, 'Profesional', ctx.professionalName);
+            addField(meta, 'Matricula profesional', ctx.professionalMatricula);
+            addField(meta, 'Especialidad', ctx.professionalSpecialty);
+            addField(meta, 'Lugar de trabajo', ctx.workplaceName);
+        }
 
         const lines = cleaned.split(/\r?\n/);
         const body = lines.map((line) => {
@@ -200,7 +210,7 @@
 
         if (ctx.showStudyDate) pushField('Fecha', `${ctx.studyDate}${ctx.studyTime ? ' ' + ctx.studyTime : ''}`);
         pushField('Estudio', ctx.studyType);
-        pushField('Informe N', ctx.reportNum);
+        if (ctx.showReportNumber) pushField('Informe N', ctx.reportNum);
         pushField('Paciente', ctx.patientName);
         pushField('DNI', ctx.patientDni);
         pushField('Edad', ctx.patientAge ? `${ctx.patientAge} años` : '');
@@ -209,10 +219,12 @@
         pushField('N Afiliado', ctx.patientAffiliateNum);
         pushField('Medico solicitante', ctx.referringDoctor);
         pushField('Motivo de consulta', ctx.studyReason);
-        pushField('Profesional', ctx.professionalName);
-        pushField('Matricula profesional', ctx.professionalMatricula);
-        pushField('Especialidad', ctx.professionalSpecialty);
-        pushField('Lugar de trabajo', ctx.workplaceName);
+        if (!ctx.hideReportHeader) {
+            pushField('Profesional', ctx.professionalName);
+            pushField('Matricula profesional', ctx.professionalMatricula);
+            pushField('Especialidad', ctx.professionalSpecialty);
+            pushField('Lugar de trabajo', ctx.workplaceName);
+        }
 
         lines.push('');
         lines.push('CONTENIDO DEL INFORME');
@@ -300,6 +312,8 @@
         const studyReason = escSentence(config.studyReason || document.getElementById('reqStudyReason')?.value || '');
         const refDoctor = escName(config.referringDoctor || document.getElementById('reqReferringDoctor')?.value || '');
         const reportNum = esc(document.getElementById('pdfReportNumber')?.value || config.reportNum || '');
+        const showReportNumber = (config.showReportNumber ?? true) === true;
+        const hideReportHeader = !_isClinicProfile() && (config.hideReportHeader === true);
         const footerText = esc(config.footerText || 'Este informe es válido únicamente con la firma del profesional a cargo.');
         const showSignLine = config.showSignLine ?? true;
         const showSignName = config.showSignName ?? true;
@@ -316,7 +330,7 @@
 
         let wpSection = '';
         const hasWpData = wpName || wkAddr || wkPhone || wpEmail;
-        if (hasWpData) {
+        if (!hideReportHeader && hasWpData) {
             const wpDetails = [wkAddr, wkPhone ? 'Tel: ' + wkPhone : '', wpEmail].filter(Boolean);
             wpSection = `<div class="preview-workplace"><div class="pvw-block">`
                 + ((showInstLogo && hasInstLogo) ? `<img class="pvw-logo" src="${instLogoSrc}" style="max-height:${instLogoSize}px;">` : '')
@@ -328,7 +342,7 @@
 
         let headerSection = '';
         const isAdminNoProf = (!activePro || !activePro.nombre) && (!profData.nombre || profData.nombre === 'Administrador' || profData.nombre === 'Admin');
-        if (!isAdminNoProf && profName) {
+        if (!hideReportHeader && !isAdminNoProf && profName) {
             const espArr = (espRaw || '').replace(/^ALL$/i, 'Medicina General').split(/[,\/]/).map(s => s.replace(/^General$/i, 'Medicina General').trim()).filter(Boolean);
             const espBadgesHtml = espArr.map(s => `<span class="pvh-badge">${esc(s)}</span>`).join('');
             const cItems = [];
@@ -360,7 +374,9 @@
 
         let row1 = '';
         row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">ESTUDIO:</span><span class="pvs-val">${studyType || '—'}</span></div>`;
-        row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">INFORME Nº:</span><span class="pvs-val">${reportNum || '—'}</span></div>`;
+        if (showReportNumber) {
+            row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">INFORME Nº:</span><span class="pvs-val">${reportNum || '—'}</span></div>`;
+        }
         if (showStudyDate && (studyDate || studyTime)) {
             row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">FECHA:</span><span class="pvs-val">${studyDate}${studyTime ? ' ' + studyTime : ''}</span></div>`;
         }
@@ -391,7 +407,7 @@
         if (showQR && typeof generateQRCode === 'function') {
             const qrParts = [
                 'TPRO-VERIFY',
-                `ID:${reportNum || 'TPRO-' + Date.now()}`,
+                `ID:${(showReportNumber && reportNum) ? reportNum : 'TPRO-' + Date.now()}`,
                 `Fecha:${new Date().toLocaleDateString('es-ES')}`,
                 profName ? `Prof:${profName.replace(/<[^>]+>/g, '')}` : '',
                 matricula ? `Mat:${matricula.replace(/<[^>]+>/g, '')}` : '',

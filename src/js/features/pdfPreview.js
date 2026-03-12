@@ -314,6 +314,12 @@ function _extractStudyTypeFromEditorHeading(editorEl) {
     return '';
 }
 
+function _isClinicProfile() {
+    const type = String(window.CLIENT_CONFIG?.type || '').toUpperCase();
+    const planCode = String(window.CLIENT_CONFIG?.planCode || '').toUpperCase();
+    return type === 'CLINIC' || planCode === 'CLINIC';
+}
+
 window.openPdfConfigModal = async function () {
     _initPdfAssetReplacementHandlers();
     if (typeof loadPdfConfiguration === 'function') loadPdfConfiguration();
@@ -484,6 +490,15 @@ window.openPdfConfigModal = async function () {
     if (showInstLogoChk) showInstLogoChk.checked = pdfCfgRestore.showInstLogo ?? true;
     const showProfLogoChk = document.getElementById('pdfShowProfLogo');
     if (showProfLogoChk) showProfLogoChk.checked = pdfCfgRestore.showProfLogo ?? true;
+    const showReportNumChk = document.getElementById('pdfShowReportNumber');
+    if (showReportNumChk) showReportNumChk.checked = pdfCfgRestore.showReportNumber !== false;
+    const hideHeaderChk = document.getElementById('pdfHideReportHeader');
+    if (hideHeaderChk) {
+        const isClinic = _isClinicProfile();
+        hideHeaderChk.checked = !isClinic && (pdfCfgRestore.hideReportHeader === true);
+        hideHeaderChk.disabled = isClinic;
+        hideHeaderChk.title = isClinic ? 'Esta opción solo aplica a usuarios persona' : '';
+    }
 
     // No se oculta globalmente aquí porque el panel entero ya está oculto
 
@@ -617,6 +632,8 @@ window.openPrintPreview = async function () {
     const studyReason  = escSentence(config.studyReason || document.getElementById('reqStudyReason')?.value || '');
     const refDoctor    = escName(config.referringDoctor || document.getElementById('reqReferringDoctor')?.value || '');
     const reportNum    = esc(document.getElementById('pdfReportNumber')?.value || config.reportNum || '');
+    const showReportNumber = (config.showReportNumber ?? true) === true;
+    const hideReportHeader = !_isClinicProfile() && (config.hideReportHeader === true);
     const footerText   = esc(config.footerText || 'Este informe es válido únicamente con la firma del profesional a cargo.');
     const wkAddr       = esc(config.workplaceAddress || activeWp?.address || '');
     const wkPhone      = esc(config.workplacePhone   || activeWp?.phone || '');
@@ -662,6 +679,10 @@ window.openPrintPreview = async function () {
 
     const wpHeaderEl = document.getElementById('previewWorkplace');
     if (wpHeaderEl) {
+        if (hideReportHeader) {
+            wpHeaderEl.innerHTML = '';
+            wpHeaderEl.style.display = 'none';
+        } else {
         const hasWpData = wpName || wkAddr || wkPhone || wpEmail;
         if (hasWpData) {
             wpHeaderEl.style.display = '';
@@ -678,10 +699,15 @@ window.openPrintPreview = async function () {
             wpHeaderEl.innerHTML = '';
             wpHeaderEl.style.display = 'none';
         }
+        }
     }
 
     const headerEl = document.getElementById('previewHeader');
     if (headerEl) {
+        if (hideReportHeader) {
+            headerEl.innerHTML = '';
+            headerEl.style.display = 'none';
+        } else {
         // Ocultar encabezado si es ADMIN sin profesional activo configurado
         const isAdminWithoutProf = (!activePro || !activePro.nombre) &&
             (!profData.nombre || profData.nombre === 'Administrador' || profData.nombre === 'Admin');
@@ -717,6 +743,7 @@ window.openPrintPreview = async function () {
                     ${pvContactHtml}
                 </div>`;
         }
+            }
     }
 
     const patientEl = document.getElementById('previewPatient');
@@ -745,7 +772,9 @@ window.openPrintPreview = async function () {
         // Fila 2: Solicitante | Motivo
         let row1 = '';
         row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">ESTUDIO:</span><span class="pvs-val">${studyType || '—'}</span></div>`;
-        row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">INFORME Nº:</span><span class="pvs-val">${reportNum || '—'}</span></div>`;
+        if (showReportNumber) {
+            row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">INFORME Nº:</span><span class="pvs-val">${reportNum || '—'}</span></div>`;
+        }
         if (showStudyDate && (studyDate || studyTime)) {
             row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">FECHA:</span><span class="pvs-val">${studyDate}${studyTime ? ' ' + studyTime : ''}</span></div>`;
         }
@@ -817,7 +846,7 @@ window.openPrintPreview = async function () {
             // Construir texto de verificación con datos del informe
             const qrParts = [
                 'TPRO-VERIFY',
-                `ID:${reportNum || 'TPRO-' + Date.now()}`,
+                `ID:${(showReportNumber && reportNum) ? reportNum : 'TPRO-' + Date.now()}`,
                 `Fecha:${new Date().toLocaleDateString('es-ES')}`,
                 profName ? `Prof:${profName}` : '',
                 matricula ? `Mat:${matricula}` : '',
