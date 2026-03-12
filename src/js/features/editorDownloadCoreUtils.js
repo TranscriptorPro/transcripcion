@@ -2,6 +2,7 @@
 
 (function initEditorDownloadCoreUtils() {
     const editor = document.getElementById('editor');
+    let _pdfDownloadInProgress = false;
 
     async function _ensureJsPdfReady(timeoutMs = 2600) {
         const start = Date.now();
@@ -91,7 +92,7 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ unit: 'mm', format: pageFormat, orientation });
 
-            await doc.html(sdoc.body, {
+            const renderPromise = doc.html(sdoc.body, {
                 x: 0,
                 y: 0,
                 margin: [0, 0, 0, 0],
@@ -105,6 +106,12 @@
                 }
             });
 
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('PDF_RENDER_TIMEOUT')), 12000);
+            });
+
+            await Promise.race([renderPromise, timeoutPromise]);
+
             return doc.output('blob');
         } catch (_) {
             return null;
@@ -115,6 +122,11 @@
 
     async function downloadFile(format) {
         if (!editor) return;
+
+        if (format === 'pdf' && _pdfDownloadInProgress) {
+            if (typeof showToast === 'function') showToast('⏳ Generando PDF, por favor espera...', 'info');
+            return;
+        }
 
         const _clone = editor.cloneNode(true);
         _clone.querySelectorAll('.patient-data-header, .patient-placeholder-banner, .btn-append-inline, .original-text-banner, .no-print, .ai-note-panel, .no-data-edit-btn, .inline-review-btn, #aiNotePanel').forEach(el => el.remove());
@@ -251,6 +263,16 @@
             });
         }
 
+        if (format === 'pdf') {
+            _pdfDownloadInProgress = true;
+            try {
+                await _doDownload(format, text);
+            } finally {
+                _pdfDownloadInProgress = false;
+            }
+            return;
+        }
+
         await _doDownload(format, text);
     }
 
@@ -274,6 +296,19 @@
                     await saveHandler(pdfBlob, `${fileName}_${fileDate}.pdf`);
                     if (typeof showToast === 'function') showToast('PDF descargado', 'success');
                     return;
+                }
+            }
+
+            // Fallback de continuidad: evita que la app quede bloqueada si el render fiel falla.
+            if (typeof window.downloadPDFWrapper === 'function') {
+                try {
+                    await window.downloadPDFWrapper(editor.innerHTML, fileName, date, fileDate);
+                    if (typeof showToast === 'function') {
+                        showToast('PDF descargado (modo compatibilidad)', 'warning');
+                    }
+                    return;
+                } catch (err) {
+                    console.warn('Fallback downloadPDFWrapper fallo:', err);
                 }
             }
 
