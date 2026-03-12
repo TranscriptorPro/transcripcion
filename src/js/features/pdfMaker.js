@@ -32,8 +32,8 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const mainFont     = config.font || 'helvetica';
         const mainFontSize = parseInt(config.fontSize) || 10;
         const mainLineH    = mainFontSize * 0.5;
-        const clientType = String(CLIENT_CONFIG?.type || '').toUpperCase();
-        const planCode = String(CLIENT_CONFIG?.planCode || '').toUpperCase();
+        const clientType = String(window.CLIENT_CONFIG?.type || '').toUpperCase();
+        const planCode = String(window.CLIENT_CONFIG?.planCode || '').toUpperCase();
         const isClinicProfile = clientType === 'CLINIC' || planCode === 'CLINIC';
         const cfgHideReportHeader = !isClinicProfile && config.hideReportHeader === true;
         const cfgShowHeader  = !cfgHideReportHeader && config.showHeader !== false;
