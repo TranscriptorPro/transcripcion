@@ -127,6 +127,22 @@
         }
     }
 
+    function _setInlineReviewEnabled(enabled) {
+        const value = enabled !== false;
+        window.inlineParagraphReviewEnabled = value;
+        try {
+            const prefs = JSON.parse(localStorage.getItem('settings_prefs') || '{}');
+            prefs.inlineParagraphReview = value;
+            localStorage.setItem('settings_prefs', JSON.stringify(prefs));
+            if (typeof appDB !== 'undefined') appDB.set('settings_prefs', prefs);
+        } catch (_) {}
+    }
+
+    function _syncQuickToggleUI() {
+        const quick = document.getElementById('inlineReviewQuickToggle');
+        if (quick) quick.checked = _isInlineReviewEnabled();
+    }
+
     const isPro = () => !!(window.GROQ_API_KEY) &&
         (typeof CLIENT_CONFIG === 'undefined' ||
          CLIENT_CONFIG.type === 'ADMIN' ||
@@ -326,7 +342,15 @@
             return;
         }
 
+        // Nunca mostrar botón de revisión en líneas de campo vacío.
+        editor.querySelectorAll('p.report-p, li').forEach((node) => {
+            if (node.querySelector('.no-data-field')) {
+                node.querySelectorAll('.inline-review-btn').forEach(b => b.remove());
+            }
+        });
+
         editor.querySelectorAll('h2.report-h2, h3.report-h3, p.report-p, li').forEach((node) => {
+            if ((node.matches('p.report-p, li')) && node.querySelector('.no-data-field')) return;
             const already = Array.from(node.children || []).some(ch => ch.classList && ch.classList.contains('inline-review-btn'));
             if (already) return;
             const btn = document.createElement('button');
@@ -656,6 +680,7 @@
 
     if (editor) {
         _decorateInlineReviewButtons();
+        _syncQuickToggleUI();
         editor.addEventListener('click', (e) => {
             const reviewBtn = e.target.closest('.inline-review-btn');
             if (reviewBtn) {
@@ -679,9 +704,22 @@
         });
     }
 
+    document.getElementById('inlineReviewQuickToggle')?.addEventListener('change', (e) => {
+        const enabled = !!e.target.checked;
+        _setInlineReviewEnabled(enabled);
+        _decorateInlineReviewButtons();
+        const cfgToggle = document.getElementById('settingsInlineReviewToggle');
+        if (cfgToggle) cfgToggle.checked = enabled;
+        if (typeof showToast === 'function') {
+            showToast(enabled ? 'Revisión IA activada' : 'Revisión IA desactivada', 'info');
+        }
+    });
+
     window._openEditFieldModal = openEditFieldModal;
     window._closeEditFieldModal = closeEditFieldModal;
     window._refreshInlineReviewButtons = function () {
         _decorateInlineReviewButtons();
+        _syncQuickToggleUI();
     };
+    window._syncInlineReviewQuickToggle = _syncQuickToggleUI;
 })();

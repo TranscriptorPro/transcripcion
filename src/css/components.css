@@ -1161,7 +1161,7 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            background: #0f766e;
+            background: var(--primary);
             border: none;
             border-radius: 3px;
             color: #fff;
@@ -1179,7 +1179,7 @@
             opacity: 1;
             pointer-events: auto;
         }
-        .no-data-edit-btn:hover { background: #115e59; }
+        .no-data-edit-btn:hover { background: var(--primary-dark); }
 
         .report-p .inline-review-btn,
         li .inline-review-btn,
@@ -1193,7 +1193,7 @@
             height: 18px;
             border: none;
             border-radius: 999px;
-            background: #0f766e;
+            background: var(--primary);
             color: #fff;
             font-size: 0.62rem;
             line-height: 1;
@@ -1205,7 +1205,7 @@
         }
 
         .inline-review-btn:hover {
-            background: #115e59;
+            background: var(--primary-dark);
         }
 
         @media print {

@@ -17,6 +17,9 @@
         if (typeof window._refreshInlineReviewButtons === 'function') {
             window._refreshInlineReviewButtons(inlineReviewEnabled);
         }
+        if (typeof window._syncInlineReviewQuickToggle === 'function') {
+            window._syncInlineReviewQuickToggle();
+        }
 
         if (prefs.autosave) {
             startAutosave();
@@ -97,6 +100,9 @@
         if (autosave) autosave.checked = prefs.autosave;
         if (undoHistory) undoHistory.checked = prefs.undoHistory;
         if (inlineReview) inlineReview.checked = prefs.inlineParagraphReview !== false;
+        if (typeof window._syncInlineReviewQuickToggle === 'function') {
+            window._syncInlineReviewQuickToggle();
+        }
     }
 
     function startAutosave() {
