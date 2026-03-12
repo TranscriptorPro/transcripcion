@@ -475,7 +475,12 @@ function _sanitizeGrammarArtifacts(text) {
         // Eliminar coletillas no objetivas en conclusión sobre "faltan detalles"
         .replace(/,?\s*aunque\s+faltan\s+detalles[^.]*\.?/gi, '')
         .replace(/,?\s*si\s+bien\s+faltan\s+detalles[^.]*\.?/gi, '')
+        .replace(/,?\s*excepto\s+la\s+falta\s+de\s+detalles[^.]*\.?/gi, '')
+        .replace(/,?\s*excepto\s+por\s+la\s+falta\s+de\s+detalles[^.]*\.?/gi, '')
+        .replace(/,?\s*con\s+excepci[oó]n\s+de\s+la\s+falta\s+de\s+detalles[^.]*\.?/gi, '')
+        .replace(/,?\s*salvo\s+la\s+falta\s+de\s+detalles[^.]*\.?/gi, '')
         .replace(/,?\s*(?:faltan|falta)\s+(?:detalles|datos|informaci[oó]n)[^.]*\.?/gi, '')
+        .replace(/,?\s*(?:falt[ao]n?|ausencia)\s+de\s+(?:detalles|datos|informaci[oó]n)[^.]*\.?/gi, '')
         .replace(/,?\s*(?:no\s+se\s+(?:detall[oó]|especific[oó]|inform[oó]))[^.]*\.?/gi, '')
         // Eliminar textos de placeholder genéricos
         .replace(/\bInformaci[oó]n\s+sobre\s+el\s+sistema\s+Spaeth\.?/gi, '')
