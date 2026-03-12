@@ -300,35 +300,38 @@
     });
 
     function clearFieldValue() {
-        if (!_targetSpan) return;
-        _targetSpan.remove();
-        if (editor) editor.dispatchEvent(new Event('input', { bubbles: true }));
+        // "Dejar en blanco" — cierra el modal sin tocar el badge; el campo sigue editable.
         closeEditFieldModal();
     }
     document.getElementById('btnBlankEditField')?.addEventListener('click', clearFieldValue);
 
-    function deleteFieldSection() {
-        if (!_targetSpan) return;
-        if (!editor) return;
+    function _performFieldDeletion(span) {
+        if (!span || !editor) return;
 
-        const span = _targetSpan;
-        const prev = span.previousSibling;
-        const next = span.nextSibling;
+        // Si el span ya no pertenece al DOM vivo del editor, no hay nada que borrar.
+        if (!editor.contains(span)) {
+            closeEditFieldModal();
+            return;
+        }
+
+        const para = span.closest('p, li');
         span.remove();
 
-        // Limpiar puntuación/espacios huérfanos alrededor del campo eliminado.
-        if (next && next.nodeType === 3) {
-            next.textContent = String(next.textContent || '').replace(/^\s*[,;:.]+\s*/, ' ');
-        }
-        if (prev && prev.nodeType === 3) {
-            prev.textContent = String(prev.textContent || '').replace(/\s*[,;:]+\s*$/, ' ');
-        }
-
-        const container = (prev && prev.parentElement) || (next && next.parentElement) || null;
-        const para = container?.closest('p, li') || null;
-        if (para) {
-            const plain = String(para.textContent || '').replace(/\u00A0/g, ' ').trim();
-            if (!plain) para.remove();
+        // Limpiar residuo de etiqueta en el contenedor padre.
+        if (para && editor.contains(para)) {
+            // Si quedan otros badges, no tocar la línea.
+            if (!para.querySelector('.no-data-field')) {
+                const remaining = String(para.textContent || '')
+                    .replace(/[\u00A0]+/g, ' ').trim();
+                // Quitar patrones "Etiqueta:" y ver si queda contenido útil.
+                const noLabels = remaining
+                    .replace(/[\w\u00C0-\u024F]+\s*:/g, '')
+                    .replace(/[,;.\s\u2014\u2013-]+/g, '')
+                    .trim();
+                if (!noLabels) {
+                    para.remove();
+                }
+            }
         }
 
         editor.dispatchEvent(new Event('input', { bubbles: true }));
@@ -337,11 +340,14 @@
     }
 
     document.getElementById('btnDeleteFieldSection')?.addEventListener('click', () => {
-        const sectionName = document.getElementById('editFieldModalTitle')?.textContent?.replace(/^✏️\s*/, '') || 'esta seccion';
+        // Capturar la referencia ANTES de abrir el diálogo de confirmación asíncrono.
+        const spanRef = _targetSpan;
+        if (!spanRef) return;
+        const sectionName = document.getElementById('editFieldModalTitle')?.textContent?.replace(/^✏️\s*/, '') || 'este campo';
         window.showCustomConfirm(
             '🗑️ Eliminar campo',
             `¿Eliminar "${sectionName}" del informe? Esta accion no se puede deshacer.`,
-            () => deleteFieldSection()
+            () => _performFieldDeletion(spanRef)
         );
     });
 

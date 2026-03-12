@@ -106,7 +106,7 @@ IMPORTANTE: No inventes datos. Solo estructura lo dictado.`
 # INFORME DE ECOGRAFÍA MAMARIA
 
 ## MAMA DERECHA
-Composición tisular (patrón ecográfico), presencia de nódulos (ubicación por cuadrante/reloj, tamaño, ecogenicidad, bordes, vascularización al Doppler, clasificación BIRADS), quistes, ectasia ductal, o s/p.
+Composición tisular (patrón ecográfico), presencia de nódulos (ubicación por cuadrante/reloj, tamaño, ecogenicidad, bordes, vascularización al Doppler, clasificación BI-RADS), quistes, ectasia ductal, o s/p.
 
 ## MAMA IZQUIERDA
 Composición tisular, presencia de nódulos (mismo formato), quistes, ectasia ductal, o s/p.
@@ -115,9 +115,9 @@ Composición tisular, presencia de nódulos (mismo formato), quistes, ectasia du
 Ganglios axilares bilaterales: número, tamaño, morfología, hilio graso preservado o no, o s/p.
 
 ## CONCLUSIÓN
-Mencionar SOLO hallazgos patológicos. Incluir clasificación BIRADS si fue dictada.
+Mencionar SOLO hallazgos patológicos. Incluir clasificación BI-RADS si fue dictada.
 
-REGLA DE CONCLUSIÓN: Incluir categoría BIRADS final si el médico la dictó. PROHIBIDO inventar valores.`
+REGLA DE CONCLUSIÓN: Incluir categoría BI-RADS final si el médico la dictó. PROHIBIDO inventar valores.`
     },
 
     // ── ECOGRAFÍA OBSTÉTRICA ──────────────────────────────────────
@@ -153,7 +153,7 @@ Arteria umbilical, arteria cerebral media, ductus venoso, arterias uterinas si f
 ## CONCLUSIÓN
 Resumen de hallazgos relevantes. Incluir edad gestacional, peso estimado y hallazgos patológicos si los hay.
 
-IMPORTANTE: No inventes datos. Solo estructura lo dictado. Las secciones no evaluadas deben omitirse o indicar s/p.`
+IMPORTANTE: No inventes datos. Solo estructura lo dictado. Las secciones no evaluadas deben omitirse o marcarse con [No especificado].`
     },
 
     // ── ECO DOPPLER VASCULAR ─────────────────────────────────────
@@ -205,7 +205,7 @@ Interpretación clínica, diagnóstico de situación actual.
 ## PLAN
 Indicaciones, cambios de tratamiento, estudios solicitados, interconsultas, observaciones.
 
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si una sección no fue dictada, omitirla o escribir s/p.`
+IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si una sección no fue dictada, omitirla o marcar con [No especificado].`
     },
 
     // ── EPICRISIS / RESUMEN DE INTERNACIÓN ───────────────────────
@@ -244,7 +244,7 @@ Medicación indicada al egreso con dosis y frecuencia si fueron dictadas.
 ## INDICACIONES Y SEGUIMIENTO
 Cuidados en domicilio, restricciones, signos de alarma, próximos turnos o controles indicados.
 
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Las secciones sin información dictada deben omitirse o mostrar s/p.`
+IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Las secciones sin información dictada deben omitirse o marcarse con [No especificado].`
     },
 
     // ── GENERAL ─────────────────────────────────────────────────

@@ -149,7 +149,7 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepción (ordenadas por prioridad):
 >>> REGLAS CRÍTICAS (NUNCA violar) >>>
 1. PRESERVA TODO EL CONTENIDO: cada hallazgo, medición, valor y dato de la transcripción DEBE aparecer en el informe. Nunca descartes información clínica, aunque no encaje perfectamente en la plantilla.
 2. NO añadas información que no esté en la transcripción. NO inventes valores, porcentajes, diagnósticos ni datos que el médico no haya dictado.
-3. DATOS DEL PACIENTE: NO incluyas identificación del paciente en el cuerpo del informe (nombre, sexo, edad, DNI, obra social o número de afiliado). Esos datos se gestionan por separado.
+3. DATOS DEL PACIENTE: NO incluyas datos identificatorios personales (nombre, apellido, DNI, obra social, número de afiliado). Edad, sexo, peso y talla SÍ pueden incluirse cuando la plantilla los requiera, ya que son datos clínicos relevantes para la interpretación.
 4. Devuelve ÚNICAMENTE el contenido del informe en markdown, sin texto introductorio ("Aquí está...", "A continuación...") ni final ("Espero que...", "Nota:"). NO añadas notas, comentarios ni advertencias propias.
 
 >>> FORMATO >>>
@@ -158,10 +158,10 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepción (ordenadas por prioridad):
 7. NÚMEROS Y UNIDADES: siempre con dígitos, nunca con letras ("75%" no "setenta y cinco por ciento"; "12 mm" no "doce milímetros"). NUNCA conviertas entre unidades: si dice "10 mm", escribe "10 mm", NO "1 cm".
 
 >>> MARCADOR DE CAMPOS VACÍOS >>>
-8. Usa SIEMPRE y ÚNICAMENTE el marcador [No especificado] cuando una estructura NO fue evaluada o NO tiene datos. NUNCA escribas "No se evaluó", "No fue evaluado", "Sin datos", "s/p" ni ninguna variante libre. Este marcador genera un campo editable interactivo.
+8. CAMPO NO EVALUADO: cuando una estructura NO fue evaluada ni mencionada, usa ÚNICAMENTE el marcador [No especificado]. NUNCA uses variantes como "No se evaluó", "No fue evaluado/a", "Sin datos disponibles". EXCEPCIÓN: "s/p" (sin particularidades) es VÁLIDO cuando la estructura SÍ fue evaluada y el resultado es normal. No confundir: s/p = evaluado + normal; [No especificado] = no evaluado (genera campo editable interactivo).
 
 >>> ESTUDIOS MULTI-ESTRUCTURA >>>
-9. En estudios multi-órgano/multi-segmento (ecografía, colonoscopía, Doppler, laringoscopía, etc.): una sección ## por CADA estructura evaluada. Si una estructura fue evaluada normal → describir en prosa. Si NO fue evaluada → solo [No especificado]. Si la transcripción contiene datos que no encajan en las secciones propuestas → crear subsección adicional.
+9. En estudios multi-órgano/multi-segmento (ecografía, colonoscopía, Doppler, laringoscopía, etc.): una sección ## por CADA estructura evaluada. Si una estructura fue evaluada y es normal → describir brevemente o indicar s/p. Si NO fue evaluada → marcar con [No especificado]. Si la transcripción contiene datos que no encajan en las secciones propuestas → crear subsección adicional.
 
 >>> CONCLUSIÓN >>>
 10. CONCLUSIÓN (regla universal): (a) incluir TODOS los hallazgos patológicos o positivos, ninguno puede omitirse; (b) NO incluir estructuras normales; (c) si todo es normal: "Estudio dentro de parámetros normales."; (d) NUNCA dejar vacía ni como [No especificado]; (e) NO inventar datos; (f) NO indicar tratamientos si el médico no los mencionó.

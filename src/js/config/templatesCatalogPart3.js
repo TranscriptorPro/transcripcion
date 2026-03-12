@@ -75,7 +75,7 @@ Hallazgos (lesiones, estenosis %, dominancia) o s/p. Incluir ramas si fueron eva
 Mencionar SOLO los vasos con lesiones significativas, tipo de enfermedad (uni/bi/trivascular) y recomendación terapéutica. No repetir vasos sin lesiones.
 
 REGLA DE CONCLUSIÓN: Estructura la conclusión en un párrafo corto siguiendo este orden: (1) tipo de enfermedad coronaria (ej: "Enfermedad coronaria univascular/bivascular/trivascular"), (2) TODOS los vasos que tengan cualquier lesión mencionada, cada uno UNA SOLA VEZ con su localización y porcentaje de estenosis — sin importar si la lesión es significativa o no, si fue dictada debe aparecer. NO omitas ningún vaso con lesión. NO repitas el mismo dato dos veces. PROHIBIDO: inventar valores o datos que no estén en la transcripción. PROHIBIDO: indicar tratamientos concretos (stent, CABG, medicación) si el médico no los mencionó explícitamente.
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si un vaso no fue evaluado ni mencionado, omití su sección o escribí s/p.`
+IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si un vaso no fue evaluado ni mencionado, omitir su sección o marcar con [No especificado].`
     },
     ecg: {
         name: "ECG",
@@ -96,28 +96,6 @@ Onda P, complejo QRS, segmento ST, onda T, onda U (si aplica).
 
 ## CONCLUSIÓN
 Diagnóstico electrocardiográfico.
-
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
-    },
-    eco_stress: {
-        name: "Eco-Stress",
-        category: "Cardiología",
-        keywords: ["eco-stress", "ecocardiograma de estrés", "dobutamina", "ejercicio", "isquemia", "motilidad"],
-        prompt: `Actúa como cardiólogo ecocardiografista. Estructura este informe de eco-stress:
-
-# INFORME DE ECOCARDIOGRAMA DE ESTRÉS
-
-## PROTOCOLO
-Tipo de estrés (ejercicio/dobutamina), protocolo utilizado, dosis máxima alcanzada.
-
-## HALLAZGOS EN REPOSO
-Función sistólica (FEVI), motilidad segmentaria, otras alteraciones basales.
-
-## HALLAZGOS EN ESFUERZO
-FC máxima alcanzada, % FCmax, motilidad segmentaria en estrés, aparición de nuevas alteraciones.
-
-## CONCLUSIÓN
-Resultado (positivo/negativo/no concluyente) para isquemia miocárdica inducible.
 
 IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
     },
@@ -218,7 +196,7 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
 REGLAS OBLIGATORIAS:
 - Crea una sección ## separada para CADA estructura evaluada.
 - Si una estructura es normal, descríbela en prosa breve.
-- Usa s/p solo si una estructura NO fue mencionada en la transcripción.
+- Si una estructura NO fue mencionada en la transcripción, marcar con [No especificado].
 - CONCLUSIÓN: solo hallazgos positivos (patológicos). NUNCA vacía ni [No especificado]. Si todo es normal: "Estudio dentro de parámetros normales."
 
 # INFORME DE VIDEONASOFIBROLARINGOSCOPÍA
