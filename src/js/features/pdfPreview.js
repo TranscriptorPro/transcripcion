@@ -314,6 +314,46 @@ function _extractStudyTypeFromEditorHeading(editorEl) {
     return '';
 }
 
+function _ensurePdfFormatToggles() {
+    const mkLabel = (id, text, checked) => {
+        const label = document.createElement('label');
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.id = id;
+        if (checked) input.checked = true;
+        label.appendChild(input);
+        label.appendChild(document.createTextNode(' ' + text));
+        return label;
+    };
+
+    const showHeaderEl = document.getElementById('pdfShowHeader');
+    const showQREl = document.getElementById('pdfShowQR');
+
+    if (showHeaderEl && !document.getElementById('pdfHideReportHeader')) {
+        const host = showHeaderEl.closest('label')?.parentElement;
+        const anchor = showHeaderEl.closest('label');
+        if (host && anchor) {
+            const newLabel = mkLabel(
+                'pdfHideReportHeader',
+                'Excluir encabezado de lugar de trabajo (en todas las páginas, solo usuarios persona)',
+                false
+            );
+            if (anchor.nextSibling) host.insertBefore(newLabel, anchor.nextSibling);
+            else host.appendChild(newLabel);
+        }
+    }
+
+    if (showQREl && !document.getElementById('pdfShowReportNumber')) {
+        const host = showQREl.closest('label')?.parentElement;
+        const anchor = showQREl.closest('label');
+        if (host && anchor) {
+            const newLabel = mkLabel('pdfShowReportNumber', 'Mostrar número de informe', true);
+            if (anchor.nextSibling) host.insertBefore(newLabel, anchor.nextSibling);
+            else host.appendChild(newLabel);
+        }
+    }
+}
+
 function _isClinicProfile() {
     const type = String(window.CLIENT_CONFIG?.type || '').toUpperCase();
     const planCode = String(window.CLIENT_CONFIG?.planCode || '').toUpperCase();
@@ -321,6 +361,7 @@ function _isClinicProfile() {
 }
 
 window.openPdfConfigModal = async function () {
+    _ensurePdfFormatToggles();
     _initPdfAssetReplacementHandlers();
     if (typeof loadPdfConfiguration === 'function') loadPdfConfiguration();
     const dataUtils = window.PdfDataAccessUtils || {};
