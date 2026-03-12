@@ -6963,14 +6963,17 @@ test('Gonio-AO-2 — sin señal bilateral no replica OD hacia OI', () => {
 test('Gonio-Quality-1 — corrige frases incompletas frecuentes', () => {
     assertEqual(typeof _normalizeGonioscopyNarrativeQuality, 'function', 'Debe existir normalizador de calidad para gonioscopía');
     const md = `## OJO DERECHO (OD)
-El ángulo es abierto con grado Shaffer y condición, la configuración del iris es. No se realizaron gonioscopía dinámica/indentación.`;
+El ángulo es abierto con un con grado Shaffer y condición abierto, la configuración del iris es.. Gonioscopía dinámica/indentación:.`;
     const out = _normalizeGonioscopyNarrativeQuality(md);
-    assert(out.includes('grado Shaffer [No especificado] y condición [No especificado]'),
-        'Debe completar grado/condición faltantes con [No especificado]');
-    assert(out.includes('la configuración del iris es [No especificado].'),
+    assert(!out.includes('con un con'), 'No debe duplicar preposición (con un con)');
+    assert(out.includes('grado Shaffer [No especificado] y condición abierto'),
+        'Debe completar grado Shaffer faltante manteniendo condición reportada');
+    assert(out.includes('La configuración del iris es [No especificado].'),
         'Debe completar configuración del iris faltante con [No especificado]');
     assert(out.includes('Gonioscopía dinámica/indentación: [No especificado].'),
         'Debe normalizar dinámica/indentación no reportada');
+    assert(!out.includes('..'), 'No debe dejar dobles puntos');
+    assert(!out.includes(':.') && !out.includes(' :.'), 'No debe dejar artefactos de ":."');
 });
 
 test('Gonio-Quality-2 — normaliza heading de Spaeth', () => {

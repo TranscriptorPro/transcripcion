@@ -396,15 +396,25 @@ function _normalizeGonioscopyNarrativeQuality(markdown) {
     if (!out) return out;
 
     const fixes = [
-        [/(\bcon\s+)?grado\s+Shaffer\s+y\s+condici[oó]n\b/gi, 'con grado Shaffer [No especificado] y condición [No especificado]'],
-        [/la\s+configuraci[oó]n\s+del\s+iris\s+es\.?/gi, 'la configuración del iris es [No especificado].'],
+        [/\bcon\s+un\s+con\b/gi, 'con'],
+        [/\bcon\s+con\b/gi, 'con'],
+        [/grado\s+Shaffer\s+y\s+condici[oó]n\s+(abierto|estrecho|cerrado)\b/gi, 'grado Shaffer [No especificado] y condición $1'],
+        [/grado\s+Shaffer\s+y\s+condici[oó]n(?=\s*[,.;:]|\s*$)/gi, 'grado Shaffer [No especificado] y condición [No especificado]'],
+        [/la\s+configuraci[oó]n\s+del\s+iris\s+es\s*(?:[.,;:]+)?/gi, 'La configuración del iris es [No especificado]. '],
         [/No\s+se\s+realiz(?:o|ó|aron)\s+gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\.?/gi, 'Gonioscopía dinámica/indentación: [No especificado].'],
+        [/Gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n:\s*(?:[.,;:]+)?/gi, 'Gonioscopía dinámica/indentación: [No especificado].'],
         [/(##\s*SISTEMA\s+SPAETH)\s*(\n|$)/gi, '## SISTEMA SPAETH (SI ESTÁ REPORTADO)$2']
     ];
 
     fixes.forEach(([pattern, replacement]) => {
         out = out.replace(pattern, replacement);
     });
+
+    out = out
+        .replace(/\.\s*\./g, '. ')
+        .replace(/:\s*\./g, ': [No especificado].')
+        .replace(/\s{2,}/g, ' ')
+        .replace(/([.!?]\s+)([a-záéíóúñ])/g, (_, p1, p2) => p1 + p2.toUpperCase());
 
     return out;
 }

@@ -311,56 +311,29 @@
         if (!_targetSpan) return;
         if (!editor) return;
 
-        let heading = _targetSpan.closest('h2, h3, .report-h2, .report-h3');
-        if (!heading) {
-            let node = _targetSpan.closest('p, li, div') || _targetSpan.parentElement;
-            while (node && node !== editor) {
-                let prev = node.previousElementSibling;
-                while (prev) {
-                    const tag = prev.tagName?.toLowerCase();
-                    if (tag === 'h2' || tag === 'h3' || prev.classList?.contains('report-h2') || prev.classList?.contains('report-h3')) {
-                        heading = prev;
-                        break;
-                    }
-                    prev = prev.previousElementSibling;
-                }
-                if (heading) break;
-                node = node.parentElement;
-            }
+        const span = _targetSpan;
+        const prev = span.previousSibling;
+        const next = span.nextSibling;
+        span.remove();
+
+        // Limpiar puntuación/espacios huérfanos alrededor del campo eliminado.
+        if (next && next.nodeType === 3) {
+            next.textContent = String(next.textContent || '').replace(/^\s*[,;:.]+\s*/, ' ');
+        }
+        if (prev && prev.nodeType === 3) {
+            prev.textContent = String(prev.textContent || '').replace(/\s*[,;:]+\s*$/, ' ');
         }
 
-        if (!heading) {
-            const para = _targetSpan.closest('p, li') || _targetSpan.parentElement;
-            if (para && para !== editor) para.remove();
-            closeEditFieldModal();
-            return;
+        const container = (prev && prev.parentElement) || (next && next.parentElement) || null;
+        const para = container?.closest('p, li') || null;
+        if (para) {
+            const plain = String(para.textContent || '').replace(/\u00A0/g, ' ').trim();
+            if (!plain) para.remove();
         }
 
-        const headingLevel = heading.tagName?.toLowerCase() === 'h2' || heading.classList?.contains('report-h2') ? 2 : 3;
-        const toRemove = [heading];
-        let sibling = heading.nextElementSibling;
-        while (sibling) {
-            const sibTag = sibling.tagName?.toLowerCase();
-            const sibIsH2 = sibTag === 'h2' || sibling.classList?.contains('report-h2');
-            const sibIsH3 = sibTag === 'h3' || sibling.classList?.contains('report-h3');
-            const sibLevel = sibIsH2 ? 2 : sibIsH3 ? 3 : 99;
-            if (sibLevel <= headingLevel) break;
-            toRemove.push(sibling);
-            sibling = sibling.nextElementSibling;
-        }
-
-        toRemove.forEach(el => {
-            let nextNode = el.nextSibling;
-            while (nextNode && ((nextNode.nodeType === 3 && nextNode.textContent.trim() === '') || nextNode.nodeName === 'BR')) {
-                const toKill = nextNode;
-                nextNode = nextNode.nextSibling;
-                toKill.remove();
-            }
-            el.remove();
-        });
         editor.dispatchEvent(new Event('input', { bubbles: true }));
         closeEditFieldModal();
-        if (typeof showToast === 'function') showToast('🗑️ Seccion eliminada del informe', 'info');
+        if (typeof showToast === 'function') showToast('🗑️ Campo eliminado del informe', 'info');
     }
 
     document.getElementById('btnDeleteFieldSection')?.addEventListener('click', () => {
