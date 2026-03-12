@@ -1739,6 +1739,34 @@ function doPost(e) {
     _invalidateAdminReadCaches();
   }
 
+  if (action === 'create_pdf_replica_link') {
+    try {
+      const htmlContent = String(payload.htmlContent || '');
+      const requestedName = String(payload.fileName || 'informe').trim();
+      if (!htmlContent) return createResponse({ error: 'Falta htmlContent' });
+      if (htmlContent.length > 1800000) return createResponse({ error: 'HTML demasiado grande' });
+
+      const safeName = requestedName
+        .replace(/[\\/:*?"<>|]+/g, '_')
+        .replace(/\s+/g, '_')
+        .slice(0, 120) || ('informe_' + Date.now());
+
+      const folder = _getDataFolder();
+      const file = folder.createFile(safeName, htmlContent, MimeType.HTML);
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+      const fileId = file.getId();
+      return createResponse({
+        success: true,
+        fileId: fileId,
+        viewUrl: 'https://drive.google.com/file/d/' + fileId + '/view?usp=sharing',
+        downloadUrl: 'https://drive.google.com/uc?export=download&id=' + fileId
+      });
+    } catch (err) {
+      return createResponse({ error: 'Error creando réplica: ' + err.message });
+    }
+  }
+
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
   _ensureUsuariosHeaders(sheet);
   const data = sheet.getDataRange().getValues();

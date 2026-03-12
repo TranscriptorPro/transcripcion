@@ -4,6 +4,84 @@
     const editor = document.getElementById('editor');
     let _pdfDownloadInProgress = false;
 
+    function _setPdfPreloaderState(active) {
+        const btnMain = document.getElementById('downloadBtnMain');
+        const btnMore = document.getElementById('downloadBtn');
+        const btnPreview = document.getElementById('btnDownloadFromPreview');
+        const btnPreviewMore = document.getElementById('btnDownloadPreviewMore');
+
+        [btnMain, btnMore, btnPreview, btnPreviewMore].forEach((btn) => {
+            if (!btn) return;
+            if (active) {
+                if (!btn.dataset.prevLabel) btn.dataset.prevLabel = btn.textContent || '';
+                btn.disabled = true;
+                if (btn === btnMain || btn === btnPreview) btn.textContent = '⏳ Generando...';
+            } else {
+                btn.disabled = false;
+                if ((btn === btnMain || btn === btnPreview) && btn.dataset.prevLabel) {
+                    btn.textContent = btn.dataset.prevLabel;
+                }
+            }
+        });
+    }
+
+    async function _requestBackendReplicaLink(htmlDoc, fileName, fileDate) {
+        const backendUrl = (typeof window.getResolvedBackendUrl === 'function')
+            ? window.getResolvedBackendUrl()
+            : String(window.CLIENT_CONFIG?.backendUrl || '').trim();
+        if (!backendUrl || !/^https?:\/\//i.test(backendUrl)) return null;
+
+        const payload = {
+            action: 'create_pdf_replica_link',
+            htmlContent: htmlDoc,
+            fileName: `${fileName}_${fileDate}.html`
+        };
+
+        const doFetch = (typeof fetchWithTimeout === 'function')
+            ? fetchWithTimeout
+            : (url, opts) => fetch(url, opts);
+
+        try {
+            const res = await doFetch(backendUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }, 15000);
+            if (!res || !res.ok) return null;
+            const data = await res.json().catch(() => ({}));
+            if (!data || data.error) return null;
+            const viewUrl = String(data.viewUrl || data.url || '').trim();
+            const downloadUrl = String(data.downloadUrl || viewUrl).trim();
+            if (!viewUrl) return null;
+            return { viewUrl, downloadUrl, source: 'backend' };
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function _createLocalReplicaLink(htmlDoc) {
+        const blob = new Blob([htmlDoc], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        setTimeout(() => {
+            try { URL.revokeObjectURL(url); } catch (_) {}
+        }, 30 * 60 * 1000);
+        return { viewUrl: url, downloadUrl: url, source: 'local' };
+    }
+
+    function _notifyReplicaReady(linkInfo) {
+        if (typeof window.showToastWithAction === 'function') {
+            window.showToastWithAction(
+                '✅ Réplica lista. Abrí el enlace para ver/guardar.',
+                'success',
+                'Abrir enlace',
+                () => window.open(linkInfo.viewUrl, '_blank', 'noopener,noreferrer'),
+                12000
+            );
+            return;
+        }
+        if (typeof showToast === 'function') showToast('✅ Réplica lista. Abrí el enlace en una nueva pestaña.', 'success', 7000);
+    }
+
     async function _ensureJsPdfReady(timeoutMs = 2600) {
         const start = Date.now();
         while (Date.now() - start < timeoutMs) {
@@ -288,34 +366,25 @@
         const fileDate = new Date().toISOString().split('T')[0];
 
         if (format === 'pdf') {
-            const htmlDoc = (typeof createHTML === 'function') ? await createHTML() : null;
-            if (htmlDoc) {
-                const pdfBlob = await _buildPdfBlobFromHtml(htmlDoc);
-                if (pdfBlob) {
-                    const saveHandler = (typeof window.saveToDisk === 'function') ? window.saveToDisk : saveToDisk;
-                    await saveHandler(pdfBlob, `${fileName}_${fileDate}.pdf`);
-                    if (typeof showToast === 'function') showToast('PDF descargado', 'success');
+            _setPdfPreloaderState(true);
+            try {
+                if (typeof showToast === 'function') {
+                    showToast('⏳ Generando réplica exacta. En breve tendrás un enlace de descarga...', 'info', 4500);
+                }
+                const htmlDoc = (typeof createHTML === 'function') ? await createHTML() : null;
+                if (!htmlDoc) {
+                    if (typeof showToast === 'function') showToast('No se pudo preparar la réplica del informe', 'error');
                     return;
                 }
-            }
 
-            // Fallback de continuidad: evita que la app quede bloqueada si el render fiel falla.
-            if (typeof window.downloadPDFWrapper === 'function') {
-                try {
-                    await window.downloadPDFWrapper(editor.innerHTML, fileName, date, fileDate);
-                    if (typeof showToast === 'function') {
-                        showToast('PDF descargado (modo compatibilidad)', 'warning');
-                    }
-                    return;
-                } catch (err) {
-                    console.warn('Fallback downloadPDFWrapper fallo:', err);
-                }
+                // Prioridad: backend (link persistente). Fallback: link local (sin bloquear UI).
+                const backendLink = await _requestBackendReplicaLink(htmlDoc, fileName, fileDate);
+                const linkInfo = backendLink || _createLocalReplicaLink(htmlDoc);
+                _notifyReplicaReady(linkInfo);
+                return;
+            } finally {
+                _setPdfPreloaderState(false);
             }
-
-            if (typeof showToast === 'function') {
-                showToast('No se pudo generar el PDF fiel a la vista previa. Reintentá.', 'error');
-            }
-            return;
         }
 
         let blob;
