@@ -45,6 +45,33 @@ async function _pdfPreviewSafeGet(key, fallback) {
     }
 }
 
+function _stripAccentsForCompare(text) {
+    return String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function _isGenericStudyType(text) {
+    const n = _stripAccentsForCompare(text).toLowerCase().trim();
+    return n === ''
+        || n === 'informe medico general'
+        || n === 'informe medico'
+        || n === 'informe general'
+        || n === 'informe generico'
+        || n === 'generico'
+        || n === 'general';
+}
+
+function _extractStudyTypeFromEditorHeading(editorEl) {
+    if (!editorEl) return '';
+    const probe = document.createElement('div');
+    probe.innerHTML = editorEl.innerHTML || '';
+    const heading = probe.querySelector('h1, h2, h3');
+    if (!heading) return '';
+    const raw = String(heading.textContent || '').trim();
+    const m = raw.match(/^INFORME\s+DE\s+(.+)$/i);
+    if (m && m[1]) return m[1].trim();
+    return '';
+}
+
 window.openPdfConfigModal = async function () {
     if (typeof loadPdfConfiguration === 'function') loadPdfConfiguration();
     const dataUtils = window.PdfDataAccessUtils || {};
@@ -332,7 +359,12 @@ window.openPrintPreview = async function () {
     // Datos del estudio (fallback: plantilla detectada → nombre de plantilla seleccionada)
     const tplKey = window.selectedTemplate || config.selectedTemplate || '';
     const tplName = (tplKey && window.MEDICAL_TEMPLATES?.[tplKey]?.name) || '';
-    const studyType    = escSentence(config.studyType || tplName || '');
+    const headingStudyType = _extractStudyTypeFromEditorHeading(editorEl);
+    const baseStudyType = config.studyType || tplName || '';
+    const effectiveStudyType = (_isGenericStudyType(baseStudyType) && headingStudyType)
+        ? headingStudyType
+        : baseStudyType;
+    const studyType    = escSentence(effectiveStudyType);
     const rawDate      = config.studyDate || '';
     const studyDate    = rawDate
         ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'})
@@ -482,6 +514,12 @@ window.openPrintPreview = async function () {
         contentEl.querySelectorAll('.patient-data-header, .patient-placeholder-banner, .btn-append-inline, .original-text-banner, .no-print, .ai-note-panel, #aiNotePanel').forEach(el => {
             el.remove();
         });
+        // Evitar doble título: si el contenido arranca con "INFORME DE ...",
+        // ese heading se reemplaza por el encabezado principal de la vista previa.
+        const firstEl = contentEl.firstElementChild;
+        if (firstEl && /^H[1-3]$/i.test(firstEl.tagName) && /^\s*INFORME\s+DE\b/i.test(firstEl.textContent || '')) {
+            firstEl.remove();
+        }
         // Eliminar campos vacíos [No especificado] completamente
         contentEl.querySelectorAll('.no-data-field').forEach(el => {
             el.remove();

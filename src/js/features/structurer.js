@@ -376,6 +376,18 @@ function _postProcessStructuredMarkdown(md) {
         out = out.replace(pattern, replacement);
     });
 
+    // Limpieza discursiva: quitar arranques vacíos/frecuentes que degradan el tono clínico.
+    out = out
+        .replace(/(^|\n)\s*Generalmente,\s+/g, '$1')
+        .replace(/(^|\n)\s*En general,\s+/g, '$1')
+        .replace(/(^|\n)\s*Habitualmente,\s+/g, '$1');
+
+    // Corrige artefactos de mayúsculas en artículos al inicio de oración (p.ej. "LA papila").
+    out = out.replace(/(^|[\n.!?]\s+)(LA|EL|LOS|LAS)\s+([a-záéíóúñ])/g, (m, p1, art, p3) => {
+        const articleMap = { LA: 'La', EL: 'El', LOS: 'Los', LAS: 'Las' };
+        return `${p1}${articleMap[art] || art} ${p3}`;
+    });
+
     // Eliminar secciones markdown vacías (solo subtítulos H2/H3, nunca el título principal H1)
     // Ej: "## Datos Demográficos\n\n## Siguiente Sección" → elimina "## Datos Demográficos"
     out = out.replace(/^(#{2,3}\s+[^\n]+)\n+(?=#{1,3}\s)/gm, '');

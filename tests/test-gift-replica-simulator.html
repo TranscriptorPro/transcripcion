@@ -553,21 +553,9 @@
         }));
 
         const ts = Date.now();
-        frame.srcdoc = `<!doctype html><html><body><script>
-          (function(){
-            try {
-              var raw = decodeURIComponent('${payload}');
-              var data = JSON.parse(raw);
-              Object.keys(data).forEach(function(k){
-                var v = data[k];
-                if (typeof v === 'string') localStorage.setItem(k, v);
-                else localStorage.setItem(k, JSON.stringify(v));
-              });
-            } catch(e) {}
-            location.replace('../index.html?simulator=gift-replica&ts=${ts}');
-          })();
-        <\/script></body></html>`;
-        log('Abriendo app real en iframe con bootstrap de fixture...');
+        const target = encodeURIComponent('../index.html?simulator=gift-replica&ts=' + ts);
+        frame.src = `./simulator-bootstrap.html#payload=${payload}&target=${target}`;
+        log('Abriendo app real en iframe con bootstrap estable...');
       }
 
       function hardResetSimulator() {

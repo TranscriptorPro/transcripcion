@@ -1,6 +1,45 @@
 // ============ EDITOR: EXPORT RENDER HELPERS ============
 
 (function initEditorExportRenderUtils() {
+    function _stripAccentsForCompare(text) {
+        return String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function _isGenericStudyType(text) {
+        const n = _stripAccentsForCompare(text).toLowerCase().trim();
+        return n === ''
+            || n === 'informe medico general'
+            || n === 'informe medico'
+            || n === 'informe general'
+            || n === 'informe generico'
+            || n === 'generico'
+            || n === 'general';
+    }
+
+    function _extractStudyTypeFromHtmlHeading(html) {
+        const probe = document.createElement('div');
+        probe.innerHTML = html || '';
+        const heading = probe.querySelector('h1, h2, h3');
+        if (!heading) return '';
+        const raw = String(heading.textContent || '').trim();
+        const m = raw.match(/^INFORME\s+DE\s+(.+)$/i);
+        return (m && m[1]) ? m[1].trim() : '';
+    }
+
+    function _extractStudyTypeFromPlainText(text) {
+        const line = String(text || '').split(/\r?\n/).find(l => /^\s*INFORME\s+DE\s+/i.test(l || ''));
+        if (!line) return '';
+        const m = String(line).trim().match(/^INFORME\s+DE\s+(.+)$/i);
+        return (m && m[1]) ? m[1].trim() : '';
+    }
+
+    function _computeEffectiveStudyType(baseStudyType, fallbackTemplateName, editorHtml, plainText) {
+        const base = String(baseStudyType || fallbackTemplateName || '').trim();
+        const headingStudy = _extractStudyTypeFromHtmlHeading(editorHtml) || _extractStudyTypeFromPlainText(plainText);
+        if (_isGenericStudyType(base) && headingStudy) return headingStudy;
+        return base;
+    }
+
     async function _loadExportContext(text) {
         const editorEl = document.getElementById('editor');
         const rawEditorText = editorEl?.innerText || '';
@@ -30,6 +69,13 @@
             ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
             : new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
+        const effectiveStudyType = _computeEffectiveStudyType(
+            cfg.studyType,
+            tplName,
+            editorEl?.innerHTML || '',
+            sourceText
+        );
+
         return {
             text: sourceText,
             patientName: extracted.name || cfg.patientName || reqVal('reqPatientName') || reqVal('pdfPatientName') || '',
@@ -38,7 +84,7 @@
             patientSex: extracted.sex || cfg.patientSex || reqVal('reqPatientSex') || reqVal('pdfPatientSex') || '',
             patientInsurance: extracted.insurance || cfg.patientInsurance || reqVal('reqPatientInsurance') || reqVal('pdfPatientInsurance') || '',
             patientAffiliateNum: extracted.affiliateNum || cfg.patientAffiliateNum || reqVal('reqPatientAffiliateNum') || reqVal('pdfPatientAffiliateNum') || '',
-            studyType: cfg.studyType || tplName || '',
+            studyType: effectiveStudyType,
             studyDate,
             studyTime: cfg.studyTime || reqVal('pdfStudyTime') || '',
             studyReason: cfg.studyReason || reqVal('pdfStudyReason') || '',
@@ -190,7 +236,12 @@
 
         const tplKey = window.selectedTemplate || config.selectedTemplate || '';
         const tplName = (tplKey && window.MEDICAL_TEMPLATES?.[tplKey]?.name) || '';
-        const studyType = escSentence(config.studyType || tplName || '');
+        const studyType = escSentence(_computeEffectiveStudyType(
+            config.studyType,
+            tplName,
+            editorEl?.innerHTML || '',
+            editorEl?.innerText || ''
+        ));
         const rawDate = config.studyDate || '';
         const studyDate = rawDate ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
         const studyTime = esc(document.getElementById('pdfStudyTime')?.value || config.studyTime || '');
@@ -205,6 +256,10 @@
 
         const _clone = editorEl.cloneNode(true);
         _clone.querySelectorAll('.patient-data-header, .patient-placeholder-banner, .btn-append-inline, .original-text-banner, .no-print, .ai-note-panel, .no-data-edit-btn, .no-data-field, #aiNotePanel').forEach(el => el.remove());
+        const firstEl = _clone.firstElementChild;
+        if (firstEl && /^H[1-3]$/i.test(firstEl.tagName) && /^\s*INFORME\s+DE\b/i.test(firstEl.textContent || '')) {
+            firstEl.remove();
+        }
         const bodyContent = _clone.innerHTML;
 
         let wpSection = '';
