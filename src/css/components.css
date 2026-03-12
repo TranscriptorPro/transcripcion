@@ -3655,6 +3655,9 @@
             align-items: center;
             gap: 2px;
             padding: 0 10px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #fff;
+            border: none;
         }
         .download-split .btn-download-chevron {
             border-radius: 0 8px 8px 0;
@@ -3664,6 +3667,23 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #fff;
+            border: none;
+        }
+
+        .download-split .btn-download-main:hover:not(:disabled),
+        .download-split .btn-download-chevron:hover:not(:disabled) {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            box-shadow: 0 0 12px color-mix(in srgb, var(--primary) 40%, transparent);
+            transform: translateY(-1px);
+        }
+
+        .download-split .btn-download-main:disabled,
+        .download-split .btn-download-chevron:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            box-shadow: none;
         }
 
         /* Download button consistent height */
@@ -3702,7 +3722,7 @@
         }
 
         .editor-actions .btn-accent:hover {
-            box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+            box-shadow: 0 0 8px color-mix(in srgb, var(--primary) 42%, transparent);
         }
 
         /* ============ NORMAL MODE TEMPLATE DROPDOWN LIST ============ */

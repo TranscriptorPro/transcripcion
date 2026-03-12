@@ -34,9 +34,24 @@
     }
 
     if (downloadBtnMain) {
-        downloadBtnMain.addEventListener('click', (e) => {
+        downloadBtnMain.addEventListener('click', async (e) => {
             e.stopPropagation();
-            if (typeof window.downloadFile === 'function') window.downloadFile(getPreferredFormat());
+            const fmt = getPreferredFormat();
+            try {
+                if (typeof window.downloadFile === 'function') {
+                    await window.downloadFile(fmt);
+                    return;
+                }
+                const fallback = window['download' + String(fmt || '').toUpperCase()];
+                if (typeof fallback === 'function') {
+                    await fallback();
+                    return;
+                }
+                if (typeof showToast === 'function') showToast('No se encontró el módulo de descarga', 'error');
+            } catch (err) {
+                console.warn('Download main button error:', err);
+                if (typeof showToast === 'function') showToast('Error al descargar. Reintentá.', 'error');
+            }
         });
     }
 
@@ -66,9 +81,16 @@
     updateFavUI();
 
     document.querySelectorAll('.dropdown-item').forEach(item => {
-        item.addEventListener('click', () => {
+        item.addEventListener('click', async () => {
             const format = item.dataset.format;
-            if (typeof window.downloadFile === 'function') window.downloadFile(format);
+            try {
+                if (typeof window.downloadFile === 'function') {
+                    await window.downloadFile(format);
+                }
+            } catch (err) {
+                console.warn('Download dropdown item error:', err);
+                if (typeof showToast === 'function') showToast('Error al descargar formato', 'error');
+            }
             if (downloadDropdown) downloadDropdown.classList.remove('open');
         });
     });
