@@ -402,9 +402,24 @@ function _normalizeTemplateSpecificOutput(markdown, templateKey, sourceText) {
     return out;
 }
 
+function _stripPromptLeakSections(markdown) {
+    let out = String(markdown || '');
+    if (!out) return out;
+
+    // Elimina secciones de metainstrucciones que nunca deben formar parte del informe final.
+    out = out.replace(/(?:^|\n)#{2,3}\s*(?:reglas\s+de\s+interpretaci[oó]n\s+obligatorias|reglas\s+internas|instrucciones\s+internas|notas\s+del\s+sistema)\s*\n[\s\S]*?(?=\n#{1,3}\s+|\s*$)/gi, '\n');
+
+    // Variante sin heading markdown, por si el modelo lo deja en texto plano.
+    out = out.replace(/(?:^|\n)\s*reglas\s+de\s+interpretaci[oó]n\s+obligatorias\s*\n[\s\S]*?(?=\n#{1,3}\s+|\n[A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ\s]{6,}\n|\s*$)/gi, '\n');
+
+    return out.trim();
+}
+
 function _postProcessStructuredMarkdown(md) {
     let out = String(md || '');
     if (!out) return out;
+
+    out = _stripPromptLeakSections(out);
 
     // Correcciones ortográficas médicas frecuentes (fallback defensivo post-LLM).
     const replacements = [

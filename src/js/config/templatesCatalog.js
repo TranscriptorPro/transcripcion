@@ -226,9 +226,10 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
 ## IMPRESIÓN DIAGNÓSTICA
 - Síntesis final clínica (p.ej. ángulos abiertos bilaterales, cierre aposicional, glaucoma neovascular, etc.).
 
-## REGLAS DE INTERPRETACIÓN OBLIGATORIAS
+REGLAS INTERNAS (NO INCLUIR EN LA SALIDA FINAL):
 - Si la transcripción dice "AO", "ambos ojos" o "bilateral" y no detalla diferencias entre OD/OI, debes reflejar los mismos hallazgos clínicos en OD y en OI (nunca dejar OI vacío en ese escenario).
 - Si se reporta Spaeth de forma global o bilateral, completar OD y OI dentro de la sección de Spaeth con la mejor correspondencia posible.
+- NO escribas en el informe secciones de metainstrucciones como "Reglas", "Instrucciones" o "Notas del sistema".
 
 IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
     },
