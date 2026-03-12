@@ -407,8 +407,9 @@ function _normalizeGonioscopyNarrativeQuality(markdown) {
         [/el\s+grado\s+de\s+Shaffer\s+es\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, ''],
         [/la\s+pigmentaci[oó]n\s+trabecular\s+es\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, ''],
         [/la\s+configuraci[oó]n\s+del\s+iris\s+es\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, ''],
-        [/la\s+gonioscop[ií]a\s+din[aá]mica(?:\/indentaci[oó]n)?\s*(?:es|:)\s*(?:\.\.+|…|[.,;:]+)?\s*(?:o\s+no\s+se\s+especific[oó])?\s*,?/gi, ''],
-        [/(?:la\s+)?gonioscop[ií]a\s+din[aá]mica(?:\/indentaci[oó]n)?\s+no\s+se\s+realiz[oó]\s+o\s+no\s+se\s+especific[oó]\.?,?/gi, ''],
+        [/la\s+gonioscop[ií]a\s+din[aá]mica(?:\/indentaci[oó]n)?\s*(?:es|:)\s*(?:\.\.+|…|[.,;:]+)?\s*(?:o\s+no\s+se\s+(?:especific[oó]|inform[oó]))?\s*,?/gi, ''],
+        [/(?:la\s+)?gonioscop[ií]a\s+din[aá]mica(?:\/indentaci[oó]n)?\s+no\s+se\s+realiz[oó]\s+o\s+no\s+se\s+(?:especific[oó]|inform[oó])\.?,?/gi, ''],
+        [/(?:la\s+)?gonioscop[ií]a\s+din[aá]mica(?:\/indentaci[oó]n)?\s+no\s+se\s+inform[oó]\.?,?/gi, ''],
         [/No\s+se\s+realiz(?:o|ó|aron)\s+gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\.?/gi, ''],
         [/Gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\s*:\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, ''],
         [/,\s*,/g, ','],
@@ -466,8 +467,9 @@ function _sanitizeGrammarArtifacts(text) {
         .replace(/\bel\s+grado\s+de\s+Shaffer\s+es\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, '')
         .replace(/\bla\s+pigmentaci[oó]n\s+trabecular\s+es\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, '')
         .replace(/\bla\s+configuraci[oó]n\s+del\s+iris\s+es\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, '')
-        .replace(/\bla\s+gonioscop[ií]a\s+din[aá]mica(?:\/indentaci[oó]n)?\s*(?:es|:)\s*(?:\.\.+|…|[.,;:]+)?\s*(?:o\s+no\s+se\s+especific[oó])?\s*,?/gi, '')
-        .replace(/(?:la\s+)?gonioscop[ií]a\s+din[aá]mica(?:\/indentaci[oó]n)?\s+no\s+se\s+realiz[oó]\s+o\s+no\s+se\s+especific[oó]\.?,?/gi, '')
+        .replace(/\bla\s+gonioscop[ií]a\s+din[aá]mica(?:\/indentaci[oó]n)?\s*(?:es|:)\s*(?:\.\.+|…|[.,;:]+)?\s*(?:o\s+no\s+se\s+(?:especific[oó]|inform[oó]))?\s*,?/gi, '')
+        .replace(/(?:la\s+)?gonioscop[ií]a\s+din[aá]mica(?:\/indentaci[oó]n)?\s+no\s+se\s+realiz[oó]\s+o\s+no\s+se\s+(?:especific[oó]|inform[oó])\.?,?/gi, '')
+        .replace(/(?:la\s+)?gonioscop[ií]a\s+din[aá]mica(?:\/indentaci[oó]n)?\s+no\s+se\s+inform[oó]\.?,?/gi, '')
         .replace(/\bGonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\s*:\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, '')
         .replace(/\bNo\s+se\s+realiz(?:o|ó|aron)\s+gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\.?/gi, '')
         // Eliminar textos de placeholder genéricos

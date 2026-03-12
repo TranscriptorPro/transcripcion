@@ -24,6 +24,7 @@ window.updateButtonsVisibility = function (state) {
     const btnStructureAI         = document.getElementById('btnStructureAI');
     const btnApplyTemplate       = document.getElementById('btnApplyTemplate');
     const applyTemplateWrapper   = document.getElementById('applyTemplateWrapper');
+    const inlineReviewQuickCtrl  = document.getElementById('inlineReviewQuickControl');
 
     const isTranscribed  = ['TRANSCRIBED', 'STRUCTURED', 'PREVIEWED'].includes(state);
     const isStructured   = ['STRUCTURED', 'PREVIEWED'].includes(state);
@@ -46,6 +47,11 @@ window.updateButtonsVisibility = function (state) {
         if (!isStructured && window._isComparisonMode && typeof window.exitComparisonMode === 'function') {
             window.exitComparisonMode();
         }
+    }
+
+    // Toggle rápido de revisión IA: solo visible cuando el informe ya está estructurado.
+    if (inlineReviewQuickCtrl) {
+        inlineReviewQuickCtrl.style.display = isStructured ? 'flex' : 'none';
     }
 
     // Normal mode template controls

@@ -298,7 +298,8 @@
             .replace(/^[-*]\s+/, '')
             .replace(/^"|"$/g, '')
             .replace(/\.{3,}|…+/g, '. ')
-            .replace(/(?:la\s+)?gonioscop[ií]a\s+din[aá]mica(?:\/indentaci[oó]n)?\s+no\s+se\s+realiz[oó]\s+o\s+no\s+se\s+especific[oó]\.?(?:\s+|$)/gi, ' ')
+            .replace(/(?:la\s+)?gonioscop[ií]a\s+din[aá]mica(?:\/indentaci[oó]n)?\s+no\s+se\s+realiz[oó]\s+o\s+no\s+se\s+(?:especific[oó]|inform[oó])\.?(?:\s+|$)/gi, ' ')
+            .replace(/(?:la\s+)?gonioscop[ií]a\s+din[aá]mica(?:\/indentaci[oó]n)?\s+no\s+se\s+inform[oó]\.?(?:\s+|$)/gi, ' ')
             .replace(/\s+/g, ' ')
             .trim();
         // Evitar que la IA devuelva encabezados o prefijos explicativos.
