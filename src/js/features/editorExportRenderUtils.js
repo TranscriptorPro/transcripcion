@@ -321,7 +321,9 @@
         const showSignImage = config.showSignImage ?? hasSig;
 
         const _clone = editorEl.cloneNode(true);
-        _clone.querySelectorAll('.patient-data-header, .patient-placeholder-banner, .btn-append-inline, .original-text-banner, .no-print, .ai-note-panel, .no-data-edit-btn, .no-data-field, #aiNotePanel').forEach(el => el.remove());
+        _clone.querySelectorAll('.patient-data-header, .patient-placeholder-banner, .btn-append-inline, .original-text-banner, .no-print, .ai-note-panel, .no-data-edit-btn, #aiNotePanel').forEach(el => el.remove());
+        // En PDF/export: eliminar badges vacíos completamente (no deben aparecer en el informe final)
+        _clone.querySelectorAll('.no-data-field').forEach(el => el.remove());
         const firstEl = _clone.firstElementChild;
         if (firstEl && /^H[1-3]$/i.test(firstEl.tagName) && /^\s*INFORME\s+DE\b/i.test(firstEl.textContent || '')) {
             firstEl.remove();

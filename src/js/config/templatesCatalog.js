@@ -199,41 +199,32 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
         name: "Gonioscopía",
         category: "Oftalmología",
         keywords: ["gonioscopia", "gonioscopía", "shaffer", "spaeth", "linea de schwalbe", "línea de schwalbe", "malla trabecular", "espolon escleral", "espolón escleral", "sinequias anteriores perifericas", "sinequias anteriores periféricas", "pas", "neovasos", "rubeosis", "indentacion", "indentación", "angulo camerular", "ángulo camerular"],
-        prompt: `Actúa como oftalmólogo especializado en glaucoma. Estructura este informe de gonioscopía:
+        prompt: `Actúa como oftalmólogo especializado en glaucoma. Estructura este informe de gonioscopía.
 
 # INFORME DE GONIOSCOPÍA
 
 ## OJO DERECHO (OD)
-- Ángulo: grado Shaffer y condición (abierto/estrecho/cerrado).
-- Estructuras visualizadas: línea de Schwalbe, malla trabecular, espolón escleral, banda del cuerpo ciliar.
-- Pigmentación trabecular.
-- Configuración del iris.
-- Gonioscopía dinámica/indentación (si aplica).
-- Hallazgos patológicos: sinequias anteriores periféricas (PAS), neovasos, línea de Sampaolesi u otros.
+Redactar un párrafo continuo y fluido describiendo: ángulo iridocorneal (extensión visible, grado Shaffer, condición abierto/estrecho/cerrado), estructuras visualizadas (línea de Schwalbe, malla trabecular, espolón escleral, banda del cuerpo ciliar), pigmentación trabecular, configuración del iris, gonioscopía dinámica/indentación, y hallazgos patológicos (sinequias anteriores periféricas, neovasos, línea de Sampaolesi). Si un dato no fue dictado, omitirlo del párrafo (no dejarlo como frase incompleta).
 
 ## OJO IZQUIERDO (OI)
-- Ángulo: grado Shaffer y condición (abierto/estrecho/cerrado).
-- Estructuras visualizadas: línea de Schwalbe, malla trabecular, espolón escleral, banda del cuerpo ciliar.
-- Pigmentación trabecular.
-- Configuración del iris.
-- Gonioscopía dinámica/indentación (si aplica).
-- Hallazgos patológicos: sinequias anteriores periféricas (PAS), neovasos, línea de Sampaolesi u otros.
+Mismo formato que OD.
 
-## SISTEMA SPAETH (SI ESTÁ REPORTADO)
-- OD por cuadrantes: inserción del iris, amplitud angular y configuración.
-- OI por cuadrantes: inserción del iris, amplitud angular y configuración.
+## SISTEMA SPAETH
+Solo incluir esta sección si el médico dictó datos del sistema Spaeth. Si no se mencionó Spaeth, NO incluir esta sección en absoluto.
 
 ## IMPRESIÓN DIAGNÓSTICA
-- Síntesis final clínica (p.ej. ángulos abiertos bilaterales, cierre aposicional, glaucoma neovascular, etc.).
+Síntesis clínica objetiva de los hallazgos.
 
 REGLAS INTERNAS (NO INCLUIR EN LA SALIDA FINAL):
-- Si la transcripción dice "AO", "ambos ojos" o "bilateral" y no detalla diferencias entre OD/OI, debes reflejar los mismos hallazgos clínicos en OD y en OI (nunca dejar OI vacío en ese escenario).
-- Si se reporta Spaeth de forma global o bilateral, completar OD y OI dentro de la sección de Spaeth con la mejor correspondencia posible.
-- NO escribas en el informe secciones de metainstrucciones como "Reglas", "Instrucciones" o "Notas del sistema".
-- Redacta con objetividad clínica y frases completas. Prohibido dejar frases incompletas o ambiguas como "grado Shaffer y condición" o "la configuración del iris es".
-- Si falta un dato puntual (grado, condición, configuración, dinámica), completa ese dato con "[No especificado]" dentro de la oración, sin romper la coherencia gramatical.
+- Si la transcripción dice "AO", "ambos ojos" o "bilateral" y no detalla diferencias entre OD/OI, reflejar los mismos hallazgos clínicos en ambos ojos.
+- NO escribas secciones de metainstrucciones ("Reglas", "Instrucciones", "Notas del sistema").
+- Redacción objetiva, directa, en párrafo fluido. PROHIBIDO dejar frases incompletas como "la configuración del iris es..." o "Gonioscopía dinámica/indentación:...". Si un dato no fue dictado, simplemente no lo menciones.
+- PROHIBIDO usar descripciones genéricas como "Información sobre el sistema Spaeth" o "Descripción de la configuración". Solo datos clínicos concretos.
+- PROHIBIDO incluir texto condicional como "(si está reportado)" o "(si aplica)" en encabezados o en el cuerpo.
+- Si la transcripción dice "no se observan sinequias", redactar: "No se observan sinequias anteriores periféricas, neovasos ni línea de Sampaolesi."
+- Cada oración debe ser gramaticalmente completa: sujeto + verbo + predicado. Nunca terminar con "es..." o con dos puntos sin contenido.
 
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
+IMPORTANTE: No inventes datos. Solo estructura lo dictado. Si falta información puntual, usa [No especificado].`
     },
 
     tac: {

@@ -400,11 +400,12 @@ function _normalizeGonioscopyNarrativeQuality(markdown) {
         [/\bcon\s+con\b/gi, 'con'],
         [/grado\s+Shaffer\s+y\s+condici[oó]n\s+(abierto|estrecho|cerrado)\b/gi, 'grado Shaffer [No especificado] y condición $1'],
         [/grado\s+Shaffer\s+y\s+condici[oó]n(?=\s*[,.;:]|\s*$)/gi, 'grado Shaffer [No especificado] y condición [No especificado]'],
-        [/la\s+configuraci[oó]n\s+del\s+iris\s+es\s*(?:\.\.\.|…|[.,;:]+)?/gi, 'La configuración del iris es [No especificado]. '],
-        [/la\s+gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\s+es\s*(?:\.\.\.|…|[.,;:]+)?/gi, 'Gonioscopía dinámica/indentación: [No especificado]. '],
-        [/No\s+se\s+realiz(?:o|ó|aron)\s+gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\.?/gi, 'Gonioscopía dinámica/indentación: [No especificado].'],
-        [/Gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n:\s*(?:\.\.\.|…|[.,;:]+)?/gi, 'Gonioscopía dinámica/indentación: [No especificado].'],
-        [/(##\s*SISTEMA\s+SPAETH)\s*(\n|$)/gi, '## SISTEMA SPAETH (SI ESTÁ REPORTADO)$2']
+        [/la\s+configuraci[oó]n\s+del\s+iris\s+es\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, 'La configuración del iris es [No especificado]. '],
+        [/la\s+gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\s+es\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, 'Gonioscopía dinámica/indentación: [No especificado]. '],
+        [/No\s+se\s+realiz(?:o|ó|aron)\s+gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\.?/gi, ''],
+        [/Gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\s*:\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, 'Gonioscopía dinámica/indentación: [No especificado]. '],
+        [/,\s*,/g, ','],
+        [/,\s*\./g, '.'],
     ];
 
     fixes.forEach(([pattern, replacement]) => {
@@ -453,16 +454,27 @@ function _sanitizeGrammarArtifacts(text) {
     out = out
         .replace(/\bcon\s+un\s+con\b/gi, 'con')
         .replace(/\bcon\s+con\b/gi, 'con')
-        .replace(/\bla\s+configuraci[oó]n\s+del\s+iris\s+es\s*(?:\.\.\.|…|[.,;:]+)?/gi, 'La configuración del iris es [No especificado]. ')
-        .replace(/\bla\s+gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\s+es\s*(?:\.\.\.|…|[.,;:]+)?/gi, 'Gonioscopía dinámica/indentación: [No especificado]. ')
-        .replace(/\bGonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\s*:\s*(?:\.\.\.|…|[.,;:]+)?/gi, 'Gonioscopía dinámica/indentación: [No especificado]. ')
-        .replace(/\bNo\s+se\s+realiz(?:o|ó|aron)\s+gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\.?/gi, 'Gonioscopía dinámica/indentación: [No especificado]. ')
+        // Completar frases incompletas de gonioscopía con marcador editable
+        .replace(/\bla\s+configuraci[oó]n\s+del\s+iris\s+es\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, 'La configuración del iris es [No especificado]. ')
+        .replace(/\bla\s+gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\s+es\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, 'Gonioscopía dinámica/indentación: [No especificado]. ')
+        .replace(/\bGonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\s*:\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, 'Gonioscopía dinámica/indentación: [No especificado]. ')
+        .replace(/\bNo\s+se\s+realiz(?:o|ó|aron)\s+gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\.?/gi, '')
+        // Eliminar textos de placeholder genéricos
+        .replace(/\bInformaci[oó]n\s+sobre\s+el\s+sistema\s+Spaeth\.?/gi, '')
+        .replace(/\bDescripci[oó]n\s+de\s+la\s+configuraci[oó]n[^.]*\.?/gi, '')
+        // Eliminar texto condicional en headings
+        .replace(/(##\s*[^\n]*)\s*\(\s*(?:si\s+est[aá]\s+reportado|si\s+aplica|si\s+corresponde|si\s+se\s+report[oó])\s*\)/gi, '$1')
+        .replace(/,\s*,/g, ',')
+        .replace(/,\s*\./g, '.')
         .replace(/\.\s*\./g, '. ')
         .replace(/…+/g, '. ')
         .replace(/:\s*\./g, ': [No especificado].')
         // No colapsar saltos de línea para preservar estructura markdown.
         .replace(/[ \t]{2,}/g, ' ')
         .replace(/([.!?]\s+)([a-záéíóúñ])/g, (_, p1, p2) => p1 + p2.toUpperCase());
+
+    // Eliminar secciones vacías: heading seguido directamente por otro heading (sin contenido entre ambos)
+    out = out.replace(/^(##\s+[^\n]+)\n+(?=##\s)/gm, '');
 
     return out.trim();
 }

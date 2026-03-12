@@ -6976,12 +6976,14 @@ El ángulo es abierto con un con grado Shaffer y condición abierto, la configur
     assert(!out.includes(':.') && !out.includes(' :.'), 'No debe dejar artefactos de ":."');
 });
 
-test('Gonio-Quality-2 — normaliza heading de Spaeth', () => {
-    const md = `## SISTEMA SPAETH
+test('Gonio-Quality-2 — limpia texto condicional de Spaeth', () => {
+    const md = `## SISTEMA SPAETH (SI ESTÁ REPORTADO)
 [No especificado]`;
-    const out = _normalizeGonioscopyNarrativeQuality(md);
-    assert(out.includes('## SISTEMA SPAETH (SI ESTÁ REPORTADO)'),
-        'Debe estandarizar el título de Spaeth');
+    const out = _postProcessStructuredMarkdown(md);
+    assert(!out.includes('(SI ESTÁ REPORTADO)'),
+        'No debe dejar texto condicional en heading de Spaeth');
+    assert(out.includes('SISTEMA SPAETH') || out.includes('[No especificado]'),
+        'Debe preservar contenido o heading');
 });
 
 test('Gonio-Quality-3 — normaliza abreviatura r.e. a R. E.', () => {

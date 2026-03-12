@@ -31,6 +31,20 @@ window.initPatientDataModalHandlers = function () {
         });
         const showDateChk = document.getElementById('reqShowStudyDate');
         if (showDateChk) showDateChk.checked = cfg.showStudyDate !== false;
+        const showTimeChk = document.getElementById('reqShowStudyTime');
+        if (showTimeChk) showTimeChk.checked = cfg.showStudyTime !== false;
+
+        // Default hora actual si está vacía
+        const timeInput = document.getElementById('reqStudyTime');
+        if (timeInput && !timeInput.value && !cfg.studyTime) {
+            const now = new Date();
+            timeInput.value = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+        }
+
+        // Toggle visibilidad fecha/hora
+        _applyToggleVisibility('reqShowStudyDate', 'reqStudyDate');
+        _applyToggleVisibility('reqShowStudyTime', 'reqStudyTime');
+
         patientOverlay?.classList.add('active');
         if (typeof initPatientRegistrySearch === 'function') initPatientRegistrySearch();
     };
@@ -62,6 +76,7 @@ window.initPatientDataModalHandlers = function () {
             const insurance = document.getElementById('reqPatientInsurance')?.value?.trim();
             const affiliateNum = document.getElementById('reqPatientAffiliateNum')?.value?.trim();
             const showStudyDate = document.getElementById('reqShowStudyDate')?.checked !== false;
+            const showStudyTime = document.getElementById('reqShowStudyTime')?.checked !== false;
             const studyDate = document.getElementById('reqStudyDate')?.value?.trim() || '';
             const studyTime = document.getElementById('reqStudyTime')?.value?.trim();
             const referringDoctor = document.getElementById('reqReferringDoctor')?.value?.trim();
@@ -74,9 +89,10 @@ window.initPatientDataModalHandlers = function () {
             if (insurance) config.patientInsurance = insurance;
             if (affiliateNum) config.patientAffiliateNum = affiliateNum;
             config.showStudyDate = showStudyDate;
+            config.showStudyTime = showStudyTime;
             if (showStudyDate && studyDate) config.studyDate = studyDate;
             else delete config.studyDate;
-            if (studyTime) config.studyTime = studyTime; else delete config.studyTime;
+            if (showStudyTime && studyTime) config.studyTime = studyTime; else delete config.studyTime;
             if (referringDoctor) config.referringDoctor = referringDoctor; else delete config.referringDoctor;
             if (studyReason) config.studyReason = studyReason; else delete config.studyReason;
             if (studyType) config.studyType = studyType; else delete config.studyType;
@@ -195,6 +211,45 @@ window.initPatientDataModalHandlers = function () {
         }
         if (typeof window._insertInlineAppendBtn === 'function') window._insertInlineAppendBtn();
     };
+
+    // ── Toggle visibilidad de campos fecha/hora ──
+    function _applyToggleVisibility(checkId, inputId) {
+        const chk = document.getElementById(checkId);
+        const inp = document.getElementById(inputId);
+        if (!chk || !inp) return;
+        const wrap = inp.closest('.field-group') || inp.parentElement;
+        const container = inputId === 'reqStudyDate' ? inp.parentElement : inp; // date has wrapper div with Hoy btn
+        const target = inputId === 'reqStudyDate' ? wrap : wrap;
+        function applyVis() {
+            if (inputId === 'reqStudyDate') {
+                const row = inp.closest('div[style*="display:flex"]');
+                if (row) row.style.opacity = chk.checked ? '1' : '0.4';
+            }
+            inp.disabled = !chk.checked;
+        }
+        applyVis();
+        chk.addEventListener('change', applyVis);
+    }
+
+    // ── Botón "Hoy" para fecha ──
+    const btnToday = document.getElementById('btnStudyDateToday');
+    if (btnToday) {
+        btnToday.addEventListener('click', () => {
+            const dateInput = document.getElementById('reqStudyDate');
+            if (dateInput) {
+                dateInput.value = new Date().toISOString().split('T')[0];
+                dateInput.dispatchEvent(new Event('change'));
+            }
+        });
+    }
+
+    // ── Toggle listeners para fecha y hora ──
+    document.getElementById('reqShowStudyDate')?.addEventListener('change', () => {
+        _applyToggleVisibility('reqShowStudyDate', 'reqStudyDate');
+    });
+    document.getElementById('reqShowStudyTime')?.addEventListener('change', () => {
+        _applyToggleVisibility('reqShowStudyTime', 'reqStudyTime');
+    });
 
     // ── Autocomplete en el campo Nombre y Apellido ──
     (function _initNameFieldAutocomplete() {
