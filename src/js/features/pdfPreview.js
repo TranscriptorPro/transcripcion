@@ -102,8 +102,14 @@ function _assetOptionButton(src, selected, onClick) {
 function _resolveActiveIndexes(cfg) {
     const wpSel = document.getElementById('pdfWorkplace');
     const proSel = document.getElementById('pdfProfessional');
-    const wpIndex = Number.isFinite(Number(wpSel?.value)) ? Number(wpSel.value) : Number(cfg.activeWorkplaceIndex);
-    const proIndex = Number.isFinite(Number(proSel?.value)) ? Number(proSel.value) : Number(cfg.activeProfessionalIndex);
+    const wpValue = wpSel?.value;
+    const proValue = proSel?.value;
+    const wpIndex = (wpValue !== undefined && wpValue !== null && String(wpValue).trim() !== '' && Number.isFinite(Number(wpValue)))
+        ? Number(wpValue)
+        : Number(cfg.activeWorkplaceIndex);
+    const proIndex = (proValue !== undefined && proValue !== null && String(proValue).trim() !== '' && Number.isFinite(Number(proValue)))
+        ? Number(proValue)
+        : Number(cfg.activeProfessionalIndex);
     return { wpIndex, proIndex };
 }
 
@@ -144,30 +150,32 @@ async function _selectProfessionalAsset(kind, dataUrl) {
     const cfg = window._pdfConfigCache || (await _pdfPreviewSafeGet('pdf_config', {})) || {};
     const { wpIndex, proIndex } = _resolveActiveIndexes(cfg);
 
-    if (Number.isNaN(wpIndex) || Number.isNaN(proIndex)) {
-        if (typeof showToast === 'function') showToast('Selecciona primero un profesional activo para elegir su archivo', 'warning');
-        return false;
-    }
-
     const profiles = (await _pdfPreviewSafeGet('workplace_profiles', [])) || [];
-    const prof = profiles?.[wpIndex]?.professionals?.[proIndex];
-    if (!prof) {
-        if (typeof showToast === 'function') showToast('No se encontro el profesional seleccionado', 'error');
-        return false;
+    const wp = !Number.isNaN(wpIndex) ? profiles?.[wpIndex] : null;
+    const prof = (wp && !Number.isNaN(proIndex)) ? wp?.professionals?.[proIndex] : null;
+
+    // Si existe profesional en workplace_profiles, persistir allí.
+    // Si no existe (ej. setup sin profesional seleccionado), usar fallback en pdf_config.activeProfessional.
+    if (prof) {
+        prof[optionsKey] = _uniqDataUrls([...(prof[optionsKey] || []), prof[kind], dataUrl]);
+        prof[kind] = dataUrl;
+        await _pdfPreviewSaveJson('workplace_profiles', profiles);
+        cfg.activeWorkplaceIndex = String(wpIndex);
+        cfg.activeProfessionalIndex = String(proIndex);
     }
 
-    prof[optionsKey] = _uniqDataUrls([...(prof[optionsKey] || []), prof[kind], dataUrl]);
-    prof[kind] = dataUrl;
-    await _pdfPreviewSaveJson('workplace_profiles', profiles);
-
-    cfg.activeWorkplaceIndex = String(wpIndex);
-    cfg.activeProfessionalIndex = String(proIndex);
+    const currentActive = (cfg.activeProfessional && typeof cfg.activeProfessional === 'object')
+        ? cfg.activeProfessional
+        : {};
+    const mergedOptions = _uniqDataUrls([...(currentActive[optionsKey] || []), currentActive[kind], dataUrl]);
     cfg.activeProfessional = {
-        ...(cfg.activeProfessional || {}),
+        ...currentActive,
+        [optionsKey]: mergedOptions,
         [kind]: dataUrl,
-        logo: prof.logo || cfg.activeProfessional?.logo || '',
-        firma: prof.firma || cfg.activeProfessional?.firma || ''
+        logo: (prof?.logo || currentActive.logo || (kind === 'logo' ? dataUrl : '')),
+        firma: (prof?.firma || currentActive.firma || (kind === 'firma' ? dataUrl : ''))
     };
+
     window._pdfConfigCache = cfg;
     await _pdfPreviewSaveJson('pdf_config', cfg);
 
@@ -189,6 +197,9 @@ async function _refreshAssetSelectors() {
 
     const wp = !Number.isNaN(wpIndex) ? profiles[wpIndex] : null;
     const prof = (wp && !Number.isNaN(proIndex)) ? wp?.professionals?.[proIndex] : null;
+    const activeProFallback = (cfg.activeProfessional && typeof cfg.activeProfessional === 'object')
+        ? cfg.activeProfessional
+        : null;
 
     const instCurrent = String(wp?.logo || '').startsWith('data:image/') ? wp.logo : '';
     const instOptions = _uniqDataUrls([...(wp?.logoOptions || []), instCurrent]);
@@ -206,8 +217,9 @@ async function _refreshAssetSelectors() {
         });
     }
 
-    const profCurrent = String(prof?.logo || '').startsWith('data:image/') ? prof.logo : '';
-    const profOptions = _uniqDataUrls([...(prof?.logoOptions || []), profCurrent]);
+    const profCurrentRaw = prof?.logo || activeProFallback?.logo || '';
+    const profCurrent = String(profCurrentRaw).startsWith('data:image/') ? profCurrentRaw : '';
+    const profOptions = _uniqDataUrls([...(prof?.logoOptions || []), ...(activeProFallback?.logoOptions || []), profCurrent]);
     const profPreview = document.getElementById('pdfProfLogoPreview');
     if (profPreview) {
         profPreview.innerHTML = profCurrent
@@ -222,8 +234,9 @@ async function _refreshAssetSelectors() {
         });
     }
 
-    const sigCurrent = String(prof?.firma || '').startsWith('data:image/') ? prof.firma : '';
-    const sigOptions = _uniqDataUrls([...(prof?.firmaOptions || []), sigCurrent]);
+    const sigCurrentRaw = prof?.firma || activeProFallback?.firma || '';
+    const sigCurrent = String(sigCurrentRaw).startsWith('data:image/') ? sigCurrentRaw : '';
+    const sigOptions = _uniqDataUrls([...(prof?.firmaOptions || []), ...(activeProFallback?.firmaOptions || []), sigCurrent]);
     const sigPreview = document.getElementById('pdfSignaturePreview');
     if (sigPreview) {
         sigPreview.innerHTML = sigCurrent
