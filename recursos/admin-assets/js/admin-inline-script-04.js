@@ -1400,6 +1400,10 @@
             ensureRegQuickLinkButton();
             ensureLogsClearButton();
 
+            // Enlazar acciones críticas del header al inicio para que no dependan
+            // de cargas async (si falla loadDashboard, el botón debe seguir funcionando).
+            document.getElementById('btnGiftUser')?.addEventListener('click', () => openGiftFactory());
+
             document.addEventListener('visibilitychange', () => {
                 if (!document.hidden) {
                     refreshActiveTabData(true);
@@ -1449,9 +1453,6 @@
             document.getElementById('cloneFactoryModal')?.addEventListener('click', function(e) {
                 if (e.target === this) closeCloneFactory();
             });
-
-            // Botón Regalo en header
-            document.getElementById('btnGiftUser')?.addEventListener('click', () => openGiftFactory());
 
             // Fábrica de clones — botones del modal (HTML está después del script)
             document.getElementById('cfBtnGenerate')?.addEventListener('click', handleCfGenerate);
@@ -1765,19 +1766,22 @@
             const especialidadGroup = document.getElementById('giftEspecialidad')?.closest('.gw-field-group');
             if (!especialidadGroup || !especialidadGroup.parentElement) return;
 
-            const row = especialidadGroup.parentElement;
-            if (row.classList && row.classList.contains('gw-field-row')) {
-                const sexoGroup = document.createElement('div');
-                sexoGroup.className = 'gw-field-group';
-                sexoGroup.innerHTML = `
-                    <label>Sexo <span class="gw-req">*</span></label>
-                    <select id="giftSexo">
-                        <option value="M" selected>Masculino</option>
-                        <option value="F">Femenino</option>
-                    </select>
-                    <small style="font-size:.68rem;color:#94a3b8;">Se usa para aplicar automaticamente Dr. o Dra. en informes y vista previa.</small>
-                `;
-                row.insertBefore(sexoGroup, especialidadGroup);
+            const host = especialidadGroup.parentElement;
+            const sexoGroup = document.createElement('div');
+            sexoGroup.className = 'gw-field-group';
+            sexoGroup.innerHTML = `
+                <label>Sexo <span class="gw-req">*</span></label>
+                <select id="giftSexo">
+                    <option value="M" selected>Masculino</option>
+                    <option value="F">Femenino</option>
+                </select>
+                <small style="font-size:.68rem;color:#94a3b8;">Se usa para aplicar automaticamente Dr. o Dra. en informes y vista previa.</small>
+            `;
+
+            if (host.classList && host.classList.contains('gw-field-row')) {
+                host.insertBefore(sexoGroup, especialidadGroup);
+            } else {
+                especialidadGroup.insertAdjacentElement('afterend', sexoGroup);
             }
         }
 
@@ -1862,7 +1866,8 @@
 
             // Reset campos gift — Paso 1
             document.getElementById('giftNombre').value = '';
-            document.getElementById('giftSexo').value = 'M';
+            const giftSexoField = document.getElementById('giftSexo');
+            if (giftSexoField) giftSexoField.value = 'M';
             document.getElementById('giftEmail').value = '';
             document.getElementById('giftMatricula').value = '';
             document.getElementById('giftTelefono').value = '';
