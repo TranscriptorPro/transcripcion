@@ -115,6 +115,7 @@
     let _efChunks = [];
     let _efRecordInterval = null;
     let _efRecording = false;
+    let _fieldReviewAttempt = 0;
 
     const isPro = () => !!(window.GROQ_API_KEY) &&
         (typeof CLIENT_CONFIG === 'undefined' ||
@@ -143,8 +144,8 @@
             if (colonIdx >= 0) labelText = labelText.slice(colonIdx + 1).trim();
             if (labelText.length > 40) labelText = labelText.slice(0, 40) + '...';
             title.textContent = labelText
-                ? '✏️ ' + labelText.charAt(0).toUpperCase() + labelText.slice(1)
-                : '✏️ Completar campo';
+                ? '▶ ' + labelText.charAt(0).toUpperCase() + labelText.slice(1)
+                : '▶ Revisión de campo';
         }
 
         document.getElementById('efTextInput').value = '';
@@ -152,9 +153,12 @@
         document.getElementById('efTranscribeStatus').textContent = '';
         document.getElementById('efRecordTime').textContent = '00:00';
         _stopRecordingEF();
+        _fieldReviewAttempt = 0;
+        const btnRev = document.getElementById('btnReviewFieldAI');
+        if (btnRev) btnRev.textContent = '▶ Revisión IA';
 
         _switchTab('write');
-        const fieldLabel = title ? title.textContent.replace(/^✏️\s*/, '').trim() : '';
+        const fieldLabel = title ? title.textContent.replace(/^[▶✏️]\s*/, '').trim() : '';
         _renderDynamicChips(fieldLabel);
 
         overlay.classList.add('active');
@@ -173,7 +177,7 @@
         if (!text) { closeEditFieldModal(); return; }
 
         const titleEl = document.getElementById('editFieldModalTitle');
-        const fieldLabel = titleEl ? titleEl.textContent.replace(/^✏️\s*/, '').trim() : '';
+        const fieldLabel = titleEl ? titleEl.textContent.replace(/^[▶✏️]\s*/, '').trim() : '';
         if (fieldLabel && text !== 's/p' && text !== 'Sin particularidades' && text !== 'No evaluado') {
             _saveFieldValue(fieldLabel, text);
         }
@@ -249,6 +253,121 @@
         }
     }
 
+    function _resolveGroqApiKey() {
+        try {
+            if (typeof window.getResolvedGroqApiKey === 'function') {
+                const k = String(window.getResolvedGroqApiKey() || '').trim();
+                if (k) return k;
+            }
+        } catch (_) {}
+        return String(window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '').trim();
+    }
+
+    function _cleanFieldReviewOutput(text) {
+        let out = String(text || '').trim();
+        if (!out) return '';
+        out = out
+            .replace(/^```[\w-]*\s*/i, '')
+            .replace(/```$/i, '')
+            .replace(/^[-*]\s+/, '')
+            .replace(/^"|"$/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+        // Evitar que la IA devuelva encabezados o prefijos explicativos.
+        out = out.replace(/^(?:Campo|Resultado|Revisi[oó]n)\s*:\s*/i, '').trim();
+        // Unificar variantes de no evaluado.
+        if (/^(?:no se evalu[oó]|no fue evaluad[ao]|sin datos disponibles|no evaluad[ao])\.?$/i.test(out)) {
+            return '[No especificado]';
+        }
+        return out;
+    }
+
+    async function _runFieldAIReview() {
+        if (!_targetSpan) return;
+        const key = _resolveGroqApiKey();
+        if (!key) {
+            if (typeof showToast === 'function') showToast('🔑 API Key requerida para Revisión IA', 'info');
+            return;
+        }
+
+        const btn = document.getElementById('btnReviewFieldAI');
+        const input = document.getElementById('efTextInput');
+        const status = document.getElementById('efTranscribeStatus');
+        if (!input) return;
+
+        const para = _targetSpan.closest('p, li') || _targetSpan.parentElement;
+        const paragraph = String(para?.innerText || para?.textContent || '').trim();
+        const titleEl = document.getElementById('editFieldModalTitle');
+        const fieldLabel = titleEl ? titleEl.textContent.replace(/^[▶✏️]\s*/, '').trim() : '';
+        const draft = String(input.value || '').trim();
+        const rawSource = String(window._lastRawTranscription || '').slice(0, 4000);
+
+        _fieldReviewAttempt += 1;
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = `⏳ Revisión ${_fieldReviewAttempt}`;
+        }
+        if (status) status.textContent = `⏳ Ejecutando revisión ${_fieldReviewAttempt}...`;
+
+        try {
+            const model = (Array.isArray(window.GROQ_MODELS) && window.GROQ_MODELS[0]) || 'llama-3.1-8b-instant';
+            const systemContent = [
+                'Eres un asistente de redacción médica.',
+                'Tarea: reescribir SOLO un campo clínico puntual de forma objetiva y correcta.',
+                'Reglas absolutas:',
+                '1) No inventar, no inferir, no agregar datos no presentes.',
+                '2) No usar muletillas ni mezclar idiomas. Solo español médico formal.',
+                '3) Corregir ortografía, gramática y puntuación.',
+                '4) Si el dato no está explícito: responder exactamente [No especificado].',
+                '5) Responder solo el texto final del campo, sin encabezados ni explicaciones.'
+            ].join('\n');
+
+            const userContent = [
+                `Campo objetivo: ${fieldLabel || '[Sin etiqueta]'}`,
+                `Borrador actual del campo: ${draft || '[Vacío]'}`,
+                `Párrafo de contexto: ${paragraph || '[Sin contexto]'}`,
+                `Fuente original transcripta (referencia): ${rawSource || '[No disponible]'}`,
+                'Devuelve una única frase o valor de campo final.'
+            ].join('\n\n');
+
+            const res = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${key}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model,
+                    messages: [
+                        { role: 'system', content: systemContent },
+                        { role: 'user', content: userContent }
+                    ],
+                    temperature: 0.1
+                })
+            });
+
+            if (!res.ok) throw new Error(`HTTP_${res.status}`);
+            const data = await res.json();
+            const rawOut = data?.choices?.[0]?.message?.content || '';
+            const revised = _cleanFieldReviewOutput(rawOut);
+            if (!revised) throw new Error('EMPTY_REVIEW');
+
+            input.value = revised;
+            input.focus();
+            if (status) status.textContent = `✅ Revisión ${_fieldReviewAttempt} lista. Si querés otra pasada, pulsá nuevamente.`;
+            if (typeof showToast === 'function') showToast(`✅ Revisión ${_fieldReviewAttempt} aplicada al borrador`, 'success');
+        } catch (err) {
+            if (status) status.textContent = '❌ No se pudo revisar el campo. Reintentá.';
+            if (typeof showToast === 'function') showToast('❌ Error en Revisión IA del campo', 'error');
+            console.warn('Field AI review error:', err);
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = '▶ Revisión IA';
+            }
+        }
+    }
+
     document.getElementById('efRecordBtn')?.addEventListener('click', async () => {
         if (!_efRecording) {
             try {
@@ -303,6 +422,7 @@
         // "Dejar en blanco" — cierra el modal sin tocar el badge; el campo sigue editable.
         closeEditFieldModal();
     }
+    document.getElementById('btnReviewFieldAI')?.addEventListener('click', _runFieldAIReview);
     document.getElementById('btnBlankEditField')?.addEventListener('click', clearFieldValue);
 
     function removeOrphanSectionHeadings() {
