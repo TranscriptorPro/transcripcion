@@ -259,6 +259,17 @@
                 }
             }
 
+            // Fallback robusto: generador PDF clásico si falla el render fiel HTML->blob.
+            if (typeof window.downloadPDFWrapper === 'function') {
+                try {
+                    await window.downloadPDFWrapper(editor.innerHTML, fileName, date, fileDate);
+                    if (typeof showToast === 'function') showToast('PDF descargado', 'success');
+                    return;
+                } catch (err) {
+                    console.warn('Fallback downloadPDFWrapper fallo:', err);
+                }
+            }
+
             if (typeof showToast === 'function') {
                 showToast('No se pudo generar PDF fiel desde la vista previa. Reintentá en unos segundos.', 'error');
             }

@@ -466,16 +466,28 @@ window.initModals = function () {
                 if (typeof showToast === 'function') showToast('No hay contenido en el editor', 'error');
                 return;
             }
-            // Priorizar SIEMPRE el flujo exacto HTML->Print para que PDF y vista previa coincidan.
-            if (typeof window.downloadFile === 'function') {
-                await window.downloadFile('pdf');
-            } else if (typeof downloadPDFWrapper === 'function') {
-                const safeT = typeof transcriptions !== 'undefined' ? transcriptions : [];
-                const safeI = typeof activeTabIndex !== 'undefined' ? activeTabIndex : 0;
-                const fName = (safeT[safeI]?.fileName || 'informe').replace(/\.[^/.]+$/, '');
-                const fecha = new Date().toLocaleDateString('es-ES');
-                const fDate = new Date().toISOString().split('T')[0];
-                await downloadPDFWrapper(editorEl.innerHTML, fName, fecha, fDate);
+            try {
+                // Priorizar flujo unificado principal.
+                if (typeof window.downloadFile === 'function') {
+                    await window.downloadFile('pdf');
+                    return;
+                }
+
+                // Fallback directo al generador PDF.
+                if (typeof window.downloadPDFWrapper === 'function') {
+                    const safeT = typeof transcriptions !== 'undefined' ? transcriptions : [];
+                    const safeI = typeof activeTabIndex !== 'undefined' ? activeTabIndex : 0;
+                    const fName = (safeT[safeI]?.fileName || 'informe').replace(/\.[^/.]+$/, '');
+                    const fecha = new Date().toLocaleDateString('es-ES');
+                    const fDate = new Date().toISOString().split('T')[0];
+                    await window.downloadPDFWrapper(editorEl.innerHTML, fName, fecha, fDate);
+                    return;
+                }
+
+                if (typeof showToast === 'function') showToast('No se encontró el módulo de descarga PDF', 'error');
+            } catch (err) {
+                console.warn('Error descargando PDF desde vista previa:', err);
+                if (typeof showToast === 'function') showToast('Error al descargar PDF. Reintentá.', 'error');
             }
         });
     }

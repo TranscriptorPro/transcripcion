@@ -58,7 +58,10 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         }
         const logoB64 = instLogoB64 || profLogoB64;
         const profName     = activePro?.nombre         || profData.nombre      || '';
-        const matricula    = activePro?.matricula      || profData.matricula   || '';
+        const matriculaRaw = activePro?.matricula      || profData.matricula   || '';
+        const matricula    = (typeof window.normalizeMatriculaDisplay === 'function')
+            ? window.normalizeMatriculaDisplay(matriculaRaw)
+            : matriculaRaw;
         const rawEsp       = activePro?.especialidades || profData.specialties || profData.especialidades || '';
         const especialidad = Array.isArray(rawEsp)
             ? rawEsp.filter(e => e && e !== 'Todas').join(' / ')

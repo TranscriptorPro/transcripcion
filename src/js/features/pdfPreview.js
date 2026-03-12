@@ -595,7 +595,10 @@ window.openPrintPreview = async function () {
         };
     const profName       = escName(profDisplayObj.fullName) || 'Profesional Médico';
     const profDisplayTitle = profDisplayObj.title || 'Dr.';
-    const matricula      = esc(activePro?.matricula  || profData.matricula || '');
+    const matriculaRaw   = String(activePro?.matricula || profData.matricula || '');
+    const matricula      = esc((typeof window.normalizeMatriculaDisplay === 'function')
+        ? window.normalizeMatriculaDisplay(matriculaRaw)
+        : matriculaRaw);
     const especialidadRaw = activePro?.especialidades
         || (Array.isArray(profData.specialties)
             ? profData.specialties.filter(s => s && s !== 'Todas').join(' / ')

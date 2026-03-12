@@ -36,7 +36,7 @@
     if (downloadBtnMain) {
         downloadBtnMain.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (typeof downloadFile === 'function') downloadFile(getPreferredFormat());
+            if (typeof window.downloadFile === 'function') window.downloadFile(getPreferredFormat());
         });
     }
 
@@ -68,7 +68,7 @@
     document.querySelectorAll('.dropdown-item').forEach(item => {
         item.addEventListener('click', () => {
             const format = item.dataset.format;
-            if (typeof downloadFile === 'function') downloadFile(format);
+            if (typeof window.downloadFile === 'function') window.downloadFile(format);
             if (downloadDropdown) downloadDropdown.classList.remove('open');
         });
     });

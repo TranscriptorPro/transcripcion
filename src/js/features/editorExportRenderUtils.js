@@ -77,7 +77,10 @@
             ? window.getProfessionalDisplay(rawProfName, activePro?.sexo || profData.sexo || '')
             : { fullName: String(rawProfName || '').trim() };
         const professionalName = String(profDisplayObj.fullName || rawProfName || '').trim();
-        const professionalMatricula = String(activePro?.matricula || profData.matricula || '').trim();
+        const professionalMatriculaRaw = String(activePro?.matricula || profData.matricula || '').trim();
+        const professionalMatricula = (typeof window.normalizeMatriculaDisplay === 'function')
+            ? window.normalizeMatriculaDisplay(professionalMatriculaRaw)
+            : professionalMatriculaRaw;
         const professionalSpecialtyRaw = activePro?.especialidades
             || (Array.isArray(profData.specialties)
                 ? profData.specialties.filter(s => s && s !== 'Todas').join(' / ')
@@ -252,7 +255,11 @@
             ? window.getProfessionalDisplay(rawProfName, activePro?.sexo || profData.sexo || '').fullName
             : (String(rawProfName || '').trim() || 'Profesional');
         const profName = escName(profDisplay) || '';
-        const matricula = esc(activePro?.matricula || profData.matricula || '');
+        const matriculaRaw = String(activePro?.matricula || profData.matricula || '');
+        const matriculaNorm = (typeof window.normalizeMatriculaDisplay === 'function')
+            ? window.normalizeMatriculaDisplay(matriculaRaw)
+            : matriculaRaw;
+        const matricula = esc(matriculaNorm);
         const espRaw = activePro?.especialidades
             || (Array.isArray(profData.specialties) ? profData.specialties.filter(s => s && s !== 'Todas').join(' / ') : (profData.especialidad || ''));
         const especialidad = escSentence(espRaw);

@@ -1,7 +1,20 @@
 // ============ UI PROFESSIONAL PERSONALIZATION ============
+window.normalizeMatriculaDisplay = function (value) {
+    const src = String(value || '').trim();
+    if (!src) return '';
+    return src
+        .replace(/\br\s*\.\s*e\s*\.?/gi, 'R. E.')
+        .replace(/\bR\s*\.\s*E\s*\.?/g, 'R. E.')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+};
+
 window.applyProfessionalData = function (data) {
     if (!data) return;
     const { nombre, matricula, specialties, sexo } = data;
+    const normalizedMatricula = (typeof window.normalizeMatriculaDisplay === 'function')
+        ? window.normalizeMatriculaDisplay(matricula)
+        : matricula;
 
     // Header: ADMIN siempre mantiene su banner intacto
     const isAdmin = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'ADMIN');
@@ -34,7 +47,7 @@ window.applyProfessionalData = function (data) {
             lockName.textContent = nombre;
         }
     }
-    if (lockMatricula) lockMatricula.textContent = matricula;
+    if (lockMatricula) lockMatricula.textContent = normalizedMatricula;
 
     // PDF Config Modal fields
     const pdfName = document.getElementById('pdfProfName');
@@ -42,7 +55,7 @@ window.applyProfessionalData = function (data) {
     const pdfSpecialty = document.getElementById('pdfProfEspecialidad');
 
     if (pdfName) pdfName.value = nombre;
-    if (pdfMatricula) pdfMatricula.value = matricula;
+    if (pdfMatricula) pdfMatricula.value = normalizedMatricula;
     if (pdfSpecialty) pdfSpecialty.value = Array.isArray(specialties) ? specialties.join(', ') : specialties;
 };
 
