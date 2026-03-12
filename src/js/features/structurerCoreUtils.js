@@ -112,11 +112,19 @@ function _stripRedundantEmptyMarkers(md) {
     }).join('\n');
 }
 
+function _stripWeakLeadIns(md) {
+    return String(md || '')
+        .replace(/(^|\n)\s*(?:\*\*)?\s*(Generalmente|En general|Habitualmente)\s*,\s+/gim, '$1')
+        .replace(/([.!?]\s+)(?:\*\*)?\s*(Generalmente|En general|Habitualmente)\s*,\s+/gim, '$1');
+}
+
 function markdownToHtml(md) {
     if (!md) return '';
 
     // Pre-process: remove redundant [No especificado] from complete phrases
     md = _stripRedundantEmptyMarkers(md);
+    // Limpieza final de inicios vagos introducidos por el LLM.
+    md = _stripWeakLeadIns(md);
 
     const inlineFormat = (text) => text
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
