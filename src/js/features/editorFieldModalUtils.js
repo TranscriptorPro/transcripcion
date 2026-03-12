@@ -305,7 +305,9 @@
     function _normalizeEditorVerticalRhythm() {
         if (!editor) return;
         editor.querySelectorAll('p.report-p, li').forEach((n) => {
-            const txt = String(n.textContent || '').replace(/[\u00A0\s]+/g, '').trim();
+            const clone = n.cloneNode(true);
+            clone.querySelectorAll('.inline-review-btn, .no-data-edit-btn').forEach(el => el.remove());
+            const txt = String(clone.textContent || '').replace(/[\u00A0\s]+/g, '').trim();
             const hasField = !!n.querySelector('.no-data-field');
             if (!txt && !hasField) n.remove();
         });
@@ -324,13 +326,13 @@
             return;
         }
 
-        editor.querySelectorAll('p.report-p, li').forEach((node) => {
+        editor.querySelectorAll('h2.report-h2, h3.report-h3, p.report-p, li').forEach((node) => {
             const already = Array.from(node.children || []).some(ch => ch.classList && ch.classList.contains('inline-review-btn'));
             if (already) return;
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'inline-review-btn';
-            btn.title = '2da/3ra revisión del párrafo';
+            btn.title = /^H[23]$/.test(node.tagName) ? '2da/3ra revisión de esta sección' : '2da/3ra revisión del párrafo';
             btn.textContent = '▶';
             btn.setAttribute('contenteditable', 'false');
             node.appendChild(btn);
@@ -386,98 +388,7 @@
         return '';
     }
 
-    async function _runFieldAIReview() {
-        if (!_targetSpan) return;
-        const key = _resolveGroqApiKey();
-        if (!key) {
-            if (typeof showToast === 'function') showToast('🔑 API Key requerida para Revisión IA', 'info');
-            return;
-        }
-
-        const btn = document.getElementById('btnReviewFieldAI');
-        const input = document.getElementById('efTextInput');
-        const status = document.getElementById('efTranscribeStatus');
-        if (!input) return;
-
-        const para = _targetSpan.closest('p, li') || _targetSpan.parentElement;
-        const paragraph = String(para?.innerText || para?.textContent || '').trim();
-        const titleEl = document.getElementById('editFieldModalTitle');
-        const fieldLabel = titleEl ? titleEl.textContent.replace(/^[▶✏️]\s*/, '').trim() : '';
-        const draft = String(input.value || '').trim();
-        const rawSource = String(window._lastRawTranscription || '').slice(0, 4000);
-        const templateKey = String(window.selectedTemplate || 'generico');
-        const templateName = window.MEDICAL_TEMPLATES?.[templateKey]?.name || templateKey;
-        const templateRules = _getTemplateSpecificReviewRules(templateKey);
-
-        _fieldReviewAttempt += 1;
-        if (btn) {
-            btn.disabled = true;
-            btn.textContent = `⏳ Revisión ${_fieldReviewAttempt}`;
-        }
-        if (status) status.textContent = `⏳ Ejecutando revisión ${_fieldReviewAttempt}...`;
-
-        try {
-            const model = (Array.isArray(window.GROQ_MODELS) && window.GROQ_MODELS[0]) || 'llama-3.1-8b-instant';
-            const systemContent = [
-                'Eres un asistente de redacción médica.',
-                'Tarea: reescribir SOLO un campo clínico puntual de forma objetiva y correcta.',
-                'Reglas absolutas:',
-                '1) No inventar, no inferir, no agregar datos no presentes.',
-                '2) No usar muletillas ni mezclar idiomas. Solo español médico formal.',
-                '3) Corregir ortografía, gramática y puntuación. Escribir en modo oración.',
-                '4) No alterar números, unidades, porcentajes, lateralidad ni negaciones.',
-                '5) Prohibido usar puntos suspensivos, frases incompletas o placeholders inventados.',
-                '6) Si el dato no está explícito: responder exactamente [No especificado].',
-                '7) Responder solo el texto final del campo, sin encabezados ni explicaciones.',
-                templateRules
-            ].join('\n');
-
-            const userContent = [
-                `Plantilla activa: ${templateName}`,
-                `Campo objetivo: ${fieldLabel || '[Sin etiqueta]'}`,
-                `Borrador actual del campo: ${draft || '[Vacío]'}`,
-                `Párrafo de contexto: ${paragraph || '[Sin contexto]'}`,
-                `Fuente original transcripta (referencia): ${rawSource || '[No disponible]'}`,
-                'Devuelve una única frase o valor de campo final.'
-            ].join('\n\n');
-
-            const res = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${key}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model,
-                    messages: [
-                        { role: 'system', content: systemContent },
-                        { role: 'user', content: userContent }
-                    ],
-                    temperature: 0.1
-                })
-            });
-
-            if (!res.ok) throw new Error(`HTTP_${res.status}`);
-            const data = await res.json();
-            const rawOut = data?.choices?.[0]?.message?.content || '';
-            const revised = _cleanFieldReviewOutput(rawOut);
-            if (!revised) throw new Error('EMPTY_REVIEW');
-
-            input.value = revised;
-            input.focus();
-            if (status) status.textContent = `✅ Revisión ${_fieldReviewAttempt} lista. Si querés otra pasada, pulsá nuevamente.`;
-            if (typeof showToast === 'function') showToast(`✅ Revisión ${_fieldReviewAttempt} aplicada al borrador`, 'success');
-        } catch (err) {
-            if (status) status.textContent = '❌ No se pudo revisar el campo. Reintentá.';
-            if (typeof showToast === 'function') showToast('❌ Error en Revisión IA del campo', 'error');
-            console.warn('Field AI review error:', err);
-        } finally {
-            if (btn) {
-                btn.disabled = false;
-                btn.textContent = '▶ Revisión IA';
-            }
-        }
-    }
+    // Revisión IA ahora es directa con botones inline en el editor (sin modal).
 
     document.getElementById('efRecordBtn')?.addEventListener('click', async () => {
         if (!_efRecording) {
@@ -533,7 +444,6 @@
         // "Dejar en blanco" — cierra el modal sin tocar el badge; el campo sigue editable.
         closeEditFieldModal();
     }
-    document.getElementById('btnReviewFieldAI')?.addEventListener('click', _runFieldAIReview);
     document.getElementById('btnBlankEditField')?.addEventListener('click', clearFieldValue);
 
     function removeOrphanSectionHeadings() {
@@ -542,7 +452,9 @@
             let node = heading.nextElementSibling;
             let hasContent = false;
             while (node && !/^H[23]$/.test(node.tagName)) {
-                const txt = String(node.textContent || '').replace(/[\u00A0\s]+/g, '').trim();
+                const clone = node.cloneNode(true);
+                clone.querySelectorAll('.inline-review-btn, .no-data-edit-btn').forEach(el => el.remove());
+                const txt = String(clone.textContent || '').replace(/[\u00A0\s]+/g, '').trim();
                 const hasEmptyField = !!node.querySelector?.('.no-data-field');
                 if (txt || hasEmptyField) {
                     hasContent = true;
@@ -570,7 +482,9 @@
         if (para && editor.contains(para)) {
             // Si quedan otros badges, no tocar la línea.
             if (!para.querySelector('.no-data-field')) {
-                const remaining = String(para.textContent || '')
+                const clone = para.cloneNode(true);
+                clone.querySelectorAll('.inline-review-btn, .no-data-edit-btn').forEach(el => el.remove());
+                const remaining = String(clone.textContent || '')
                     .replace(/[\u00A0]+/g, ' ').trim();
                 // Quitar patrones "Etiqueta:" y ver si queda contenido útil.
                 const noLabels = remaining
@@ -592,6 +506,19 @@
         if (typeof showToast === 'function') showToast('🗑️ Campo eliminado del informe', 'info');
     }
 
+    function _getSectionBodyForHeading(heading) {
+        const parts = [];
+        let node = heading?.nextElementSibling;
+        while (node && !/^H[23]$/.test(node.tagName)) {
+            const clone = node.cloneNode(true);
+            clone.querySelectorAll('.inline-review-btn, .no-data-edit-btn').forEach(el => el.remove());
+            const txt = String(clone.textContent || '').replace(/[\u00A0]+/g, ' ').trim();
+            if (txt) parts.push(txt);
+            node = node.nextElementSibling;
+        }
+        return parts.join(' ');
+    }
+
     async function _runInlineParagraphReview(targetNode) {
         if (!targetNode || !editor) return;
         const key = _resolveGroqApiKey();
@@ -601,9 +528,14 @@
         }
 
         const btn = targetNode.querySelector('.inline-review-btn');
-        const clone = targetNode.cloneNode(true);
-        clone.querySelectorAll('.inline-review-btn, .no-data-edit-btn').forEach(el => el.remove());
-        const paragraph = String(clone.textContent || '').replace(/[\u00A0]+/g, ' ').trim();
+        const isHeadingTarget = /^H[23]$/.test(targetNode.tagName || '');
+        const paragraph = isHeadingTarget
+            ? _getSectionBodyForHeading(targetNode)
+            : (() => {
+                const clone = targetNode.cloneNode(true);
+                clone.querySelectorAll('.inline-review-btn, .no-data-edit-btn').forEach(el => el.remove());
+                return String(clone.textContent || '').replace(/[\u00A0]+/g, ' ').trim();
+            })();
         if (!paragraph) return;
 
         if (btn) {
@@ -631,9 +563,10 @@
             ].join('\n');
             const userContent = [
                 `Plantilla activa: ${templateName}`,
+                isHeadingTarget ? `Sección objetivo: ${String(targetNode.textContent || '').replace(/▶/g, '').trim()}` : '',
                 `Párrafo actual: ${paragraph}`,
                 `Fuente transcripta: ${rawSource || '[No disponible]'}`
-            ].join('\n\n');
+            ].filter(Boolean).join('\n\n');
 
             const res = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
@@ -656,11 +589,23 @@
             const revised = _cleanFieldReviewOutput(rawOut);
             if (!revised) throw new Error('EMPTY_REVIEW');
 
-            targetNode.innerHTML = '';
-            if (/^\[No especificado\]$/i.test(revised)) {
-                targetNode.appendChild(_createEmptyFieldBadge());
+            if (isHeadingTarget) {
+                let firstBody = targetNode.nextElementSibling;
+                while (firstBody && /^H[23]$/.test(firstBody.tagName || '')) firstBody = firstBody.nextElementSibling;
+                if (!firstBody || /^H[23]$/.test(firstBody?.tagName || '')) return;
+                firstBody.innerHTML = '';
+                if (/^\[No especificado\]$/i.test(revised)) {
+                    firstBody.appendChild(_createEmptyFieldBadge());
+                } else {
+                    firstBody.appendChild(document.createTextNode(revised));
+                }
             } else {
-                targetNode.appendChild(document.createTextNode(revised));
+                targetNode.innerHTML = '';
+                if (/^\[No especificado\]$/i.test(revised)) {
+                    targetNode.appendChild(_createEmptyFieldBadge());
+                } else {
+                    targetNode.appendChild(document.createTextNode(revised));
+                }
             }
             _decorateInlineReviewButtons();
             editor.dispatchEvent(new Event('input', { bubbles: true }));
@@ -716,7 +661,7 @@
             if (reviewBtn) {
                 e.preventDefault();
                 e.stopPropagation();
-                const container = reviewBtn.closest('p.report-p, li');
+                const container = reviewBtn.closest('h2.report-h2, h3.report-h3, p.report-p, li');
                 if (container) _runInlineParagraphReview(container);
                 return;
             }
