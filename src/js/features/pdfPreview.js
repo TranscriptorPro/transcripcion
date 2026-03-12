@@ -360,22 +360,22 @@ window.openPrintPreview = async function () {
     const tplKey = window.selectedTemplate || config.selectedTemplate || '';
     const tplName = (tplKey && window.MEDICAL_TEMPLATES?.[tplKey]?.name) || '';
     const headingStudyType = _extractStudyTypeFromEditorHeading(editorEl);
-    const baseStudyType = config.studyType || tplName || '';
+    const baseStudyType = config.studyType || document.getElementById('reqStudyType')?.value || tplName || '';
     const effectiveStudyType = (_isGenericStudyType(baseStudyType) && headingStudyType)
         ? headingStudyType
         : baseStudyType;
     const studyType    = escSentence(effectiveStudyType);
-    const rawDate      = config.studyDate || '';
+    const rawDate      = config.studyDate || document.getElementById('reqStudyDate')?.value || '';
     const studyDate    = rawDate
         ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'})
         : new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'});
-    const studyReason  = escSentence(config.studyReason || '');
-    const refDoctor    = escName(config.referringDoctor || '');
+    const studyReason  = escSentence(config.studyReason || document.getElementById('reqStudyReason')?.value || '');
+    const refDoctor    = escName(config.referringDoctor || document.getElementById('reqReferringDoctor')?.value || '');
     const reportNum    = esc(document.getElementById('pdfReportNumber')?.value || config.reportNum || '');
     const footerText   = esc(config.footerText || 'Este informe es válido únicamente con la firma del profesional a cargo.');
     const wkAddr       = esc(config.workplaceAddress || activeWp?.address || '');
     const wkPhone      = esc(config.workplacePhone   || activeWp?.phone || '');
-    const studyTime    = esc(document.getElementById('pdfStudyTime')?.value || config.studyTime || '');
+    const studyTime    = esc(document.getElementById('reqStudyTime')?.value || document.getElementById('pdfStudyTime')?.value || config.studyTime || '');
     const showSignLine = config.showSignLine ?? true;
     const showSignName = config.showSignName ?? true;
     const showSignMat  = config.showSignMatricula ?? true;

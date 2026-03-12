@@ -1388,10 +1388,9 @@
 
         /* Encabezado de datos del paciente insertado en el editor */
         .patient-data-header {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.6rem 1rem;
+            display: block;
+            position: relative;
+            padding: 0.6rem 2.8rem 0.6rem 1rem;
             margin-bottom: 0.75rem;
             background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(59,130,246,0.06));
             border: 1.5px solid rgba(16,185,129,0.35);
@@ -1401,10 +1400,18 @@
             user-select: none;
         }
         .patient-data-content {
-            flex: 1;
             line-height: 1.6;
+            margin-right: 0.5rem;
+        }
+        .study-data-content {
+            margin-top: 0.2rem;
+            padding-top: 0.2rem;
+            border-top: 1px dashed rgba(16,185,129,0.3);
         }
         .patient-data-edit-btn {
+            position: absolute;
+            top: 0.45rem;
+            right: 0.45rem;
             background: none;
             border: 1px solid var(--border);
             border-radius: 6px;

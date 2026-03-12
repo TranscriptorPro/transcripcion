@@ -9,7 +9,7 @@
     <!-- PURGE: auto-purge al detectar nueva versión + ?purge manual. Preserva tema y color -->
     <script>
     (function() {
-        var APP_VERSION = 'v60'; // ← bump esto en cada deploy para forzar auto-purge
+        var APP_VERSION = 'v61'; // ← bump esto en cada deploy para forzar auto-purge
         try { window.APP_VERSION = APP_VERSION; } catch(_) {}
         var params = new URLSearchParams(window.location.search);
         var forcePurge = params.has('purge');
@@ -977,7 +977,6 @@
                 <!-- Tabs de navegación -->
                 <div class="config-tabs">
                     <button class="config-tab active" data-tab="cfgTabHeader">📄 Encabezado</button>
-                    <button class="config-tab" data-tab="cfgTabStudy">📝 Estudio</button>
                     <button class="config-tab" data-tab="cfgTabFormat">🎨 Formato</button>
                     <button class="config-tab" data-tab="cfgTabSignature">✍️ Firma</button>
                 </div>
@@ -1042,16 +1041,12 @@
                                     <input type="hidden" id="logoUpload" aria-hidden="true">
                                     <div id="pdfLogoPreview" class="logo-preview"></div>
                                 </div>
-                                <div class="field-group" id="logoSizeGroup">
-                                    <label>📐 Tamaño del logo profesional: <span id="logoSizeValue">60</span>px</label>
-                                    <input type="range" id="pdfLogoSize" min="30" max="200" value="60" step="5" style="width:100%;accent-color:var(--primary);">
-                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- TAB 2: Datos del Estudio -->
-                    <div class="config-tab-panel" id="cfgTabStudy">
+                    <!-- TAB legado: Datos del Estudio (oculto; ahora se completa desde el editor) -->
+                    <div class="config-tab-panel" id="cfgTabStudy" style="display:none !important;" aria-hidden="true">
                         <div class="pdf-config-section">
                             <div class="field-group">
                                 <label>Tipo de estudio</label>
@@ -1208,10 +1203,6 @@
                                 <label><input type="checkbox" id="pdfShowSignName" checked> Incluir nombre debajo de firma</label>
                                 <label><input type="checkbox" id="pdfShowSignMatricula" checked> Incluir matrícula debajo de firma</label>
                                 <label><input type="checkbox" id="pdfShowSignImage" checked> Insertar firma digital (si está disponible)</label>
-                            </div>
-                            <div class="field-group" style="margin-top:12px;">
-                                <label>📐 Tamaño de la firma digital: <span id="firmaSizeValue">60</span>px</label>
-                                <input type="range" id="pdfFirmaSize" min="30" max="150" value="60" step="5" style="width:100%;accent-color:var(--primary);">
                             </div>
                         </div>
                     </div>
@@ -1460,7 +1451,7 @@
         <div class="modal-overlay" id="patientDataRequiredOverlay">
             <div class="modal" style="max-width: 460px;">
                 <div class="modal-header">
-                    <h2>👤 Datos del Paciente</h2>
+                    <h2>👤 Datos del Paciente y Estudio</h2>
                     <button class="modal-close" id="btnClosePatientModal">&times;</button>
                 </div>
                 <div class="modal-body">
@@ -1514,6 +1505,33 @@
                             <label>Nº de Afiliado</label>
                             <input type="text" id="reqPatientAffiliateNum" class="toolbar-input" style="width:100%;" placeholder="Número de afiliado">
                         </div>
+                    </div>
+                    <hr style="margin:0.9rem 0;border:none;border-top:1px solid var(--border);">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.25rem;">
+                        <strong style="font-size:0.86rem;">📝 Datos del estudio</strong>
+                        <small style="color:var(--text-secondary);font-size:0.75rem;">Solo se mostrarán los campos completos</small>
+                    </div>
+                    <div style="display:flex; gap:0.75rem; margin-top:0.5rem;">
+                        <div class="field-group" style="flex:1">
+                            <label>Fecha del estudio <span class="field-required">*</span></label>
+                            <input type="date" id="reqStudyDate" class="toolbar-input" style="width:100%;">
+                        </div>
+                        <div class="field-group" style="flex:1">
+                            <label>Hora (opcional)</label>
+                            <input type="time" id="reqStudyTime" class="toolbar-input" style="width:100%;">
+                        </div>
+                    </div>
+                    <div class="field-group" style="margin-top:0.5rem;">
+                        <label>Médico solicitante</label>
+                        <input type="text" id="reqReferringDoctor" class="toolbar-input" style="width:100%;" placeholder="Dr/a que solicitó el estudio">
+                    </div>
+                    <div class="field-group" style="margin-top:0.5rem;">
+                        <label>Motivo / Indicación clínica</label>
+                        <input type="text" id="reqStudyReason" class="toolbar-input" style="width:100%;" placeholder="Ej: dolor abdominal, control anual">
+                    </div>
+                    <div class="field-group" style="margin-top:0.5rem;">
+                        <label>Tipo de estudio (opcional)</label>
+                        <input type="text" id="reqStudyType" class="toolbar-input" style="width:100%;" placeholder="Ej: Fondo de ojo, Ecografía abdominal">
                     </div>
                 </div>
                 <div class="modal-footer" style="padding:1rem 1.5rem; border-top:1px solid var(--border); display:flex; gap:0.5rem; justify-content:flex-end;">
@@ -2693,20 +2711,16 @@
         (function () {
             // Registrar Service Worker
             if ('serviceWorker' in navigator) {
-                // Recargar cuando un nuevo SW toma el control (solo en UPDATES, no en primera instalación)
-                let refreshing = false;
                 let hadController = !!navigator.serviceWorker.controller;
                 navigator.serviceWorker.addEventListener('controllerchange', () => {
-                    if (refreshing) return;
                     if (!hadController) {
-                        // Primera activación del SW — no recargar (evita interrumpir factory setup)
+                        // Primera activación del SW.
                         hadController = true;
-                        console.log('[SW] Primera activación del SW — sin recarga');
+                        console.log('[SW] Primera activación del SW');
                         return;
                     }
-                    refreshing = true;
-                    console.log('[SW] Nuevo SW tomó el control, recargando...');
-                    window.location.reload();
+                    // No recargar automáticamente: evita perder trabajo en el editor.
+                    console.log('[SW] Nuevo SW tomó el control; se aplicará plenamente al reabrir la app.');
                 });
 
                 window.addEventListener('load', () => {
@@ -2715,11 +2729,6 @@
                             console.log('[SW] Registrado:', reg.scope);
                             // Forzar check de update en cada carga
                             reg.update().catch(() => {});
-
-                            // Check periódico de updates cada 30 segundos
-                            setInterval(() => {
-                                reg.update().catch(() => {});
-                            }, 30000);
 
                             // Cuando hay un SW esperando (ej: de una visita anterior), activarlo
                             if (reg.waiting) {

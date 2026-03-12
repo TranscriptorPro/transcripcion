@@ -8,13 +8,22 @@ window.initPatientDataModalHandlers = function () {
 
     window.openPatientDataModal = function () {
         const cfg = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        const extracted = (typeof extractPatientDataFromText === 'function')
+            ? extractPatientDataFromText((document.getElementById('editor')?.innerText || ''))
+            : {};
+        const today = new Date().toISOString().split('T')[0];
         const prefill = {
-            reqPatientName: cfg.patientName || '',
-            reqPatientDni: cfg.patientDni || '',
-            reqPatientAge: cfg.patientAge || '',
-            reqPatientSex: cfg.patientSex || '',
-            reqPatientInsurance: cfg.patientInsurance || '',
-            reqPatientAffiliateNum: cfg.patientAffiliateNum || '',
+            reqPatientName: cfg.patientName || extracted.name || '',
+            reqPatientDni: cfg.patientDni || extracted.dni || '',
+            reqPatientAge: cfg.patientAge || extracted.age || '',
+            reqPatientSex: cfg.patientSex || extracted.sex || '',
+            reqPatientInsurance: cfg.patientInsurance || extracted.insurance || '',
+            reqPatientAffiliateNum: cfg.patientAffiliateNum || extracted.affiliateNum || '',
+            reqStudyDate: cfg.studyDate || extracted.studyDate || today,
+            reqStudyTime: cfg.studyTime || extracted.studyTime || '',
+            reqReferringDoctor: cfg.referringDoctor || extracted.referringDoctor || '',
+            reqStudyReason: cfg.studyReason || extracted.studyReason || '',
+            reqStudyType: cfg.studyType || extracted.studyType || '',
             reqPatientSearch: ''
         };
         Object.entries(prefill).forEach(([id, val]) => {
@@ -42,26 +51,31 @@ window.initPatientDataModalHandlers = function () {
     if (btnSavePatientData) {
         btnSavePatientData.addEventListener('click', () => {
             const name = document.getElementById('reqPatientName')?.value?.trim();
-            if (!name) {
-                if (typeof showToast === 'function') showToast('El nombre del paciente es obligatorio', 'error');
-                const nameEl = document.getElementById('reqPatientName');
-                if (nameEl) { nameEl.style.borderColor = '#dc2626'; nameEl.focus(); }
-                return;
-            }
 
             const config = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
-            config.patientName = name;
+            if (name) config.patientName = name;
+            else delete config.patientName;
             const dni = document.getElementById('reqPatientDni')?.value?.trim();
             const age = document.getElementById('reqPatientAge')?.value?.trim();
             const sex = document.getElementById('reqPatientSex')?.value;
             const insurance = document.getElementById('reqPatientInsurance')?.value?.trim();
             const affiliateNum = document.getElementById('reqPatientAffiliateNum')?.value?.trim();
+            const studyDate = document.getElementById('reqStudyDate')?.value?.trim() || new Date().toISOString().split('T')[0];
+            const studyTime = document.getElementById('reqStudyTime')?.value?.trim();
+            const referringDoctor = document.getElementById('reqReferringDoctor')?.value?.trim();
+            const studyReason = document.getElementById('reqStudyReason')?.value?.trim();
+            const studyType = document.getElementById('reqStudyType')?.value?.trim();
 
             if (dni) config.patientDni = dni;
             if (age) config.patientAge = age;
             if (sex) config.patientSex = sex;
             if (insurance) config.patientInsurance = insurance;
             if (affiliateNum) config.patientAffiliateNum = affiliateNum;
+            config.studyDate = studyDate;
+            if (studyTime) config.studyTime = studyTime; else delete config.studyTime;
+            if (referringDoctor) config.referringDoctor = referringDoctor; else delete config.referringDoctor;
+            if (studyReason) config.studyReason = studyReason; else delete config.studyReason;
+            if (studyType) config.studyType = studyType; else delete config.studyType;
 
             window._pdfConfigCache = config;
             if (typeof appDB !== 'undefined') appDB.set('pdf_config', config);
@@ -70,7 +84,19 @@ window.initPatientDataModalHandlers = function () {
             patientOverlay?.classList.remove('active');
             if (typeof showToast === 'function') showToast('Datos del paciente guardados', 'success');
 
-            window._insertPatientDataInEditor({ name, dni, age, sex, insurance, affiliateNum });
+            window._insertPatientDataInEditor({
+                name,
+                dni,
+                age,
+                sex,
+                insurance,
+                affiliateNum,
+                studyDate,
+                studyTime,
+                referringDoctor,
+                studyReason,
+                studyType
+            });
             if (typeof savePatientToRegistry === 'function') {
                 savePatientToRegistry({ name, dni, age, sex, insurance, affiliateNum });
                 if (typeof populatePatientDatalist === 'function') populatePatientDatalist();
@@ -96,13 +122,24 @@ window.initPatientDataModalHandlers = function () {
         if (data.height) lines.push(`<strong>Altura:</strong> ${data.height}`);
         if (data.insurance) lines.push(`<strong>Obra Social:</strong> ${data.insurance}`);
         if (data.affiliateNum) lines.push(`<strong>Nº Afiliado:</strong> ${data.affiliateNum}`);
-        if (lines.length === 0) return;
+
+        const studyLines = [];
+        const dateForDisplay = data.studyDate
+            ? new Date(data.studyDate + 'T12:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
+            : new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        studyLines.push(`<strong>Fecha:</strong> ${dateForDisplay}${data.studyTime ? ' ' + data.studyTime : ''}`);
+        if (data.studyType) studyLines.push(`<strong>Estudio:</strong> ${data.studyType}`);
+        if (data.referringDoctor) studyLines.push(`<strong>Médico solicitante:</strong> ${data.referringDoctor}`);
+        if (data.studyReason) studyLines.push(`<strong>Motivo:</strong> ${data.studyReason}`);
+
+        if (lines.length === 0 && studyLines.length === 0) return;
 
         const header = document.createElement('div');
         header.className = 'patient-data-header';
         header.setAttribute('contenteditable', 'false');
-        header.innerHTML = `<div class="patient-data-content">${lines.join(' &nbsp;·&nbsp; ')}</div>`
-            + `<button class="patient-data-edit-btn" title="Editar datos del paciente">✏️</button>`;
+        const patientHtml = lines.length ? `<div class="patient-data-content">${lines.join(' &nbsp;·&nbsp; ')}</div>` : '';
+        const studyHtml = studyLines.length ? `<div class="patient-data-content study-data-content">${studyLines.join(' &nbsp;·&nbsp; ')}</div>` : '';
+        header.innerHTML = `${patientHtml}${studyHtml}<button class="patient-data-edit-btn" title="Editar datos del paciente y estudio">✏️</button>`;
         header.querySelector('.patient-data-edit-btn').addEventListener('click', () => {
             if (typeof window.openPatientDataModal === 'function') window.openPatientDataModal();
         });
@@ -116,7 +153,9 @@ window.initPatientDataModalHandlers = function () {
             if (oldH) oldH.remove();
             const oldP = temp.querySelector('.patient-placeholder-banner');
             if (oldP) oldP.remove();
-            const headerHTML = `<div class="patient-data-header" contenteditable="false"><div class="patient-data-content">${lines.join(' &nbsp;·&nbsp; ')}</div><button class="patient-data-edit-btn" title="Editar datos del paciente">✏️</button></div>`;
+            const patientHTML = lines.length ? `<div class="patient-data-content">${lines.join(' &nbsp;·&nbsp; ')}</div>` : '';
+            const studyHTML = studyLines.length ? `<div class="patient-data-content study-data-content">${studyLines.join(' &nbsp;·&nbsp; ')}</div>` : '';
+            const headerHTML = `<div class="patient-data-header" contenteditable="false">${patientHTML}${studyHTML}<button class="patient-data-edit-btn" title="Editar datos del paciente y estudio">✏️</button></div>`;
             temp.insertAdjacentHTML('afterbegin', headerHTML);
             window._lastStructuredHTML = temp.innerHTML;
         }
@@ -126,7 +165,8 @@ window.initPatientDataModalHandlers = function () {
         const cfg = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
         const hasAnyPatientData = !!(
             cfg.patientName || cfg.patientDni || cfg.patientAge || cfg.patientSex ||
-            cfg.patientWeight || cfg.patientHeight || cfg.patientInsurance || cfg.patientAffiliateNum
+            cfg.patientWeight || cfg.patientHeight || cfg.patientInsurance || cfg.patientAffiliateNum ||
+            cfg.studyDate || cfg.studyTime || cfg.referringDoctor || cfg.studyReason || cfg.studyType
         );
         if (hasAnyPatientData) {
             window._insertPatientDataInEditor({
@@ -137,7 +177,12 @@ window.initPatientDataModalHandlers = function () {
                 weight: cfg.patientWeight,
                 height: cfg.patientHeight,
                 insurance: cfg.patientInsurance,
-                affiliateNum: cfg.patientAffiliateNum
+                affiliateNum: cfg.patientAffiliateNum,
+                studyDate: cfg.studyDate,
+                studyTime: cfg.studyTime,
+                referringDoctor: cfg.referringDoctor,
+                studyReason: cfg.studyReason,
+                studyType: cfg.studyType
             });
         } else if (typeof insertPatientPlaceholder === 'function') {
             insertPatientPlaceholder();

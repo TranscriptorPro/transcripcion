@@ -120,6 +120,12 @@ const INSURANCE_REGEX = /(?:obra\s+social|prepaga)\s*(?::|-)?\s*([^,.;\n]+)/i;
 const AFFILIATE_REGEX = /(?:n[°º]\s*afiliado|afiliad[oa]|nro\.?\s*afiliado)\s*(?::|-)?\s*([A-Za-z0-9.-]{3,30})/i;
 const WEIGHT_REGEX = /(?:peso)\s*(?::|-)?\s*(\d{2,3}(?:[.,]\d{1,2})?)\s*(?:kg|kilogramos?)?/i;
 const HEIGHT_REGEX = /(?:altura|talla)\s*(?::|-)?\s*(\d(?:[.,]\d{1,2})|\d{2,3})\s*(?:m|mts?|cm)?/i;
+const STUDY_DATE_REGEX = /(?:fecha(?:\s+del\s+estudio)?|estudio\s+realizado\s+el)\s*(?::|-)?\s*(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})/i;
+const STUDY_TIME_REGEX = /(?:hora(?:\s+del\s+estudio)?|hs?)\s*(?::|-)?\s*(\d{1,2}:\d{2})/i;
+const REFERRING_DOCTOR_REGEX = /(?:m[eé]dico\s+solicitante|solicitado\s+por|derivado\s+por|solicitante)\s*(?::|-)?\s*([^\n.;]{3,90})/i;
+const STUDY_REASON_REGEX = /(?:motivo(?:\s+de\s+(?:consulta|solicitud|estudio))?|indicaci[oó]n(?:\s+cl[ií]nica)?|raz[oó]n\s+del\s+estudio)\s*(?::|-)?\s*([^\n]{3,140})/i;
+const STUDY_TYPE_LINE_REGEX = /(?:tipo\s+de\s+estudio|estudio|pr[aá]ctica)\s*(?::|-)?\s*([^\n.;]{3,90})/i;
+const STUDY_TYPE_HEADING_REGEX = /\bINFORME\s+DE\s+([^\n]+)/i;
 
 const _NAME_BLOCKLIST = new Set([
     'masculino', 'femenino', 'sexo', 'genero', 'paciente', 'dni', 'documento',
@@ -189,6 +195,36 @@ window.extractPatientDataFromText = function (text) {
     if (weightMatch && weightMatch[1]) data.weight = String(weightMatch[1]).replace(',', '.');
     const heightMatch = text.match(HEIGHT_REGEX);
     if (heightMatch && heightMatch[1]) data.height = String(heightMatch[1]).replace(',', '.');
+
+    const studyDateMatch = text.match(STUDY_DATE_REGEX);
+    if (studyDateMatch && studyDateMatch[1]) {
+        const raw = String(studyDateMatch[1]).trim();
+        const parts = raw.split(/[\/-]/).map(p => p.trim());
+        if (parts.length === 3) {
+            let dd = parseInt(parts[0], 10);
+            let mm = parseInt(parts[1], 10);
+            let yy = parseInt(parts[2], 10);
+            if (yy < 100) yy += 2000;
+            if (dd >= 1 && dd <= 31 && mm >= 1 && mm <= 12 && yy >= 2000 && yy <= 2100) {
+                data.studyDate = `${String(yy).padStart(4, '0')}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
+            }
+        }
+    }
+
+    const studyTimeMatch = text.match(STUDY_TIME_REGEX);
+    if (studyTimeMatch && studyTimeMatch[1]) data.studyTime = studyTimeMatch[1].trim();
+
+    const refMatch = text.match(REFERRING_DOCTOR_REGEX);
+    if (refMatch && refMatch[1]) data.referringDoctor = refMatch[1].trim().replace(/[.,;:]+$/g, '');
+
+    const reasonMatch = text.match(STUDY_REASON_REGEX);
+    if (reasonMatch && reasonMatch[1]) data.studyReason = reasonMatch[1].trim().replace(/[.,;:]+$/g, '');
+
+    const typeHeadingMatch = text.match(STUDY_TYPE_HEADING_REGEX);
+    const typeLineMatch = text.match(STUDY_TYPE_LINE_REGEX);
+    const studyType = (typeHeadingMatch && typeHeadingMatch[1]) ? typeHeadingMatch[1] : (typeLineMatch && typeLineMatch[1]);
+    if (studyType) data.studyType = String(studyType).trim().replace(/[.,;:]+$/g, '');
+
     return data;
 }
 
@@ -302,15 +338,15 @@ window.savePdfConfiguration = function () {
     const existing = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
 
     const config = {
-        studyType: val('pdfStudyType'),
+        studyType: val('pdfStudyType') || existing.studyType || '',
         selectedTemplate: window.selectedTemplate || '',
-        reportNum: val('pdfReportNumber'),
-        studyDate: val('pdfStudyDate'),
-        studyTime: val('pdfStudyTime'),
-        studyReason: val('pdfStudyReason'),
-        referringDoctor: val('pdfReferringDoctor'),
-        equipment: val('pdfEquipment'),
-        technique: val('pdfTechnique'),
+        reportNum: val('pdfReportNumber') || existing.reportNum || '',
+        studyDate: val('pdfStudyDate') || existing.studyDate || '',
+        studyTime: val('pdfStudyTime') || existing.studyTime || '',
+        studyReason: val('pdfStudyReason') || existing.studyReason || '',
+        referringDoctor: val('pdfReferringDoctor') || existing.referringDoctor || '',
+        equipment: val('pdfEquipment') || existing.equipment || '',
+        technique: val('pdfTechnique') || existing.technique || '',
         patientName: val('pdfPatientName'),
         patientDni: val('pdfPatientDni'),
         patientAge: val('pdfPatientAge'),
@@ -336,15 +372,17 @@ window.savePdfConfiguration = function () {
         showSignImage: chk('pdfShowSignImage', true),
         showPhone: chk('pdfShowPhone', true),
         showEmail: chk('pdfShowEmail', true),
-        showSocial: chk('pdfShowSocial', false),
-        logoSizePx: parseInt(document.getElementById('pdfLogoSize')?.value || '60'),
-        firmaSizePx: parseInt(document.getElementById('pdfFirmaSize')?.value || '60'),
+        showSocial: chk('pdfShowSocial', true),
         footerText: val('pdfFooterText'),
         selectedWorkplace: val('pdfWorkplace'),
         workplaceAddress: normName(val('pdfWorkplaceAddress')),
         workplacePhone: val('pdfWorkplacePhone'),
         workplaceEmail: val('pdfWorkplaceEmail')
     };
+
+    // Tamaños de logo/firma quedan fijados por configuración del administrador.
+    if (existing.logoSizePx !== undefined) config.logoSizePx = existing.logoSizePx;
+    if (existing.firmaSizePx !== undefined) config.firmaSizePx = existing.firmaSizePx;
 
     // Preservar campos de profesional activo (seteados por business.js)
     if (existing.activeProfessional)      config.activeProfessional      = existing.activeProfessional;
@@ -381,13 +419,6 @@ window.savePdfConfiguration = function () {
     window._pdfConfigCache = config;
     if (typeof appDB !== 'undefined') appDB.set('pdf_config', config);
     else localStorage.setItem('pdf_config', JSON.stringify(config));
-    // Persistir tamaños de logo y firma en localStorage para acceso rápido
-    localStorage.setItem('prof_logo_size_px', String(config.logoSizePx || 60));
-    localStorage.setItem('firma_size_px', String(config.firmaSizePx || 60));
-    if (typeof appDB !== 'undefined') {
-        appDB.set('prof_logo_size_px', config.logoSizePx || 60);
-        appDB.set('firma_size_px', config.firmaSizePx || 60);
-    }
     if (typeof showToast === 'function') showToast('💾 Configuración PDF guardada', 'success');
 }
 
@@ -431,14 +462,7 @@ window.loadPdfConfiguration = async function () {
     setChk('pdfShowSignImage', config.showSignImage, true);
     setChk('pdfShowPhone',     config.showPhone,  true);
     setChk('pdfShowEmail',     config.showEmail,  true);
-    setChk('pdfShowSocial',    config.showSocial, false);
-    // Sliders de tamaño
-    const logoSlider = document.getElementById('pdfLogoSize');
-    const firmaSlider = document.getElementById('pdfFirmaSize');
-    const lsVal = config.logoSizePx || parseInt(localStorage.getItem('prof_logo_size_px') || '60');
-    const fsVal = config.firmaSizePx || parseInt(localStorage.getItem('firma_size_px') || '60');
-    if (logoSlider) { logoSlider.value = lsVal; const lbl = document.getElementById('logoSizeValue'); if (lbl) lbl.textContent = lsVal; }
-    if (firmaSlider) { firmaSlider.value = fsVal; const lbl = document.getElementById('firmaSizeValue'); if (lbl) lbl.textContent = fsVal; }
+    setChk('pdfShowSocial',    config.showSocial, true);
     set('pdfFooterText', config.footerText);
     set('pdfWorkplace', config.selectedWorkplace);
     set('pdfWorkplaceAddress', config.workplaceAddress);

@@ -271,22 +271,6 @@ window.initModals = function () {
         handleImageUpload('pdfLogoUpload',      'pdfLogoPreview',      'pdf_logo');
     }
 
-    // Sliders de tamaño de logo y firma — label en vivo
-    const logoSizeSlider = document.getElementById('pdfLogoSize');
-    const firmaSizeSlider = document.getElementById('pdfFirmaSize');
-    if (logoSizeSlider) {
-        logoSizeSlider.addEventListener('input', () => {
-            const lbl = document.getElementById('logoSizeValue');
-            if (lbl) lbl.textContent = logoSizeSlider.value;
-        });
-    }
-    if (firmaSizeSlider) {
-        firmaSizeSlider.addEventListener('input', () => {
-            const lbl = document.getElementById('firmaSizeValue');
-            if (lbl) lbl.textContent = firmaSizeSlider.value;
-        });
-    }
-
     if (btnSavePdfConfig) {
         btnSavePdfConfig.addEventListener('click', () => {
             if (typeof savePdfConfiguration === 'function') savePdfConfiguration();
@@ -333,11 +317,15 @@ window.initModals = function () {
                     ? window.normalizeFieldText(String(v || ''), 'name')
                     : String(v || '');
                 const config = {
-                    studyType: val('pdfStudyType'), studyDate: val('pdfStudyDate'),
-                    reportNum: val('pdfReportNumber'),
-                    studyTime: val('pdfStudyTime'), studyReason: val('pdfStudyReason'),
-                    referringDoctor: val('pdfReferringDoctor'), equipment: val('pdfEquipment'),
-                    technique: val('pdfTechnique'), patientName: val('pdfPatientName'),
+                    studyType: val('pdfStudyType') || existing.studyType || '',
+                    studyDate: val('pdfStudyDate') || existing.studyDate || '',
+                    reportNum: val('pdfReportNumber') || existing.reportNum || '',
+                    studyTime: val('pdfStudyTime') || existing.studyTime || '',
+                    studyReason: val('pdfStudyReason') || existing.studyReason || '',
+                    referringDoctor: val('pdfReferringDoctor') || existing.referringDoctor || '',
+                    equipment: val('pdfEquipment') || existing.equipment || '',
+                    technique: val('pdfTechnique') || existing.technique || '',
+                    patientName: val('pdfPatientName'),
                     patientDni: val('pdfPatientDni'), patientAge: val('pdfPatientAge'),
                     patientSex: val('pdfPatientSex'), patientInsurance: val('pdfPatientInsurance'),
                     patientAffiliateNum: val('pdfPatientAffiliateNum'), patientPhone: val('pdfPatientPhone'),
@@ -346,17 +334,17 @@ window.initModals = function () {
                     font: val('pdfFont') || 'helvetica', fontSize: val('pdfFontSize') || '11',
                     lineSpacing: val('pdfLineSpacing') || '1.5',
                     showHeader: chk('pdfShowHeader', true), showFooter: chk('pdfShowFooter', true),
-                    showPageNum: chk('pdfShowPageNum', true), showDate: chk('pdfShowDate', false),
-                    showQR: chk('pdfShowQR', false), showSignLine: chk('pdfShowSignLine', true),
+                    showPageNum: chk('pdfShowPageNum', true), showDate: chk('pdfShowDate', true),
+                    showQR: chk('pdfShowQR', true), showSignLine: chk('pdfShowSignLine', true),
                     showSignName: chk('pdfShowSignName', true), showSignMatricula: chk('pdfShowSignMatricula', true),
                     showSignImage: chk('pdfShowSignImage', true),
-                    showPhone: chk('pdfShowPhone', true), showEmail: chk('pdfShowEmail', true), showSocial: chk('pdfShowSocial', false),
-                    logoSizePx: parseInt(document.getElementById('pdfLogoSize')?.value || '60'),
-                    firmaSizePx: parseInt(document.getElementById('pdfFirmaSize')?.value || '60'),
+                    showPhone: chk('pdfShowPhone', true), showEmail: chk('pdfShowEmail', true), showSocial: chk('pdfShowSocial', true),
                     footerText: val('pdfFooterText'), selectedWorkplace: val('pdfWorkplace'),
                     workplaceAddress: normName(val('pdfWorkplaceAddress')), workplacePhone: val('pdfWorkplacePhone'),
                     workplaceEmail: val('pdfWorkplaceEmail')
                 };
+                if (existing.logoSizePx !== undefined) config.logoSizePx = existing.logoSizePx;
+                if (existing.firmaSizePx !== undefined) config.firmaSizePx = existing.firmaSizePx;
                 // Preservar campos de profesional activo (seteados por business.js)
                 if (existing.activeProfessional)                       config.activeProfessional      = existing.activeProfessional;
                 if (existing.activeProfessionalIndex !== undefined)     config.activeProfessionalIndex = existing.activeProfessionalIndex;

@@ -625,6 +625,11 @@ window.triggerPatientDataCheck = function(rawText) {
     delete savedConfig.patientHeight;
     delete savedConfig.patientInsurance;
     delete savedConfig.patientAffiliateNum;
+    delete savedConfig.referringDoctor;
+    delete savedConfig.studyReason;
+    delete savedConfig.studyTime;
+    delete savedConfig.studyType;
+    savedConfig.studyDate = new Date().toISOString().split('T')[0];
     window._pdfConfigCache = savedConfig;
     if (typeof appDB !== 'undefined') appDB.set('pdf_config', savedConfig);
     else localStorage.setItem('pdf_config', JSON.stringify(savedConfig));
@@ -634,7 +639,13 @@ window.triggerPatientDataCheck = function(rawText) {
         ? extractPatientDataFromText(rawText) : {};
 
     const hasPatientData = !!(extracted.name || extracted.dni || extracted.age || extracted.sex || extracted.weight || extracted.height || extracted.insurance || extracted.affiliateNum);
-    if (hasPatientData) {
+    const hasStudyData = !!(extracted.studyDate || extracted.studyTime || extracted.referringDoctor || extracted.studyReason || extracted.studyType);
+    if (extracted.studyDate) savedConfig.studyDate = extracted.studyDate;
+    if (extracted.studyTime) savedConfig.studyTime = extracted.studyTime;
+    if (extracted.referringDoctor) savedConfig.referringDoctor = extracted.referringDoctor;
+    if (extracted.studyReason) savedConfig.studyReason = extracted.studyReason;
+    if (extracted.studyType) savedConfig.studyType = extracted.studyType;
+    if (hasPatientData || hasStudyData) {
         // Encontrado en el audio/texto — guardar y notificar
         if (extracted.name) savedConfig.patientName = extracted.name;
         if (extracted.dni) savedConfig.patientDni = extracted.dni;
@@ -648,8 +659,8 @@ window.triggerPatientDataCheck = function(rawText) {
         if (typeof appDB !== 'undefined') appDB.set('pdf_config', savedConfig);
         else localStorage.setItem('pdf_config', JSON.stringify(savedConfig));
         if (typeof showToast === 'function') {
-            const who = extracted.name ? extracted.name : 'datos del paciente';
-            showToast(`👤 Paciente detectado: ${who}`, 'success');
+            if (extracted.name) showToast(`👤 Paciente detectado: ${extracted.name}`, 'success');
+            else if (hasStudyData) showToast('📝 Se detectaron datos del estudio', 'success');
         }
         // Quitar placeholder si existía e insertar header con datos extraídos
         removePatientPlaceholder();
@@ -670,7 +681,7 @@ function insertPatientPlaceholder() {
     const banner = document.createElement('div');
     banner.className = 'patient-placeholder-banner';
     banner.setAttribute('contenteditable', 'false');
-    banner.innerHTML = '👤 <span>Completar datos del paciente</span> — Click aquí';
+    banner.innerHTML = '👤 <span>Completar datos del paciente y estudio</span> — Click aquí';
     banner.addEventListener('click', () => {
         if (typeof window.openPatientDataModal === 'function') window.openPatientDataModal();
     });

@@ -83,6 +83,16 @@
         _cfgDirty |= _syncField('patientSex', 'reqPatientSex', 'pdfPatientSex');
         _cfgDirty |= _syncField('patientInsurance', 'reqPatientInsurance', 'pdfPatientInsurance');
         _cfgDirty |= _syncField('patientAffiliateNum', 'reqPatientAffiliateNum', 'pdfPatientAffiliateNum');
+        _cfgDirty |= _syncField('studyDate', 'reqStudyDate', 'pdfStudyDate');
+        _cfgDirty |= _syncField('studyTime', 'reqStudyTime', 'pdfStudyTime');
+        _cfgDirty |= _syncField('referringDoctor', 'reqReferringDoctor', 'pdfReferringDoctor');
+        _cfgDirty |= _syncField('studyReason', 'reqStudyReason', 'pdfStudyReason');
+        _cfgDirty |= _syncField('studyType', 'reqStudyType', 'pdfStudyType');
+
+        if (!pdfConfig.studyDate) {
+            pdfConfig.studyDate = new Date().toISOString().split('T')[0];
+            _cfgDirty = true;
+        }
 
         if (_cfgDirty) {
             window._pdfConfigCache = pdfConfig;

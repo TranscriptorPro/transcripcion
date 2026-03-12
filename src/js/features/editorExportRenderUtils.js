@@ -84,11 +84,11 @@
             patientSex: extracted.sex || cfg.patientSex || reqVal('reqPatientSex') || reqVal('pdfPatientSex') || '',
             patientInsurance: extracted.insurance || cfg.patientInsurance || reqVal('reqPatientInsurance') || reqVal('pdfPatientInsurance') || '',
             patientAffiliateNum: extracted.affiliateNum || cfg.patientAffiliateNum || reqVal('reqPatientAffiliateNum') || reqVal('pdfPatientAffiliateNum') || '',
-            studyType: effectiveStudyType,
+            studyType: effectiveStudyType || reqVal('reqStudyType') || '',
             studyDate,
-            studyTime: cfg.studyTime || reqVal('pdfStudyTime') || '',
-            studyReason: cfg.studyReason || reqVal('pdfStudyReason') || '',
-            referringDoctor: cfg.referringDoctor || reqVal('pdfReferringDoctor') || '',
+            studyTime: cfg.studyTime || reqVal('reqStudyTime') || reqVal('pdfStudyTime') || '',
+            studyReason: cfg.studyReason || reqVal('reqStudyReason') || reqVal('pdfStudyReason') || '',
+            referringDoctor: cfg.referringDoctor || reqVal('reqReferringDoctor') || reqVal('pdfReferringDoctor') || '',
             reportNum: cfg.reportNum || reqVal('pdfReportNumber') || ''
         };
     }
@@ -237,16 +237,16 @@
         const tplKey = window.selectedTemplate || config.selectedTemplate || '';
         const tplName = (tplKey && window.MEDICAL_TEMPLATES?.[tplKey]?.name) || '';
         const studyType = escSentence(_computeEffectiveStudyType(
-            config.studyType,
+            config.studyType || document.getElementById('reqStudyType')?.value || '',
             tplName,
             editorEl?.innerHTML || '',
             editorEl?.innerText || ''
         ));
         const rawDate = config.studyDate || '';
         const studyDate = rawDate ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        const studyTime = esc(document.getElementById('pdfStudyTime')?.value || config.studyTime || '');
-        const studyReason = escSentence(config.studyReason || '');
-        const refDoctor = escName(config.referringDoctor || '');
+        const studyTime = esc(document.getElementById('reqStudyTime')?.value || document.getElementById('pdfStudyTime')?.value || config.studyTime || '');
+        const studyReason = escSentence(config.studyReason || document.getElementById('reqStudyReason')?.value || '');
+        const refDoctor = escName(config.referringDoctor || document.getElementById('reqReferringDoctor')?.value || '');
         const reportNum = esc(document.getElementById('pdfReportNumber')?.value || config.reportNum || '');
         const footerText = esc(config.footerText || 'Este informe es válido únicamente con la firma del profesional a cargo.');
         const showSignLine = config.showSignLine ?? true;

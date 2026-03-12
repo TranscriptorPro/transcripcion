@@ -155,7 +155,8 @@ window.fetchWithTimeout = function(url, options, timeoutMs = 120000) {
         'reqPatientName', 'profName', 'profNombre', 'nombreProfesional',
         'workplace', 'lugarTrabajo',
         'pdfProfName', 'proNombre', 'pdfPatientName',
-        'wpName', 'pdfWorkplaceAddress', 'wpAddress'
+        'wpName', 'pdfWorkplaceAddress', 'wpAddress',
+        'reqReferringDoctor', 'reqStudyType'
     ]);
 
     // Campos que se fuerzan a MAYÚSCULAS completas
@@ -167,7 +168,8 @@ window.fetchWithTimeout = function(url, options, timeoutMs = 120000) {
     const SKIP_FIELDS = new Set([
         'reqPatientSearch', 'reqPatientDni', 'reqPatientAge',
         'reqPatientAffiliateNum', 'apiKeyInput', 'registrySearch',
-        'groqApiKey', 'deviceId', 'fieldSearchInput'
+        'groqApiKey', 'deviceId', 'fieldSearchInput',
+        'reqStudyDate', 'reqStudyTime'
     ]);
 
     function shouldNormalize(el) {
