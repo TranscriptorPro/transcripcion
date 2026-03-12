@@ -167,7 +167,7 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepción (ordenadas por prioridad):
 10. En estudios multi-órgano/multi-segmento (ecografía, colonoscopía, Doppler, laringoscopía, etc.): una sección ## por CADA estructura evaluada. Si una estructura fue evaluada y es normal → describir brevemente o indicar s/p. Si NO fue evaluada → marcar con [No especificado]. Si la transcripción contiene datos que no encajan en las secciones propuestas → crear subsección adicional.
 
 >>> CONCLUSIÓN >>>
-11. CONCLUSIÓN (regla universal): (a) incluir TODOS los hallazgos patológicos o positivos, ninguno puede omitirse; (b) NO incluir estructuras normales; (c) si todo es normal: "Estudio dentro de parámetros normales."; (d) NUNCA dejar vacía ni como [No especificado]; (e) NO inventar datos; (f) NO indicar tratamientos si el médico no los mencionó.
+11. CONCLUSIÓN (regla universal): (a) incluir TODOS los hallazgos patológicos o positivos, ninguno puede omitirse; (b) NO incluir estructuras normales; (c) si todo es normal: "Estudio dentro de parámetros normales."; (d) NUNCA dejar vacía ni como [No especificado]; (e) NO inventar datos; (f) NO indicar tratamientos si el médico no los mencionó; (g) PROHIBIDO agregar frases de salvedad sobre faltantes (por ejemplo: "aunque faltan detalles", "faltan datos", "no se detalló/no se especificó").
 
 >>> CALIDAD LINGÜÍSTICA >>>
 12. CORRECCIÓN ASR: el texto proviene de reconocimiento de voz. Corrige silenciosamente errores fonéticos ("o dinofagia" → "odinofagia", "bujales" → "bucales"), anglicismos ("laryngoscopy" → "laringoscopía") y palabras partidas. NO señales las correcciones.
@@ -472,6 +472,11 @@ function _sanitizeGrammarArtifacts(text) {
         .replace(/(?:la\s+)?gonioscop[ií]a\s+din[aá]mica(?:\/indentaci[oó]n)?\s+no\s+se\s+inform[oó]\.?,?/gi, '')
         .replace(/\bGonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\s*:\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, '')
         .replace(/\bNo\s+se\s+realiz(?:o|ó|aron)\s+gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\.?/gi, '')
+        // Eliminar coletillas no objetivas en conclusión sobre "faltan detalles"
+        .replace(/,?\s*aunque\s+faltan\s+detalles[^.]*\.?/gi, '')
+        .replace(/,?\s*si\s+bien\s+faltan\s+detalles[^.]*\.?/gi, '')
+        .replace(/,?\s*(?:faltan|falta)\s+(?:detalles|datos|informaci[oó]n)[^.]*\.?/gi, '')
+        .replace(/,?\s*(?:no\s+se\s+(?:detall[oó]|especific[oó]|inform[oó]))[^.]*\.?/gi, '')
         // Eliminar textos de placeholder genéricos
         .replace(/\bInformaci[oó]n\s+sobre\s+el\s+sistema\s+Spaeth\.?/gi, '')
         .replace(/\bDescripci[oó]n\s+de\s+la\s+configuraci[oó]n[^.]*\.?/gi, '')

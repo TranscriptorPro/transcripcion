@@ -247,11 +247,18 @@ function markdownToHtml(md) {
         .replace(rxLabelField, `$1${EMPTY_FIELD_HTML}`)
         .replace(rxBareField, `$1${EMPTY_FIELD_HTML}`);
 
-    // Añadir botón de revisión directa en TODOS los párrafos/campos editables.
-    // No se agrega dentro de headings ni en bloques ya vacíos con badge.
+    // Añadir botón de revisión directa solo en párrafos/listas con contenido real.
+    // Nunca agregarlo en campos vacíos.
     const wrapReview = document.createElement('div');
     wrapReview.innerHTML = result;
     wrapReview.querySelectorAll('p.report-p, li').forEach((node) => {
+        if (node.querySelector('.no-data-field')) return;
+        const clone = node.cloneNode(true);
+        clone.querySelectorAll('.inline-review-btn, .no-data-edit-btn, .no-data-field').forEach(el => el.remove());
+        const rawText = String(clone.textContent || '')
+            .replace(/[\u00A0\s]+/g, ' ')
+            .trim();
+        if (!rawText || !/[\p{L}\p{N}]/u.test(rawText)) return;
         if (node.querySelector('.inline-review-btn')) return;
         node.insertAdjacentHTML('beforeend', INLINE_REVIEW_BTN_HTML);
     });

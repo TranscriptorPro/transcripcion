@@ -1182,9 +1182,7 @@
         .no-data-edit-btn:hover { background: var(--primary-dark); }
 
         .report-p .inline-review-btn,
-        li .inline-review-btn,
-        .report-h2 .inline-review-btn,
-        .report-h3 .inline-review-btn {
+        li .inline-review-btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -1206,6 +1204,83 @@
 
         .inline-review-btn:hover {
             background: var(--primary-dark);
+        }
+
+        #inlineReviewQuickControl {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.24rem 0.52rem;
+            border: 1px solid color-mix(in srgb, var(--primary) 52%, var(--border));
+            border-radius: 10px;
+            background:
+                linear-gradient(135deg, color-mix(in srgb, var(--primary) 14%, var(--bg-card)) 0%, var(--bg-card) 62%),
+                repeating-linear-gradient(90deg, transparent 0 8px, color-mix(in srgb, var(--primary) 10%, transparent) 8px 9px);
+            box-shadow:
+                inset 0 0 0 1px color-mix(in srgb, var(--primary) 20%, transparent),
+                0 0 10px color-mix(in srgb, var(--primary) 22%, transparent);
+            overflow: hidden;
+            animation: inline-review-panel-glow 2.2s ease-in-out infinite;
+        }
+
+        #inlineReviewQuickControl::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -45%;
+            width: 42%;
+            height: 100%;
+            background: linear-gradient(110deg, transparent 0%, color-mix(in srgb, #ffffff 35%, transparent) 50%, transparent 100%);
+            pointer-events: none;
+            animation: inline-review-panel-scan 2.4s linear infinite;
+        }
+
+        #inlineReviewQuickControl .inline-review-quick-label {
+            font-size: 0.74rem;
+            color: var(--text-secondary);
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+            text-transform: uppercase;
+            text-shadow: 0 0 8px color-mix(in srgb, var(--primary) 38%, transparent);
+        }
+
+        #inlineReviewQuickControl .toggle-switch-sm {
+            filter: drop-shadow(0 0 5px color-mix(in srgb, var(--primary) 35%, transparent));
+        }
+
+        #inlineReviewQuickControl .toggle-slider-sm {
+            background: linear-gradient(90deg, color-mix(in srgb, var(--text-secondary) 45%, #1f2937), #1f2937);
+            border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+        }
+
+        #inlineReviewQuickControl .toggle-slider-sm::before {
+            background: linear-gradient(145deg, #ffffff 0%, #dbeafe 100%);
+            box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent), 0 0 7px color-mix(in srgb, var(--primary) 35%, transparent);
+        }
+
+        #inlineReviewQuickControl .toggle-switch-sm input:checked + .toggle-slider-sm {
+            background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 88%, #0284c7), color-mix(in srgb, var(--primary-dark) 70%, #0f172a));
+            box-shadow: inset 0 0 6px color-mix(in srgb, #ffffff 22%, transparent), 0 0 8px color-mix(in srgb, var(--primary) 45%, transparent);
+        }
+
+        @keyframes inline-review-panel-glow {
+            0%, 100% {
+                box-shadow:
+                    inset 0 0 0 1px color-mix(in srgb, var(--primary) 20%, transparent),
+                    0 0 8px color-mix(in srgb, var(--primary) 16%, transparent);
+            }
+            50% {
+                box-shadow:
+                    inset 0 0 0 1px color-mix(in srgb, var(--primary) 34%, transparent),
+                    0 0 14px color-mix(in srgb, var(--primary) 32%, transparent);
+            }
+        }
+
+        @keyframes inline-review-panel-scan {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(340%); }
         }
 
         @media print {

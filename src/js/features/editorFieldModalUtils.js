@@ -350,14 +350,18 @@
             }
         });
 
-        editor.querySelectorAll('h2.report-h2, h3.report-h3, p.report-p, li').forEach((node) => {
-            if ((node.matches('p.report-p, li')) && node.querySelector('.no-data-field')) return;
+        editor.querySelectorAll('p.report-p, li').forEach((node) => {
+            if (node.querySelector('.no-data-field')) return;
+            const clone = node.cloneNode(true);
+            clone.querySelectorAll('.inline-review-btn, .no-data-edit-btn, .no-data-field').forEach(el => el.remove());
+            const txt = String(clone.textContent || '').replace(/[\u00A0\s]+/g, ' ').trim();
+            if (!txt || !/[\p{L}\p{N}]/u.test(txt)) return;
             const already = Array.from(node.children || []).some(ch => ch.classList && ch.classList.contains('inline-review-btn'));
             if (already) return;
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'inline-review-btn';
-            btn.title = /^H[23]$/.test(node.tagName) ? '2da/3ra revisión de esta sección' : '2da/3ra revisión del párrafo';
+            btn.title = '2da/3ra revisión del párrafo';
             btn.textContent = '▶';
             btn.setAttribute('contenteditable', 'false');
             node.appendChild(btn);
