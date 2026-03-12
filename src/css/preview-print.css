@@ -69,7 +69,7 @@
     font-size: 11pt;
     font-weight: 700;
     letter-spacing: 0.06em;
-    text-transform: none;
+    text-transform: uppercase;
 }
 .pvw-details {
     font-size: 8pt;
@@ -299,7 +299,7 @@
 .a4-page .preview-content h1 {
     font-size: 13pt;
     font-weight: 700;
-    text-transform: none;
+    text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--pa, #1a56a0);
     border-bottom: 2px solid var(--pa, #1a56a0);
@@ -313,7 +313,7 @@
     color: var(--pa, #1a56a0);
     margin: 16px 0 6px;
     padding-bottom: 3px;
-    border-bottom: 1px solid color-mix(in srgb, var(--pa, #1a56a0) 30%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--pa, #1a56a0) 30%, white);
 }
 .a4-page .preview-content h3 {
     font-size: 10.5pt;
@@ -376,7 +376,7 @@
 .a4-page .report-h1 {
     font-size: 13pt;
     font-weight: 700;
-    text-transform: none;
+    text-transform: uppercase;
     letter-spacing: 0.10em;
     border-bottom: 2px solid var(--pa, #1a56a0);
     padding-bottom: 4px;
@@ -392,7 +392,7 @@
     color: var(--pa, #1a56a0);
     margin: 14px 0 6px;
     padding-bottom: 3px;
-    border-bottom: 1px solid color-mix(in srgb, var(--pa, #1a56a0) 30%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--pa, #1a56a0) 30%, white);
 }
 .a4-page .report-h3 {
     font-size: 10.5pt;

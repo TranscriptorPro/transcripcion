@@ -822,7 +822,7 @@ window.openPrintPreview = async function () {
         let row2 = '';
         if (refDoctor)   row2 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">SOLICITANTE:</span><span class="pvs-val">${refDoctor}</span></div>`;
         if (studyReason) row2 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">MOTIVO:</span><span class="pvs-val">${studyReason}</span></div>`;
-        studyEl.innerHTML = `<div style="text-align:center;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--primary,#1a56a0);font-size:13pt;border-bottom:2px solid var(--primary,#1a56a0);padding-bottom:4px;margin:2px 0 10px;">${studyTitle}</div><div class="pvs-grid pvs-3col">${row1}</div>`
+        studyEl.innerHTML = `<div style="text-align:center;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--pa,#1a56a0);font-size:13pt;border-bottom:2px solid var(--pa,#1a56a0);padding-bottom:4px;margin:2px 0 10px;">${studyTitle}</div><div class="pvs-grid pvs-3col">${row1}</div>`
             + (row2 ? `<div class="pvs-grid pvs-2col">${row2}</div>` : '');
     }
 

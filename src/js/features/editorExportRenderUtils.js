@@ -436,7 +436,8 @@
         };
         const [ar, ag, ab] = _hexToRgb(accentColor);
         const accentLight = `rgb(${Math.round(ar * 0.3 + 255 * 0.7)},${Math.round(ag * 0.3 + 255 * 0.7)},${Math.round(ab * 0.3 + 255 * 0.7)})`;
-
+        const accentBadgeBg = `rgb(${Math.round(ar * 0.15 + 255 * 0.85)},${Math.round(ag * 0.15 + 255 * 0.85)},${Math.round(ab * 0.15 + 255 * 0.85)})`;
+        const accentBadgeBorder = `rgb(${Math.round(ar * 0.25 + 255 * 0.75)},${Math.round(ag * 0.25 + 255 * 0.75)},${Math.round(ab * 0.25 + 255 * 0.75)})`;
         return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -459,7 +460,7 @@ body { font-family: ${fontFamily}; font-size: ${fontSize}pt; line-height: ${line
 .pvh-info { flex: 1; }
 .pvh-name { font-size: 14pt; font-weight: 700; color: var(--pa); letter-spacing: 0.02em; }
 .pvh-badges { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px; }
-.pvh-badge { background: ${accentLight}; color: var(--pa); border: 1px solid ${accentLight}; border-radius: 12px; padding: 1px 8px; font-size: 8pt; font-weight: 600; white-space: nowrap; font-family: Helvetica, Arial, sans-serif; }
+.pvh-badge { background: ${accentBadgeBg}; color: var(--pa); border: 1px solid ${accentBadgeBorder}; border-radius: 12px; padding: 1px 8px; font-size: 8pt; font-weight: 600; white-space: nowrap; font-family: Helvetica, Arial, sans-serif; }
 .pvh-mat { font-size: 8.5pt; color: #555; margin-top: 3px; }
 .pvh-contact { margin-left: auto; text-align: right; font-size: 8pt; color: #555; font-family: Helvetica, Arial, sans-serif; min-width: 130px; }
 .pvh-ci { display: flex; align-items: center; gap: 5px; justify-content: flex-end; margin-bottom: 3px; white-space: nowrap; }
