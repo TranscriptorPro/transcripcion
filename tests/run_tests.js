@@ -6960,6 +6960,27 @@ test('Gonio-AO-2 — sin señal bilateral no replica OD hacia OI', () => {
     assertEqual(out, md, 'No debe modificar salida cuando no hay AO/ambos ojos/bilateral');
 });
 
+test('Gonio-Quality-1 — corrige frases incompletas frecuentes', () => {
+    assertEqual(typeof _normalizeGonioscopyNarrativeQuality, 'function', 'Debe existir normalizador de calidad para gonioscopía');
+    const md = `## OJO DERECHO (OD)
+El ángulo es abierto con grado Shaffer y condición, la configuración del iris es. No se realizaron gonioscopía dinámica/indentación.`;
+    const out = _normalizeGonioscopyNarrativeQuality(md);
+    assert(out.includes('grado Shaffer [No especificado] y condición [No especificado]'),
+        'Debe completar grado/condición faltantes con [No especificado]');
+    assert(out.includes('la configuración del iris es [No especificado].'),
+        'Debe completar configuración del iris faltante con [No especificado]');
+    assert(out.includes('Gonioscopía dinámica/indentación: [No especificado].'),
+        'Debe normalizar dinámica/indentación no reportada');
+});
+
+test('Gonio-Quality-2 — normaliza heading de Spaeth', () => {
+    const md = `## SISTEMA SPAETH
+[No especificado]`;
+    const out = _normalizeGonioscopyNarrativeQuality(md);
+    assert(out.includes('## SISTEMA SPAETH (SI ESTÁ REPORTADO)'),
+        'Debe estandarizar el título de Spaeth');
+});
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // Bloque 115: Extracción paciente — 41 casos clínicos
 // ═══════════════════════════════════════════════════════════════════════════════

@@ -391,12 +391,31 @@ function _normalizeGonioscopyBilateralAO(markdown, sourceText) {
     return out.replace(oi.full, `${oi.header}${od.body}`);
 }
 
+function _normalizeGonioscopyNarrativeQuality(markdown) {
+    let out = String(markdown || '');
+    if (!out) return out;
+
+    const fixes = [
+        [/(\bcon\s+)?grado\s+Shaffer\s+y\s+condici[oó]n\b/gi, 'con grado Shaffer [No especificado] y condición [No especificado]'],
+        [/la\s+configuraci[oó]n\s+del\s+iris\s+es\.?/gi, 'la configuración del iris es [No especificado].'],
+        [/No\s+se\s+realiz(?:o|ó|aron)\s+gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\.?/gi, 'Gonioscopía dinámica/indentación: [No especificado].'],
+        [/(##\s*SISTEMA\s+SPAETH)\s*(\n|$)/gi, '## SISTEMA SPAETH (SI ESTÁ REPORTADO)$2']
+    ];
+
+    fixes.forEach(([pattern, replacement]) => {
+        out = out.replace(pattern, replacement);
+    });
+
+    return out;
+}
+
 function _normalizeTemplateSpecificOutput(markdown, templateKey, sourceText) {
     let out = String(markdown || '');
     if (!out) return out;
 
     if (templateKey === 'gonioscopia') {
         out = _normalizeGonioscopyBilateralAO(out, sourceText);
+        out = _normalizeGonioscopyNarrativeQuality(out);
     }
 
     return out;

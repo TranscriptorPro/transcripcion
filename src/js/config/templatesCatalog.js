@@ -230,6 +230,8 @@ REGLAS INTERNAS (NO INCLUIR EN LA SALIDA FINAL):
 - Si la transcripción dice "AO", "ambos ojos" o "bilateral" y no detalla diferencias entre OD/OI, debes reflejar los mismos hallazgos clínicos en OD y en OI (nunca dejar OI vacío en ese escenario).
 - Si se reporta Spaeth de forma global o bilateral, completar OD y OI dentro de la sección de Spaeth con la mejor correspondencia posible.
 - NO escribas en el informe secciones de metainstrucciones como "Reglas", "Instrucciones" o "Notas del sistema".
+- Redacta con objetividad clínica y frases completas. Prohibido dejar frases incompletas o ambiguas como "grado Shaffer y condición" o "la configuración del iris es".
+- Si falta un dato puntual (grado, condición, configuración, dinámica), completa ese dato con "[No especificado]" dentro de la oración, sin romper la coherencia gramatical.
 
 IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
     },
