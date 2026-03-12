@@ -401,12 +401,14 @@ function _normalizeGonioscopyNarrativeQuality(markdown) {
     const fixes = [
         [/\bcon\s+un\s+con\b/gi, 'con'],
         [/\bcon\s+con\b/gi, 'con'],
-        [/grado\s+Shaffer\s+y\s+condici[oó]n\s+(abierto|estrecho|cerrado)\b/gi, 'grado Shaffer [No especificado] y condición $1'],
-        [/grado\s+Shaffer\s+y\s+condici[oó]n(?=\s*[,.;:]|\s*$)/gi, 'grado Shaffer [No especificado] y condición [No especificado]'],
-        [/la\s+configuraci[oó]n\s+del\s+iris\s+es\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, 'La configuración del iris es [No especificado]. '],
-        [/la\s+gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\s+es\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, 'Gonioscopía dinámica/indentación: [No especificado]. '],
+        [/grado\s+Shaffer\s+y\s+condici[oó]n\s+(abierto|estrecho|cerrado)\b/gi, 'grado Shaffer y condición $1'],
+        [/grado\s+Shaffer\s+y\s+condici[oó]n(?=\s*[,.;:]|\s*$)/gi, ''],
+        [/el\s+grado\s+de\s+Shaffer\s+es\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, ''],
+        [/la\s+pigmentaci[oó]n\s+trabecular\s+es\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, ''],
+        [/la\s+configuraci[oó]n\s+del\s+iris\s+es\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, ''],
+        [/la\s+gonioscop[ií]a\s+din[aá]mica(?:\/indentaci[oó]n)?\s*(?:es|:)\s*(?:\.\.+|…|[.,;:]+)?\s*(?:o\s+no\s+se\s+especific[oó])?\s*,?/gi, ''],
         [/No\s+se\s+realiz(?:o|ó|aron)\s+gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\.?/gi, ''],
-        [/Gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\s*:\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, 'Gonioscopía dinámica/indentación: [No especificado]. '],
+        [/Gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\s*:\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, ''],
         [/,\s*,/g, ','],
         [/,\s*\./g, '.'],
     ];
@@ -417,7 +419,7 @@ function _normalizeGonioscopyNarrativeQuality(markdown) {
 
     out = out
         .replace(/\.\s*\./g, '. ')
-        .replace(/:\s*\./g, ': [No especificado].')
+        .replace(/:\s*\./g, '.')
         .replace(/\s{2,}/g, ' ')
         .replace(/([.!?]\s+)([a-záéíóúñ])/g, (_, p1, p2) => p1 + p2.toUpperCase());
 
@@ -457,10 +459,12 @@ function _sanitizeGrammarArtifacts(text) {
     out = out
         .replace(/\bcon\s+un\s+con\b/gi, 'con')
         .replace(/\bcon\s+con\b/gi, 'con')
-        // Completar frases incompletas de gonioscopía con marcador editable
-        .replace(/\bla\s+configuraci[oó]n\s+del\s+iris\s+es\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, 'La configuración del iris es [No especificado]. ')
-        .replace(/\bla\s+gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\s+es\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, 'Gonioscopía dinámica/indentación: [No especificado]. ')
-        .replace(/\bGonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\s*:\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, 'Gonioscopía dinámica/indentación: [No especificado]. ')
+        // Eliminar frases incompletas o inventadas en gonioscopía (no agregar texto no dictado)
+        .replace(/\bel\s+grado\s+de\s+Shaffer\s+es\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, '')
+        .replace(/\bla\s+pigmentaci[oó]n\s+trabecular\s+es\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, '')
+        .replace(/\bla\s+configuraci[oó]n\s+del\s+iris\s+es\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, '')
+        .replace(/\bla\s+gonioscop[ií]a\s+din[aá]mica(?:\/indentaci[oó]n)?\s*(?:es|:)\s*(?:\.\.+|…|[.,;:]+)?\s*(?:o\s+no\s+se\s+especific[oó])?\s*,?/gi, '')
+        .replace(/\bGonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\s*:\s*(?:\.\.+|…|[.,;:]+)?\s*,?/gi, '')
         .replace(/\bNo\s+se\s+realiz(?:o|ó|aron)\s+gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\.?/gi, '')
         // Eliminar textos de placeholder genéricos
         .replace(/\bInformaci[oó]n\s+sobre\s+el\s+sistema\s+Spaeth\.?/gi, '')
@@ -471,7 +475,7 @@ function _sanitizeGrammarArtifacts(text) {
         .replace(/,\s*\./g, '.')
         .replace(/\.\s*\./g, '. ')
         .replace(/…+/g, '. ')
-        .replace(/:\s*\./g, ': [No especificado].')
+        .replace(/:\s*\./g, '.')
         // No colapsar saltos de línea para preservar estructura markdown.
         .replace(/[ \t]{2,}/g, ' ')
         .replace(/([.!?]\s+)([a-záéíóúñ])/g, (_, p1, p2) => p1 + p2.toUpperCase());

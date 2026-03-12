@@ -1143,7 +1143,7 @@
             border-color: var(--primary);
         }
 
-        /* ── Campo vacío [No especificado] — botón lápiz aparece al hover ─── */
+        /* ── Campo vacío [No especificado] — botón revisión aparece al hover ─── */
         .no-data-field {
             display: inline-flex;
             align-items: center;
@@ -1161,12 +1161,12 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            background: var(--primary);
+            background: #0f766e;
             border: none;
             border-radius: 3px;
             color: #fff;
             cursor: pointer;
-            font-size: 0.7rem;
+            font-size: 0.68rem;
             padding: 1px 4px;
             line-height: 1.5;
             opacity: 0;
@@ -1179,7 +1179,7 @@
             opacity: 1;
             pointer-events: auto;
         }
-        .no-data-edit-btn:hover { background: var(--primary-dark); }
+        .no-data-edit-btn:hover { background: #115e59; }
         /* Dark mode: editor text and background */
         [data-theme="dark"] .editor-content,
         [data-theme="dark"] #editor {
@@ -2981,9 +2981,9 @@
         }
 
         #proInputSourceSwitch #proSourceToggle:checked + .pro-toggle-slider {
-            background: linear-gradient(135deg, #0ea5e9, #3b82f6);
-            border-color: #1d4ed8;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.18);
+            background: linear-gradient(135deg, #f59e0b, #f97316, #ef4444);
+            border-color: rgba(120, 53, 15, 0.82);
+            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.24);
             animation: none;
         }
 

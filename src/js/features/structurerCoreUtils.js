@@ -114,8 +114,8 @@ function _stripRedundantEmptyMarkers(md) {
 
 function _stripWeakLeadIns(md) {
     return String(md || '')
-        .replace(/(^|\n)\s*(?:\*\*)?\s*(Generalmente|En general|Habitualmente)\s*,\s+/gim, '$1')
-        .replace(/([.!?]\s+)(?:\*\*)?\s*(Generalmente|En general|Habitualmente)\s*,\s+/gim, '$1');
+    .replace(/(^|\n)\s*(?:\*\*)?\s*(Generalmente|En general|Habitualmente|Generally|Usually|Typically|Commonly|In general|Overall)\s*,\s+/gim, '$1')
+    .replace(/([.!?]\s+)(?:\*\*)?\s*(Generalmente|En general|Habitualmente|Generally|Usually|Typically|Commonly|In general|Overall)\s*,\s+/gim, '$1');
 }
 
 function markdownToHtml(md) {
@@ -210,12 +210,14 @@ function markdownToHtml(md) {
     const EMPTY_FIELD_HTML =
         '<span class="no-data-field" contenteditable="false" data-field-empty="1">'
         + '<span class="no-data-text">— campo vacío —</span>'
-        + '<button class="no-data-edit-btn" tabindex="0" title="Completar campo" type="button">✏️</button>'
+        + '<button class="no-data-edit-btn" tabindex="0" title="Revisión" type="button">▶</button>'
         + '</span>';
 
     // Patrones que el AI puede generar cuando una estructura no fue evaluada
     const NO_EVAL_PATTERNS = [
         /\[No especificado\]/g,
+        /\[Sin datos disponibles\]/gi,
+        /\[No evaluado(?: en este estudio)?\]/gi,
         /\bNo se evalu\u00f3\.?/gi,
         /\bNo fue evaluad[ao]\.?/gi,
         /\bNo evaluad[ao]\.?/gi,
@@ -224,7 +226,15 @@ function markdownToHtml(md) {
     ];
 
     let result = html.join('\n');
-    NO_EVAL_PATTERNS.forEach(rx => { result = result.replace(rx, EMPTY_FIELD_HTML); });
+
+    // Convertir a badge solo cuando el marcador representa un campo completo (fin de línea/bloque).
+    // Evita mostrar botones en medio de frases clínicas.
+    const emptyToken = '(?:\\[No especificado\\]|\\[Sin datos disponibles\\]|\\[No evaluado(?: en este estudio)?\\]|No se evalu\\u00f3\\.?|No fue evaluad[ao]\\.?|No evaluad[ao]\\.?|No se realiz\\u00f3\\.?|Sin datos disponibles\\.?)';
+    const rxLabelField = new RegExp(`(:\\s*)${emptyToken}(?:\\s*[.,;:]?)(?=\\s*(?:<br\\s*\\/?>|<\\/p>|<\\/li>))`, 'gi');
+    const rxBareField = new RegExp(`(>\\s*)${emptyToken}(?:\\s*[.,;:]?)(?=\\s*(?:<br\\s*\\/?>|<\\/p>|<\\/li>))`, 'gi');
+    result = result
+        .replace(rxLabelField, `$1${EMPTY_FIELD_HTML}`)
+        .replace(rxBareField, `$1${EMPTY_FIELD_HTML}`);
 
     // Limpiar fragmentos huérfanos adyacentes al badge (ej: "s.", ".s", puntuación suelta)
     // que quedan cuando la IA genera variantes como "[No especificado]s." o "Sin datos."
@@ -232,8 +242,7 @@ function markdownToHtml(md) {
     result = result.replace(new RegExp(badgeEndTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*[a-z]{0,3}[.,;:]+', 'gi'),
         badgeEndTag);
 
-    // Eliminar secciones (headings) que quedaron vacías (solo título sin contenido debajo)
-    result = result.replace(/<h([23]) class="report-h\1">([^<]*)<\/h\1>\s*(?=<h[123] |$)/gi, '');
+    // No eliminar headings aquí: el borrado de secciones debe depender de acciones del usuario.
 
     return result;
 }

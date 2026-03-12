@@ -6,7 +6,7 @@
     const normalTemplateList = document.getElementById('normalTemplateList');
 
     function buildStaticTemplate(templateName, rawText) {
-        const nd = '<span class="no-data-field" contenteditable="false" data-field-empty="1"><span class="no-data-text">[No especificado]</span><button class="no-data-edit-btn" tabindex="0" title="Completar campo" type="button">✏️</button></span>';
+        const nd = '<span class="no-data-field" contenteditable="false" data-field-empty="1"><span class="no-data-text">[No especificado]</span><button class="no-data-edit-btn" tabindex="0" title="Revisión" type="button">▶</button></span>';
         return `<h1 class="report-h1">${templateName}</h1>
 <h2 class="report-h2">Datos del Paciente</h2>
 <p class="report-p"><strong>Nombre:</strong> ${nd} &nbsp; <strong>DNI:</strong> ${nd}</p>

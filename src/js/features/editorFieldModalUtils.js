@@ -305,6 +305,24 @@
     }
     document.getElementById('btnBlankEditField')?.addEventListener('click', clearFieldValue);
 
+    function removeOrphanSectionHeadings() {
+        if (!editor) return;
+        editor.querySelectorAll('h2.report-h2, h3.report-h3').forEach((heading) => {
+            let node = heading.nextElementSibling;
+            let hasContent = false;
+            while (node && !/^H[23]$/.test(node.tagName)) {
+                const txt = String(node.textContent || '').replace(/[\u00A0\s]+/g, '').trim();
+                const hasEmptyField = !!node.querySelector?.('.no-data-field');
+                if (txt || hasEmptyField) {
+                    hasContent = true;
+                    break;
+                }
+                node = node.nextElementSibling;
+            }
+            if (!hasContent) heading.remove();
+        });
+    }
+
     function _performFieldDeletion(span) {
         if (!span || !editor) return;
 
@@ -334,6 +352,8 @@
             }
         }
 
+        removeOrphanSectionHeadings();
+
         editor.dispatchEvent(new Event('input', { bubbles: true }));
         closeEditFieldModal();
         if (typeof showToast === 'function') showToast('🗑️ Campo eliminado del informe', 'info');
@@ -343,7 +363,7 @@
         // Capturar la referencia ANTES de abrir el diálogo de confirmación asíncrono.
         const spanRef = _targetSpan;
         if (!spanRef) return;
-        const sectionName = document.getElementById('editFieldModalTitle')?.textContent?.replace(/^✏️\s*/, '') || 'este campo';
+        const sectionName = document.getElementById('editFieldModalTitle')?.textContent?.replace(/^[▶✏️]\s*/, '') || 'este campo';
         window.showCustomConfirm(
             '🗑️ Eliminar campo',
             `¿Eliminar "${sectionName}" del informe? Esta accion no se puede deshacer.`,

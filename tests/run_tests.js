@@ -6966,12 +6966,10 @@ test('Gonio-Quality-1 — corrige frases incompletas frecuentes', () => {
 El ángulo es abierto con un con grado Shaffer y condición abierto, la configuración del iris es.. Gonioscopía dinámica/indentación:.`;
     const out = _normalizeGonioscopyNarrativeQuality(md);
     assert(!out.includes('con un con'), 'No debe duplicar preposición (con un con)');
-    assert(out.includes('grado Shaffer [No especificado] y condición abierto'),
-        'Debe completar grado Shaffer faltante manteniendo condición reportada');
-    assert(out.includes('La configuración del iris es [No especificado].'),
-        'Debe completar configuración del iris faltante con [No especificado]');
-    assert(out.includes('Gonioscopía dinámica/indentación: [No especificado].'),
-        'Debe normalizar dinámica/indentación no reportada');
+    assert(!/la\s+configuraci[oó]n\s+del\s+iris\s+es\s*(?:\.\.|\.)?/i.test(out),
+        'No debe dejar frase truncada de configuración del iris');
+    assert(!/gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\s*(?:es|:)/i.test(out),
+        'No debe incluir dinámica/indentación cuando no está especificada');
     assert(!out.includes('..'), 'No debe dejar dobles puntos');
     assert(!out.includes(':.') && !out.includes(' :.'), 'No debe dejar artefactos de ":."');
 });
@@ -6999,23 +6997,21 @@ test('Gonio-Quality-4 — limpia artefactos gramaticales severos del caso real',
     assert(!out.includes('con un con'), 'No debe persistir la duplicación "con un con"');
     assert(!out.includes('..'), 'No debe persistir doble punto');
     assert(!out.includes(':.') && !out.includes(' :.'), 'No debe persistir artefacto ":."');
-    assert(out.includes('La configuración del iris es [No especificado].'),
-        'Debe completar frase truncada de configuración del iris');
-    assert(out.includes('Gonioscopía dinámica/indentación: [No especificado].'),
-        'Debe completar frase truncada de dinámica/indentación');
+    assert(!/la\s+configuraci[oó]n\s+del\s+iris\s+es\s*(?:\.\.|\.)?/i.test(out),
+        'No debe dejar frase truncada de configuración del iris');
+    assert(!/gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\s*(?:es|:)/i.test(out),
+        'No debe dejar frase truncada de dinámica/indentación');
 });
 
 test('Gonio-Quality-5 — corrige variantes con elipsis unicode y "es." sin contenido', () => {
     const md = 'El ángulo iridocorneal es visible en toda su extensión, con un grado Shaffer y condición abierto, se visualizan la línea de Schwalbe bien definida, la malla trabecular pigmentada, el espolón escleral definido y la banda del cuerpo ciliar visible. La configuración del iris es... La gonioscopía dinámica/indentación es. No se observan hallazgos patológicos como sinequias anteriores periféricas (PAS), neovasos, línea de Sampaolesi u otros.';
     const out = _postProcessStructuredMarkdown(md);
-    assert(out.includes('La configuración del iris es [No especificado].'),
-        'Debe reemplazar "La configuración del iris es..." por marcador editable');
-    assert(out.includes('Gonioscopía dinámica/indentación: [No especificado].'),
-        'Debe reemplazar "La gonioscopía dinámica/indentación es." por marcador editable');
     assert(!/configuraci[oó]n del iris es\s*(?:\.\.\.|…|\.)/i.test(out),
         'No debe quedar frase truncada de iris');
     assert(!/gonioscop[ií]a din[aá]mica\/indentaci[oó]n\s+es\s*(?:\.\.\.|…|\.)/i.test(out),
         'No debe quedar frase truncada de dinámica/indentación');
+    assert(!/gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\s*:/i.test(out),
+        'No debe inventar campo dinámico con marcador cuando no se especificó');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
