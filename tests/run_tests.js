@@ -7003,6 +7003,19 @@ test('Gonio-Quality-4 — limpia artefactos gramaticales severos del caso real',
         'Debe completar frase truncada de dinámica/indentación');
 });
 
+test('Gonio-Quality-5 — corrige variantes con elipsis unicode y "es." sin contenido', () => {
+    const md = 'El ángulo iridocorneal es visible en toda su extensión, con un grado Shaffer y condición abierto, se visualizan la línea de Schwalbe bien definida, la malla trabecular pigmentada, el espolón escleral definido y la banda del cuerpo ciliar visible. La configuración del iris es... La gonioscopía dinámica/indentación es. No se observan hallazgos patológicos como sinequias anteriores periféricas (PAS), neovasos, línea de Sampaolesi u otros.';
+    const out = _postProcessStructuredMarkdown(md);
+    assert(out.includes('La configuración del iris es [No especificado].'),
+        'Debe reemplazar "La configuración del iris es..." por marcador editable');
+    assert(out.includes('Gonioscopía dinámica/indentación: [No especificado].'),
+        'Debe reemplazar "La gonioscopía dinámica/indentación es." por marcador editable');
+    assert(!/configuraci[oó]n del iris es\s*(?:\.\.\.|…|\.)/i.test(out),
+        'No debe quedar frase truncada de iris');
+    assert(!/gonioscop[ií]a din[aá]mica\/indentaci[oó]n\s+es\s*(?:\.\.\.|…|\.)/i.test(out),
+        'No debe quedar frase truncada de dinámica/indentación');
+});
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // Bloque 115: Extracción paciente — 41 casos clínicos
 // ═══════════════════════════════════════════════════════════════════════════════

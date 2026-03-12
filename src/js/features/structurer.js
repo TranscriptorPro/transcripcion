@@ -400,9 +400,10 @@ function _normalizeGonioscopyNarrativeQuality(markdown) {
         [/\bcon\s+con\b/gi, 'con'],
         [/grado\s+Shaffer\s+y\s+condici[oó]n\s+(abierto|estrecho|cerrado)\b/gi, 'grado Shaffer [No especificado] y condición $1'],
         [/grado\s+Shaffer\s+y\s+condici[oó]n(?=\s*[,.;:]|\s*$)/gi, 'grado Shaffer [No especificado] y condición [No especificado]'],
-        [/la\s+configuraci[oó]n\s+del\s+iris\s+es\s*(?:[.,;:]+)?/gi, 'La configuración del iris es [No especificado]. '],
+        [/la\s+configuraci[oó]n\s+del\s+iris\s+es\s*(?:\.\.\.|…|[.,;:]+)?/gi, 'La configuración del iris es [No especificado]. '],
+        [/la\s+gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\s+es\s*(?:\.\.\.|…|[.,;:]+)?/gi, 'Gonioscopía dinámica/indentación: [No especificado]. '],
         [/No\s+se\s+realiz(?:o|ó|aron)\s+gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\.?/gi, 'Gonioscopía dinámica/indentación: [No especificado].'],
-        [/Gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n:\s*(?:[.,;:]+)?/gi, 'Gonioscopía dinámica/indentación: [No especificado].'],
+        [/Gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n:\s*(?:\.\.\.|…|[.,;:]+)?/gi, 'Gonioscopía dinámica/indentación: [No especificado].'],
         [/(##\s*SISTEMA\s+SPAETH)\s*(\n|$)/gi, '## SISTEMA SPAETH (SI ESTÁ REPORTADO)$2']
     ];
 
@@ -452,10 +453,12 @@ function _sanitizeGrammarArtifacts(text) {
     out = out
         .replace(/\bcon\s+un\s+con\b/gi, 'con')
         .replace(/\bcon\s+con\b/gi, 'con')
-        .replace(/\bla\s+configuraci[oó]n\s+del\s+iris\s+es\s*(?:[.,;:]+)?/gi, 'La configuración del iris es [No especificado]. ')
-        .replace(/\bGonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\s*:\s*(?:[.,;:]+)?/gi, 'Gonioscopía dinámica/indentación: [No especificado]. ')
+        .replace(/\bla\s+configuraci[oó]n\s+del\s+iris\s+es\s*(?:\.\.\.|…|[.,;:]+)?/gi, 'La configuración del iris es [No especificado]. ')
+        .replace(/\bla\s+gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\s+es\s*(?:\.\.\.|…|[.,;:]+)?/gi, 'Gonioscopía dinámica/indentación: [No especificado]. ')
+        .replace(/\bGonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\s*:\s*(?:\.\.\.|…|[.,;:]+)?/gi, 'Gonioscopía dinámica/indentación: [No especificado]. ')
         .replace(/\bNo\s+se\s+realiz(?:o|ó|aron)\s+gonioscop[ií]a\s+din[aá]mica\/indentaci[oó]n\.?/gi, 'Gonioscopía dinámica/indentación: [No especificado]. ')
         .replace(/\.\s*\./g, '. ')
+        .replace(/…+/g, '. ')
         .replace(/:\s*\./g, ': [No especificado].')
         // No colapsar saltos de línea para preservar estructura markdown.
         .replace(/[ \t]{2,}/g, ' ')
