@@ -206,6 +206,7 @@ Antes de responder, verifica: ¿preservé TODOS los datos? ¿Usé [No especifica
         if (extractedPatient && (extractedPatient.name || extractedPatient.dni || extractedPatient.age || extractedPatient.sex || extractedPatient.insurance || extractedPatient.affiliateNum)) {
             cleaned = _stripPatientIdentitySections(cleaned);
         }
+        cleaned = _normalizeTemplateSpecificOutput(cleaned, templateKey, text);
         return _postProcessStructuredMarkdown(cleaned);
     } catch (error) {
         if (error.name === 'AbortError') {
@@ -326,6 +327,79 @@ function _prepareStructuringInput(text) {
         // Normaliza espacios.
         .replace(/\s{2,}/g, ' ')
         .trim();
+}
+
+function _isBilateralGonioscopyInput(sourceText) {
+    const normalized = _normStr(sourceText || '');
+    if (!normalized) return false;
+
+    return /\bao\b/.test(normalized) ||
+           normalized.includes('ambos ojos') ||
+           normalized.includes('bilateral') ||
+           normalized.includes('ojo derecho e izquierdo');
+}
+
+function _extractMarkdownSection(markdown, sectionPattern) {
+    const sectionRegex = new RegExp(
+        `(#{2,3}\\s*${sectionPattern}[^\\n]*\\n)([\\s\\S]*?)(?=\\n#{2,3}\\s+|$)`,
+        'i'
+    );
+    const match = String(markdown || '').match(sectionRegex);
+    if (!match) return null;
+
+    return {
+        full: match[0],
+        header: match[1],
+        body: match[2]
+    };
+}
+
+function _sectionLooksNoData(sectionBody) {
+    const lines = String(sectionBody || '')
+        .split('\n')
+        .map(l => l.trim())
+        .filter(Boolean);
+    if (lines.length === 0) return true;
+
+    for (const line of lines) {
+        const clean = line.replace(/^[-*•]\s*/, '').trim();
+        if (!clean) continue;
+
+        const colonIdx = clean.indexOf(':');
+        const value = colonIdx >= 0 ? clean.slice(colonIdx + 1).trim() : clean;
+        if (!value) continue;
+        if (/^\[No especificado\]\.?(?:\s*)$/i.test(value)) continue;
+
+        return false;
+    }
+
+    return true;
+}
+
+function _normalizeGonioscopyBilateralAO(markdown, sourceText) {
+    let out = String(markdown || '');
+    if (!out) return out;
+    if (!_isBilateralGonioscopyInput(sourceText)) return out;
+
+    const od = _extractMarkdownSection(out, 'OJO\\s+DERECHO');
+    const oi = _extractMarkdownSection(out, 'OJO\\s+IZQUIERDO');
+    if (!od || !oi) return out;
+    if (_sectionLooksNoData(od.body)) return out;
+    if (!_sectionLooksNoData(oi.body)) return out;
+
+    // Si el dictado fue AO/bilateral y OI quedó vacío, replicar hallazgos de OD.
+    return out.replace(oi.full, `${oi.header}${od.body}`);
+}
+
+function _normalizeTemplateSpecificOutput(markdown, templateKey, sourceText) {
+    let out = String(markdown || '');
+    if (!out) return out;
+
+    if (templateKey === 'gonioscopia') {
+        out = _normalizeGonioscopyBilateralAO(out, sourceText);
+    }
+
+    return out;
 }
 
 function _postProcessStructuredMarkdown(md) {

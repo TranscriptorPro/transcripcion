@@ -6921,6 +6921,45 @@ test('Badge-7 — conserva badge en línea corta sin frase coherente', () => {
     assertIncludes(out, '[No especificado]', 'Línea corta debe conservar badge');
 });
 
+test('Gonio-AO-1 — AO bilateral replica OD en OI cuando OI queda vacío', () => {
+    assertEqual(typeof _normalizeGonioscopyBilateralAO, 'function', 'Debe existir normalizador AO de gonioscopía');
+    const source = 'Gonioscopía AO. Shaffer IV sin sinequias.';
+    const md = `# INFORME DE GONIOSCOPÍA
+
+## OJO DERECHO (OD)
+- Ángulo: Grado IV de Shaffer, abierto.
+- Hallazgos patológicos: Sin PAS ni neovasos.
+
+## OJO IZQUIERDO (OI)
+- Ángulo: [No especificado]
+- Hallazgos patológicos: [No especificado]
+
+## IMPRESIÓN DIAGNÓSTICA
+- Ángulos abiertos bilaterales.`;
+
+    const out = _normalizeGonioscopyBilateralAO(md, source);
+    const oiMatch = out.match(/## OJO IZQUIERDO \(OI\)[\s\S]*?(?=\n##\s+|\s*$)/);
+    assert(oiMatch && oiMatch[0], 'Debe existir sección OI en salida normalizada');
+    assert(/Grado IV de Shaffer, abierto\./.test(oiMatch[0]),
+        'OI debe completarse con hallazgos de OD en caso AO bilateral');
+    assert(/Sin PAS ni neovasos\./.test(oiMatch[0]),
+        'OI debe incluir hallazgos patológicos copiados desde OD en caso AO bilateral');
+});
+
+test('Gonio-AO-2 — sin señal bilateral no replica OD hacia OI', () => {
+    const source = 'Gonioscopía OD con Shaffer IV.';
+    const md = `# INFORME DE GONIOSCOPÍA
+
+## OJO DERECHO (OD)
+- Ángulo: Grado IV de Shaffer, abierto.
+
+## OJO IZQUIERDO (OI)
+- Ángulo: [No especificado]`;
+
+    const out = _normalizeGonioscopyBilateralAO(md, source);
+    assertEqual(out, md, 'No debe modificar salida cuando no hay AO/ambos ojos/bilateral');
+});
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // Bloque 115: Extracción paciente — 41 casos clínicos
 // ═══════════════════════════════════════════════════════════════════════════════
