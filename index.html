@@ -9,7 +9,7 @@
     <!-- PURGE: auto-purge al detectar nueva versión + ?purge manual. Preserva tema y color -->
     <script>
     (function() {
-        var APP_VERSION = 'v61'; // ← bump esto en cada deploy para forzar auto-purge
+        var APP_VERSION = 'v62'; // ← bump esto en cada deploy para forzar auto-purge
         try { window.APP_VERSION = APP_VERSION; } catch(_) {}
         var params = new URLSearchParams(window.location.search);
         var forcePurge = params.has('purge');
@@ -1036,10 +1036,15 @@
                                     </div>
                                 </div>
                                 <div class="field-group" id="logoUploadGroup">
-                                    <label>🖼️ Logo (opcional)</label>
-                                    <input type="file" id="pdfLogoUpload" accept="image/*">
-                                    <input type="hidden" id="logoUpload" aria-hidden="true">
+                                    <label>🖼️ Logo institucional precargado</label>
                                     <div id="pdfLogoPreview" class="logo-preview"></div>
+                                    <small style="color:var(--text-secondary);">Este logo se administra fuera de esta pantalla.</small>
+                                </div>
+                                <div class="field-group" id="profLogoPreviewGroup">
+                                    <label>🧑‍⚕️ Logo profesional precargado</label>
+                                    <div id="pdfProfLogoPreview" class="logo-preview"></div>
+                                    <label style="margin-top:8px;display:block;"><input type="checkbox" id="pdfShowProfLogo" checked> Incluir logo profesional en el encabezado (si está disponible)</label>
+                                    <small style="color:var(--text-secondary);">Solo visualización. La edición se realiza en la configuración inicial del usuario.</small>
                                 </div>
                             </div>
                         </div>
@@ -1165,8 +1170,8 @@
                                     <label>Tamaño fuente</label>
                                     <select id="pdfFontSize">
                                         <option value="9">9 pt</option>
-                                        <option value="10">10 pt</option>
-                                        <option value="11" selected>11 pt</option>
+                                        <option value="10" selected>10 pt</option>
+                                        <option value="11">11 pt</option>
                                         <option value="12">12 pt</option>
                                         <option value="14">14 pt</option>
                                     </select>
@@ -1174,9 +1179,9 @@
                                 <div class="field-group">
                                     <label>Interlineado</label>
                                     <select id="pdfLineSpacing">
-                                        <option value="1">Simple</option>
+                                        <option value="1" selected>Simple</option>
                                         <option value="1.15">1.15</option>
-                                        <option value="1.5" selected>1.5</option>
+                                        <option value="1.5">1.5</option>
                                         <option value="2">Doble</option>
                                     </select>
                                 </div>
@@ -1203,6 +1208,11 @@
                                 <label><input type="checkbox" id="pdfShowSignName" checked> Incluir nombre debajo de firma</label>
                                 <label><input type="checkbox" id="pdfShowSignMatricula" checked> Incluir matrícula debajo de firma</label>
                                 <label><input type="checkbox" id="pdfShowSignImage" checked> Insertar firma digital (si está disponible)</label>
+                            </div>
+                            <div class="field-group" id="pdfSignaturePreviewGroup" style="margin-top:10px;">
+                                <label>✍️ Firma digital precargada</label>
+                                <div id="pdfSignaturePreview" class="signature-preview"></div>
+                                <small style="color:var(--text-secondary);">Solo visualización. La edición se realiza en la configuración inicial del usuario.</small>
                             </div>
                         </div>
                     </div>

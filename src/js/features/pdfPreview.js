@@ -242,6 +242,28 @@ window.openPdfConfigModal = async function () {
 
     const showSignImageChk = document.getElementById('pdfShowSignImage');
     if (showSignImageChk) showSignImageChk.checked = pdfCfgRestore.showSignImage ?? true;
+    const showProfLogoChk = document.getElementById('pdfShowProfLogo');
+    if (showProfLogoChk) showProfLogoChk.checked = pdfCfgRestore.showProfLogo ?? true;
+
+    const profLogoPreviewEl = document.getElementById('pdfProfLogoPreview');
+    const sigPreviewEl = document.getElementById('pdfSignaturePreview');
+    const logoSrc = (activeProRestore?.logo && String(activeProRestore.logo).startsWith('data:image/'))
+        ? activeProRestore.logo
+        : ((profData.logo && String(profData.logo).startsWith('data:image/')) ? profData.logo : '');
+    const sigSrc = (activeProRestore?.firma && String(activeProRestore.firma).startsWith('data:image/'))
+        ? activeProRestore.firma
+        : ((await safeGet('pdf_signature', '')) || '');
+
+    if (profLogoPreviewEl) {
+        profLogoPreviewEl.innerHTML = logoSrc
+            ? `<img src="${logoSrc}" alt="Logo profesional" style="max-height:70px;">`
+            : '<span style="color:var(--text-secondary);font-size:0.8rem;">No hay logo profesional disponible</span>';
+    }
+    if (sigPreviewEl) {
+        sigPreviewEl.innerHTML = (sigSrc && String(sigSrc).startsWith('data:image/'))
+            ? `<img src="${sigSrc}" alt="Firma" style="max-height:70px;">`
+            : '<span style="color:var(--text-secondary);font-size:0.8rem;">No hay firma digital disponible</span>';
+    }
 
     // No se oculta globalmente aquí porque el panel entero ya está oculto
 
@@ -388,6 +410,7 @@ window.openPrintPreview = async function () {
     const sigSrc  = (activePro?.firma && activePro.firma.startsWith('data:')) ? activePro.firma : ((await safeGet('pdf_signature', '')) || '');
     const hasInstLogo = !!(instLogoSrc && instLogoSrc.startsWith('data:image/'));
     const hasProfLogo = !!(profLogoSrc && profLogoSrc.startsWith('data:image/'));
+    const showProfLogo = (config.showProfLogo ?? true) === true;
     const hasLogo = hasInstLogo; // alias para compat. interna
     const hasSig  = !!(sigSrc && sigSrc.startsWith('data:image/'));
 
@@ -459,7 +482,7 @@ window.openPrintPreview = async function () {
             const pvContactHtml = pvCItems.length ? `<div class="pvh-contact">${pvCItems.join('')}</div>` : '';
             headerEl.innerHTML = `
                 <div class="pvh-body" style="display:flex;align-items:center;gap:12px;">
-                    ${hasProfLogo ? `<img src="${profLogoSrc}" alt="Logo Prof" style="height:40px;max-height:40px;width:auto;object-fit:contain;flex-shrink:0;background:transparent;border:none;border-radius:0;">` : ''}
+                    ${(showProfLogo && hasProfLogo) ? `<img src="${profLogoSrc}" alt="Logo Prof" style="height:40px;max-height:40px;width:auto;object-fit:contain;flex-shrink:0;background:transparent;border:none;border-radius:0;">` : ''}
                     <div class="pvh-info" style="flex:1;min-width:0;">
                         <div>
                             <span class="pvh-name">Estudio realizado por: ${profDisplayFullName}</span>

@@ -220,6 +220,7 @@
         const sigSrc = (activePro?.firma && activePro.firma.startsWith('data:')) ? activePro.firma : (typeof appDB !== 'undefined' ? (await appDB.get('pdf_signature')) || '' : '');
         const hasInstLogo = !!(instLogoSrc && instLogoSrc.startsWith('data:image/'));
         const hasProfLogo = !!(profLogoSrc && profLogoSrc.startsWith('data:image/'));
+        const showProfLogo = (config.showProfLogo ?? true) === true;
         const hasSig = !!(sigSrc && sigSrc.startsWith('data:image/'));
         const instLogoSize = config.instLogoSizePx || 60;
         const firmaSize = config.firmaSizePx || 60;
@@ -289,7 +290,7 @@
             if (profYoutube) cItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#9654;</span>${profYoutube}</div>`);
             const contactHtml = cItems.length ? `<div class="pvh-contact">${cItems.join('')}</div>` : '';
             headerSection = `<div class="preview-header"><div class="pvh-body">`
-                + (hasProfLogo ? `<img src="${profLogoSrc}" style="height:40px;max-height:40px;width:auto;object-fit:contain;flex-shrink:0;background:transparent;border:none;border-radius:0;">` : '')
+                + ((showProfLogo && hasProfLogo) ? `<img src="${profLogoSrc}" style="height:40px;max-height:40px;width:auto;object-fit:contain;flex-shrink:0;background:transparent;border:none;border-radius:0;">` : '')
                 + `<div class="pvh-info"><div><span class="pvh-name">Estudio realizado por: ${profDispName}</span></div>`
                 + (espBadgesHtml ? `<div class="pvh-badges">${espBadgesHtml}</div>` : '')
                 + (matricula ? `<div class="pvh-mat">Mat. ${matricula}</div>` : '')

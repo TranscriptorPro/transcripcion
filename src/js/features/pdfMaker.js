@@ -121,6 +121,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const showSignLine = config.showSignLine !== false;
         const showSignName = config.showSignName !== false;
         const showSignMat  = config.showSignMatricula !== false;
+        const showProfLogo = (config.showProfLogo ?? true) === true;
         let cy      = 10;
         let pageNum = 1;
         let headerH = 10;  // se actualiza tras dibujar el encabezado
@@ -236,16 +237,18 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             if (showSocial && profYoutube) contactItems.push(`YouTube: ${profYoutube}`);
             const contactColW = contactItems.length ? 54 : 0;
             const infoRightLimit = contactItems.length ? (PAGE_W - MR - contactColW - 3) : (PAGE_W - MR);
-            if (profLogoB64 && profLogoB64 !== instLogoB64) {
-                try {
-                    const profSizePx = parseInt(localStorage.getItem('prof_logo_size_px') || '60');
-                    const profScale = profSizePx / 60;
-                    const profImgW = Math.round(16 * profScale), profImgH = Math.round(16 * profScale);
-                    const profImgType = profLogoB64.includes('data:image/png') ? 'PNG' : 'JPEG';
-                    const profB64data = profLogoB64.includes(',') ? profLogoB64.split(',')[1] : profLogoB64;
-                    doc.addImage(profB64data, profImgType, ML, cy, profImgW, profImgH);
-                    infoX = ML + profImgW + 6;
-                } catch (e) { /* imagen inválida */ }
+            if (showProfLogo) {
+                if (profLogoB64 && profLogoB64 !== instLogoB64) {
+                    try {
+                        const profSizePx = parseInt(localStorage.getItem('prof_logo_size_px') || '60');
+                        const profScale = profSizePx / 60;
+                        const profImgW = Math.round(16 * profScale), profImgH = Math.round(16 * profScale);
+                        const profImgType = profLogoB64.includes('data:image/png') ? 'PNG' : 'JPEG';
+                        const profB64data = profLogoB64.includes(',') ? profLogoB64.split(',')[1] : profLogoB64;
+                        doc.addImage(profB64data, profImgType, ML, cy, profImgW, profImgH);
+                        infoX = ML + profImgW + 6;
+                    } catch (e) { /* imagen inválida */ }
+                }
             }
             let iy = cy + 5;
             if (profDisplayName) {

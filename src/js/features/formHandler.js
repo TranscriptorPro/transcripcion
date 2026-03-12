@@ -359,13 +359,14 @@ window.savePdfConfiguration = function () {
         orientation: val('pdfOrientation') || 'portrait',
         margins: val('pdfMargins') || 'normal',
         font: val('pdfFont') || 'helvetica',
-        fontSize: val('pdfFontSize') || '11',
-        lineSpacing: val('pdfLineSpacing') || '1.5',
+        fontSize: val('pdfFontSize') || '10',
+        lineSpacing: val('pdfLineSpacing') || '1',
         showHeader: chk('pdfShowHeader', true),
         showFooter: chk('pdfShowFooter', true),
         showPageNum: chk('pdfShowPageNum', true),
         showDate: chk('pdfShowDate', true),
         showQR: chk('pdfShowQR', true),
+        showProfLogo: chk('pdfShowProfLogo', true),
         showSignLine: chk('pdfShowSignLine', true),
         showSignName: chk('pdfShowSignName', true),
         showSignMatricula: chk('pdfShowSignMatricula', true),
@@ -449,13 +450,14 @@ window.loadPdfConfiguration = async function () {
     set('pdfOrientation', config.orientation || 'portrait');
     set('pdfMargins', config.margins || 'normal');
     set('pdfFont', config.font || 'helvetica');
-    set('pdfFontSize', config.fontSize || '11');
-    set('pdfLineSpacing', config.lineSpacing || '1.5');
+    set('pdfFontSize', config.fontSize || '10');
+    set('pdfLineSpacing', config.lineSpacing || '1');
     setChk('pdfShowHeader', config.showHeader, true);
     setChk('pdfShowFooter', config.showFooter, true);
     setChk('pdfShowPageNum', config.showPageNum, true);
     setChk('pdfShowDate', config.showDate, true);
     setChk('pdfShowQR', config.showQR, true);
+    setChk('pdfShowProfLogo', config.showProfLogo, true);
     setChk('pdfShowSignLine', config.showSignLine, true);
     setChk('pdfShowSignName', config.showSignName, true);
     setChk('pdfShowSignMatricula', config.showSignMatricula, true);

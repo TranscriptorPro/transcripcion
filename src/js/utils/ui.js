@@ -266,11 +266,6 @@ window.initModals = function () {
         });
     }
 
-    // Logo: registrar listener de carga de imagen (firma se configura en clones)
-    if (typeof handleImageUpload === 'function') {
-        handleImageUpload('pdfLogoUpload',      'pdfLogoPreview',      'pdf_logo');
-    }
-
     if (btnSavePdfConfig) {
         btnSavePdfConfig.addEventListener('click', () => {
             if (typeof savePdfConfiguration === 'function') savePdfConfiguration();
@@ -331,11 +326,11 @@ window.initModals = function () {
                     patientAffiliateNum: val('pdfPatientAffiliateNum'), patientPhone: val('pdfPatientPhone'),
                     patientBirthdate: val('pdfPatientBirthdate'), pageSize: val('pdfPageSize') || 'a4',
                     orientation: val('pdfOrientation') || 'portrait', margins: val('pdfMargins') || 'normal',
-                    font: val('pdfFont') || 'helvetica', fontSize: val('pdfFontSize') || '11',
-                    lineSpacing: val('pdfLineSpacing') || '1.5',
+                    font: val('pdfFont') || 'helvetica', fontSize: val('pdfFontSize') || '10',
+                    lineSpacing: val('pdfLineSpacing') || '1',
                     showHeader: chk('pdfShowHeader', true), showFooter: chk('pdfShowFooter', true),
                     showPageNum: chk('pdfShowPageNum', true), showDate: chk('pdfShowDate', true),
-                    showQR: chk('pdfShowQR', true), showSignLine: chk('pdfShowSignLine', true),
+                    showQR: chk('pdfShowQR', true), showProfLogo: chk('pdfShowProfLogo', true), showSignLine: chk('pdfShowSignLine', true),
                     showSignName: chk('pdfShowSignName', true), showSignMatricula: chk('pdfShowSignMatricula', true),
                     showSignImage: chk('pdfShowSignImage', true),
                     showPhone: chk('pdfShowPhone', true), showEmail: chk('pdfShowEmail', true), showSocial: chk('pdfShowSocial', true),
