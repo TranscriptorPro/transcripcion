@@ -88,6 +88,15 @@ window.STUDY_TERMINOLOGY = [
     clasificaciones: [],
     unidades: []
   },
+  {
+    estudio: "Gonioscopía",
+    templateKey: "gonioscopia",
+    category: "Oftalmología",
+    keywords: ["ángulo camerular", "shaffer", "spaeth", "malla trabecular", "espolón escleral", "línea de schwalbe", "sinequias anteriores periféricas", "pas", "rubeosis"],
+    abreviaturas: { PAS: "Sinequias Anteriores Periféricas", OD: "Ojo Derecho", OI: "Ojo Izquierdo" },
+    clasificaciones: ["Shaffer", "Spaeth"],
+    unidades: ["grados", "+", "cuadrantes", "horas"]
+  },
 
   // ══════════════════════════════════════════════════════════
   //  IMÁGENES

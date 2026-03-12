@@ -189,6 +189,7 @@ window.initModals = function () {
     const closePdfConfig = document.getElementById('closePdfConfig');
     const btnClosePdfConfig = document.getElementById('btnClosePdfConfig');
     const btnSavePdfConfig = document.getElementById('btnSavePdfConfig');
+    const btnRestorePdfDefaults = document.getElementById('btnRestorePdfDefaults');
     const btnPreviewFromConfig = document.getElementById('btnPreviewFromConfig');
 
     const closePdfConfigModal = () => pdfModalOverlay?.classList.remove('active');
@@ -297,6 +298,44 @@ window.initModals = function () {
             closePdfConfigModal();
             if (typeof showToast === 'function') showToast('✅ Configuración guardada', 'success');
             // Actualizar semáforo tras guardar
+            if (typeof updateConfigTrafficLight === 'function') updateConfigTrafficLight();
+        });
+    }
+
+    if (btnRestorePdfDefaults) {
+        btnRestorePdfDefaults.addEventListener('click', () => {
+            const setVal = (id, value) => {
+                const el = document.getElementById(id);
+                if (el) el.value = value;
+            };
+            const setChk = (id, value = true) => {
+                const el = document.getElementById(id);
+                if (el) el.checked = !!value;
+            };
+
+            // Valores recomendados del panel Formato
+            setVal('pdfPageSize', 'a4');
+            setVal('pdfOrientation', 'portrait');
+            setVal('pdfMargins', 'normal');
+            setVal('pdfFont', 'helvetica');
+            setVal('pdfFontSize', '11');
+            setVal('pdfLineSpacing', '1.15');
+
+            // Checkboxes ON por defecto (incluye logos y firma)
+            setChk('pdfShowHeader', true);
+            setChk('pdfShowFooter', true);
+            setChk('pdfShowPageNum', true);
+            setChk('pdfShowDate', true);
+            setChk('pdfShowQR', true);
+            setChk('pdfShowInstLogo', true);
+            setChk('pdfShowProfLogo', true);
+            setChk('pdfShowSignLine', true);
+            setChk('pdfShowSignName', true);
+            setChk('pdfShowSignMatricula', true);
+            setChk('pdfShowSignImage', true);
+
+            if (typeof savePdfConfiguration === 'function') savePdfConfiguration();
+            if (typeof showToast === 'function') showToast('↺ Valores recomendados restaurados', 'success');
             if (typeof updateConfigTrafficLight === 'function') updateConfigTrafficLight();
         });
     }

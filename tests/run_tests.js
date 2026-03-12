@@ -2603,7 +2603,7 @@ console.log('\n── Bloque 52: templates coverage ─────────�
 
 const EXPECTED_TEMPLATES = [
     'espirometria', 'test_marcha', 'pletismografia', 'oximetria_nocturna',
-    'campimetria', 'oct_retinal', 'topografia_corneal', 'fondo_ojo',
+    'campimetria', 'oct_retinal', 'topografia_corneal', 'fondo_ojo', 'gonioscopia',
     'tac', 'resonancia', 'mamografia', 'densitometria', 'pet_ct', 'radiografia',
     'ecografia_abdominal', 'ecografia_renal', 'ecografia_tiroidea', 'ecografia_mamaria',
     'gastroscopia', 'colonoscopia', 'broncoscopia', 'laringoscopia',
@@ -6442,6 +6442,8 @@ const CORPUS = {
     topografia_corneal: `Topografía corneal por elevación para estudio de la arquitectura anterior y posterior. Mapa queratométrico central registra una potencia de 44.5 dioptrías. Elevación posterior paracentral inferior excede el límite. Paquimetría ultrasónica mínima de 510 micras.`,
     
     fondo_ojo: `Examen de fondo de ojo bajo midriasis farmacológica mediante oftalmoscopía indirecta. La papila óptica presenta bordes definidos. Brillo foveolar conservado sin exudados ni hemorragias intrarretinianas.`,
+
+    gonioscopia: `Gonioscopía de ambos ojos con lente de cuatro espejos. Ojo derecho con ángulo grado IV de Shaffer, línea de Schwalbe y espolón escleral visibles, sin PAS ni neovasos. Ojo izquierdo con ángulo grado II, indentación positiva sin sinequias, línea de Sampaolesi inferior.`,
     
     tac: `Tomografía axial computarizada de tórax con contraste endovenoso. Se identifica un nódulo sólido de bordes espiculados de 15 milímetros en segmento apical del lóbulo superior derecho. Densidad de 40 unidades Hounsfield con realce significativo tras administración de yodo.`,
     
@@ -6980,9 +6982,9 @@ CLINICAL_CASES.forEach(c => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Bloque 116: autoDetectTemplateKey — 41 casos clínicos
+// Bloque 116: autoDetectTemplateKey — 42 casos clínicos
 // ═══════════════════════════════════════════════════════════════════════════════
-console.log('\n── Bloque 116: autoDetectTemplateKey — 41 casos clínicos ──────');
+console.log('\n── Bloque 116: autoDetectTemplateKey — 42 casos clínicos ──────');
 
 const TEMPLATE_CASES = [
     { id: 1,  text: 'espirometría forzada basal y posterior a cuatrocientos microgramos de salbutamol evidenciando una capacidad vital forzada', expected: 'espirometria' },
@@ -6993,39 +6995,40 @@ const TEMPLATE_CASES = [
     { id: 6,  text: 'tomografía de coherencia óptica de la mácula un marcado engrosamiento retiniano', expected: 'oct_retinal' },
     { id: 7,  text: 'topografía corneal un encurvamiento inferior asimétrico bilateral con valor queratométrico', expected: 'topografia_corneal' },
     { id: 8,  text: 'exploración del fondo de ojo bajo midriasis disco óptico de forma redonda y bordes regulares', expected: 'fondo_ojo' },
-    { id: 9,  text: 'tomografía axial computarizada de cráneo evidenciándose parénquima de densidad normal sin colecciones hemáticas', expected: 'tac' },
-    { id: 10, text: 'resonancia magnética cerebral en equipo de tres Tesla con secuencias sagital T uno axial T dos y FLAIR', expected: 'resonancia' },
-    { id: 11, text: 'tamizaje donde se observan mamas de composición heterogéneamente densa tipo C con microcalcificaciones birads cinco', expected: 'mamografia' },
-    { id: 12, text: 'densitometría ósea reportando un T score de menos dos punto ocho en el cuello femoral izquierdo', expected: 'densitometria' },
-    { id: 13, text: 'PET CT tras sesenta minutos una masa en el lóbulo superior derecho con un valor estandarizado de captación', expected: 'pet_ct' },
-    { id: 14, text: 'radiografía convencional muestra una solución de continuidad ósea diáfisis tibial con trazo oblicuo', expected: 'radiografia' },
-    { id: 15, text: 'ecografía reporta hígado de morfología normal vesícula biliar imágenes ecogénicas sombra acústica posterior colédoco', expected: 'ecografia_abdominal' },
-    { id: 16, text: 'riñones de situación y tamaño habitual conservando el parénquima hidronefrosis moderada cálculo obstructivo unión ureteropélica', expected: 'ecografia_renal' },
-    { id: 17, text: 'explora glándula tiroides lóbulo derecho nódulo sólido hipoecoico bordes irregulares microcalcificaciones internas', expected: 'ecografia_tiroidea' },
-    { id: 18, text: 'ecografía revela mama derecha masa sólida ovalada circunscrita tejido fibroadenomatoso birads tres', expected: 'ecografia_mamaria' },
-    { id: 19, text: 'eco doppler vascular de troncos supraaórticos engrosamiento miointimal placa de ateroma calcificada estenosis', expected: 'eco_doppler' },
-    { id: 20, text: 'gastroscopía esófago mucosa normal antro gástrico eritema parcheado biopsias bulbo duodenal', expected: 'gastroscopia' },
-    { id: 21, text: 'colonoscopía preparación adecuada equipo hasta el ciego colon sigmoides pólipo sésil resecado asa fría', expected: 'colonoscopia' },
-    { id: 22, text: 'broncoscopía cuerdas vocales móviles tráquea normal bronquio lóbulo superior lesión exofítica biopsias cepillado citología', expected: 'broncoscopia' },
-    { id: 23, text: 'laringoscopía permite visualizar tercio medio cuerda vocal verdadera nódulo base sésil movilidad cordal fonación', expected: 'laringoscopia' },
-    { id: 24, text: 'gammagrafía cardíaca en reposo y esfuerzo ventrícolo izquierdo defecto de captación reversible isquemia miocárdica', expected: 'gammagrafia_cardiaca' },
-    { id: 25, text: 'holter electrocardiográfico de veinticuatro horas ritmo sinusal extrasístoles ventriculares pausas segmento ST', expected: 'holter' },
-    { id: 26, text: 'monitoreo ambulatorio de presión arterial veinticuatro horas promedios diurnos elevados patrón non dipper', expected: 'mapa' },
-    { id: 27, text: 'cinecoronariografía por arteria radial descendente anterior estenosis severa angioplastia stent circunfleja', expected: 'cinecoro' },
-    { id: 28, text: 'electrocardiograma ritmo sinusal regular intervalo PR complejo QRS eje eléctrico repolarización ventricular', expected: 'ecg' },
-    { id: 29, text: 'eco stress en banda sinfín contractilidad basal normal esfuerzo máximo hipocinesia segmentos apicales isquemia miocárdica', expected: 'eco_stress' },
-    { id: 30, text: 'ecocardiograma transtorácico diámetros cavitarios válvula aórtica calcificación gradiente transvalvular estenosis aórtica fracción eyección', expected: 'ett' },
-    { id: 31, text: 'citología exfoliativa cervicovaginal sistema Bethesda células escamosas atípicas ascus virus papiloma humano', expected: 'pap' },
-    { id: 32, text: 'colposcopía ácido acético unión escamocolumnar zona acetoblanca mosaico punteado lésión intraepitelial biopsia dirigida', expected: 'colposcopia' },
-    { id: 33, text: 'ecografía obstétrica biometría fetal diámetro biparietal longitud fémur treinta y dos semanas placenta líquido amniótico', expected: 'ecografia_obstetrica' },
-    { id: 34, text: 'electromiografía velocidad de conducción nerviosa latencia distal prolongada nervio mediano túnel del carpo neuropático', expected: 'electromiografia' },
-    { id: 35, text: 'polisomnografía arquitectura de sueño fragmentada índice apneas hipopneas obstructivas desaturaciones oxígeno', expected: 'polisomnografia' },
-    { id: 36, text: 'videonasolaringoscopía cornetes inferiores hipertróficos septum nasal desviado meato medio pólipos fosas nasales nasofaringe', expected: 'naso' },
-    { id: 37, text: 'endoscopía otológica conducto auditivo externo membrana timpánica retracción derrame oído medio', expected: 'endoscopia_otologica' },
-    { id: 38, text: 'protocolo quirúrgico colecistectomía laparoscópica vesícula biliar triángulo anatómico arteria conducto cístico', expected: 'protocolo_quirurgico' },
-    { id: 39, text: 'nota de evolución internación lúcido afebril mejoría disnea auscultación crepitantes antibiótico intravenoso', expected: 'nota_evolucion' },
-    { id: 40, text: 'epicrisis ingresó dolor precordial infarto agudo miocardio revascularización percutánea alta hospitalaria', expected: 'epicrisis' },
-    { id: 41, text: 'evaluación general examen físico normal índice masa corporal sobrepeso informe médico recomendaciones dieta ejercicio', expected: 'generico' },
+    { id: 9,  text: 'gonioscopía con clasificación Shaffer grado cuatro, malla trabecular pigmentada y ausencia de sinequias anteriores periféricas', expected: 'gonioscopia' },
+    { id: 10, text: 'tomografía axial computarizada de cráneo evidenciándose parénquima de densidad normal sin colecciones hemáticas', expected: 'tac' },
+    { id: 11, text: 'resonancia magnética cerebral en equipo de tres Tesla con secuencias sagital T uno axial T dos y FLAIR', expected: 'resonancia' },
+    { id: 12, text: 'tamizaje donde se observan mamas de composición heterogéneamente densa tipo C con microcalcificaciones birads cinco', expected: 'mamografia' },
+    { id: 13, text: 'densitometría ósea reportando un T score de menos dos punto ocho en el cuello femoral izquierdo', expected: 'densitometria' },
+    { id: 14, text: 'PET CT tras sesenta minutos una masa en el lóbulo superior derecho con un valor estandarizado de captación', expected: 'pet_ct' },
+    { id: 15, text: 'radiografía convencional muestra una solución de continuidad ósea diáfisis tibial con trazo oblicuo', expected: 'radiografia' },
+    { id: 16, text: 'ecografía reporta hígado de morfología normal vesícula biliar imágenes ecogénicas sombra acústica posterior colédoco', expected: 'ecografia_abdominal' },
+    { id: 17, text: 'riñones de situación y tamaño habitual conservando el parénquima hidronefrosis moderada cálculo obstructivo unión ureteropélica', expected: 'ecografia_renal' },
+    { id: 18, text: 'explora glándula tiroides lóbulo derecho nódulo sólido hipoecoico bordes irregulares microcalcificaciones internas', expected: 'ecografia_tiroidea' },
+    { id: 19, text: 'ecografía revela mama derecha masa sólida ovalada circunscrita tejido fibroadenomatoso birads tres', expected: 'ecografia_mamaria' },
+    { id: 20, text: 'eco doppler vascular de troncos supraaórticos engrosamiento miointimal placa de ateroma calcificada estenosis', expected: 'eco_doppler' },
+    { id: 21, text: 'gastroscopía esófago mucosa normal antro gástrico eritema parcheado biopsias bulbo duodenal', expected: 'gastroscopia' },
+    { id: 22, text: 'colonoscopía preparación adecuada equipo hasta el ciego colon sigmoides pólipo sésil resecado asa fría', expected: 'colonoscopia' },
+    { id: 23, text: 'broncoscopía cuerdas vocales móviles tráquea normal bronquio lóbulo superior lesión exofítica biopsias cepillado citología', expected: 'broncoscopia' },
+    { id: 24, text: 'laringoscopía permite visualizar tercio medio cuerda vocal verdadera nódulo base sésil movilidad cordal fonación', expected: 'laringoscopia' },
+    { id: 25, text: 'gammagrafía cardíaca en reposo y esfuerzo ventrícolo izquierdo defecto de captación reversible isquemia miocárdica', expected: 'gammagrafia_cardiaca' },
+    { id: 26, text: 'holter electrocardiográfico de veinticuatro horas ritmo sinusal extrasístoles ventriculares pausas segmento ST', expected: 'holter' },
+    { id: 27, text: 'monitoreo ambulatorio de presión arterial veinticuatro horas promedios diurnos elevados patrón non dipper', expected: 'mapa' },
+    { id: 28, text: 'cinecoronariografía por arteria radial descendente anterior estenosis severa angioplastia stent circunfleja', expected: 'cinecoro' },
+    { id: 29, text: 'electrocardiograma ritmo sinusal regular intervalo PR complejo QRS eje eléctrico repolarización ventricular', expected: 'ecg' },
+    { id: 30, text: 'eco stress en banda sinfín contractilidad basal normal esfuerzo máximo hipocinesia segmentos apicales isquemia miocárdica', expected: 'eco_stress' },
+    { id: 31, text: 'ecocardiograma transtorácico diámetros cavitarios válvula aórtica calcificación gradiente transvalvular estenosis aórtica fracción eyección', expected: 'ett' },
+    { id: 32, text: 'citología exfoliativa cervicovaginal sistema Bethesda células escamosas atípicas ascus virus papiloma humano', expected: 'pap' },
+    { id: 33, text: 'colposcopía ácido acético unión escamocolumnar zona acetoblanca mosaico punteado lésión intraepitelial biopsia dirigida', expected: 'colposcopia' },
+    { id: 34, text: 'ecografía obstétrica biometría fetal diámetro biparietal longitud fémur treinta y dos semanas placenta líquido amniótico', expected: 'ecografia_obstetrica' },
+    { id: 35, text: 'electromiografía velocidad de conducción nerviosa latencia distal prolongada nervio mediano túnel del carpo neuropático', expected: 'electromiografia' },
+    { id: 36, text: 'polisomnografía arquitectura de sueño fragmentada índice apneas hipopneas obstructivas desaturaciones oxígeno', expected: 'polisomnografia' },
+    { id: 37, text: 'videonasolaringoscopía cornetes inferiores hipertróficos septum nasal desviado meato medio pólipos fosas nasales nasofaringe', expected: 'naso' },
+    { id: 38, text: 'endoscopía otológica conducto auditivo externo membrana timpánica retracción derrame oído medio', expected: 'endoscopia_otologica' },
+    { id: 39, text: 'protocolo quirúrgico colecistectomía laparoscópica vesícula biliar triángulo anatómico arteria conducto cístico', expected: 'protocolo_quirurgico' },
+    { id: 40, text: 'nota de evolución internación lúcido afebril mejoría disnea auscultación crepitantes antibiótico intravenoso', expected: 'nota_evolucion' },
+    { id: 41, text: 'epicrisis ingresó dolor precordial infarto agudo miocardio revascularización percutánea alta hospitalaria', expected: 'epicrisis' },
+    { id: 42, text: 'evaluación general examen físico normal índice masa corporal sobrepeso informe médico recomendaciones dieta ejercicio', expected: 'generico' },
 ];
 
 TEMPLATE_CASES.forEach(c => {

@@ -195,6 +195,39 @@ Diagnóstico y recomendaciones.
 
 IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
     },
+    gonioscopia: {
+        name: "Gonioscopía",
+        category: "Oftalmología",
+        keywords: ["gonioscopia", "gonioscopía", "shaffer", "spaeth", "linea de schwalbe", "línea de schwalbe", "malla trabecular", "espolon escleral", "espolón escleral", "sinequias anteriores perifericas", "sinequias anteriores periféricas", "pas", "neovasos", "rubeosis", "indentacion", "indentación", "angulo camerular", "ángulo camerular"],
+        prompt: `Actúa como oftalmólogo especializado en glaucoma. Estructura este informe de gonioscopía:
+
+# INFORME DE GONIOSCOPÍA
+
+## OJO DERECHO (OD)
+- Ángulo: grado Shaffer y condición (abierto/estrecho/cerrado).
+- Estructuras visualizadas: línea de Schwalbe, malla trabecular, espolón escleral, banda del cuerpo ciliar.
+- Pigmentación trabecular.
+- Configuración del iris.
+- Gonioscopía dinámica/indentación (si aplica).
+- Hallazgos patológicos: sinequias anteriores periféricas (PAS), neovasos, línea de Sampaolesi u otros.
+
+## OJO IZQUIERDO (OI)
+- Ángulo: grado Shaffer y condición (abierto/estrecho/cerrado).
+- Estructuras visualizadas: línea de Schwalbe, malla trabecular, espolón escleral, banda del cuerpo ciliar.
+- Pigmentación trabecular.
+- Configuración del iris.
+- Gonioscopía dinámica/indentación (si aplica).
+- Hallazgos patológicos: sinequias anteriores periféricas (PAS), neovasos, línea de Sampaolesi u otros.
+
+## SISTEMA SPAETH (SI ESTÁ REPORTADO)
+- OD por cuadrantes: inserción del iris, amplitud angular y configuración.
+- OI por cuadrantes: inserción del iris, amplitud angular y configuración.
+
+## IMPRESIÓN DIAGNÓSTICA
+- Síntesis final clínica (p.ej. ángulos abiertos bilaterales, cierre aposicional, glaucoma neovascular, etc.).
+
+IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
+    },
 
     tac: {
         name: "TAC / Tomografía",
