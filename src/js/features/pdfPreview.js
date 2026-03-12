@@ -52,13 +52,16 @@ window.openPdfConfigModal = async function () {
 
     const profData = (await safeGet('prof_data', {})) || {};
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+    const normName = (v) => (typeof window.normalizeFieldText === 'function')
+        ? window.normalizeFieldText(String(v || ''), 'name')
+        : String(v || '');
     const isAdmin = typeof isAdminUser === 'function' && isAdminUser();
     const isPro = window.currentMode === 'pro';
 
-    set('pdfProfName', profData.nombre);
+    set('pdfProfName', normName(profData.nombre));
     set('pdfProfMatricula', profData.matricula);
     const specs = Array.isArray(profData.specialties) ? profData.specialties.join(' / ') : (profData.especialidad || '');
-    set('pdfProfEspecialidad', specs);
+    set('pdfProfEspecialidad', normName(specs));
 
     if (isAdmin) {
         ['pdfProfName', 'pdfProfMatricula', 'pdfProfEspecialidad'].forEach(id => {
@@ -190,9 +193,9 @@ window.openPdfConfigModal = async function () {
     const pdfCfgRestore = (await safeGet('pdf_config', {})) || {};
     const activeProRestore = pdfCfgRestore.activeProfessional;
     if (activeProRestore) {
-        set('pdfProfName',        activeProRestore.nombre        || '');
+        set('pdfProfName',        normName(activeProRestore.nombre || ''));
         set('pdfProfMatricula',   activeProRestore.matricula     || '');
-        set('pdfProfEspecialidad',activeProRestore.especialidades|| '');
+        set('pdfProfEspecialidad',normName(activeProRestore.especialidades || ''));
     }
     const restoredWpIdx  = pdfCfgRestore.activeWorkplaceIndex;
     const restoredProIdx = pdfCfgRestore.activeProfessionalIndex;
@@ -211,7 +214,7 @@ window.openPdfConfigModal = async function () {
     }
 
     const showSignImageChk = document.getElementById('pdfShowSignImage');
-    if (showSignImageChk) showSignImageChk.checked = pdfCfgRestore.showSignImage ?? false;
+    if (showSignImageChk) showSignImageChk.checked = pdfCfgRestore.showSignImage ?? true;
 
     // No se oculta globalmente aquí porque el panel entero ya está oculto
 

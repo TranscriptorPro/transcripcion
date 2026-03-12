@@ -329,6 +329,9 @@ window.initModals = function () {
                 const existing = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
                 const val = (id) => document.getElementById(id)?.value || '';
                 const chk = (id, def) => document.getElementById(id)?.checked ?? def;
+                const normName = (v) => (typeof window.normalizeFieldText === 'function')
+                    ? window.normalizeFieldText(String(v || ''), 'name')
+                    : String(v || '');
                 const config = {
                     studyType: val('pdfStudyType'), studyDate: val('pdfStudyDate'),
                     reportNum: val('pdfReportNumber'),
@@ -346,12 +349,12 @@ window.initModals = function () {
                     showPageNum: chk('pdfShowPageNum', true), showDate: chk('pdfShowDate', false),
                     showQR: chk('pdfShowQR', false), showSignLine: chk('pdfShowSignLine', true),
                     showSignName: chk('pdfShowSignName', true), showSignMatricula: chk('pdfShowSignMatricula', true),
-                    showSignImage: chk('pdfShowSignImage', false),
+                    showSignImage: chk('pdfShowSignImage', true),
                     showPhone: chk('pdfShowPhone', true), showEmail: chk('pdfShowEmail', true), showSocial: chk('pdfShowSocial', false),
                     logoSizePx: parseInt(document.getElementById('pdfLogoSize')?.value || '60'),
                     firmaSizePx: parseInt(document.getElementById('pdfFirmaSize')?.value || '60'),
                     footerText: val('pdfFooterText'), selectedWorkplace: val('pdfWorkplace'),
-                    workplaceAddress: val('pdfWorkplaceAddress'), workplacePhone: val('pdfWorkplacePhone'),
+                    workplaceAddress: normName(val('pdfWorkplaceAddress')), workplacePhone: val('pdfWorkplacePhone'),
                     workplaceEmail: val('pdfWorkplaceEmail')
                 };
                 // Preservar campos de profesional activo (seteados por business.js)
@@ -367,9 +370,9 @@ window.initModals = function () {
                 }
 
                 // Sincronizar datos visibles de profesional aunque no exista activo previo.
-                const pName = (val('pdfProfName') || '').trim();
+                const pName = normName((val('pdfProfName') || '').trim());
                 const pMat = (val('pdfProfMatricula') || '').trim();
-                const pEsp = (val('pdfProfEspecialidad') || '').trim();
+                const pEsp = normName((val('pdfProfEspecialidad') || '').trim());
                 const cEl = document.getElementById('pdfHeaderColor');
                 const hColor = cEl?.dataset?.selectedColor || cEl?.value || '';
                 const hasAnyProfField = !!(pName || pMat || pEsp || hColor);

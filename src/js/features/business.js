@@ -76,10 +76,13 @@ window.initWorkplaceManagement = function () {
     function populateWorkplaceDropdown() {
         const sel   = document.getElementById('pdfWorkplace');
         if (!sel) return;
+        const normName = (v) => (typeof window.normalizeFieldText === 'function')
+            ? window.normalizeFieldText(String(v || ''), 'name')
+            : String(v || '');
         const current = sel.value;
         sel.innerHTML = '<option value="">Seleccionar lugar...</option>';
         workplaceProfiles.forEach((p, i) => {
-            const label = p.name || `Lugar ${i + 1}`;
+            const label = normName(p.name || `Lugar ${i + 1}`);
             const o = document.createElement('option'); o.value = i; o.textContent = label; sel.appendChild(o);
         });
         if (current !== '') sel.value = current;
@@ -90,12 +93,15 @@ window.initWorkplaceManagement = function () {
     function loadWorkplaceProfile(index) {
         const profile = workplaceProfiles[index];
         if (!profile) return;
+        const normName = (v) => (typeof window.normalizeFieldText === 'function')
+            ? window.normalizeFieldText(String(v || ''), 'name')
+            : String(v || '');
         const addr    = document.getElementById('pdfWorkplaceAddress');
         const phone   = document.getElementById('pdfWorkplacePhone');
         const email   = document.getElementById('pdfWorkplaceEmail');
         const footer  = document.getElementById('pdfFooterText');
         const logo    = document.getElementById('pdfLogoPreview');
-        if (addr)   addr.value   = profile.address || '';
+        if (addr)   addr.value   = normName(profile.address || '');
         if (phone)  phone.value  = profile.phone   || '';
         if (email)  email.value  = profile.email   || '';
         if (footer) footer.value = profile.footer   || '';
@@ -474,7 +480,10 @@ window.initWorkplaceManagement = function () {
     // (quickWorkplaceSelector eliminado — reemplazado por quickProfileSelector en outputProfiles.js)
 
     document.getElementById('btnSaveWorkplace')?.addEventListener('click', () => {
-        const name = document.getElementById('wpName')?.value?.trim();
+        const normName = (v) => (typeof window.normalizeFieldText === 'function')
+            ? window.normalizeFieldText(String(v || ''), 'name')
+            : String(v || '');
+        const name = normName(document.getElementById('wpName')?.value?.trim());
         if (!name) { showToast('Ingrese un nombre para el lugar', 'error'); return; }
 
         const logoInput = document.getElementById('wpLogo');
@@ -482,7 +491,7 @@ window.initWorkplaceManagement = function () {
         const currentProfile = isEditing ? workplaceProfiles[_editingWorkplaceIndex] : null;
         const profile = {
             name,
-            address:       document.getElementById('wpAddress')?.value?.trim() || '',
+            address:       normName(document.getElementById('wpAddress')?.value?.trim() || ''),
             phone:         document.getElementById('wpPhone')?.value?.trim()   || '',
             email:         document.getElementById('wpEmail')?.value?.trim()   || '',
             footer:        document.getElementById('wpFooter')?.value?.trim()  || '',

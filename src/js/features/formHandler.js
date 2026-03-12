@@ -294,6 +294,9 @@ window.handleImageUpload = function (inputId, previewId, storageKey) {
 window.savePdfConfiguration = function () {
     const val = (id) => document.getElementById(id)?.value || '';
     const chk = (id, def) => document.getElementById(id)?.checked ?? def;
+    const normName = (v) => (typeof window.normalizeFieldText === 'function')
+        ? window.normalizeFieldText(String(v || ''), 'name')
+        : String(v || '');
 
     // Preservar datos del profesional activo que fueron seteados por business.js
     const existing = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
@@ -338,7 +341,7 @@ window.savePdfConfiguration = function () {
         firmaSizePx: parseInt(document.getElementById('pdfFirmaSize')?.value || '60'),
         footerText: val('pdfFooterText'),
         selectedWorkplace: val('pdfWorkplace'),
-        workplaceAddress: val('pdfWorkplaceAddress'),
+        workplaceAddress: normName(val('pdfWorkplaceAddress')),
         workplacePhone: val('pdfWorkplacePhone'),
         workplaceEmail: val('pdfWorkplaceEmail')
     };
@@ -357,9 +360,9 @@ window.savePdfConfiguration = function () {
 
     // Si hay profesional activo, sincronizar los campos visibles del modal para evitar drift
     {
-        const profName = (val('pdfProfName') || '').trim();
+        const profName = normName((val('pdfProfName') || '').trim());
         const profMat = (val('pdfProfMatricula') || '').trim();
-        const profEsp = (val('pdfProfEspecialidad') || '').trim();
+        const profEsp = normName((val('pdfProfEspecialidad') || '').trim());
         const colEl = document.getElementById('pdfHeaderColor');
         const hdrColor = colEl?.dataset?.selectedColor || colEl?.value || '';
         const hasAnyProfField = !!(profName || profMat || profEsp || hdrColor);

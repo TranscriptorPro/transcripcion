@@ -66,12 +66,13 @@ window.fetchWithTimeout = function(url, options, timeoutMs = 120000) {
 
     function _isUpperSigla(word) {
         const clean = word.replace(/[.,;:!?()]+$/g, '');
+        const dottedCompact = clean.replace(/\s+/g, '');
         // Solo siglas explícitas del set
         if (SIGLAS.has(clean.toUpperCase())) return true;
         // Mayúsculas con números intercalados (VEF1, T4, PO2, FIO2, etc.)
         if (/^[A-Z]+\d+[A-Z]*$/i.test(clean) && clean.length <= 6) return true;
         // Con punto: D.N.I., M.P.
-        if (/^([A-Z]\.){2,}[A-Z]?$/i.test(clean)) return true;
+        if (/^([A-Z]\.){2,}[A-Z]?$/i.test(dottedCompact)) return true;
         return false;
     }
 
@@ -154,7 +155,7 @@ window.fetchWithTimeout = function(url, options, timeoutMs = 120000) {
         'reqPatientName', 'profName', 'profNombre', 'nombreProfesional',
         'workplace', 'lugarTrabajo',
         'pdfProfName', 'proNombre', 'pdfPatientName',
-        'wpName'
+        'wpName', 'pdfWorkplaceAddress', 'wpAddress'
     ]);
 
     // Campos que se fuerzan a MAYÚSCULAS completas
