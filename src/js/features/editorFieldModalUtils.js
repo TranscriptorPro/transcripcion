@@ -323,10 +323,20 @@
         if (!editor) return;
         editor.querySelectorAll('p.report-p, li').forEach((n) => {
             const clone = n.cloneNode(true);
-            clone.querySelectorAll('.inline-review-btn, .no-data-edit-btn').forEach(el => el.remove());
+            clone.querySelectorAll('.inline-review-btn, .no-data-edit-btn, .no-data-field').forEach(el => el.remove());
             const txt = String(clone.textContent || '').replace(/[\u00A0\s]+/g, '').trim();
+            const htmlNoBreaks = String(clone.innerHTML || '')
+                .replace(/<br\s*\/?>/gi, '')
+                .replace(/&nbsp;/gi, '')
+                .trim();
             const hasField = !!n.querySelector('.no-data-field');
-            if (!txt && !hasField) n.remove();
+            if ((!txt || !/[\p{L}\p{N}]/u.test(txt)) && !hasField && !htmlNoBreaks) n.remove();
+        });
+        editor.querySelectorAll('ul, ol').forEach((list) => {
+            if (!list.querySelector('li')) list.remove();
+        });
+        Array.from(editor.children || []).forEach((child) => {
+            if (child && child.tagName === 'BR') child.remove();
         });
         editor.querySelectorAll('h2.report-h2, h3.report-h3').forEach((h) => {
             const prev = h.previousElementSibling;
@@ -337,6 +347,9 @@
     function _decorateInlineReviewButtons() {
         if (!editor) return;
         const enabled = _isInlineReviewEnabled();
+
+        // Limpiar botones heredados en títulos para evitar duplicación visual.
+        editor.querySelectorAll('h2.report-h2 .inline-review-btn, h3.report-h3 .inline-review-btn').forEach((b) => b.remove());
 
         if (!enabled) {
             editor.querySelectorAll('.inline-review-btn').forEach(b => b.remove());
@@ -352,6 +365,10 @@
 
         editor.querySelectorAll('p.report-p, li').forEach((node) => {
             if (node.querySelector('.no-data-field')) return;
+            const ownButtons = Array.from(node.children || []).filter((ch) => ch.classList && ch.classList.contains('inline-review-btn'));
+            if (ownButtons.length > 1) {
+                ownButtons.slice(0, -1).forEach((b) => b.remove());
+            }
             const clone = node.cloneNode(true);
             clone.querySelectorAll('.inline-review-btn, .no-data-edit-btn, .no-data-field').forEach(el => el.remove());
             const txt = String(clone.textContent || '').replace(/[\u00A0\s]+/g, ' ').trim();
@@ -691,7 +708,7 @@
             if (reviewBtn) {
                 e.preventDefault();
                 e.stopPropagation();
-                const container = reviewBtn.closest('h2.report-h2, h3.report-h3, p.report-p, li');
+                const container = reviewBtn.closest('p.report-p, li');
                 if (container) _runInlineParagraphReview(container);
                 return;
             }
