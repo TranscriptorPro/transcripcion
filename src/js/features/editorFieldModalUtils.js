@@ -117,6 +117,16 @@
     let _efRecording = false;
     let _fieldReviewAttempt = 0;
 
+    function _isInlineReviewEnabled() {
+        if (typeof window.inlineParagraphReviewEnabled === 'boolean') return window.inlineParagraphReviewEnabled;
+        try {
+            const prefs = JSON.parse(localStorage.getItem('settings_prefs') || '{}');
+            return prefs.inlineParagraphReview !== false;
+        } catch (_) {
+            return true;
+        }
+    }
+
     const isPro = () => !!(window.GROQ_API_KEY) &&
         (typeof CLIENT_CONFIG === 'undefined' ||
          CLIENT_CONFIG.type === 'ADMIN' ||
@@ -297,6 +307,13 @@
 
     function _decorateInlineReviewButtons() {
         if (!editor) return;
+        const enabled = _isInlineReviewEnabled();
+
+        if (!enabled) {
+            editor.querySelectorAll('.inline-review-btn').forEach(b => b.remove());
+            return;
+        }
+
         editor.querySelectorAll('p.report-p, li').forEach((node) => {
             const already = Array.from(node.children || []).some(ch => ch.classList && ch.classList.contains('inline-review-btn'));
             if (already) return;
@@ -709,4 +726,7 @@
 
     window._openEditFieldModal = openEditFieldModal;
     window._closeEditFieldModal = closeEditFieldModal;
+    window._refreshInlineReviewButtons = function () {
+        _decorateInlineReviewButtons();
+    };
 })();
