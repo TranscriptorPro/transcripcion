@@ -160,16 +160,19 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepción (ordenadas por prioridad):
 >>> MARCADOR DE CAMPOS VACÍOS >>>
 8. CAMPO NO EVALUADO: cuando una estructura NO fue evaluada ni mencionada, usa ÚNICAMENTE el marcador [No especificado]. NUNCA uses variantes como "No se evaluó", "No fue evaluado/a", "Sin datos disponibles". EXCEPCIÓN: "s/p" (sin particularidades) es VÁLIDO cuando la estructura SÍ fue evaluada y el resultado es normal. No confundir: s/p = evaluado + normal; [No especificado] = no evaluado (genera campo editable interactivo).
 
+>>> PRESERVAR TODAS LAS SECCIONES DE LA PLANTILLA >>>
+9. NUNCA elimines, omitas ni fusiones secciones de la plantilla. Mantén TODAS las secciones ##, incluso si no tienen contenido (en ese caso usa [No especificado]). El usuario decide qué hacer con cada sección vacía.
+
 >>> ESTUDIOS MULTI-ESTRUCTURA >>>
-9. En estudios multi-órgano/multi-segmento (ecografía, colonoscopía, Doppler, laringoscopía, etc.): una sección ## por CADA estructura evaluada. Si una estructura fue evaluada y es normal → describir brevemente o indicar s/p. Si NO fue evaluada → marcar con [No especificado]. Si la transcripción contiene datos que no encajan en las secciones propuestas → crear subsección adicional.
+10. En estudios multi-órgano/multi-segmento (ecografía, colonoscopía, Doppler, laringoscopía, etc.): una sección ## por CADA estructura evaluada. Si una estructura fue evaluada y es normal → describir brevemente o indicar s/p. Si NO fue evaluada → marcar con [No especificado]. Si la transcripción contiene datos que no encajan en las secciones propuestas → crear subsección adicional.
 
 >>> CONCLUSIÓN >>>
-10. CONCLUSIÓN (regla universal): (a) incluir TODOS los hallazgos patológicos o positivos, ninguno puede omitirse; (b) NO incluir estructuras normales; (c) si todo es normal: "Estudio dentro de parámetros normales."; (d) NUNCA dejar vacía ni como [No especificado]; (e) NO inventar datos; (f) NO indicar tratamientos si el médico no los mencionó.
+11. CONCLUSIÓN (regla universal): (a) incluir TODOS los hallazgos patológicos o positivos, ninguno puede omitirse; (b) NO incluir estructuras normales; (c) si todo es normal: "Estudio dentro de parámetros normales."; (d) NUNCA dejar vacía ni como [No especificado]; (e) NO inventar datos; (f) NO indicar tratamientos si el médico no los mencionó.
 
 >>> CALIDAD LINGÜÍSTICA >>>
-11. CORRECCIÓN ASR: el texto proviene de reconocimiento de voz. Corrige silenciosamente errores fonéticos ("o dinofagia" → "odinofagia", "bujales" → "bucales"), anglicismos ("laryngoscopy" → "laringoscopía") y palabras partidas. NO señales las correcciones.
-12. Español médico formal impecable. Corrige errores ortográficos, gramaticales y de concordancia. Encabezados anatómicos sin tildes incorrectas: "OROFARINGE" (correcto), NO "ORÓFARINGE".
-13. PROHIBIDO usar muletillas o inicios vagos como "Generalmente,", "Generally,", "Usually,", "En general," o "Habitualmente,". Redacta directo, preciso y objetivo. Escribe SIEMPRE en español médico formal.
+12. CORRECCIÓN ASR: el texto proviene de reconocimiento de voz. Corrige silenciosamente errores fonéticos ("o dinofagia" → "odinofagia", "bujales" → "bucales"), anglicismos ("laryngoscopy" → "laringoscopía") y palabras partidas. NO señales las correcciones.
+13. Español médico formal impecable. Corrige errores ortográficos, gramaticales y de concordancia. Encabezados anatómicos sin tildes incorrectas: "OROFARINGE" (correcto), NO "ORÓFARINGE".
+14. PROHIBIDO usar muletillas, rellenos o inicios vagos en CUALQUIER idioma: "Generalmente,", "Generally,", "Usually,", "Typically,", "Normally,", "Basically,", "En general,", "Habitualmente,", "Cabe destacar que", "Es importante mencionar que", "It should be noted that", etc. Redacta directo, preciso y objetivo. Escribe SIEMPRE en español médico formal. NUNCA mezcles idiomas ni uses inglés.
 
 >>> RECORDATORIO FINAL >>>
 Antes de responder, verifica: ¿preservé TODOS los datos? ¿Usé [No especificado] (no variantes)? ¿La conclusión incluye todos los hallazgos patológicos? ¿No inventé nada?`;
@@ -473,9 +476,6 @@ function _sanitizeGrammarArtifacts(text) {
         .replace(/[ \t]{2,}/g, ' ')
         .replace(/([.!?]\s+)([a-záéíóúñ])/g, (_, p1, p2) => p1 + p2.toUpperCase());
 
-    // Eliminar secciones vacías: heading seguido directamente por otro heading (sin contenido entre ambos)
-    out = out.replace(/^(##\s+[^\n]+)\n+(?=##\s)/gm, '');
-
     return out.trim();
 }
 
@@ -564,10 +564,34 @@ function _postProcessStructuredMarkdown(md) {
         out = out.replace(pattern, replacement);
     });
 
-    // Limpieza discursiva: quitar muletillas al inicio de línea y de oración (ES + EN).
-    const muletillas = 'Generalmente|En general|Habitualmente|Generally|Usually|Typically|Commonly|In general|Overall';
-    const rxMulStart = new RegExp(`(^|\\n)\\s*(?:\\*\\*)?\\s*(?:${muletillas})\\s*,\\s+`, 'gim');
-    const rxMulMid   = new RegExp(`([.!?]\\s+)(?:\\*\\*)?\\s*(?:${muletillas})\\s*,\\s+`, 'gim');
+    // Limpieza discursiva: quitar muletillas al inicio de línea y de oración (todos los idiomas).
+    const muletillas = [
+        // Español
+        'Generalmente', 'En general', 'Habitualmente', 'Normalmente',
+        'Por lo general', 'De manera general', 'Típicamente',
+        'Usualmente', 'Comúnmente', 'Frecuentemente',
+        'Básicamente', 'Esencialmente', 'Fundamentalmente',
+        'Cabe destacar que', 'Cabe mencionar que', 'Cabe señalar que',
+        'Es importante mencionar que', 'Es importante señalar que',
+        'Es importante destacar que', 'Es de notar que',
+        'Vale la pena mencionar que', 'Se observa que',
+        'Como se mencionó anteriormente', 'Como se indicó',
+        'En términos generales', 'De forma general',
+        // Inglés
+        'Generally', 'Usually', 'Typically', 'Commonly', 'In general',
+        'Overall', 'Normally', 'Basically', 'Essentially', 'Fundamentally',
+        'It is worth noting that', 'It should be noted that',
+        'It is important to note that', 'It is noteworthy that',
+        'As previously mentioned', 'As noted above',
+        // Portugués
+        'Geralmente', 'Normalmente', 'Tipicamente', 'Comumente',
+        'Em geral', 'No geral', 'Basicamente',
+        // Francés
+        'G\u00e9n\u00e9ralement', 'Habituellement', 'Typiquement', 'En g\u00e9n\u00e9ral',
+        'Normalement', 'Fondamentalement'
+    ].join('|');
+    const rxMulStart = new RegExp(`(^|\\n)\\s*(?:\\*\\*)?\\s*(?:${muletillas})\\s*,?\\s+`, 'gim');
+    const rxMulMid   = new RegExp(`([.!?]\\s+)(?:\\*\\*)?\\s*(?:${muletillas})\\s*,?\\s+`, 'gim');
     out = out
         .replace(rxMulStart, '$1')
         .replace(rxMulMid, '$1');
@@ -578,11 +602,7 @@ function _postProcessStructuredMarkdown(md) {
         return `${p1}${articleMap[art] || art} ${p3}`;
     });
 
-    // Eliminar secciones markdown vacías (solo subtítulos H2/H3, nunca el título principal H1)
-    // Ej: "## Datos Demográficos\n\n## Siguiente Sección" → elimina "## Datos Demográficos"
-    out = out.replace(/^(#{2,3}\s+[^\n]+)\n+(?=#{1,3}\s)/gm, '');
-    // Heading H2/H3 vacío al final del documento
-    out = out.replace(/\n#{2,3}\s+[^\n]+\s*$/g, '');
+    // NO eliminar secciones vacías: el usuario decide qué hacer con campos sin contenido.
 
     out = _sanitizeGrammarArtifacts(out);
     out = _normalizeMarkdownHeadingLayout(out);
