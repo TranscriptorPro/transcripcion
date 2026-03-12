@@ -1851,27 +1851,48 @@
          * Abre la Fábrica de Clones en modo GIFT (crear usuario regalo)
          */
         function openGiftFactory() {
+            const requiredIds = ['cloneFactoryModal', 'cfModalTitle', 'cfModeNormal', 'cfModeGift'];
+            const missingRequired = requiredIds.filter(id => !document.getElementById(id));
+            if (missingRequired.length) {
+                const reloadFlag = 'admin_gift_dom_reload_once';
+                if (!sessionStorage.getItem(reloadFlag)) {
+                    sessionStorage.setItem(reloadFlag, '1');
+                    window.location.replace('admin.html?v=' + Date.now());
+                    return;
+                }
+                dashAlert('No se pudo abrir el modo Regalo por caché desactualizada del panel. Recargá la página (Ctrl+F5).', '⚠️');
+                return;
+            }
+
+            const byId = (id) => document.getElementById(id);
+            const setValue = (id, value) => {
+                const el = byId(id);
+                if (el) el.value = value;
+                return el;
+            };
+
             _cfCurrentUser = null;
             _cfMode = 'gift';
             _ensureGiftSexoField();
             _bindGiftNameSanitizer();
 
             // Título
-            document.getElementById('cfModalTitle').textContent = '🎁 Crear Usuario Regalo';
+            byId('cfModalTitle').textContent = '🎁 Crear Usuario Regalo';
 
             // Mostrar modo gift, ocultar normal
-            document.getElementById('cfModeNormal').style.display = 'none';
-            document.getElementById('cfModeGift').style.display = 'block';
-            document.getElementById('cfApiKeyLabel').textContent = '(para el usuario regalo)';
+            byId('cfModeNormal').style.display = 'none';
+            byId('cfModeGift').style.display = 'block';
+            const cfApiKeyLabel = byId('cfApiKeyLabel');
+            if (cfApiKeyLabel) cfApiKeyLabel.textContent = '(para el usuario regalo)';
 
             // Reset campos gift — Paso 1
-            document.getElementById('giftNombre').value = '';
+            setValue('giftNombre', '');
             const giftSexoField = document.getElementById('giftSexo');
             if (giftSexoField) giftSexoField.value = 'M';
-            document.getElementById('giftEmail').value = '';
-            document.getElementById('giftMatricula').value = '';
-            document.getElementById('giftTelefono').value = '';
-            document.getElementById('giftEspecialidad').value = '';
+            setValue('giftEmail', '');
+            setValue('giftMatricula', '');
+            setValue('giftTelefono', '');
+            setValue('giftEspecialidad', '');
 
             // Reset campos gift — Paso 2 (Workplaces)
             _giftWpCounter = 0;
@@ -1883,7 +1904,8 @@
             // Reset campos gift — Paso 3 (Apariencia + Firma + Logo)
             _giftSelectedColor = '#1a56a0';
             _giftImageData = { firma: null, proLogo: null, proLogoSize: 60, firmaSize: 60, instLogoSize: 60 };
-            document.getElementById('giftColorPreview').style.background = '#1a56a0';
+            const giftColorPreview = byId('giftColorPreview');
+            if (giftColorPreview) giftColorPreview.style.background = '#1a56a0';
             document.querySelectorAll('#giftColorPalette .gift-color-swatch').forEach(s => {
                 s.style.border = '3px solid transparent';
                 s.style.boxShadow = 'none';
@@ -1900,10 +1922,10 @@
             if (proLogoInput) proLogoInput.value = '';
 
             // Reset campos gift — Paso 4 (Licencia y Permisos)
-            document.getElementById('giftPlan').value = 'GIFT';
-            document.getElementById('giftProMode').value = 'true';
-            document.getElementById('giftDevices').value = '2';
-            document.getElementById('giftDuration').value = '90';
+            setValue('giftPlan', 'GIFT');
+            setValue('giftProMode', 'true');
+            setValue('giftDevices', '2');
+            setValue('giftDuration', '90');
             const allTplCheck = document.getElementById('giftAllTemplates');
             if (allTplCheck) { allTplCheck.checked = true; }
             const tplGrid = document.getElementById('giftTemplatesGrid');
@@ -1915,13 +1937,19 @@
 
             // Poblar especialidades en el select
             const sel = document.getElementById('giftEspecialidad');
-            sel.innerHTML = '<option value="">— Seleccioná —</option>';
-            ESPECIALIDADES.forEach(esp => {
-                sel.innerHTML += `<option value="${esp}">${esp}</option>`;
-            });
+            if (sel) {
+                sel.innerHTML = '<option value="">— Seleccioná —</option>';
+                ESPECIALIDADES.forEach(esp => {
+                    sel.innerHTML += `<option value="${esp}">${esp}</option>`;
+                });
+            }
 
             // Reset estado — API Key editable para usuario regalo (nuevo usuario, sin aprobación previa)
             const cfApiKeyInputGift = document.getElementById('cfApiKey');
+            if (!cfApiKeyInputGift) {
+                dashAlert('No se pudo abrir el campo de API Key del modo Regalo. Recargá la página (Ctrl+F5).', '⚠️');
+                return;
+            }
             // Auto-llenar con las keys guardadas en Mis Keys
             cfApiKeyInputGift.value = localStorage.getItem('admin_groq_key') || '';
             cfApiKeyInputGift.readOnly = false;
@@ -1940,15 +1968,18 @@
             const cfB2g = document.getElementById('cfApiKeyB2');
             if (cfB1g) { cfB1g.value = localStorage.getItem('admin_groq_key_b1') || ''; cfB1g.readOnly = false; cfB1g.style.background = ''; cfB1g.style.opacity = ''; cfB1g.style.cursor = ''; }
             if (cfB2g) { cfB2g.value = localStorage.getItem('admin_groq_key_b2') || ''; cfB2g.readOnly = false; cfB2g.style.background = ''; cfB2g.style.opacity = ''; cfB2g.style.cursor = ''; }
-            document.getElementById('cfLinkResult').style.display = 'none';
+            const cfLinkResult = byId('cfLinkResult');
+            if (cfLinkResult) cfLinkResult.style.display = 'none';
 
             // Botón con estilo gift — ocultar del footer (el paso 6 tiene su propio botón)
             const btn = document.getElementById('cfBtnGenerate');
-            btn.textContent = '🎁 Crear y Generar Link';
-            btn.style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
-            btn.style.display = 'none';
+            if (btn) {
+                btn.textContent = '🎁 Crear y Generar Link';
+                btn.style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
+                btn.style.display = 'none';
+            }
 
-            document.getElementById('cloneFactoryModal').style.display = 'flex';
+            byId('cloneFactoryModal').style.display = 'flex';
         }
 
         function closeCloneFactory() {
