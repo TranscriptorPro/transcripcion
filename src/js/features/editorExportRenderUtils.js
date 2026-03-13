@@ -97,6 +97,7 @@
         const workplaceName = String(activeWp?.name || '').trim();
         const extracted = (typeof extractPatientDataFromText === 'function') ? extractPatientDataFromText(sourceText) : {};
         const reqVal = (id) => document.getElementById(id)?.value?.trim() || '';
+        const cleanDoctorName = (v) => String(v || '').replace(/^\s*(?:dr\.?|dra\.?)\s+/i, '').trim();
 
         const tplKey = window.selectedTemplate || cfg.selectedTemplate || '';
         const tplName = (tplKey && window.MEDICAL_TEMPLATES?.[tplKey]?.name) || '';
@@ -126,10 +127,10 @@
             studyTime: cfg.studyTime || reqVal('reqStudyTime') || reqVal('pdfStudyTime') || '',
             studyReason: cfg.studyReason || reqVal('reqStudyReason') || reqVal('pdfStudyReason') || '',
             referringDoctor: (() => {
-                const raw = cfg.referringDoctor || reqVal('reqReferringDoctor') || reqVal('pdfReferringDoctor') || '';
+                const raw = cleanDoctorName(cfg.referringDoctor || reqVal('reqReferringDoctor') || reqVal('pdfReferringDoctor') || '');
                 if (!raw) return '';
-                const sex = cfg.referringDoctorSex || reqVal('reqReferringDoctorSex') || '';
-                const prefix = sex === 'F' ? 'Dra. ' : sex === 'M' ? 'Dr. ' : '';
+                const sex = cfg.referringDoctorSex || '';
+                const prefix = sex === 'F' ? 'Dra. ' : sex === 'M' ? 'Dr. ' : 'Dr./Dra. ';
                 return prefix + raw;
             })(),
             reportNum: cfg.reportNum || reqVal('pdfReportNumber') || '',
@@ -340,9 +341,9 @@
         const studyDate = rawDate ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
         const studyTime = esc(document.getElementById('reqStudyTime')?.value || document.getElementById('pdfStudyTime')?.value || config.studyTime || '');
         const studyReason = escSentence(config.studyReason || document.getElementById('reqStudyReason')?.value || '');
-        const _refDocRaw = config.referringDoctor || document.getElementById('reqReferringDoctor')?.value || '';
-        const _refDocSex = config.referringDoctorSex || document.getElementById('reqReferringDoctorSex')?.value || '';
-        const _refDrPrefix = _refDocSex === 'F' ? 'Dra. ' : _refDocSex === 'M' ? 'Dr. ' : '';
+        const _refDocRaw = cleanDoctorName(config.referringDoctor || document.getElementById('reqReferringDoctor')?.value || '');
+        const _refDocSex = config.referringDoctorSex || '';
+        const _refDrPrefix = _refDocSex === 'F' ? 'Dra. ' : _refDocSex === 'M' ? 'Dr. ' : 'Dr./Dra. ';
         const refDoctor = _refDocRaw ? escName(_refDrPrefix + _refDocRaw) : '';
         const reportNum = esc(document.getElementById('pdfReportNumber')?.value || config.reportNum || '');
         const showReportNumber = (config.showReportNumber ?? true) === true;

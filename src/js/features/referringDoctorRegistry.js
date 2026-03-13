@@ -1,6 +1,6 @@
 // ============ REGISTRO DE MÉDICOS SOLICITANTES ============
 // Almacena médicos solicitantes en localStorage/appDB.
-// Cada entrada: { name, sex, lastUsed, usageCount }
+// Cada entrada: { name, lastUsed, usageCount }
 // Se va completando automáticamente a medida que el médico realiza estudios.
 
 const _DR_REG_KEY = 'referring_doctor_registry';
@@ -30,9 +30,13 @@ function _drNorm(s) {
     return typeof _normStr === 'function' ? _normStr(s || '') : String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
+function _cleanDoctorName(name) {
+    return String(name || '').replace(/^\s*(?:dr\.?|dra\.?)\s+/i, '').trim();
+}
+
 // ---- Guardar / actualizar médico solicitante ----
-window.saveReferringDoctor = function(name, sex) {
-    const n = String(name || '').trim();
+window.saveReferringDoctor = function(name) {
+    const n = _cleanDoctorName(name);
     if (!n) return;
     const reg = _getDrRegistry();
     const normN = _drNorm(n);
@@ -40,9 +44,8 @@ window.saveReferringDoctor = function(name, sex) {
     if (idx >= 0) {
         reg[idx].usageCount = (reg[idx].usageCount || 0) + 1;
         reg[idx].lastUsed = new Date().toISOString();
-        if (sex) reg[idx].sex = sex;
     } else {
-        reg.unshift({ name: n, sex: sex || '', usageCount: 1, lastUsed: new Date().toISOString() });
+        reg.unshift({ name: n, usageCount: 1, lastUsed: new Date().toISOString() });
         if (reg.length > _DR_REG_MAX) reg.pop();
     }
     // Ordenar por frecuencia descendente
@@ -87,10 +90,9 @@ window.initReferringDoctorSearch = function() {
         const esc = typeof escapeHtml === 'function' ? escapeHtml
             : (s => (s || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'));
         dropdown.innerHTML = results.map((d, i) => {
-            const prefix = d.sex === 'F' ? 'Dra.' : d.sex === 'M' ? 'Dr.' : 'Dr./a';
             return `<div data-idx="${i}" style="padding:0.5rem 0.85rem;cursor:pointer;font-size:0.82rem;border-bottom:1px solid var(--border);"
                 onmouseenter="this.style.background='var(--bg-hover,#2a2a2a)'"
-                onmouseleave="this.style.background=''"><span style="opacity:0.6;font-size:0.75rem;margin-right:6px;">${esc(prefix)}</span>${esc(d.name)}</div>`;
+                onmouseleave="this.style.background=''">${esc(d.name)}</div>`;
         }).join('');
         dropdown.style.display = 'block';
 
@@ -99,8 +101,6 @@ window.initReferringDoctorSearch = function() {
                 e.preventDefault();
                 const d = results[parseInt(el.dataset.idx)];
                 input.value = d.name;
-                const sexEl = document.getElementById('reqReferringDoctorSex');
-                if (sexEl && d.sex) sexEl.value = d.sex;
                 hideDropdown();
             });
         });

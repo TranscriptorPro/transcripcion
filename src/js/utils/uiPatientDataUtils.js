@@ -6,6 +6,10 @@ window.initPatientDataModalHandlers = function () {
     const btnSkipPatientData = document.getElementById('btnSkipPatientData');
     const btnClosePatientModal = document.getElementById('btnClosePatientModal');
 
+    const _cleanReferringDoctorName = (v) => String(v || '')
+        .replace(/^\s*(?:dr\.?|dra\.?)\s+/i, '')
+        .trim();
+
     window.openPatientDataModal = function () {
         const cfg = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
         const extracted = (typeof extractPatientDataFromText === 'function')
@@ -20,8 +24,7 @@ window.initPatientDataModalHandlers = function () {
             reqPatientAffiliateNum: cfg.patientAffiliateNum || extracted.affiliateNum || '',
             reqStudyDate: cfg.studyDate || extracted.studyDate || '',
             reqStudyTime: cfg.studyTime || extracted.studyTime || '',
-            reqReferringDoctor: cfg.referringDoctor || extracted.referringDoctor || '',
-            reqReferringDoctorSex: cfg.referringDoctorSex || '',
+            reqReferringDoctor: _cleanReferringDoctorName(cfg.referringDoctor || extracted.referringDoctor || ''),
             reqStudyReason: cfg.studyReason || extracted.studyReason || '',
             reqStudyType: cfg.studyType || extracted.studyType || '',
             reqPatientSearch: ''
@@ -93,7 +96,7 @@ window.initPatientDataModalHandlers = function () {
             const showStudyTime = document.getElementById('reqShowStudyTime')?.checked !== false;
             const studyDate = document.getElementById('reqStudyDate')?.value?.trim() || '';
             const studyTime = document.getElementById('reqStudyTime')?.value?.trim();
-            const referringDoctor = document.getElementById('reqReferringDoctor')?.value?.trim();
+            const referringDoctor = _cleanReferringDoctorName(document.getElementById('reqReferringDoctor')?.value?.trim());
             const studyReason = document.getElementById('reqStudyReason')?.value?.trim();
             const studyType = document.getElementById('reqStudyType')?.value?.trim();
 
@@ -107,12 +110,11 @@ window.initPatientDataModalHandlers = function () {
             if (showStudyDate && studyDate) config.studyDate = studyDate;
             else delete config.studyDate;
             if (showStudyTime && studyTime) config.studyTime = studyTime; else delete config.studyTime;
-            const referringDoctorSex = document.getElementById('reqReferringDoctorSex')?.value || '';
             if (referringDoctor) config.referringDoctor = referringDoctor; else delete config.referringDoctor;
-            if (referringDoctorSex) config.referringDoctorSex = referringDoctorSex; else delete config.referringDoctorSex;
+            delete config.referringDoctorSex;
             if (studyReason) config.studyReason = studyReason; else delete config.studyReason;
             // Guardar en historiales para autocompletado futuro
-            if (referringDoctor && typeof saveReferringDoctor === 'function') saveReferringDoctor(referringDoctor, referringDoctorSex);
+            if (referringDoctor && typeof saveReferringDoctor === 'function') saveReferringDoctor(referringDoctor);
             if (studyReason && typeof saveStudyReason === 'function') saveStudyReason(studyReason);
             if (studyType) config.studyType = studyType; else delete config.studyType;
 
