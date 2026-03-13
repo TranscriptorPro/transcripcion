@@ -85,18 +85,103 @@
         a.remove();
     }
 
-    function _notifyReplicaReady(linkInfo) {
-        if (typeof window.showToastWithAction === 'function') {
-            window.showToastWithAction(
-                '✅ Réplica lista. Podés descargarla ahora.',
-                'success',
-                'Descargar',
-                () => _triggerReplicaDownload(linkInfo),
-                12000
-            );
+    function _ensurePdfReadyModal() {
+        let overlay = document.getElementById('pdfReadyModalOverlay');
+        if (overlay) return overlay;
+
+        overlay = document.createElement('div');
+        overlay.id = 'pdfReadyModalOverlay';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:12000;display:none;align-items:center;justify-content:center;padding:16px;';
+
+        const card = document.createElement('div');
+        card.style.cssText = 'width:min(520px,96vw);background:#fff;border-radius:14px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.25);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;';
+
+        const title = document.createElement('h3');
+        title.textContent = 'PDF creado';
+        title.style.cssText = 'margin:0 0 8px 0;font-size:1.2rem;line-height:1.2;color:#111827;';
+
+        const body = document.createElement('p');
+        body.id = 'pdfReadyModalMessage';
+        body.textContent = 'Tu informe ya esta listo para descargar.';
+        body.style.cssText = 'margin:0 0 14px 0;color:#374151;line-height:1.5;';
+
+        const actions = document.createElement('div');
+        actions.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;';
+
+        const btnOpen = document.createElement('button');
+        btnOpen.id = 'pdfReadyOpenBtn';
+        btnOpen.type = 'button';
+        btnOpen.textContent = 'Abrir';
+        btnOpen.style.cssText = 'border:1px solid #d1d5db;background:#fff;color:#111827;padding:9px 14px;border-radius:8px;cursor:pointer;';
+
+        const btnDownload = document.createElement('button');
+        btnDownload.id = 'pdfReadyDownloadBtn';
+        btnDownload.type = 'button';
+        btnDownload.textContent = 'Descargar';
+        btnDownload.style.cssText = 'border:1px solid transparent;background:#111827;color:#fff;padding:9px 14px;border-radius:8px;cursor:pointer;';
+
+        const btnClose = document.createElement('button');
+        btnClose.id = 'pdfReadyCloseBtn';
+        btnClose.type = 'button';
+        btnClose.textContent = 'Cerrar';
+        btnClose.style.cssText = 'border:1px solid #d1d5db;background:#f9fafb;color:#111827;padding:9px 14px;border-radius:8px;cursor:pointer;';
+
+        actions.appendChild(btnClose);
+        actions.appendChild(btnOpen);
+        actions.appendChild(btnDownload);
+        card.appendChild(title);
+        card.appendChild(body);
+        card.appendChild(actions);
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+
+        btnClose.addEventListener('click', () => {
+            overlay.style.display = 'none';
+            document.body.style.overflow = '';
+        });
+
+        return overlay;
+    }
+
+    function _showPdfReadyModal(linkInfo) {
+        const overlay = _ensurePdfReadyModal();
+        if (!overlay) {
+            if (typeof showToast === 'function') showToast('PDF creado. Listo para descargar.', 'success', 8000);
             return;
         }
-        if (typeof showToast === 'function') showToast('✅ Réplica lista. Descargala desde el enlace generado.', 'success', 7000);
+
+        const openBtn = overlay.querySelector('#pdfReadyOpenBtn');
+        const downloadBtn = overlay.querySelector('#pdfReadyDownloadBtn');
+        const msg = overlay.querySelector('#pdfReadyModalMessage');
+
+        if (msg) {
+            msg.textContent = (linkInfo?.source === 'backend')
+                ? 'El PDF fue creado y guardado. Descargalo ahora o abrilo en una nueva pestaña.'
+                : 'El PDF fue creado en modo local. Descargalo ahora para conservarlo.';
+        }
+
+        if (openBtn) {
+            openBtn.onclick = () => {
+                const href = String(linkInfo?.viewUrl || linkInfo?.downloadUrl || '').trim();
+                if (!href) return;
+                window.open(href, '_blank', 'noopener,noreferrer');
+            };
+        }
+
+        if (downloadBtn) {
+            downloadBtn.onclick = () => {
+                _triggerReplicaDownload(linkInfo);
+                overlay.style.display = 'none';
+                document.body.style.overflow = '';
+            };
+        }
+
+        overlay.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function _notifyReplicaReady(linkInfo) {
+        _showPdfReadyModal(linkInfo);
     }
 
     async function _ensureJsPdfReady(timeoutMs = 2600) {
