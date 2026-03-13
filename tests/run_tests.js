@@ -121,6 +121,7 @@ load('src/js/features/structurer.js');
 load('src/js/features/patientRegistry.js');
 load('src/js/features/formHandler.js');
 load('src/js/utils/stateManager.js');
+load('src/js/features/reportContextResolver.js');
 
 // Cargar funciones puras adicionales para tests extendidos
 // _hexToRgb está fuera de la función principal en pdfMaker.js — extraer manualmente
@@ -7147,6 +7148,150 @@ test('Editor-Table — handler usa DOM (no execCommand insertHTML)', () => {
     assertIncludes(fmtCode, 'insertCell', 'Debe usar DOM table API (insertCell)');
     assert(!fmtCode.includes("execCommand('insertHTML'") && !fmtCode.includes('execCommand("insertHTML"'),
         'No debe usar execCommand insertHTML para tablas');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bloque 118: reportContextResolver — slider de hora (ON/OFF)
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 118: reportContextResolver — slider hora on/off ─────');
+
+await asyncTest('Hora OFF: resolveReportContext.studyTime debe quedar vacío', async () => {
+    const prevGetEl = global.document.getElementById;
+    const prevExtract = global.extractPatientDataFromText;
+
+    const map = {
+        reqShowStudyTime: { checked: false },
+        reqShowStudyDate: { checked: true },
+        reqStudyTime: { value: '09:45' },
+        pdfStudyTime: { value: '09:45' },
+        reqStudyType: { value: 'Informe médico general' },
+        reqStudyDate: { value: '2026-03-13' }
+    };
+    global.document.getElementById = (id) => map[id] || null;
+    global.extractPatientDataFromText = () => ({});
+
+    global._pdfConfigCache = {
+        studyTime: '09:45',
+        showStudyTime: false,
+        showStudyDate: true,
+        studyDate: '2026-03-13',
+        studyType: 'Informe médico general'
+    };
+
+    const ctx = await global.resolveReportContext({ includeEditorExtract: false, editorEl: null });
+    assertEqual(ctx.showStudyTime, false, 'showStudyTime debe ser false');
+    assertEqual(ctx.studyTime, '', 'studyTime debe ser vacío cuando slider está OFF');
+
+    global.document.getElementById = prevGetEl;
+    global.extractPatientDataFromText = prevExtract;
+});
+
+await asyncTest('Hora ON: resolveReportContext.studyTime debe conservar valor', async () => {
+    const prevGetEl = global.document.getElementById;
+    const prevExtract = global.extractPatientDataFromText;
+
+    const map = {
+        reqShowStudyTime: { checked: true },
+        reqShowStudyDate: { checked: true },
+        reqStudyTime: { value: '14:20' },
+        pdfStudyTime: { value: '14:20' },
+        reqStudyType: { value: 'Informe médico general' },
+        reqStudyDate: { value: '2026-03-13' }
+    };
+    global.document.getElementById = (id) => map[id] || null;
+    global.extractPatientDataFromText = () => ({});
+
+    global._pdfConfigCache = {
+        studyTime: '14:20',
+        showStudyTime: true,
+        showStudyDate: true,
+        studyDate: '2026-03-13',
+        studyType: 'Informe médico general'
+    };
+
+    const ctx = await global.resolveReportContext({ includeEditorExtract: false, editorEl: null });
+    assertEqual(ctx.showStudyTime, true, 'showStudyTime debe ser true');
+    assertEqual(ctx.studyTime, '14:20', 'studyTime debe conservar valor cuando slider está ON');
+
+    global.document.getElementById = prevGetEl;
+    global.extractPatientDataFromText = prevExtract;
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bloque 119: reportContextResolver — título correcto por plantilla
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 119: reportContextResolver — título por plantilla ────');
+
+await asyncTest('Título: genérico + heading => toma heading (GONIOSCOPÍA)', async () => {
+    const prevGetEl = global.document.getElementById;
+    const prevExtract = global.extractPatientDataFromText;
+    const prevSelectedTemplate = global.selectedTemplate;
+
+    const map = {
+        reqShowStudyTime: { checked: true },
+        reqShowStudyDate: { checked: true },
+        reqStudyType: { value: 'Informe médico general' },
+        reqStudyDate: { value: '2026-03-13' }
+    };
+    global.document.getElementById = (id) => map[id] || null;
+    global.extractPatientDataFromText = () => ({});
+    global.selectedTemplate = 'gonioscopia';
+
+    const editorEl = {
+        querySelector: () => ({ textContent: 'INFORME DE GONIOSCOPÍA' }),
+        innerText: 'INFORME DE GONIOSCOPÍA\nHallazgos...'
+    };
+
+    global._pdfConfigCache = {
+        studyType: 'Informe médico general',
+        selectedTemplate: 'gonioscopia',
+        showStudyDate: true,
+        showStudyTime: true
+    };
+
+    const ctx = await global.resolveReportContext({ includeEditorExtract: false, editorEl });
+    const up = String(ctx.studyType || '').toUpperCase();
+    assertIncludes(up, 'GONIOSCOP', 'Debe tomar título de la plantilla/heading (gonioscopía)');
+
+    global.document.getElementById = prevGetEl;
+    global.extractPatientDataFromText = prevExtract;
+    global.selectedTemplate = prevSelectedTemplate;
+});
+
+await asyncTest('Título: genérico + sin heading => toma nombre de plantilla', async () => {
+    const prevGetEl = global.document.getElementById;
+    const prevExtract = global.extractPatientDataFromText;
+    const prevSelectedTemplate = global.selectedTemplate;
+
+    const map = {
+        reqShowStudyTime: { checked: true },
+        reqShowStudyDate: { checked: true },
+        reqStudyType: { value: 'Informe médico general' },
+        reqStudyDate: { value: '2026-03-13' }
+    };
+    global.document.getElementById = (id) => map[id] || null;
+    global.extractPatientDataFromText = () => ({});
+    global.selectedTemplate = 'gonioscopia';
+
+    const editorEl = {
+        querySelector: () => null,
+        innerText: ''
+    };
+
+    global._pdfConfigCache = {
+        studyType: 'Informe médico general',
+        selectedTemplate: 'gonioscopia',
+        showStudyDate: true,
+        showStudyTime: true
+    };
+
+    const ctx = await global.resolveReportContext({ includeEditorExtract: false, editorEl });
+    const up = String(ctx.studyType || '').toUpperCase();
+    assertIncludes(up, 'GONIOSCOP', 'Sin heading debe caer al nombre de plantilla');
+
+    global.document.getElementById = prevGetEl;
+    global.extractPatientDataFromText = prevExtract;
+    global.selectedTemplate = prevSelectedTemplate;
 });
 
 // Limpiar estado después de tests
