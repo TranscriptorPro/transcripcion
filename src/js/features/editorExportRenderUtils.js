@@ -98,8 +98,7 @@
         const extracted = (typeof extractPatientDataFromText === 'function') ? extractPatientDataFromText(sourceText) : {};
         const reqVal = (id) => document.getElementById(id)?.value?.trim() || '';
         const cleanDoctorName = (v) => String(v || '').replace(/^\s*(?:dr\.?|dra\.?)\s+/i, '').trim();
-        // Detecta si el input original tiene prefix femenino (Dra.), sino por defecto Dr.
-        const drPrefix = (raw) => /^\s*dra\.?\s+/i.test(raw) ? 'Dra. ' : 'Dr. ';
+        const drPrefix = () => 'Dr./a ';
 
         const tplKey = window.selectedTemplate || cfg.selectedTemplate || '';
         const tplName = (tplKey && window.MEDICAL_TEMPLATES?.[tplKey]?.name) || '';
@@ -132,9 +131,7 @@
                 const inputStr = cfg.referringDoctor || reqVal('reqReferringDoctor') || reqVal('pdfReferringDoctor') || '';
                 const raw = cleanDoctorName(inputStr);
                 if (!raw) return '';
-                const sex = cfg.referringDoctorSex || '';
-                const prefix = sex === 'F' ? 'Dra. ' : sex === 'M' ? 'Dr. ' : drPrefix(inputStr);
-                return prefix + raw;
+                return 'Dr./a ' + raw;
             })(),
             reportNum: cfg.reportNum || reqVal('pdfReportNumber') || '',
             showReportNumber: (cfg.showReportNumber ?? true) === true,
@@ -346,9 +343,7 @@
         const studyReason = escSentence(config.studyReason || document.getElementById('reqStudyReason')?.value || '');
         const _refDocInputStr = config.referringDoctor || document.getElementById('reqReferringDoctor')?.value || '';
         const _refDocRaw = cleanDoctorName(_refDocInputStr);
-        const _refDocSex = config.referringDoctorSex || '';
-        const _refDrPrefix = _refDocSex === 'F' ? 'Dra. ' : _refDocSex === 'M' ? 'Dr. ' : drPrefix(_refDocInputStr);
-        const refDoctor = _refDocRaw ? escName(_refDrPrefix + _refDocRaw) : '';
+        const refDoctor = _refDocRaw ? escName('Dr./a ' + _refDocRaw) : '';
         const reportNum = esc(document.getElementById('pdfReportNumber')?.value || config.reportNum || '');
         const showReportNumber = (config.showReportNumber ?? true) === true;
         const hideReportHeader = !_isClinicProfile() && (config.hideReportHeader === true);
