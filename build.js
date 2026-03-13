@@ -62,6 +62,8 @@ const JS_FILES = [
     'src/js/features/licenseCacheUtils.js',
     'src/js/features/licenseManager.js',
     'src/js/features/patientRegistry.js',
+    'src/js/features/referringDoctorRegistry.js',
+    'src/js/features/studyReasonHistory.js',
     'src/js/features/formHandler.js',
     'src/js/features/themeManager.js',
     'src/js/features/settingsThemeUtils.js',

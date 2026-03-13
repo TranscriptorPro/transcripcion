@@ -21,6 +21,7 @@ window.initPatientDataModalHandlers = function () {
             reqStudyDate: cfg.studyDate || extracted.studyDate || '',
             reqStudyTime: cfg.studyTime || extracted.studyTime || '',
             reqReferringDoctor: cfg.referringDoctor || extracted.referringDoctor || '',
+            reqReferringDoctorSex: cfg.referringDoctorSex || '',
             reqStudyReason: cfg.studyReason || extracted.studyReason || '',
             reqStudyType: cfg.studyType || extracted.studyType || '',
             reqPatientSearch: ''
@@ -47,6 +48,8 @@ window.initPatientDataModalHandlers = function () {
 
         patientOverlay?.classList.add('active');
         if (typeof initPatientRegistrySearch === 'function') initPatientRegistrySearch();
+        if (typeof initReferringDoctorSearch === 'function') initReferringDoctorSearch();
+        if (typeof initStudyReasonSearch === 'function') initStudyReasonSearch();
     };
 
     function closePatientModal() {
@@ -93,8 +96,13 @@ window.initPatientDataModalHandlers = function () {
             if (showStudyDate && studyDate) config.studyDate = studyDate;
             else delete config.studyDate;
             if (showStudyTime && studyTime) config.studyTime = studyTime; else delete config.studyTime;
+            const referringDoctorSex = document.getElementById('reqReferringDoctorSex')?.value || '';
             if (referringDoctor) config.referringDoctor = referringDoctor; else delete config.referringDoctor;
+            if (referringDoctorSex) config.referringDoctorSex = referringDoctorSex; else delete config.referringDoctorSex;
             if (studyReason) config.studyReason = studyReason; else delete config.studyReason;
+            // Guardar en historiales para autocompletado futuro
+            if (referringDoctor && typeof saveReferringDoctor === 'function') saveReferringDoctor(referringDoctor, referringDoctorSex);
+            if (studyReason && typeof saveStudyReason === 'function') saveStudyReason(studyReason);
             if (studyType) config.studyType = studyType; else delete config.studyType;
 
             window._pdfConfigCache = config;

@@ -1575,7 +1575,16 @@
                     </div>
                     <div class="field-group" style="margin-top:0.5rem;">
                         <label>Médico solicitante</label>
-                        <input type="text" id="reqReferringDoctor" class="toolbar-input" style="width:100%;" placeholder="Dr/a que solicitó el estudio">
+                        <div style="display:flex;align-items:center;gap:6px;">
+                            <select id="reqReferringDoctorSex" class="toolbar-input" style="width:82px;flex-shrink:0;" title="Tratamiento">
+                                <option value="">Dr./a</option>
+                                <option value="M">Dr.</option>
+                                <option value="F">Dra.</option>
+                            </select>
+                            <div style="position:relative;flex:1;">
+                                <input type="text" id="reqReferringDoctor" class="toolbar-input" style="width:100%;" placeholder="Nombre y apellido del solicitante">
+                            </div>
+                        </div>
                     </div>
                     <div class="field-group" style="margin-top:0.5rem;">
                         <label>Motivo / Indicación clínica</label>
@@ -2525,6 +2534,8 @@
         <script src="src/js/features/licenseCacheUtils.js"></script>
         <script src="src/js/features/licenseManager.js"></script>
         <script src="src/js/features/patientRegistry.js"></script>
+        <script src="src/js/features/referringDoctorRegistry.js"></script>
+        <script src="src/js/features/studyReasonHistory.js"></script>
         <script src="src/js/features/formHandler.js"></script>
         <script src="src/js/features/themeManager.js"></script>
         <script src="src/js/features/settingsThemeUtils.js"></script>

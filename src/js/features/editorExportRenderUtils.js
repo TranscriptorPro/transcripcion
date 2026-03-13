@@ -125,7 +125,13 @@
             showStudyDate: (document.getElementById('reqShowStudyDate')?.checked ?? cfg.showStudyDate ?? true) !== false,
             studyTime: cfg.studyTime || reqVal('reqStudyTime') || reqVal('pdfStudyTime') || '',
             studyReason: cfg.studyReason || reqVal('reqStudyReason') || reqVal('pdfStudyReason') || '',
-            referringDoctor: cfg.referringDoctor || reqVal('reqReferringDoctor') || reqVal('pdfReferringDoctor') || '',
+            referringDoctor: (() => {
+                const raw = cfg.referringDoctor || reqVal('reqReferringDoctor') || reqVal('pdfReferringDoctor') || '';
+                if (!raw) return '';
+                const sex = cfg.referringDoctorSex || reqVal('reqReferringDoctorSex') || '';
+                const prefix = sex === 'F' ? 'Dra. ' : sex === 'M' ? 'Dr. ' : '';
+                return prefix + raw;
+            })(),
             reportNum: cfg.reportNum || reqVal('pdfReportNumber') || '',
             showReportNumber: (cfg.showReportNumber ?? true) === true,
             hideReportHeader: !_isClinicProfile() && (cfg.hideReportHeader === true),
@@ -334,7 +340,10 @@
         const studyDate = rawDate ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
         const studyTime = esc(document.getElementById('reqStudyTime')?.value || document.getElementById('pdfStudyTime')?.value || config.studyTime || '');
         const studyReason = escSentence(config.studyReason || document.getElementById('reqStudyReason')?.value || '');
-        const refDoctor = escName(config.referringDoctor || document.getElementById('reqReferringDoctor')?.value || '');
+        const _refDocRaw = config.referringDoctor || document.getElementById('reqReferringDoctor')?.value || '';
+        const _refDocSex = config.referringDoctorSex || document.getElementById('reqReferringDoctorSex')?.value || '';
+        const _refDrPrefix = _refDocSex === 'F' ? 'Dra. ' : _refDocSex === 'M' ? 'Dr. ' : '';
+        const refDoctor = _refDocRaw ? escName(_refDrPrefix + _refDocRaw) : '';
         const reportNum = esc(document.getElementById('pdfReportNumber')?.value || config.reportNum || '');
         const showReportNumber = (config.showReportNumber ?? true) === true;
         const hideReportHeader = !_isClinicProfile() && (config.hideReportHeader === true);
