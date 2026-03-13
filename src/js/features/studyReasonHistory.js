@@ -57,6 +57,16 @@ window.searchStudyReasons = function(query) {
         .slice(0, 10);
 };
 
+window.getAllStudyReasons = function() {
+    return _getSrHistory();
+};
+
+window.deleteStudyReason = function(reason) {
+    const target = String(reason || '').trim();
+    if (!target) return;
+    _setSrHistory(_getSrHistory().filter(h => _srNorm(h.reason || '') !== _srNorm(target)));
+};
+
 // ---- Inicializar autocomplete en reqStudyReason ----
 window.initStudyReasonSearch = function() {
     const input = document.getElementById('reqStudyReason');

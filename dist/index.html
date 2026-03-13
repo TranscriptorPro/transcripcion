@@ -126,7 +126,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
-        <link rel="stylesheet" href="app.mmotiykm.min.css">
+        <link rel="stylesheet" href="app.mmouup9t.min.css">
 </head>
 
 <body>
@@ -647,8 +647,17 @@
                             <span class="stg-chevron">▾</span>
                         </button>
                         <div class="stg-accordion-content">
+                            <button class="btn btn-outline btn-full stg-action-btn" id="settingsOpenPatientRegistry">
+                                👥 Registro de pacientes
+                            </button>
                             <button class="btn btn-outline btn-full stg-action-btn" id="settingsOpenHistory">
                                 📋 Historial de informes
+                            </button>
+                            <button class="btn btn-outline btn-full stg-action-btn" id="settingsOpenDoctorRegistry" style="margin-top: 0.4rem;">
+                                🩺 Médicos solicitantes
+                            </button>
+                            <button class="btn btn-outline btn-full stg-action-btn" id="settingsOpenReasonHistory" style="margin-top: 0.4rem;">
+                                🧾 Motivos / indicación clínica
                             </button>
                             <button class="btn btn-outline btn-full stg-action-btn" id="settingsOpenDictionary" style="margin-top: 0.4rem;">
                                 📖 Diccionario médico
@@ -1494,10 +1503,12 @@
                     <div class="patient-search-box">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.35rem;">
                             <label>Buscar paciente anterior</label>
-                            <button type="button" id="btnOpenRegistryPanel" class="btn btn-secondary"
-                                style="padding:.2rem .6rem;font-size:.72rem;">&#x1F4CB; Gestionar registro</button>
-                            <button type="button" id="btnOpenReportHistory" class="btn btn-secondary"
-                                style="padding:.2rem .6rem;font-size:.72rem;">&#x1F4C4; Historial informes</button>
+                            <span style="display:none;">
+                                <button type="button" id="btnOpenRegistryPanel" class="btn btn-secondary"
+                                    style="display:none;padding:.2rem .6rem;font-size:.72rem;">&#x1F4CB; Gestionar registro</button>
+                                <button type="button" id="btnOpenReportHistory" class="btn btn-secondary"
+                                    style="display:none;padding:.2rem .6rem;font-size:.72rem;">&#x1F4C4; Historial informes</button>
+                            </span>
                         </div>
                         <div class="search-input-wrap">
                             <input type="text" id="reqPatientSearch"
@@ -2469,7 +2480,7 @@
             </svg>
             <span id="toastMessage"></span>
         </div>
-        <script src="app.mmotiygt.min.js"></script>
+        <script src="app.mmouup93.min.js"></script>
 
         <!-- G1: Modal Panel Registro de Pacientes -->
         <div class="modal-overlay" id="registryPanelOverlay">
@@ -2576,6 +2587,56 @@
                                 </tr>
                             </thead>
                             <tbody id="reportHistoryTbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="doctorRegistryOverlay">
+            <div class="modal" style="max-width:760px;">
+                <div class="modal-header">
+                    <h3 style="margin:0;">🩺 Médicos solicitantes</h3>
+                    <button class="btn-icon" id="btnCloseDoctorRegistryPanel" title="Cerrar">&times;</button>
+                </div>
+                <div class="modal-body" style="padding:1rem 1.25rem;">
+                    <input type="text" id="doctorRegistrySearch" class="toolbar-input" style="width:100%;margin-bottom:.85rem;" placeholder="🔎 Buscar por nombre o apellido...">
+                    <div style="overflow:auto;">
+                        <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+                            <thead>
+                                <tr style="border-bottom:1px solid var(--border);">
+                                    <th style="text-align:left;padding:.4rem .5rem;">Nombre</th>
+                                    <th style="text-align:left;padding:.4rem .5rem;">Último uso</th>
+                                    <th style="text-align:left;padding:.4rem .5rem;">Usos</th>
+                                    <th style="text-align:center;padding:.4rem .5rem;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="doctorRegistryTbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="studyReasonOverlay">
+            <div class="modal" style="max-width:760px;">
+                <div class="modal-header">
+                    <h3 style="margin:0;">🧾 Motivos / indicación clínica</h3>
+                    <button class="btn-icon" id="btnCloseStudyReasonPanel" title="Cerrar">&times;</button>
+                </div>
+                <div class="modal-body" style="padding:1rem 1.25rem;">
+                    <input type="text" id="studyReasonSearchPanel" class="toolbar-input" style="width:100%;margin-bottom:.85rem;" placeholder="🔎 Buscar motivo o indicación...">
+                    <div style="overflow:auto;">
+                        <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+                            <thead>
+                                <tr style="border-bottom:1px solid var(--border);">
+                                    <th style="text-align:left;padding:.4rem .5rem;">Motivo / indicación</th>
+                                    <th style="text-align:left;padding:.4rem .5rem;">Último uso</th>
+                                    <th style="text-align:left;padding:.4rem .5rem;">Usos</th>
+                                    <th style="text-align:center;padding:.4rem .5rem;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studyReasonTbody"></tbody>
                         </table>
                     </div>
                 </div>

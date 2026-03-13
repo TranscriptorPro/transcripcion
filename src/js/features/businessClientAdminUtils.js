@@ -133,5 +133,7 @@ function _initCommonModules() {
     if (typeof initContact === 'function') initContact();
     if (typeof initDiagnostic === 'function') initDiagnostic();
     if (typeof initPatientRegistryPanel === 'function') initPatientRegistryPanel();
+    if (typeof initReferringDoctorRegistryPanel === 'function') initReferringDoctorRegistryPanel();
+    if (typeof initStudyReasonHistoryPanel === 'function') initStudyReasonHistoryPanel();
     if (typeof initLicenseManager === 'function') initLicenseManager();
 }

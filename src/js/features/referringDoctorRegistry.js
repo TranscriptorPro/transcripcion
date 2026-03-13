@@ -62,6 +62,16 @@ window.searchReferringDoctors = function(query) {
         .slice(0, 10);
 };
 
+window.getAllReferringDoctors = function() {
+    return _getDrRegistry();
+};
+
+window.deleteReferringDoctor = function(name) {
+    const target = _cleanDoctorName(name);
+    if (!target) return;
+    _setDrRegistry(_getDrRegistry().filter(d => _drNorm(d.name || '') !== _drNorm(target)));
+};
+
 // ---- Inicializar autocomplete en el campo reqReferringDoctor ----
 window.initReferringDoctorSearch = function() {
     const input = document.getElementById('reqReferringDoctor');

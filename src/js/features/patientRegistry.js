@@ -242,8 +242,9 @@ if (typeof _normStr === 'undefined') {
 window.initPatientRegistryPanel = function () {
     const overlay  = document.getElementById('registryPanelOverlay');
     const openBtn  = document.getElementById('btnOpenRegistryPanel');
+    const settingsOpenBtn = document.getElementById('settingsOpenPatientRegistry');
     const closeBtn = document.getElementById('btnCloseRegistryPanel');
-    if (!overlay || !openBtn) return;
+    if (!overlay || (!openBtn && !settingsOpenBtn)) return;
 
     function fmtDate(iso) {
         if (!iso) return '—';
@@ -320,12 +321,17 @@ window.initPatientRegistryPanel = function () {
         }
     }
 
+    window._refreshPatientRegistryPanel = () => renderTable(document.getElementById('registrySearch')?.value);
+
     // ---- Abrir / cerrar ----
-    openBtn.addEventListener('click', () => {
+    const openPanel = () => {
         overlay.classList.add('active');
         renderTable();
         document.getElementById('registrySearch')?.focus();
-    });
+    };
+
+    openBtn?.addEventListener('click', openPanel);
+    settingsOpenBtn?.addEventListener('click', openPanel);
     function closePanel() { overlay.classList.remove('active'); }
     if (closeBtn) closeBtn.addEventListener('click', closePanel);
     overlay.addEventListener('click', e => { if (e.target === overlay) closePanel(); });

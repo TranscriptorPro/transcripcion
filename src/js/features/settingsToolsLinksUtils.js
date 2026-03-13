@@ -9,6 +9,9 @@
         const repopulateAndOpenSettings = opts.repopulateAndOpenSettings;
 
         const historyBtn = document.getElementById('settingsOpenHistory');
+        const patientRegistryBtn = document.getElementById('settingsOpenPatientRegistry');
+        const doctorRegistryBtn = document.getElementById('settingsOpenDoctorRegistry');
+        const reasonHistoryBtn = document.getElementById('settingsOpenReasonHistory');
         const dictBtn = document.getElementById('settingsOpenDictionary');
         const shortcutsBtn = document.getElementById('settingsOpenShortcuts');
         const paymentsBtn = document.getElementById('settingsOpenPaymentsPortal');
@@ -27,6 +30,42 @@
                 if (histOverlay) {
                     histOverlay.classList.add('active');
                     if (typeof watchForClose === 'function') watchForClose(histOverlay, reopenSettings);
+                }
+            });
+        }
+
+        if (patientRegistryBtn) {
+            patientRegistryBtn.addEventListener('click', () => {
+                if (overlay) overlay.classList.remove('active');
+                const panel = document.getElementById('registryPanelOverlay');
+                if (panel) {
+                    panel.classList.add('active');
+                    if (typeof window._refreshPatientRegistryPanel === 'function') window._refreshPatientRegistryPanel();
+                    if (typeof watchForClose === 'function') watchForClose(panel, reopenSettings);
+                }
+            });
+        }
+
+        if (doctorRegistryBtn) {
+            doctorRegistryBtn.addEventListener('click', () => {
+                if (overlay) overlay.classList.remove('active');
+                const panel = document.getElementById('doctorRegistryOverlay');
+                if (panel) {
+                    panel.classList.add('active');
+                    if (typeof window._refreshDoctorRegistryPanel === 'function') window._refreshDoctorRegistryPanel();
+                    if (typeof watchForClose === 'function') watchForClose(panel, reopenSettings);
+                }
+            });
+        }
+
+        if (reasonHistoryBtn) {
+            reasonHistoryBtn.addEventListener('click', () => {
+                if (overlay) overlay.classList.remove('active');
+                const panel = document.getElementById('studyReasonOverlay');
+                if (panel) {
+                    panel.classList.add('active');
+                    if (typeof window._refreshStudyReasonPanel === 'function') window._refreshStudyReasonPanel();
+                    if (typeof watchForClose === 'function') watchForClose(panel, reopenSettings);
                 }
             });
         }

@@ -164,6 +164,53 @@ async function _generatePDFBase64FromHtmlSnapshot() {
     }
 }
 
+async function _generatePDFBase64FromPreviewDom() {
+    const previewEl = document.getElementById('previewPage');
+    if (!previewEl || typeof window.html2canvas !== 'function' || !window.jspdf?.jsPDF) {
+        return null;
+    }
+
+    try {
+        let cfg = {};
+        try {
+            cfg = window._pdfConfigCache
+                || (typeof appDB !== 'undefined' ? (await appDB.get('pdf_config')) : null)
+                || JSON.parse(localStorage.getItem('pdf_config') || '{}')
+                || {};
+        } catch (_) {
+            cfg = {};
+        }
+
+        const pageFormat = String(cfg.pageSize || 'a4').toLowerCase();
+        const orientation = String(cfg.orientation || 'portrait').toLowerCase();
+        const fmtSizes = {
+            a4: { w: 210, h: 297 },
+            letter: { w: 215.9, h: 279.4 },
+            legal: { w: 215.9, h: 355.6 }
+        };
+        const sz = fmtSizes[pageFormat] || fmtSizes.a4;
+        const pageWmm = orientation === 'landscape' ? sz.h : sz.w;
+
+        const canvas = await window.html2canvas(previewEl, {
+            scale: 1.6,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            scrollX: 0,
+            scrollY: 0
+        });
+        if (!canvas) return null;
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: 'mm', format: pageFormat, orientation });
+        const renderHmm = (canvas.height * pageWmm) / canvas.width;
+        doc.addImage(canvas.toDataURL('image/jpeg', 0.94), 'JPEG', 0, 0, pageWmm, renderHmm, undefined, 'FAST');
+        return await _blobToBase64(doc.output('blob'));
+    } catch (err) {
+        console.error('[email PDF] Fallback preview DOM falló:', err);
+        return null;
+    }
+}
+
 async function _generatePDFBase64Impl() {
     if (typeof jspdf === 'undefined') {
         await new Promise(r => setTimeout(r, 600));
@@ -171,6 +218,9 @@ async function _generatePDFBase64Impl() {
     try {
         const editorEl  = window.editor || document.getElementById('editor');
         if (!editorEl || !editorEl.innerHTML.trim()) return null;
+
+        const fromPreview = await _generatePDFBase64FromPreviewDom();
+        if (fromPreview) return fromPreview;
 
         // Ruta preferida: renderizar desde HTML completo para máxima similitud con la vista previa.
         const exactLike = await _generatePDFBase64FromHtmlSnapshot();
