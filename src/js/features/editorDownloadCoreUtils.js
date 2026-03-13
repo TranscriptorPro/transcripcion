@@ -599,4 +599,7 @@
     window.downloadTXT = () => downloadFile('txt');
     window.downloadHTML = () => downloadFile('html');
     window.downloadPDF = () => downloadFile('pdf');
+    // Expuesto para que pdfPreviewActions pueda generar el PDF de email
+    // usando exactamente el mismo pipeline que el botón de descarga.
+    window._buildPdfBlobForEmail = _buildPdfBlobFromHtml;
 })();
