@@ -431,6 +431,17 @@
 
                 const pdfBlob = await _buildPdfBlobFromHtml(htmlDoc);
                 if (!pdfBlob) {
+                    // Fallback cross-browser: usar generador legado si el render fiel falla.
+                    if (typeof window.downloadPDFWrapper === 'function') {
+                        try {
+                            await window.downloadPDFWrapper(editor.innerHTML, fileName, date, fileDate);
+                            if (typeof showToast === 'function') showToast('PDF descargado (modo compatibilidad)', 'warning');
+                            return;
+                        } catch (err) {
+                            console.warn('Fallback downloadPDFWrapper fallo:', err);
+                        }
+                    }
+
                     if (typeof showToast === 'function') showToast('No se pudo generar el PDF. Reintenta.', 'error');
                     return;
                 }

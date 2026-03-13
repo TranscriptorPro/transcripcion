@@ -1,0 +1,589 @@
+/**
+ * ─────────────────────────────────────────────────────────────────────
+ *  SKIN: Light Minimal
+ * ─────────────────────────────────────────────────────────────────────
+ *  Scoped bajo body.skin-light-minimal
+ *  Estética: Ultra limpia, luminosa, espaciosa, tipografía nítida
+ *
+ *  Paleta:   bg=#fafafa  accent=#2563eb  card=#ffffff  text=#111827
+ * ─────────────────────────────────────────────────────────────────────
+ */
+
+/* ═══════════════════════════════════════════════════════════════════
+   1. CSS Variables Override
+   ═══════════════════════════════════════════════════════════════════ */
+body.skin-light-minimal {
+    --primary: #2563eb;
+    --primary-light: #60a5fa;
+    --primary-dark: #1d4ed8;
+    --accent: #f59e0b;
+    --bg-main: #fafafa;
+    --bg-card: #ffffff;
+    --bg-hover: #f3f4f6;
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --border: #e5e7eb;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+    --radius: 12px;
+    --radius-sm: 8px;
+}
+
+/* Force light palette even if data-theme=dark */
+body.skin-light-minimal {
+    color-scheme: light;
+}
+
+/* Override dark theme vars when this skin is active */
+body.skin-light-minimal [data-theme="dark"] {
+    --bg-main: #fafafa;
+    --bg-card: #ffffff;
+    --bg-hover: #f3f4f6;
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --border: #e5e7eb;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   2. Body & Background
+   ═══════════════════════════════════════════════════════════════════ */
+body.skin-light-minimal {
+    background: #fafafa;
+    color: #111827;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   3. Header — Clean flat style
+   ═══════════════════════════════════════════════════════════════════ */
+body.skin-light-minimal .header {
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+body.skin-light-minimal .header::before,
+body.skin-light-minimal .header::after {
+    display: none !important;
+}
+
+body.skin-light-minimal .header-title {
+    color: #111827;
+}
+
+body.skin-light-minimal .header-subtitle {
+    color: #6b7280;
+}
+
+body.skin-light-minimal .theme-toggle {
+    background: #f3f4f6;
+    border-radius: 8px;
+}
+
+body.skin-light-minimal .theme-toggle:hover {
+    background: #e5e7eb;
+}
+
+body.skin-light-minimal .theme-toggle svg {
+    fill: #6b7280;
+}
+
+body.skin-light-minimal .theme-toggle:hover svg {
+    fill: #2563eb;
+}
+
+/* Pro toggle */
+body.skin-light-minimal .pro-toggle-container {
+    background: #f3f4f6;
+    border-color: #e5e7eb;
+}
+
+body.skin-light-minimal .pro-toggle-label-active {
+    color: #2563eb;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   4. Cards — Clean minimal
+   ═══════════════════════════════════════════════════════════════════ */
+body.skin-light-minimal .card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    border-radius: 12px;
+}
+
+body.skin-light-minimal .card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+body.skin-light-minimal .card-title {
+    color: #2563eb;
+    font-weight: 600;
+}
+
+body.skin-light-minimal .card-title svg {
+    fill: #2563eb;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   5. Buttons — Soft, rounded
+   ═══════════════════════════════════════════════════════════════════ */
+body.skin-light-minimal .btn-primary,
+body.skin-light-minimal .btn.btn-primary {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.2);
+    font-weight: 600;
+}
+
+body.skin-light-minimal .btn-primary:hover,
+body.skin-light-minimal .btn.btn-primary:hover {
+    background: #1d4ed8;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+    transform: translateY(-1px);
+}
+
+body.skin-light-minimal .btn-secondary,
+body.skin-light-minimal .btn.btn-secondary {
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    color: #374151;
+    border-radius: 10px;
+}
+
+body.skin-light-minimal .btn-secondary:hover,
+body.skin-light-minimal .btn.btn-secondary:hover {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+body.skin-light-minimal .btn-outline,
+body.skin-light-minimal .btn.btn-outline {
+    background: transparent;
+    border: 1px solid #d1d5db;
+    color: #374151;
+    border-radius: 10px;
+}
+
+body.skin-light-minimal .btn-outline:hover,
+body.skin-light-minimal .btn.btn-outline:hover {
+    background: #f9fafb;
+    border-color: #2563eb;
+    color: #2563eb;
+}
+
+body.skin-light-minimal .btn-accent,
+body.skin-light-minimal .btn.btn-accent {
+    background: #f59e0b;
+    border-color: #f59e0b;
+    color: #ffffff;
+    border-radius: 10px;
+}
+
+/* Pro Structure button */
+body.skin-light-minimal .btn-transcribe-structure {
+    background: #2563eb !important;
+    border-color: #2563eb !important;
+    color: #ffffff !important;
+    border-radius: 10px;
+}
+
+body.skin-light-minimal .btn-transcribe-structure:hover {
+    background: #1d4ed8 !important;
+}
+
+body.skin-light-minimal .pro-badge-sm {
+    background: rgba(37, 99, 235, 0.1);
+    color: #2563eb;
+    border: 1px solid rgba(37, 99, 235, 0.3);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   6. Drop Zone
+   ═══════════════════════════════════════════════════════════════════ */
+body.skin-light-minimal .drop-zone {
+    border: 2px dashed #d1d5db;
+    background: #fafafa;
+    border-radius: 12px;
+}
+
+body.skin-light-minimal .drop-zone:hover,
+body.skin-light-minimal .drop-zone.dragover {
+    border-color: #2563eb;
+    background: rgba(37, 99, 235, 0.03);
+}
+
+body.skin-light-minimal .drop-zone-icon {
+    background: linear-gradient(135deg, #2563eb, #60a5fa);
+}
+
+body.skin-light-minimal .drop-zone h3 {
+    color: #111827;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   7. Audio Options
+   ═══════════════════════════════════════════════════════════════════ */
+body.skin-light-minimal .audio-option {
+    background: #fafafa;
+    color: #6b7280;
+    border-radius: 8px;
+}
+
+body.skin-light-minimal .audio-option:hover {
+    background: #f3f4f6;
+    color: #2563eb;
+}
+
+body.skin-light-minimal .audio-option input {
+    accent-color: #2563eb;
+}
+
+body.skin-light-minimal .join-audios-option {
+    background: rgba(37, 99, 235, 0.05);
+    border-color: rgba(37, 99, 235, 0.2);
+}
+
+body.skin-light-minimal .join-audios-option input[type="checkbox"] {
+    accent-color: #2563eb;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   8. Inputs
+   ═══════════════════════════════════════════════════════════════════ */
+body.skin-light-minimal .toolbar-input,
+body.skin-light-minimal .toolbar-select,
+body.skin-light-minimal input[type="text"],
+body.skin-light-minimal input[type="email"],
+body.skin-light-minimal input[type="password"],
+body.skin-light-minimal input[type="date"],
+body.skin-light-minimal input[type="time"],
+body.skin-light-minimal input[type="number"],
+body.skin-light-minimal select,
+body.skin-light-minimal textarea {
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    color: #111827;
+    border-radius: 8px;
+}
+
+body.skin-light-minimal .toolbar-input:focus,
+body.skin-light-minimal input:focus,
+body.skin-light-minimal select:focus,
+body.skin-light-minimal textarea:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    outline: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   9. Editor
+   ═══════════════════════════════════════════════════════════════════ */
+body.skin-light-minimal .editor-header {
+    border-color: #e5e7eb !important;
+}
+
+body.skin-light-minimal .editor-tabs .tab-btn,
+body.skin-light-minimal .editor-tabs button {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    color: #6b7280;
+    border-radius: 8px;
+}
+
+body.skin-light-minimal .editor-tabs .tab-btn.active,
+body.skin-light-minimal .editor-tabs button.active {
+    background: #ffffff;
+    color: #2563eb;
+    border-color: #2563eb;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.1);
+}
+
+body.skin-light-minimal .btn-action-green {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    color: #6b7280;
+    border-radius: 8px;
+}
+
+body.skin-light-minimal .btn-action-green:hover {
+    background: #f3f4f6;
+    color: #2563eb;
+    border-color: #2563eb;
+}
+
+body.skin-light-minimal #editor,
+body.skin-light-minimal .editor-content,
+body.skin-light-minimal [contenteditable] {
+    background: #ffffff;
+    color: #111827;
+}
+
+body.skin-light-minimal .btn-ai-magic {
+    border-color: rgba(37, 99, 235, 0.3);
+    background: rgba(37, 99, 235, 0.08);
+}
+
+body.skin-light-minimal .btn-ai-magic .gemini-icon {
+    fill: #2563eb;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   10. Modals
+   ═══════════════════════════════════════════════════════════════════ */
+body.skin-light-minimal .modal-overlay {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+body.skin-light-minimal .modal {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+    border-radius: 16px;
+}
+
+body.skin-light-minimal .modal-header {
+    background: #fafafa;
+    border-bottom: 1px solid #e5e7eb;
+    border-radius: 16px 16px 0 0;
+}
+
+body.skin-light-minimal .modal-header h2,
+body.skin-light-minimal .modal-header h3 {
+    color: #111827;
+}
+
+body.skin-light-minimal .modal-close {
+    color: #9ca3af;
+}
+
+body.skin-light-minimal .modal-close:hover {
+    color: #374151;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   11. Settings Accordions
+   ═══════════════════════════════════════════════════════════════════ */
+body.skin-light-minimal .stg-accordion-btn {
+    background: #ffffff;
+    border-bottom: 1px solid #f3f4f6;
+    color: #111827;
+}
+
+body.skin-light-minimal .stg-accordion-btn:hover {
+    background: #fafafa;
+}
+
+body.skin-light-minimal .stg-accordion-content {
+    background: #fafafa;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+body.skin-light-minimal .stg-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+}
+
+body.skin-light-minimal .stg-badge {
+    background: rgba(37, 99, 235, 0.08);
+    color: #2563eb;
+    border: 1px solid rgba(37, 99, 235, 0.2);
+}
+
+body.skin-light-minimal .stg-theme-btn {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    color: #374151;
+    border-radius: 8px;
+}
+
+body.skin-light-minimal .stg-theme-btn.active {
+    border-color: #2563eb;
+    color: #2563eb;
+    background: rgba(37, 99, 235, 0.05);
+}
+
+body.skin-light-minimal .stg-stat-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+}
+
+body.skin-light-minimal .stg-stat-num {
+    color: #2563eb;
+}
+
+body.skin-light-minimal .stg-switch-slider {
+    background: #d1d5db;
+}
+
+body.skin-light-minimal .stg-switch input:checked + .stg-switch-slider {
+    background: #2563eb;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   12. Session Assistant
+   ═══════════════════════════════════════════════════════════════════ */
+body.skin-light-minimal .sa-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+    border-radius: 16px;
+}
+
+body.skin-light-minimal .sa-title {
+    color: #111827;
+}
+
+body.skin-light-minimal .sa-select {
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    color: #111827;
+}
+
+body.skin-light-minimal .sa-select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+body.skin-light-minimal .sa-btn-confirm {
+    background: #2563eb;
+    color: #ffffff;
+    border-radius: 10px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   13. API Status
+   ═══════════════════════════════════════════════════════════════════ */
+body.skin-light-minimal .api-status {
+    border-radius: 8px;
+}
+
+body.skin-light-minimal .api-status.connected {
+    background: rgba(34, 197, 94, 0.08);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    color: #16a34a;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   14. Config Tabs
+   ═══════════════════════════════════════════════════════════════════ */
+body.skin-light-minimal .config-tabs {
+    background: #fafafa;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+body.skin-light-minimal .config-tab {
+    color: #6b7280;
+    border-bottom: 2px solid transparent;
+}
+
+body.skin-light-minimal .config-tab.active {
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+}
+
+body.skin-light-minimal .config-tab:hover {
+    color: #2563eb;
+    background: rgba(37, 99, 235, 0.03);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   15. Progress
+   ═══════════════════════════════════════════════════════════════════ */
+body.skin-light-minimal .progress-bar {
+    background: #f3f4f6;
+    border-radius: 4px;
+}
+
+body.skin-light-minimal .progress-fill {
+    background: linear-gradient(90deg, #2563eb, #60a5fa);
+    border-radius: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   16. File Items
+   ═══════════════════════════════════════════════════════════════════ */
+body.skin-light-minimal .file-item {
+    background: #fafafa;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   17. Onboarding
+   ═══════════════════════════════════════════════════════════════════ */
+body.skin-light-minimal .onboarding-modal {
+    background: #ffffff;
+    border-color: #2563eb !important;
+    border-radius: 16px;
+}
+
+body.skin-light-minimal .onboarding-title {
+    color: #2563eb !important;
+}
+
+body.skin-light-minimal .onboarding-feature-item {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+}
+
+body.skin-light-minimal .onboarding-dot.active {
+    background: #2563eb;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   18. Report Metadata
+   ═══════════════════════════════════════════════════════════════════ */
+body.skin-light-minimal #reportMetadataCard {
+    border-left-color: #2563eb !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   19. Scrollbar — thin and subtle
+   ═══════════════════════════════════════════════════════════════════ */
+body.skin-light-minimal ::-webkit-scrollbar {
+    width: 6px;
+}
+
+body.skin-light-minimal ::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+body.skin-light-minimal ::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 4px;
+}
+
+body.skin-light-minimal ::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   20. Wizard Template Card
+   ═══════════════════════════════════════════════════════════════════ */
+body.skin-light-minimal #wizardTemplateCard {
+    border-color: #2563eb !important;
+    background: rgba(37, 99, 235, 0.02) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   21. Checkbox accent color override
+   ═══════════════════════════════════════════════════════════════════ */
+body.skin-light-minimal input[type="checkbox"] {
+    accent-color: #2563eb;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   22. Toast
+   ═══════════════════════════════════════════════════════════════════ */
+body.skin-light-minimal .toast,
+body.skin-light-minimal [class*="toast"] {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    color: #111827;
+}

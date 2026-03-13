@@ -233,12 +233,20 @@ async function build() {
         copyDirSync(path.join(__dirname, 'recursos'), path.join(DIST, 'recursos'));
     }
 
-    // Actualizar SW para que cachee el bundle en vez de los archivos individuales
+    // Actualizar SW para que cachee el bundle y fuerce invalidación por versión
     let sw = fs.readFileSync(path.join(DIST, 'sw.js'), 'utf8');
-    // Reemplazar lista de archivos JS/CSS individuales por los bundles
+    const swCacheName = `transcriptor-pro-${bundleName.replace('.min.js', '')}`;
+
+    // Versionar cache por build para evitar servir bundles viejos
     sw = sw.replace(
-        /const PRECACHE_URLS\s*=\s*\[[\s\S]*?\];/,
-        `const PRECACHE_URLS = [\n    './',\n    './index.html',\n    './${bundleName}',\n    './${cssBundleName}',\n    './manifest.json'\n];`
+        /const\s+CACHE_NAME\s*=\s*'[^']+';/,
+        `const CACHE_NAME   = '${swCacheName}';`
+    );
+
+    // Reemplazar app shell por bundles reales de este build
+    sw = sw.replace(
+        /const\s+APP_SHELL\s*=\s*\[[\s\S]*?\];/,
+        `const APP_SHELL = [\n    './',\n    './index.html',\n    './${bundleName}',\n    './${cssBundleName}',\n    './manifest.json',\n    './assets/icon-192.png',\n    './assets/icon-512.png'\n];`
     );
     fs.writeFileSync(path.join(DIST, 'sw.js'), sw, 'utf8');
 
