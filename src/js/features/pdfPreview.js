@@ -918,7 +918,46 @@ window.openPrintPreview = async function () {
         const pageNumEl = document.querySelector('.pvf-pagenum');
         const pageHeightMM = 297;
         const onePagePx = pageHeightMM * (96 / 25.4); // ~1122px
-        const totalPages = Math.max(1, Math.ceil((pageEl?.scrollHeight || 0) / onePagePx));
+
+        // Estimación más fiel: contar páginas por bloques de contenido reales,
+        // evitando falsos "Página 1 de 2" por redondeos de scrollHeight.
+        const contentEl = document.getElementById('previewContent');
+        const footerEl = document.getElementById('previewFooter');
+        const sigEl = document.getElementById('previewSignature');
+        const wpHeaderEl = document.getElementById('previewWorkplace');
+
+        const headerZoneH = contentEl ? contentEl.offsetTop : 0;
+        const footerZoneH = (footerEl?.offsetHeight || 0) + (sigEl?.offsetHeight || 0) + 40;
+        const firstPageContentH = Math.max(120, onePagePx - headerZoneH - footerZoneH);
+        const repeatedHeaderH = (wpHeaderEl?.offsetHeight || 0) + 20;
+        const nextPageContentH = Math.max(120, onePagePx - repeatedHeaderH - footerZoneH);
+
+        let totalPages = 1;
+        if (contentEl) {
+            const children = Array.from(contentEl.children).filter(ch => !ch.classList.contains('pv-pagebreak-marker'));
+            if (children.length > 0) {
+                let used = 0;
+                let currentCap = firstPageContentH;
+                let pageIdx = 1;
+                for (const child of children) {
+                    const styles = getComputedStyle(child);
+                    const childH = child.offsetHeight
+                        + parseInt(styles.marginTop || 0, 10)
+                        + parseInt(styles.marginBottom || 0, 10);
+
+                    if (used > 0 && used + childH > currentCap) {
+                        pageIdx++;
+                        used = childH;
+                        currentCap = nextPageContentH;
+                    } else {
+                        used += childH;
+                    }
+                }
+                totalPages = Math.max(1, pageIdx);
+            }
+        } else {
+            totalPages = Math.max(1, Math.ceil((pageEl?.scrollHeight || 0) / onePagePx));
+        }
 
         if (pageNumEl) {
             pageNumEl.textContent = totalPages > 1 ? `Página 1 de ${totalPages}` : 'Página 1 de 1';
@@ -931,22 +970,12 @@ window.openPrintPreview = async function () {
             pageEl.querySelectorAll('.pv-pagebreak-marker').forEach(m => m.remove());
 
             // Solo repetir el workplace banner (no el header profesional)
-            const wpHeaderEl = document.getElementById('previewWorkplace');
             const wpCloneHtml = wpHeaderEl && wpHeaderEl.style.display !== 'none' ? wpHeaderEl.outerHTML : '';
 
             // Insertar marcadores en el contenido en las posiciones de salto
-            const contentEl = document.getElementById('previewContent');
             if (contentEl) {
                 // Calcular la altura disponible para contenido en la primera página
-                const headerZoneH = contentEl.offsetTop; // todo lo que hay antes del contenido
-                const footerEl = document.getElementById('previewFooter');
-                const sigEl = document.getElementById('previewSignature');
-                const footerZoneH = (footerEl?.offsetHeight || 0) + (sigEl?.offsetHeight || 0) + 40;
-
-                const firstPageContentH = onePagePx - headerZoneH - footerZoneH;
-                // Páginas siguientes: solo workplace banner se repite (~50px aprox) + footer
-                const repeatedHeaderH = (wpHeaderEl?.offsetHeight || 0) + 20;
-                const nextPageContentH = onePagePx - repeatedHeaderH - footerZoneH;
+                // Reusar capacidades calculadas arriba para mantener consistencia.
 
                 let accumulatedH = 0;
                 let currentPageBreakAt = firstPageContentH;

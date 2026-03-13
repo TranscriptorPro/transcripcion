@@ -25,31 +25,32 @@
         });
     }
 
-    function _createLocalPdfLink(pdfBlob, fileName, fileDate) {
+    async function _createLocalPdfLink(pdfBlob, fileName, fileDate) {
         const blob = pdfBlob instanceof Blob ? pdfBlob : null;
         if (!blob) return null;
-        const url = URL.createObjectURL(blob);
-        setTimeout(() => {
-            try { URL.revokeObjectURL(url); } catch (_) {}
-        }, 30 * 60 * 1000);
+        let bytes;
+        try {
+            // Firefox puede invalidar blobs provenientes de renderers complejos.
+            // Clonamos a bytes para reconstruir un Blob fresco al descargar.
+            bytes = new Uint8Array(await blob.arrayBuffer());
+        } catch (_) {
+            return null;
+        }
         return {
-            viewUrl: url,
-            downloadUrl: url,
             source: 'pdf_blob',
-            fileName: `${fileName}_${fileDate}.pdf`
+            fileName: `${fileName}_${fileDate}.pdf`,
+            pdfBytes: bytes
         };
     }
 
-    function _triggerReplicaDownload(linkInfo) {
-        const href = String(linkInfo?.downloadUrl || linkInfo?.viewUrl || '').trim();
-        if (!href) return;
+    async function _triggerReplicaDownload(linkInfo) {
+        const fileName = String(linkInfo?.fileName || `informe_${new Date().toISOString().split('T')[0]}.pdf`);
+        const bytes = linkInfo?.pdfBytes;
+        if (!(bytes instanceof Uint8Array)) throw new Error('PDF bytes no disponibles');
 
-        const a = document.createElement('a');
-        a.href = href;
-        a.download = String(linkInfo?.fileName || `informe_${new Date().toISOString().split('T')[0]}.pdf`);
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
+        const freshBlob = new Blob([bytes], { type: 'application/pdf' });
+        const saveHandler = (typeof window.saveToDisk === 'function') ? window.saveToDisk : saveToDisk;
+        await saveHandler(freshBlob, fileName);
     }
 
     function _ensurePdfReadyModal() {
@@ -106,10 +107,21 @@
         }
 
         if (downloadBtn) {
-            downloadBtn.onclick = () => {
-                _triggerReplicaDownload(linkInfo);
-                overlay.style.display = 'none';
-                document.body.style.overflow = '';
+            downloadBtn.onclick = async () => {
+                downloadBtn.disabled = true;
+                const prev = downloadBtn.textContent;
+                downloadBtn.textContent = 'Descargando...';
+                try {
+                    await _triggerReplicaDownload(linkInfo);
+                    overlay.style.display = 'none';
+                    document.body.style.overflow = '';
+                } catch (err) {
+                    if (typeof showToast === 'function') showToast('No se pudo descargar el PDF. Reintenta.', 'error');
+                    console.warn('Error descargando PDF desde modal:', err);
+                } finally {
+                    downloadBtn.disabled = false;
+                    downloadBtn.textContent = prev;
+                }
             };
         }
 
@@ -230,7 +242,8 @@
             await Promise.race([renderPromise, timeoutPromise]);
 
             return doc.output('blob');
-        } catch (_) {
+        } catch (err) {
+            console.warn('Error en _buildPdfBlobFromHtml:', err);
             return null;
         } finally {
             if (document.body.contains(wrapper)) document.body.removeChild(wrapper);
@@ -422,7 +435,7 @@
                     return;
                 }
 
-                const linkInfo = _createLocalPdfLink(pdfBlob, fileName, fileDate);
+                const linkInfo = await _createLocalPdfLink(pdfBlob, fileName, fileDate);
                 if (!linkInfo) {
                     if (typeof showToast === 'function') showToast('No se pudo preparar la descarga del PDF', 'error');
                     return;
