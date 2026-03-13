@@ -234,12 +234,35 @@
                     scrollY: 0
                 });
 
+                // Recortar filas blancas al final del canvas para evitar páginas en blanco.
+                let trimmedHeight = fullCanvas.height;
+                {
+                    const trimCtx = fullCanvas.getContext('2d');
+                    if (trimCtx) {
+                        const rowData = trimCtx.getImageData(0, 0, fullCanvas.width, fullCanvas.height).data;
+                        const rowBytes = fullCanvas.width * 4;
+                        let lastNonBlankRow = 0;
+                        for (let row = 0; row < fullCanvas.height; row++) {
+                            const base = row * rowBytes;
+                            for (let col = 0; col < rowBytes; col += 4) {
+                                // Pixel no-blanco: R o G o B < 250
+                                if (rowData[base + col] < 250 || rowData[base + col + 1] < 250 || rowData[base + col + 2] < 250) {
+                                    lastNonBlankRow = row;
+                                    break;
+                                }
+                            }
+                        }
+                        // Dejar un pequeño margen inferior (20px) para no cortar sombras/bordes.
+                        trimmedHeight = Math.min(fullCanvas.height, lastNonBlankRow + 20);
+                    }
+                }
+
                 const pagePxHeight = Math.max(1, Math.floor((fullCanvas.width * pageHmm) / pageWmm));
                 let offsetY = 0;
                 let pageIndex = 0;
 
-                while (offsetY < fullCanvas.height) {
-                    const sliceH = Math.min(pagePxHeight, fullCanvas.height - offsetY);
+                while (offsetY < trimmedHeight) {
+                    const sliceH = Math.min(pagePxHeight, trimmedHeight - offsetY);
                     const pageCanvas = document.createElement('canvas');
                     pageCanvas.width = fullCanvas.width;
                     pageCanvas.height = sliceH;
