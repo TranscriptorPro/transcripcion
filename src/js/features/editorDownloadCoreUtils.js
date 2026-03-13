@@ -219,8 +219,60 @@
             await new Promise(r => setTimeout(r, 180));
 
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ unit: 'mm', format: pageFormat, orientation });
 
+            // Ruta 1 (preferida): captura visual fiel y paginado por imagen.
+            if (typeof window.html2canvas === 'function') {
+                const doc = new jsPDF({ unit: 'mm', format: pageFormat, orientation });
+                const target = sdoc.body;
+                const fullCanvas = await window.html2canvas(target, {
+                    scale: 1.6,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    width: viewportW,
+                    windowWidth: viewportW,
+                    scrollX: 0,
+                    scrollY: 0
+                });
+
+                const pagePxHeight = Math.max(1, Math.floor((fullCanvas.width * pageHmm) / pageWmm));
+                let offsetY = 0;
+                let pageIndex = 0;
+
+                while (offsetY < fullCanvas.height) {
+                    const sliceH = Math.min(pagePxHeight, fullCanvas.height - offsetY);
+                    const pageCanvas = document.createElement('canvas');
+                    pageCanvas.width = fullCanvas.width;
+                    pageCanvas.height = sliceH;
+                    const ctx = pageCanvas.getContext('2d');
+                    if (!ctx) throw new Error('CANVAS_CONTEXT_UNAVAILABLE');
+
+                    ctx.drawImage(
+                        fullCanvas,
+                        0,
+                        offsetY,
+                        fullCanvas.width,
+                        sliceH,
+                        0,
+                        0,
+                        fullCanvas.width,
+                        sliceH
+                    );
+
+                    if (pageIndex > 0) doc.addPage();
+
+                    const renderHmm = (sliceH * pageWmm) / fullCanvas.width;
+                    const imgData = pageCanvas.toDataURL('image/jpeg', 0.94);
+                    doc.addImage(imgData, 'JPEG', 0, 0, pageWmm, renderHmm, undefined, 'FAST');
+
+                    offsetY += sliceH;
+                    pageIndex += 1;
+                }
+
+                return doc.output('blob');
+            }
+
+            // Ruta 2 (fallback): renderer HTML interno de jsPDF.
+            const doc = new jsPDF({ unit: 'mm', format: pageFormat, orientation });
             const renderPromise = doc.html(sdoc.body, {
                 x: 0,
                 y: 0,
@@ -240,7 +292,6 @@
             });
 
             await Promise.race([renderPromise, timeoutPromise]);
-
             return doc.output('blob');
         } catch (err) {
             console.warn('Error en _buildPdfBlobFromHtml:', err);
