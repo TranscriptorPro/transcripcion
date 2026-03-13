@@ -68,18 +68,35 @@
         return { viewUrl: url, downloadUrl: url, source: 'local' };
     }
 
+    function _triggerReplicaDownload(linkInfo) {
+        const href = String(linkInfo?.downloadUrl || linkInfo?.viewUrl || '').trim();
+        if (!href) return;
+
+        if (linkInfo?.source === 'backend') {
+            window.open(href, '_blank', 'noopener,noreferrer');
+            return;
+        }
+
+        const a = document.createElement('a');
+        a.href = href;
+        a.download = `informe_${new Date().toISOString().split('T')[0]}.html`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    }
+
     function _notifyReplicaReady(linkInfo) {
         if (typeof window.showToastWithAction === 'function') {
             window.showToastWithAction(
-                '✅ Réplica lista. Abrí el enlace para ver/guardar.',
+                '✅ Réplica lista. Podés descargarla ahora.',
                 'success',
-                'Abrir enlace',
-                () => window.open(linkInfo.viewUrl, '_blank', 'noopener,noreferrer'),
+                'Descargar',
+                () => _triggerReplicaDownload(linkInfo),
                 12000
             );
             return;
         }
-        if (typeof showToast === 'function') showToast('✅ Réplica lista. Abrí el enlace en una nueva pestaña.', 'success', 7000);
+        if (typeof showToast === 'function') showToast('✅ Réplica lista. Descargala desde el enlace generado.', 'success', 7000);
     }
 
     async function _ensureJsPdfReady(timeoutMs = 2600) {
