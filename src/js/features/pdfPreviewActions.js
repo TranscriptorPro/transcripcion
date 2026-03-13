@@ -166,7 +166,7 @@ async function _generatePDFBase64FromHtmlSnapshot() {
         wrapper.style.cssText = `position:fixed;left:-99999px;top:0;width:${viewportW}px;background:#fff;z-index:-1;`;
 
         const sandbox = document.createElement('iframe');
-        sandbox.style.cssText = `width:${viewportW}px;height:${viewportH}px;border:0;background:#fff;`;
+        sandbox.style.cssText = `width:${viewportW}px;min-height:${viewportH}px;border:0;background:#fff;`;
         wrapper.appendChild(sandbox);
         document.body.appendChild(wrapper);
 
@@ -177,40 +177,88 @@ async function _generatePDFBase64FromHtmlSnapshot() {
         await ready;
 
         const sdoc = sandbox.contentDocument;
-        if (!sdoc) {
+        if (!sdoc || !sdoc.body) {
             wrapper.remove();
             return null;
         }
 
-        await new Promise(r => setTimeout(r, 220));
+        // Esperar a que los estilos y fuentes se apliquen.
+        await new Promise(r => setTimeout(r, 300));
 
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ unit: 'mm', format: pageFormat, orientation });
 
-        const bodyEl = sdoc.body;
-        if (!bodyEl) {
+        // Ruta principal: html2canvas (mismo pipeline que el botón Descargar PDF).
+        if (typeof window.html2canvas === 'function') {
+            const target = sdoc.body;
+            const fullCanvas = await window.html2canvas(target, {
+                scale: 1.6,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                width: viewportW,
+                windowWidth: viewportW,
+                scrollX: 0,
+                scrollY: 0
+            });
+
+            // Recortar trailing whitespace (evita página en blanco al final).
+            let trimmedHeight = fullCanvas.height;
+            const trimCtx = fullCanvas.getContext('2d');
+            if (trimCtx) {
+                const rowData = trimCtx.getImageData(0, 0, fullCanvas.width, fullCanvas.height).data;
+                const rowBytes = fullCanvas.width * 4;
+                let lastNonBlankRow = 0;
+                for (let row = 0; row < fullCanvas.height; row++) {
+                    const base = row * rowBytes;
+                    for (let col = 0; col < rowBytes; col += 4) {
+                        if (rowData[base + col] < 250 || rowData[base + col + 1] < 250 || rowData[base + col + 2] < 250) {
+                            lastNonBlankRow = row;
+                            break;
+                        }
+                    }
+                }
+                trimmedHeight = Math.min(fullCanvas.height, lastNonBlankRow + 20);
+            }
+
+            const pagePxHeight = Math.max(1, Math.floor((fullCanvas.width * pageHmm) / pageWmm));
+            let offsetY = 0;
+            let pageIndex = 0;
+
+            while (offsetY < trimmedHeight) {
+                const sliceH = Math.min(pagePxHeight, trimmedHeight - offsetY);
+                const pageCanvas = document.createElement('canvas');
+                pageCanvas.width = fullCanvas.width;
+                pageCanvas.height = sliceH;
+                const ctx = pageCanvas.getContext('2d');
+                if (!ctx) break;
+                ctx.drawImage(fullCanvas, 0, offsetY, fullCanvas.width, sliceH, 0, 0, fullCanvas.width, sliceH);
+                if (pageIndex > 0) doc.addPage();
+                const renderHmm = (sliceH * pageWmm) / fullCanvas.width;
+                doc.addImage(pageCanvas.toDataURL('image/jpeg', 0.94), 'JPEG', 0, 0, pageWmm, renderHmm, undefined, 'FAST');
+                offsetY += sliceH;
+                pageIndex += 1;
+            }
+
+            const blob = doc.output('blob');
             wrapper.remove();
-            return null;
+            return await _blobToBase64(blob);
         }
 
-        await doc.html(bodyEl, {
-            x: 0,
-            y: 0,
+        // Fallback: jsPDF.html() si html2canvas no está disponible.
+        await doc.html(sdoc.body, {
+            x: 0, y: 0,
             margin: [0, 0, 0, 0],
             autoPaging: 'slice',
             width: pageWmm,
             windowWidth: viewportW,
-            html2canvas: {
-                scale: 2,
-                useCORS: true,
-                backgroundColor: '#ffffff'
-            }
+            html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' }
         });
 
         const blob = doc.output('blob');
         wrapper.remove();
         return await _blobToBase64(blob);
-    } catch (_) {
+    } catch (err) {
+        console.error('Error en _generatePDFBase64FromHtmlSnapshot:', err);
         return null;
     }
 }
