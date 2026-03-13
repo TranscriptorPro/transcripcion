@@ -37,11 +37,11 @@
                     <td style="padding:.45rem .5rem;">${esc(r.reason)}</td>
                     <td style="padding:.45rem .5rem;">${fmtDate(r.lastUsed)}</td>
                     <td style="padding:.45rem .5rem;">${Number(r.usageCount || 0)}</td>
-                    <td style="padding:.45rem .5rem;text-align:center;">
-                        <div class="registry-row-actions">
-                            <button class="registry-mini-btn" type="button" data-edit-idx="${idx}">Editar</button>
-                            <button class="registry-mini-btn registry-mini-btn-danger" type="button" data-del-idx="${idx}">Borrar</button>
-                        </div>
+                    <td style="padding:.45rem .5rem;text-align:center;white-space:nowrap;">
+                        <button class="btn btn-secondary registry-edit-btn" style="padding:.25rem .5rem;font-size:.75rem;"
+                            data-idx="${idx}">&#9998;</button>
+                        <button class="btn registry-delete-btn" style="padding:.25rem .5rem;font-size:.75rem;background:var(--error);"
+                            data-idx="${idx}">&#x1F5D1;</button>
                     </td>
                 </tr>`).join('');
         }
@@ -49,11 +49,11 @@
         if (!tbody._delegated) {
             tbody._delegated = true;
             tbody.addEventListener('click', async (e) => {
-                const editBtn = e.target.closest('[data-edit-idx]');
-                const btn = e.target.closest('[data-del-idx]');
+                const editBtn = e.target.closest('.registry-edit-btn');
+                const btn = e.target.closest('.registry-delete-btn');
                 const rows = getRows(search?.value || '');
                 if (editBtn) {
-                    const row = rows[parseInt(editBtn.dataset.editIdx, 10)];
+                    const row = rows[parseInt(editBtn.dataset.idx, 10)];
                     if (!row) return;
                     const next = window.prompt('Editar motivo / indicación clínica', row.reason);
                     if (next == null) return;
@@ -64,7 +64,7 @@
                     return;
                 }
                 if (!btn) return;
-                const row = rows[parseInt(btn.dataset.delIdx, 10)];
+                const row = rows[parseInt(btn.dataset.idx, 10)];
                 if (!row) return;
                 const ok = typeof window.showCustomConfirm === 'function'
                     ? await window.showCustomConfirm('Eliminar motivo clínico', `¿Eliminar "${row.reason}" del historial?`)
