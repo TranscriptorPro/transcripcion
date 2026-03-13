@@ -37,7 +37,7 @@ window._retryPendingContacts = async function () {
             const senderDisplay = resolveProfessionalName(msg.nombre, msg.sexo);
             const res = await fetch(backendUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify({
                     action: 'send_email',
                     to: msg.to || defaultSupportEmail,
@@ -255,7 +255,7 @@ window.initContact = function () {
                 try {
                     const response = await fetch(backendUrl, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'text/plain' },
                         body: JSON.stringify({
                             action: 'send_email',
                             to: contactEmail,
@@ -272,7 +272,7 @@ window.initContact = function () {
                         try {
                             await fetch(backendUrl, {
                                 method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
+                                headers: { 'Content-Type': 'text/plain' },
                                 body: JSON.stringify({
                                     action: 'log_support_request',
                                     medicoId: medicoId,
