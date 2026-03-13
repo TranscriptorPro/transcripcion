@@ -46,6 +46,36 @@
                 </tr>`).join('');
         }
 
+        function startInlineEdit(tr, rowData) {
+            const reasonTd = tr.cells[0];
+            const actionsTd = tr.cells[3];
+            const prevReason  = reasonTd.innerHTML;
+            const prevActions = actionsTd.innerHTML;
+            reasonTd.innerHTML = `<input type="text" value="${esc(rowData.reason)}" style="width:100%;padding:.2rem .4rem;border:1px solid #ccc;border-radius:4px;font-size:.875rem;">`;
+            actionsTd.innerHTML =
+                `<button class="btn" style="padding:.2rem .5rem;font-size:.72rem;background:var(--primary,#1a56a0);color:#fff;margin-right:4px;">Guardar</button>` +
+                `<button class="btn btn-secondary" style="padding:.2rem .5rem;font-size:.72rem;">Cancelar</button>`;
+            const input = reasonTd.querySelector('input');
+            input?.focus();
+            input?.select();
+            const [saveBtn, cancelBtn] = actionsTd.querySelectorAll('button');
+            const abort = () => { reasonTd.innerHTML = prevReason; actionsTd.innerHTML = prevActions; };
+            cancelBtn.addEventListener('click', abort);
+            saveBtn.addEventListener('click', () => {
+                const next = input.value.trim();
+                if (!next) return;
+                const ok = typeof window.updateStudyReason === 'function'
+                    ? window.updateStudyReason(rowData.reason, next)
+                    : false;
+                if (ok) render(search?.value || '');
+                else abort();
+            });
+            input?.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') saveBtn.click();
+                if (e.key === 'Escape') abort();
+            });
+        }
+
         if (!tbody._delegated) {
             tbody._delegated = true;
             tbody.addEventListener('click', async (e) => {
@@ -53,14 +83,11 @@
                 const btn = e.target.closest('.registry-delete-btn');
                 const rows = getRows(search?.value || '');
                 if (editBtn) {
-                    const row = rows[parseInt(editBtn.dataset.idx, 10)];
+                    const idx = parseInt(editBtn.dataset.idx, 10);
+                    const row = rows[idx];
                     if (!row) return;
-                    const next = window.prompt('Editar motivo / indicación clínica', row.reason);
-                    if (next == null) return;
-                    const okEdit = typeof window.updateStudyReason === 'function'
-                        ? window.updateStudyReason(row.reason, next)
-                        : false;
-                    if (okEdit) render(search?.value || '');
+                    const tr = editBtn.closest('tr');
+                    if (tr) startInlineEdit(tr, row);
                     return;
                 }
                 if (!btn) return;
