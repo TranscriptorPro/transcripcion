@@ -268,7 +268,8 @@ window.initEmailSendModal = function () {
 
             const response = await fetch(backendUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                // Request simple para evitar preflight OPTIONS en Apps Script (CORS 405).
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({
                     action: 'send_email',
                     to: to,
@@ -281,7 +282,13 @@ window.initEmailSendModal = function () {
                 })
             });
 
-            const result = await response.json();
+            const raw = await response.text();
+            let result = null;
+            try {
+                result = raw ? JSON.parse(raw) : null;
+            } catch (_) {
+                result = null;
+            }
 
             if (result.success) {
                 if (statusEl) {
@@ -292,7 +299,7 @@ window.initEmailSendModal = function () {
                 if (typeof showToast === 'function') showToast('✅ Email enviado correctamente', 'success');
                 setTimeout(closeModal, 2500);
             } else {
-                throw new Error(result.error || 'Error desconocido del servidor');
+                throw new Error((result && result.error) || `Error backend HTTP_${response.status}`);
             }
         } catch (err) {
             console.error('Error enviando email:', err);
