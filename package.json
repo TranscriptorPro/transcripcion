@@ -8,7 +8,8 @@
     "test": "node tests/run_tests.js",
     "test:e2e:admin-edit": "node tests/e2e-admin-user-edit-wizard.js",
     "test:e2e:full": "node tests/e2e-full-qa-playwright.js",
-    "test:smoke:postdeploy": "node tests/smoke-postdeploy-version.js"
+    "test:smoke:postdeploy": "node tests/smoke-postdeploy-version.js",
+    "release:verify": "node scripts/release-verify.js"
   },
   "dependencies": {
     "playwright": "^1.58.2"
