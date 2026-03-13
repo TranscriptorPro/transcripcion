@@ -363,7 +363,7 @@ function _isClinicProfile() {
 window.openPdfConfigModal = async function () {
     _ensurePdfFormatToggles();
     _initPdfAssetReplacementHandlers();
-    if (typeof loadPdfConfiguration === 'function') loadPdfConfiguration();
+    if (typeof loadPdfConfiguration === 'function') await loadPdfConfiguration();
     const dataUtils = window.PdfDataAccessUtils || {};
     const safeGet = (typeof dataUtils.safeGet === 'function') ? dataUtils.safeGet : async (_k, fallback) => fallback;
 
@@ -563,6 +563,9 @@ window.openPrintPreview = async function () {
     // Priorizar _pdfConfigCache (actualizado en memoria de forma síncrona por el botón Previsualizar)
     // para que los cambios del formulario sean visibles ANTES de guardar en IndexedDB
     const config   = window._pdfConfigCache || (await safeGet('pdf_config', {})) || {};
+    const resolvedCtx = (typeof window.resolveReportContext === 'function')
+        ? await window.resolveReportContext({ includeEditorExtract: true, includeFormFallback: true })
+        : null;
 
     // Check de robustez para debugging: confirma datos clave usados por preview.
     console.log('[PDFPreview] Datos fuente:', {
@@ -651,42 +654,47 @@ window.openPrintPreview = async function () {
 
     // Preferir: 1) extraído del audio → 2) guardado en pdf_config → 3) formulario req* en pantalla
     // Normalización: nombres→name, cobertura→UPPER, resto→sentence
-    const patientName     = escName(extracted.name || config.patientName || formPatient.name || '');
-    const patientDni      = esc(extracted.dni   || config.patientDni   || formPatient.dni      || '');
-    const patientAge      = esc(extracted.age   || config.patientAge   || formPatient.age      || '');
-    const rawSex          = extracted.sex || config.patientSex || formPatient.sex || '';
+    const patientName     = escName((resolvedCtx && resolvedCtx.patientName) || extracted.name || config.patientName || formPatient.name || '');
+    const patientDni      = esc((resolvedCtx && resolvedCtx.patientDni) || extracted.dni || config.patientDni || formPatient.dni || '');
+    const patientAge      = esc((resolvedCtx && resolvedCtx.patientAge) || extracted.age || config.patientAge || formPatient.age || '');
+    const rawSex          = (resolvedCtx && resolvedCtx.patientSex) || extracted.sex || config.patientSex || formPatient.sex || '';
     const patientSex      = rawSex === 'M' ? 'Masculino' : rawSex === 'F' ? 'Femenino' : escName(rawSex);
-    const patientInsurance = escUpper(config.patientInsurance || formPatient.insurance || '');
-    const affiliateNum = esc(config.patientAffiliateNum || reqVal('reqPatientAffiliateNum') || reqVal('pdfPatientAffiliateNum') || '');
+    const patientInsurance = escUpper((resolvedCtx && resolvedCtx.patientInsurance) || config.patientInsurance || formPatient.insurance || '');
+    const affiliateNum = esc((resolvedCtx && resolvedCtx.patientAffiliateNum) || config.patientAffiliateNum || reqVal('reqPatientAffiliateNum') || reqVal('pdfPatientAffiliateNum') || '');
 
     // Datos del estudio (fallback: plantilla detectada → nombre de plantilla seleccionada)
     const tplKey = window.selectedTemplate || config.selectedTemplate || '';
     const tplName = (tplKey && window.MEDICAL_TEMPLATES?.[tplKey]?.name) || '';
     const headingStudyType = _extractStudyTypeFromEditorHeading(editorEl);
     const baseStudyType = config.studyType || document.getElementById('reqStudyType')?.value || tplName || '';
-    const effectiveStudyType = (_isGenericStudyType(baseStudyType) && headingStudyType)
-        ? headingStudyType
-        : baseStudyType;
+    const effectiveStudyType = (resolvedCtx && resolvedCtx.studyType)
+        ? resolvedCtx.studyType
+        : ((_isGenericStudyType(baseStudyType) && headingStudyType)
+            ? headingStudyType
+            : baseStudyType);
     const studyType    = escSentence(effectiveStudyType);
-    const rawDate      = config.studyDate || document.getElementById('reqStudyDate')?.value || '';
-    const showStudyDate = (document.getElementById('reqShowStudyDate')?.checked ?? config.showStudyDate ?? true) !== false;
-    const studyDate    = rawDate
-        ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'})
-        : '';
-    const studyReason  = escSentence(config.studyReason || document.getElementById('reqStudyReason')?.value || '');
-    const _rawRefDoctor = String(config.referringDoctor || document.getElementById('reqReferringDoctor')?.value || '')
+    const showStudyDate = resolvedCtx ? resolvedCtx.showStudyDate : ((document.getElementById('reqShowStudyDate')?.checked ?? config.showStudyDate ?? true) !== false);
+    const studyDate    = resolvedCtx
+        ? (resolvedCtx.studyDateDisplay || '')
+        : ((config.studyDate || document.getElementById('reqStudyDate')?.value || '')
+            ? new Date((config.studyDate || document.getElementById('reqStudyDate')?.value || '') + 'T12:00').toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'})
+            : '');
+    const studyReason  = escSentence((resolvedCtx && resolvedCtx.studyReason) || config.studyReason || document.getElementById('reqStudyReason')?.value || '');
+    const _rawRefDoctor = String((resolvedCtx && resolvedCtx.referringDoctorRaw) || config.referringDoctor || document.getElementById('reqReferringDoctor')?.value || '')
         .replace(/^\s*(?:dr\.?|dra\.?)\s+/i, '')
         .trim();
-    const refDoctor    = _rawRefDoctor ? escName('Dr./a ' + _rawRefDoctor) : '';
-    const reportNum    = esc(document.getElementById('pdfReportNumber')?.value || config.reportNum || '');
+    const refDoctor    = (resolvedCtx && resolvedCtx.referringDoctorDisplay)
+        ? escName(resolvedCtx.referringDoctorDisplay)
+        : (_rawRefDoctor ? escName('Dr./a ' + _rawRefDoctor) : '');
+    const reportNum    = esc((resolvedCtx && resolvedCtx.reportNum) || document.getElementById('pdfReportNumber')?.value || config.reportNum || '');
     const showReportNumber = (config.showReportNumber ?? true) === true;
-    const hideReportHeader = !_isClinicProfile() && (config.hideReportHeader === true);
-    const footerText   = esc(config.footerText || 'Este informe es válido únicamente con la firma del profesional a cargo.');
+    const hideReportHeader = resolvedCtx ? !!resolvedCtx.hideReportHeader : (!_isClinicProfile() && (config.hideReportHeader === true));
+    const footerText   = esc((resolvedCtx && resolvedCtx.footerText) || config.footerText || 'Este informe es válido únicamente con la firma del profesional a cargo.');
     const wkAddr       = esc(config.workplaceAddress || activeWp?.address || '');
     const wkPhone      = esc(config.workplacePhone   || activeWp?.phone || '');
-    const showStudyTime = (document.getElementById('reqShowStudyTime')?.checked ?? config.showStudyTime ?? true) !== false;
+    const showStudyTime = resolvedCtx ? resolvedCtx.showStudyTime : ((document.getElementById('reqShowStudyTime')?.checked ?? config.showStudyTime ?? true) !== false);
     const studyTime    = showStudyTime
-        ? esc(document.getElementById('reqStudyTime')?.value || document.getElementById('pdfStudyTime')?.value || config.studyTime || '')
+        ? esc((resolvedCtx && resolvedCtx.studyTime) || document.getElementById('reqStudyTime')?.value || document.getElementById('pdfStudyTime')?.value || config.studyTime || '')
         : '';
     const showSignLine = config.showSignLine ?? true;
     const showSignName = config.showSignName ?? true;
@@ -882,7 +890,9 @@ window.openPrintPreview = async function () {
     if (footerEl) {
         const parts = [];
         if (footerText) parts.push(`<span>${footerText}</span>`);
-        if (config.showDate) parts.push(`<span>Impreso: ${new Date().toLocaleDateString('es-ES')}</span>`);
+        if (resolvedCtx ? resolvedCtx.showDateInFooter : !!config.showDate) {
+            parts.push(`<span>Impreso: ${new Date().toLocaleDateString('es-ES')}</span>`);
+        }
         // Número de página real: calculado después de renderizar
         if (config.showPageNum) parts.push(`<span class="pvf-pagenum" style="margin-left:auto;">Página 1</span>`);
         footerEl.innerHTML = parts.length ? `<div class="pvf-wrap">${parts.join('')}</div>` : '';

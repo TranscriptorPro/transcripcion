@@ -30,8 +30,12 @@
         btn.addEventListener('click', () => {
             const overlay = document.getElementById('settingsModalOverlay');
             if (overlay) overlay.classList.remove('active');
-            const pdfOverlay = document.getElementById('pdfModalOverlay');
-            if (pdfOverlay) pdfOverlay.classList.add('active');
+            if (typeof window.openPdfConfigModal === 'function') {
+                window.openPdfConfigModal();
+            } else {
+                const pdfOverlay = document.getElementById('pdfModalOverlay');
+                if (pdfOverlay) pdfOverlay.classList.add('active');
+            }
         });
     }
 

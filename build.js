@@ -93,6 +93,7 @@ const JS_FILES = [
     'src/js/features/sessionAssistant.js',
     'src/js/features/outputProfiles.js',
     'src/js/features/pdfDataAccessUtils.js',
+    'src/js/features/reportContextResolver.js',
     'src/js/features/pdfPreview.js',
     'src/js/features/pdfPreviewActions.js',
     'src/js/features/pdfMakerSectionUtils.js',

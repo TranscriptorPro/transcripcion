@@ -17,7 +17,6 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const { jsPDF } = window.jspdf;
         const profData  = (typeof safeJSONParse === 'function') ? await safeJSONParse('prof_data', {}) : (await appDB.get('prof_data')) || {};
         const config    = (typeof safeJSONParse === 'function') ? await safeJSONParse('pdf_config', {}) : (await appDB.get('pdf_config')) || {};
-        const activePro = config.activeProfessional || null;
         const pgSize = (config.pageSize || 'a4').toLowerCase();
         const orient = (config.orientation || 'portrait').toLowerCase();
         const doc = new jsPDF({ unit: 'mm', format: pgSize, orientation: orient });
@@ -32,18 +31,28 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const mainFont     = config.font || 'helvetica';
         const mainFontSize = parseInt(config.fontSize) || 10;
         const mainLineH    = mainFontSize * 0.5;
+        const _edForCtx = typeof window !== 'undefined' ? (window.editor || document.getElementById('editor')) : null;
+        const resolvedCtx = (typeof window.resolveReportContext === 'function')
+            ? await window.resolveReportContext({ includeEditorExtract: true, includeFormFallback: true, editorEl: _edForCtx })
+            : null;
         const clientType = String(window.CLIENT_CONFIG?.type || '').toUpperCase();
         const planCode = String(window.CLIENT_CONFIG?.planCode || '').toUpperCase();
         const isClinicProfile = clientType === 'CLINIC' || planCode === 'CLINIC';
-        const cfgHideReportHeader = !isClinicProfile && config.hideReportHeader === true;
+        const activePro = (resolvedCtx && resolvedCtx.activeProfessional) || config.activeProfessional || null;
+        const cfgHideReportHeader = resolvedCtx
+            ? !!resolvedCtx.hideReportHeader
+            : (!isClinicProfile && config.hideReportHeader === true);
         const cfgShowHeader  = !cfgHideReportHeader && config.showHeader !== false;
         const cfgShowFooter  = config.showFooter  !== false;
         const cfgShowPageNum = config.showPageNum !== false;
-        const cfgShowDate    = config.showDate    === true;
+        const cfgShowDate    = resolvedCtx
+            ? !!resolvedCtx.showDateInFooter
+            : ((config.showDate ?? true) === true);
         const cfgShowReportNumber = config.showReportNumber !== false;
         const wpProfiles = (await appDB.get('workplace_profiles')) || [];
         const wpIdx = config.activeWorkplaceIndex;
-        const activeWp = (wpIdx !== undefined && wpIdx !== null) ? wpProfiles[Number(wpIdx)] : wpProfiles[0];
+        const activeWp = (resolvedCtx && resolvedCtx.activeWorkplace)
+            || ((wpIdx !== undefined && wpIdx !== null) ? wpProfiles[Number(wpIdx)] : wpProfiles[0]);
         const wpLogo = activeWp?.logo || '';
         const instLogoB64 = (wpLogo && wpLogo.startsWith('data:'))
             ? wpLogo : ((await appDB.get('pdf_logo')) || '');
@@ -106,32 +115,37 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             insurance: _reqVal('reqPatientInsurance')  || _reqVal('pdfPatientInsurance'),
             affiliate: _reqVal('reqPatientAffiliateNum') || _reqVal('pdfPatientAffiliateNum'),
         };
-        const pName      = _extracted.name || config.patientName || _formP.name || '';
-        const pDni       = _extracted.dni  || config.patientDni  || _formP.dni  || '';
-        const _rawAge    = _extracted.age  || config.patientAge  || _formP.age  || '';
+        const pName      = (resolvedCtx && resolvedCtx.patientName) || _extracted.name || config.patientName || _formP.name || '';
+        const pDni       = (resolvedCtx && resolvedCtx.patientDni)  || _extracted.dni  || config.patientDni  || _formP.dni  || '';
+        const _rawAge    = (resolvedCtx && resolvedCtx.patientAge)  || _extracted.age  || config.patientAge  || _formP.age  || '';
         const pAge       = _rawAge ? `${_rawAge} años` : '';
-        const _rawSex    = _extracted.sex  || config.patientSex  || _formP.sex  || '';
+        const _rawSex    = (resolvedCtx && resolvedCtx.patientSex) || _extracted.sex || config.patientSex || _formP.sex || '';
         const pSex       = _rawSex === 'M' ? 'Masculino' : _rawSex === 'F' ? 'Femenino' : _rawSex;
-        const pInsurance = config.patientInsurance || _formP.insurance || '';
-        const pAffiliateNum = config.patientAffiliateNum || _formP.affiliate || '';
-        const rawDate    = config.studyDate        || '';
-        const pDate      = rawDate
-            ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'})
-            : new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'});
-        const showStudyTime = (_reqVal('reqShowStudyTime')
-            ? !!document.getElementById('reqShowStudyTime')?.checked
-            : (config.showStudyTime ?? true)) !== false;
-        const studyTime   = showStudyTime ? (_reqVal('pdfStudyTime') || _reqVal('reqStudyTime') || config.studyTime || '') : '';
+        const pInsurance = (resolvedCtx && resolvedCtx.patientInsurance) || config.patientInsurance || _formP.insurance || '';
+        const pAffiliateNum = (resolvedCtx && resolvedCtx.patientAffiliateNum) || config.patientAffiliateNum || _formP.affiliate || '';
+        const showStudyDate = resolvedCtx ? !!resolvedCtx.showStudyDate : ((config.showStudyDate ?? true) !== false);
+        const pDate      = showStudyDate
+            ? ((resolvedCtx && resolvedCtx.studyDateDisplay)
+                || (config.studyDate
+                    ? new Date(config.studyDate + 'T12:00').toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'})
+                    : ''))
+            : '';
+        const showStudyTime = resolvedCtx ? !!resolvedCtx.showStudyTime : ((config.showStudyTime ?? true) !== false);
+        const studyTime   = showStudyTime
+            ? ((resolvedCtx && resolvedCtx.studyTime) || _reqVal('pdfStudyTime') || _reqVal('reqStudyTime') || config.studyTime || '')
+            : '';
         const tplKey      = (typeof window !== 'undefined' && window.selectedTemplate) || config.selectedTemplate || '';
         const tplNameFb   = (tplKey && typeof MEDICAL_TEMPLATES !== 'undefined' && MEDICAL_TEMPLATES[tplKey]?.name) || '';
-        const studyType   = config.studyType || tplNameFb || '';
-        const reportNum   = _reqVal('pdfReportNumber') || config.reportNum || '';
-        const _rawRefDoctor = String(config.referringDoctor || _reqVal('reqReferringDoctor') || _reqVal('pdfReferringDoctor') || '')
+        const studyType   = (resolvedCtx && resolvedCtx.studyType) || config.studyType || tplNameFb || '';
+        const reportNum   = (resolvedCtx && resolvedCtx.reportNum) || _reqVal('pdfReportNumber') || config.reportNum || '';
+        const _rawRefDoctor = String((resolvedCtx && resolvedCtx.referringDoctorRaw) || config.referringDoctor || _reqVal('reqReferringDoctor') || _reqVal('pdfReferringDoctor') || '')
             .replace(/^\s*(?:dr\.?|dra\.?)\s+/i, '')
             .trim();
-        const refDoctor   = _rawRefDoctor ? ('Dr./a ' + _rawRefDoctor) : '';
-        const studyReason = config.studyReason       || '';
-        const footerText  = config.footerText        || '';
+        const refDoctor   = (resolvedCtx && resolvedCtx.referringDoctorDisplay)
+            ? resolvedCtx.referringDoctorDisplay
+            : (_rawRefDoctor ? ('Dr./a ' + _rawRefDoctor) : '');
+        const studyReason = (resolvedCtx && resolvedCtx.studyReason) || config.studyReason || '';
+        const footerText  = (resolvedCtx && resolvedCtx.footerText) || config.footerText || '';
         const showSignLine = config.showSignLine !== false;
         const showSignName = config.showSignName !== false;
         const showSignMat  = config.showSignMatricula !== false;

@@ -46,6 +46,10 @@
         return base;
     }
 
+    function _cleanDoctorName(v) {
+        return String(v || '').replace(/^\s*(?:dr\.?|dra\.?)\s+/i, '').trim();
+    }
+
     async function _loadExportContext(text) {
         const editorEl = document.getElementById('editor');
         const rawEditorText = editorEl?.innerText || '';
@@ -97,7 +101,6 @@
         const workplaceName = String(activeWp?.name || '').trim();
         const extracted = (typeof extractPatientDataFromText === 'function') ? extractPatientDataFromText(sourceText) : {};
         const reqVal = (id) => document.getElementById(id)?.value?.trim() || '';
-        const cleanDoctorName = (v) => String(v || '').replace(/^\s*(?:dr\.?|dra\.?)\s+/i, '').trim();
         const drPrefix = () => 'Dr./a ';
 
         const tplKey = window.selectedTemplate || cfg.selectedTemplate || '';
@@ -135,7 +138,7 @@
             studyReason: cfg.studyReason || reqVal('reqStudyReason') || reqVal('pdfStudyReason') || '',
             referringDoctor: (() => {
                 const inputStr = cfg.referringDoctor || reqVal('reqReferringDoctor') || reqVal('pdfReferringDoctor') || '';
-                const raw = cleanDoctorName(inputStr);
+                const raw = _cleanDoctorName(inputStr);
                 if (!raw) return '';
                 return 'Dr./a ' + raw;
             })(),
@@ -324,39 +327,46 @@
         const instLogoSize = config.instLogoSizePx || 60;
         const firmaSize = config.firmaSizePx || 60;
 
+        const resolvedCtx = (typeof window.resolveReportContext === 'function')
+            ? await window.resolveReportContext({ includeEditorExtract: true, includeFormFallback: true, editorEl })
+            : null;
         const extracted = (typeof extractPatientDataFromText === 'function') ? extractPatientDataFromText(editorEl.innerText) : {};
         const reqVal = (id) => document.getElementById(id)?.value?.trim() || '';
-        const patientName = escName(extracted.name || config.patientName || reqVal('reqPatientName') || reqVal('pdfPatientName') || '');
-        const patientDni = esc(extracted.dni || config.patientDni || reqVal('reqPatientDni') || reqVal('pdfPatientDni') || '');
-        const patientAge = esc(extracted.age || config.patientAge || reqVal('reqPatientAge') || reqVal('pdfPatientAge') || '');
-        const rawSex = extracted.sex || config.patientSex || reqVal('reqPatientSex') || reqVal('pdfPatientSex') || '';
+        const patientName = escName((resolvedCtx && resolvedCtx.patientName) || extracted.name || config.patientName || reqVal('reqPatientName') || reqVal('pdfPatientName') || '');
+        const patientDni = esc((resolvedCtx && resolvedCtx.patientDni) || extracted.dni || config.patientDni || reqVal('reqPatientDni') || reqVal('pdfPatientDni') || '');
+        const patientAge = esc((resolvedCtx && resolvedCtx.patientAge) || extracted.age || config.patientAge || reqVal('reqPatientAge') || reqVal('pdfPatientAge') || '');
+        const rawSex = (resolvedCtx && resolvedCtx.patientSex) || extracted.sex || config.patientSex || reqVal('reqPatientSex') || reqVal('pdfPatientSex') || '';
         const patientSex = rawSex === 'M' ? 'Masculino' : rawSex === 'F' ? 'Femenino' : escName(rawSex);
-        const patientIns = escUpper(config.patientInsurance || reqVal('reqPatientInsurance') || reqVal('pdfPatientInsurance') || '');
-        const affiliateNum = esc(config.patientAffiliateNum || reqVal('reqPatientAffiliateNum') || reqVal('pdfPatientAffiliateNum') || '');
+        const patientIns = escUpper((resolvedCtx && resolvedCtx.patientInsurance) || config.patientInsurance || reqVal('reqPatientInsurance') || reqVal('pdfPatientInsurance') || '');
+        const affiliateNum = esc((resolvedCtx && resolvedCtx.patientAffiliateNum) || config.patientAffiliateNum || reqVal('reqPatientAffiliateNum') || reqVal('pdfPatientAffiliateNum') || '');
 
         const tplKey = window.selectedTemplate || config.selectedTemplate || '';
         const tplName = (tplKey && window.MEDICAL_TEMPLATES?.[tplKey]?.name) || '';
-        const studyType = escSentence(_computeEffectiveStudyType(
-            config.studyType || document.getElementById('reqStudyType')?.value || '',
-            tplName,
-            editorEl?.innerHTML || '',
-            editorEl?.innerText || ''
-        ));
-        const rawDate = config.studyDate || '';
-        const showStudyDate = config.showStudyDate !== false;
-        const studyDate = rawDate ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
-        const showStudyTime = (document.getElementById('reqShowStudyTime')?.checked ?? config.showStudyTime ?? true) !== false;
+        const studyType = escSentence(
+            (resolvedCtx && resolvedCtx.studyType)
+            || _computeEffectiveStudyType(
+                config.studyType || document.getElementById('reqStudyType')?.value || '',
+                tplName,
+                editorEl?.innerHTML || '',
+                editorEl?.innerText || ''
+            )
+        );
+        const showStudyDate = resolvedCtx ? resolvedCtx.showStudyDate : (config.showStudyDate !== false);
+        const studyDate = resolvedCtx ? (resolvedCtx.studyDateDisplay || '') : (config.studyDate ? new Date(config.studyDate + 'T12:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
+        const showStudyTime = resolvedCtx ? resolvedCtx.showStudyTime : ((document.getElementById('reqShowStudyTime')?.checked ?? config.showStudyTime ?? true) !== false);
         const studyTime = showStudyTime
-            ? esc(document.getElementById('reqStudyTime')?.value || document.getElementById('pdfStudyTime')?.value || config.studyTime || '')
+            ? esc((resolvedCtx && resolvedCtx.studyTime) || document.getElementById('reqStudyTime')?.value || document.getElementById('pdfStudyTime')?.value || config.studyTime || '')
             : '';
-        const studyReason = escSentence(config.studyReason || document.getElementById('reqStudyReason')?.value || '');
+        const studyReason = escSentence((resolvedCtx && resolvedCtx.studyReason) || config.studyReason || document.getElementById('reqStudyReason')?.value || '');
         const _refDocInputStr = config.referringDoctor || document.getElementById('reqReferringDoctor')?.value || '';
-        const _refDocRaw = cleanDoctorName(_refDocInputStr);
-        const refDoctor = _refDocRaw ? escName('Dr./a ' + _refDocRaw) : '';
-        const reportNum = esc(document.getElementById('pdfReportNumber')?.value || config.reportNum || '');
+        const _refDocRaw = _cleanDoctorName(_refDocInputStr);
+        const refDoctor = (resolvedCtx && resolvedCtx.referringDoctorDisplay)
+            ? escName(resolvedCtx.referringDoctorDisplay)
+            : (_refDocRaw ? escName('Dr./a ' + _refDocRaw) : '');
+        const reportNum = esc((resolvedCtx && resolvedCtx.reportNum) || document.getElementById('pdfReportNumber')?.value || config.reportNum || '');
         const showReportNumber = (config.showReportNumber ?? true) === true;
-        const hideReportHeader = !_isClinicProfile() && (config.hideReportHeader === true);
-        const footerText = esc(config.footerText || 'Este informe es válido únicamente con la firma del profesional a cargo.');
+        const hideReportHeader = resolvedCtx ? !!resolvedCtx.hideReportHeader : (!_isClinicProfile() && (config.hideReportHeader === true));
+        const footerText = esc((resolvedCtx && resolvedCtx.footerText) || config.footerText || 'Este informe es válido únicamente con la firma del profesional a cargo.');
         const showSignLine = config.showSignLine ?? true;
         const showSignName = config.showSignName ?? true;
         const showSignMat = config.showSignMatricula ?? true;
@@ -443,7 +453,9 @@
 
         const footerParts = [];
         if (footerText) footerParts.push(`<span>${footerText}</span>`);
-        footerParts.push(`<span style="margin-left:auto;">Fecha: ${new Date().toLocaleDateString('es-ES')}</span>`);
+        if (resolvedCtx ? resolvedCtx.showDateInFooter : ((config.showDate ?? true) === true)) {
+            footerParts.push(`<span style="margin-left:auto;">Fecha: ${new Date().toLocaleDateString('es-ES')}</span>`);
+        }
         const footerSection = `<div class="preview-footer"><div class="pvf-wrap">${footerParts.join('')}</div></div>`;
 
         let qrSection = '';

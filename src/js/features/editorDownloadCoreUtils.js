@@ -422,7 +422,7 @@
         _cfgDirty |= _syncCheck('showDate', 'pdfShowDate', true);
         _cfgDirty |= _syncCheck('showStudyDate', 'reqShowStudyDate', true);
         _cfgDirty |= _syncCheck('showStudyTime', 'reqShowStudyTime', true);
-        _cfgDirty |= _syncCheck('showQR', 'pdfShowQR', true);
+        _cfgDirty |= _syncCheck('showQR', 'pdfShowQR', false);
         _cfgDirty |= _syncCheck('showReportNumber', 'pdfShowReportNumber', true);
         _cfgDirty |= _syncCheck('showInstLogo', 'pdfShowInstLogo', true);
         _cfgDirty |= _syncCheck('showProfLogo', 'pdfShowProfLogo', true);
@@ -453,9 +453,13 @@
             }
         }
 
+        const resolvedCtx = (typeof window.resolveReportContext === 'function')
+            ? await window.resolveReportContext({ includeEditorExtract: true, includeFormFallback: true, editorEl: editor })
+            : null;
+
         const _isProLike = window.currentMode === 'pro'
             || !['NORMAL', 'TRIAL'].includes((window.CLIENT_CONFIG?.type || 'NORMAL').toUpperCase());
-        const _hasPatient = !!(pdfConfig.patientName);
+        const _hasPatient = !!(String((resolvedCtx && resolvedCtx.patientName) || pdfConfig.patientName || '').trim());
 
         if (!_hasPatient && !_isProLike) {
             return new Promise(resolve => {

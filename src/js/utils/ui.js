@@ -124,6 +124,9 @@ window.handleApiKeyBannerAction = function () {
 
 // ============ MODALS & INTERFACE ============
 window.initModals = function () {
+    if (window._uiModalsInitialized === true) return;
+    window._uiModalsInitialized = true;
+
     const helpModal = document.getElementById('helpModal');
     const helpBtn = document.getElementById('helpBtn');
     const closeHelp = document.getElementById('closeHelp');
@@ -327,7 +330,7 @@ window.initModals = function () {
             setChk('pdfShowFooter', true);
             setChk('pdfShowPageNum', true);
             setChk('pdfShowDate', true);
-            setChk('pdfShowQR', true);
+            setChk('pdfShowQR', false);
             setChk('pdfShowReportNumber', true);
             setChk('pdfShowInstLogo', true);
             setChk('pdfShowProfLogo', true);
@@ -373,7 +376,7 @@ window.initModals = function () {
                     showHeader: chk('pdfShowHeader', true), showFooter: chk('pdfShowFooter', true),
                     hideReportHeader: chk('pdfHideReportHeader', false),
                     showPageNum: chk('pdfShowPageNum', true), showDate: chk('pdfShowDate', true),
-                    showQR: chk('pdfShowQR', true), showReportNumber: chk('pdfShowReportNumber', true), showInstLogo: chk('pdfShowInstLogo', true), showProfLogo: chk('pdfShowProfLogo', true), showSignLine: chk('pdfShowSignLine', true),
+                    showQR: chk('pdfShowQR', false), showReportNumber: chk('pdfShowReportNumber', true), showInstLogo: chk('pdfShowInstLogo', true), showProfLogo: chk('pdfShowProfLogo', true), showSignLine: chk('pdfShowSignLine', true),
                     showSignName: chk('pdfShowSignName', true), showSignMatricula: chk('pdfShowSignMatricula', true),
                     showSignImage: chk('pdfShowSignImage', true),
                     showPhone: chk('pdfShowPhone', true), showEmail: chk('pdfShowEmail', true), showSocial: chk('pdfShowSocial', true),

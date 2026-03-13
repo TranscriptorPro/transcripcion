@@ -12,8 +12,81 @@ async function _queuePendingEmail(payload) {
     }
 }
 
+async function _retryPendingOutboundEmails() {
+    if (window._pendingOutboundRetryRunning) return;
+    window._pendingOutboundRetryRunning = true;
+    try {
+        let pending = (typeof appDB !== 'undefined' ? await appDB.get('pending_outbound_emails') : null)
+            || JSON.parse(localStorage.getItem('pending_outbound_emails') || '[]');
+        if (!Array.isArray(pending) || pending.length === 0) return;
+
+        let backendUrl = '';
+        try {
+            backendUrl =
+                (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.backendUrl)
+                || (typeof appDB !== 'undefined' ? await appDB.get('backend_url') : '')
+                || localStorage.getItem('backend_url')
+                || '';
+        } catch (_) {
+            backendUrl = localStorage.getItem('backend_url') || '';
+        }
+        backendUrl = String(backendUrl || '').trim();
+        if (!/^https?:\/\//i.test(backendUrl)) return;
+
+        const remaining = [];
+        for (const msg of pending) {
+            try {
+                const sendUrl = backendUrl + (backendUrl.includes('?') ? '&' : '?') + 'action=send_email';
+                let pdfBase64 = null;
+                if (typeof window.generatePDFBase64 === 'function') {
+                    pdfBase64 = await window.generatePDFBase64();
+                }
+
+                const response = await fetch(sendUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({
+                        action: 'send_email',
+                        to: msg.to,
+                        subject: msg.subject,
+                        htmlBody: msg.htmlBody,
+                        pdfBase64: pdfBase64,
+                        fileName: `Informe_${new Date().toISOString().split('T')[0]}.pdf`,
+                        senderName: msg.senderName || msg.profName || 'Profesional',
+                        replyTo: msg.replyTo || ''
+                    })
+                });
+
+                const raw = await response.text();
+                let parsed = null;
+                try { parsed = raw ? JSON.parse(raw) : null; } catch (_) { parsed = null; }
+                const ok = !!(
+                    (parsed && (parsed.success === true || parsed.ok === true || String(parsed.status || '').toLowerCase() === 'ok'))
+                    || (response.ok && /email enviado|success|"success"\s*:\s*true/i.test(String(raw || '')))
+                );
+                if (!ok) throw new Error('SEND_FAILED');
+            } catch (_) {
+                remaining.push(msg);
+            }
+        }
+
+        if (typeof appDB !== 'undefined') await appDB.set('pending_outbound_emails', remaining);
+        localStorage.setItem('pending_outbound_emails', JSON.stringify(remaining));
+        if (remaining.length === 0 && typeof showToast === 'function') {
+            showToast('✅ Correos pendientes reenviados', 'success');
+        }
+    } catch (_) {
+        // No bloquear UI por fallas de reintento.
+    } finally {
+        window._pendingOutboundRetryRunning = false;
+    }
+}
+
 // ============ ENVIAR POR EMAIL DESDE VISTA PREVIA ============
 window.emailFromPreview = async function () {
+    const resolvedCtx = (typeof window.resolveReportContext === 'function')
+        ? await window.resolveReportContext({ includeEditorExtract: true, includeFormFallback: true })
+        : null;
     const config   = (await _pdfPreviewSafeGet('pdf_config', {})) || {};
     const profData = (await _pdfPreviewSafeGet('prof_data', {})) || {};
     const activePro = config.activeProfessional || null;
@@ -21,21 +94,22 @@ window.emailFromPreview = async function () {
     const profDisplay = (typeof window.getProfessionalDisplay === 'function')
         ? window.getProfessionalDisplay(rawProfName, activePro?.sexo || profData.sexo || '').fullName
         : (String(rawProfName || '').trim() || 'Profesional');
-    const patientName = config.patientName || '';
-    const studyType   = config.studyType   || 'Informe médico';
-    const reportNum   = config.reportNum   || '';
-    const rawDate     = config.studyDate   || '';
-    const studyDate   = rawDate
-        ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'})
-        : new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'});
+    const patientName = (resolvedCtx && resolvedCtx.patientName) || config.patientName || '';
+    const studyType   = (resolvedCtx && resolvedCtx.studyType)   || config.studyType   || 'Informe médico';
+    const reportNum   = (resolvedCtx && resolvedCtx.reportNum)   || config.reportNum   || '';
+    const studyDate   = (resolvedCtx && resolvedCtx.studyDateDisplay)
+        || (config.studyDate
+            ? new Date(config.studyDate + 'T12:00').toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'})
+            : new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'}));
 
     // Asunto automático
     const subject = `Informe de ${studyType}${patientName ? ' — ' + patientName : ''} — Fecha: ${studyDate}`;
 
     // Cuerpo HTML del email
     const wpProfiles = (await _pdfPreviewSafeGet('workplace_profiles', [])) || [];
+    const wpFromResolved = resolvedCtx && resolvedCtx.activeWorkplace;
     const wpIdx = config.activeWorkplaceIndex;
-    const activeWp = (wpIdx !== undefined && wpIdx !== null) ? wpProfiles[Number(wpIdx)] : wpProfiles[0];
+    const activeWp = wpFromResolved || ((wpIdx !== undefined && wpIdx !== null) ? wpProfiles[Number(wpIdx)] : wpProfiles[0]);
     const wpName = activeWp?.name || '';
     const wpPhone = activeWp?.phone || config.workplacePhone || '';
     const senderReplyTo = String(activePro?.email || profData.email || activeWp?.email || config.workplaceEmail || '').trim();
@@ -219,12 +293,12 @@ async function _generatePDFBase64Impl() {
         const editorEl  = window.editor || document.getElementById('editor');
         if (!editorEl || !editorEl.innerHTML.trim()) return null;
 
-        const fromPreview = await _generatePDFBase64FromPreviewDom();
-        if (fromPreview) return fromPreview;
-
-        // Ruta preferida: renderizar desde HTML completo para máxima similitud con la vista previa.
         const exactLike = await _generatePDFBase64FromHtmlSnapshot();
         if (exactLike) return exactLike;
+
+        // Fallback: capturar el DOM de preview si el pipeline principal falla.
+        const fromPreview = await _generatePDFBase64FromPreviewDom();
+        if (fromPreview) return fromPreview;
 
         // Ruta 3 (último recurso): PDF simple de texto para no bloquear el envío de correo.
         if (window.jspdf?.jsPDF) {
@@ -260,7 +334,14 @@ window.initEmailSendModal = function () {
     const sendBtn     = document.getElementById('btnSendEmailNow');
     const statusEl    = document.getElementById('emailSendStatus');
 
-    const closeModal = () => { overlay?.classList.remove('active'); };
+    if (!overlay || overlay.dataset.emailSendInitialized === '1') return;
+    overlay.dataset.emailSendInitialized = '1';
+
+    const closeModal = () => {
+        overlay?.classList.remove('active');
+        window._emailPendingData = null;
+        window._emailPdfBase64Promise = null;
+    };
 
     closeBtn?.addEventListener('click', closeModal);
     cancelBtn?.addEventListener('click', closeModal);
@@ -410,6 +491,10 @@ window.initEmailSendModal = function () {
             sendBtn.textContent = '📨 Enviar ahora';
         }
     });
+
+    // Reintento suave de envios pendientes: al iniciar y al recuperar conectividad.
+    setTimeout(() => { _retryPendingOutboundEmails(); }, 2000);
+    window.addEventListener('online', () => { _retryPendingOutboundEmails(); });
 };
 window.workplaceProfiles = [];
 _pdfPreviewSafeGet('workplace_profiles', []).then(function(v) { window.workplaceProfiles = v || []; }).catch(function() {});

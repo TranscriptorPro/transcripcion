@@ -367,7 +367,7 @@ window.savePdfConfiguration = function () {
         showFooter: chk('pdfShowFooter', true),
         showPageNum: chk('pdfShowPageNum', true),
         showDate: chk('pdfShowDate', true),
-        showQR: chk('pdfShowQR', true),
+        showQR: chk('pdfShowQR', false),
         showReportNumber: chk('pdfShowReportNumber', true),
         showInstLogo: chk('pdfShowInstLogo', true),
         showProfLogo: chk('pdfShowProfLogo', true),
@@ -465,7 +465,7 @@ window.loadPdfConfiguration = async function () {
     setChk('pdfShowFooter', config.showFooter, true);
     setChk('pdfShowPageNum', config.showPageNum, true);
     setChk('pdfShowDate', config.showDate, true);
-    setChk('pdfShowQR', config.showQR, true);
+    setChk('pdfShowQR', config.showQR, false);
     setChk('pdfShowReportNumber', config.showReportNumber, true);
     setChk('pdfShowInstLogo', config.showInstLogo, true);
     setChk('pdfShowProfLogo', config.showProfLogo, true);
