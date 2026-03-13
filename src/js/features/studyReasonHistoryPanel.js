@@ -12,49 +12,30 @@
         return String(v || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    window.initStudyReasonHistoryPanel = function () {
-        const overlay = document.getElementById('studyReasonOverlay');
-        const closeBtn = document.getElementById('btnCloseStudyReasonPanel');
-        const tbody = document.getElementById('studyReasonTbody');
-        const search = document.getElementById('studyReasonSearchPanel');
-        if (!overlay || !tbody) return;
+    window._refreshStudyReasonPanel = null;
 
-        function getRows(filter) {
+    window.initStudyReasonHistoryPanel = function () {
+        const overlay   = document.getElementById('studyReasonOverlay');
+        const closeBtn  = document.getElementById('btnCloseStudyReasonPanel');
+        const getTbody  = () => document.getElementById('studyReasonTbody');
+        const getSearch = () => document.getElementById('studyReasonSearchPanel');
+        if (!overlay) return;
+
+        function getReasonRows(filter) {
             const all = typeof window.getAllStudyReasons === 'function' ? window.getAllStudyReasons() : [];
             if (!filter) return all;
             const q = typeof window._normStr === 'function' ? window._normStr(filter) : String(filter || '').toLowerCase();
             return all.filter(r => (typeof window._normStr === 'function' ? window._normStr(r.reason || '') : String(r.reason || '').toLowerCase()).includes(q));
         }
 
-        function render(filter) {
-            const rows = getRows(filter);
-            if (!rows.length) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--text-secondary);">No hay motivos registrados.</td></tr>';
-                return;
-            }
-            tbody.innerHTML = rows.map((r, idx) => `
-                <tr>
-                    <td style="padding:.45rem .5rem;">${esc(r.reason)}</td>
-                    <td style="padding:.45rem .5rem;">${fmtDate(r.lastUsed)}</td>
-                    <td style="padding:.45rem .5rem;">${Number(r.usageCount || 0)}</td>
-                    <td style="padding:.45rem .5rem;text-align:center;white-space:nowrap;">
-                        <button class="btn btn-secondary registry-edit-btn" style="padding:.25rem .5rem;font-size:.75rem;"
-                            data-idx="${idx}">&#9998;</button>
-                        <button class="btn registry-delete-btn" style="padding:.25rem .5rem;font-size:.75rem;background:var(--error);"
-                            data-idx="${idx}">&#x1F5D1;</button>
-                    </td>
-                </tr>`).join('');
-        }
-
-        function startInlineEdit(tr, rowData) {
-            const reasonTd = tr.cells[0];
+        function startReasonInlineEdit(tr, rowData, onDone) {
+            const reasonTd  = tr.cells[0];
             const actionsTd = tr.cells[3];
             const prevReason  = reasonTd.innerHTML;
             const prevActions = actionsTd.innerHTML;
-            reasonTd.innerHTML = `<input type="text" value="${esc(rowData.reason)}" style="width:100%;padding:.2rem .4rem;border:1px solid #ccc;border-radius:4px;font-size:.875rem;">`;
-            actionsTd.innerHTML =
-                `<button class="btn" style="padding:.2rem .5rem;font-size:.72rem;background:var(--primary,#1a56a0);color:#fff;margin-right:4px;">Guardar</button>` +
-                `<button class="btn btn-secondary" style="padding:.2rem .5rem;font-size:.72rem;">Cancelar</button>`;
+            reasonTd.innerHTML  = `<input type="text" value="${esc(rowData.reason)}" style="width:100%;padding:.2rem .4rem;border:1px solid #ccc;border-radius:4px;font-size:.875rem;">`;
+            actionsTd.innerHTML = `<button type="button" style="padding:.2rem .5rem;font-size:.72rem;background:#1a56a0;color:#fff;border:none;border-radius:5px;cursor:pointer;margin-right:4px;">Guardar</button>` +
+                                  `<button type="button" style="padding:.2rem .5rem;font-size:.72rem;background:#6b7280;color:#fff;border:none;border-radius:5px;cursor:pointer;">Cancelar</button>`;
             const input = reasonTd.querySelector('input');
             input?.focus();
             input?.select();
@@ -62,51 +43,79 @@
             const abort = () => { reasonTd.innerHTML = prevReason; actionsTd.innerHTML = prevActions; };
             cancelBtn.addEventListener('click', abort);
             saveBtn.addEventListener('click', () => {
-                const next = input.value.trim();
-                if (!next) return;
+                const next = (input ? input.value : '').trim();
+                if (!next) { abort(); return; }
                 const ok = typeof window.updateStudyReason === 'function'
                     ? window.updateStudyReason(rowData.reason, next)
                     : false;
-                if (ok) render(search?.value || '');
+                if (ok) { if (typeof onDone === 'function') onDone(); }
                 else abort();
             });
-            input?.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') saveBtn.click();
-                if (e.key === 'Escape') abort();
+            input?.addEventListener('keydown', (evt) => {
+                if (evt.key === 'Enter')  saveBtn.click();
+                if (evt.key === 'Escape') abort();
             });
         }
 
-        if (!tbody._delegated) {
-            tbody._delegated = true;
-            tbody.addEventListener('click', async (e) => {
-                const editBtn = e.target.closest('.registry-edit-btn');
-                const btn = e.target.closest('.registry-delete-btn');
-                const rows = getRows(search?.value || '');
-                if (editBtn) {
-                    const idx = parseInt(editBtn.dataset.idx, 10);
-                    const row = rows[idx];
-                    if (!row) return;
-                    const tr = editBtn.closest('tr');
-                    if (tr) startInlineEdit(tr, row);
-                    return;
-                }
-                if (!btn) return;
-                const row = rows[parseInt(btn.dataset.idx, 10)];
-                if (!row) return;
-                const ok = typeof window.showCustomConfirm === 'function'
-                    ? await window.showCustomConfirm('Eliminar motivo clínico', `¿Eliminar "${row.reason}" del historial?`)
-                    : window.confirm(`¿Eliminar "${row.reason}" del historial?`);
-                if (!ok) return;
-                if (typeof window.deleteStudyReason === 'function') window.deleteStudyReason(row.reason);
-                render(search?.value || '');
+        function renderReasons(filter) {
+            const tbody = getTbody();
+            if (!tbody) return;
+            const rows = getReasonRows(filter);
+            if (!rows.length) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--text-secondary);">No hay motivos registrados.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = rows.map((r) => `
+                <tr>
+                    <td style="padding:.45rem .5rem;">${esc(r.reason)}</td>
+                    <td style="padding:.45rem .5rem;">${fmtDate(r.lastUsed)}</td>
+                    <td style="padding:.45rem .5rem;">${Number(r.usageCount || 0)}</td>
+                    <td style="padding:.45rem .5rem;text-align:center;white-space:nowrap;"></td>
+                </tr>`).join('');
+
+            // Adjuntar listeners directamente en los botones generados (sin delegación)
+            const trs = tbody.querySelectorAll('tr');
+            rows.forEach((rowData, idx) => {
+                const tr = trs[idx];
+                if (!tr) return;
+                const actionsTd = tr.cells[3];
+
+                const editBtn = document.createElement('button');
+                editBtn.type = 'button';
+                editBtn.textContent = '✏';
+                editBtn.style.cssText = 'padding:.25rem .5rem;font-size:.75rem;background:#e5e7eb;border:none;border-radius:5px;cursor:pointer;margin-right:4px;';
+                editBtn.addEventListener('click', () => {
+                    startReasonInlineEdit(tr, rowData, () => renderReasons(getSearch()?.value || ''));
+                });
+
+                const delBtn = document.createElement('button');
+                delBtn.type = 'button';
+                delBtn.textContent = '🗑';
+                delBtn.style.cssText = 'padding:.25rem .5rem;font-size:.75rem;background:#ef4444;color:#fff;border:none;border-radius:5px;cursor:pointer;';
+                delBtn.addEventListener('click', async () => {
+                    const ok = typeof window.showCustomConfirm === 'function'
+                        ? await window.showCustomConfirm('Eliminar motivo clínico', `¿Eliminar "${rowData.reason}" del historial?`)
+                        : window.confirm(`¿Eliminar "${rowData.reason}" del historial?`);
+                    if (!ok) return;
+                    if (typeof window.deleteStudyReason === 'function') window.deleteStudyReason(rowData.reason);
+                    renderReasons(getSearch()?.value || '');
+                });
+
+                actionsTd.appendChild(editBtn);
+                actionsTd.appendChild(delBtn);
             });
         }
 
         closeBtn?.addEventListener('click', () => overlay.classList.remove('active'));
         overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('active'); });
-        search?.addEventListener('input', (e) => render(e.target.value));
 
-        overlay.addEventListener('transitionstart', () => render(search?.value || ''));
-        window._refreshStudyReasonPanel = () => render(search?.value || '');
+        const searchEl = getSearch();
+        if (searchEl && !searchEl._srListener) {
+            searchEl._srListener = true;
+            searchEl.addEventListener('input', (e) => renderReasons(e.target.value));
+        }
+
+        window._refreshStudyReasonPanel = () => renderReasons(getSearch()?.value || '');
+        renderReasons(getSearch()?.value || '');
     };
 })();

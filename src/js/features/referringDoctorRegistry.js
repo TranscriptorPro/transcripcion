@@ -67,17 +67,26 @@ window.getAllReferringDoctors = function() {
 };
 
 window.deleteReferringDoctor = function(name) {
-    const target = _cleanDoctorName(name);
-    if (!target) return;
-    _setDrRegistry(_getDrRegistry().filter(d => _drNorm(d.name || '') !== _drNorm(target)));
+    // Buscar por nombre exacto primero, luego por nombre sin prefijo Dr./Dra.
+    const rawNorm   = _drNorm(name);
+    const cleanNorm = _drNorm(_cleanDoctorName(name));
+    _setDrRegistry(_getDrRegistry().filter(d => {
+        const dn = _drNorm(d.name || '');
+        return dn !== rawNorm && dn !== cleanNorm;
+    }));
 };
 
 window.updateReferringDoctor = function(oldName, newName) {
-    const prev = _cleanDoctorName(oldName);
     const next = _cleanDoctorName(newName);
-    if (!prev || !next) return false;
+    if (!oldName || !next) return false;
     const reg = _getDrRegistry();
-    const oldIdx = reg.findIndex(d => _drNorm(d.name || '') === _drNorm(prev));
+    // Buscar por nombre exacto (con prefijo) y también por nombre limpio
+    const rawNorm   = _drNorm(oldName);
+    const cleanNorm = _drNorm(_cleanDoctorName(oldName));
+    const oldIdx = reg.findIndex(d => {
+        const dn = _drNorm(d.name || '');
+        return dn === rawNorm || dn === cleanNorm;
+    });
     if (oldIdx < 0) return false;
 
     const dupIdx = reg.findIndex((d, i) => i !== oldIdx && _drNorm(d.name || '') === _drNorm(next));
