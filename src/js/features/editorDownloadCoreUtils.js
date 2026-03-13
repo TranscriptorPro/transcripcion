@@ -234,40 +234,30 @@
                     scrollY: 0
                 });
 
-                // Recortar filas blancas al final del canvas para evitar páginas en blanco.
+                // Calcular altura de recorte usando scrollHeight del DOM del iframe.
+                // NUNCA usar getImageData() — lanza DOMException/SecurityError en canvas
+                // tainted por imágenes con CORS (logo, firma, QR) y rompe toda la generación.
                 let trimmedHeight = fullCanvas.height;
                 try {
-                    const trimCtx = fullCanvas.getContext('2d');
-                    if (trimCtx) {
-                        const rowBytes = fullCanvas.width * 4;
-                        // Escanear de abajo hacia arriba: parar al primer pixel con contenido.
-                        let lastNonBlankRow = fullCanvas.height - 1;
-                        for (let row = fullCanvas.height - 1; row >= 0; row--) {
-                            const rowData = trimCtx.getImageData(0, row, fullCanvas.width, 1).data;
-                            let rowIsBlank = true;
-                            for (let col = 0; col < rowData.length; col += 4) {
-                                if (rowData[col] < 250 || rowData[col + 1] < 250 || rowData[col + 2] < 250) {
-                                    rowIsBlank = false;
-                                    break;
-                                }
-                            }
-                            if (!rowIsBlank) {
-                                lastNonBlankRow = row;
-                                break;
-                            }
+                    const contentDomH = Math.max(
+                        sdoc.documentElement?.scrollHeight || 0,
+                        sdoc.body?.scrollHeight || 0
+                    );
+                    if (contentDomH > 50 && fullHeight > 0) {
+                        // Escalar de px DOM a px canvas (html2canvas scale=1.6 → ratio≈1.6)
+                        const domToCanvas = fullCanvas.height / fullHeight;
+                        // 40px de margen DOM para no cortar sombras/bordes
+                        const candidateH = Math.min(
+                            fullCanvas.height,
+                            Math.ceil((contentDomH + 40) * domToCanvas)
+                        );
+                        // Solo recortar si el resultado es sensato (>=15% y <97%)
+                        if (candidateH >= fullCanvas.height * 0.15 && candidateH < fullCanvas.height * 0.97) {
+                            trimmedHeight = candidateH;
                         }
-                        // Margen inferior de 40px para no cortar sombras/bordes.
-                        const candidate = Math.min(fullCanvas.height, lastNonBlankRow + 40);
-                        // Solo recortar si ahorra al menos 15% del canvas (evitar recortes mínimos
-                        // o absurdos si el scan falla y candidate queda muy bajo).
-                        const minSafeHeight = Math.max(fullCanvas.height * 0.15, 200);
-                        if (candidate >= minSafeHeight && candidate < fullCanvas.height * 0.97) {
-                            trimmedHeight = candidate;
-                        }
-                        // Si candidate < minSafeHeight → algo salió mal, usar fullCanvas.height.
                     }
                 } catch (trimErr) {
-                    console.warn('Canvas trim falló, usando altura completa:', trimErr);
+                    // No debería fallar, pero si algo va mal usamos el canvas completo.
                     trimmedHeight = fullCanvas.height;
                 }
 
