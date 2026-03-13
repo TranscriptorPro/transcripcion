@@ -105,6 +105,11 @@ window.emailFromPreview = async function () {
         senderName: profDisplay,
         replyTo: senderReplyTo
     };
+
+    // Pre-generar PDF en segundo plano para acelerar el envío cuando el usuario confirma.
+    window._emailPdfBase64Promise = (typeof window.generatePDFBase64 === 'function')
+        ? window.generatePDFBase64().catch(() => null)
+        : null;
 };
 
 function _escHtml(s) {
@@ -253,8 +258,13 @@ window.initEmailSendModal = function () {
         }
 
         try {
-            // Generar PDF en base64
-            const pdfBase64 = await window.generatePDFBase64();
+            // Reutilizar pre-generación en background si existe; fallback a generación inmediata.
+            let pdfBase64 = window._emailPdfBase64Promise
+                ? await window._emailPdfBase64Promise
+                : null;
+            if (!pdfBase64) {
+                pdfBase64 = await window.generatePDFBase64();
+            }
             if (!pdfBase64) throw new Error('No se pudo generar el PDF');
 
             sendBtn.textContent = '📨 Enviando...';
@@ -266,7 +276,10 @@ window.initEmailSendModal = function () {
             const fileDate = new Date().toISOString().split('T')[0];
             const fileName = `Informe_${(data.studyType || 'Medico').replace(/\s+/g, '_')}_${fileDate}.pdf`;
 
-            const response = await fetch(backendUrl, {
+            // Compatibilidad backend viejo/nuevo: action en query + body.
+            const sendUrl = backendUrl + (backendUrl.includes('?') ? '&' : '?') + 'action=send_email';
+
+            const response = await fetch(sendUrl, {
                 method: 'POST',
                 // Request simple para evitar preflight OPTIONS en Apps Script (CORS 405).
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -290,7 +303,12 @@ window.initEmailSendModal = function () {
                 result = null;
             }
 
-            if (result.success) {
+            const isSuccess = !!(
+                (result && (result.success === true || result.ok === true || String(result.status || '').toLowerCase() === 'ok'))
+                || (response.ok && /email enviado|success|"success"\s*:\s*true/i.test(String(raw || '')))
+            );
+
+            if (isSuccess) {
                 if (statusEl) {
                     statusEl.style.background = '#d1fae5';
                     statusEl.style.color = '#065f46';
