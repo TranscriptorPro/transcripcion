@@ -167,7 +167,7 @@
         const addField = (arr, label, value) => {
             const v = String(value || '').trim();
             if (!v) return;
-            arr.push(`\\b ${_rtfEscapeLine(label)}:\\b0 ${_rtfEscapeLine(v)}\\par`);
+            arr.push({ label, value: v });
         };
 
         const meta = [];
@@ -198,7 +198,24 @@
             return `${_rtfEscapeLine(t)}\\par`;
         }).join('\n');
 
-        return `{\\rtf1\\ansi\\ansicpg1252\\deff0{\\fonttbl{\\f0 Arial;}}\\paperw12240\\paperh15840\\margl1080\\margr1080\\margt1080\\margb1080\\f0\\fs22\\sa100\\sl${rtfSl}\\slmult1\\qc\\b INFORME M\\'c9DICO\\b0\\par\\ql\\par${meta.join('\n')}\\par\\b CONTENIDO DEL INFORME\\b0\\par\\par${body}}`;
+        const renderMetaCell = (entry) => {
+            if (!entry) return '\\intbl \\cell';
+            return `\\intbl \\b ${_rtfEscapeLine(entry.label)}:\\b0 ${_rtfEscapeLine(entry.value)}\\cell`;
+        };
+
+        const metaRows = [];
+        for (let i = 0; i < meta.length; i += 2) {
+            const left = meta[i] || null;
+            const right = meta[i + 1] || null;
+            // Tabla de dos columnas para compactar datos clínicos como en PDF, sin complejidad de header/logos.
+            metaRows.push(`{\\trowd\\trgaph108\\trleft0\\trrh360\\cellx4500\\cellx9000\n${renderMetaCell(left)}\n${renderMetaCell(right)}\n\\row}`);
+        }
+
+        const metaBlock = metaRows.length
+            ? `\\b DATOS DEL ESTUDIO Y PACIENTE\\b0\\par\\par${metaRows.join('\\n')}\\par\\par`
+            : '';
+
+        return `{\\rtf1\\ansi\\ansicpg1252\\deff0{\\fonttbl{\\f0 Arial;}}\\paperw12240\\paperh15840\\margl1080\\margr1080\\margt1080\\margb1080\\f0\\fs22\\sa100\\sl${rtfSl}\\slmult1\\ql${metaBlock}\\b CONTENIDO DEL INFORME\\b0\\par\\par${body}}`;
     }
 
     async function createTXT(text) {
