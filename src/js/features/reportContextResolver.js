@@ -10,6 +10,23 @@
         return String(name || '').replace(/^\s*(?:dr\.?|dra\.?)\s+/i, '').trim();
     }
 
+    function _sanitizeInsuranceName(rawInsurance, affiliateNum) {
+        let val = String(rawInsurance || '').trim();
+        const aff = String(affiliateNum || '').trim();
+        if (!val) return '';
+
+        // Quita fragmentos tipo "N° AFILIADO: 12345" o similares.
+        val = val.replace(/\bN\s*[°ºo]?\s*AFILIAD[OA]\b\s*:?\s*[A-Z0-9\-\.\/]+/gi, ' ');
+
+        // Si por extracción quedó el número dentro de cobertura, lo elimina.
+        if (aff) {
+            const escAff = aff.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            val = val.replace(new RegExp(`(^|\\s|[(:-])${escAff}(?=\\s|$|[),.;:-])`, 'g'), ' ');
+        }
+
+        return val.replace(/\s{2,}/g, ' ').replace(/[\s,;:\-]+$/g, '').trim();
+    }
+
     function _reqValue(id) {
         return document.getElementById(id)?.value?.trim() || '';
     }
@@ -21,9 +38,18 @@
     }
 
     function _isGenericStudyType(value) {
-        const s = String(value || '').trim().toLowerCase();
+        const s = String(value || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim()
+            .toLowerCase();
         if (!s) return true;
-        return s === 'informe medico' || s === 'informe médico' || s === 'generico' || s === 'general';
+        return s === 'informe medico general'
+            || s === 'informe medico'
+            || s === 'informe general'
+            || s === 'informe generico'
+            || s === 'generico'
+            || s === 'general';
     }
 
     function _extractStudyTypeFromEditor(editorEl) {
@@ -105,8 +131,9 @@
         const patientDni = extracted.dni || config.patientDni || _reqValue('reqPatientDni') || _reqValue('pdfPatientDni');
         const patientAge = extracted.age || config.patientAge || _reqValue('reqPatientAge') || _reqValue('pdfPatientAge');
         const patientSex = extracted.sex || config.patientSex || _reqValue('reqPatientSex') || _reqValue('pdfPatientSex');
-        const patientInsurance = extracted.insurance || config.patientInsurance || _reqValue('reqPatientInsurance') || _reqValue('pdfPatientInsurance');
         const patientAffiliateNum = extracted.affiliateNum || config.patientAffiliateNum || _reqValue('reqPatientAffiliateNum') || _reqValue('pdfPatientAffiliateNum');
+        const patientInsuranceRaw = extracted.insurance || config.patientInsurance || _reqValue('reqPatientInsurance') || _reqValue('pdfPatientInsurance');
+        const patientInsurance = _sanitizeInsuranceName(patientInsuranceRaw, patientAffiliateNum);
 
         const showStudyDate = _reqChecked('reqShowStudyDate', config.showStudyDate !== false);
         const showStudyTime = _reqChecked('reqShowStudyTime', config.showStudyTime !== false);
@@ -122,7 +149,9 @@
         const tplName = (tplKey && window.MEDICAL_TEMPLATES?.[tplKey]?.name) || '';
         const headingStudyType = _extractStudyTypeFromEditor(editorEl);
         const baseStudyType = config.studyType || _reqValue('reqStudyType') || tplName || '';
-        const studyType = (_isGenericStudyType(baseStudyType) && headingStudyType) ? headingStudyType : baseStudyType;
+        const studyType = _isGenericStudyType(baseStudyType)
+            ? (headingStudyType || tplName || baseStudyType)
+            : baseStudyType;
 
         const rawRefDoctor = _cleanDoctorName(config.referringDoctor || _reqValue('reqReferringDoctor') || '');
         const referringDoctorDisplay = rawRefDoctor ? ('Dr./a ' + rawRefDoctor) : '';
