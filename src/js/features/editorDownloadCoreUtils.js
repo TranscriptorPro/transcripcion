@@ -236,25 +236,39 @@
 
                 // Recortar filas blancas al final del canvas para evitar páginas en blanco.
                 let trimmedHeight = fullCanvas.height;
-                {
+                try {
                     const trimCtx = fullCanvas.getContext('2d');
                     if (trimCtx) {
-                        const rowData = trimCtx.getImageData(0, 0, fullCanvas.width, fullCanvas.height).data;
                         const rowBytes = fullCanvas.width * 4;
-                        let lastNonBlankRow = 0;
-                        for (let row = 0; row < fullCanvas.height; row++) {
-                            const base = row * rowBytes;
-                            for (let col = 0; col < rowBytes; col += 4) {
-                                // Pixel no-blanco: R o G o B < 250
-                                if (rowData[base + col] < 250 || rowData[base + col + 1] < 250 || rowData[base + col + 2] < 250) {
-                                    lastNonBlankRow = row;
+                        // Escanear de abajo hacia arriba: parar al primer pixel con contenido.
+                        let lastNonBlankRow = fullCanvas.height - 1;
+                        for (let row = fullCanvas.height - 1; row >= 0; row--) {
+                            const rowData = trimCtx.getImageData(0, row, fullCanvas.width, 1).data;
+                            let rowIsBlank = true;
+                            for (let col = 0; col < rowData.length; col += 4) {
+                                if (rowData[col] < 250 || rowData[col + 1] < 250 || rowData[col + 2] < 250) {
+                                    rowIsBlank = false;
                                     break;
                                 }
                             }
+                            if (!rowIsBlank) {
+                                lastNonBlankRow = row;
+                                break;
+                            }
                         }
-                        // Dejar un pequeño margen inferior (20px) para no cortar sombras/bordes.
-                        trimmedHeight = Math.min(fullCanvas.height, lastNonBlankRow + 20);
+                        // Margen inferior de 40px para no cortar sombras/bordes.
+                        const candidate = Math.min(fullCanvas.height, lastNonBlankRow + 40);
+                        // Solo recortar si ahorra al menos 15% del canvas (evitar recortes mínimos
+                        // o absurdos si el scan falla y candidate queda muy bajo).
+                        const minSafeHeight = Math.max(fullCanvas.height * 0.15, 200);
+                        if (candidate >= minSafeHeight && candidate < fullCanvas.height * 0.97) {
+                            trimmedHeight = candidate;
+                        }
+                        // Si candidate < minSafeHeight → algo salió mal, usar fullCanvas.height.
                     }
+                } catch (trimErr) {
+                    console.warn('Canvas trim falló, usando altura completa:', trimErr);
+                    trimmedHeight = fullCanvas.height;
                 }
 
                 const pagePxHeight = Math.max(1, Math.floor((fullCanvas.width * pageHmm) / pageWmm));
