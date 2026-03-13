@@ -226,7 +226,25 @@ async function _generatePDFBase64Impl() {
         const exactLike = await _generatePDFBase64FromHtmlSnapshot();
         if (exactLike) return exactLike;
 
-        // Sin fallback al renderer nativo para mantener fidelidad 1:1 con preview/export HTML.
+        // Ruta 3 (último recurso): PDF simple de texto para no bloquear el envío de correo.
+        if (window.jspdf?.jsPDF) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+            const plain = String(editorEl.innerText || '').trim();
+            const lines = doc.splitTextToSize(plain || 'Informe médico', 180);
+            doc.setFontSize(10);
+            let y = 12;
+            lines.forEach((line) => {
+                if (y > 285) {
+                    doc.addPage();
+                    y = 12;
+                }
+                doc.text(line, 15, y);
+                y += 5;
+            });
+            return await _blobToBase64(doc.output('blob'));
+        }
+
         return null;
     } catch (e) {
         console.error('Error generando PDF base64:', e);

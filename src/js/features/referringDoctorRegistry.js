@@ -72,6 +72,28 @@ window.deleteReferringDoctor = function(name) {
     _setDrRegistry(_getDrRegistry().filter(d => _drNorm(d.name || '') !== _drNorm(target)));
 };
 
+window.updateReferringDoctor = function(oldName, newName) {
+    const prev = _cleanDoctorName(oldName);
+    const next = _cleanDoctorName(newName);
+    if (!prev || !next) return false;
+    const reg = _getDrRegistry();
+    const oldIdx = reg.findIndex(d => _drNorm(d.name || '') === _drNorm(prev));
+    if (oldIdx < 0) return false;
+
+    const dupIdx = reg.findIndex((d, i) => i !== oldIdx && _drNorm(d.name || '') === _drNorm(next));
+    if (dupIdx >= 0) {
+        reg[dupIdx].usageCount = (reg[dupIdx].usageCount || 0) + (reg[oldIdx].usageCount || 0);
+        reg[dupIdx].lastUsed = reg[oldIdx].lastUsed || reg[dupIdx].lastUsed;
+        reg.splice(oldIdx, 1);
+    } else {
+        reg[oldIdx].name = next;
+    }
+
+    reg.sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0));
+    _setDrRegistry(reg);
+    return true;
+};
+
 // ---- Inicializar autocomplete en el campo reqReferringDoctor ----
 window.initReferringDoctorSearch = function() {
     const input = document.getElementById('reqReferringDoctor');

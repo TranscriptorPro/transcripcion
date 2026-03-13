@@ -38,6 +38,7 @@
                     <td style="padding:.45rem .5rem;">${fmtDate(d.lastUsed)}</td>
                     <td style="padding:.45rem .5rem;">${Number(d.usageCount || 0)}</td>
                     <td style="padding:.45rem .5rem;text-align:center;">
+                        <button class="btn" data-edit-idx="${idx}" style="padding:.25rem .55rem;font-size:.75rem;">✏️</button>
                         <button class="btn" data-del-idx="${idx}" style="padding:.25rem .55rem;font-size:.75rem;background:var(--error);color:white;">🗑</button>
                     </td>
                 </tr>`).join('');
@@ -46,9 +47,21 @@
         if (!tbody._delegated) {
             tbody._delegated = true;
             tbody.addEventListener('click', async (e) => {
+                const editBtn = e.target.closest('[data-edit-idx]');
                 const btn = e.target.closest('[data-del-idx]');
-                if (!btn) return;
                 const rows = getRows(search?.value || '');
+                if (editBtn) {
+                    const row = rows[parseInt(editBtn.dataset.editIdx, 10)];
+                    if (!row) return;
+                    const next = window.prompt('Editar médico solicitante', row.name);
+                    if (next == null) return;
+                    const okEdit = typeof window.updateReferringDoctor === 'function'
+                        ? window.updateReferringDoctor(row.name, next)
+                        : false;
+                    if (okEdit) render(search?.value || '');
+                    return;
+                }
+                if (!btn) return;
                 const row = rows[parseInt(btn.dataset.delIdx, 10)];
                 if (!row) return;
                 const ok = typeof window.showCustomConfirm === 'function'

@@ -67,6 +67,28 @@ window.deleteStudyReason = function(reason) {
     _setSrHistory(_getSrHistory().filter(h => _srNorm(h.reason || '') !== _srNorm(target)));
 };
 
+window.updateStudyReason = function(oldReason, newReason) {
+    const prev = String(oldReason || '').trim();
+    const next = String(newReason || '').trim();
+    if (!prev || !next) return false;
+    const hist = _getSrHistory();
+    const oldIdx = hist.findIndex(h => _srNorm(h.reason || '') === _srNorm(prev));
+    if (oldIdx < 0) return false;
+
+    const dupIdx = hist.findIndex((h, i) => i !== oldIdx && _srNorm(h.reason || '') === _srNorm(next));
+    if (dupIdx >= 0) {
+        hist[dupIdx].usageCount = (hist[dupIdx].usageCount || 0) + (hist[oldIdx].usageCount || 0);
+        hist[dupIdx].lastUsed = hist[oldIdx].lastUsed || hist[dupIdx].lastUsed;
+        hist.splice(oldIdx, 1);
+    } else {
+        hist[oldIdx].reason = next;
+    }
+
+    hist.sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0));
+    _setSrHistory(hist);
+    return true;
+};
+
 // ---- Inicializar autocomplete en reqStudyReason ----
 window.initStudyReasonSearch = function() {
     const input = document.getElementById('reqStudyReason');
