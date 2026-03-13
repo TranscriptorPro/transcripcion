@@ -25,61 +25,28 @@
         });
     }
 
-    async function _requestBackendReplicaLink(htmlDoc, fileName, fileDate) {
-        const backendUrl = (typeof window.getResolvedBackendUrl === 'function')
-            ? window.getResolvedBackendUrl()
-            : String(window.CLIENT_CONFIG?.backendUrl || '').trim();
-        if (!backendUrl || !/^https?:\/\//i.test(backendUrl)) return null;
-
-        const payload = {
-            action: 'create_pdf_replica_link',
-            htmlContent: htmlDoc,
-            fileName: `${fileName}_${fileDate}.html`
-        };
-
-        const doFetch = (typeof fetchWithTimeout === 'function')
-            ? fetchWithTimeout
-            : (url, opts) => fetch(url, opts);
-
-        try {
-            const res = await doFetch(backendUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            }, 15000);
-            if (!res || !res.ok) return null;
-            const data = await res.json().catch(() => ({}));
-            if (!data || data.error) return null;
-            const viewUrl = String(data.viewUrl || data.url || '').trim();
-            const downloadUrl = String(data.downloadUrl || viewUrl).trim();
-            if (!viewUrl) return null;
-            return { viewUrl, downloadUrl, source: 'backend' };
-        } catch (_) {
-            return null;
-        }
-    }
-
-    function _createLocalReplicaLink(htmlDoc) {
-        const blob = new Blob([htmlDoc], { type: 'text/html;charset=utf-8' });
+    function _createLocalPdfLink(pdfBlob, fileName, fileDate) {
+        const blob = pdfBlob instanceof Blob ? pdfBlob : null;
+        if (!blob) return null;
         const url = URL.createObjectURL(blob);
         setTimeout(() => {
             try { URL.revokeObjectURL(url); } catch (_) {}
         }, 30 * 60 * 1000);
-        return { viewUrl: url, downloadUrl: url, source: 'local' };
+        return {
+            viewUrl: url,
+            downloadUrl: url,
+            source: 'pdf_blob',
+            fileName: `${fileName}_${fileDate}.pdf`
+        };
     }
 
     function _triggerReplicaDownload(linkInfo) {
         const href = String(linkInfo?.downloadUrl || linkInfo?.viewUrl || '').trim();
         if (!href) return;
 
-        if (linkInfo?.source === 'backend') {
-            window.open(href, '_blank', 'noopener,noreferrer');
-            return;
-        }
-
         const a = document.createElement('a');
         a.href = href;
-        a.download = `informe_${new Date().toISOString().split('T')[0]}.html`;
+        a.download = String(linkInfo?.fileName || `informe_${new Date().toISOString().split('T')[0]}.pdf`);
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -102,43 +69,24 @@
 
         const body = document.createElement('p');
         body.id = 'pdfReadyModalMessage';
-        body.textContent = 'Tu informe ya esta listo para descargar.';
+        body.textContent = 'Tu PDF ya esta listo para descargar.';
         body.style.cssText = 'margin:0 0 14px 0;color:#374151;line-height:1.5;';
 
         const actions = document.createElement('div');
         actions.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;';
 
-        const btnOpen = document.createElement('button');
-        btnOpen.id = 'pdfReadyOpenBtn';
-        btnOpen.type = 'button';
-        btnOpen.textContent = 'Abrir';
-        btnOpen.style.cssText = 'border:1px solid #d1d5db;background:#fff;color:#111827;padding:9px 14px;border-radius:8px;cursor:pointer;';
-
         const btnDownload = document.createElement('button');
         btnDownload.id = 'pdfReadyDownloadBtn';
         btnDownload.type = 'button';
-        btnDownload.textContent = 'Descargar';
+        btnDownload.textContent = 'Descargar PDF';
         btnDownload.style.cssText = 'border:1px solid transparent;background:#111827;color:#fff;padding:9px 14px;border-radius:8px;cursor:pointer;';
 
-        const btnClose = document.createElement('button');
-        btnClose.id = 'pdfReadyCloseBtn';
-        btnClose.type = 'button';
-        btnClose.textContent = 'Cerrar';
-        btnClose.style.cssText = 'border:1px solid #d1d5db;background:#f9fafb;color:#111827;padding:9px 14px;border-radius:8px;cursor:pointer;';
-
-        actions.appendChild(btnClose);
-        actions.appendChild(btnOpen);
         actions.appendChild(btnDownload);
         card.appendChild(title);
         card.appendChild(body);
         card.appendChild(actions);
         overlay.appendChild(card);
         document.body.appendChild(overlay);
-
-        btnClose.addEventListener('click', () => {
-            overlay.style.display = 'none';
-            document.body.style.overflow = '';
-        });
 
         return overlay;
     }
@@ -150,22 +98,11 @@
             return;
         }
 
-        const openBtn = overlay.querySelector('#pdfReadyOpenBtn');
         const downloadBtn = overlay.querySelector('#pdfReadyDownloadBtn');
         const msg = overlay.querySelector('#pdfReadyModalMessage');
 
         if (msg) {
-            msg.textContent = (linkInfo?.source === 'backend')
-                ? 'El PDF fue creado y guardado. Descargalo ahora o abrilo en una nueva pestaña.'
-                : 'El PDF fue creado en modo local. Descargalo ahora para conservarlo.';
-        }
-
-        if (openBtn) {
-            openBtn.onclick = () => {
-                const href = String(linkInfo?.viewUrl || linkInfo?.downloadUrl || '').trim();
-                if (!href) return;
-                window.open(href, '_blank', 'noopener,noreferrer');
-            };
+            msg.textContent = 'El PDF fue creado correctamente. Presiona Descargar PDF para guardarlo.';
         }
 
         if (downloadBtn) {
@@ -471,17 +408,25 @@
             _setPdfPreloaderState(true);
             try {
                 if (typeof showToast === 'function') {
-                    showToast('⏳ Generando réplica exacta. En breve tendrás un enlace de descarga...', 'info', 4500);
+                    showToast('⏳ Generando PDF...', 'info', 3500);
                 }
                 const htmlDoc = (typeof createHTML === 'function') ? await createHTML() : null;
                 if (!htmlDoc) {
-                    if (typeof showToast === 'function') showToast('No se pudo preparar la réplica del informe', 'error');
+                    if (typeof showToast === 'function') showToast('No se pudo preparar el PDF del informe', 'error');
                     return;
                 }
 
-                // Prioridad: backend (link persistente). Fallback: link local (sin bloquear UI).
-                const backendLink = await _requestBackendReplicaLink(htmlDoc, fileName, fileDate);
-                const linkInfo = backendLink || _createLocalReplicaLink(htmlDoc);
+                const pdfBlob = await _buildPdfBlobFromHtml(htmlDoc);
+                if (!pdfBlob) {
+                    if (typeof showToast === 'function') showToast('No se pudo generar el PDF. Reintenta.', 'error');
+                    return;
+                }
+
+                const linkInfo = _createLocalPdfLink(pdfBlob, fileName, fileDate);
+                if (!linkInfo) {
+                    if (typeof showToast === 'function') showToast('No se pudo preparar la descarga del PDF', 'error');
+                    return;
+                }
                 _notifyReplicaReady(linkInfo);
                 return;
             } finally {
