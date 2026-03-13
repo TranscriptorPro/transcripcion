@@ -96,6 +96,30 @@ function _stripGeneralConclusionSections(md) {
     return out.trim();
 }
 
+/**
+ * Elimina oraciones adversativas/de carencia en la sección de conclusión.
+ * Estas oraciones empiezan o contienen frases del tipo "aunque se carece de...",
+ * "si bien no se especificó...", "sin embargo falta...", etc.
+ * El modelo a veces las genera a pesar de tener prohibición explícita en el prompt.
+ */
+function _stripConclusionCaveats(md) {
+    let out = String(md || '');
+    if (!out) return out;
+
+    // Patrón que detecta oraciones adversativas sobre datos faltantes/no dictados.
+    const CAVEAT_PATTERN = /[^.!?\n]*(?:aunque\s+(?:se\s+carece|no\s+se\s+(?:detalló|especificó|mencionó|evaluó|dispone|cuenta)|faltan?)|si\s+bien\s+(?:no\s+se|falta)|sin\s+embargo[\s,]+(?:falta|no\s+se|se\s+carece)|no\s+(?:se\s+dispone|se\s+cuenta)\s+con\s+información|falta(?:n)?\s+(?:datos?|información|detalles?)\s+sobre|a\s+pesar\s+de\s+(?:no\s+contar|la\s+falta)|no\s+obstante\s+(?:la\s+falta|no\s+se))[^.!?\n]*[.!?]?/gi;
+
+    // Solo aplicar dentro de la sección de CONCLUSIÓN / IMPRESIÓN DIAGNÓSTICA.
+    out = out.replace(
+        /(##+\s*(?:conclusi[oó]n(?:es)?|impresi[oó]n\s+diagn[oó]stica|conclusi[oó]n\s+diagn[oó]stica)\s*\n)([\s\S]*?)(?=\n##+\s|$)/gi,
+        (match, heading, body) => {
+            const cleaned = body.replace(CAVEAT_PATTERN, '').replace(/\n{3,}/g, '\n\n').trim();
+            return heading + (cleaned || 'Estudio dentro de parámetros normales.') + '\n';
+        }
+    );
+    return out;
+}
+
 function _stripPatientIdentitySections(md) {
     let out = String(md || '');
     if (!out) return out;
@@ -167,7 +191,16 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepción (ordenadas por prioridad):
 10. En estudios multi-órgano/multi-segmento (ecografía, colonoscopía, Doppler, laringoscopía, etc.): una sección ## por CADA estructura evaluada. Si una estructura fue evaluada y es normal → describir brevemente o indicar s/p. Si NO fue evaluada → marcar con [No especificado]. Si la transcripción contiene datos que no encajan en las secciones propuestas → crear subsección adicional.
 
 >>> CONCLUSIÓN >>>
-11. CONCLUSIÓN (regla universal): (a) incluir TODOS los hallazgos patológicos o positivos, ninguno puede omitirse; (b) NO incluir estructuras normales; (c) si todo es normal: "Estudio dentro de parámetros normales."; (d) NUNCA dejar vacía ni como [No especificado]; (e) NO inventar datos; (f) NO indicar tratamientos si el médico no los mencionó; (g) PROHIBIDO agregar frases de salvedad sobre faltantes (por ejemplo: "aunque faltan detalles", "faltan datos", "no se detalló/no se especificó").
+11. CONCLUSIÓN — REGLA INAMOVIBLE DE MÁS ALTA PRIORIDAD:
+La conclusión es un párrafo que SOLO contiene hallazgos que el médico dictó de forma explícita y positiva.
+(a) Incluir TODOS los hallazgos patológicos o positivos; ninguno puede omitirse.
+(b) NO incluir estructuras normales ni neutrales.
+(c) Si todo es normal: escribir exactamente "Estudio dentro de parámetros normales." y nada más.
+(d) NUNCA dejar vacía ni como [No especificado].
+(e) PROHIBICIÓN ABSOLUTA DE INVENTAR O INFERIR: NO agregues datos que el médico no dijo, NO menciones lo que "falta", NO sugieras lo que "debería haberse evaluado", NO hagas diagnósticos diferenciales, NO especules.
+(f) PROHIBICIÓN ABSOLUTA DE FRASES ADVERSATIVAS O DE CARENCIA: La conclusión NUNCA puede contener frases como — "aunque se carece de", "aunque faltan detalles", "si bien no se especificó", "sin embargo falta", "aunque no se detalló", "no se dispone de", "falta información sobre", "aunque no se evaluó", "aunque se desconoce", "a pesar de no contar con", "no obstante la falta de", o cualquier variante que introduzca lo que NO fue dicho. Si el modelo siente la necesidad de escribir una de esas frases, DEBE eliminarse completamente.
+(g) NO indicar tratamientos si el médico no los mencionó.
+REGLA DE ORO: preguntate "¿el médico dijo esto explícitamente?" → SI → inclúyelo. NO → bórralo.
 
 >>> CALIDAD LINGÜÍSTICA >>>
 12. CORRECCIÓN ASR: el texto proviene de reconocimiento de voz. Corrige silenciosamente errores fonéticos ("o dinofagia" → "odinofagia", "bujales" → "bucales"), anglicismos ("laryngoscopy" → "laringoscopía") y palabras partidas. NO señales las correcciones.
@@ -176,7 +209,7 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepción (ordenadas por prioridad):
 15. PROHIBIDO usar puntos suspensivos (...) o frases incompletas. Si un campo no se realizó/no se especificó y no es vital para la estructura, NO lo menciones. Si la estructura exige el campo, colócalo como campo independiente con [No especificado], nunca incrustado en un párrafo con texto clínico.
 
 >>> RECORDATORIO FINAL >>>
-Antes de responder, verifica: ¿preservé TODOS los datos? ¿Usé [No especificado] (no variantes)? ¿La conclusión incluye todos los hallazgos patológicos? ¿No inventé nada?`;
+Antes de responder, verifica: ¿preservé TODOS los datos? ¿Usé [No especificado] (no variantes)? ¿La conclusión incluye SOLO hallazgos que el médico dictó explícitamente? ¿La conclusión NO tiene frases como "aunque se carece de", "aunque no se detalló", "si bien falta información", "sin embargo falta", "aunque no se evaluó"? ¿No inventé absolutamente nada?`;
 
     try {
         const res = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
@@ -206,6 +239,8 @@ Antes de responder, verifica: ¿preservé TODOS los datos? ¿Usé [No especifica
         // RB-6: Trackear uso de API de estructuración
         if (window.apiUsageTracker) window.apiUsageTracker.trackStructuring();
         let cleaned = forceGeneralNoConclusion ? _stripGeneralConclusionSections(content) : content;
+        // Red de seguridad: eliminar oraciones adversativas/de carencia en conclusión aunque el modelo desobedezca.
+        cleaned = _stripConclusionCaveats(cleaned);
         const extractedPatient = (typeof extractPatientDataFromText === 'function') ? extractPatientDataFromText(text) : {};
         if (extractedPatient && (extractedPatient.name || extractedPatient.dni || extractedPatient.age || extractedPatient.sex || extractedPatient.insurance || extractedPatient.affiliateNum)) {
             cleaned = _stripPatientIdentitySections(cleaned);
