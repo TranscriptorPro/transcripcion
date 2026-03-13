@@ -420,6 +420,57 @@
             color: white;
         }
 
+        .registry-row-actions {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            flex-wrap: nowrap;
+        }
+
+        .registry-mini-btn {
+            appearance: none;
+            border: 1px solid var(--border);
+            background: var(--bg-main);
+            color: var(--text-primary);
+            border-radius: 8px;
+            padding: 0.28rem 0.55rem;
+            font-family: inherit;
+            font-size: 0.74rem;
+            font-weight: 600;
+            line-height: 1.1;
+            cursor: pointer;
+            transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+            transform: none !important;
+            box-shadow: none !important;
+            min-width: 58px;
+            white-space: nowrap;
+        }
+
+        .registry-mini-btn:hover {
+            background: var(--bg-hover);
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: none !important;
+        }
+
+        .registry-mini-btn:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 1px;
+        }
+
+        .registry-mini-btn-danger {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #b91c1c;
+        }
+
+        .registry-mini-btn-danger:hover {
+            background: #fee2e2;
+            border-color: #fca5a5;
+            color: #991b1b;
+        }
+
         /* Botón Transcribir y Estructurar (Pro) — Gemini animated */
         .btn-transcribe-structure {
             display: inline-flex;

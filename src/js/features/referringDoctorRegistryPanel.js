@@ -38,8 +38,10 @@
                     <td style="padding:.45rem .5rem;">${fmtDate(d.lastUsed)}</td>
                     <td style="padding:.45rem .5rem;">${Number(d.usageCount || 0)}</td>
                     <td style="padding:.45rem .5rem;text-align:center;">
-                        <button class="btn" data-edit-idx="${idx}" style="padding:.25rem .55rem;font-size:.75rem;">✏️</button>
-                        <button class="btn" data-del-idx="${idx}" style="padding:.25rem .55rem;font-size:.75rem;background:var(--error);color:white;">🗑</button>
+                        <div class="registry-row-actions">
+                            <button class="registry-mini-btn" type="button" data-edit-idx="${idx}">Editar</button>
+                            <button class="registry-mini-btn registry-mini-btn-danger" type="button" data-del-idx="${idx}">Borrar</button>
+                        </div>
                     </td>
                 </tr>`).join('');
         }
