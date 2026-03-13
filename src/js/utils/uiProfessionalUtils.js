@@ -3,8 +3,12 @@ window.normalizeMatriculaDisplay = function (value) {
     const src = String(value || '').trim();
     if (!src) return '';
     return src
+    .replace(/\bm\s*\.\s*p\s*\.?/gi, 'M. P.')
+    .replace(/\bM\s*\.\s*P\s*\.?/g, 'M. P.')
+    .replace(/\bmp\b/gi, 'MP')
         .replace(/\br\s*\.\s*e\s*\.?/gi, 'R. E.')
         .replace(/\bR\s*\.\s*E\s*\.?/g, 'R. E.')
+    .replace(/\bre\b/gi, 'RE')
         .replace(/\s{2,}/g, ' ')
         .trim();
 };

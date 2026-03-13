@@ -114,6 +114,11 @@
             sourceText
         );
 
+        const showStudyTime = (document.getElementById('reqShowStudyTime')?.checked ?? cfg.showStudyTime ?? true) !== false;
+        const resolvedStudyTime = showStudyTime
+            ? (cfg.studyTime || reqVal('reqStudyTime') || reqVal('pdfStudyTime') || '')
+            : '';
+
         return {
             text: sourceText,
             patientName: extracted.name || cfg.patientName || reqVal('reqPatientName') || reqVal('pdfPatientName') || '',
@@ -125,7 +130,8 @@
             studyType: effectiveStudyType || reqVal('reqStudyType') || '',
             studyDate,
             showStudyDate: (document.getElementById('reqShowStudyDate')?.checked ?? cfg.showStudyDate ?? true) !== false,
-            studyTime: cfg.studyTime || reqVal('reqStudyTime') || reqVal('pdfStudyTime') || '',
+            showStudyTime,
+            studyTime: resolvedStudyTime,
             studyReason: cfg.studyReason || reqVal('reqStudyReason') || reqVal('pdfStudyReason') || '',
             referringDoctor: (() => {
                 const inputStr = cfg.referringDoctor || reqVal('reqReferringDoctor') || reqVal('pdfReferringDoctor') || '';
@@ -339,7 +345,10 @@
         const rawDate = config.studyDate || '';
         const showStudyDate = config.showStudyDate !== false;
         const studyDate = rawDate ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
-        const studyTime = esc(document.getElementById('reqStudyTime')?.value || document.getElementById('pdfStudyTime')?.value || config.studyTime || '');
+        const showStudyTime = (document.getElementById('reqShowStudyTime')?.checked ?? config.showStudyTime ?? true) !== false;
+        const studyTime = showStudyTime
+            ? esc(document.getElementById('reqStudyTime')?.value || document.getElementById('pdfStudyTime')?.value || config.studyTime || '')
+            : '';
         const studyReason = escSentence(config.studyReason || document.getElementById('reqStudyReason')?.value || '');
         const _refDocInputStr = config.referringDoctor || document.getElementById('reqReferringDoctor')?.value || '';
         const _refDocRaw = cleanDoctorName(_refDocInputStr);

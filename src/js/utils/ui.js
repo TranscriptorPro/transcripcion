@@ -486,8 +486,11 @@ window.initModals = function () {
 
                 if (typeof showToast === 'function') showToast('No se encontró el módulo de descarga PDF', 'error');
             } catch (err) {
-                console.warn('Error descargando PDF desde vista previa:', err);
-                if (typeof showToast === 'function') showToast('Error al descargar PDF. Reintentá.', 'error');
+                console.error('Error descargando PDF desde vista previa:', err);
+                const detail = String(err?.message || '').trim();
+                if (typeof showToast === 'function') {
+                    showToast(detail ? (`Error al descargar PDF: ${detail}`) : 'Error al descargar PDF. Reintentá.', 'error');
+                }
             }
         });
     }

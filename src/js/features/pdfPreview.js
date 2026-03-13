@@ -674,14 +674,20 @@ window.openPrintPreview = async function () {
         ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'})
         : '';
     const studyReason  = escSentence(config.studyReason || document.getElementById('reqStudyReason')?.value || '');
-    const refDoctor    = escName(config.referringDoctor || document.getElementById('reqReferringDoctor')?.value || '');
+    const _rawRefDoctor = String(config.referringDoctor || document.getElementById('reqReferringDoctor')?.value || '')
+        .replace(/^\s*(?:dr\.?|dra\.?)\s+/i, '')
+        .trim();
+    const refDoctor    = _rawRefDoctor ? escName('Dr./a ' + _rawRefDoctor) : '';
     const reportNum    = esc(document.getElementById('pdfReportNumber')?.value || config.reportNum || '');
     const showReportNumber = (config.showReportNumber ?? true) === true;
     const hideReportHeader = !_isClinicProfile() && (config.hideReportHeader === true);
     const footerText   = esc(config.footerText || 'Este informe es válido únicamente con la firma del profesional a cargo.');
     const wkAddr       = esc(config.workplaceAddress || activeWp?.address || '');
     const wkPhone      = esc(config.workplacePhone   || activeWp?.phone || '');
-    const studyTime    = esc(document.getElementById('reqStudyTime')?.value || document.getElementById('pdfStudyTime')?.value || config.studyTime || '');
+    const showStudyTime = (document.getElementById('reqShowStudyTime')?.checked ?? config.showStudyTime ?? true) !== false;
+    const studyTime    = showStudyTime
+        ? esc(document.getElementById('reqStudyTime')?.value || document.getElementById('pdfStudyTime')?.value || config.studyTime || '')
+        : '';
     const showSignLine = config.showSignLine ?? true;
     const showSignName = config.showSignName ?? true;
     const showSignMat  = config.showSignMatricula ?? true;

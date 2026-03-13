@@ -118,12 +118,18 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const pDate      = rawDate
             ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'})
             : new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'});
-        const studyTime   = _reqVal('pdfStudyTime') || config.studyTime || '';
+        const showStudyTime = (_reqVal('reqShowStudyTime')
+            ? !!document.getElementById('reqShowStudyTime')?.checked
+            : (config.showStudyTime ?? true)) !== false;
+        const studyTime   = showStudyTime ? (_reqVal('pdfStudyTime') || _reqVal('reqStudyTime') || config.studyTime || '') : '';
         const tplKey      = (typeof window !== 'undefined' && window.selectedTemplate) || config.selectedTemplate || '';
         const tplNameFb   = (tplKey && typeof MEDICAL_TEMPLATES !== 'undefined' && MEDICAL_TEMPLATES[tplKey]?.name) || '';
         const studyType   = config.studyType || tplNameFb || '';
         const reportNum   = _reqVal('pdfReportNumber') || config.reportNum || '';
-        const refDoctor   = config.referringDoctor   || '';
+        const _rawRefDoctor = String(config.referringDoctor || _reqVal('reqReferringDoctor') || _reqVal('pdfReferringDoctor') || '')
+            .replace(/^\s*(?:dr\.?|dra\.?)\s+/i, '')
+            .trim();
+        const refDoctor   = _rawRefDoctor ? ('Dr./a ' + _rawRefDoctor) : '';
         const studyReason = config.studyReason       || '';
         const footerText  = config.footerText        || '';
         const showSignLine = config.showSignLine !== false;

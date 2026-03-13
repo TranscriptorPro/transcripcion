@@ -421,6 +421,7 @@
         _cfgDirty |= _syncCheck('showPageNum', 'pdfShowPageNum', true);
         _cfgDirty |= _syncCheck('showDate', 'pdfShowDate', true);
         _cfgDirty |= _syncCheck('showStudyDate', 'reqShowStudyDate', true);
+        _cfgDirty |= _syncCheck('showStudyTime', 'reqShowStudyTime', true);
         _cfgDirty |= _syncCheck('showQR', 'pdfShowQR', true);
         _cfgDirty |= _syncCheck('showReportNumber', 'pdfShowReportNumber', true);
         _cfgDirty |= _syncCheck('showInstLogo', 'pdfShowInstLogo', true);
@@ -430,6 +431,11 @@
         _cfgDirty |= _syncCheck('showSignMatricula', 'pdfShowSignMatricula', true);
         _cfgDirty |= _syncCheck('showSignImage', 'pdfShowSignImage', true);
 
+        if (pdfConfig.showStudyTime === false && pdfConfig.studyTime) {
+            delete pdfConfig.studyTime;
+            _cfgDirty = true;
+        }
+
         if (!pdfConfig.studyDate) {
             pdfConfig.studyDate = new Date().toISOString().split('T')[0];
             _cfgDirty = true;
@@ -437,8 +443,14 @@
 
         if (_cfgDirty) {
             window._pdfConfigCache = pdfConfig;
-            if (typeof appDB !== 'undefined') await appDB.set('pdf_config', pdfConfig);
-            else localStorage.setItem('pdf_config', JSON.stringify(pdfConfig));
+            try {
+                if (typeof appDB !== 'undefined') await appDB.set('pdf_config', pdfConfig);
+                else localStorage.setItem('pdf_config', JSON.stringify(pdfConfig));
+            } catch (cfgErr) {
+                // No interrumpir la descarga si falla el guardado en DB.
+                try { localStorage.setItem('pdf_config', JSON.stringify(pdfConfig)); } catch (_) { /* ignore */ }
+                console.warn('No se pudo persistir pdf_config antes de descargar:', cfgErr);
+            }
         }
 
         const _isProLike = window.currentMode === 'pro'
