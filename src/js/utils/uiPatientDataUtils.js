@@ -57,6 +57,17 @@ window.initPatientDataModalHandlers = function () {
     }
 
     if (btnClosePatientModal) btnClosePatientModal.addEventListener('click', closePatientModal);
+
+    // Fallback robusto: si el header se re-renderiza, el botón ✏️ sigue abriendo el modal.
+    if (!window._patientEditDelegationBound) {
+        document.addEventListener('click', (ev) => {
+            const btn = ev.target && ev.target.closest ? ev.target.closest('.patient-data-edit-btn') : null;
+            if (!btn) return;
+            ev.preventDefault();
+            if (typeof window.openPatientDataModal === 'function') window.openPatientDataModal();
+        });
+        window._patientEditDelegationBound = true;
+    }
     if (btnSkipPatientData) {
         btnSkipPatientData.addEventListener('click', () => {
             closePatientModal();
@@ -137,29 +148,35 @@ window.initPatientDataModalHandlers = function () {
         const editorEl = document.getElementById('editor');
         if (!editorEl) return;
 
+        const esc = (v) => String(v ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+
         const oldPlaceholder = editorEl.querySelector('.patient-placeholder-banner');
         if (oldPlaceholder) oldPlaceholder.remove();
         const oldHeader = editorEl.querySelector('.patient-data-header');
         if (oldHeader) oldHeader.remove();
 
         const lines = [];
-        if (data.name) lines.push(`<strong>Paciente:</strong> ${data.name}`);
-        if (data.dni) lines.push(`<strong>DNI:</strong> ${data.dni}`);
-        if (data.age) lines.push(`<strong>Edad:</strong> ${data.age} años`);
-        if (data.sex) lines.push(`<strong>Sexo:</strong> ${data.sex}`);
-        if (data.weight) lines.push(`<strong>Peso:</strong> ${data.weight} kg`);
-        if (data.height) lines.push(`<strong>Altura:</strong> ${data.height}`);
-        if (data.insurance) lines.push(`<strong>Obra Social:</strong> ${data.insurance}`);
-        if (data.affiliateNum) lines.push(`<strong>Nº Afiliado:</strong> ${data.affiliateNum}`);
+        if (data.name) lines.push(`<strong>Paciente:</strong> ${esc(data.name)}`);
+        if (data.dni) lines.push(`<strong>DNI:</strong> ${esc(data.dni)}`);
+        if (data.age) lines.push(`<strong>Edad:</strong> ${esc(data.age)} años`);
+        if (data.sex) lines.push(`<strong>Sexo:</strong> ${esc(data.sex)}`);
+        if (data.weight) lines.push(`<strong>Peso:</strong> ${esc(data.weight)} kg`);
+        if (data.height) lines.push(`<strong>Altura:</strong> ${esc(data.height)}`);
+        if (data.insurance) lines.push(`<strong>Obra Social:</strong> ${esc(data.insurance)}`);
+        if (data.affiliateNum) lines.push(`<strong>Nº Afiliado:</strong> ${esc(data.affiliateNum)}`);
 
         const studyLines = [];
         if (data.showStudyDate !== false && data.studyDate) {
             const dateForDisplay = new Date(data.studyDate + 'T12:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            studyLines.push(`<strong>Fecha:</strong> ${dateForDisplay}${data.studyTime ? ' ' + data.studyTime : ''}`);
+            studyLines.push(`<strong>Fecha:</strong> ${esc(dateForDisplay)}${data.studyTime ? ' ' + esc(data.studyTime) : ''}`);
         }
-        if (data.studyType) studyLines.push(`<strong>Estudio:</strong> ${data.studyType}`);
-        if (data.referringDoctor) studyLines.push(`<strong>Médico solicitante:</strong> ${data.referringDoctor}`);
-        if (data.studyReason) studyLines.push(`<strong>Motivo:</strong> ${data.studyReason}`);
+        if (data.studyType) studyLines.push(`<strong>Estudio:</strong> ${esc(data.studyType)}`);
+        if (data.referringDoctor) studyLines.push(`<strong>Médico solicitante:</strong> ${esc(data.referringDoctor)}`);
+        if (data.studyReason) studyLines.push(`<strong>Motivo:</strong> ${esc(data.studyReason)}`);
 
         if (lines.length === 0 && studyLines.length === 0) return;
 
@@ -169,7 +186,7 @@ window.initPatientDataModalHandlers = function () {
         const patientHtml = lines.length ? `<div class="patient-data-content">${lines.join(' &nbsp;·&nbsp; ')}</div>` : '';
         const studyHtml = studyLines.length ? `<div class="patient-data-content study-data-content">${studyLines.join(' &nbsp;·&nbsp; ')}</div>` : '';
         header.innerHTML = `${patientHtml}${studyHtml}<button class="patient-data-edit-btn" title="Editar datos del paciente y estudio">✏️</button>`;
-        header.querySelector('.patient-data-edit-btn').addEventListener('click', () => {
+        header.querySelector('.patient-data-edit-btn')?.addEventListener('click', () => {
             if (typeof window.openPatientDataModal === 'function') window.openPatientDataModal();
         });
         editorEl.insertBefore(header, editorEl.firstChild);
