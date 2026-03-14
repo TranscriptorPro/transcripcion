@@ -207,14 +207,25 @@
         }
 
         // ── Cuerpo con detección de headings H1/H2/H3 ──
+        // titleText sin RTF-escape para comparar con el contenido del body
+        const _titleRaw = String(ctx.studyType || '').trim()
+            ? `INFORME DE ${String(ctx.studyType).toUpperCase()}`
+            : 'INFORME M\u00C9DICO';
+
         const lines = cleaned.split(/\r?\n/);
         const bodyParts = [];
+        let _firstH1Skipped = false;
         for (const line of lines) {
             const t = String(line || '');
             if (!t.trim()) { bodyParts.push('\\par'); continue; }
             const trimmed = t.trim();
-            const isH1 = trimmed.length <= 80 && trimmed === trimmed.toUpperCase() && /[A-ZÁÉÍÓÚÑ]/.test(trimmed);
+            const isH1 = trimmed.length <= 80 && trimmed === trimmed.toUpperCase() && /[A-Z\u00C1\u00C9\u00CD\u00D3\u00DA\u00D1]/.test(trimmed);
             if (isH1) {
+                // Omitir el primer H1 si es el mismo título que ya muestra titleBlock
+                if (!_firstH1Skipped && trimmed === _titleRaw) {
+                    _firstH1Skipped = true;
+                    continue;
+                }
                 // Heading principal: centrado, bold, color acento, tamaño grande, línea inferior
                 bodyParts.push(`\\pard\\qc\\sb200\\sa80{\\f0\\fs26\\b\\cf1 ${_rtfEscapeLine(trimmed)}}\\par`);
                 bodyParts.push(`{\\pard\\brdrb\\brdrs\\brdrw10\\brdrcf1\\brsp40 \\par}`);
@@ -258,14 +269,14 @@
             profBlock = `{\\pard\\sb60\\sa80 ${profParts.join('')}\\par}\n{\\pard\\brdrb\\brdrs\\brdrw5\\brdrcf1\\brsp20 \\par}`;
         }
 
-        // ── Firma ──
+        // ── Firma (centrada) ──
         let sigBlock = '';
         if (!ctx.hideReportHeader && ctx.professionalName) {
-            sigBlock = '\\par\\par\\par';
-            sigBlock += `{\\pard\\qr\\sb200 {\\f0\\fs18 ____________________________}\\par}`;
-            sigBlock += `{\\pard\\qr {\\f0\\fs20\\b ${_rtfEscapeLine(ctx.professionalName)}}\\par}`;
-            if (ctx.professionalMatricula) sigBlock += `{\\pard\\qr {\\f0\\fs18\\cf2 Mat. ${_rtfEscapeLine(ctx.professionalMatricula)}}\\par}`;
-            if (ctx.professionalSpecialty) sigBlock += `{\\pard\\qr {\\f0\\fs18\\i\\cf2 ${_rtfEscapeLine(ctx.professionalSpecialty)}}\\par}`;
+            sigBlock = '\\par\\par';
+            sigBlock += `{\\pard\\qc\\sb80\\sa0 {\\f0\\fs18 ____________________________}\\par}`;
+            sigBlock += `{\\pard\\qc\\sb0 {\\f0\\fs20\\b ${_rtfEscapeLine(ctx.professionalName)}}\\par}`;
+            if (ctx.professionalMatricula) sigBlock += `{\\pard\\qc\\sb0 {\\f0\\fs18\\cf2 Mat. ${_rtfEscapeLine(ctx.professionalMatricula)}}\\par}`;
+            if (ctx.professionalSpecialty) sigBlock += `{\\pard\\qc\\sb0 {\\f0\\fs18\\i\\cf2 ${_rtfEscapeLine(ctx.professionalSpecialty)}}\\par}`;
         }
 
         // ── Footer ──
@@ -276,7 +287,7 @@
         return `{\\rtf1\\ansi\\ansicpg1252\\deff0
 {\\fonttbl{\\f0 Arial;}}
 {\\colortbl;\\red${accentR}\\green${accentG}\\blue${accentB};\\red136\\green136\\blue136;}
-\\paperw12240\\paperh15840\\margl1440\\margr1440\\margt1080\\margb1080
+\\paperw12240\\paperh15840\\margl900\\margr900\\margt1080\\margb1080
 \\f0\\fs22\\sa80\\sl${rtfSl}\\slmult1\\ql
 ${profBlock}
 ${titleBlock}
