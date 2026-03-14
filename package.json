@@ -6,6 +6,9 @@
   "scripts": {
     "build": "node build.js",
     "test": "node tests/run_tests.js",
+    "qa:sandbox": "node scripts/qa-sandbox.js --page=sandbox",
+    "qa:preview": "node scripts/qa-sandbox.js --page=preview",
+    "qa:manual": "node scripts/qa-sandbox.js --page=manual",
     "test:e2e:admin-edit": "node tests/e2e-admin-user-edit-wizard.js",
     "test:e2e:full": "node tests/e2e-full-qa-playwright.js",
     "test:smoke:postdeploy": "node tests/smoke-postdeploy-version.js",
