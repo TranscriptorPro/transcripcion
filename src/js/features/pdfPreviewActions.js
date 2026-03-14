@@ -557,7 +557,7 @@ window.printFromPreview = async function () {
     };
 };
 
-// ============ PDF VIA html2canvas (Único pipeline — 100% idéntico a la preview) ============
+// ============ PDF VIA html-to-image (no parsea CSS — usa SVG foreignObject) ============
 window.downloadPDFFromCanvas = async function (fileName, fileDate) {
     if (typeof showToast === 'function') showToast('\u23F3 Generando PDF...', 'info', 10000);
     try {
@@ -571,7 +571,6 @@ window.downloadPDFFromCanvas = async function (fileName, fileDate) {
             if (typeof window.openPrintPreview === 'function') {
                 await window.openPrintPreview();
             }
-            // Esperar al render (openPrintPreview usa setTimeout 150ms internamente)
             await new Promise(r => setTimeout(r, 700));
         }
 
@@ -579,72 +578,33 @@ window.downloadPDFFromCanvas = async function (fileName, fileDate) {
         const markers = Array.from(previewPage.querySelectorAll('.pv-pagebreak-marker'));
         markers.forEach(m => { m._savedDisplay = m.style.display; m.style.display = 'none'; });
 
-        let canvas;
+        let dataUrl;
         try {
-            canvas = await window.html2canvas(previewPage, {
-                scale: 2,
-                useCORS: true,
-                allowTaint: false,
+            // html-to-image: captura pixel-perfect sin parsear CSS (SVG foreignObject)
+            const lib = window.htmlToImage || window['html-to-image'];
+            if (!lib) throw new Error('html-to-image no cargado');
+
+            dataUrl = await lib.toJpeg(previewPage, {
+                quality: 0.92,
+                pixelRatio: 2,
                 backgroundColor: '#ffffff',
-                scrollX: 0,
-                scrollY: 0,
-                width: previewPage.scrollWidth,
-                height: previewPage.scrollHeight,
-                windowWidth: previewPage.offsetWidth,
-                windowHeight: previewPage.scrollHeight,
-                logging: false,
-                onclone: function (clonedDoc) {
-                    // ── Fix 1: forzar light-only en el root ──────────────────────────────
-                    // "only light" previene que Chrome resuelva colores de sistema como color(srgb…)
-                    clonedDoc.documentElement.style.setProperty('color-scheme', 'only light', 'important');
-                    // Quitar atributos de tema que activen dark mode
-                    ['data-theme', 'data-bs-theme'].forEach(function (a) {
-                        clonedDoc.documentElement.removeAttribute(a);
-                        clonedDoc.body && clonedDoc.body.removeAttribute(a);
-                    });
-                    ['dark', 'dark-mode', 'theme-dark'].forEach(function (c) {
-                        clonedDoc.documentElement.classList.remove(c);
-                        clonedDoc.body && clonedDoc.body.classList.remove(c);
-                    });
-
-                    // ── Fix 2: sanear <style> tags (CSS compilado) ───────────────────────
-                    var _reColor = /color\s*\([^)]*\)/g;
-                    var _reMix = /color-mix\s*\([^)]*\)/g;
-                    clonedDoc.querySelectorAll('style').forEach(function (styleEl) {
-                        var t = styleEl.textContent || '';
-                        if (t.indexOf('color(') !== -1 || t.indexOf('color-mix(') !== -1) {
-                            styleEl.textContent = t
-                                .replace(_reColor, 'black')
-                                .replace(_reMix, 'black');
-                        }
-                    });
-
-                    // ── Fix 3: sanear estilos inline ─────────────────────────────────────
-                    clonedDoc.querySelectorAll('[style]').forEach(function (el) {
-                        var s = el.getAttribute('style') || '';
-                        if (s.indexOf('color(') !== -1 || s.indexOf('color-mix(') !== -1) {
-                            el.setAttribute('style', s
-                                .replace(_reColor, 'black')
-                                .replace(_reMix, 'black'));
-                        }
-                    });
-
-                    // ── Fix 4: inyectar hoja de override final ───────────────────────────
-                    var fix = clonedDoc.createElement('style');
-                    fix.textContent = [
-                        ':root { color-scheme: only light !important; }',
-                        '* { forced-color-adjust: none !important; color-scheme: normal !important; }'
-                    ].join('\n');
-                    clonedDoc.head.appendChild(fix);
-                }
+                skipFonts: false
             });
         } finally {
             markers.forEach(m => { m.style.display = m._savedDisplay !== undefined ? m._savedDisplay : ''; });
         }
 
-        if (!canvas) throw new Error('html2canvas no produjo resultado');
+        if (!dataUrl) throw new Error('html-to-image no produjo resultado');
 
-        // 3. Paginar en hojas A4
+        // 3. Convertir dataUrl → canvas para paginar en A4
+        const img = new Image();
+        await new Promise(function (res, rej) { img.onload = res; img.onerror = rej; img.src = dataUrl; });
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        canvas.getContext('2d').drawImage(img, 0, 0);
+
+        // 4. Paginar en hojas A4
         const { jsPDF } = window.jspdf;
         const PAGE_W_MM = 210;
         const PAGE_H_MM = 297;
@@ -667,7 +627,7 @@ window.downloadPDFFromCanvas = async function (fileName, fileDate) {
             doc.addImage(slice.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, PAGE_W_MM, sliceHmm);
         }
 
-        // 4. Descargar
+        // 5. Descargar
         const blob = doc.output('blob');
         const saveHandler = (typeof window.saveToDisk === 'function') ? window.saveToDisk : async (b, name) => {
             const url = URL.createObjectURL(b);

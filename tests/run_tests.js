@@ -2454,7 +2454,7 @@ test('pdfMaker.js drawFooter soporta footerText', () => {
 test('pdfPreviewActions.js expone downloadPDFFromCanvas', () => {
     const code = fs.readFileSync(path.join(root, 'src/js/features/pdfPreviewActions.js'), 'utf-8');
     assert(code.includes('window.downloadPDFFromCanvas'), 'Debe exponer downloadPDFFromCanvas');
-    assert(code.includes('html2canvas'), 'Debe usar html2canvas para captura');
+    assert(code.includes('htmlToImage') || code.includes('html-to-image'), 'Debe usar html-to-image para captura');
     assert(code.includes('pageHeightPx'), 'Debe paginar por altura A4');
 });
 
