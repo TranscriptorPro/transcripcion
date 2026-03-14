@@ -7421,9 +7421,13 @@ test('Preview/PDF/HTML: no renderizan la celda ESTUDIO en la grilla de metadatos
 test('TXT/RTF: no agregan campo Estudio en cabecera de metadatos', () => {
     const exportCode = fs.readFileSync(path.join(root, 'src/js/features/editorExportRenderUtils.js'), 'utf-8');
     assert(!exportCode.includes("addField(meta, 'Estudio', ctx.studyType);"),
-        'createRTF no debe incluir campo Estudio');
+        'createRTF no debe incluir campo Estudio en metadatos');
     assert(!exportCode.includes("pushField('Estudio', ctx.studyType);"),
-        'createTXT no debe incluir campo Estudio');
+        'createTXT no debe incluir campo Estudio en metadatos');
+    assertIncludes(exportCode, 'INFORME DE ${_rtfEscapeLine(String(ctx.studyType).toUpperCase())}',
+        'createRTF debe incluir el tipo de estudio en el titulo');
+    assertIncludes(exportCode, '`INFORME DE ${String(ctx.studyType).toUpperCase()}`',
+        'createTXT debe incluir el tipo de estudio en el titulo');
 });
 
 // Limpiar estado después de tests

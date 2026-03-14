@@ -230,12 +230,19 @@
             ? `\\b DATOS DEL ESTUDIO Y PACIENTE\\b0\\par\\par${metaRows.join('\\n')}\\par\\par`
             : '';
 
-        return `{\\rtf1\\ansi\\ansicpg1252\\deff0{\\fonttbl{\\f0 Arial;}}\\paperw12240\\paperh15840\\margl1080\\margr1080\\margt1080\\margb1080\\f0\\fs22\\sa100\\sl${rtfSl}\\slmult1\\ql${metaBlock}\\b CONTENIDO DEL INFORME\\b0\\par\\par${body}}`;
+        const titleLine = String(ctx.studyType || '').trim()
+            ? `\\b INFORME DE ${_rtfEscapeLine(String(ctx.studyType).toUpperCase())}\\b0\\par\\par`
+            : '\\b INFORME MEDICO\\b0\\par\\par';
+
+        return `{\\rtf1\\ansi\\ansicpg1252\\deff0{\\fonttbl{\\f0 Arial;}}\\paperw12240\\paperh15840\\margl1080\\margr1080\\margt1080\\margb1080\\f0\\fs22\\sa100\\sl${rtfSl}\\slmult1\\ql${titleLine}${metaBlock}\\b CONTENIDO DEL INFORME\\b0\\par\\par${body}}`;
     }
 
     async function createTXT(text) {
         const ctx = await _loadExportContext(text);
-        const lines = ['INFORME MEDICO'];
+        const reportTitle = String(ctx.studyType || '').trim()
+            ? `INFORME DE ${String(ctx.studyType).toUpperCase()}`
+            : 'INFORME MEDICO';
+        const lines = [reportTitle];
 
         const pushField = (label, value) => {
             const v = String(value || '').trim();
