@@ -189,7 +189,7 @@
         };
 
         const meta = [];
-        if (ctx.showStudyDate) addField(meta, 'Fecha', `${ctx.studyDate}${ctx.studyTime ? ' ' + ctx.studyTime : ''}`);
+        if (ctx.showStudyDate) addField(meta, 'Fecha', `${ctx.studyDate}${ctx.studyTime ? ' ' + ctx.studyTime + ' hs.' : ''}`);
         if (ctx.showReportNumber) addField(meta, 'Informe N\u00BA', ctx.reportNum);
         addField(meta, 'Paciente', ctx.patientName);
         addField(meta, 'DNI', ctx.patientDni);
@@ -259,28 +259,29 @@
             : _rtfEscapeLine('INFORME M\u00C9DICO');
         const titleBlock = `{\\pard\\qc\\sb0\\sa50{\\f0\\fs26\\b\\cf1 ${titleText}}\\par}\n{\\pard\\brdrb\\brdrs\\brdrw15\\brdrcf1\\brsp40 \\par}`;
 
-        // ── Bloque profesional (header) ──
-        let profBlock = '';
-        if (!ctx.hideReportHeader && ctx.professionalName) {
-            const profParts = [];
-            profParts.push(`{\\f0\\fs19\\b ${_rtfEscapeLine('Estudio realizado por: ' + ctx.professionalName)}}`);
-            if (ctx.professionalMatricula) profParts.push(`{\\f0\\fs18\\cf2  - Mat. ${_rtfEscapeLine(ctx.professionalMatricula)}}`);
-            if (ctx.professionalSpecialty) profParts.push(`{\\f0\\fs18\\i\\cf2  | ${_rtfEscapeLine(ctx.professionalSpecialty)}}`);
-            profBlock = `{\\pard\\sb30\\sa40 ${profParts.join('')}\\par}\n{\\pard\\brdrb\\brdrs\\brdrw5\\brdrcf1\\brsp20 \\par}`;
-        }
+        // ── Bloque profesional (ahora solo en footer) ──
+        let profBlock = ''; // vacío — el profesional aparece en el pie de página
 
-        // ── Firma (centrada) ──
+        // ── Firma (centrada, con espacio generoso para firmar) ──
         let sigBlock = '';
         if (!ctx.hideReportHeader && ctx.professionalName) {
-            sigBlock = '\\par';
-            sigBlock += `{\\pard\\qc\\sb40\\sa0 {\\f0\\fs18 ____________________________}\\par}`;
-            sigBlock += `{\\pard\\qc\\sb0 {\\f0\\fs20\\b ${_rtfEscapeLine(ctx.professionalName)}}\\par}`;
-            if (ctx.professionalMatricula) sigBlock += `{\\pard\\qc\\sb0 {\\f0\\fs18\\cf2 Mat. ${_rtfEscapeLine(ctx.professionalMatricula)}}\\par}`;
-            if (ctx.professionalSpecialty) sigBlock += `{\\pard\\qc\\sb0 {\\f0\\fs18\\i\\cf2 ${_rtfEscapeLine(ctx.professionalSpecialty)}}\\par}`;
+            sigBlock = '\\par\\par\\par';
+            sigBlock += `{\\pard\\qc\\sb60\\sa0 {\\f0\\fs18 ____________________________}\\par}`;
+            sigBlock += `{\\pard\\qc\\sb0 {\\f0\\fs18\\b ${_rtfEscapeLine(ctx.professionalName)}}\\par}`;
+            if (ctx.professionalMatricula) sigBlock += `{\\pard\\qc\\sb0 {\\f0\\fs16\\cf2 Mat. ${_rtfEscapeLine(ctx.professionalMatricula)}}\\par}`;
+            if (ctx.professionalSpecialty) sigBlock += `{\\pard\\qc\\sb0 {\\f0\\fs16\\i\\cf2 ${_rtfEscapeLine(ctx.professionalSpecialty)}}\\par}`;
         }
 
-        // ── Footer ──
-        const footerLine = `{\\pard\\brdrb\\brdrs\\brdrw5\\brdrcf2\\brsp20 \\par}\n{\\pard\\qc\\sb40{\\f0\\fs16\\cf2 ${_rtfEscapeLine('Este informe es v\u00E1lido \u00FAnicamente con la firma del profesional a cargo.')}}\\par}`;
+        // ── Footer: linea 1 = profesional, linea 2 = disclaimer ──
+        let footerLine = `{\\pard\\brdrb\\brdrs\\brdrw5\\brdrcf2\\brsp20 \\par}`;
+        if (!ctx.hideReportHeader && ctx.professionalName) {
+            const fp = [];
+            fp.push(_rtfEscapeLine('Estudio realizado por: ' + ctx.professionalName));
+            if (ctx.professionalMatricula) fp.push(_rtfEscapeLine('Mat. ' + ctx.professionalMatricula));
+            if (ctx.professionalSpecialty) fp.push(_rtfEscapeLine(ctx.professionalSpecialty));
+            footerLine += `\n{\\pard\\qc\\sb30\\sa0{\\f0\\fs16\\cf2 ${fp.join('  \u00B7  ')}}}\\par`;
+        }
+        footerLine += `\n{\\pard\\qc\\sb0{\\f0\\fs14\\i\\cf2 ${_rtfEscapeLine('Este informe es v\u00E1lido \u00FAnicamente con la firma del profesional a cargo.')}}\\par}`;
 
         // ── Documento RTF completo ──
         // Color table: \cf1 = acento azul, \cf2 = gris

@@ -8,7 +8,23 @@
             btn.addEventListener('click', () => {
                 const acc = btn.closest('.stg-accordion');
                 if (!acc) return;
-                acc.classList.toggle('open');
+                const wasOpen = acc.classList.contains('open');
+                // Cerrar todos los demás
+                document.querySelectorAll('.stg-accordion.open').forEach(a => {
+                    if (a !== acc) a.classList.remove('open');
+                });
+                acc.classList.toggle('open', !wasOpen);
+                // Si se abrió, hacer scroll para que el botón quede arriba del modal
+                if (!wasOpen) {
+                    setTimeout(() => {
+                        const body = acc.closest('.settings-body');
+                        if (body) {
+                            body.scrollTo({ top: acc.offsetTop - 8, behavior: 'smooth' });
+                        } else {
+                            acc.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    }, 30);
+                }
             });
         });
     }

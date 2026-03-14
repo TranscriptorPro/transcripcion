@@ -507,9 +507,20 @@
         const safeTranscriptions = typeof transcriptions !== 'undefined' ? transcriptions : [];
         const safeActiveIndex = typeof activeTabIndex !== 'undefined' ? activeTabIndex : 0;
 
-        const fileName = (safeTranscriptions[safeActiveIndex]?.fileName || 'informe').replace(/\.[^/.]+$/, '');
+        // Nombre inteligente: Estudio_Apellido_DD-MM-YY
+        const _cfg = (typeof window.currentPdfConfig !== 'undefined' && window.currentPdfConfig) ? window.currentPdfConfig : {};
+        const _safePart = (s) => String(s || '').trim().replace(/[/\\:*?"<>|]/g, '').replace(/\s+/g, '_') || '';
+        const _studyPart = _safePart(_cfg.studyType || '');
+        const _patientFirst = (_cfg.patientName || '').trim().split(/\s+/)[0];
+        const _lastNamePart = _safePart(_patientFirst);
+        const _now = new Date();
+        const _dd = String(_now.getDate()).padStart(2, '0');
+        const _mm = String(_now.getMonth() + 1).padStart(2, '0');
+        const _yy = String(_now.getFullYear()).slice(2);
+        const _smartBase = [_studyPart, _lastNamePart, `${_dd}-${_mm}-${_yy}`].filter(Boolean).join('_');
+        const fileName = _smartBase || (safeTranscriptions[safeActiveIndex]?.fileName || 'informe').replace(/\.[^/.]+$/, '');
         const date = new Date().toLocaleDateString('es-ES');
-        const fileDate = new Date().toISOString().split('T')[0];
+        const fileDate = `${_dd}-${_mm}-${_yy}`;
 
         if (format === 'pdf') {
             _setPdfPreloaderState(true);
