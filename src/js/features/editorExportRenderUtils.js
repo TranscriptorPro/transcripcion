@@ -227,11 +227,11 @@
                     continue;
                 }
                 // Heading principal: centrado, bold, color acento, tamaño grande, línea inferior
-                bodyParts.push(`\\pard\\qc\\sb200\\sa80{\\f0\\fs26\\b\\cf1 ${_rtfEscapeLine(trimmed)}}\\par`);
+                bodyParts.push(`\\pard\\qc\\sb90\\sa30{\\f0\\fs21\\b\\cf1 ${_rtfEscapeLine(trimmed)}}\\par`);
                 bodyParts.push(`{\\pard\\brdrb\\brdrs\\brdrw10\\brdrcf1\\brsp40 \\par}`);
                 bodyParts.push('\\pard\\ql');
             } else {
-                bodyParts.push(`\\pard\\ql\\sl${rtfSl}\\slmult1\\sa80{\\f0\\fs22 ${_rtfEscapeLine(t)}}\\par`);
+                bodyParts.push(`\\pard\\ql\\sl${rtfSl}\\slmult1\\sa40{\\f0\\fs20 ${_rtfEscapeLine(t)}}\\par`);
             }
         }
         const body = bodyParts.join('\n');
@@ -239,41 +239,41 @@
         // ── Metadatos en tabla con bordes y color ──
         const renderMetaCell = (entry) => {
             if (!entry) return '\\intbl \\cell';
-            return `\\intbl {\\f0\\fs18\\cf1\\b ${_rtfEscapeLine(entry.label)}:}{\\f0\\fs20\\b0  ${_rtfEscapeLine(entry.value)}}\\cell`;
+            return `\\intbl {\\f0\\fs17\\cf1\\b ${_rtfEscapeLine(entry.label)}:}{\\f0\\fs17\\b0  ${_rtfEscapeLine(entry.value)}}\\cell`;
         };
 
         const metaRows = [];
         for (let i = 0; i < meta.length; i += 2) {
             const left = meta[i] || null;
             const right = meta[i + 1] || null;
-            metaRows.push(`{\\trowd\\trgaph108\\trleft0\\trrh360\\trbrdrb\\brdrs\\brdrw5\\brdrcf2\\cellx4500\\cellx9000\n${renderMetaCell(left)}\n${renderMetaCell(right)}\n\\row}`);
+            metaRows.push(`{\\trowd\\trgaph108\\trleft0\\trbrdrb\\brdrs\\brdrw5\\brdrcf2\\cellx5400\\cellx10800\n${renderMetaCell(left)}\n${renderMetaCell(right)}\n\\row}`);
         }
 
         const metaBlock = metaRows.length
-            ? `{\\pard\\sb100\\sa60\\f0\\fs20\\cf1\\b DATOS DEL ESTUDIO Y PACIENTE\\b0\\par}\n{\\pard\\brdrb\\brdrs\\brdrw10\\brdrcf1\\brsp20 \\par}\n${metaRows.join('\n')}\\par`
+            ? `{\\pard\\sb50\\sa20\\f0\\fs17\\cf1\\b DATOS DEL ESTUDIO Y PACIENTE\\b0\\par}\n{\\pard\\brdrb\\brdrs\\brdrw10\\brdrcf1\\brsp20 \\par}\n${metaRows.join('\n')}\\par`
             : '';
 
         // ── Título centrado con línea decorativa ──
         const titleText = String(ctx.studyType || '').trim()
             ? `INFORME DE ${_rtfEscapeLine(String(ctx.studyType).toUpperCase())}`
             : _rtfEscapeLine('INFORME M\u00C9DICO');
-        const titleBlock = `{\\pard\\qc\\sb0\\sa100{\\f0\\fs32\\b\\cf1 ${titleText}}\\par}\n{\\pard\\brdrb\\brdrs\\brdrw15\\brdrcf1\\brsp40 \\par}`;
+        const titleBlock = `{\\pard\\qc\\sb0\\sa50{\\f0\\fs26\\b\\cf1 ${titleText}}\\par}\n{\\pard\\brdrb\\brdrs\\brdrw15\\brdrcf1\\brsp40 \\par}`;
 
         // ── Bloque profesional (header) ──
         let profBlock = '';
         if (!ctx.hideReportHeader && ctx.professionalName) {
             const profParts = [];
-            profParts.push(`{\\f0\\fs22\\b ${_rtfEscapeLine('Estudio realizado por: ' + ctx.professionalName)}}`);
+            profParts.push(`{\\f0\\fs19\\b ${_rtfEscapeLine('Estudio realizado por: ' + ctx.professionalName)}}`);
             if (ctx.professionalMatricula) profParts.push(`{\\f0\\fs18\\cf2  - Mat. ${_rtfEscapeLine(ctx.professionalMatricula)}}`);
             if (ctx.professionalSpecialty) profParts.push(`{\\f0\\fs18\\i\\cf2  | ${_rtfEscapeLine(ctx.professionalSpecialty)}}`);
-            profBlock = `{\\pard\\sb60\\sa80 ${profParts.join('')}\\par}\n{\\pard\\brdrb\\brdrs\\brdrw5\\brdrcf1\\brsp20 \\par}`;
+            profBlock = `{\\pard\\sb30\\sa40 ${profParts.join('')}\\par}\n{\\pard\\brdrb\\brdrs\\brdrw5\\brdrcf1\\brsp20 \\par}`;
         }
 
         // ── Firma (centrada) ──
         let sigBlock = '';
         if (!ctx.hideReportHeader && ctx.professionalName) {
-            sigBlock = '\\par\\par';
-            sigBlock += `{\\pard\\qc\\sb80\\sa0 {\\f0\\fs18 ____________________________}\\par}`;
+            sigBlock = '\\par';
+            sigBlock += `{\\pard\\qc\\sb40\\sa0 {\\f0\\fs18 ____________________________}\\par}`;
             sigBlock += `{\\pard\\qc\\sb0 {\\f0\\fs20\\b ${_rtfEscapeLine(ctx.professionalName)}}\\par}`;
             if (ctx.professionalMatricula) sigBlock += `{\\pard\\qc\\sb0 {\\f0\\fs18\\cf2 Mat. ${_rtfEscapeLine(ctx.professionalMatricula)}}\\par}`;
             if (ctx.professionalSpecialty) sigBlock += `{\\pard\\qc\\sb0 {\\f0\\fs18\\i\\cf2 ${_rtfEscapeLine(ctx.professionalSpecialty)}}\\par}`;
@@ -287,8 +287,8 @@
         return `{\\rtf1\\ansi\\ansicpg1252\\deff0
 {\\fonttbl{\\f0 Arial;}}
 {\\colortbl;\\red${accentR}\\green${accentG}\\blue${accentB};\\red136\\green136\\blue136;}
-\\paperw12240\\paperh15840\\margl1440\\margr1440\\margt1440\\margb1440
-\\f0\\fs22\\ql
+\\paperw12240\\paperh15840\\margl720\\margr720\\margt720\\margb720
+\\f0\\fs20\\ql
 ${profBlock}
 ${titleBlock}
 \\par
