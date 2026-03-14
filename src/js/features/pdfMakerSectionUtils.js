@@ -145,6 +145,16 @@ window.PdfMakerSectionUtils.drawPatientBlockSection = function(ctx) {
 
 window.PdfMakerSectionUtils.drawSignatureSection = function(ctx) {
     const { PAGE_W, MR, showSignLine, showSignName, showSignMat, profName, profDisplayName, matricula, especialidad, sigB64, doc, setBlack, setGray, mainFont, ensureSpace, cyStart } = ctx;
+    const canDrawSignatureImage = !!sigB64;
+    const canDrawSignLine = showSignLine === true;
+    const canDrawSignName = showSignName && !!profName;
+    const canDrawSignMat = showSignMat && (!!matricula || !!especialidad);
+
+    // Si no hay contenido visible en firma, no reservar espacio ni paginar.
+    if (!canDrawSignatureImage && !canDrawSignLine && !canDrawSignName && !canDrawSignMat) {
+        return cyStart;
+    }
+
     let cy = cyStart + 18;
     cy = ensureSpace(cy, 45);
 

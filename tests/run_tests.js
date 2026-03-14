@@ -122,6 +122,7 @@ load('src/js/features/patientRegistry.js');
 load('src/js/features/formHandler.js');
 load('src/js/utils/stateManager.js');
 load('src/js/features/reportContextResolver.js');
+load('src/js/features/pdfMakerSectionUtils.js');
 
 // Cargar funciones puras adicionales para tests extendidos
 // _hexToRgb está fuera de la función principal en pdfMaker.js — extraer manualmente
@@ -7292,6 +7293,111 @@ await asyncTest('Título: genérico + sin heading => toma nombre de plantilla', 
     global.document.getElementById = prevGetEl;
     global.extractPatientDataFromText = prevExtract;
     global.selectedTemplate = prevSelectedTemplate;
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bloque 120: reportContextResolver — checkbox Nº informe para PDF
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 120: reportContextResolver — Nº informe on/off ───────');
+
+await asyncTest('Nº informe OFF: resolveReportContext.showReportNumber debe ser false', async () => {
+    const prevGetEl = global.document.getElementById;
+    const prevExtract = global.extractPatientDataFromText;
+
+    const map = {
+        reqShowStudyTime: { checked: true },
+        reqShowStudyDate: { checked: true },
+        pdfShowReportNumber: { checked: false },
+        reqStudyType: { value: 'Informe médico general' },
+        reqStudyDate: { value: '2026-03-13' }
+    };
+    global.document.getElementById = (id) => map[id] || null;
+    global.extractPatientDataFromText = () => ({});
+
+    global._pdfConfigCache = {
+        showReportNumber: false,
+        showStudyDate: true,
+        showStudyTime: true,
+        studyType: 'Informe médico general'
+    };
+
+    const ctx = await global.resolveReportContext({ includeEditorExtract: false, editorEl: null });
+    assertEqual(ctx.showReportNumber, false, 'showReportNumber debe ser false cuando checkbox está OFF');
+
+    global.document.getElementById = prevGetEl;
+    global.extractPatientDataFromText = prevExtract;
+});
+
+await asyncTest('Nº informe ON: resolveReportContext.showReportNumber debe ser true', async () => {
+    const prevGetEl = global.document.getElementById;
+    const prevExtract = global.extractPatientDataFromText;
+
+    const map = {
+        reqShowStudyTime: { checked: true },
+        reqShowStudyDate: { checked: true },
+        pdfShowReportNumber: { checked: true },
+        reqStudyType: { value: 'Informe médico general' },
+        reqStudyDate: { value: '2026-03-13' }
+    };
+    global.document.getElementById = (id) => map[id] || null;
+    global.extractPatientDataFromText = () => ({});
+
+    global._pdfConfigCache = {
+        showReportNumber: true,
+        showStudyDate: true,
+        showStudyTime: true,
+        studyType: 'Informe médico general'
+    };
+
+    const ctx = await global.resolveReportContext({ includeEditorExtract: false, editorEl: null });
+    assertEqual(ctx.showReportNumber, true, 'showReportNumber debe ser true cuando checkbox está ON');
+
+    global.document.getElementById = prevGetEl;
+    global.extractPatientDataFromText = prevExtract;
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bloque 121: pdfMakerSectionUtils — firma vacía no debe paginar
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 121: PDF firma vacía sin paginación extra ────────────');
+
+test('Firma vacía: drawSignatureSection retorna cyStart y no llama ensureSpace', () => {
+    let ensureSpaceCalls = 0;
+    const cyStart = 150;
+    const docStub = {
+        setDrawColor: () => {},
+        setLineWidth: () => {},
+        line: () => {},
+        setFontSize: () => {},
+        setFont: () => {},
+        text: () => {},
+        addImage: () => {}
+    };
+
+    const cyOut = global.PdfMakerSectionUtils.drawSignatureSection({
+        PAGE_W: 210,
+        MR: 12,
+        showSignLine: false,
+        showSignName: false,
+        showSignMat: false,
+        profName: '',
+        profDisplayName: '',
+        matricula: '',
+        especialidad: '',
+        sigB64: '',
+        doc: docStub,
+        setBlack: () => {},
+        setGray: () => {},
+        mainFont: 'helvetica',
+        ensureSpace: (cy) => {
+            ensureSpaceCalls++;
+            return cy;
+        },
+        cyStart
+    });
+
+    assertEqual(cyOut, cyStart, 'Con firma vacía debe conservar cyStart');
+    assertEqual(ensureSpaceCalls, 0, 'Con firma vacía no debe intentar paginar');
 });
 
 // Limpiar estado después de tests

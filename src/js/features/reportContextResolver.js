@@ -137,6 +137,7 @@
 
         const showStudyDate = _reqChecked('reqShowStudyDate', config.showStudyDate !== false);
         const showStudyTime = _reqChecked('reqShowStudyTime', config.showStudyTime !== false);
+        const showReportNumber = _reqChecked('pdfShowReportNumber', (config.showReportNumber ?? true) !== false);
 
         const studyDateRaw = config.studyDate || _reqValue('reqStudyDate') || _reqValue('pdfStudyDate') || '';
         const studyDateDisplay = showStudyDate ? _toDateDisplay(studyDateRaw) : '';
@@ -187,6 +188,7 @@
             studyDateDisplay,
             showStudyDate,
             showStudyTime,
+            showReportNumber,
             studyTime,
             studyReason: config.studyReason || _reqValue('reqStudyReason') || '',
             referringDoctorRaw: rawRefDoctor,

@@ -48,7 +48,9 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const cfgShowDate    = resolvedCtx
             ? !!resolvedCtx.showDateInFooter
             : ((config.showDate ?? true) === true);
-        const cfgShowReportNumber = config.showReportNumber !== false;
+        const cfgShowReportNumber = (resolvedCtx && typeof resolvedCtx.showReportNumber === 'boolean')
+            ? resolvedCtx.showReportNumber
+            : (config.showReportNumber !== false);
         const wpProfiles = (await appDB.get('workplace_profiles')) || [];
         const wpIdx = config.activeWorkplaceIndex;
         const activeWp = (resolvedCtx && resolvedCtx.activeWorkplace)
