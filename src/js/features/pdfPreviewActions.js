@@ -556,3 +556,93 @@ window.printFromPreview = async function () {
         }, 500);
     };
 };
+
+// ============ PDF VIA html2canvas (Único pipeline — 100% idéntico a la preview) ============
+window.downloadPDFFromCanvas = async function (fileName, fileDate) {
+    if (typeof showToast === 'function') showToast('\u23F3 Generando PDF...', 'info', 10000);
+    try {
+        // 1. Asegurar que la preview está renderizada
+        const previewPage = document.getElementById('previewPage');
+        if (!previewPage) throw new Error('Vista previa no disponible');
+
+        const overlay = document.getElementById('printPreviewOverlay');
+        const isOpen = overlay && overlay.classList.contains('active');
+        if (!isOpen) {
+            if (typeof window.openPrintPreview === 'function') {
+                await window.openPrintPreview();
+            }
+            // Esperar al render (openPrintPreview usa setTimeout 150ms internamente)
+            await new Promise(r => setTimeout(r, 700));
+        }
+
+        // 2. Ocultar marcadores de salto de página para captura limpia
+        const markers = Array.from(previewPage.querySelectorAll('.pv-pagebreak-marker'));
+        markers.forEach(m => { m._savedDisplay = m.style.display; m.style.display = 'none'; });
+
+        let canvas;
+        try {
+            canvas = await window.html2canvas(previewPage, {
+                scale: 2,
+                useCORS: true,
+                allowTaint: false,
+                backgroundColor: '#ffffff',
+                scrollX: 0,
+                scrollY: 0,
+                width: previewPage.scrollWidth,
+                height: previewPage.scrollHeight,
+                windowWidth: previewPage.offsetWidth,
+                windowHeight: previewPage.scrollHeight,
+                logging: false
+            });
+        } finally {
+            markers.forEach(m => { m.style.display = m._savedDisplay !== undefined ? m._savedDisplay : ''; });
+        }
+
+        if (!canvas) throw new Error('html2canvas no produjo resultado');
+
+        // 3. Paginar en hojas A4
+        const { jsPDF } = window.jspdf;
+        const PAGE_W_MM = 210;
+        const PAGE_H_MM = 297;
+        const pageHeightPx = Math.round((PAGE_H_MM / PAGE_W_MM) * canvas.width);
+        const totalPages = Math.ceil(canvas.height / pageHeightPx);
+
+        const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
+        for (let i = 0; i < totalPages; i++) {
+            if (i > 0) doc.addPage();
+            const srcY = i * pageHeightPx;
+            const srcH = Math.min(pageHeightPx, canvas.height - srcY);
+
+            const slice = document.createElement('canvas');
+            slice.width = canvas.width;
+            slice.height = srcH;
+            slice.getContext('2d').drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
+
+            const sliceHmm = (srcH / canvas.width) * PAGE_W_MM;
+            doc.addImage(slice.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, PAGE_W_MM, sliceHmm);
+        }
+
+        // 4. Descargar
+        const blob = doc.output('blob');
+        const saveHandler = (typeof window.saveToDisk === 'function') ? window.saveToDisk : async (b, name) => {
+            const url = URL.createObjectURL(b);
+            const a = document.createElement('a'); a.href = url; a.download = name;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        };
+        await saveHandler(blob, `${fileName}_${fileDate}.pdf`);
+        if (typeof showToast === 'function') showToast('PDF descargado \u2713', 'success');
+
+        // Guardar en historial
+        if (typeof saveReportToHistory === 'function' && !window._skipReportSave) {
+            try {
+                const editorEl = window.editor || document.getElementById('editor');
+                saveReportToHistory({ htmlContent: editorEl ? editorEl.innerHTML : '', fileName: fileName, patientName: '', patientDni: '' });
+            } catch (_) { /* no bloquear */ }
+        }
+    } catch (err) {
+        console.error('[downloadPDFFromCanvas] Error:', err);
+        if (typeof showToast === 'function') showToast('Error al generar PDF: ' + (err.message || String(err)), 'error');
+    }
+};

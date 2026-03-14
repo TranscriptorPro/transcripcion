@@ -514,32 +514,31 @@
         if (format === 'pdf') {
             _setPdfPreloaderState(true);
             try {
-                if (typeof showToast === 'function') {
-                    showToast('⏳ Generando PDF...', 'info', 3500);
+                // Captura exacta de la vista previa — idéntico visual garantizado
+                if (typeof window.downloadPDFFromCanvas === 'function') {
+                    await window.downloadPDFFromCanvas(fileName, fileDate);
+                    return;
                 }
+                // Fallback: pipeline jsPDF original
+                if (typeof showToast === 'function') showToast('⏳ Generando PDF...', 'info', 3500);
                 const htmlDoc = (typeof createHTML === 'function') ? await createHTML() : null;
                 if (!htmlDoc) {
                     if (typeof showToast === 'function') showToast('No se pudo preparar el PDF del informe', 'error');
                     return;
                 }
-
                 const pdfBlob = await _buildPdfBlobFromHtml(htmlDoc);
                 if (!pdfBlob) {
-                    // Fallback cross-browser: usar generador legado si el render fiel falla.
                     if (typeof window.downloadPDFWrapper === 'function') {
                         try {
                             await window.downloadPDFWrapper(editor.innerHTML, fileName, date, fileDate);
-                            if (typeof showToast === 'function') showToast('PDF descargado (modo compatibilidad)', 'warning');
                             return;
                         } catch (err) {
                             console.warn('Fallback downloadPDFWrapper fallo:', err);
                         }
                     }
-
                     if (typeof showToast === 'function') showToast('No se pudo generar el PDF. Reintenta.', 'error');
                     return;
                 }
-
                 const linkInfo = await _createLocalPdfLink(pdfBlob, fileName, fileDate);
                 if (!linkInfo) {
                     if (typeof showToast === 'function') showToast('No se pudo preparar la descarga del PDF', 'error');

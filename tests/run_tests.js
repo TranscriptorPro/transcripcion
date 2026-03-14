@@ -2451,6 +2451,24 @@ test('pdfMaker.js drawFooter soporta footerText', () => {
     assert(code.includes('footerText'), 'Debe usar footerText en el pie');
 });
 
+test('pdfPreviewActions.js expone downloadPDFFromCanvas', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/pdfPreviewActions.js'), 'utf-8');
+    assert(code.includes('window.downloadPDFFromCanvas'), 'Debe exponer downloadPDFFromCanvas');
+    assert(code.includes('html2canvas'), 'Debe usar html2canvas para captura');
+    assert(code.includes('pageHeightPx'), 'Debe paginar por altura A4');
+});
+
+test('editorDownloadCoreUtils.js usa downloadPDFFromCanvas como primer intento', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/editorDownloadCoreUtils.js'), 'utf-8');
+    // Buscar el bloque del case pdf (donde format === 'pdf')
+    const pdfBlock = code.substring(code.indexOf("if (format === 'pdf')"));
+    assert(pdfBlock.includes('downloadPDFFromCanvas'), 'El bloque PDF debe llamar downloadPDFFromCanvas');
+    // downloadPDFFromCanvas debe aparecer antes que _buildPdfBlobFromHtml en ese bloque
+    const posCanvas = pdfBlock.indexOf('downloadPDFFromCanvas');
+    const posFallback = pdfBlock.indexOf('_buildPdfBlobFromHtml');
+    assert(posCanvas < posFallback, 'downloadPDFFromCanvas debe invocarse antes del fallback jsPDF en el bloque PDF');
+});
+
 // BLOQUE 48: Preview modal — dropdown multi-formato
 console.log('\n── Bloque 48: Preview modal — dropdown multi-formato ─────────');
 
