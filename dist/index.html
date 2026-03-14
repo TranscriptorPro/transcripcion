@@ -126,7 +126,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
-        <link rel="stylesheet" href="app.mmpiy3wo.min.css">
+        <link rel="stylesheet" href="app.mmpo2qu7.min.css">
 </head>
 
 <body>
@@ -919,6 +919,30 @@
                         </div>
                     </div>
 
+                    <!-- 11b. Actualizar App -->
+                    <div class="stg-accordion" data-stg="update">
+                        <button class="stg-accordion-btn" type="button">
+                            <span>🔄 Actualizar App</span>
+                            <span class="stg-chevron">▾</span>
+                        </button>
+                        <div class="stg-accordion-content">
+                            <p class="stg-hint" style="margin-bottom: 0.75rem;">
+                                Si los cambios nuevos no aparecen, usá este botón para forzar la descarga
+                                de la última versión. <strong>No se pierden tus datos ni tu API Key.</strong>
+                            </p>
+                            <div id="appVersionInfo" style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.75rem; padding:6px 10px; background:var(--bg-secondary,#f1f5f9); border-radius:6px;">
+                                Versión en caché: <span id="cachedVersionLabel">comprobando…</span>
+                            </div>
+                            <button class="btn btn-primary btn-full stg-action-btn" id="btnForceUpdate"
+                                style="background:#1a56a0; border-color:#1a56a0; font-weight:700; font-size:0.95rem;">
+                                🚀 Actualizar a la última versión
+                            </button>
+                            <p style="font-size:0.72rem; color:var(--text-secondary); margin-top:0.5rem; text-align:center;">
+                                La app se recargará automáticamente después de limpiar la caché.
+                            </p>
+                        </div>
+                    </div>
+
                     <!-- 12. Acerca de -->
                     <div class="stg-accordion" data-stg="about">
                         <button class="stg-accordion-btn" type="button">
@@ -1450,7 +1474,6 @@
                         <div class="dropdown-content" id="previewDownloadDropdown" style="display:none;position:absolute;bottom:100%;left:0;right:auto;margin-bottom:4px;background:var(--bg-card,#1e293b);border:1px solid var(--border);border-radius:8px;z-index:10010;min-width:220px;width:max-content;box-shadow:0 4px 16px rgba(0,0,0,0.3);">
                             <button data-format="pdf" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:0.9rem;">📄 PDF Profesional</button>
                             <button data-format="rtf" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:0.9rem;">📝 Word (RTF)</button>
-                            <button data-format="txt" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:0.9rem;">🗒️ Texto Simple</button>
                             <button data-format="html" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:0.9rem;">🌐 HTML</button>
                         </div>
                     </div>
@@ -2320,7 +2343,6 @@
                             <div class="dropdown-content" id="downloadDropdown">
                                 <button data-format="pdf" onclick="downloadPDF()">📄 PDF Profesional <span class="fav-star" data-fmt="pdf" title="Marcar como favorito">⭐</span></button>
                                 <button data-format="rtf" onclick="downloadRTF()">📝 Word (RTF) <span class="fav-star" data-fmt="rtf" title="Marcar como favorito">☆</span></button>
-                                <button data-format="txt" onclick="downloadTXT()">🗒️ Texto Simple <span class="fav-star" data-fmt="txt" title="Marcar como favorito">☆</span></button>
                                 <button data-format="html" onclick="downloadHTML()">🌐 HTML <span class="fav-star" data-fmt="html" title="Marcar como favorito">☆</span></button>
                             </div>
                         </div>
@@ -2480,7 +2502,7 @@
             </svg>
             <span id="toastMessage"></span>
         </div>
-        <script src="app.mmpiy3wa.min.js"></script>
+        <script src="app.mmpo2qtp.min.js"></script>
 
         <!-- G1: Modal Panel Registro de Pacientes -->
         <div class="modal-overlay" id="registryPanelOverlay">
@@ -2903,6 +2925,58 @@
         </div>
 
     </main>
+
+    <script>
+    // ── Forzar actualización de Service Worker sin perder datos ──────────
+    (function () {
+        // Mostrar versión actual en caché
+        var vLabel = document.getElementById('cachedVersionLabel');
+        if (vLabel && 'caches' in window) {
+            caches.keys().then(function (keys) {
+                var v = keys.find(function (k) { return k.startsWith('transcriptor-pro-'); });
+                vLabel.textContent = v ? v.replace('transcriptor-pro-', '') : 'desconocida';
+            });
+        }
+
+        var btn = document.getElementById('btnForceUpdate');
+        if (!btn) return;
+
+        btn.addEventListener('click', function () {
+            btn.disabled = true;
+            btn.textContent = '⏳ Limpiando caché…';
+
+            // 1. Desregistrar todos los Service Workers
+            var swPromise = ('serviceWorker' in navigator)
+                ? navigator.serviceWorker.getRegistrations().then(function (regs) {
+                    return Promise.all(regs.map(function (r) { return r.unregister(); }));
+                })
+                : Promise.resolve();
+
+            // 2. Limpiar todos los cachés del CacheStorage (NO toca localStorage)
+            var cachePromise = ('caches' in window)
+                ? caches.keys().then(function (keys) {
+                    return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+                })
+                : Promise.resolve();
+
+            Promise.all([swPromise, cachePromise])
+                .then(function () {
+                    btn.textContent = '✅ ¡Listo! Recargando…';
+                    // Forzar recarga desde servidor (ignora caché del navegador)
+                    setTimeout(function () {
+                        window.location.reload(true);
+                    }, 800);
+                })
+                .catch(function (err) {
+                    btn.disabled = false;
+                    btn.textContent = '🚀 Actualizar a la última versión';
+                    if (typeof showToast === 'function') {
+                        showToast('Error al limpiar caché: ' + err.message, 'error');
+                    }
+                });
+        });
+    })();
+    </script>
 </body>
 
 </html>

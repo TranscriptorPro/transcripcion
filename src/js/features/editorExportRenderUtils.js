@@ -190,18 +190,18 @@
 
         const meta = [];
         if (ctx.showStudyDate) addField(meta, 'Fecha', `${ctx.studyDate}${ctx.studyTime ? ' ' + ctx.studyTime : ''}`);
-        if (ctx.showReportNumber) addField(meta, 'Informe N\u186?', ctx.reportNum);
+        if (ctx.showReportNumber) addField(meta, 'Informe N\u00BA', ctx.reportNum);
         addField(meta, 'Paciente', ctx.patientName);
         addField(meta, 'DNI', ctx.patientDni);
-        addField(meta, 'Edad', ctx.patientAge ? `${ctx.patientAge} a\u241?os` : '');
+        addField(meta, 'Edad', ctx.patientAge ? `${ctx.patientAge} a\u00F1os` : '');
         addField(meta, 'Sexo', ctx.patientSex === 'M' ? 'Masculino' : ctx.patientSex === 'F' ? 'Femenino' : ctx.patientSex);
         addField(meta, 'Cobertura', ctx.patientInsurance);
-        addField(meta, 'N\u186? Afiliado', ctx.patientAffiliateNum);
-        addField(meta, 'M\u233?dico solicitante', ctx.referringDoctor);
+        addField(meta, 'N\u00BA Afiliado', ctx.patientAffiliateNum);
+        addField(meta, 'M\u00E9dico solicitante', ctx.referringDoctor);
         addField(meta, 'Motivo de consulta', ctx.studyReason);
         if (!ctx.hideReportHeader) {
             addField(meta, 'Profesional', ctx.professionalName);
-            addField(meta, 'Matr\u237?cula', ctx.professionalMatricula);
+            addField(meta, 'Matr\u00EDcula', ctx.professionalMatricula);
             addField(meta, 'Especialidad', ctx.professionalSpecialty);
             addField(meta, 'Lugar de trabajo', ctx.workplaceName);
         }
@@ -245,7 +245,7 @@
         // ── Título centrado con línea decorativa ──
         const titleText = String(ctx.studyType || '').trim()
             ? `INFORME DE ${_rtfEscapeLine(String(ctx.studyType).toUpperCase())}`
-            : 'INFORME M\u201?DICO';
+            : 'INFORME M\u00C9DICO';
         const titleBlock = `{\\pard\\qc\\sb0\\sa100{\\f0\\fs32\\b\\cf1 ${titleText}}\\par}\n{\\pard\\brdrb\\brdrs\\brdrw15\\brdrcf1\\brsp40 \\par}`;
 
         // ── Bloque profesional (header) ──
@@ -253,7 +253,7 @@
         if (!ctx.hideReportHeader && ctx.professionalName) {
             const profParts = [];
             profParts.push(`{\\f0\\fs22\\b ${_rtfEscapeLine('Estudio realizado por: ' + ctx.professionalName)}}`);
-            if (ctx.professionalMatricula) profParts.push(`{\\f0\\fs18\\cf2  — Mat. ${_rtfEscapeLine(ctx.professionalMatricula)}}`);
+            if (ctx.professionalMatricula) profParts.push(`{\\f0\\fs18\\cf2  - Mat. ${_rtfEscapeLine(ctx.professionalMatricula)}}`);
             if (ctx.professionalSpecialty) profParts.push(`{\\f0\\fs18\\i\\cf2  | ${_rtfEscapeLine(ctx.professionalSpecialty)}}`);
             profBlock = `{\\pard\\sb60\\sa80 ${profParts.join('')}\\par}\n{\\pard\\brdrb\\brdrs\\brdrw5\\brdrcf1\\brsp20 \\par}`;
         }
@@ -269,7 +269,7 @@
         }
 
         // ── Footer ──
-        const footerLine = `{\\pard\\brdrb\\brdrs\\brdrw5\\brdrcf2\\brsp20 \\par}\n{\\pard\\qc\\sb40{\\f0\\fs16\\cf2 Este informe es v\u225?lido \u250?nicamente con la firma del profesional a cargo.}\\par}`;
+        const footerLine = `{\\pard\\brdrb\\brdrs\\brdrw5\\brdrcf2\\brsp20 \\par}\n{\\pard\\qc\\sb40{\\f0\\fs16\\cf2 Este informe es v\u00E1lido \u00FAnicamente con la firma del profesional a cargo.}\\par}`;
 
         // ── Documento RTF completo ──
         // Color table: \cf1 = acento azul, \cf2 = gris
