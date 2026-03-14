@@ -592,7 +592,27 @@ window.downloadPDFFromCanvas = async function (fileName, fileDate) {
                 height: previewPage.scrollHeight,
                 windowWidth: previewPage.offsetWidth,
                 windowHeight: previewPage.scrollHeight,
-                logging: false
+                logging: false,
+                onclone: function (clonedDoc) {
+                    // html2canvas 1.4.1 no soporta la función CSS color() ni color-mix().
+                    // Eliminamos toda aparición en estilos inline del clon.
+                    clonedDoc.querySelectorAll('[style]').forEach(function (el) {
+                        var s = el.getAttribute('style') || '';
+                        if (s.indexOf('color(') !== -1 || s.indexOf('color-mix(') !== -1) {
+                            el.setAttribute('style', s
+                                .replace(/[:,\s]color\s*\([^;}"']+\)/gi, ': inherit')
+                                .replace(/[:,\s]color-mix\s*\([^;}"']+\)/gi, ': inherit')
+                            );
+                        }
+                    });
+                    // Inyectar override para color-scheme (fuente más común del error)
+                    var fix = clonedDoc.createElement('style');
+                    fix.textContent = [
+                        ':root { color-scheme: light !important; }',
+                        '* { forced-color-adjust: none !important; }'
+                    ].join('\n');
+                    clonedDoc.head.appendChild(fix);
+                }
             });
         } finally {
             markers.forEach(m => { m.style.display = m._savedDisplay !== undefined ? m._savedDisplay : ''; });
