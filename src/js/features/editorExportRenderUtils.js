@@ -572,8 +572,8 @@ body { font-family: ${fontFamily}; font-size: ${fontSize}pt; line-height: ${line
 <body>
 ${wpSection}
 ${headerSection}
-${patientSection}
 ${studySection}
+${patientSection}
 <div class="preview-content">${bodyContent}</div>
 ${sigSection}
 ${qrSection}

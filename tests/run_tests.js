@@ -7430,6 +7430,19 @@ test('TXT/RTF: no agregan campo Estudio en cabecera de metadatos', () => {
         'createTXT debe incluir el tipo de estudio en el titulo');
 });
 
+test('Paridad Preview/PDF-HTML: orden de bloques estudio antes que paciente', () => {
+    const exportCode = fs.readFileSync(path.join(root, 'src/js/features/editorExportRenderUtils.js'), 'utf-8');
+    const idxPreviewStudy = indexCode.indexOf('id="previewStudy"');
+    const idxPreviewPatient = indexCode.indexOf('id="previewPatient"');
+
+    const idxStudy = exportCode.indexOf('${studySection}');
+    const idxPatient = exportCode.indexOf('${patientSection}');
+    assert(idxStudy >= 0 && idxPatient >= 0 && idxStudy < idxPatient,
+        'createHTML debe renderizar estudio antes de paciente');
+    assert(idxPreviewStudy >= 0 && idxPreviewPatient >= 0 && idxPreviewStudy < idxPreviewPatient,
+        'La vista previa mantiene estudio antes de paciente');
+});
+
 // Limpiar estado después de tests
 global.localStorage.clear();
 global._reportHistCache = null;
