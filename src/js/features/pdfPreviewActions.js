@@ -594,22 +594,46 @@ window.downloadPDFFromCanvas = async function (fileName, fileDate) {
                 windowHeight: previewPage.scrollHeight,
                 logging: false,
                 onclone: function (clonedDoc) {
-                    // html2canvas 1.4.1 no soporta la función CSS color() ni color-mix().
-                    // Eliminamos toda aparición en estilos inline del clon.
+                    // ── Fix 1: forzar light-only en el root ──────────────────────────────
+                    // "only light" previene que Chrome resuelva colores de sistema como color(srgb…)
+                    clonedDoc.documentElement.style.setProperty('color-scheme', 'only light', 'important');
+                    // Quitar atributos de tema que activen dark mode
+                    ['data-theme', 'data-bs-theme'].forEach(function (a) {
+                        clonedDoc.documentElement.removeAttribute(a);
+                        clonedDoc.body && clonedDoc.body.removeAttribute(a);
+                    });
+                    ['dark', 'dark-mode', 'theme-dark'].forEach(function (c) {
+                        clonedDoc.documentElement.classList.remove(c);
+                        clonedDoc.body && clonedDoc.body.classList.remove(c);
+                    });
+
+                    // ── Fix 2: sanear <style> tags (CSS compilado) ───────────────────────
+                    var _reColor = /color\s*\([^)]*\)/g;
+                    var _reMix = /color-mix\s*\([^)]*\)/g;
+                    clonedDoc.querySelectorAll('style').forEach(function (styleEl) {
+                        var t = styleEl.textContent || '';
+                        if (t.indexOf('color(') !== -1 || t.indexOf('color-mix(') !== -1) {
+                            styleEl.textContent = t
+                                .replace(_reColor, 'black')
+                                .replace(_reMix, 'black');
+                        }
+                    });
+
+                    // ── Fix 3: sanear estilos inline ─────────────────────────────────────
                     clonedDoc.querySelectorAll('[style]').forEach(function (el) {
                         var s = el.getAttribute('style') || '';
                         if (s.indexOf('color(') !== -1 || s.indexOf('color-mix(') !== -1) {
                             el.setAttribute('style', s
-                                .replace(/[:,\s]color\s*\([^;}"']+\)/gi, ': inherit')
-                                .replace(/[:,\s]color-mix\s*\([^;}"']+\)/gi, ': inherit')
-                            );
+                                .replace(_reColor, 'black')
+                                .replace(_reMix, 'black'));
                         }
                     });
-                    // Inyectar override para color-scheme (fuente más común del error)
+
+                    // ── Fix 4: inyectar hoja de override final ───────────────────────────
                     var fix = clonedDoc.createElement('style');
                     fix.textContent = [
-                        ':root { color-scheme: light !important; }',
-                        '* { forced-color-adjust: none !important; }'
+                        ':root { color-scheme: only light !important; }',
+                        '* { forced-color-adjust: none !important; color-scheme: normal !important; }'
                     ].join('\n');
                     clonedDoc.head.appendChild(fix);
                 }
