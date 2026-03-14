@@ -188,7 +188,6 @@
 
         const meta = [];
         if (ctx.showStudyDate) addField(meta, 'Fecha', `${ctx.studyDate}${ctx.studyTime ? ' ' + ctx.studyTime : ''}`);
-        addField(meta, 'Estudio', ctx.studyType);
         if (ctx.showReportNumber) addField(meta, 'Informe N', ctx.reportNum);
         addField(meta, 'Paciente', ctx.patientName);
         addField(meta, 'DNI', ctx.patientDni);
@@ -245,7 +244,6 @@
         };
 
         if (ctx.showStudyDate) pushField('Fecha', `${ctx.studyDate}${ctx.studyTime ? ' ' + ctx.studyTime : ''}`);
-        pushField('Estudio', ctx.studyType);
         if (ctx.showReportNumber) pushField('Informe N', ctx.reportNum);
         pushField('Paciente', ctx.patientName);
         pushField('DNI', ctx.patientDni);
@@ -427,7 +425,6 @@
         if (pCells.length) patientSection = `<div class="preview-patient"><div class="pvp-grid">${pCells.join('')}</div></div>`;
 
         let row1 = '';
-        row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">ESTUDIO:</span><span class="pvs-val">${studyType || '—'}</span></div>`;
         if (showReportNumber) {
             row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">INFORME Nº:</span><span class="pvs-val">${reportNum || '—'}</span></div>`;
         }

@@ -826,10 +826,9 @@ window.openPrintPreview = async function () {
     const studyEl = document.getElementById('previewStudy');
     if (studyEl) {
         const studyTitle = (studyType && String(studyType).trim()) ? `INFORME DE ${studyType}` : 'INFORME MEDICO';
-        // Fila 1: Estudio | Informe Nº | Fecha
+        // Fila 1: Informe Nº | Fecha
         // Fila 2: Solicitante | Motivo
         let row1 = '';
-        row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">ESTUDIO:</span><span class="pvs-val">${studyType || '—'}</span></div>`;
         if (showReportNumber) {
             row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">INFORME Nº:</span><span class="pvs-val">${reportNum || '—'}</span></div>`;
         }

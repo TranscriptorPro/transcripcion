@@ -7400,6 +7400,32 @@ test('Firma vacía: drawSignatureSection retorna cyStart y no llama ensureSpace'
     assertEqual(ensureSpaceCalls, 0, 'Con firma vacía no debe intentar paginar');
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bloque 122: quitar campo ESTUDIO redundante en metadatos
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 122: Sin duplicar campo ESTUDIO en metadatos ────────');
+
+test('Preview/PDF/HTML: no renderizan la celda ESTUDIO en la grilla de metadatos', () => {
+    const previewCode = fs.readFileSync(path.join(root, 'src/js/features/pdfPreview.js'), 'utf-8');
+    const exportCode = fs.readFileSync(path.join(root, 'src/js/features/editorExportRenderUtils.js'), 'utf-8');
+    const pdfSectionCode = fs.readFileSync(path.join(root, 'src/js/features/pdfMakerSectionUtils.js'), 'utf-8');
+
+    assert(!previewCode.includes('ESTUDIO:</span><span class="pvs-val">${studyType || \u0027—\u0027}</span>'),
+        'pdfPreview no debe mostrar ESTUDIO en la fila de metadatos');
+    assert(!exportCode.includes('ESTUDIO:</span><span class="pvs-val">${studyType || \u0027—\u0027}</span>'),
+        'createHTML no debe mostrar ESTUDIO en la fila de metadatos');
+    assert(!pdfSectionCode.includes("row1.push({ label: 'ESTUDIO:'"),
+        'pdfMakerSectionUtils no debe agregar ESTUDIO a row1');
+});
+
+test('TXT/RTF: no agregan campo Estudio en cabecera de metadatos', () => {
+    const exportCode = fs.readFileSync(path.join(root, 'src/js/features/editorExportRenderUtils.js'), 'utf-8');
+    assert(!exportCode.includes("addField(meta, 'Estudio', ctx.studyType);"),
+        'createRTF no debe incluir campo Estudio');
+    assert(!exportCode.includes("pushField('Estudio', ctx.studyType);"),
+        'createTXT no debe incluir campo Estudio');
+});
+
 // Limpiar estado después de tests
 global.localStorage.clear();
 global._reportHistCache = null;

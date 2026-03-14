@@ -3,7 +3,6 @@ window.PdfMakerSectionUtils = window.PdfMakerSectionUtils || {};
 window.PdfMakerSectionUtils.drawStudyInfoSection = function(ctx) {
     const { studyType, reportNum, showReportNumber = true, pDate, studyTime, refDoctor, studyReason, CW, ML, cyStart, doc, accent, ensureSpace, setBlack } = ctx;
     const row1 = [];
-    row1.push({ label: 'ESTUDIO:', value: studyType || '—' });
     if (showReportNumber) row1.push({ label: 'INFORME Nº:', value: reportNum || '—' });
     row1.push({ label: 'FECHA:', value: `${pDate}${studyTime ? ' ' + studyTime : ''}` });
 
