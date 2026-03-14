@@ -447,6 +447,32 @@ window.initPatientRegistryPanel = function () {
     });
 };
 
+// ── API pública para datosPanel (delete/update sin depender del modal) ──
+window.deletePatientFromRegistry = function (name, dni) {
+    const normDni = (dni || '').replace(/\D/g, '');
+    const reg = getRegistry().filter(p => {
+        if (normDni && p.dni && p.dni.replace(/\D/g, '') === normDni) return false;
+        if (!normDni && _normStr(p.name || '') === _normStr(name || '')) return false;
+        return true;
+    });
+    setRegistry(reg);
+    if (typeof window._refreshDatosPanel === 'function') window._refreshDatosPanel();
+};
+
+window.updatePatientInRegistry = function (originalName, originalDni, newData) {
+    const normOrigDni = (originalDni || '').replace(/\D/g, '');
+    const reg = getRegistry();
+    const idx = reg.findIndex(p => {
+        if (normOrigDni && p.dni && p.dni.replace(/\D/g, '') === normOrigDni) return true;
+        return _normStr(p.name || '') === _normStr(originalName || '');
+    });
+    if (idx < 0) return false;
+    reg[idx] = { ...reg[idx], ...newData };
+    setRegistry(reg);
+    if (typeof window._refreshDatosPanel === 'function') window._refreshDatosPanel();
+    return true;
+};
+
 // ============ G2: Incrementar contador de visitas al guardar en registry ============
 const _origSavePatient = window.savePatientToRegistry;
 window.savePatientToRegistry = function(patient) {

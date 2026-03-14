@@ -66,6 +66,7 @@ const JS_FILES = [
     'src/js/features/referringDoctorRegistryPanel.js',
     'src/js/features/studyReasonHistory.js',
     'src/js/features/studyReasonHistoryPanel.js',
+    'src/js/features/datosPanel.js',
     'src/js/features/formHandler.js',
     'src/js/features/themeManager.js',
     'src/js/features/settingsThemeUtils.js',

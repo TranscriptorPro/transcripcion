@@ -231,7 +231,7 @@
                 bodyParts.push(`{\\pard\\brdrb\\brdrs\\brdrw10\\brdrcf1\\brsp40 \\par}`);
                 bodyParts.push('\\pard\\ql');
             } else {
-                bodyParts.push(`{\\f0\\fs22 ${_rtfEscapeLine(t)}}\\par`);
+                bodyParts.push(`\\pard\\ql\\sl${rtfSl}\\slmult1\\sa80{\\f0\\fs22 ${_rtfEscapeLine(t)}}\\par`);
             }
         }
         const body = bodyParts.join('\n');
@@ -256,7 +256,7 @@
         // ── Título centrado con línea decorativa ──
         const titleText = String(ctx.studyType || '').trim()
             ? `INFORME DE ${_rtfEscapeLine(String(ctx.studyType).toUpperCase())}`
-            : 'INFORME M\u00C9DICO';
+            : _rtfEscapeLine('INFORME M\u00C9DICO');
         const titleBlock = `{\\pard\\qc\\sb0\\sa100{\\f0\\fs32\\b\\cf1 ${titleText}}\\par}\n{\\pard\\brdrb\\brdrs\\brdrw15\\brdrcf1\\brsp40 \\par}`;
 
         // ── Bloque profesional (header) ──
@@ -280,15 +280,15 @@
         }
 
         // ── Footer ──
-        const footerLine = `{\\pard\\brdrb\\brdrs\\brdrw5\\brdrcf2\\brsp20 \\par}\n{\\pard\\qc\\sb40{\\f0\\fs16\\cf2 Este informe es v\u00E1lido \u00FAnicamente con la firma del profesional a cargo.}\\par}`;
+        const footerLine = `{\\pard\\brdrb\\brdrs\\brdrw5\\brdrcf2\\brsp20 \\par}\n{\\pard\\qc\\sb40{\\f0\\fs16\\cf2 ${_rtfEscapeLine('Este informe es v\u00E1lido \u00FAnicamente con la firma del profesional a cargo.')}}\\par}`;
 
         // ── Documento RTF completo ──
         // Color table: \cf1 = acento azul, \cf2 = gris
         return `{\\rtf1\\ansi\\ansicpg1252\\deff0
 {\\fonttbl{\\f0 Arial;}}
 {\\colortbl;\\red${accentR}\\green${accentG}\\blue${accentB};\\red136\\green136\\blue136;}
-\\paperw12240\\paperh15840\\margl900\\margr900\\margt1080\\margb1080
-\\f0\\fs22\\sa80\\sl${rtfSl}\\slmult1\\ql
+\\paperw12240\\paperh15840\\margl1440\\margr1440\\margt1440\\margb1440
+\\f0\\fs22\\ql
 ${profBlock}
 ${titleBlock}
 \\par

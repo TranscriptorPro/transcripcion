@@ -26,10 +26,10 @@
         if (historyBtn) {
             historyBtn.addEventListener('click', () => {
                 if (overlay) overlay.classList.remove('active');
-                const histOverlay = document.getElementById('reportHistoryOverlay');
-                if (histOverlay) {
-                    histOverlay.classList.add('active');
-                    if (typeof watchForClose === 'function') watchForClose(histOverlay, reopenSettings);
+                if (typeof window.openDatosPanel === 'function') {
+                    window.openDatosPanel('history');
+                    const dp = document.getElementById('datosPanelOverlay');
+                    if (dp && typeof watchForClose === 'function') watchForClose(dp, reopenSettings);
                 }
             });
         }
@@ -37,11 +37,10 @@
         if (patientRegistryBtn) {
             patientRegistryBtn.addEventListener('click', () => {
                 if (overlay) overlay.classList.remove('active');
-                const panel = document.getElementById('registryPanelOverlay');
-                if (panel) {
-                    panel.classList.add('active');
-                    if (typeof window._refreshPatientRegistryPanel === 'function') window._refreshPatientRegistryPanel();
-                    if (typeof watchForClose === 'function') watchForClose(panel, reopenSettings);
+                if (typeof window.openDatosPanel === 'function') {
+                    window.openDatosPanel('patients');
+                    const dp = document.getElementById('datosPanelOverlay');
+                    if (dp && typeof watchForClose === 'function') watchForClose(dp, reopenSettings);
                 }
             });
         }
@@ -49,11 +48,10 @@
         if (doctorRegistryBtn) {
             doctorRegistryBtn.addEventListener('click', () => {
                 if (overlay) overlay.classList.remove('active');
-                const panel = document.getElementById('doctorRegistryOverlay');
-                if (panel) {
-                    panel.classList.add('active');
-                    if (typeof window._refreshDoctorRegistryPanel === 'function') window._refreshDoctorRegistryPanel();
-                    if (typeof watchForClose === 'function') watchForClose(panel, reopenSettings);
+                if (typeof window.openDatosPanel === 'function') {
+                    window.openDatosPanel('doctors');
+                    const dp = document.getElementById('datosPanelOverlay');
+                    if (dp && typeof watchForClose === 'function') watchForClose(dp, reopenSettings);
                 }
             });
         }
@@ -61,11 +59,10 @@
         if (reasonHistoryBtn) {
             reasonHistoryBtn.addEventListener('click', () => {
                 if (overlay) overlay.classList.remove('active');
-                const panel = document.getElementById('studyReasonOverlay');
-                if (panel) {
-                    panel.classList.add('active');
-                    if (typeof window._refreshStudyReasonPanel === 'function') window._refreshStudyReasonPanel();
-                    if (typeof watchForClose === 'function') watchForClose(panel, reopenSettings);
+                if (typeof window.openDatosPanel === 'function') {
+                    window.openDatosPanel('reasons');
+                    const dp = document.getElementById('datosPanelOverlay');
+                    if (dp && typeof watchForClose === 'function') watchForClose(dp, reopenSettings);
                 }
             });
         }
