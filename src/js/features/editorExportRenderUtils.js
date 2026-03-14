@@ -179,6 +179,8 @@
             .replace(/✏️?/g, '');
         const lineSpacing = Math.max(1, Math.min(2, parseFloat(ctx.lineSpacing) || 1));
         const rtfSl = Math.round(240 * lineSpacing);
+        // Color de acento (azul profesional)
+        const accentR = 26, accentG = 86, accentB = 160;
 
         const addField = (arr, label, value) => {
             const v = String(value || '').trim();
@@ -188,53 +190,104 @@
 
         const meta = [];
         if (ctx.showStudyDate) addField(meta, 'Fecha', `${ctx.studyDate}${ctx.studyTime ? ' ' + ctx.studyTime : ''}`);
-        if (ctx.showReportNumber) addField(meta, 'Informe N', ctx.reportNum);
+        if (ctx.showReportNumber) addField(meta, 'Informe N\u186?', ctx.reportNum);
         addField(meta, 'Paciente', ctx.patientName);
         addField(meta, 'DNI', ctx.patientDni);
-        addField(meta, 'Edad', ctx.patientAge ? `${ctx.patientAge} años` : '');
+        addField(meta, 'Edad', ctx.patientAge ? `${ctx.patientAge} a\u241?os` : '');
         addField(meta, 'Sexo', ctx.patientSex === 'M' ? 'Masculino' : ctx.patientSex === 'F' ? 'Femenino' : ctx.patientSex);
         addField(meta, 'Cobertura', ctx.patientInsurance);
-        addField(meta, 'N Afiliado', ctx.patientAffiliateNum);
-        addField(meta, 'Medico solicitante', ctx.referringDoctor);
+        addField(meta, 'N\u186? Afiliado', ctx.patientAffiliateNum);
+        addField(meta, 'M\u233?dico solicitante', ctx.referringDoctor);
         addField(meta, 'Motivo de consulta', ctx.studyReason);
         if (!ctx.hideReportHeader) {
             addField(meta, 'Profesional', ctx.professionalName);
-            addField(meta, 'Matricula profesional', ctx.professionalMatricula);
+            addField(meta, 'Matr\u237?cula', ctx.professionalMatricula);
             addField(meta, 'Especialidad', ctx.professionalSpecialty);
             addField(meta, 'Lugar de trabajo', ctx.workplaceName);
         }
 
+        // ── Cuerpo con detección de headings H1/H2/H3 ──
         const lines = cleaned.split(/\r?\n/);
-        const body = lines.map((line) => {
+        const bodyParts = [];
+        for (const line of lines) {
             const t = String(line || '');
-            if (!t.trim()) return '\\par';
-            const isHeading = t.trim().length <= 80 && t.trim() === t.trim().toUpperCase() && /[A-ZÁÉÍÓÚÑ]/.test(t);
-            if (isHeading) return `\\par\\b ${_rtfEscapeLine(t.trim())}\\b0\\par`;
-            return `${_rtfEscapeLine(t)}\\par`;
-        }).join('\n');
+            if (!t.trim()) { bodyParts.push('\\par'); continue; }
+            const trimmed = t.trim();
+            const isH1 = trimmed.length <= 80 && trimmed === trimmed.toUpperCase() && /[A-ZÁÉÍÓÚÑ]/.test(trimmed);
+            if (isH1) {
+                // Heading principal: centrado, bold, color acento, tamaño grande, línea inferior
+                bodyParts.push(`\\pard\\qc\\sb200\\sa80{\\f0\\fs26\\b\\cf1 ${_rtfEscapeLine(trimmed)}}\\par`);
+                bodyParts.push(`{\\pard\\brdrb\\brdrs\\brdrw10\\brdrcf1\\brsp40 \\par}`);
+                bodyParts.push('\\pard\\ql');
+            } else {
+                bodyParts.push(`{\\f0\\fs22 ${_rtfEscapeLine(t)}}\\par`);
+            }
+        }
+        const body = bodyParts.join('\n');
 
+        // ── Metadatos en tabla con bordes y color ──
         const renderMetaCell = (entry) => {
             if (!entry) return '\\intbl \\cell';
-            return `\\intbl \\b ${_rtfEscapeLine(entry.label)}:\\b0 ${_rtfEscapeLine(entry.value)}\\cell`;
+            return `\\intbl {\\f0\\fs18\\cf1\\b ${_rtfEscapeLine(entry.label)}:}{\\f0\\fs20\\b0  ${_rtfEscapeLine(entry.value)}}\\cell`;
         };
 
         const metaRows = [];
         for (let i = 0; i < meta.length; i += 2) {
             const left = meta[i] || null;
             const right = meta[i + 1] || null;
-            // Tabla de dos columnas para compactar datos clínicos como en PDF, sin complejidad de header/logos.
-            metaRows.push(`{\\trowd\\trgaph108\\trleft0\\trrh360\\cellx4500\\cellx9000\n${renderMetaCell(left)}\n${renderMetaCell(right)}\n\\row}`);
+            metaRows.push(`{\\trowd\\trgaph108\\trleft0\\trrh360\\trbrdrb\\brdrs\\brdrw5\\brdrcf2\\cellx4500\\cellx9000\n${renderMetaCell(left)}\n${renderMetaCell(right)}\n\\row}`);
         }
 
         const metaBlock = metaRows.length
-            ? `\\b DATOS DEL ESTUDIO Y PACIENTE\\b0\\par\\par${metaRows.join('\\n')}\\par\\par`
+            ? `{\\pard\\sb100\\sa60\\f0\\fs20\\cf1\\b DATOS DEL ESTUDIO Y PACIENTE\\b0\\par}\n{\\pard\\brdrb\\brdrs\\brdrw10\\brdrcf1\\brsp20 \\par}\n${metaRows.join('\n')}\\par`
             : '';
 
-        const titleLine = String(ctx.studyType || '').trim()
-            ? `\\b INFORME DE ${_rtfEscapeLine(String(ctx.studyType).toUpperCase())}\\b0\\par\\par`
-            : '\\b INFORME MEDICO\\b0\\par\\par';
+        // ── Título centrado con línea decorativa ──
+        const titleText = String(ctx.studyType || '').trim()
+            ? `INFORME DE ${_rtfEscapeLine(String(ctx.studyType).toUpperCase())}`
+            : 'INFORME M\u201?DICO';
+        const titleBlock = `{\\pard\\qc\\sb0\\sa100{\\f0\\fs32\\b\\cf1 ${titleText}}\\par}\n{\\pard\\brdrb\\brdrs\\brdrw15\\brdrcf1\\brsp40 \\par}`;
 
-        return `{\\rtf1\\ansi\\ansicpg1252\\deff0{\\fonttbl{\\f0 Arial;}}\\paperw12240\\paperh15840\\margl1080\\margr1080\\margt1080\\margb1080\\f0\\fs22\\sa100\\sl${rtfSl}\\slmult1\\ql${titleLine}${metaBlock}\\b CONTENIDO DEL INFORME\\b0\\par\\par${body}}`;
+        // ── Bloque profesional (header) ──
+        let profBlock = '';
+        if (!ctx.hideReportHeader && ctx.professionalName) {
+            const profParts = [];
+            profParts.push(`{\\f0\\fs22\\b ${_rtfEscapeLine('Estudio realizado por: ' + ctx.professionalName)}}`);
+            if (ctx.professionalMatricula) profParts.push(`{\\f0\\fs18\\cf2  — Mat. ${_rtfEscapeLine(ctx.professionalMatricula)}}`);
+            if (ctx.professionalSpecialty) profParts.push(`{\\f0\\fs18\\i\\cf2  | ${_rtfEscapeLine(ctx.professionalSpecialty)}}`);
+            profBlock = `{\\pard\\sb60\\sa80 ${profParts.join('')}\\par}\n{\\pard\\brdrb\\brdrs\\brdrw5\\brdrcf1\\brsp20 \\par}`;
+        }
+
+        // ── Firma ──
+        let sigBlock = '';
+        if (!ctx.hideReportHeader && ctx.professionalName) {
+            sigBlock = '\\par\\par\\par';
+            sigBlock += `{\\pard\\qr\\sb200 {\\f0\\fs18 ____________________________}\\par}`;
+            sigBlock += `{\\pard\\qr {\\f0\\fs20\\b ${_rtfEscapeLine(ctx.professionalName)}}\\par}`;
+            if (ctx.professionalMatricula) sigBlock += `{\\pard\\qr {\\f0\\fs18\\cf2 Mat. ${_rtfEscapeLine(ctx.professionalMatricula)}}\\par}`;
+            if (ctx.professionalSpecialty) sigBlock += `{\\pard\\qr {\\f0\\fs18\\i\\cf2 ${_rtfEscapeLine(ctx.professionalSpecialty)}}\\par}`;
+        }
+
+        // ── Footer ──
+        const footerLine = `{\\pard\\brdrb\\brdrs\\brdrw5\\brdrcf2\\brsp20 \\par}\n{\\pard\\qc\\sb40{\\f0\\fs16\\cf2 Este informe es v\u225?lido \u250?nicamente con la firma del profesional a cargo.}\\par}`;
+
+        // ── Documento RTF completo ──
+        // Color table: \cf1 = acento azul, \cf2 = gris
+        return `{\\rtf1\\ansi\\ansicpg1252\\deff0
+{\\fonttbl{\\f0 Arial;}}
+{\\colortbl;\\red${accentR}\\green${accentG}\\blue${accentB};\\red136\\green136\\blue136;}
+\\paperw12240\\paperh15840\\margl1440\\margr1440\\margt1080\\margb1080
+\\f0\\fs22\\sa80\\sl${rtfSl}\\slmult1\\ql
+${profBlock}
+${titleBlock}
+\\par
+${metaBlock}
+\\par
+${body}
+${sigBlock}
+\\par
+${footerLine}
+}`;
     }
 
     async function createTXT(text) {

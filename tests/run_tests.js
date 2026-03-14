@@ -2364,8 +2364,8 @@ test('evaluateConfigCompleteness — nombre+mat sin espec retorna yellow', () =>
 // BLOQUE 44: validateBeforeDownload — gate de descarga
 console.log('\n── Bloque 44: validateBeforeDownload ────────────────────────');
 
-test('validateBeforeDownload — formato txt siempre pasa', () => {
-    assertEqual(validateBeforeDownload('txt'), true);
+test('validateBeforeDownload — formato rtf siempre pasa', () => {
+    assertEqual(validateBeforeDownload('rtf'), true);
 });
 
 test('validateBeforeDownload — pdf con green pasa', () => {
@@ -2473,7 +2473,7 @@ test('index.html dropdown del preview tiene z-index alto', () => {
     assert(zIndex >= 10000, `z-index ${zIndex} debe ser >= 10000 para estar sobre el modal`);
 });
 
-test('index.html dropdown tiene 4 formatos (pdf, rtf, txt, html)', () => {
+test('index.html dropdown tiene 3 formatos (pdf, rtf, html)', () => {
     const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
     const ddRegion = html.substring(
         html.indexOf('id="previewDownloadDropdown"'),
@@ -2481,8 +2481,8 @@ test('index.html dropdown tiene 4 formatos (pdf, rtf, txt, html)', () => {
     );
     assert(ddRegion.includes('data-format="pdf"'), 'Falta botón PDF');
     assert(ddRegion.includes('data-format="rtf"'), 'Falta botón RTF');
-    assert(ddRegion.includes('data-format="txt"'), 'Falta botón TXT');
     assert(ddRegion.includes('data-format="html"'), 'Falta botón HTML');
+    assert(!ddRegion.includes('data-format="txt"'), 'No debe tener botón TXT');
 });
 
 test('ui.js maneja click en btnDownloadPreviewMore', () => {
@@ -2491,10 +2491,10 @@ test('ui.js maneja click en btnDownloadPreviewMore', () => {
     assert(code.includes("previewDownloadDropdown"), 'Debe referenciar previewDownloadDropdown');
 });
 
-test('ui.js formatos llaman window.downloadRTF/TXT/HTML', () => {
+test('ui.js formatos llaman window.downloadRTF/HTML', () => {
     const code = fs.readFileSync(path.join(root, 'src/js/utils/ui.js'), 'utf-8');
     assert(code.includes("downloadRTF") || code.includes("download' + fmt.toUpperCase()"),
-        'Debe poder llamar downloadRTF/TXT/HTML');
+        'Debe poder llamar downloadRTF/HTML');
 });
 
 // BLOQUE 49: autoDetectTemplateKey — textos crudos realistas
@@ -3178,66 +3178,63 @@ console.log('\n── Bloque 57: Descarga — Formatos según plan ────�
 // Reimplementar _getAllowedFormats para testing
 function _testGetAllowedFormats(type) {
     type = (type || 'ADMIN').toUpperCase();
-    if (type === 'ADMIN' || type === 'PRO') return ['pdf', 'rtf', 'txt', 'html'];
-    if (type === 'NORMAL') return ['txt', 'pdf'];
-    return ['txt']; // TRIAL
+    if (type === 'ADMIN' || type === 'PRO') return ['pdf', 'rtf', 'html'];
+    if (type === 'NORMAL') return ['pdf'];
+    return ['pdf']; // TRIAL
 }
 
-test('Formatos: ADMIN puede descargar todos (pdf, rtf, txt, html)', () => {
+test('Formatos: ADMIN puede descargar todos (pdf, rtf, html)', () => {
     const formats = _testGetAllowedFormats('ADMIN');
-    assertEqual(formats.length, 4);
+    assertEqual(formats.length, 3);
     assert(formats.includes('pdf'));
     assert(formats.includes('rtf'));
-    assert(formats.includes('txt'));
     assert(formats.includes('html'));
 });
 
-test('Formatos: PRO puede descargar todos (pdf, rtf, txt, html)', () => {
+test('Formatos: PRO puede descargar todos (pdf, rtf, html)', () => {
     const formats = _testGetAllowedFormats('PRO');
-    assertEqual(formats.length, 4);
+    assertEqual(formats.length, 3);
     assert(formats.includes('pdf'));
     assert(formats.includes('rtf'));
 });
 
-test('Formatos: NORMAL solo puede descargar txt y pdf', () => {
+test('Formatos: NORMAL solo puede descargar pdf', () => {
     const formats = _testGetAllowedFormats('NORMAL');
-    assertEqual(formats.length, 2);
-    assert(formats.includes('txt'));
+    assertEqual(formats.length, 1);
     assert(formats.includes('pdf'));
     assert(!formats.includes('rtf'), 'Normal NO debe tener RTF');
     assert(!formats.includes('html'), 'Normal NO debe tener HTML');
 });
 
-test('Formatos: TRIAL solo puede descargar txt', () => {
+test('Formatos: TRIAL solo puede descargar pdf', () => {
     const formats = _testGetAllowedFormats('TRIAL');
     assertEqual(formats.length, 1);
-    assert(formats.includes('txt'));
-    assert(!formats.includes('pdf'), 'Trial NO debe tener PDF');
+    assert(formats.includes('pdf'));
 });
 
 test('Formatos: GIFT (mapeado como PRO) puede descargar todos', () => {
     // Gift se mapea a PRO en el factory
     const giftPlan = _testPlanMapping('gift');
     const formats = _testGetAllowedFormats(giftPlan.type); // 'PRO'
-    assertEqual(formats.length, 4);
+    assertEqual(formats.length, 3);
 });
 
 test('Formatos: CLINIC (mapeado como PRO) puede descargar todos', () => {
     const clinicPlan = _testPlanMapping('clinic');
     const formats = _testGetAllowedFormats(clinicPlan.type);
-    assertEqual(formats.length, 4);
+    assertEqual(formats.length, 3);
 });
 
 test('Formatos: botón principal dice "Descargar PDF" si plan permite PDF', () => {
     const allowed = _testGetAllowedFormats('PRO');
-    const btnText = allowed.includes('pdf') ? '📥 Descargar PDF' : '📥 Descargar TXT';
+    const btnText = allowed.includes('pdf') ? '📥 Descargar PDF' : '📥 Descargar RTF';
     assertEqual(btnText, '📥 Descargar PDF');
 });
 
-test('Formatos: botón principal dice "Descargar TXT" si plan NO permite PDF', () => {
+test('Formatos: botón principal dice "Descargar PDF" para todos los planes', () => {
     const allowed = _testGetAllowedFormats('TRIAL');
-    const btnText = allowed.includes('pdf') ? '📥 Descargar PDF' : '📥 Descargar TXT';
-    assertEqual(btnText, '📥 Descargar TXT');
+    const btnText = allowed.includes('pdf') ? '📥 Descargar PDF' : '📥 Descargar RTF';
+    assertEqual(btnText, '📥 Descargar PDF');
 });
 
 test('Formatos: chevron oculto si solo 1 formato disponible', () => {
@@ -3247,15 +3244,15 @@ test('Formatos: chevron oculto si solo 1 formato disponible', () => {
 });
 
 test('Formatos: chevron visible si más de 1 formato', () => {
-    const allowed = _testGetAllowedFormats('NORMAL');
+    const allowed = _testGetAllowedFormats('PRO');
     const showChevron = allowed.length > 1;
-    assert(showChevron, 'Chevron debe mostrarse para Normal (2 formatos)');
+    assert(showChevron, 'Chevron debe mostrarse para PRO (3 formatos)');
 });
 
-test('Formatos: _forceTxt activo para Trial (sin PDF)', () => {
+test('Formatos: _forceTxt NO activo para ningún plan (todos tienen PDF)', () => {
     const allowed = _testGetAllowedFormats('TRIAL');
     const forceTxt = !allowed.includes('pdf');
-    assert(forceTxt, 'Trial debe forzar TXT');
+    assert(!forceTxt, 'Todos los planes deben tener PDF');
 });
 
 test('Formatos: _forceTxt inactivo para Pro (con PDF)', () => {

@@ -561,12 +561,7 @@
                 ext = 'rtf';
                 break;
             }
-            case 'txt': {
-                const txtContent = (typeof createTXT === 'function') ? await createTXT(text) : `INFORME MEDICO\nFecha: ${date}\n\n${text}`;
-                blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
-                ext = 'txt';
-                break;
-            }
+
             case 'html': blob = new Blob([await createHTML()], { type: 'text/html;charset=utf-8' }); ext = 'html'; break;
             default: break;
         }
@@ -584,7 +579,7 @@
             const mimeTypes = {
                 pdf: 'application/pdf',
                 rtf: 'application/rtf',
-                txt: 'text/plain',
+
                 html: 'text/html'
             };
             const types = [{
@@ -616,7 +611,6 @@
     window.downloadFile = downloadFile;
     window.saveToDisk = saveToDisk;
     window.downloadRTF = () => downloadFile('rtf');
-    window.downloadTXT = () => downloadFile('txt');
     window.downloadHTML = () => downloadFile('html');
     window.downloadPDF = () => downloadFile('pdf');
     // Expuesto para que pdfPreviewActions pueda generar el PDF de email

@@ -137,7 +137,7 @@ if (redoBtn) {
 // Download core extracted to src/js/features/editorDownloadCoreUtils.js
 // Compatibility markers for tests: patientName / confirm( / El informe no tiene datos del paciente
 // Compatibility markers for tests: resolve(true) / resolve(false) / downloadFile
-// Compatibility markers for tests: saveToDisk / window.downloadRTF / window.downloadTXT / window.downloadHTML / window.downloadPDF
+// Compatibility markers for tests: saveToDisk / window.downloadRTF / window.downloadHTML / window.downloadPDF
 
 // Export render helpers extracted to src/js/features/editorExportRenderUtils.js
 // Compatibility markers for tests: createRTF / createHTML / window.createRTF / window.createHTML

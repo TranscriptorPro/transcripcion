@@ -13,10 +13,10 @@ window.initPreviewDownloadDropdown = function (btnDownloadFromPreview) {
         const cfg = window.CLIENT_CONFIG || {};
         const type = (cfg.type || 'ADMIN').toUpperCase();
         if (type === 'ADMIN' || type === 'PRO' || type === 'GIFT' || type === 'CLINIC') {
-            return ['pdf', 'rtf', 'txt', 'html'];
+            return ['pdf', 'rtf', 'html'];
         }
-        if (type === 'NORMAL') return ['pdf', 'txt'];
-        return ['txt'];
+        if (type === 'NORMAL') return ['pdf'];
+        return ['pdf'];
     };
 
     const applyFormatRestrictions = () => {
@@ -31,7 +31,7 @@ window.initPreviewDownloadDropdown = function (btnDownloadFromPreview) {
                 btnDownloadFromPreview.textContent = '📥 Descargar PDF';
                 btnDownloadFromPreview._forceTxt = false;
             } else {
-                btnDownloadFromPreview.textContent = '📥 Descargar TXT';
+                btnDownloadFromPreview.textContent = '📥 Descargar RTF';
                 btnDownloadFromPreview._forceTxt = true;
             }
         }

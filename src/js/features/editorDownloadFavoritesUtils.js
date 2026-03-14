@@ -4,7 +4,7 @@
     const downloadDropdown = document.getElementById('downloadDropdown');
     const downloadBtnMain = document.getElementById('downloadBtnMain');
     const downloadBtnChevron = document.getElementById('downloadBtn');
-    const FORMAT_LABELS = { pdf: 'PDF', rtf: 'RTF', txt: 'TXT', html: 'HTML' };
+    const FORMAT_LABELS = { pdf: 'PDF', rtf: 'RTF', html: 'HTML' };
 
     let _prefFmtCache = null;
     if (typeof appDB !== 'undefined') {

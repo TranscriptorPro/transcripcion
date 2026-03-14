@@ -653,6 +653,17 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                 }
             } catch (_) { /* QR no disponible */ }
         }
+        // ── Eliminar última página si quedó vacía (solo banner/footer sin contenido real) ──
+        const totalPages = doc.internal.getNumberOfPages();
+        if (totalPages > 1) {
+            // Verificar si la última página tiene contenido más allá del banner y footer
+            // Si cy en la última página está cerca del tope (bajo el banner), la página está vacía
+            const bannerH = cfgShowHeader ? 18 : 0;
+            const contentStartY = bannerH + 2;
+            if (cy <= contentStartY + 5) {
+                doc.deletePage(totalPages);
+            }
+        }
         const blob = doc.output('blob');
         const saveBlob = typeof window.saveToDisk === 'function'
             ? window.saveToDisk

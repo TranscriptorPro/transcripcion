@@ -455,12 +455,12 @@ window.initModals = function () {
 
     if (btnDownloadFromPreview) {
         btnDownloadFromPreview.addEventListener('click', async () => {
-            // Si el plan no permite PDF, descargar TXT en su lugar
+            // Si el plan no permite PDF, descargar RTF en su lugar
             if (btnDownloadFromPreview._forceTxt) {
-                if (typeof window.downloadTXT === 'function') {
-                    window.downloadTXT();
+                if (typeof window.downloadRTF === 'function') {
+                    window.downloadRTF();
                 } else {
-                    if (typeof showToast === 'function') showToast('Formato TXT no disponible', 'info');
+                    if (typeof showToast === 'function') showToast('Formato no disponible', 'info');
                 }
                 return;
             }
