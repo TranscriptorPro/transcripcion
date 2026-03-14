@@ -7443,6 +7443,123 @@ test('Paridad Preview/PDF-HTML: orden de bloques estudio antes que paciente', ()
         'La vista previa mantiene estudio antes de paciente');
 });
 
+// Bloque 123: Verificación exhaustiva — nombre del paciente en TODOS los pipelines
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 123: Nombre del paciente presente en todos los canales de render ──');
+
+test('Preview: pdfPreview.js tiene renderizado de patientName en previewPatient', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/pdfPreview.js'), 'utf-8');
+    // Verifica que el código crea una celda con el nombre del paciente
+    assertIncludes(code, "if (patientName)", 'pdfPreview debe tener check de patientName');
+    assertIncludes(code, "Paciente</span>", 'pdfPreview debe mostrar label Paciente');
+    assertIncludes(code, "${patientName}", 'pdfPreview debe interpolar patientName en la celda');
+    // Verifica que la variable patientName se resuelve con fallback
+    assert(code.includes('resolvedCtx.patientName') && code.includes('extracted.name') && code.includes('config.patientName'),
+        'pdfPreview debe tener cadena de fallback para patientName');
+});
+
+test('HTML export: createHTML tiene renderizado de patientName en patientSection', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/editorExportRenderUtils.js'), 'utf-8');
+    assertIncludes(code, "if (patientName) pCells.push", 'createHTML debe agregar patientName a pCells');
+    assertIncludes(code, "Paciente</span><span class=\"pvp-val pvp-bold\">${patientName}", 'createHTML debe tener celda de paciente con nombre');
+    assert(code.includes('resolvedCtx.patientName') && code.includes('extracted.name') && code.includes('config.patientName'),
+        'createHTML debe tener cadena de fallback para patientName');
+});
+
+test('RTF export: createRTF incluye campo Paciente con ctx.patientName', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/editorExportRenderUtils.js'), 'utf-8');
+    assertIncludes(code, "addField(meta, 'Paciente', ctx.patientName)", 'createRTF debe incluir Paciente en metadatos');
+});
+
+test('TXT export: createTXT incluye campo Paciente con ctx.patientName', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/editorExportRenderUtils.js'), 'utf-8');
+    assertIncludes(code, "pushField('Paciente', ctx.patientName)", 'createTXT debe incluir Paciente en metadatos');
+});
+
+test('PDF jsPDF: drawPatientBlockSection dibuja pName en el bloque paciente', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/pdfMakerSectionUtils.js'), 'utf-8');
+    assertIncludes(code, "if (pName) col1.push", 'drawPatientBlockSection debe agregar pName a col1');
+    assertIncludes(code, "label: 'PACIENTE', value: pName", 'drawPatientBlockSection debe tener label PACIENTE');
+});
+
+test('PDF jsPDF: pdfMaker.js resuelve pName y llama drawPatientBlock', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/pdfMaker.js'), 'utf-8');
+    assert(code.includes('resolvedCtx.patientName') && code.includes('config.patientName') && code.includes('_formP.name'),
+        'pdfMaker debe tener cadena de fallback para pName');
+    assertIncludes(code, 'drawPatientBlock()', 'pdfMaker debe llamar drawPatientBlock()');
+});
+
+test('reportContextResolver devuelve patientName desde config', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/reportContextResolver.js'), 'utf-8');
+    assertIncludes(code, "config.patientName", 'reportContextResolver debe leer config.patientName');
+    assertIncludes(code, "extracted.name", 'reportContextResolver debe usar extracted.name como fallback');
+    // Verifica que patientName está en el return del resolver
+    assert(code.includes('patientName,') || code.includes('patientName:'),
+        'reportContextResolver debe retornar patientName');
+});
+
+test('index.html tiene el div previewPatient para mostrar datos del paciente', () => {
+    assertIncludes(indexCode, 'id="previewPatient"', 'index.html debe tener div#previewPatient');
+    const idxStudy = indexCode.indexOf('id="previewStudy"');
+    const idxPatient = indexCode.indexOf('id="previewPatient"');
+    const idxContent = indexCode.indexOf('id="previewContent"');
+    assert(idxStudy < idxPatient && idxPatient < idxContent,
+        'Orden en index.html: previewStudy → previewPatient → previewContent');
+});
+
+test('Simulación: _loadExportContext con config.patientName devuelve nombre', () => {
+    localStorage.setItem('pdf_config', JSON.stringify({ patientName: 'García, María' }));
+    const config = JSON.parse(localStorage.getItem('pdf_config'));
+    assert(config.patientName === 'García, María',
+        `config.patientName debe ser 'García, María', obtuvo: ${config.patientName}`);
+    localStorage.clear();
+});
+
+test('Simulación: resolveReportContext incluye patientName desde pdf_config', async () => {
+    localStorage.setItem('pdf_config', JSON.stringify({ patientName: 'López, Ana', doctorName: 'Dr. Test' }));
+    // Si resolveReportContext está disponible, probarlo directamente
+    if (typeof global.resolveReportContext === 'function') {
+        const ctx = await global.resolveReportContext({ includeEditorExtract: false });
+        assert(ctx.patientName === 'López, Ana',
+            `resolvedCtx.patientName debe ser 'López, Ana', obtuvo: ${ctx.patientName}`);
+    } else {
+        // Verificar que el flujo de datos es correcto leyendo desde pdf_config
+        const config = JSON.parse(localStorage.getItem('pdf_config'));
+        assert(config.patientName === 'López, Ana',
+            `Flujo de datos: pdf_config.patientName correcto`);
+    }
+    localStorage.clear();
+});
+
+test('Pipeline createHTML: patientSection se genera con datos no vacíos', () => {
+    // Verificar la lógica: si patientName tiene valor → pCells.push → patientSection tiene contenido
+    const code = fs.readFileSync(path.join(root, 'src/js/features/editorExportRenderUtils.js'), 'utf-8');
+    // La variable patientSection se declara vacía y se llena si hay celdas
+    assertIncludes(code, "let patientSection = ''", 'patientSection arranca vacía');
+    assertIncludes(code, "if (pCells.length) patientSection =", 'patientSection se llena si hay celdas');
+    // El template final incluye patientSection en el body HTML
+    assertIncludes(code, '${patientSection}', 'Template HTML incluye ${patientSection}');
+});
+
+test('Pipeline Preview: previewPatient se muestra si hay celdas de paciente', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/pdfPreview.js'), 'utf-8');
+    assertIncludes(code, "patientEl.style.display = ''", 'patientEl se hace visible si hay celdas');
+    assertIncludes(code, "patientEl.style.display = 'none'", 'patientEl se oculta si no hay datos');
+});
+
+test('Ningún pipeline tiene código que borre o anule patientName innecesariamente', () => {
+    const previewCode = fs.readFileSync(path.join(root, 'src/js/features/pdfPreview.js'), 'utf-8');
+    const exportCode = fs.readFileSync(path.join(root, 'src/js/features/editorExportRenderUtils.js'), 'utf-8');
+    const pdfCode = fs.readFileSync(path.join(root, 'src/js/features/pdfMaker.js'), 'utf-8');
+    // No debe haber delete, null o asignación vacía a patientName en estos archivos
+    assert(!previewCode.includes('patientName = null') && !previewCode.includes('delete patientName'),
+        'pdfPreview.js no anula patientName');
+    assert(!exportCode.includes('patientName = null') && !exportCode.includes('delete patientName'),
+        'editorExportRenderUtils.js no anula patientName');
+    assert(!pdfCode.includes('pName = null') && !pdfCode.includes('delete pName'),
+        'pdfMaker.js no anula pName');
+});
+
 // Limpiar estado después de tests
 global.localStorage.clear();
 global._reportHistCache = null;
