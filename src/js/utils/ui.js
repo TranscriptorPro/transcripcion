@@ -560,10 +560,9 @@ window.initModals = function () {
         if (document.getElementById('btnRestoreOriginal')?._showingOriginal) return;
         if (window._isComparisonMode) return;
 
-        // Solo Pro mode estricto con contenido estructurado en el editor
-        const _isPro = window.currentMode === 'pro'
-            || (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'PRO');
-        if (!_isPro) return;
+        // Solo para clones/planes PRO (incluye Gift/Clinic mapeados a type=PRO)
+        const _hasProPlan = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'PRO');
+        if (!_hasProPlan) return;
         if (!editor.innerText.trim()) return;
         // No mostrar si el contenido no está estructurado (texto plano sin secciones)
         if (!editor.querySelector('h3, h4, .section-header, strong')) return;
@@ -572,12 +571,12 @@ window.initModals = function () {
         const wrap = document.createElement('div');
         wrap.className = 'btn-append-inline';
         wrap.setAttribute('contenteditable', 'false');
-        wrap.innerHTML = `<button class="btn btn-pro-animated" title="Grabar y agregar texto al final del informe">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+        wrap.innerHTML = `<button class="btn btn-pro-animated" title="Grabar y agregar texto al final del informe" aria-label="Grabar y agregar texto al final del informe">
+            <svg class="append-mic-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
                 <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
                 <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
             </svg>
-            <span>Grabar y agregar +</span>
+            <span class="append-plus">+</span>
         </button>`;
 
         // Reubicar REV IA junto al botón inline (a su izquierda)
@@ -742,10 +741,20 @@ window.initModals = function () {
                         if (newText) {
                             const editor = document.getElementById('editor');
                             if (editor) {
-                                // Append as new paragraph
-                                const p = document.createElement('p');
-                                p.textContent = newText;
-                                editor.appendChild(p);
+                                // Mantener consistencia visual: agregar como párrafos de informe estructurado.
+                                const normalizedLines = String(newText || '')
+                                    .split(/\r?\n+/)
+                                    .map(line => line.trim())
+                                    .filter(Boolean);
+                                if (!normalizedLines.length) {
+                                    normalizedLines.push(String(newText || '').trim());
+                                }
+                                normalizedLines.filter(Boolean).forEach((line) => {
+                                    const p = document.createElement('p');
+                                    p.className = 'report-p';
+                                    p.textContent = line;
+                                    editor.appendChild(p);
+                                });
                                 editor.dispatchEvent(new Event('input', { bubbles: true }));
                                 if (typeof updateWordCount === 'function') updateWordCount();
                                 showToast('✅ Texto agregado al final del informe', 'success');
@@ -754,7 +763,8 @@ window.initModals = function () {
 
                                 // Sincronizar: agregar texto crudo al original para coherencia comparativa
                                 if (window._lastRawTranscription != null) {
-                                    window._lastRawTranscription = window._lastRawTranscription.trimEnd() + '\n' + newText;
+                                    const appendedRaw = normalizedLines.join('\n');
+                                    window._lastRawTranscription = window._lastRawTranscription.trimEnd() + '\n' + appendedRaw;
                                 }
                                 // Marcar flag según la vista actual
                                 const btnR = document.getElementById('btnRestoreOriginal');
@@ -813,7 +823,7 @@ window.initModals = function () {
                 inlineBtn.classList.remove('recording-pulse');
                 inlineBtn.classList.add('btn-pro-animated');
                 const span = inlineBtn.querySelector('span');
-                if (span) span.textContent = 'Grabar y agregar +';
+                if (span) span.textContent = '+';
             }
         }
     }

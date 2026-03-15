@@ -45,6 +45,9 @@
         appDB.get(_FIELD_HISTORY_KEY).then(function(v) { _fldHistCache = v || {}; }).catch(function() {});
     }
 
+    const _hasInlineReviewPlan = () =>
+        (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'PRO');
+
     function _getFieldHistory() {
         if (_fldHistCache !== null) return _fldHistCache;
         try { return JSON.parse(localStorage.getItem(_FIELD_HISTORY_KEY)) || {}; } catch (_) { return {}; }
@@ -118,6 +121,7 @@
     let _fieldReviewAttempt = 0;
 
     function _isInlineReviewEnabled() {
+        if (!_hasInlineReviewPlan()) return false;
         if (typeof window.inlineParagraphReviewEnabled === 'boolean') return window.inlineParagraphReviewEnabled;
         try {
             const prefs = JSON.parse(localStorage.getItem('settings_prefs') || '{}');
@@ -356,6 +360,10 @@
             return;
         }
 
+            if (!_hasInlineReviewPlan()) {
+                editor.querySelectorAll('.inline-review-btn').forEach(b => b.remove());
+                return;
+            }
         // Nunca mostrar botón de revisión en líneas de campo vacío.
         editor.querySelectorAll('p.report-p, li').forEach((node) => {
             if (node.querySelector('.no-data-field')) {
