@@ -2596,7 +2596,8 @@ test('catálogo compartido de templates: app/admin/registro lo consumen con fall
     assert(shared.includes('window.TP_TEMPLATE_CATEGORY_REGISTRY'), 'Debe existir registro compartido global');
     assert(shared.includes("{ key: 'gonioscopia', name: 'Gonioscopía' }"), 'El registro compartido debe incluir gonioscopia');
     assert(appTemplates.includes('window.TP_TEMPLATE_CATEGORY_REGISTRY'), 'templates.js debe leer del registro compartido');
-    assert(adminHtml.includes('../src/js/config/templateCategoryRegistry.js'), 'admin.html debe cargar el registro compartido');
+    assert(adminHtml.includes('admin-assets/js/templateCategoryRegistry.js') || adminHtml.includes('../src/js/config/templateCategoryRegistry.js'),
+        'admin.html debe cargar el registro compartido');
     assert(adminScript.includes('window.TP_TEMPLATE_CATEGORY_REGISTRY'), 'admin script debe consumir registro compartido');
     assert(registro.includes('../src/js/config/templateCategoryRegistry.js'), 'registro.html debe cargar el registro compartido');
     assert(registro.includes('window.TP_TEMPLATE_CATEGORY_REGISTRY'), 'registro script debe consumir registro compartido');
@@ -2614,9 +2615,12 @@ test('runtime de plantillas admin: registro compartido expone API de persistenci
     assert(shared.includes('resetAdminTemplatesConfig'), 'El registro compartido debe exponer resetAdminTemplatesConfig');
     assert(shared.includes('applyToMedicalTemplates'), 'El registro compartido debe poder aplicar overrides a MEDICAL_TEMPLATES');
     assert(appTemplates.includes('applyToMedicalTemplates'), 'templates.js debe aplicar overrides runtime al cargar');
-    assert(adminHtml.includes('../src/js/config/templatesCatalog.js'), 'admin.html debe cargar templatesCatalog para editar catálogo base');
-    assert(adminHtml.includes('../src/js/config/templatesCatalogPart2.js'), 'admin.html debe cargar templatesCatalogPart2 para editar catálogo base');
-    assert(adminHtml.includes('../src/js/config/templatesCatalogPart3.js'), 'admin.html debe cargar templatesCatalogPart3 para editar catálogo base');
+    assert(adminHtml.includes('admin-assets/js/templatesCatalog.js') || adminHtml.includes('../src/js/config/templatesCatalog.js'),
+        'admin.html debe cargar templatesCatalog para editar catálogo base');
+    assert(adminHtml.includes('admin-assets/js/templatesCatalogPart2.js') || adminHtml.includes('../src/js/config/templatesCatalogPart2.js'),
+        'admin.html debe cargar templatesCatalogPart2 para editar catálogo base');
+    assert(adminHtml.includes('admin-assets/js/templatesCatalogPart3.js') || adminHtml.includes('../src/js/config/templatesCatalogPart3.js'),
+        'admin.html debe cargar templatesCatalogPart3 para editar catálogo base');
     assert(adminScript.includes('_ensureTemplatesAdminTab'), 'admin script debe inicializar tab dinámico de plantillas');
     assert(adminScript.includes('_tplAdminEnsureRegistryReady'), 'admin script debe bootstraper el registro de plantillas si falta');
     assert(adminScript.includes('No se pudo cargar el registro de plantillas'), 'admin script debe mostrar error visible si falla la carga del registro');

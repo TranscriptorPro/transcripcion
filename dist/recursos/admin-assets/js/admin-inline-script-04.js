@@ -650,6 +650,7 @@
             if (window.TP_TEMPLATE_CATEGORY_REGISTRY) return true;
 
             const candidates = [
+                'admin-assets/js/',
                 '../src/js/config/',
                 '../../src/js/config/',
                 '/src/js/config/'
