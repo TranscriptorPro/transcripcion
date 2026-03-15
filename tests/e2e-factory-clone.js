@@ -25,27 +25,27 @@ const FACTORY_SCENARIOS = [
     {
         id: 'E2E_TRIAL_001',
         plan: 'trial',
-        expected: { type: 'TRIAL', hasProMode: false, canGenerateApps: false, maxDevices: 1, formats: ['txt'] }
+        expected: { type: 'TRIAL', hasProMode: false, canGenerateApps: false, maxDevices: 1, formats: ['pdf'] }
     },
     {
         id: 'E2E_NORMAL_001',
         plan: 'normal',
-        expected: { type: 'NORMAL', hasProMode: false, canGenerateApps: false, maxDevices: 1, formats: ['pdf', 'txt'] }
+        expected: { type: 'NORMAL', hasProMode: false, canGenerateApps: false, maxDevices: 1, formats: ['pdf'] }
     },
     {
         id: 'E2E_PRO_001',
         plan: 'pro',
-        expected: { type: 'PRO', hasProMode: true, canGenerateApps: false, maxDevices: 3, formats: ['pdf', 'rtf', 'txt', 'html'] }
+        expected: { type: 'PRO', hasProMode: true, canGenerateApps: false, maxDevices: 3, formats: ['pdf', 'rtf', 'html'] }
     },
     {
         id: 'E2E_GIFT_001',
         plan: 'gift',
-        expected: { type: 'PRO', hasProMode: true, canGenerateApps: false, maxDevices: 3, formats: ['pdf', 'rtf', 'txt', 'html'] }
+        expected: { type: 'PRO', hasProMode: true, canGenerateApps: false, maxDevices: 3, formats: ['pdf', 'rtf', 'html'] }
     },
     {
         id: 'E2E_CLINIC_001',
         plan: 'clinic',
-        expected: { type: 'PRO', hasProMode: true, canGenerateApps: true, maxDevices: 5, formats: ['pdf', 'rtf', 'txt', 'html'] }
+        expected: { type: 'PRO', hasProMode: true, canGenerateApps: true, maxDevices: 5, formats: ['pdf', 'rtf', 'html'] }
     }
 ];
 
@@ -272,8 +272,8 @@ async function runTests() {
                 visible: b.style.display !== 'none'
             }));
         });
-        if (formats.length >= 4) {
-            log('pass', 'Preview tiene 4 formatos (pdf, rtf, txt, html)', JSON.stringify(formats.map(f => f.format)));
+        if (formats.length >= 3) {
+            log('pass', 'Preview tiene 3 formatos (pdf, rtf, html)', JSON.stringify(formats.map(f => f.format)));
         } else {
             log('fail', 'Preview formatos', `Solo ${formats.length} encontrados`);
         }

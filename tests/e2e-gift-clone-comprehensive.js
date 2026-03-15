@@ -355,8 +355,7 @@ async function runTests() {
         if (formatCheck.found) {
             const visFormats = formatCheck.formats.filter(f => f.visible).map(f => f.format);
             log(visFormats.includes('pdf') ? 'pass' : 'fail', 'B', 'Formato PDF disponible', JSON.stringify(visFormats));
-            log(visFormats.includes('txt') ? 'pass' : 'fail', 'B', 'Formato TXT disponible', JSON.stringify(visFormats));
-            // PRO debería tener rtf y html también
+            // PRO/GIFT debe mostrar pdf, rtf y html en el dropdown.
             log(visFormats.includes('rtf') ? 'pass' : 'fail', 'B', 'Formato RTF disponible (PRO)', JSON.stringify(visFormats));
             log(visFormats.includes('html') ? 'pass' : 'fail', 'B', 'Formato HTML disponible (PRO)', JSON.stringify(visFormats));
         } else {
