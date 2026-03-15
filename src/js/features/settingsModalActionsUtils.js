@@ -39,8 +39,13 @@
             contactBtn.addEventListener('click', () => {
                 const overlay = document.getElementById('settingsModalOverlay');
                 if (overlay) overlay.classList.remove('active');
-                const btnContacto = document.getElementById('btnContacto');
-                if (btnContacto) btnContacto.click();
+                // Usar openContactModal si está disponible (siempre está para usuarios no-admin).
+                if (typeof window.openContactModal === 'function') {
+                    window.openContactModal();
+                } else {
+                    const btnContacto = document.getElementById('btnContacto');
+                    if (btnContacto) btnContacto.click();
+                }
             });
         }
 

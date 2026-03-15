@@ -52,6 +52,10 @@
         if (deviceItem) deviceItem.style.display = isAdmin ? '' : 'none';
         if (planItem) planItem.style.display = isAdmin ? '' : 'none';
 
+        // Admin es el soporte — no necesita el botón "Contactar soporte".
+        const contactBtn = el('settingsContactSupport');
+        if (contactBtn) contactBtn.style.display = isAdmin ? 'none' : '';
+
         const appVersionRaw = (typeof window !== 'undefined' && window.APP_VERSION)
             || localStorage.getItem('app_version')
             || '2.0';

@@ -70,7 +70,7 @@
             if (el) el.style.display = visible ? '' : 'none';
         }
 
-        const allSections = ['cuenta', 'apikey', 'workplace', 'profiles', 'pdf', 'editor', 'tools', 'theme', 'skins', 'stats', 'backup', 'info', 'about'];
+        const allSections = ['cuenta', 'apikey', 'workplace', 'profiles', 'pdf', 'editor', 'tools', 'theme', 'skins', 'stats', 'backup', 'info', 'update', 'about'];
 
         if (isAdmin) {
             allSections.forEach((key) => toggleAccordion(key, true));

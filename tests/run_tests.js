@@ -7736,6 +7736,41 @@ test('Ningún pipeline tiene código que borre o anule patientName innecesariame
         'pdfMaker.js no anula pName');
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bloque 124: Settings modal — regresión de fixes (backup-keys, color, contacto)
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 124: Settings modal — fixes regresión ──────────────────');
+
+const shellUtilsCode = fs.readFileSync(path.join(root, 'src/js/features/settingsModalShellUtils.js'), 'utf-8');
+const themeSectionCode = fs.readFileSync(path.join(root, 'src/js/features/settingsThemeSectionUtils.js'), 'utf-8');
+const populateCodeB124 = fs.readFileSync(path.join(root, 'src/js/features/settingsModalPopulateUtils.js'), 'utf-8');
+const actionsCodeB124 = fs.readFileSync(path.join(root, 'src/js/features/settingsModalActionsUtils.js'), 'utf-8');
+
+test('Settings-Fix1 — sección update incluida en allSections (K2)', () => {
+    assert(shellUtilsCode.includes("'update'"),
+        "allSections debe incluir 'update' para ocultar a usuarios no-admin per K2");
+});
+
+test('Settings-Fix2 — colorCircle inicializado con defaultPrimary cuando no hay color guardado', () => {
+    assert(themeSectionCode.includes('colorCircle.style.background = defaultPrimary'),
+        'initThemeSection debe inicializar colorCircle.style.background con defaultPrimary');
+});
+
+test('Settings-Fix3 — populateThemeButtons actualiza colorCircle al reabrir modal', () => {
+    assert(themeSectionCode.includes("getElementById('settingsColorCircle')"),
+        'populateThemeButtons debe actualizar el círculo de color al reabrir el modal');
+});
+
+test('Settings-Fix4 — botón Contactar soporte usa openContactModal() directo', () => {
+    assert(actionsCodeB124.includes('window.openContactModal'),
+        'settingsContactSupport debe llamar window.openContactModal() cuando esté disponible');
+});
+
+test('Settings-Fix5 — botón Contactar soporte oculto para admin en populateInfo', () => {
+    assert(populateCodeB124.includes('settingsContactSupport') && populateCodeB124.includes('isAdmin'),
+        'populateInfo debe ocultar settingsContactSupport para usuarios admin');
+});
+
 // Limpiar estado después de tests
 global.localStorage.clear();
 global._reportHistCache = null;
