@@ -272,14 +272,14 @@
             if (ctx.professionalSpecialty) sigBlock += `{\\pard\\qc\\sb0 {\\f0\\fs16\\i\\cf2 ${_rtfEscapeLine(ctx.professionalSpecialty)}}\\par}`;
         }
 
-        // ── Footer: linea 1 = profesional, linea 2 = disclaimer ──
-        let footerLine = `{\\pard\\brdrb\\brdrs\\brdrw5\\brdrcf2\\brsp20 \\par}`;
+        // ── Footer: linea 1 = profesional, linea 2 = disclaimer (pie real de pagina) ──
+        let footerLine = `{\\pard\\qc\\brdrt\\brdrs\\brdrw5\\brdrcf2\\brsp20\\sb0\\sa20 \\par}`;
         if (!ctx.hideReportHeader && ctx.professionalName) {
             const fp = [];
             fp.push(_rtfEscapeLine('Estudio realizado por: ' + ctx.professionalName));
             if (ctx.professionalMatricula) fp.push(_rtfEscapeLine('Mat. ' + ctx.professionalMatricula));
             if (ctx.professionalSpecialty) fp.push(_rtfEscapeLine(ctx.professionalSpecialty));
-            footerLine += `\n{\\pard\\qc\\sb30\\sa0{\\f0\\fs16\\cf2 ${fp.join('  \u00B7  ')}}}\\par`;
+            footerLine += `\n{\\pard\\qc\\sb20\\sa0{\\f0\\fs16\\cf2 ${fp.join('  |  ')}}}\\par`;
         }
         footerLine += `\n{\\pard\\qc\\sb0{\\f0\\fs14\\i\\cf2 ${_rtfEscapeLine('Este informe es v\u00E1lido \u00FAnicamente con la firma del profesional a cargo.')}}\\par}`;
 
@@ -289,6 +289,10 @@
 {\\fonttbl{\\f0 Arial;}}
 {\\colortbl;\\red${accentR}\\green${accentG}\\blue${accentB};\\red136\\green136\\blue136;}
 \\paperw12240\\paperh15840\\margl720\\margr720\\margt720\\margb720
+    \\uc1
+    {\\footer
+    ${footerLine}
+    }
 \\f0\\fs20\\ql
 ${profBlock}
 ${titleBlock}
@@ -297,8 +301,7 @@ ${metaBlock}
 \\par
 ${body}
 ${sigBlock}
-\\par
-${footerLine}
+    \\par
 }`;
     }
 
@@ -315,7 +318,7 @@ ${footerLine}
             lines.push(`${label}: ${v}`);
         };
 
-        if (ctx.showStudyDate) pushField('Fecha', `${ctx.studyDate}${ctx.studyTime ? ' ' + ctx.studyTime : ''}`);
+        if (ctx.showStudyDate) pushField('Fecha', `${ctx.studyDate}${ctx.studyTime ? ' ' + ctx.studyTime + ' hs.' : ''}`);
         if (ctx.showReportNumber) pushField('Informe N', ctx.reportNum);
         pushField('Paciente', ctx.patientName);
         pushField('DNI', ctx.patientDni);
@@ -501,7 +504,7 @@ ${footerLine}
             row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">INFORME Nº:</span><span class="pvs-val">${reportNum || '—'}</span></div>`;
         }
         if (showStudyDate && (studyDate || studyTime)) {
-            row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">FECHA:</span><span class="pvs-val">${studyDate}${studyTime ? ' ' + studyTime : ''}</span></div>`;
+            row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">FECHA:</span><span class="pvs-val">${studyDate}${studyTime ? ' ' + studyTime + ' hs.' : ''}</span></div>`;
         }
         let row2 = '';
         if (refDoctor) row2 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">SOLICITANTE:</span><span class="pvs-val">${refDoctor}</span></div>`;

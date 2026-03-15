@@ -507,19 +507,29 @@
         const safeTranscriptions = typeof transcriptions !== 'undefined' ? transcriptions : [];
         const safeActiveIndex = typeof activeTabIndex !== 'undefined' ? activeTabIndex : 0;
 
-        // Nombre inteligente: Estudio_Apellido_DD-MM-YY
+        // Nombre inteligente: Estudio_Apellido_DD-MM-YY (fecha del estudio cuando exista)
         const _cfg = (typeof window.currentPdfConfig !== 'undefined' && window.currentPdfConfig) ? window.currentPdfConfig : {};
+        const _resolvedCtx = (typeof window.resolveReportContext === 'function')
+            ? await window.resolveReportContext({ includeEditorExtract: true, includeFormFallback: true, editorEl: editor })
+            : null;
         const _safePart = (s) => String(s || '').trim().replace(/[/\\:*?"<>|]/g, '').replace(/\s+/g, '_') || '';
-        const _studyPart = _safePart(_cfg.studyType || '');
-        const _patientFirst = (_cfg.patientName || '').trim().split(/\s+/)[0];
-        const _lastNamePart = _safePart(_patientFirst);
-        const _now = new Date();
-        const _dd = String(_now.getDate()).padStart(2, '0');
-        const _mm = String(_now.getMonth() + 1).padStart(2, '0');
-        const _yy = String(_now.getFullYear()).slice(2);
-        const _smartBase = [_studyPart, _lastNamePart, `${_dd}-${_mm}-${_yy}`].filter(Boolean).join('_');
+        const _studyPart = _safePart((_resolvedCtx && _resolvedCtx.studyType) || _cfg.studyType || '');
+        const _patientRaw = String((_resolvedCtx && _resolvedCtx.patientName) || _cfg.patientName || '').trim();
+        const _patientLast = _patientRaw.includes(',')
+            ? _patientRaw.split(',')[0].trim()
+            : ((_patientRaw.split(/\s+/).filter(Boolean).pop()) || '');
+        const _lastNamePart = _safePart(_patientLast);
+
+        const _studyDateIso = String((_resolvedCtx && _resolvedCtx.studyDate) || _cfg.studyDate || '').trim();
+        const _isIsoDate = /^\d{4}-\d{2}-\d{2}$/.test(_studyDateIso);
+        const _baseDate = _isIsoDate ? new Date(_studyDateIso + 'T12:00:00') : new Date();
+        const _dd = String(_baseDate.getDate()).padStart(2, '0');
+        const _mm = String(_baseDate.getMonth() + 1).padStart(2, '0');
+        const _yy = String(_baseDate.getFullYear()).slice(2);
+
+        const _smartBase = [_studyPart, _lastNamePart].filter(Boolean).join('_');
         const fileName = _smartBase || (safeTranscriptions[safeActiveIndex]?.fileName || 'informe').replace(/\.[^/.]+$/, '');
-        const date = new Date().toLocaleDateString('es-ES');
+        const date = _baseDate.toLocaleDateString('es-ES');
         const fileDate = `${_dd}-${_mm}-${_yy}`;
 
         if (format === 'pdf') {

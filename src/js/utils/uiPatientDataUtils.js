@@ -174,7 +174,7 @@ window.initPatientDataModalHandlers = function () {
         const studyLines = [];
         if (data.showStudyDate !== false && data.studyDate) {
             const dateForDisplay = new Date(data.studyDate + 'T12:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            studyLines.push(`<strong>Fecha:</strong> ${esc(dateForDisplay)}${data.studyTime ? ' ' + esc(data.studyTime) : ''}`);
+            studyLines.push(`<strong>Fecha:</strong> ${esc(dateForDisplay)}${data.studyTime ? ' ' + esc(data.studyTime) + ' hs.' : ''}`);
         }
         if (data.studyType) studyLines.push(`<strong>Estudio:</strong> ${esc(data.studyType)}`);
         if (data.referringDoctor) studyLines.push(`<strong>Médico solicitante:</strong> ${esc(data.referringDoctor)}`);
