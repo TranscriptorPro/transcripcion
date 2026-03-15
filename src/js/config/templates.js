@@ -1,5 +1,9 @@
 // ============ TEMPLATE CATEGORIES & HELPERS ============
 
+if (window.TP_TEMPLATE_CATEGORY_REGISTRY && typeof window.TP_TEMPLATE_CATEGORY_REGISTRY.applyToMedicalTemplates === 'function') {
+    window.TP_TEMPLATE_CATEGORY_REGISTRY.applyToMedicalTemplates();
+}
+
 const _sharedTplCats = window.TP_TEMPLATE_CATEGORY_REGISTRY && window.TP_TEMPLATE_CATEGORY_REGISTRY.templateKeysByCategory;
 
 window.TEMPLATE_CATEGORIES = _sharedTplCats || {

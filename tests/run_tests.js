@@ -2596,6 +2596,22 @@ test('catálogo compartido de templates: app/admin/registro lo consumen con fall
     assert(registro.includes('window.TP_TEMPLATE_CATEGORY_REGISTRY'), 'registro script debe consumir registro compartido');
 });
 
+test('runtime de plantillas admin: registro compartido expone API de persistencia y merge', () => {
+    const shared = fs.readFileSync(path.join(root, 'src/js/config/templateCategoryRegistry.js'), 'utf-8');
+    const appTemplates = fs.readFileSync(path.join(root, 'src/js/config/templates.js'), 'utf-8');
+    const adminScript = fs.readFileSync(path.join(root, 'recursos/admin-assets/js/admin-inline-script-04.js'), 'utf-8');
+
+    assert(shared.includes("const ADMIN_TEMPLATES_STORAGE_KEY = 'admin_templates_config'"), 'El registro debe usar key de storage para templates admin');
+    assert(shared.includes('upsertAdminTemplate'), 'El registro compartido debe exponer upsertAdminTemplate');
+    assert(shared.includes('saveAdminTemplatesConfig'), 'El registro compartido debe exponer saveAdminTemplatesConfig');
+    assert(shared.includes('resetAdminTemplatesConfig'), 'El registro compartido debe exponer resetAdminTemplatesConfig');
+    assert(shared.includes('applyToMedicalTemplates'), 'El registro compartido debe poder aplicar overrides a MEDICAL_TEMPLATES');
+    assert(appTemplates.includes('applyToMedicalTemplates'), 'templates.js debe aplicar overrides runtime al cargar');
+    assert(adminScript.includes('_ensureTemplatesAdminTab'), 'admin script debe inicializar tab dinámico de plantillas');
+    assert(adminScript.includes('[data-tab="plantillas"]'), 'admin script debe crear botón tab para plantillas');
+    assert(adminScript.includes("tab.id = 'tab-plantillas'"), 'admin script debe crear contenido del tab de plantillas');
+});
+
 test('editorDownloadCoreUtils.js corrige estudios con mayúsculas mezcladas en filename', () => {
     const code = fs.readFileSync(path.join(root, 'src/js/features/editorDownloadCoreUtils.js'), 'utf-8');
     assert(code.includes('const hasWeirdMixedCase = /[a-záéíóúñü][A-ZÁÉÍÓÚÑÜ]/.test(t);'), 'Debe detectar mayúsculas mezcladas dentro de una palabra');

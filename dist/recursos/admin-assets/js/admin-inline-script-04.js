@@ -221,6 +221,8 @@
         let logsLoaded = false;
         let registrosLoaded = false;
         let soporteLoaded = false;
+        let templatesAdminLoaded = false;
+        let currentTemplateAdminEditKey = '';
         let allRegistrations = [];
         let currentActiveTab = 'usuarios';
         let activeRefreshInFlight = false;
@@ -439,6 +441,8 @@
                 _initPlansEditor();
             } else if (tabName === 'extras') {
                 _initExtrasEditor();
+            } else if (tabName === 'plantillas') {
+                _initTemplatesAdminPanel();
             } else if (tabName === 'soporte' && !soporteLoaded) {
                 loadSupportRequests();
                 soporteLoaded = true;
@@ -501,6 +505,367 @@
             } catch (err) {
                 await dashAlert('Error al vaciar logs: ' + err.message, '❌');
             }
+        }
+
+        function _ensureTemplatesAdminTab() {
+            const tabsContainer = document.querySelector('.tabs-nav .container');
+            if (!tabsContainer) return;
+
+            if (!tabsContainer.querySelector('[data-tab="plantillas"]')) {
+                const btn = document.createElement('button');
+                btn.className = 'tab-btn';
+                btn.dataset.tab = 'plantillas';
+                btn.textContent = '🧩 Plantillas';
+                btn.addEventListener('click', () => showTab('plantillas'));
+
+                const extrasBtn = tabsContainer.querySelector('[data-tab="extras"]');
+                if (extrasBtn && extrasBtn.nextSibling) tabsContainer.insertBefore(btn, extrasBtn.nextSibling);
+                else tabsContainer.appendChild(btn);
+            }
+
+            if (document.getElementById('tab-plantillas')) return;
+
+            const tab = document.createElement('div');
+            tab.id = 'tab-plantillas';
+            tab.className = 'tab-content';
+            tab.innerHTML = `
+                <section class="plans-section">
+                    <div class="container">
+                        <h2 style="margin-bottom:1rem;color:var(--text-primary);">🧩 Gestión de Plantillas</h2>
+                        <p style="color:var(--text-secondary);margin-bottom:1.2rem;">
+                            Agregá o editá plantillas médicas sin tocar código. Los cambios impactan en app, registro y panel admin desde el registro compartido.
+                        </p>
+
+                        <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1rem;">
+                            <button class="btn-primary" id="tplBtnNew">➕ Nueva plantilla</button>
+                            <button class="btn-secondary" id="tplBtnExport">⬇️ Exportar JSON</button>
+                            <button class="btn-secondary" id="tplBtnImport">⬆️ Importar JSON</button>
+                            <button class="btn-secondary" id="tplBtnReset">↩️ Restaurar defaults</button>
+                            <input type="file" id="tplImportFile" accept="application/json" style="display:none;">
+                            <span id="tplCountBadge" style="font-size:.82rem;color:var(--text-secondary);align-self:center;"></span>
+                        </div>
+
+                        <div class="table-wrapper" style="margin-bottom:1.1rem;">
+                            <table class="users-table" id="tplTable">
+                                <thead>
+                                    <tr>
+                                        <th>Key</th>
+                                        <th>Nombre</th>
+                                        <th>Categoría</th>
+                                        <th>Keywords</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tplTableBody">
+                                    <tr><td colspan="6" class="text-center">⏳ Cargando plantillas...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div style="background:var(--bg-secondary,#f8fafc);border:1px solid var(--border,#e2e8f0);border-radius:12px;padding:1rem;">
+                            <h3 style="margin:0 0 .8rem;color:var(--text-primary);font-size:1rem;">✏️ Editor de plantilla</h3>
+
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;">
+                                <div>
+                                    <label style="display:block;font-size:.82rem;color:var(--text-secondary);margin-bottom:.25rem;">Key (slug)</label>
+                                    <input id="tplKey" type="text" placeholder="eco_transesofagico" style="width:100%;padding:.55rem .7rem;border:1px solid var(--border,#cbd5e1);border-radius:8px;background:var(--bg-primary,#fff);color:var(--text-primary);">
+                                </div>
+                                <div>
+                                    <label style="display:block;font-size:.82rem;color:var(--text-secondary);margin-bottom:.25rem;">Nombre visible</label>
+                                    <input id="tplName" type="text" placeholder="Ecocardiograma transesofágico" style="width:100%;padding:.55rem .7rem;border:1px solid var(--border,#cbd5e1);border-radius:8px;background:var(--bg-primary,#fff);color:var(--text-primary);">
+                                </div>
+                            </div>
+
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-top:.7rem;">
+                                <div>
+                                    <label style="display:block;font-size:.82rem;color:var(--text-secondary);margin-bottom:.25rem;">Categoría</label>
+                                    <select id="tplCategory" style="width:100%;padding:.55rem .7rem;border:1px solid var(--border,#cbd5e1);border-radius:8px;background:var(--bg-primary,#fff);color:var(--text-primary);"></select>
+                                </div>
+                                <div>
+                                    <label style="display:block;font-size:.82rem;color:var(--text-secondary);margin-bottom:.25rem;">Keywords (coma separadas)</label>
+                                    <input id="tplKeywords" type="text" placeholder="ecocardiograma transesofagico, ete, transesofagico" style="width:100%;padding:.55rem .7rem;border:1px solid var(--border,#cbd5e1);border-radius:8px;background:var(--bg-primary,#fff);color:var(--text-primary);">
+                                </div>
+                            </div>
+
+                            <div style="margin-top:.7rem;">
+                                <label style="display:block;font-size:.82rem;color:var(--text-secondary);margin-bottom:.25rem;">Prompt de estructuración</label>
+                                <textarea id="tplPrompt" rows="4" placeholder="Indicaciones específicas para estructurar este estudio" style="width:100%;padding:.6rem .7rem;border:1px solid var(--border,#cbd5e1);border-radius:8px;background:var(--bg-primary,#fff);color:var(--text-primary);resize:vertical;"></textarea>
+                            </div>
+
+                            <div style="margin-top:.7rem;display:flex;align-items:center;gap:.45rem;">
+                                <input id="tplDisabled" type="checkbox" style="width:15px;height:15px;accent-color:var(--primary,#2563eb);">
+                                <label for="tplDisabled" style="font-size:.83rem;color:var(--text-secondary);cursor:pointer;">Desactivada (oculta en UI)</label>
+                            </div>
+
+                            <div style="display:flex;gap:.6rem;margin-top:.9rem;">
+                                <button class="btn-primary" id="tplBtnSave">💾 Guardar plantilla</button>
+                                <button class="btn-secondary" id="tplBtnCancel">Cancelar edición</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            `;
+
+            const tabSoporte = document.getElementById('tab-soporte');
+            if (tabSoporte && tabSoporte.parentNode) tabSoporte.parentNode.insertBefore(tab, tabSoporte);
+            else document.body.appendChild(tab);
+        }
+
+        function _tplAdminEscape(v) {
+            const s = String(v == null ? '' : v);
+            return s
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function _tplAdminApi() {
+            return window.TP_TEMPLATE_CATEGORY_REGISTRY || null;
+        }
+
+        function _tplAdminFillCategoryOptions(selected) {
+            const sel = document.getElementById('tplCategory');
+            if (!sel) return;
+
+            const api = _tplAdminApi();
+            const baseCats = Object.keys((api && (api.baseTemplateMapByCategory || api.templateMapByCategory)) || {});
+            sel.innerHTML = baseCats.map((cat) => `<option value="${_tplAdminEscape(cat)}">${_tplAdminEscape(cat)}</option>`).join('');
+
+            if (selected && !baseCats.includes(selected)) {
+                const opt = document.createElement('option');
+                opt.value = selected;
+                opt.textContent = selected;
+                sel.appendChild(opt);
+            }
+            if (selected) sel.value = selected;
+        }
+
+        function _tplAdminResetEditor() {
+            currentTemplateAdminEditKey = '';
+            const keyInput = document.getElementById('tplKey');
+            if (keyInput) {
+                keyInput.value = '';
+                keyInput.readOnly = false;
+                keyInput.style.opacity = '';
+            }
+            document.getElementById('tplName').value = '';
+            document.getElementById('tplKeywords').value = '';
+            document.getElementById('tplPrompt').value = '';
+            document.getElementById('tplDisabled').checked = false;
+            _tplAdminFillCategoryOptions('General');
+        }
+
+        function _tplAdminRenderTable() {
+            const api = _tplAdminApi();
+            const tbody = document.getElementById('tplTableBody');
+            const badge = document.getElementById('tplCountBadge');
+            if (!api || !tbody || !badge) return;
+
+            const cfg = (typeof api.getAdminTemplatesConfig === 'function')
+                ? api.getAdminTemplatesConfig()
+                : { templates: [] };
+            const rows = Array.isArray(cfg.templates) ? cfg.templates.slice() : [];
+
+            rows.sort((a, b) => {
+                const c = String(a.category || '').localeCompare(String(b.category || ''));
+                if (c !== 0) return c;
+                return String(a.name || '').localeCompare(String(b.name || ''));
+            });
+
+            badge.textContent = `${rows.length} plantilla(s) administrable(s)`;
+
+            if (!rows.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Sin overrides. Usando catálogo base.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = rows.map((t) => {
+                const kwCount = Array.isArray(t.keywords) ? t.keywords.length : 0;
+                const state = t.disabled
+                    ? '<span style="padding:2px 8px;border-radius:999px;background:#fee2e2;color:#991b1b;font-size:.74rem;font-weight:600;">Desactivada</span>'
+                    : '<span style="padding:2px 8px;border-radius:999px;background:#dcfce7;color:#166534;font-size:.74rem;font-weight:600;">Activa</span>';
+                return `
+                    <tr>
+                        <td style="font-family:monospace;">${_tplAdminEscape(t.key)}</td>
+                        <td>${_tplAdminEscape(t.name)}</td>
+                        <td>${_tplAdminEscape(t.category)}</td>
+                        <td>${kwCount}</td>
+                        <td>${state}</td>
+                        <td>
+                            <button class="btn-secondary tpl-admin-action" data-action="edit" data-key="${_tplAdminEscape(t.key)}" style="padding:4px 8px;font-size:.78rem;">Editar</button>
+                            <button class="btn-secondary tpl-admin-action" data-action="delete" data-key="${_tplAdminEscape(t.key)}" style="padding:4px 8px;font-size:.78rem;color:#b91c1c;border-color:#fca5a5;">Borrar</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function _tplAdminEditByKey(key) {
+            const api = _tplAdminApi();
+            if (!api || typeof api.getAdminTemplatesConfig !== 'function') return;
+            const cfg = api.getAdminTemplatesConfig();
+            const item = (cfg.templates || []).find((t) => String(t.key) === String(key));
+            if (!item) return;
+
+            currentTemplateAdminEditKey = item.key;
+            const keyInput = document.getElementById('tplKey');
+            keyInput.value = item.key;
+            keyInput.readOnly = true;
+            keyInput.style.opacity = '.75';
+            document.getElementById('tplName').value = item.name || '';
+            _tplAdminFillCategoryOptions(item.category || 'General');
+            document.getElementById('tplKeywords').value = Array.isArray(item.keywords) ? item.keywords.join(', ') : '';
+            document.getElementById('tplPrompt').value = item.prompt || '';
+            document.getElementById('tplDisabled').checked = !!item.disabled;
+        }
+
+        async function _tplAdminDeleteByKey(key) {
+            const api = _tplAdminApi();
+            if (!api || typeof api.removeAdminTemplate !== 'function') return;
+            const ok = await dashConfirm(`¿Borrar override de plantilla "${key}"?`, '🗑️');
+            if (!ok) return;
+
+            api.removeAdminTemplate(key);
+            _tplAdminRenderTable();
+            if (currentTemplateAdminEditKey === key) _tplAdminResetEditor();
+            showNotification('Plantilla eliminada', 'success');
+        }
+
+        function _tplAdminCollectForm() {
+            const keyRaw = document.getElementById('tplKey').value;
+            const name = document.getElementById('tplName').value.trim();
+            const category = document.getElementById('tplCategory').value;
+            const prompt = document.getElementById('tplPrompt').value.trim();
+            const disabled = !!document.getElementById('tplDisabled').checked;
+
+            const key = String(keyRaw || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '_')
+                .replace(/^_+|_+$/g, '')
+                .replace(/_{2,}/g, '_');
+
+            const keywords = document.getElementById('tplKeywords').value
+                .split(',')
+                .map((k) => k.trim())
+                .filter(Boolean);
+
+            if (!key) throw new Error('La key es obligatoria');
+            if (!name) throw new Error('El nombre es obligatorio');
+            if (!category) throw new Error('La categoría es obligatoria');
+            if (!prompt) throw new Error('El prompt es obligatorio');
+            if (!keywords.length) throw new Error('Ingresá al menos una keyword');
+
+            return { key, name, category, prompt, keywords, disabled };
+        }
+
+        function _tplAdminDownloadJSON(filename, obj) {
+            const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function _initTemplatesAdminPanel() {
+            _ensureTemplatesAdminTab();
+            if (templatesAdminLoaded) {
+                _tplAdminRenderTable();
+                return;
+            }
+            templatesAdminLoaded = true;
+
+            _tplAdminResetEditor();
+            _tplAdminRenderTable();
+
+            document.getElementById('tplBtnNew')?.addEventListener('click', () => {
+                _tplAdminResetEditor();
+            });
+
+            document.getElementById('tplBtnCancel')?.addEventListener('click', () => {
+                _tplAdminResetEditor();
+            });
+
+            document.getElementById('tplBtnSave')?.addEventListener('click', () => {
+                try {
+                    const api = _tplAdminApi();
+                    if (!api || typeof api.upsertAdminTemplate !== 'function') {
+                        throw new Error('No se encontró API de plantillas runtime');
+                    }
+                    const payload = _tplAdminCollectForm();
+                    api.upsertAdminTemplate(payload);
+                    _tplAdminRenderTable();
+                    _tplAdminResetEditor();
+                    showNotification('Plantilla guardada y sincronizada', 'success');
+                } catch (err) {
+                    showNotification(err.message || 'No se pudo guardar la plantilla', 'error');
+                }
+            });
+
+            document.getElementById('tplBtnExport')?.addEventListener('click', () => {
+                const api = _tplAdminApi();
+                if (!api || typeof api.getAdminTemplatesConfig !== 'function') return;
+                const cfg = api.getAdminTemplatesConfig();
+                const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+                _tplAdminDownloadJSON(`admin_templates_config_${stamp}.json`, cfg);
+            });
+
+            document.getElementById('tplBtnImport')?.addEventListener('click', () => {
+                document.getElementById('tplImportFile')?.click();
+            });
+
+            document.getElementById('tplImportFile')?.addEventListener('change', (e) => {
+                const file = e.target.files && e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function () {
+                    try {
+                        const api = _tplAdminApi();
+                        if (!api || typeof api.saveAdminTemplatesConfig !== 'function') {
+                            throw new Error('No se encontró API de importación');
+                        }
+                        const parsed = JSON.parse(String(reader.result || '{}'));
+                        const normalized = Array.isArray(parsed) ? { templates: parsed } : parsed;
+                        api.saveAdminTemplatesConfig(normalized);
+                        _tplAdminRenderTable();
+                        _tplAdminResetEditor();
+                        showNotification('Plantillas importadas correctamente', 'success');
+                    } catch (err) {
+                        showNotification('Importación inválida: ' + (err.message || 'JSON no válido'), 'error');
+                    }
+                };
+                reader.readAsText(file);
+                e.target.value = '';
+            });
+
+            document.getElementById('tplBtnReset')?.addEventListener('click', async () => {
+                const ok = await dashConfirm('¿Restaurar catálogo base y eliminar todos los overrides de plantillas?', '↩️');
+                if (!ok) return;
+                const api = _tplAdminApi();
+                if (!api || typeof api.resetAdminTemplatesConfig !== 'function') return;
+                api.resetAdminTemplatesConfig();
+                _tplAdminRenderTable();
+                _tplAdminResetEditor();
+                showNotification('Catálogo restaurado a defaults', 'success');
+            });
+
+            document.getElementById('tplTableBody')?.addEventListener('click', (e) => {
+                const btn = e.target.closest('.tpl-admin-action');
+                if (!btn) return;
+                const action = btn.dataset.action;
+                const key = btn.dataset.key;
+                if (!key) return;
+                if (action === 'edit') _tplAdminEditByKey(key);
+                else if (action === 'delete') _tplAdminDeleteByKey(key);
+            });
         }
 
         /* ── User Metrics Modal ──────────────────────────────────────────────── */
@@ -1399,6 +1764,7 @@
         document.addEventListener('DOMContentLoaded', async () => {
             ensureRegQuickLinkButton();
             ensureLogsClearButton();
+            _ensureTemplatesAdminTab();
 
             // Enlazar acciones críticas del header al inicio para que no dependan
             // de cargas async (si falla loadDashboard, el botón debe seguir funcionando).
