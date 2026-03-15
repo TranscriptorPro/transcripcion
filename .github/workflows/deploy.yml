@@ -37,6 +37,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Quality gate (quick audit)
+        run: npm run audit:quick
+
       - name: Build (minify + obfuscate)
         run: node build.js
 
