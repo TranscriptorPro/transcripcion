@@ -6,6 +6,8 @@
   "scripts": {
     "build": "node build.js",
     "test": "node tests/run_tests.js",
+    "audit:quick": "node scripts/audit-runner.js --profile=quick",
+    "audit:full": "node scripts/audit-runner.js --profile=full",
     "qa:sandbox": "node scripts/qa-sandbox.js --page=sandbox",
     "qa:preview": "node scripts/qa-sandbox.js --page=preview",
     "qa:manual": "node scripts/qa-sandbox.js --page=manual",
