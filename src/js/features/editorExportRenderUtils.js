@@ -265,23 +265,24 @@
         // ── Firma (centrada, con espacio generoso para firmar) ──
         let sigBlock = '';
         if (!ctx.hideReportHeader && ctx.professionalName) {
-            sigBlock = '\\par\\par\\par';
-            sigBlock += `{\\pard\\qc\\sb60\\sa0 {\\f0\\fs18 ____________________________}\\par}`;
-            sigBlock += `{\\pard\\qc\\sb0 {\\f0\\fs18\\b ${_rtfEscapeLine(ctx.professionalName)}}\\par}`;
-            if (ctx.professionalMatricula) sigBlock += `{\\pard\\qc\\sb0 {\\f0\\fs16\\cf2 Mat. ${_rtfEscapeLine(ctx.professionalMatricula)}}\\par}`;
-            if (ctx.professionalSpecialty) sigBlock += `{\\pard\\qc\\sb0 {\\f0\\fs16\\i\\cf2 ${_rtfEscapeLine(ctx.professionalSpecialty)}}\\par}`;
+            const sigIndent = 5400;
+            sigBlock = '\\par\\par\\par\\par';
+            sigBlock += `{\\pard\\qc\\li${sigIndent}\\sb80\\sa0 {\\f0\\fs18 ____________________________}\\par}`;
+            sigBlock += `{\\pard\\qc\\li${sigIndent}\\sb0\\sa0 {\\f0\\fs18\\b ${_rtfEscapeLine(ctx.professionalName)}}\\par}`;
+            if (ctx.professionalMatricula) sigBlock += `{\\pard\\qc\\li${sigIndent}\\sb0\\sa0 {\\f0\\fs16\\cf2 Mat. ${_rtfEscapeLine(ctx.professionalMatricula)}}\\par}`;
+            if (ctx.professionalSpecialty) sigBlock += `{\\pard\\qc\\li${sigIndent}\\sb0\\sa0 {\\f0\\fs16\\i\\cf2 ${_rtfEscapeLine(ctx.professionalSpecialty)}}\\par}`;
         }
 
         // ── Footer: linea 1 = profesional, linea 2 = disclaimer (pie real de pagina) ──
-        let footerLine = `{\\pard\\qc\\brdrt\\brdrs\\brdrw5\\brdrcf2\\brsp20\\sb0\\sa20 \\par}`;
+        let footerLine = `{\\pard\\ql\\brdrt\\brdrs\\brdrw5\\brdrcf2\\brsp20\\sb0\\sa20 \\par}`;
         if (!ctx.hideReportHeader && ctx.professionalName) {
             const fp = [];
             fp.push(_rtfEscapeLine('Estudio realizado por: ' + ctx.professionalName));
             if (ctx.professionalMatricula) fp.push(_rtfEscapeLine('Mat. ' + ctx.professionalMatricula));
             if (ctx.professionalSpecialty) fp.push(_rtfEscapeLine(ctx.professionalSpecialty));
-            footerLine += `\n{\\pard\\qc\\sb20\\sa0{\\f0\\fs16\\cf2 ${fp.join('  |  ')}}}\\par`;
+            footerLine += `\n{\\pard\\ql\\sb20\\sa0{\\f0\\fs16\\cf2 ${fp.join('  |  ')}}}\\par`;
         }
-        footerLine += `\n{\\pard\\qc\\sb0{\\f0\\fs14\\i\\cf2 ${_rtfEscapeLine('Este informe es v\u00E1lido \u00FAnicamente con la firma del profesional a cargo.')}}\\par}`;
+        footerLine += `\n{\\pard\\ql\\sb80\\sa0{\\f0\\fs14\\i\\cf2 ${_rtfEscapeLine('Este informe es v\u00E1lido \u00FAnicamente con la firma del profesional a cargo.')}}\\par}`;
 
         // ── Documento RTF completo ──
         // Color table: \cf1 = acento azul, \cf2 = gris

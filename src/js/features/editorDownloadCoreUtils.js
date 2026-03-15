@@ -513,12 +513,39 @@
             ? await window.resolveReportContext({ includeEditorExtract: true, includeFormFallback: true, editorEl: editor })
             : null;
         const _safePart = (s) => String(s || '').trim().replace(/[/\\:*?"<>|]/g, '').replace(/\s+/g, '_') || '';
-        const _studyPart = _safePart((_resolvedCtx && _resolvedCtx.studyType) || _cfg.studyType || '');
+        const _normalizeStudyForFile = (s) => {
+            let t = String(s || '').trim().replace(/^INFORME\s+DE\s+/i, '');
+            if (!t) return '';
+            const letters = t.replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñÜü]/g, '');
+            const isMostlyUpper = !!letters && letters === letters.toUpperCase();
+            if (isMostlyUpper) {
+                t = t.toLowerCase().replace(/\b([a-záéíóúñü])/g, (m, c) => c.toUpperCase());
+            }
+            return t;
+        };
+
+        const _studyPart = _safePart(_normalizeStudyForFile((_resolvedCtx && _resolvedCtx.studyType) || _cfg.studyType || ''));
+
         const _patientRaw = String((_resolvedCtx && _resolvedCtx.patientName) || _cfg.patientName || '').trim();
-        const _patientLast = _patientRaw.includes(',')
-            ? _patientRaw.split(',')[0].trim()
-            : ((_patientRaw.split(/\s+/).filter(Boolean).pop()) || '');
-        const _lastNamePart = _safePart(_patientLast);
+        const _patientClean = _patientRaw.replace(/\s+/g, ' ').trim();
+        let _patientPart = '';
+        if (_patientClean) {
+            if (_patientClean.includes(',')) {
+                const parts = _patientClean.split(',').map(p => p.trim()).filter(Boolean);
+                const last = _safePart(parts[0] || '');
+                const first = _safePart(parts.slice(1).join(' ') || '');
+                _patientPart = [last, first].filter(Boolean).join('_');
+            } else {
+                const tokens = _patientClean.split(' ').filter(Boolean);
+                if (tokens.length >= 2) {
+                    const last = _safePart(tokens[tokens.length - 1]);
+                    const first = _safePart(tokens.slice(0, -1).join(' '));
+                    _patientPart = [last, first].filter(Boolean).join('_');
+                } else {
+                    _patientPart = _safePart(tokens[0] || '');
+                }
+            }
+        }
 
         const _studyDateIso = String((_resolvedCtx && _resolvedCtx.studyDate) || _cfg.studyDate || '').trim();
         const _isIsoDate = /^\d{4}-\d{2}-\d{2}$/.test(_studyDateIso);
@@ -527,7 +554,7 @@
         const _mm = String(_baseDate.getMonth() + 1).padStart(2, '0');
         const _yy = String(_baseDate.getFullYear()).slice(2);
 
-        const _smartBase = [_studyPart, _lastNamePart].filter(Boolean).join('_');
+        const _smartBase = [_studyPart, _patientPart].filter(Boolean).join('_');
         const fileName = _smartBase || (safeTranscriptions[safeActiveIndex]?.fileName || 'informe').replace(/\.[^/.]+$/, '');
         const date = _baseDate.toLocaleDateString('es-ES');
         const fileDate = `${_dd}-${_mm}-${_yy}`;
