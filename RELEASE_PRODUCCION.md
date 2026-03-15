@@ -85,3 +85,56 @@ Aunque todo lo automatico este verde, ejecutar esta pasada manual corta:
 3. Smoke postdeploy: en verde.
 4. E2E integral: en verde (con warnings no bloqueantes reportados por el runner).
 5. Verificacion de logo principal: la clase `.header-logo` no aplica borde circular en app/admin.
+
+## 8) Prioridades de desarrollo para salir a produccion rapido
+
+Objetivo: reducir riesgo real de operacion en el menor tiempo posible.
+
+### Prioridad 1 - Bloqueo de release por calidad (inmediato)
+
+1. Mantener gate de auditoria quick antes de deploy.
+2. Exigir smoke postdeploy obligatorio en URL publicada.
+3. Si smoke falla: tratar release como NO-GO y corregir antes de nueva salida.
+
+### Prioridad 2 - Cobertura de circuitos de negocio faltantes (48-72h)
+
+Implementar y automatizar en perfil full:
+
+1. Compra y activacion inicial de plan.
+2. Upgrade y downgrade de plan con persistencia de permisos.
+3. Transferencia/rotacion de dispositivo y bloqueos por limite.
+4. Flujo de licencia vencida y renovacion sin perdida de configuracion.
+
+### Prioridad 3 - Confiabilidad operativa (siguiente bloque)
+
+1. Estandarizar telemetria minima de errores criticos (UI, API, PDF, licencias).
+2. Definir alertas operativas basicas (error rate, fallos de smoke, fallos de E2E criticos).
+3. Consolidar reporte diario de estado usando trend de auditorias.
+
+### Prioridad 4 - Endurecimiento de experiencia real (pre-go-live)
+
+1. Pruebas de microfono real y permisos por navegador objetivo.
+2. Pruebas mobile reales (Android e iOS) en onboarding, audio y exportacion.
+3. Validacion de PDF en casos extremos (texto largo, logos grandes, firmas complejas).
+
+## 9) Plan corto de ejecucion recomendado
+
+### Dia 1
+
+1. Cerrar smoke postdeploy bloqueante en CI.
+2. Definir criterio de severidad (critico/alto/medio) para Go/No-Go.
+
+### Dia 2-3
+
+1. Desarrollar tests de compra/upgrade/transferencia.
+2. Integrarlos en auditoria full y verificar green continuo.
+
+### Dia 4
+
+1. Prueba piloto controlada con usuarios internos.
+2. Corregir hallazgos de mayor impacto.
+
+### Dia 5
+
+1. Re-ejecutar release verify completo.
+2. Publicar con monitoreo intensivo 30-60 minutos.
