@@ -2495,6 +2495,12 @@ test('pdfPreview.js persiste reportNum auto-generado en _pdfConfigCache', () => 
     assert(code.includes('window._pdfConfigCache = config'), 'Debe actualizar _pdfConfigCache con el número de informe');
 });
 
+test('pdfPreview.js declara config en openPdfConfigModal antes de usar reportNum', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/pdfPreview.js'), 'utf-8');
+    assert(code.includes("const config = window._pdfConfigCache || (await safeGet('pdf_config', {})) || {};"),
+        'openPdfConfigModal debe declarar config para evitar ReferenceError al abrir desde Configuración');
+});
+
 test('reportHistory.js expone clearReportHistory y limpia appDB/cache/ui', () => {
     const code = fs.readFileSync(path.join(root, 'src/js/features/reportHistory.js'), 'utf-8');
     assert(code.includes('window.clearReportHistory = async function () {'), 'Debe exponer clearReportHistory');

@@ -366,6 +366,7 @@ window.openPdfConfigModal = async function () {
     if (typeof loadPdfConfiguration === 'function') await loadPdfConfiguration();
     const dataUtils = window.PdfDataAccessUtils || {};
     const safeGet = (typeof dataUtils.safeGet === 'function') ? dataUtils.safeGet : async (_k, fallback) => fallback;
+    const config = window._pdfConfigCache || (await safeGet('pdf_config', {})) || {};
 
     const profData = (await safeGet('prof_data', {})) || {};
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
