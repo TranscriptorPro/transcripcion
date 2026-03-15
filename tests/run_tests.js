@@ -2605,6 +2605,7 @@ test('catálogo compartido de templates: app/admin/registro lo consumen con fall
 test('runtime de plantillas admin: registro compartido expone API de persistencia y merge', () => {
     const shared = fs.readFileSync(path.join(root, 'src/js/config/templateCategoryRegistry.js'), 'utf-8');
     const appTemplates = fs.readFileSync(path.join(root, 'src/js/config/templates.js'), 'utf-8');
+    const adminHtml = fs.readFileSync(path.join(root, 'recursos/admin.html'), 'utf-8');
     const adminScript = fs.readFileSync(path.join(root, 'recursos/admin-assets/js/admin-inline-script-04.js'), 'utf-8');
 
     assert(shared.includes("const ADMIN_TEMPLATES_STORAGE_KEY = 'admin_templates_config'"), 'El registro debe usar key de storage para templates admin');
@@ -2613,9 +2614,28 @@ test('runtime de plantillas admin: registro compartido expone API de persistenci
     assert(shared.includes('resetAdminTemplatesConfig'), 'El registro compartido debe exponer resetAdminTemplatesConfig');
     assert(shared.includes('applyToMedicalTemplates'), 'El registro compartido debe poder aplicar overrides a MEDICAL_TEMPLATES');
     assert(appTemplates.includes('applyToMedicalTemplates'), 'templates.js debe aplicar overrides runtime al cargar');
+    assert(adminHtml.includes('../src/js/config/templatesCatalog.js'), 'admin.html debe cargar templatesCatalog para editar catálogo base');
+    assert(adminHtml.includes('../src/js/config/templatesCatalogPart2.js'), 'admin.html debe cargar templatesCatalogPart2 para editar catálogo base');
+    assert(adminHtml.includes('../src/js/config/templatesCatalogPart3.js'), 'admin.html debe cargar templatesCatalogPart3 para editar catálogo base');
     assert(adminScript.includes('_ensureTemplatesAdminTab'), 'admin script debe inicializar tab dinámico de plantillas');
+    assert(adminScript.includes('const runtimeMap ='), 'admin script debe listar catálogo runtime completo (base + overrides)');
+    assert(adminScript.includes("data-action=\"reset\""), 'admin script debe permitir restaurar override a base');
     assert(adminScript.includes('[data-tab="plantillas"]'), 'admin script debe crear botón tab para plantillas');
     assert(adminScript.includes("tab.id = 'tab-plantillas'"), 'admin script debe crear contenido del tab de plantillas');
+});
+
+test('settings modal: botón Configurar informes PDF mantiene flujo funcional', () => {
+    const settingsWorkplaceCode = fs.readFileSync(path.join(root, 'src/js/features/settingsWorkplaceUtils.js'), 'utf-8');
+    const settingsPanelCode = fs.readFileSync(path.join(root, 'src/js/features/settingsPanel.js'), 'utf-8');
+    const indexCode = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
+    const pdfPreviewCode = fs.readFileSync(path.join(root, 'src/js/features/pdfPreview.js'), 'utf-8');
+
+    assert(settingsWorkplaceCode.includes("document.getElementById('settingsOpenPdfConfig')"), 'Debe existir botón settingsOpenPdfConfig');
+    assert(settingsWorkplaceCode.includes('openPdfConfigModal'), 'settingsWorkplaceUtils debe invocar openPdfConfigModal');
+    assert(settingsPanelCode.includes('_initPdfConfigLink'), 'settingsPanel debe inicializar el botón de Configurar informes PDF');
+    assert(indexCode.includes('id="settingsOpenPdfConfig"'), 'index.html debe contener el botón settingsOpenPdfConfig');
+    assert(pdfPreviewCode.includes("const config = window._pdfConfigCache || (await safeGet('pdf_config', {})) || {};"),
+        'openPdfConfigModal debe declarar config antes de usar reportNum');
 });
 
 test('editorDownloadCoreUtils.js corrige estudios con mayúsculas mezcladas en filename', () => {

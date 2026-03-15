@@ -667,7 +667,57 @@
             const cfg = (typeof api.getAdminTemplatesConfig === 'function')
                 ? api.getAdminTemplatesConfig()
                 : { templates: [] };
-            const rows = Array.isArray(cfg.templates) ? cfg.templates.slice() : [];
+            const overrideRows = Array.isArray(cfg.templates) ? cfg.templates.slice() : [];
+            const overrideByKey = {};
+            overrideRows.forEach((item) => {
+                if (item && item.key) overrideByKey[String(item.key)] = item;
+            });
+
+            const runtimeMap = (api.templateMapByCategory && typeof api.templateMapByCategory === 'object')
+                ? api.templateMapByCategory
+                : {};
+            const rows = [];
+            const seenKeys = {};
+
+            Object.entries(runtimeMap).forEach(([category, list]) => {
+                (list || []).forEach((item) => {
+                    const key = String(item && item.key || '');
+                    if (!key || seenKeys[key]) return;
+                    seenKeys[key] = true;
+
+                    const ov = overrideByKey[key] || null;
+                    const runtimeTpl = (window.MEDICAL_TEMPLATES && window.MEDICAL_TEMPLATES[key]) || {};
+                    const rowName = (ov && ov.name) || (item && item.name) || runtimeTpl.name || key;
+                    const rowCategory = (ov && ov.category) || category || 'General';
+
+                    rows.push({
+                        key,
+                        name: rowName,
+                        category: rowCategory,
+                        keywords: (ov && Array.isArray(ov.keywords) && ov.keywords.length)
+                            ? ov.keywords
+                            : (Array.isArray(runtimeTpl.keywords) ? runtimeTpl.keywords : []),
+                        prompt: (ov && ov.prompt) || runtimeTpl.prompt || '',
+                        disabled: !!(ov && ov.disabled),
+                        isOverride: !!ov
+                    });
+                });
+            });
+
+            overrideRows.forEach((ov) => {
+                const key = String((ov && ov.key) || '');
+                if (!key || seenKeys[key]) return;
+                seenKeys[key] = true;
+                rows.push({
+                    key,
+                    name: ov.name || key,
+                    category: ov.category || 'General',
+                    keywords: Array.isArray(ov.keywords) ? ov.keywords : [],
+                    prompt: ov.prompt || '',
+                    disabled: !!ov.disabled,
+                    isOverride: true
+                });
+            });
 
             rows.sort((a, b) => {
                 const c = String(a.category || '').localeCompare(String(b.category || ''));
@@ -675,7 +725,8 @@
                 return String(a.name || '').localeCompare(String(b.name || ''));
             });
 
-            badge.textContent = `${rows.length} plantilla(s) administrable(s)`;
+            const overrideCount = overrideRows.length;
+            badge.textContent = `${rows.length} plantilla(s) totales · ${overrideCount} override(s)`;
 
             if (!rows.length) {
                 tbody.innerHTML = '<tr><td colspan="6" class="text-center">Sin overrides. Usando catálogo base.</td></tr>';
@@ -686,7 +737,12 @@
                 const kwCount = Array.isArray(t.keywords) ? t.keywords.length : 0;
                 const state = t.disabled
                     ? '<span style="padding:2px 8px;border-radius:999px;background:#fee2e2;color:#991b1b;font-size:.74rem;font-weight:600;">Desactivada</span>'
-                    : '<span style="padding:2px 8px;border-radius:999px;background:#dcfce7;color:#166534;font-size:.74rem;font-weight:600;">Activa</span>';
+                    : (t.isOverride
+                        ? '<span style="padding:2px 8px;border-radius:999px;background:#dbeafe;color:#1e40af;font-size:.74rem;font-weight:600;">Override</span>'
+                        : '<span style="padding:2px 8px;border-radius:999px;background:#dcfce7;color:#166534;font-size:.74rem;font-weight:600;">Base</span>');
+                const restoreBtn = t.isOverride
+                    ? `<button class="btn-secondary tpl-admin-action" data-action="reset" data-key="${_tplAdminEscape(t.key)}" style="padding:4px 8px;font-size:.78rem;color:#92400e;border-color:#fcd34d;">Restaurar</button>`
+                    : '';
                 return `
                     <tr>
                         <td style="font-family:monospace;">${_tplAdminEscape(t.key)}</td>
@@ -696,7 +752,7 @@
                         <td>${state}</td>
                         <td>
                             <button class="btn-secondary tpl-admin-action" data-action="edit" data-key="${_tplAdminEscape(t.key)}" style="padding:4px 8px;font-size:.78rem;">Editar</button>
-                            <button class="btn-secondary tpl-admin-action" data-action="delete" data-key="${_tplAdminEscape(t.key)}" style="padding:4px 8px;font-size:.78rem;color:#b91c1c;border-color:#fca5a5;">Borrar</button>
+                            ${restoreBtn}
                         </td>
                     </tr>
                 `;
@@ -708,30 +764,41 @@
             if (!api || typeof api.getAdminTemplatesConfig !== 'function') return;
             const cfg = api.getAdminTemplatesConfig();
             const item = (cfg.templates || []).find((t) => String(t.key) === String(key));
-            if (!item) return;
+            const runtimeInfo = (typeof api.findTemplateByKey === 'function') ? api.findTemplateByKey(key) : null;
+            const runtimeTemplate = (window.MEDICAL_TEMPLATES && window.MEDICAL_TEMPLATES[key]) || (runtimeInfo && runtimeInfo.template) || {};
+            const data = item || {
+                key: String(key),
+                name: runtimeTemplate.name || (runtimeInfo && runtimeInfo.template && runtimeInfo.template.name) || String(key),
+                category: (runtimeInfo && runtimeInfo.category) || 'General',
+                keywords: Array.isArray(runtimeTemplate.keywords) ? runtimeTemplate.keywords : [],
+                prompt: runtimeTemplate.prompt || '',
+                disabled: false
+            };
 
-            currentTemplateAdminEditKey = item.key;
+            if (!data || !data.key) return;
+
+            currentTemplateAdminEditKey = data.key;
             const keyInput = document.getElementById('tplKey');
-            keyInput.value = item.key;
+            keyInput.value = data.key;
             keyInput.readOnly = true;
             keyInput.style.opacity = '.75';
-            document.getElementById('tplName').value = item.name || '';
-            _tplAdminFillCategoryOptions(item.category || 'General');
-            document.getElementById('tplKeywords').value = Array.isArray(item.keywords) ? item.keywords.join(', ') : '';
-            document.getElementById('tplPrompt').value = item.prompt || '';
-            document.getElementById('tplDisabled').checked = !!item.disabled;
+            document.getElementById('tplName').value = data.name || '';
+            _tplAdminFillCategoryOptions(data.category || 'General');
+            document.getElementById('tplKeywords').value = Array.isArray(data.keywords) ? data.keywords.join(', ') : '';
+            document.getElementById('tplPrompt').value = data.prompt || '';
+            document.getElementById('tplDisabled').checked = !!data.disabled;
         }
 
         async function _tplAdminDeleteByKey(key) {
             const api = _tplAdminApi();
             if (!api || typeof api.removeAdminTemplate !== 'function') return;
-            const ok = await dashConfirm(`¿Borrar override de plantilla "${key}"?`, '🗑️');
+            const ok = await dashConfirm(`¿Restaurar plantilla "${key}" al valor base?`, '↩️');
             if (!ok) return;
 
             api.removeAdminTemplate(key);
             _tplAdminRenderTable();
             if (currentTemplateAdminEditKey === key) _tplAdminResetEditor();
-            showNotification('Plantilla eliminada', 'success');
+            showNotification('Override restaurado a base', 'success');
         }
 
         function _tplAdminCollectForm() {
@@ -864,7 +931,7 @@
                 const key = btn.dataset.key;
                 if (!key) return;
                 if (action === 'edit') _tplAdminEditByKey(key);
-                else if (action === 'delete') _tplAdminDeleteByKey(key);
+                else if (action === 'reset') _tplAdminDeleteByKey(key);
             });
         }
 

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test E2E - Settings abre Configurar PDF</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 16px; background: #f5f7fb; color: #1f2937; }
+    h1 { font-size: 18px; margin: 0 0 10px; }
+    .row { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
+    button { padding: 8px 14px; border: 1px solid #2563eb; background: #2563eb; color: #fff; border-radius: 8px; cursor: pointer; }
+    #log { background: #fff; border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; min-height: 80px; font-size: 13px; white-space: pre-wrap; }
+    iframe { width: 100%; height: 78vh; border: 1px solid #cbd5e1; border-radius: 10px; background: #fff; }
+    .ok { color: #166534; font-weight: 700; }
+    .err { color: #991b1b; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <h1>🧪 E2E: Configuración -> Configurar informes PDF</h1>
+  <div class="row">
+    <button id="runTest">Ejecutar test</button>
+    <span id="status">Listo para ejecutar.</span>
+  </div>
+  <div id="log"></div>
+  <iframe id="appFrame" src="../index.html"></iframe>
+
+  <script>
+    (function () {
+      const frame = document.getElementById('appFrame');
+      const runBtn = document.getElementById('runTest');
+      const status = document.getElementById('status');
+      const log = document.getElementById('log');
+
+      function wait(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      function write(line, cls) {
+        const div = document.createElement('div');
+        div.textContent = line;
+        if (cls) div.className = cls;
+        log.appendChild(div);
+      }
+
+      async function run() {
+        log.innerHTML = '';
+        status.textContent = 'Ejecutando...';
+        write('Iniciando test en iframe...');
+
+        const w = frame.contentWindow;
+        const d = frame.contentDocument;
+        if (!w || !d) {
+          write('No se pudo acceder al iframe.', 'err');
+          status.innerHTML = '<span class="err">Falló</span>';
+          return;
+        }
+
+        try {
+          for (let i = 0; i < 40; i++) {
+            if (d.getElementById('btnSettings')) break;
+            await wait(200);
+          }
+
+          const btnSettings = d.getElementById('btnSettings');
+          const settingsOverlay = d.getElementById('settingsModalOverlay');
+          const pdfBtn = d.getElementById('settingsOpenPdfConfig');
+          const pdfOverlay = d.getElementById('pdfModalOverlay');
+
+          if (!btnSettings) throw new Error('No existe #btnSettings');
+          if (!settingsOverlay) throw new Error('No existe #settingsModalOverlay');
+          if (!pdfBtn) throw new Error('No existe #settingsOpenPdfConfig');
+          if (!pdfOverlay) throw new Error('No existe #pdfModalOverlay');
+
+          btnSettings.click();
+          await wait(250);
+          if (!settingsOverlay.classList.contains('active')) {
+            throw new Error('No abrió el modal de Configuración');
+          }
+          write('OK: abrió modal de Configuración.');
+
+          pdfBtn.click();
+          await wait(450);
+
+          if (!pdfOverlay.classList.contains('active')) {
+            throw new Error('No abrió el modal de Configurar informes PDF');
+          }
+
+          write('OK: abrió modal de Configurar informes PDF.', 'ok');
+          status.innerHTML = '<span class="ok">Pasó</span>';
+        } catch (err) {
+          write('ERROR: ' + (err && err.message ? err.message : String(err)), 'err');
+          status.innerHTML = '<span class="err">Falló</span>';
+        }
+      }
+
+      runBtn.addEventListener('click', run);
+    })();
+  </script>
+</body>
+</html>
