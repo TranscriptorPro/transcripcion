@@ -1253,6 +1253,7 @@
     </div>
 
     <!-- ════ JAVASCRIPT ════ -->
+    <script src="../src/js/config/templateCategoryRegistry.js"></script>
     <script>
         // ── Config ──────────────────────────────────────────────────────────────
         const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec';
@@ -1342,7 +1343,9 @@
         })();
 
         // ── Template map (same as admin.html) ──
-        const TEMPLATE_MAP = {
+        const _sharedTplReg = window.TP_TEMPLATE_CATEGORY_REGISTRY || null;
+
+        const TEMPLATE_MAP = (_sharedTplReg && _sharedTplReg.templateMapByCategory) || {
             'Neumología': [
                 { key: 'espirometria', name: 'Espirometría' },
                 { key: 'test_marcha', name: 'Test Marcha 6 min' },
@@ -1404,7 +1407,7 @@
         };
 
         // Form specialty → template category mapping
-        const FORM_ESP_TO_CAT = {
+        const FORM_ESP_TO_CAT = (_sharedTplReg && _sharedTplReg.formSpecialtyToTemplateCategories) || {
             'Cardiología': ['Cardiología'],
             'Ecografía General': ['Imágenes'],
             'Eco-Doppler Vascular': ['Imágenes'],

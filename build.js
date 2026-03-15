@@ -20,6 +20,7 @@ const JS_FILES = [
     'src/js/config/templatesCatalog.js',
     'src/js/config/templatesCatalogPart2.js',
     'src/js/config/templatesCatalogPart3.js',
+    'src/js/config/templateCategoryRegistry.js',
     'src/js/config/templates.js',
     'src/js/config/studyTerminology.js',
     'src/js/utils/dom.js',

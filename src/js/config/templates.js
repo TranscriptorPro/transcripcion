@@ -1,6 +1,8 @@
 // ============ TEMPLATE CATEGORIES & HELPERS ============
 
-window.TEMPLATE_CATEGORIES = {
+const _sharedTplCats = window.TP_TEMPLATE_CATEGORY_REGISTRY && window.TP_TEMPLATE_CATEGORY_REGISTRY.templateKeysByCategory;
+
+window.TEMPLATE_CATEGORIES = _sharedTplCats || {
     "Neumología": ["espirometria", "test_marcha", "pletismografia", "oximetria_nocturna"],
     "Oftalmología": ["campimetria", "oct_retinal", "topografia_corneal", "fondo_ojo", "gonioscopia"],
     "Imágenes": ["tac", "resonancia", "mamografia", "densitometria", "pet_ct", "radiografia", "ecografia_abdominal", "ecografia_renal", "ecografia_tiroidea", "ecografia_mamaria", "eco_doppler"],

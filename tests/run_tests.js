@@ -2577,7 +2577,23 @@ test('registro/admin incluyen Gonioscopía en opción de Oftalmología', () => {
     assert(registro.includes("{ key: 'gonioscopia', name: 'Gonioscopía' }"), 'registro debe mapear plantilla gonioscopia en Oftalmología');
     assert(registro.includes("'Gonioscopía'"), 'registro debe mostrar Gonioscopía en lista de estudios');
     assert(admin.includes("{ key: 'gonioscopia', name: 'Gonioscopía' }"), 'admin debe mapear plantilla gonioscopia en Oftalmología');
-    assert(admin.includes("'Oftalmología': ['Campimetría', 'OCT Retinal', 'Topografía Corneal', 'Fondo de Ojo', 'Gonioscopía']"), 'admin debe incluir Gonioscopía en estudios por especialidad');
+    assert(admin.includes("'Gonioscopía'"), 'admin debe incluir Gonioscopía en estudios por especialidad');
+});
+
+test('catálogo compartido de templates: app/admin/registro lo consumen con fallback', () => {
+    const shared = fs.readFileSync(path.join(root, 'src/js/config/templateCategoryRegistry.js'), 'utf-8');
+    const appTemplates = fs.readFileSync(path.join(root, 'src/js/config/templates.js'), 'utf-8');
+    const adminHtml = fs.readFileSync(path.join(root, 'recursos/admin.html'), 'utf-8');
+    const adminScript = fs.readFileSync(path.join(root, 'recursos/admin-assets/js/admin-inline-script-04.js'), 'utf-8');
+    const registro = fs.readFileSync(path.join(root, 'recursos/registro.html'), 'utf-8');
+
+    assert(shared.includes('window.TP_TEMPLATE_CATEGORY_REGISTRY'), 'Debe existir registro compartido global');
+    assert(shared.includes("{ key: 'gonioscopia', name: 'Gonioscopía' }"), 'El registro compartido debe incluir gonioscopia');
+    assert(appTemplates.includes('window.TP_TEMPLATE_CATEGORY_REGISTRY'), 'templates.js debe leer del registro compartido');
+    assert(adminHtml.includes('../src/js/config/templateCategoryRegistry.js'), 'admin.html debe cargar el registro compartido');
+    assert(adminScript.includes('window.TP_TEMPLATE_CATEGORY_REGISTRY'), 'admin script debe consumir registro compartido');
+    assert(registro.includes('../src/js/config/templateCategoryRegistry.js'), 'registro.html debe cargar el registro compartido');
+    assert(registro.includes('window.TP_TEMPLATE_CATEGORY_REGISTRY'), 'registro script debe consumir registro compartido');
 });
 
 test('editorDownloadCoreUtils.js corrige estudios con mayúsculas mezcladas en filename', () => {

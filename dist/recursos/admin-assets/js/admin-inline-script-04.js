@@ -1485,32 +1485,10 @@
 
         // ========== NUEVO USUARIO ==========
 
-        const ESPECIALIDADES = [
-            'Cardiología',
-            'Neumología',
-            'Oftalmología',
-            'Imágenes',
-            'Endoscopía',
-            'Neurología',
-            'ORL',
-            'Ginecología',
-            'Quirúrgico',
-            'General'
-        ];
-
-        const ESTUDIOS_POR_ESPECIALIDAD = {
-            'Neumología': ['Espirometría', 'Test Marcha 6min', 'Pletismografía', 'Oximetría Nocturna'],
-            'Oftalmología': ['Campimetría', 'OCT Retinal', 'Topografía Corneal', 'Fondo de Ojo', 'Gonioscopía'],
-            'Imágenes': ['TAC', 'RMN', 'Mamografía', 'Densitometría', 'PET-CT', 'Radiografía', 'Ecografía'],
-            'Endoscopía': ['Gastroscopía', 'Colonoscopía', 'Broncoscopía', 'Laringoscopía'],
-            'Cardiología': ['Gammagrafía', 'Holter', 'MAPA', 'Cinecoronariografía', 'ECG', 'Eco-Stress'],
-            'Ginecología': ['PAP', 'Colposcopía'],
-            'General': ['Informe Evolutivo', 'Epicrisis', 'Certificado'],
-            'Quirúrgico': ['Protocolo Operatorio', 'Parte de Cirugía']
-        };
+        const _sharedTplReg = window.TP_TEMPLATE_CATEGORY_REGISTRY || null;
 
         // ── Mapeo de template keys agrupados por categoría (sincronizado con templates.js) ──
-        const TEMPLATE_MAP = {
+        const TEMPLATE_MAP = (_sharedTplReg && _sharedTplReg.templateMapByCategory) || {
             'Neumología': [
                 { key: 'espirometria', name: 'Espirometría' },
                 { key: 'test_marcha', name: 'Test Marcha 6 min' },
@@ -1571,8 +1549,17 @@
             ]
         };
 
+        const ESPECIALIDADES = Object.keys(TEMPLATE_MAP);
+
+        const ESTUDIOS_POR_ESPECIALIDAD = (_sharedTplReg && _sharedTplReg.studiesByCategory) || Object.fromEntries(
+            Object.entries(TEMPLATE_MAP).map(([esp, templates]) => [
+                esp,
+                (templates || []).map((t) => t.name)
+            ])
+        );
+
         // ── Mapeo: especialidad del formulario de registro → categoría(s) de plantillas ──
-        const FORM_ESP_TO_TEMPLATE_CAT = {
+        const FORM_ESP_TO_TEMPLATE_CAT = (_sharedTplReg && _sharedTplReg.formSpecialtyToTemplateCategories) || {
             'Cardiología': ['Cardiología'],
             'Ecografía General': ['Imágenes'],
             'Eco-Doppler Vascular': ['Imágenes'],
