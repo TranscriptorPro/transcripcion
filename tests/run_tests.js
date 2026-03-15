@@ -2476,6 +2476,25 @@ test('pdfPreviewActions.js email prioriza pipeline de preview', () => {
     assert(posPreview < posHtml, 'Debe priorizar preview (mismo pipeline que descarga) antes de html snapshot');
 });
 
+test('reportHistory.js guarda htmlContent limpiado de botones IA', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/reportHistory.js'), 'utf-8');
+    assert(code.includes('_cleanHtml'), 'saveReportToHistory debe tener helper _cleanHtml');
+    assert(code.includes('inline-review-btn'), 'Debe limpiar botones inline-review-btn del HTML guardado');
+    assert(code.includes('_cleanHtml(data.htmlContent)'), 'Debe limpiar htmlContent antes de guardarlo');
+});
+
+test('reportHistory.js viewReport elimina botones IA al mostrar', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/reportHistory.js'), 'utf-8');
+    assert(code.includes('_rvCleanHtml'), 'viewReport debe usar helper de limpieza');
+    assert(code.includes('content.innerHTML = _rvCleanHtml(report.htmlContent)'), 'Debe asignar HTML limpio al visor');
+});
+
+test('pdfPreview.js persiste reportNum auto-generado en _pdfConfigCache', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/pdfPreview.js'), 'utf-8');
+    assert(code.includes('config.reportNum = reportNumEl.value'), 'Debe persistir el número auto-generado al config cache');
+    assert(code.includes('window._pdfConfigCache = config'), 'Debe actualizar _pdfConfigCache con el número de informe');
+});
+
 test('editorDownloadCoreUtils.js usa downloadPDFFromCanvas como primer intento', () => {
     const code = fs.readFileSync(path.join(root, 'src/js/features/editorDownloadCoreUtils.js'), 'utf-8');
     // Buscar el bloque del case pdf (donde format === 'pdf')

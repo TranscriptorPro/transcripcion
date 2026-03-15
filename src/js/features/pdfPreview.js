@@ -492,6 +492,18 @@ window.openPdfConfigModal = async function () {
     if (reportNumEl && !reportNumEl.value && typeof generateReportNumber === 'function') {
         reportNumEl.value = generateReportNumber();
     }
+    // Persistir el número de informe (auto-generado o existente) en el config cache
+    // para que TODOS los pipelines (captura DOM, createHTML fallback, email) lo vean.
+    if (reportNumEl && reportNumEl.value && config && !config.reportNum) {
+        config.reportNum = reportNumEl.value;
+        window._pdfConfigCache = config;
+        try {
+            localStorage.setItem('pdf_config', JSON.stringify(config));
+            if (typeof appDB !== 'undefined' && appDB && typeof appDB.set === 'function') {
+                appDB.set('pdf_config', config).catch(() => {});
+            }
+        } catch (_) {}
+    }
     const studyDateEl = document.getElementById('pdfStudyDate');
     if (studyDateEl && !studyDateEl.value) {
         studyDateEl.value = new Date().toISOString().split('T')[0];

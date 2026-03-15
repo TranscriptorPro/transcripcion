@@ -67,6 +67,22 @@ window.resetReportHistoryMax = function () {
 window.saveReportToHistory = function (data) {
     if (!data || !data.htmlContent) return null;
 
+    // Limpiar HTML de elementos de UI que no deben estar en el historial almacenado
+    // (botones de revisión IA, badges de campo vacío, paneles de notas, etc.)
+    const _cleanHtml = (raw) => {
+        if (!raw || typeof document === 'undefined') return raw || '';
+        try {
+            const div = document.createElement('div');
+            div.innerHTML = raw;
+            div.querySelectorAll(
+                '.inline-review-btn, .no-data-edit-btn, .ai-note-panel, ' +
+                '#aiNotePanel, .patient-data-header, .patient-placeholder-banner, ' +
+                '.btn-append-inline, .original-text-banner, .no-print, .no-data-field'
+            ).forEach(el => el.remove());
+            return div.innerHTML;
+        } catch (_) { return raw; }
+    };
+
     const pdfConfig = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
     const patientName = data.patientName || pdfConfig.patientName || '';
     const patientDni  = data.patientDni  || pdfConfig.patientDni  || '';
@@ -84,7 +100,7 @@ window.saveReportToHistory = function (data) {
         templateName: templateName,
         date:         new Date().toISOString(),
         professionalName: data.professionalName || (pdfConfig.activeProfessional && pdfConfig.activeProfessional.nombre) || '',
-        htmlContent:  data.htmlContent,
+        htmlContent:  _cleanHtml(data.htmlContent),
         fileName:     data.fileName || 'informe',
         patientData: {
             name:         patientName,
@@ -307,10 +323,23 @@ window.viewReport = function (reportId) {
 
     title.textContent = `${report.patientName || 'Sin nombre'} — ${report.templateName || report.templateKey}`;
     meta.textContent  = `${dateStr} · ${report.fileName}`;
-    // Sanitizar HTML del informe para prevenir XSS
-    content.innerHTML = typeof DOMPurify !== 'undefined'
-        ? DOMPurify.sanitize(report.htmlContent)
-        : report.htmlContent.replace(/<script[\s\S]*?<\/script>/gi, '');
+    // Sanitizar HTML del informe para prevenir XSS y eliminar íconos/botones de UI
+    const _rvCleanHtml = (raw) => {
+        if (!raw) return '';
+        try {
+            const div = document.createElement('div');
+            div.innerHTML = typeof DOMPurify !== 'undefined'
+                ? DOMPurify.sanitize(raw)
+                : raw.replace(/<script[\s\S]*?<\/script>/gi, '');
+            div.querySelectorAll(
+                '.inline-review-btn, .no-data-edit-btn, .ai-note-panel, ' +
+                '#aiNotePanel, .patient-data-header, .patient-placeholder-banner, ' +
+                '.btn-append-inline, .original-text-banner, .no-print, .no-data-field'
+            ).forEach(el => el.remove());
+            return div.innerHTML;
+        } catch (_) { return raw; }
+    };
+    content.innerHTML = _rvCleanHtml(report.htmlContent);
 
     // Botón re-exportar PDF
     const btnReExport = document.getElementById('btnReExportPdf');
