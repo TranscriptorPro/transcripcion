@@ -626,6 +626,50 @@
             return window.TP_TEMPLATE_CATEGORY_REGISTRY || null;
         }
 
+        function _tplAdminLoadScript(src) {
+            return new Promise((resolve, reject) => {
+                if (!src) {
+                    reject(new Error('Ruta inválida'));
+                    return;
+                }
+                const existing = Array.from(document.scripts || []).find((s) => s.src && s.src.includes(src));
+                if (existing) {
+                    resolve(true);
+                    return;
+                }
+                const script = document.createElement('script');
+                script.src = src;
+                script.async = false;
+                script.onload = () => resolve(true);
+                script.onerror = () => reject(new Error('No se pudo cargar ' + src));
+                document.head.appendChild(script);
+            });
+        }
+
+        async function _tplAdminEnsureRegistryReady() {
+            if (window.TP_TEMPLATE_CATEGORY_REGISTRY) return true;
+
+            const candidates = [
+                '../src/js/config/',
+                '../../src/js/config/',
+                '/src/js/config/'
+            ];
+
+            for (const base of candidates) {
+                try {
+                    await _tplAdminLoadScript(base + 'templatesCatalog.js');
+                    await _tplAdminLoadScript(base + 'templatesCatalogPart2.js');
+                    await _tplAdminLoadScript(base + 'templatesCatalogPart3.js');
+                    await _tplAdminLoadScript(base + 'templateCategoryRegistry.js');
+                    if (window.TP_TEMPLATE_CATEGORY_REGISTRY) return true;
+                } catch (_) {
+                    // Probar siguiente base path.
+                }
+            }
+
+            return !!window.TP_TEMPLATE_CATEGORY_REGISTRY;
+        }
+
         function _tplAdminFillCategoryOptions(selected) {
             const sel = document.getElementById('tplCategory');
             if (!sel) return;
@@ -662,7 +706,12 @@
             const api = _tplAdminApi();
             const tbody = document.getElementById('tplTableBody');
             const badge = document.getElementById('tplCountBadge');
-            if (!api || !tbody || !badge) return;
+            if (!tbody || !badge) return;
+            if (!api) {
+                badge.textContent = '0 plantilla(s)';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="color:#b91c1c;">No se pudo cargar el registro de plantillas. Recargá el panel.</td></tr>';
+                return;
+            }
 
             const cfg = (typeof api.getAdminTemplatesConfig === 'function')
                 ? api.getAdminTemplatesConfig()
@@ -842,8 +891,20 @@
             URL.revokeObjectURL(url);
         }
 
-        function _initTemplatesAdminPanel() {
+        async function _initTemplatesAdminPanel() {
             _ensureTemplatesAdminTab();
+            const tbody = document.getElementById('tplTableBody');
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">⏳ Cargando plantillas...</td></tr>';
+            }
+
+            const ready = await _tplAdminEnsureRegistryReady();
+            if (!ready) {
+                _tplAdminRenderTable();
+                showNotification('No se pudo inicializar el registro de plantillas', 'error');
+                return;
+            }
+
             if (templatesAdminLoaded) {
                 _tplAdminRenderTable();
                 return;

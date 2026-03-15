@@ -2618,6 +2618,8 @@ test('runtime de plantillas admin: registro compartido expone API de persistenci
     assert(adminHtml.includes('../src/js/config/templatesCatalogPart2.js'), 'admin.html debe cargar templatesCatalogPart2 para editar catálogo base');
     assert(adminHtml.includes('../src/js/config/templatesCatalogPart3.js'), 'admin.html debe cargar templatesCatalogPart3 para editar catálogo base');
     assert(adminScript.includes('_ensureTemplatesAdminTab'), 'admin script debe inicializar tab dinámico de plantillas');
+    assert(adminScript.includes('_tplAdminEnsureRegistryReady'), 'admin script debe bootstraper el registro de plantillas si falta');
+    assert(adminScript.includes('No se pudo cargar el registro de plantillas'), 'admin script debe mostrar error visible si falla la carga del registro');
     assert(adminScript.includes('const runtimeMap ='), 'admin script debe listar catálogo runtime completo (base + overrides)');
     assert(adminScript.includes("data-action=\"reset\""), 'admin script debe permitir restaurar override a base');
     assert(adminScript.includes('[data-tab="plantillas"]'), 'admin script debe crear botón tab para plantillas');
