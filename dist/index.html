@@ -127,7 +127,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
-        <link rel="stylesheet" href="app.mmr40rhf.min.css">
+        <link rel="stylesheet" href="app.mmr46i7f.min.css">
 </head>
 
 <body>
@@ -2264,12 +2264,14 @@
                             </svg>
                             <span>IA</span>
                         </button>
-                        <div id="inlineReviewQuickControl" style="display:flex;align-items:center;gap:0.35rem;padding:0.2rem 0.45rem;border:1px solid var(--border);border-radius:10px;background:var(--bg-card);">
-                            <span class="inline-review-quick-label">▶ Rev IA</span>
-                            <label class="toggle-switch-sm" style="margin:0;">
-                                <input type="checkbox" id="inlineReviewQuickToggle" checked>
-                                <span class="toggle-slider-sm"></span>
-                            </label>
+                        <div id="inlineReviewQuickDock" style="display:contents;">
+                            <div id="inlineReviewQuickControl" style="display:flex;align-items:center;gap:0.35rem;padding:0.2rem 0.45rem;border:1px solid var(--border);border-radius:10px;background:var(--bg-card);">
+                                <span class="inline-review-quick-label">▶ Rev IA</span>
+                                <label class="toggle-switch-sm" style="margin:0;">
+                                    <input type="checkbox" id="inlineReviewQuickToggle" checked>
+                                    <span class="toggle-slider-sm"></span>
+                                </label>
+                            </div>
                         </div>
                         <!-- Restore/Toggle original text -->
                         <button class="btn btn-outline btn-sm-icon toggle-comparison-btn" id="btnRestoreOriginal" style="display:none;" title="Ver texto original">↩ Original</button>
@@ -2503,7 +2505,7 @@
             </svg>
             <span id="toastMessage"></span>
         </div>
-        <script src="app.mmr40rgt.min.js"></script>
+        <script src="app.mmr46i6p.min.js"></script>
 
         <!-- G1: Modal Panel Registro de Pacientes -->
         <div class="modal-overlay" id="registryPanelOverlay">

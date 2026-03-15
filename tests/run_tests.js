@@ -2541,6 +2541,19 @@ test('structurer.js oculta editor y acciones durante STRUCTURING', () => {
     assert(css.includes('body.structuring-active #editorToolbar,'), 'Debe ocultar la barra del editor mientras estructura');
 });
 
+test('ui.js mueve REV IA al botón inline de grabación', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/utils/ui.js'), 'utf-8');
+    assert(code.includes("const quickDock = document.getElementById('inlineReviewQuickDock');"), 'Debe existir dock para REV IA');
+    assert(code.includes("wrap.prepend(quickCtrl);"), 'REV IA debe insertarse a la izquierda del botón inline');
+});
+
+test('index.html incluye dock para REV IA y css pro-like inline', () => {
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
+    const css = fs.readFileSync(path.join(root, 'src/css/components.css'), 'utf-8');
+    assert(html.includes('id="inlineReviewQuickDock"'), 'Debe existir contenedor dock para REV IA');
+    assert(css.includes('#inlineReviewQuickControl.inline-review-in-editor'), 'REV IA debe tener estilo diferenciado tipo Pro cuando está inline');
+});
+
 test('editorDownloadCoreUtils.js corrige estudios con mayúsculas mezcladas en filename', () => {
     const code = fs.readFileSync(path.join(root, 'src/js/features/editorDownloadCoreUtils.js'), 'utf-8');
     assert(code.includes('const hasWeirdMixedCase = /[a-záéíóúñü][A-ZÁÉÍÓÚÑÜ]/.test(t);'), 'Debe detectar mayúsculas mezcladas dentro de una palabra');

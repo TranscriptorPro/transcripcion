@@ -543,10 +543,18 @@ window.initModals = function () {
     window._insertInlineAppendBtn = function () {
         const editor = document.getElementById('editor');
         if (!editor) return;
+        const quickCtrl = document.getElementById('inlineReviewQuickControl');
+        const quickDock = document.getElementById('inlineReviewQuickDock');
 
         // Remover existente si hay
         const existing = editor.querySelector('.btn-append-inline');
-        if (existing) existing.remove();
+        if (existing) {
+            if (quickCtrl && existing.contains(quickCtrl) && quickDock) {
+                quickCtrl.classList.remove('inline-review-in-editor');
+                quickDock.appendChild(quickCtrl);
+            }
+            existing.remove();
+        }
 
         // No mostrar en vista de texto original ni en modo comparación
         if (document.getElementById('btnRestoreOriginal')?._showingOriginal) return;
@@ -571,6 +579,12 @@ window.initModals = function () {
             </svg>
             <span>Grabar y agregar +</span>
         </button>`;
+
+        // Reubicar REV IA junto al botón inline (a su izquierda)
+        if (quickCtrl) {
+            quickCtrl.classList.add('inline-review-in-editor');
+            wrap.prepend(quickCtrl);
+        }
 
         // Sincronizar estado de grabación si ya estaba activa
         if (window._appendRecordingActive) {

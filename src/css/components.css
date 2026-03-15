@@ -1627,6 +1627,7 @@
             display: flex;
             align-items: center;
             justify-content: flex-end;
+            gap: 0.45rem;
             margin-bottom: 0.75rem;
             padding-right: 0.5rem;
             user-select: none;
@@ -1650,6 +1651,46 @@
             animation: recordingPulse 1s ease infinite !important;
             background: #ef4444 !important;
             color: #fff !important;
+        }
+
+        #inlineReviewQuickControl.inline-review-in-editor {
+            gap: 0.42rem;
+            padding: 0.3rem 0.58rem;
+            border-radius: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.34);
+            background: linear-gradient(135deg, #0f766e, #0b5d57);
+            box-shadow: 0 0 10px rgba(15, 118, 110, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+            animation: none;
+            overflow: visible;
+        }
+
+        #inlineReviewQuickControl.inline-review-in-editor::after {
+            display: none;
+        }
+
+        #inlineReviewQuickControl.inline-review-in-editor .inline-review-quick-label {
+            color: #f8fafc;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: none;
+            text-shadow: none;
+            letter-spacing: 0.01em;
+        }
+
+        #inlineReviewQuickControl.inline-review-in-editor .toggle-slider-sm {
+            background-color: rgba(255, 255, 255, 0.25);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        #inlineReviewQuickControl.inline-review-in-editor .toggle-slider-sm::before {
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.22);
+        }
+
+        #inlineReviewQuickControl.inline-review-in-editor .toggle-switch-sm input:checked + .toggle-slider-sm {
+            background: linear-gradient(135deg, #f59e0b, #f97316, #ef4444);
+            border-color: rgba(255, 255, 255, 0.55);
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.35);
         }
         @keyframes recordingPulse {
             0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.5); }

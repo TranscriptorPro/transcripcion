@@ -2269,12 +2269,14 @@
                             </svg>
                             <span>IA</span>
                         </button>
-                        <div id="inlineReviewQuickControl" style="display:flex;align-items:center;gap:0.35rem;padding:0.2rem 0.45rem;border:1px solid var(--border);border-radius:10px;background:var(--bg-card);">
-                            <span class="inline-review-quick-label">▶ Rev IA</span>
-                            <label class="toggle-switch-sm" style="margin:0;">
-                                <input type="checkbox" id="inlineReviewQuickToggle" checked>
-                                <span class="toggle-slider-sm"></span>
-                            </label>
+                        <div id="inlineReviewQuickDock" style="display:contents;">
+                            <div id="inlineReviewQuickControl" style="display:flex;align-items:center;gap:0.35rem;padding:0.2rem 0.45rem;border:1px solid var(--border);border-radius:10px;background:var(--bg-card);">
+                                <span class="inline-review-quick-label">▶ Rev IA</span>
+                                <label class="toggle-switch-sm" style="margin:0;">
+                                    <input type="checkbox" id="inlineReviewQuickToggle" checked>
+                                    <span class="toggle-slider-sm"></span>
+                                </label>
+                            </div>
                         </div>
                         <!-- Restore/Toggle original text -->
                         <button class="btn btn-outline btn-sm-icon toggle-comparison-btn" id="btnRestoreOriginal" style="display:none;" title="Ver texto original">↩ Original</button>
