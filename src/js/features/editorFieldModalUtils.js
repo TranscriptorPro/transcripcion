@@ -46,7 +46,8 @@
     }
 
     const _hasInlineReviewPlan = () =>
-        (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'PRO');
+        (typeof CLIENT_CONFIG !== 'undefined'
+            && (CLIENT_CONFIG.type === 'PRO' || CLIENT_CONFIG.type === 'ADMIN'));
 
     function _getFieldHistory() {
         if (_fldHistCache !== null) return _fldHistCache;

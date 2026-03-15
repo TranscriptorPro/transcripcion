@@ -2545,7 +2545,8 @@ test('ui.js mueve REV IA al botón inline de grabación', () => {
     const code = fs.readFileSync(path.join(root, 'src/js/utils/ui.js'), 'utf-8');
     assert(code.includes("const quickDock = document.getElementById('inlineReviewQuickDock');"), 'Debe existir dock para REV IA');
     assert(code.includes("wrap.prepend(quickCtrl);"), 'REV IA debe insertarse a la izquierda del botón inline');
-    assert(code.includes("const _hasProPlan = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'PRO');"), 'El botón inline debe limitarse a planes PRO');
+    assert(code.includes("const _canUseInlineAppend = (typeof CLIENT_CONFIG !== 'undefined'"), 'El botón inline debe limitarse por tipo de plan');
+    assert(code.includes("CLIENT_CONFIG.type === 'PRO' || CLIENT_CONFIG.type === 'ADMIN'"), 'El botón inline debe habilitarse para PRO y ADMIN');
     assert(code.includes('<span class="append-plus">+</span>'), 'El botón inline debe usar versión compacta con +');
     assert(code.includes("p.className = 'report-p';"), 'El texto agregado debe mantener formato report-p para consistencia de preview/export');
 });
@@ -2558,13 +2559,14 @@ test('index.html incluye dock para REV IA y css pro-like inline', () => {
     assert(css.includes('.btn-append-inline .append-plus'), 'El botón inline debe tener estilo específico para el signo +');
 });
 
-test('stateManager y revisión inline restringen estas funciones a planes PRO', () => {
+test('stateManager y revisión inline restringen estas funciones a planes avanzados', () => {
     const stateCode = fs.readFileSync(path.join(root, 'src/js/utils/stateManager.js'), 'utf-8');
     const reviewCode = fs.readFileSync(path.join(root, 'src/js/features/editorFieldModalUtils.js'), 'utf-8');
-    assert(stateCode.includes('const hasProPlan     = (typeof CLIENT_CONFIG !== \'undefined\' && CLIENT_CONFIG.type === \'PRO\');'), 'stateManager debe calcular hasProPlan explícito');
-    assert(stateCode.includes('isStructured && hasProPlan'), 'El toggle rápido de REV IA solo debe mostrarse para planes PRO');
+    assert(stateCode.includes('const hasAdvancedPlan = (typeof CLIENT_CONFIG !== \'undefined\''), 'stateManager debe calcular plan avanzado explícito');
+    assert(stateCode.includes("CLIENT_CONFIG.type === 'PRO' || CLIENT_CONFIG.type === 'ADMIN'"), 'stateManager debe habilitar para PRO y ADMIN');
+    assert(stateCode.includes('isStructured && hasAdvancedPlan'), 'El toggle rápido de REV IA solo debe mostrarse para planes avanzados');
     assert(reviewCode.includes('const _hasInlineReviewPlan = () =>'), 'Revisión inline debe tener helper de plan permitido');
-    assert(reviewCode.includes('CLIENT_CONFIG.type === \'PRO\''), 'Revisión inline debe restringirse a type=PRO');
+    assert(reviewCode.includes("CLIENT_CONFIG.type === 'PRO' || CLIENT_CONFIG.type === 'ADMIN'"), 'Revisión inline debe habilitarse para PRO y ADMIN');
 });
 
 test('editorDownloadCoreUtils.js corrige estudios con mayúsculas mezcladas en filename', () => {

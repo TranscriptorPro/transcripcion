@@ -560,9 +560,10 @@ window.initModals = function () {
         if (document.getElementById('btnRestoreOriginal')?._showingOriginal) return;
         if (window._isComparisonMode) return;
 
-        // Solo para clones/planes PRO (incluye Gift/Clinic mapeados a type=PRO)
-        const _hasProPlan = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'PRO');
-        if (!_hasProPlan) return;
+        // Disponible para PRO y ADMIN (admin debe poder probar).
+        const _canUseInlineAppend = (typeof CLIENT_CONFIG !== 'undefined'
+            && (CLIENT_CONFIG.type === 'PRO' || CLIENT_CONFIG.type === 'ADMIN'));
+        if (!_canUseInlineAppend) return;
         if (!editor.innerText.trim()) return;
         // No mostrar si el contenido no está estructurado (texto plano sin secciones)
         if (!editor.querySelector('h3, h4, .section-header, strong')) return;

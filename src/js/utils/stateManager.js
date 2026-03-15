@@ -31,7 +31,8 @@ window.updateButtonsVisibility = function (state) {
     const isStructured   = ['STRUCTURED', 'PREVIEWED'].includes(state);
     const isProMode      = window.currentMode === 'pro'
         || (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'PRO');
-    const hasProPlan     = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'PRO');
+    const hasAdvancedPlan = (typeof CLIENT_CONFIG !== 'undefined'
+        && (CLIENT_CONFIG.type === 'PRO' || CLIENT_CONFIG.type === 'ADMIN'));
     const isNormalMode   = isTranscribed && !isProMode;
 
     // btnStructureAI: visible in pro mode after transcription, hidden after structuring
@@ -53,7 +54,7 @@ window.updateButtonsVisibility = function (state) {
 
     // Toggle rápido de revisión IA: solo visible cuando el informe ya está estructurado.
     if (inlineReviewQuickCtrl) {
-        inlineReviewQuickCtrl.style.display = (isStructured && hasProPlan) ? 'flex' : 'none';
+        inlineReviewQuickCtrl.style.display = (isStructured && hasAdvancedPlan) ? 'flex' : 'none';
     }
 
     // Normal mode template controls
