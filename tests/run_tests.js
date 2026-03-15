@@ -2571,6 +2571,15 @@ test('stateManager y revisión inline restringen estas funciones a planes avanza
     assert(reviewCode.includes("CLIENT_CONFIG.type === 'PRO' || CLIENT_CONFIG.type === 'ADMIN'"), 'Revisión inline debe habilitarse para PRO y ADMIN');
 });
 
+test('registro/admin incluyen Gonioscopía en opción de Oftalmología', () => {
+    const registro = fs.readFileSync(path.join(root, 'recursos/registro.html'), 'utf-8');
+    const admin = fs.readFileSync(path.join(root, 'recursos/admin-assets/js/admin-inline-script-04.js'), 'utf-8');
+    assert(registro.includes("{ key: 'gonioscopia', name: 'Gonioscopía' }"), 'registro debe mapear plantilla gonioscopia en Oftalmología');
+    assert(registro.includes("'Gonioscopía'"), 'registro debe mostrar Gonioscopía en lista de estudios');
+    assert(admin.includes("{ key: 'gonioscopia', name: 'Gonioscopía' }"), 'admin debe mapear plantilla gonioscopia en Oftalmología');
+    assert(admin.includes("'Oftalmología': ['Campimetría', 'OCT Retinal', 'Topografía Corneal', 'Fondo de Ojo', 'Gonioscopía']"), 'admin debe incluir Gonioscopía en estudios por especialidad');
+});
+
 test('editorDownloadCoreUtils.js corrige estudios con mayúsculas mezcladas en filename', () => {
     const code = fs.readFileSync(path.join(root, 'src/js/features/editorDownloadCoreUtils.js'), 'utf-8');
     assert(code.includes('const hasWeirdMixedCase = /[a-záéíóúñü][A-ZÁÉÍÓÚÑÜ]/.test(t);'), 'Debe detectar mayúsculas mezcladas dentro de una palabra');

@@ -1500,7 +1500,7 @@
 
         const ESTUDIOS_POR_ESPECIALIDAD = {
             'Neumología': ['Espirometría', 'Test Marcha 6min', 'Pletismografía', 'Oximetría Nocturna'],
-            'Oftalmología': ['Campimetría', 'OCT Retinal', 'Topografía Corneal', 'Fondo de Ojo'],
+            'Oftalmología': ['Campimetría', 'OCT Retinal', 'Topografía Corneal', 'Fondo de Ojo', 'Gonioscopía'],
             'Imágenes': ['TAC', 'RMN', 'Mamografía', 'Densitometría', 'PET-CT', 'Radiografía', 'Ecografía'],
             'Endoscopía': ['Gastroscopía', 'Colonoscopía', 'Broncoscopía', 'Laringoscopía'],
             'Cardiología': ['Gammagrafía', 'Holter', 'MAPA', 'Cinecoronariografía', 'ECG', 'Eco-Stress'],
@@ -1521,7 +1521,8 @@
                 { key: 'campimetria', name: 'Campimetría' },
                 { key: 'oct_retinal', name: 'OCT Retinal' },
                 { key: 'topografia_corneal', name: 'Topografía Corneal' },
-                { key: 'fondo_ojo', name: 'Fondo de Ojo' }
+                { key: 'fondo_ojo', name: 'Fondo de Ojo' },
+                { key: 'gonioscopia', name: 'Gonioscopía' }
             ],
             'Imágenes': [
                 { key: 'tac', name: 'TAC' },
