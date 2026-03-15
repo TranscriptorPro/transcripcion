@@ -556,22 +556,43 @@ window.downloadPDFFromCanvas = async function (fileName, fileDate) {
     }
 };
 
-window._buildPdfBlobFromPreviewCapture = async function () {
+window._buildPdfBlobFromPreviewCapture = async function (options) {
+    const opts = options || {};
     // 1. Asegurar que la preview está renderizada
     const previewPage = document.getElementById('previewPage');
     if (!previewPage) throw new Error('Vista previa no disponible');
 
     const overlay = document.getElementById('printPreviewOverlay');
     const isOpen = overlay && overlay.classList.contains('active');
+    let captureNode = previewPage;
+    let tempCaptureHost = null;
+    let restoreOverlayVisibility = '';
+    let restoreOverlayPointerEvents = '';
     if (!isOpen) {
+        if (opts.silentOpen && overlay) {
+            restoreOverlayVisibility = overlay.style.visibility;
+            restoreOverlayPointerEvents = overlay.style.pointerEvents;
+            overlay.style.visibility = 'hidden';
+            overlay.style.pointerEvents = 'none';
+        }
         if (typeof window.openPrintPreview === 'function') {
             await window.openPrintPreview();
         }
         await new Promise(r => setTimeout(r, 700));
+
+        if (opts.silentOpen) {
+            const livePreviewPage = document.getElementById('previewPage');
+            if (!livePreviewPage) throw new Error('Vista previa no disponible');
+            tempCaptureHost = document.createElement('div');
+            tempCaptureHost.style.cssText = 'position:fixed;left:-99999px;top:0;background:#fff;z-index:-1;pointer-events:none;';
+            captureNode = livePreviewPage.cloneNode(true);
+            tempCaptureHost.appendChild(captureNode);
+            document.body.appendChild(tempCaptureHost);
+        }
     }
 
     // 2. Ocultar marcadores de salto de página para captura limpia
-    const markers = Array.from(previewPage.querySelectorAll('.pv-pagebreak-marker'));
+    const markers = Array.from(captureNode.querySelectorAll('.pv-pagebreak-marker'));
     markers.forEach(m => { m._savedDisplay = m.style.display; m.style.display = 'none'; });
 
     let dataUrl;
@@ -580,7 +601,7 @@ window._buildPdfBlobFromPreviewCapture = async function () {
         const lib = window.htmlToImage || window['html-to-image'];
         if (!lib) throw new Error('html-to-image no cargado');
 
-        dataUrl = await lib.toJpeg(previewPage, {
+        dataUrl = await lib.toJpeg(captureNode, {
             quality: 0.92,
             pixelRatio: 2,
             backgroundColor: '#ffffff',
@@ -588,6 +609,12 @@ window._buildPdfBlobFromPreviewCapture = async function () {
         });
     } finally {
         markers.forEach(m => { m.style.display = m._savedDisplay !== undefined ? m._savedDisplay : ''; });
+        if (tempCaptureHost && tempCaptureHost.parentNode) tempCaptureHost.parentNode.removeChild(tempCaptureHost);
+        if (!isOpen && opts.silentOpen && overlay) {
+            overlay.classList.remove('active');
+            overlay.style.visibility = restoreOverlayVisibility;
+            overlay.style.pointerEvents = restoreOverlayPointerEvents;
+        }
     }
 
     if (!dataUrl) throw new Error('html-to-image no produjo resultado');

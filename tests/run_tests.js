@@ -2521,6 +2521,15 @@ test('editorDownloadCoreUtils.js usa pestaña pendiente para PDF principal sin a
     assert(code.includes('const pendingPdfTab = _consumePendingPdfTab();'), 'Debe consumir la pestaña pendiente del botón principal');
     assert(code.includes('if (pendingPdfTab) {'), 'Debe tener ruta específica para PDF del botón principal');
     assert(code.includes('const opened = await _openPdfBlobInNewTab(pdfBlob, targetPdfFileName, pendingPdfTab);'), 'Debe abrir el PDF en pestaña nueva');
+    assert(code.includes("pdfBlob = await window._buildPdfBlobFromPreviewCapture({ silentOpen: true });"), 'Debe priorizar el pipeline exacto de preview en modo silencioso');
+});
+
+test('pdfPreviewActions.js soporta captura silenciosa offscreen', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/pdfPreviewActions.js'), 'utf-8');
+    assert(code.includes('window._buildPdfBlobFromPreviewCapture = async function (options)'), 'El helper debe aceptar opciones');
+    assert(code.includes('if (opts.silentOpen && overlay) {'), 'Debe soportar apertura silenciosa');
+    assert(code.includes("tempCaptureHost.style.cssText = 'position:fixed;left:-99999px;top:0;background:#fff;z-index:-1;pointer-events:none;'"), 'Debe capturar en host offscreen');
+    assert(code.includes("overlay.classList.remove('active');"), 'Debe cerrar la preview silenciosa al terminar');
 });
 
 test('structurer.js oculta editor y acciones durante STRUCTURING', () => {

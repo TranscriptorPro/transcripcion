@@ -607,13 +607,23 @@
                 // Generar el blob y abrirlo en una pestaña nueva para que el navegador gestione el guardado.
                 if (pendingPdfTab) {
                     if (typeof showToast === 'function') showToast('⏳ Generando PDF...', 'info', 3500);
-                    const htmlDoc = (typeof createHTML === 'function') ? await createHTML() : null;
-                    if (!htmlDoc) {
-                        try { pendingPdfTab.close(); } catch (_) { /* ignore */ }
-                        if (typeof showToast === 'function') showToast('No se pudo preparar el PDF del informe', 'error');
-                        return;
+                    let pdfBlob = null;
+                    if (typeof window._buildPdfBlobFromPreviewCapture === 'function') {
+                        try {
+                            pdfBlob = await window._buildPdfBlobFromPreviewCapture({ silentOpen: true });
+                        } catch (previewErr) {
+                            console.warn('Ruta exacta silenciosa del PDF falló, usando fallback HTML:', previewErr);
+                        }
                     }
-                    const pdfBlob = await _buildPdfBlobFromHtml(htmlDoc);
+                    if (!pdfBlob) {
+                        const htmlDoc = (typeof createHTML === 'function') ? await createHTML() : null;
+                        if (!htmlDoc) {
+                            try { pendingPdfTab.close(); } catch (_) { /* ignore */ }
+                            if (typeof showToast === 'function') showToast('No se pudo preparar el PDF del informe', 'error');
+                            return;
+                        }
+                        pdfBlob = await _buildPdfBlobFromHtml(htmlDoc);
+                    }
                     if (!pdfBlob) {
                         try { pendingPdfTab.close(); } catch (_) { /* ignore */ }
                         if (typeof showToast === 'function') showToast('No se pudo generar el PDF. Reintentá.', 'error');
