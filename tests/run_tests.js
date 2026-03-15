@@ -2495,6 +2495,21 @@ test('pdfPreview.js persiste reportNum auto-generado en _pdfConfigCache', () => 
     assert(code.includes('window._pdfConfigCache = config'), 'Debe actualizar _pdfConfigCache con el número de informe');
 });
 
+test('reportHistory.js expone clearReportHistory y limpia appDB/cache/ui', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/reportHistory.js'), 'utf-8');
+    assert(code.includes('window.clearReportHistory = async function () {'), 'Debe exponer clearReportHistory');
+    assert(code.includes('await _clearReportHistoryStorage();'), 'Debe limpiar storage de forma centralizada');
+    assert(code.includes("if (typeof window._refreshReportHistoryPanel === 'function') window._refreshReportHistoryPanel();"), 'Debe refrescar el modal de historial');
+    assert(code.includes("if (typeof window._refreshDatosPanel === 'function') window._refreshDatosPanel();"), 'Debe refrescar el panel Mis Datos');
+    assert(code.includes("if (reportViewer) reportViewer.classList.remove('active');"), 'Debe cerrar el visor de informe al limpiar');
+});
+
+test('datosPanel.js usa clearReportHistory para el botón Limpiar', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/datosPanel.js'), 'utf-8');
+    assert(code.includes("if (typeof window.clearReportHistory === 'function') {"), 'El panel de datos debe delegar en clearReportHistory');
+    assert(code.includes('await window.clearReportHistory();'), 'El botón Limpiar debe esperar la limpieza centralizada');
+});
+
 test('editorDownloadCoreUtils.js usa downloadPDFFromCanvas como primer intento', () => {
     const code = fs.readFileSync(path.join(root, 'src/js/features/editorDownloadCoreUtils.js'), 'utf-8');
     // Buscar el bloque del case pdf (donde format === 'pdf')

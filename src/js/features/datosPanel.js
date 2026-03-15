@@ -406,8 +406,12 @@
                     ? await window.showCustomConfirm('\uD83D\uDDD1\uFE0F Limpiar historial', '\u00BFEliminar los ' + stats.total + ' informes? Esta acci\u00F3n no se puede deshacer.')
                     : window.confirm('\u00BFLimpiar el historial de informes?');
                 if (!ok) return;
-                localStorage.setItem('report_history', '[]');
-                renderHistory('');
+                if (typeof window.clearReportHistory === 'function') {
+                    await window.clearReportHistory();
+                } else {
+                    localStorage.setItem('report_history', '[]');
+                    renderHistory('');
+                }
                 if (typeof showToast === 'function') showToast('Historial limpiado', 'info');
             });
         }

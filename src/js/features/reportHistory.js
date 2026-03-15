@@ -30,6 +30,18 @@ function _setReportHistory(arr) {
     }
 }
 
+async function _clearReportHistoryStorage() {
+    _reportHistCache = [];
+    try {
+        localStorage.setItem(REPORT_HISTORY_KEY, '[]');
+    } catch (_) { /* keep best-effort */ }
+    if (typeof appDB !== 'undefined' && appDB && typeof appDB.set === 'function') {
+        try {
+            await appDB.set(REPORT_HISTORY_KEY, []);
+        } catch (_) { /* keep best-effort */ }
+    }
+}
+
 function _isQuotaExceededError(e) {
     if (!e) return false;
     const name = String(e.name || '').toLowerCase();
@@ -266,6 +278,25 @@ window.getReportHistoryStats = function () {
             ? Math.round(JSON.stringify(_reportHistCache).length / 1024)
             : Math.round((localStorage.getItem(REPORT_HISTORY_KEY) || '').length / 1024)
     };
+};
+
+window.clearReportHistory = async function () {
+    await _clearReportHistoryStorage();
+
+    const reportSearchEl = document.getElementById('reportHistorySearch');
+    if (reportSearchEl) reportSearchEl.value = '';
+    const datosSearchEl = document.getElementById('dp-search-history');
+    if (datosSearchEl) datosSearchEl.value = '';
+
+    if (typeof window._refreshReportHistoryPanel === 'function') window._refreshReportHistoryPanel();
+    if (typeof window._refreshDatosPanel === 'function') window._refreshDatosPanel();
+
+    const reportViewer = document.getElementById('reportViewerOverlay');
+    if (reportViewer) reportViewer.classList.remove('active');
+    const patientReports = document.getElementById('patientReportsModal');
+    if (patientReports) patientReports.classList.remove('active');
+
+    return true;
 };
 
 // ============ UI: VISOR DE INFORME (solo lectura) ============
@@ -521,8 +552,7 @@ window.initReportHistoryPanel = function () {
         const ok = await window.showCustomConfirm('🗑️ Limpiar historial', `¿Eliminar TODOS los informes del historial? (${stats.total} informes)\n\nEsta acción no se puede deshacer. Recomendamos exportar antes.`);
         if (!ok) return;
         try {
-            _setReportHistory([]);
-            renderTable();
+            await window.clearReportHistory();
             if (typeof showToast === 'function') showToast('Historial limpiado', 'info');
         } catch (e) {
             if (typeof showToast === 'function') showToast('No se pudo limpiar historial: ' + (e && e.message ? e.message : 'error de almacenamiento'), 'error');
