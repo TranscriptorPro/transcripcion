@@ -1330,6 +1330,12 @@
             text-shadow: 0 0 8px color-mix(in srgb, var(--primary) 38%, transparent);
         }
 
+        :root:not([data-theme="dark"]) #inlineReviewQuickControl .inline-review-quick-label,
+        body:not([data-theme="dark"]) #inlineReviewQuickControl .inline-review-quick-label {
+            color: color-mix(in srgb, var(--text-primary) 88%, #111827);
+            text-shadow: 0 0 4px color-mix(in srgb, var(--primary) 18%, transparent);
+        }
+
         #inlineReviewQuickControl .toggle-switch-sm {
             filter: drop-shadow(0 0 5px color-mix(in srgb, var(--primary) 35%, transparent));
         }
