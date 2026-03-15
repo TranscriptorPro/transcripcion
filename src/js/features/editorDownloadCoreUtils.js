@@ -518,7 +518,8 @@
             if (!t) return '';
             const letters = t.replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñÜü]/g, '');
             const isMostlyUpper = !!letters && letters === letters.toUpperCase();
-            if (isMostlyUpper) {
+            const hasWeirdMixedCase = /[a-záéíóúñü][A-ZÁÉÍÓÚÑÜ]/.test(t);
+            if (isMostlyUpper || hasWeirdMixedCase) {
                 t = t.toLowerCase().replace(/\b([a-záéíóúñü])/g, (m, c) => c.toUpperCase());
             }
             return t;

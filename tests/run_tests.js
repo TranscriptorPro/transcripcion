@@ -2510,6 +2510,12 @@ test('datosPanel.js usa clearReportHistory para el botón Limpiar', () => {
     assert(code.includes('await window.clearReportHistory();'), 'El botón Limpiar debe esperar la limpieza centralizada');
 });
 
+test('editorDownloadCoreUtils.js corrige estudios con mayúsculas mezcladas en filename', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/editorDownloadCoreUtils.js'), 'utf-8');
+    assert(code.includes('const hasWeirdMixedCase = /[a-záéíóúñü][A-ZÁÉÍÓÚÑÜ]/.test(t);'), 'Debe detectar mayúsculas mezcladas dentro de una palabra');
+    assert(code.includes('if (isMostlyUpper || hasWeirdMixedCase) {'), 'Debe normalizar tanto mayúsculas completas como mixed case');
+});
+
 test('editorDownloadCoreUtils.js usa downloadPDFFromCanvas como primer intento', () => {
     const code = fs.readFileSync(path.join(root, 'src/js/features/editorDownloadCoreUtils.js'), 'utf-8');
     // Buscar el bloque del case pdf (donde format === 'pdf')
