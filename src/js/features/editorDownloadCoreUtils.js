@@ -53,6 +53,43 @@
         await saveHandler(freshBlob, fileName);
     }
 
+    function _consumePendingPdfTab() {
+        const tab = window._pendingPdfOpenTab || null;
+        window._pendingPdfOpenTab = null;
+        return (tab && !tab.closed) ? tab : null;
+    }
+
+    async function _openPdfBlobInNewTab(pdfBlob, filename, targetTab) {
+        const blob = pdfBlob instanceof Blob ? pdfBlob : null;
+        if (!blob) return false;
+
+        const url = URL.createObjectURL(blob);
+        const safeTab = (targetTab && !targetTab.closed) ? targetTab : null;
+        try {
+            if (safeTab) {
+                safeTab.location.href = url;
+                try { safeTab.focus(); } catch (_) { /* ignore */ }
+            } else {
+                const opened = window.open(url, '_blank');
+                if (!opened) return false;
+            }
+            setTimeout(() => URL.revokeObjectURL(url), 10 * 60 * 1000);
+            if (typeof showToast === 'function') showToast(`PDF abierto en nueva pestaña: ${filename}`, 'success');
+            return true;
+        } catch (_) {
+            try {
+                const opened = window.open(url, '_blank');
+                if (!opened) return false;
+                setTimeout(() => URL.revokeObjectURL(url), 10 * 60 * 1000);
+                if (typeof showToast === 'function') showToast(`PDF abierto en nueva pestaña: ${filename}`, 'success');
+                return true;
+            } catch (err) {
+                console.warn('No se pudo abrir la pestaña PDF:', err);
+                return false;
+            }
+        }
+    }
+
     function _ensurePdfReadyModal() {
         let overlay = document.getElementById('pdfReadyModalOverlay');
         if (overlay) return overlay;
@@ -563,6 +600,33 @@
         if (format === 'pdf') {
             _setPdfPreloaderState(true);
             try {
+                const pendingPdfTab = _consumePendingPdfTab();
+                const targetPdfFileName = `${fileName}_${fileDate}.pdf`;
+
+                // Desde el botón principal: NO abrir vista previa.
+                // Generar el blob y abrirlo en una pestaña nueva para que el navegador gestione el guardado.
+                if (pendingPdfTab) {
+                    if (typeof showToast === 'function') showToast('⏳ Generando PDF...', 'info', 3500);
+                    const htmlDoc = (typeof createHTML === 'function') ? await createHTML() : null;
+                    if (!htmlDoc) {
+                        try { pendingPdfTab.close(); } catch (_) { /* ignore */ }
+                        if (typeof showToast === 'function') showToast('No se pudo preparar el PDF del informe', 'error');
+                        return;
+                    }
+                    const pdfBlob = await _buildPdfBlobFromHtml(htmlDoc);
+                    if (!pdfBlob) {
+                        try { pendingPdfTab.close(); } catch (_) { /* ignore */ }
+                        if (typeof showToast === 'function') showToast('No se pudo generar el PDF. Reintentá.', 'error');
+                        return;
+                    }
+                    const opened = await _openPdfBlobInNewTab(pdfBlob, targetPdfFileName, pendingPdfTab);
+                    if (!opened) {
+                        try { pendingPdfTab.close(); } catch (_) { /* ignore */ }
+                        if (typeof showToast === 'function') showToast('El navegador bloqueó la pestaña del PDF. Permití popups e intentá de nuevo.', 'error');
+                    }
+                    return;
+                }
+
                 // Captura exacta de la vista previa — idéntico visual garantizado
                 if (typeof window.downloadPDFFromCanvas === 'function') {
                     await window.downloadPDFFromCanvas(fileName, fileDate);

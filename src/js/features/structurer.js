@@ -1001,6 +1001,15 @@ window.autoStructure = async function (options = {}) {
     return await _doAutoStructure(options);
 };
 
+function _setStructuringVisualState(active) {
+    const editor = document.getElementById('editor');
+    if (editor) {
+        editor.classList.toggle('structuring-pending', !!active);
+        editor.setAttribute('contenteditable', active ? 'false' : 'true');
+    }
+    if (document.body) document.body.classList.toggle('structuring-active', !!active);
+}
+
 async function _doAutoStructure(options) {
     if (window._structuring) return false;
     window._structuring = true;
@@ -1008,6 +1017,7 @@ async function _doAutoStructure(options) {
     const editor = document.getElementById('editor');
     if (!editor || !editor.innerText.trim()) {
         if (typeof showToast === 'function') showToast('No hay texto para estructurar', 'error');
+        window._structuring = false;
         return false;
     }
     // Obtener texto limpio sin elementos UI (placeholder, header paciente, botón inline)
@@ -1016,7 +1026,10 @@ async function _doAutoStructure(options) {
     const rawText = _clone.innerText;
     const structInput = _prepareStructuringInput(rawText);
     const savedHTML = editor.innerHTML;
-    if (!checkStructurePrerequisites()) return false;
+    if (!checkStructurePrerequisites()) {
+        window._structuring = false;
+        return false;
+    }
 
     // Regla: extraer y poblar datos de paciente antes de estructurar.
     triggerPatientDataCheck(rawText);
@@ -1034,6 +1047,8 @@ async function _doAutoStructure(options) {
         btnStructureAIEl.disabled = true;
         btnStructureAIEl.innerHTML = '⏳ IA...';
     }
+    _setStructuringVisualState(true);
+    if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURING');
     showProgress();
 
     try {
@@ -1054,6 +1069,7 @@ async function _doAutoStructure(options) {
         });
         const { body, note } = parseAIResponse(rawMarkdown);
         editor.innerHTML = body;
+        _setStructuringVisualState(false);
         window._lastStructuredHTML = body;
         if (typeof saveEditorSnapshot === 'function') saveEditorSnapshot('Estructurado con IA', 'structuring');
         // Re-insertar header de datos del paciente (fue eliminado al reemplazar el innerHTML)
@@ -1082,6 +1098,7 @@ async function _doAutoStructure(options) {
         return true;
     } catch (error) {
         editor.innerHTML = savedHTML;
+        _setStructuringVisualState(false);
         _showStructurerFailureToast(error);
         if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
         return false;
@@ -1091,6 +1108,7 @@ async function _doAutoStructure(options) {
             btnStructureAIEl.disabled = false;
             btnStructureAIEl.innerHTML = oldHTML;
         }
+        _setStructuringVisualState(false);
         hideProgress();
     }
 }
@@ -1122,6 +1140,8 @@ window.initStructurer = function () {
             const oldText = btnApplyStructure.textContent;
             btnApplyStructure.disabled = true;
             btnApplyStructure.textContent = "✨ Estructurando...";
+            _setStructuringVisualState(true);
+            if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURING');
 
             try {
                 const templateSelect = document.getElementById('templateSelect');
@@ -1132,6 +1152,7 @@ window.initStructurer = function () {
                 });
                 const { body, note } = parseAIResponse(rawMarkdown);
                 editor.innerHTML = body;
+                _setStructuringVisualState(false);
                 window._lastStructuredHTML = body;
                 if (typeof saveEditorSnapshot === 'function') saveEditorSnapshot('Re-estructurado', 'structuring');
                 // Re-insertar header de datos del paciente
@@ -1156,9 +1177,11 @@ window.initStructurer = function () {
                 if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURED');
             } catch (e) {
                 editor.innerHTML = savedHTML;
+                _setStructuringVisualState(false);
                 _showStructurerFailureToast(e);
                 if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('TRANSCRIBED');
             } finally {
+                _setStructuringVisualState(false);
                 btnApplyStructure.disabled = false;
                 btnApplyStructure.textContent = oldText;
             }

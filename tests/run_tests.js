@@ -2510,6 +2510,28 @@ test('datosPanel.js usa clearReportHistory para el botón Limpiar', () => {
     assert(code.includes('await window.clearReportHistory();'), 'El botón Limpiar debe esperar la limpieza centralizada');
 });
 
+test('editorDownloadFavoritesUtils.js preabre una pestaña para PDF desde el botón principal', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/editorDownloadFavoritesUtils.js'), 'utf-8');
+    assert(code.includes("if (fmt === 'pdf' && typeof window.open === 'function') {"), 'El botón principal PDF debe preabrir una pestaña');
+    assert(code.includes('window._pendingPdfOpenTab = pendingPdfTab || null;'), 'Debe guardar la pestaña pendiente para evitar popup blockers');
+});
+
+test('editorDownloadCoreUtils.js usa pestaña pendiente para PDF principal sin abrir preview', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/editorDownloadCoreUtils.js'), 'utf-8');
+    assert(code.includes('const pendingPdfTab = _consumePendingPdfTab();'), 'Debe consumir la pestaña pendiente del botón principal');
+    assert(code.includes('if (pendingPdfTab) {'), 'Debe tener ruta específica para PDF del botón principal');
+    assert(code.includes('const opened = await _openPdfBlobInNewTab(pdfBlob, targetPdfFileName, pendingPdfTab);'), 'Debe abrir el PDF en pestaña nueva');
+});
+
+test('structurer.js oculta editor y acciones durante STRUCTURING', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/structurer.js'), 'utf-8');
+    const css = fs.readFileSync(path.join(root, 'src/css/components.css'), 'utf-8');
+    assert(code.includes("updateButtonsVisibility('STRUCTURING')"), 'Debe pasar al estado STRUCTURING durante el proceso');
+    assert(code.includes("editor.classList.toggle('structuring-pending', !!active);"), 'Debe marcar el editor como structuring-pending');
+    assert(css.includes('.editor-content.structuring-pending'), 'Debe existir estilo para ocultar el contenido crudo durante estructuración');
+    assert(css.includes('body.structuring-active #editorToolbar,'), 'Debe ocultar la barra del editor mientras estructura');
+});
+
 test('editorDownloadCoreUtils.js corrige estudios con mayúsculas mezcladas en filename', () => {
     const code = fs.readFileSync(path.join(root, 'src/js/features/editorDownloadCoreUtils.js'), 'utf-8');
     assert(code.includes('const hasWeirdMixedCase = /[a-záéíóúñü][A-ZÁÉÍÓÚÑÜ]/.test(t);'), 'Debe detectar mayúsculas mezcladas dentro de una palabra');
@@ -2521,10 +2543,11 @@ test('editorDownloadCoreUtils.js usa downloadPDFFromCanvas como primer intento',
     // Buscar el bloque del case pdf (donde format === 'pdf')
     const pdfBlock = code.substring(code.indexOf("if (format === 'pdf')"));
     assert(pdfBlock.includes('downloadPDFFromCanvas'), 'El bloque PDF debe llamar downloadPDFFromCanvas');
-    // downloadPDFFromCanvas debe aparecer antes que _buildPdfBlobFromHtml en ese bloque
+    assert(pdfBlock.includes('if (pendingPdfTab) {'), 'El bloque PDF debe contemplar la ruta específica del botón principal');
+    const posPending = pdfBlock.indexOf('if (pendingPdfTab) {');
     const posCanvas = pdfBlock.indexOf('downloadPDFFromCanvas');
-    const posFallback = pdfBlock.indexOf('_buildPdfBlobFromHtml');
-    assert(posCanvas < posFallback, 'downloadPDFFromCanvas debe invocarse antes del fallback jsPDF en el bloque PDF');
+    assert(posPending >= 0 && posCanvas >= 0, 'Deben existir la ruta de pestaña nueva y la ruta de preview exacta');
+    assert(posPending < posCanvas, 'La ruta del botón principal debe resolverse antes de la captura desde preview');
 });
 
 // BLOQUE 48: Preview modal — dropdown multi-formato

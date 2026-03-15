@@ -26,6 +26,7 @@ window.updateButtonsVisibility = function (state) {
     const applyTemplateWrapper   = document.getElementById('applyTemplateWrapper');
     const inlineReviewQuickCtrl  = document.getElementById('inlineReviewQuickControl');
 
+    const isStructuring  = state === 'STRUCTURING';
     const isTranscribed  = ['TRANSCRIBED', 'STRUCTURED', 'PREVIEWED'].includes(state);
     const isStructured   = ['STRUCTURED', 'PREVIEWED'].includes(state);
     const isProMode      = window.currentMode === 'pro'
@@ -64,10 +65,10 @@ window.updateButtonsVisibility = function (state) {
 
     // PDF buttons: visible after transcription
     if (btnConfigPdfMain) {
-        btnConfigPdfMain.style.display = isTranscribed ? 'inline-flex' : 'none';
-        btnConfigPdfMain.disabled = !isTranscribed;
+        btnConfigPdfMain.style.display = (isTranscribed && !isStructuring) ? 'inline-flex' : 'none';
+        btnConfigPdfMain.disabled = !isTranscribed || isStructuring;
         // Actualizar semáforo de completitud al mostrar el botón
-        if (isTranscribed && typeof updateConfigTrafficLight === 'function') {
+        if (isTranscribed && !isStructuring && typeof updateConfigTrafficLight === 'function') {
             updateConfigTrafficLight();
         }
     }
@@ -88,22 +89,22 @@ window.updateButtonsVisibility = function (state) {
 
     // Copy & Download: visible after transcription
     if (copyBtn) {
-        copyBtn.style.display = isTranscribed ? 'inline-flex' : 'none';
-        copyBtn.disabled = !isTranscribed;
+        copyBtn.style.display = (isTranscribed && !isStructuring) ? 'inline-flex' : 'none';
+        copyBtn.disabled = !isTranscribed || isStructuring;
     }
     if (printBtn) {
-        printBtn.style.display = isTranscribed ? 'inline-flex' : 'none';
-        printBtn.disabled = !isTranscribed;
+        printBtn.style.display = (isTranscribed && !isStructuring) ? 'inline-flex' : 'none';
+        printBtn.disabled = !isTranscribed || isStructuring;
     }
     if (downloadBtnContainer) {
-        downloadBtnContainer.style.display = isTranscribed ? 'block' : 'none';
+        downloadBtnContainer.style.display = (isTranscribed && !isStructuring) ? 'block' : 'none';
     }
     if (downloadBtn) {
-        downloadBtn.disabled = !isTranscribed;
+        downloadBtn.disabled = !isTranscribed || isStructuring;
     }
     const downloadBtnMain = document.getElementById('downloadBtnMain');
     if (downloadBtnMain) {
-        downloadBtnMain.disabled = !isTranscribed;
+        downloadBtnMain.disabled = !isTranscribed || isStructuring;
     }
 
     // downloadPdfBtn (separate button, if present)
@@ -140,7 +141,7 @@ window.updateButtonsVisibility = function (state) {
     // Botón diccionario médico: visible tras transcripción
     const btnMedicalCheck = document.getElementById('btnMedicalCheck');
     if (btnMedicalCheck) {
-        btnMedicalCheck.style.display = isTranscribed ? '' : 'none';
+        btnMedicalCheck.style.display = (isTranscribed && !isStructuring) ? '' : 'none';
     }
 
     if (typeof window.updateProSourceModeUI === 'function') {

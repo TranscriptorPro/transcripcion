@@ -37,7 +37,19 @@
         downloadBtnMain.addEventListener('click', async (e) => {
             e.stopPropagation();
             const fmt = getPreferredFormat();
+            let pendingPdfTab = null;
             try {
+                if (fmt === 'pdf' && typeof window.open === 'function') {
+                    pendingPdfTab = window.open('', '_blank');
+                    window._pendingPdfOpenTab = pendingPdfTab || null;
+                    if (pendingPdfTab && !pendingPdfTab.closed) {
+                        try {
+                            pendingPdfTab.document.open();
+                            pendingPdfTab.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Generando PDF...</title></head><body style="font-family:Segoe UI,Arial,sans-serif;padding:24px;color:#334155;"><h2 style="margin:0 0 12px;">Generando PDF...</h2><p style="margin:0;">La pestaña se actualizará automáticamente cuando el informe esté listo.</p></body></html>');
+                            pendingPdfTab.document.close();
+                        } catch (_) { /* ignore */ }
+                    }
+                }
                 if (typeof window.downloadFile === 'function') {
                     await window.downloadFile(fmt);
                     return;
@@ -49,6 +61,10 @@
                 }
                 if (typeof showToast === 'function') showToast('No se encontró el módulo de descarga', 'error');
             } catch (err) {
+                if (pendingPdfTab && !pendingPdfTab.closed) {
+                    try { pendingPdfTab.close(); } catch (_) { /* ignore */ }
+                }
+                window._pendingPdfOpenTab = null;
                 console.warn('Download main button error:', err);
                 if (typeof showToast === 'function') showToast('Error al descargar. Reintentá.', 'error');
             }

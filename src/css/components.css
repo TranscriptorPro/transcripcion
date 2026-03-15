@@ -1117,6 +1117,39 @@
             font-style: italic;
         }
 
+        .editor-content.structuring-pending {
+            position: relative;
+            color: transparent !important;
+            caret-color: transparent;
+            user-select: none;
+            pointer-events: none;
+            min-height: 450px;
+        }
+
+        .editor-content.structuring-pending > * {
+            visibility: hidden;
+        }
+
+        .editor-content.structuring-pending::before {
+            content: 'Estructurando informe con IA...';
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            color: var(--text-secondary);
+            font-style: italic;
+            letter-spacing: 0.02em;
+            background: var(--bg-card);
+            visibility: visible;
+        }
+
+        body.structuring-active #editorToolbar,
+        body.structuring-active .editor-actions {
+            display: none !important;
+        }
+
         /* Find & Replace Panel */
         .find-replace-panel {
             display: none;
