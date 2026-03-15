@@ -2458,6 +2458,24 @@ test('pdfPreviewActions.js expone downloadPDFFromCanvas', () => {
     assert(code.includes('pageHeightPx'), 'Debe paginar por altura A4');
 });
 
+test('pdfPreviewActions.js expone helper de blob para pipeline único', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/pdfPreviewActions.js'), 'utf-8');
+    assert(code.includes('window._buildPdfBlobFromPreviewCapture'), 'Debe exponer helper único de generación PDF desde preview');
+    assert(code.includes('return doc.output(\'blob\')'), 'El helper debe devolver Blob PDF');
+});
+
+test('pdfPreviewActions.js email prioriza pipeline de preview', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/pdfPreviewActions.js'), 'utf-8');
+    const fnStart = code.indexOf('async function _generatePDFBase64Impl()');
+    assert(fnStart >= 0, 'Debe existir _generatePDFBase64Impl');
+    const fnEnd = code.indexOf('// ============ INIT EMAIL SEND MODAL ============', fnStart);
+    const fnCode = code.substring(fnStart, fnEnd > fnStart ? fnEnd : fnStart + 1600);
+    const posPreview = fnCode.indexOf('_generatePDFBase64FromPreviewDom()');
+    const posHtml = fnCode.indexOf('_generatePDFBase64FromHtmlSnapshot()');
+    assert(posPreview >= 0 && posHtml >= 0, 'Debe evaluar preview y html snapshot');
+    assert(posPreview < posHtml, 'Debe priorizar preview (mismo pipeline que descarga) antes de html snapshot');
+});
+
 test('editorDownloadCoreUtils.js usa downloadPDFFromCanvas como primer intento', () => {
     const code = fs.readFileSync(path.join(root, 'src/js/features/editorDownloadCoreUtils.js'), 'utf-8');
     // Buscar el bloque del case pdf (donde format === 'pdf')

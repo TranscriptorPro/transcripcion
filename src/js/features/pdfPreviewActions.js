@@ -239,46 +239,14 @@ async function _generatePDFBase64FromHtmlSnapshot() {
 }
 
 async function _generatePDFBase64FromPreviewDom() {
-    const previewEl = document.getElementById('previewPage');
-    if (!previewEl || typeof window.html2canvas !== 'function' || !window.jspdf?.jsPDF) {
+    // Mismo pipeline visual que la descarga manual para garantizar consistencia 1:1.
+    if (typeof window._buildPdfBlobFromPreviewCapture !== 'function') {
         return null;
     }
-
     try {
-        let cfg = {};
-        try {
-            cfg = window._pdfConfigCache
-                || (typeof appDB !== 'undefined' ? (await appDB.get('pdf_config')) : null)
-                || JSON.parse(localStorage.getItem('pdf_config') || '{}')
-                || {};
-        } catch (_) {
-            cfg = {};
-        }
-
-        const pageFormat = String(cfg.pageSize || 'a4').toLowerCase();
-        const orientation = String(cfg.orientation || 'portrait').toLowerCase();
-        const fmtSizes = {
-            a4: { w: 210, h: 297 },
-            letter: { w: 215.9, h: 279.4 },
-            legal: { w: 215.9, h: 355.6 }
-        };
-        const sz = fmtSizes[pageFormat] || fmtSizes.a4;
-        const pageWmm = orientation === 'landscape' ? sz.h : sz.w;
-
-        const canvas = await window.html2canvas(previewEl, {
-            scale: 1.6,
-            useCORS: true,
-            backgroundColor: '#ffffff',
-            scrollX: 0,
-            scrollY: 0
-        });
-        if (!canvas) return null;
-
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: 'mm', format: pageFormat, orientation });
-        const renderHmm = (canvas.height * pageWmm) / canvas.width;
-        doc.addImage(canvas.toDataURL('image/jpeg', 0.94), 'JPEG', 0, 0, pageWmm, renderHmm, undefined, 'FAST');
-        return await _blobToBase64(doc.output('blob'));
+        const blob = await window._buildPdfBlobFromPreviewCapture();
+        if (!blob) return null;
+        return await _blobToBase64(blob);
     } catch (err) {
         console.error('[email PDF] Fallback preview DOM falló:', err);
         return null;
@@ -293,12 +261,13 @@ async function _generatePDFBase64Impl() {
         const editorEl  = window.editor || document.getElementById('editor');
         if (!editorEl || !editorEl.innerHTML.trim()) return null;
 
-        const exactLike = await _generatePDFBase64FromHtmlSnapshot();
-        if (exactLike) return exactLike;
-
-        // Fallback: capturar el DOM de preview si el pipeline principal falla.
+        // Prioridad 1: exactamente el mismo pipeline que descargar PDF desde preview.
         const fromPreview = await _generatePDFBase64FromPreviewDom();
         if (fromPreview) return fromPreview;
+
+        // Prioridad 2: fallback html snapshot si el pipeline visual no está disponible.
+        const exactLike = await _generatePDFBase64FromHtmlSnapshot();
+        if (exactLike) return exactLike;
 
         // Ruta 3 (último recurso): PDF simple de texto para no bloquear el envío de correo.
         if (window.jspdf?.jsPDF) {
@@ -561,74 +530,10 @@ window.printFromPreview = async function () {
 window.downloadPDFFromCanvas = async function (fileName, fileDate) {
     if (typeof showToast === 'function') showToast('\u23F3 Generando PDF...', 'info', 10000);
     try {
-        // 1. Asegurar que la preview está renderizada
-        const previewPage = document.getElementById('previewPage');
-        if (!previewPage) throw new Error('Vista previa no disponible');
+        const blob = await window._buildPdfBlobFromPreviewCapture();
+        if (!blob) throw new Error('No se pudo generar el PDF desde preview');
 
-        const overlay = document.getElementById('printPreviewOverlay');
-        const isOpen = overlay && overlay.classList.contains('active');
-        if (!isOpen) {
-            if (typeof window.openPrintPreview === 'function') {
-                await window.openPrintPreview();
-            }
-            await new Promise(r => setTimeout(r, 700));
-        }
-
-        // 2. Ocultar marcadores de salto de página para captura limpia
-        const markers = Array.from(previewPage.querySelectorAll('.pv-pagebreak-marker'));
-        markers.forEach(m => { m._savedDisplay = m.style.display; m.style.display = 'none'; });
-
-        let dataUrl;
-        try {
-            // html-to-image: captura pixel-perfect sin parsear CSS (SVG foreignObject)
-            const lib = window.htmlToImage || window['html-to-image'];
-            if (!lib) throw new Error('html-to-image no cargado');
-
-            dataUrl = await lib.toJpeg(previewPage, {
-                quality: 0.92,
-                pixelRatio: 2,
-                backgroundColor: '#ffffff',
-                skipFonts: false
-            });
-        } finally {
-            markers.forEach(m => { m.style.display = m._savedDisplay !== undefined ? m._savedDisplay : ''; });
-        }
-
-        if (!dataUrl) throw new Error('html-to-image no produjo resultado');
-
-        // 3. Convertir dataUrl → canvas para paginar en A4
-        const img = new Image();
-        await new Promise(function (res, rej) { img.onload = res; img.onerror = rej; img.src = dataUrl; });
-        const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        canvas.getContext('2d').drawImage(img, 0, 0);
-
-        // 4. Paginar en hojas A4
-        const { jsPDF } = window.jspdf;
-        const PAGE_W_MM = 210;
-        const PAGE_H_MM = 297;
-        const pageHeightPx = Math.round((PAGE_H_MM / PAGE_W_MM) * canvas.width);
-        const totalPages = Math.ceil(canvas.height / pageHeightPx);
-
-        const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-
-        for (let i = 0; i < totalPages; i++) {
-            if (i > 0) doc.addPage();
-            const srcY = i * pageHeightPx;
-            const srcH = Math.min(pageHeightPx, canvas.height - srcY);
-
-            const slice = document.createElement('canvas');
-            slice.width = canvas.width;
-            slice.height = srcH;
-            slice.getContext('2d').drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
-
-            const sliceHmm = (srcH / canvas.width) * PAGE_W_MM;
-            doc.addImage(slice.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, PAGE_W_MM, sliceHmm);
-        }
-
-        // 5. Descargar
-        const blob = doc.output('blob');
+        // Descargar
         const saveHandler = (typeof window.saveToDisk === 'function') ? window.saveToDisk : async (b, name) => {
             const url = URL.createObjectURL(b);
             const a = document.createElement('a'); a.href = url; a.download = name;
@@ -649,4 +554,74 @@ window.downloadPDFFromCanvas = async function (fileName, fileDate) {
         console.error('[downloadPDFFromCanvas] Error:', err);
         if (typeof showToast === 'function') showToast('Error al generar PDF: ' + (err.message || String(err)), 'error');
     }
+};
+
+window._buildPdfBlobFromPreviewCapture = async function () {
+    // 1. Asegurar que la preview está renderizada
+    const previewPage = document.getElementById('previewPage');
+    if (!previewPage) throw new Error('Vista previa no disponible');
+
+    const overlay = document.getElementById('printPreviewOverlay');
+    const isOpen = overlay && overlay.classList.contains('active');
+    if (!isOpen) {
+        if (typeof window.openPrintPreview === 'function') {
+            await window.openPrintPreview();
+        }
+        await new Promise(r => setTimeout(r, 700));
+    }
+
+    // 2. Ocultar marcadores de salto de página para captura limpia
+    const markers = Array.from(previewPage.querySelectorAll('.pv-pagebreak-marker'));
+    markers.forEach(m => { m._savedDisplay = m.style.display; m.style.display = 'none'; });
+
+    let dataUrl;
+    try {
+        // html-to-image: captura pixel-perfect sin parsear CSS (SVG foreignObject)
+        const lib = window.htmlToImage || window['html-to-image'];
+        if (!lib) throw new Error('html-to-image no cargado');
+
+        dataUrl = await lib.toJpeg(previewPage, {
+            quality: 0.92,
+            pixelRatio: 2,
+            backgroundColor: '#ffffff',
+            skipFonts: false
+        });
+    } finally {
+        markers.forEach(m => { m.style.display = m._savedDisplay !== undefined ? m._savedDisplay : ''; });
+    }
+
+    if (!dataUrl) throw new Error('html-to-image no produjo resultado');
+
+    // 3. Convertir dataUrl → canvas para paginar en A4
+    const img = new Image();
+    await new Promise(function (res, rej) { img.onload = res; img.onerror = rej; img.src = dataUrl; });
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    canvas.getContext('2d').drawImage(img, 0, 0);
+
+    // 4. Paginar en hojas A4
+    const { jsPDF } = window.jspdf;
+    const PAGE_W_MM = 210;
+    const PAGE_H_MM = 297;
+    const pageHeightPx = Math.round((PAGE_H_MM / PAGE_W_MM) * canvas.width);
+    const totalPages = Math.ceil(canvas.height / pageHeightPx);
+
+    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
+    for (let i = 0; i < totalPages; i++) {
+        if (i > 0) doc.addPage();
+        const srcY = i * pageHeightPx;
+        const srcH = Math.min(pageHeightPx, canvas.height - srcY);
+
+        const slice = document.createElement('canvas');
+        slice.width = canvas.width;
+        slice.height = srcH;
+        slice.getContext('2d').drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
+
+        const sliceHmm = (srcH / canvas.width) * PAGE_W_MM;
+        doc.addImage(slice.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, PAGE_W_MM, sliceHmm);
+    }
+
+    return doc.output('blob');
 };
