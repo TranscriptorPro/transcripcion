@@ -162,13 +162,13 @@ window.handleFactorySetupCore = async function (medicoId) {
                     if (typeof appDB !== 'undefined') appDB.set('workplace_profiles', workplaceProfiles);
                     localStorage.setItem('workplace_profiles', JSON.stringify(workplaceProfiles));
 
-                    // ── CLINIC mode: si vienen múltiples profesionales, poblar el primer workplace ──
+                    // ── CLINIC mode: si vienen profesionales, poblar el primer workplace ──
                     // regDatos.profesionales (de Registro_Datos) o doctor.Profesionales (campo top-level)
                     let clinicProfs = [];
                     try {
                         clinicProfs = regDatos.profesionales || JSON.parse(doctor.Profesionales || '[]');
                     } catch(_) {}
-                    if (Array.isArray(clinicProfs) && clinicProfs.length > 1) {
+                    if (Array.isArray(clinicProfs) && clinicProfs.length >= 1) {
                         workplaceProfiles[0].professionals = clinicProfs.map(function(p) {
                             const smp = (typeof p.socialMedia === 'object' && p.socialMedia) ? p.socialMedia : {};
                             return {
@@ -198,6 +198,11 @@ window.handleFactorySetupCore = async function (medicoId) {
 
                     // Actualizar prof_data con workplace
                     profData.workplace = wp.name || '';
+                    // En CLINIC, la identidad principal de la app es la institución.
+                    if (plan === 'clinic' && wp.name) {
+                        profData.nombre = wp.name;
+                        if (!profData.matricula) profData.matricula = '';
+                    }
                     window._profDataCache = profData;
                     if (typeof appDB !== 'undefined') appDB.set('prof_data', profData);
                     localStorage.setItem('prof_data', JSON.stringify(profData));

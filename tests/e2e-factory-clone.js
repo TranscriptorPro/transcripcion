@@ -3,9 +3,8 @@
  * Prueba el flujo completo: fábrica de clones, PDF, descarga, PWA, pricing
  *
  * Ejecutar: node tests/e2e-factory-clone.js
+ * Remoto: APP_URL=https://transcriptorpro.github.io/transcripcion/ node tests/e2e-factory-clone.js
  * Requiere: npm install playwright (ya está en package.json)
- *
- * NOTA: Necesita un servidor HTTP local. Usa serve o similar.
  */
 
 const { chromium } = require('playwright');
@@ -80,10 +79,17 @@ function log(status, name, detail) {
 
 // ── Tests ──────────────────────────────────────────────────────────────────
 async function runTests() {
+    const remoteBase = String(process.env.APP_URL || '').trim();
+    const useRemote = !!remoteBase;
     const PORT = 8765;
-    const BASE = `http://localhost:${PORT}`;
-    const server = await startServer(PORT);
-    console.log(`\n🌐 Servidor local en ${BASE}`);
+    const BASE = useRemote ? remoteBase : `http://localhost:${PORT}`;
+    let server = null;
+    if (!useRemote) {
+        server = await startServer(PORT);
+        console.log(`\n🌐 Servidor local en ${BASE}`);
+    } else {
+        console.log(`\n🌐 Ejecutando contra remoto en ${BASE}`);
+    }
 
     const browser = await chromium.launch({ headless: true });
     const context = await browser.newContext({
@@ -307,7 +313,7 @@ async function runTests() {
         if (swRegistered) {
             log('pass', 'Service Worker registrado');
         } else {
-            log('info', 'Service Worker', 'No registrado (localhost sin HTTPS)');
+            log('info', 'Service Worker', 'No registrado en este entorno');
         }
 
         // Verificar manifest
@@ -435,7 +441,7 @@ async function runTests() {
         log('fail', 'Error inesperado', err.message);
     } finally {
         await browser.close();
-        server.close();
+        if (server) server.close();
     }
 
     // ═══════════════════════════════════════════════════════════════

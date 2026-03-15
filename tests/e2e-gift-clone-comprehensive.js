@@ -10,6 +10,7 @@
  *  - Límites de dispositivos
  *
  * Ejecutar: node tests/e2e-gift-clone-comprehensive.js
+ * Remoto: APP_URL=https://transcriptorpro.github.io/transcripcion/ node tests/e2e-gift-clone-comprehensive.js
  * Requiere: Playwright (ya instalado)
  */
 
@@ -121,10 +122,17 @@ function log(status, section, name, detail) {
 
 // ── MAIN ────────────────────────────────────────────────────────────────────
 async function runTests() {
+    const remoteBase = String(process.env.APP_URL || '').trim();
+    const useRemote = !!remoteBase;
     const PORT = 8899;
-    const BASE = `http://localhost:${PORT}`;
-    const server = await startServer(PORT);
-    console.log(`\n🌐 Servidor local en ${BASE}`);
+    const BASE = useRemote ? remoteBase.replace(/\/+$/, '') : `http://localhost:${PORT}`;
+    let server = null;
+    if (!useRemote) {
+        server = await startServer(PORT);
+        console.log(`\n🌐 Servidor local en ${BASE}`);
+    } else {
+        console.log(`\n🌐 Ejecutando contra remoto en ${BASE}`);
+    }
 
     const SCREENSHOT_DIR = path.join(__dirname, '..', 'anexos', 'accesorios', 'gift_e2e_screenshots');
     if (!fs.existsSync(SCREENSHOT_DIR)) fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
@@ -133,7 +141,9 @@ async function runTests() {
     const context = await browser.newContext({
         viewport: { width: 1366, height: 900 },
         permissions: ['clipboard-read', 'clipboard-write'],
-        locale: 'es-AR'
+        locale: 'es-AR',
+        // Evita que un service worker remoto intercepte recursos y des-sincronice el setup del clon.
+        serviceWorkers: 'block'
     });
 
     // ── MOCK: Interceptar calls al backend de Google Apps Script ─────────────
@@ -209,7 +219,17 @@ async function runTests() {
         await page.goto(`${BASE}/?id=${encodeURIComponent(GIFT_USER.ID_Medico)}`, {
             waitUntil: 'domcontentloaded', timeout: 20000
         });
-        await page.waitForTimeout(5000); // Esperar factory setup + onboarding
+        await page.waitForFunction((expectedId) => {
+            try {
+                const raw = localStorage.getItem('client_config_stored');
+                if (!raw) return false;
+                const cfg = JSON.parse(raw);
+                return cfg && cfg.medicoId === expectedId;
+            } catch (_) {
+                return false;
+            }
+        }, GIFT_USER.ID_Medico, { timeout: 30000 });
+        await page.waitForTimeout(1200);
 
         await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'A01_after_load.png'), fullPage: false });
 
@@ -217,6 +237,10 @@ async function runTests() {
         const cfg = await page.evaluate(() => {
             try { return JSON.parse(localStorage.getItem('client_config_stored') || '{}'); } catch(_) { return {}; }
         });
+        if (cfg.medicoId !== GIFT_USER.ID_Medico) {
+            log('fail', 'A', 'Factory setup no completado', `medicoId esperado: ${GIFT_USER.ID_Medico}, got: ${cfg.medicoId}`);
+            throw new Error('Factory setup incompleto: abortando para evitar falsos negativos en cascada');
+        }
         log(cfg.type === 'PRO' ? 'pass' : 'fail', 'A', 'clientConfig.type = PRO (plan gift→PRO)', `got: ${cfg.type}`);
         log(cfg.hasProMode === true ? 'pass' : 'fail', 'A', 'clientConfig.hasProMode = true', `got: ${cfg.hasProMode}`);
         log(cfg.canGenerateApps === false ? 'pass' : 'fail', 'A', 'clientConfig.canGenerateApps = false (gift≠clinic)', `got: ${cfg.canGenerateApps}`);
@@ -674,7 +698,7 @@ async function runTests() {
         console.error(err);
     } finally {
         await browser.close();
-        server.close();
+        if (server) server.close();
     }
 
     // ═══════════════════════════════════════════════════════════════════
