@@ -566,7 +566,7 @@ window.initModals = function () {
         if (!_canUseInlineAppend) return;
         if (!editor.innerText.trim()) return;
         // No mostrar si el contenido no está estructurado (texto plano sin secciones)
-        if (!editor.querySelector('h3, h4, .section-header, strong')) return;
+        if (!editor.querySelector('h1, h2, h3, h4, .report-h1, .report-h2, .report-h3, .section-header, strong')) return;
 
         // Crear wrapper contenteditable=false
         const wrap = document.createElement('div');

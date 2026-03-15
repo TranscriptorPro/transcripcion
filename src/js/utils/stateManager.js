@@ -52,9 +52,12 @@ window.updateButtonsVisibility = function (state) {
         }
     }
 
-    // Toggle rápido de revisión IA: solo visible cuando el informe ya está estructurado.
+    const editorEl = document.getElementById('editor');
+    const looksStructuredByDom = !!(editorEl && editorEl.querySelector('h1, h2, h3, h4, .report-h1, .report-h2, .report-h3, .section-header, strong'));
+
+    // Toggle rápido de revisión IA: visible con estructura detectada (estado o DOM) para planes avanzados.
     if (inlineReviewQuickCtrl) {
-        inlineReviewQuickCtrl.style.display = (isStructured && hasAdvancedPlan) ? 'flex' : 'none';
+        inlineReviewQuickCtrl.style.display = ((isStructured || looksStructuredByDom) && hasAdvancedPlan) ? 'flex' : 'none';
     }
 
     // Normal mode template controls

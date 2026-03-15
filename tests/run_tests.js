@@ -2547,6 +2547,7 @@ test('ui.js mueve REV IA al botón inline de grabación', () => {
     assert(code.includes("wrap.prepend(quickCtrl);"), 'REV IA debe insertarse a la izquierda del botón inline');
     assert(code.includes("const _canUseInlineAppend = (typeof CLIENT_CONFIG !== 'undefined'"), 'El botón inline debe limitarse por tipo de plan');
     assert(code.includes("CLIENT_CONFIG.type === 'PRO' || CLIENT_CONFIG.type === 'ADMIN'"), 'El botón inline debe habilitarse para PRO y ADMIN');
+    assert(code.includes("h1, h2, h3, h4, .report-h1, .report-h2, .report-h3, .section-header, strong"), 'La detección de contenido estructurado debe contemplar h1/h2 y clases report-*');
     assert(code.includes('<span class="append-plus">+</span>'), 'El botón inline debe usar versión compacta con +');
     assert(code.includes("p.className = 'report-p';"), 'El texto agregado debe mantener formato report-p para consistencia de preview/export');
 });
@@ -2564,7 +2565,8 @@ test('stateManager y revisión inline restringen estas funciones a planes avanza
     const reviewCode = fs.readFileSync(path.join(root, 'src/js/features/editorFieldModalUtils.js'), 'utf-8');
     assert(stateCode.includes('const hasAdvancedPlan = (typeof CLIENT_CONFIG !== \'undefined\''), 'stateManager debe calcular plan avanzado explícito');
     assert(stateCode.includes("CLIENT_CONFIG.type === 'PRO' || CLIENT_CONFIG.type === 'ADMIN'"), 'stateManager debe habilitar para PRO y ADMIN');
-    assert(stateCode.includes('isStructured && hasAdvancedPlan'), 'El toggle rápido de REV IA solo debe mostrarse para planes avanzados');
+    assert(stateCode.includes('const looksStructuredByDom = !!('), 'stateManager debe detectar estructura por DOM como fallback');
+    assert(stateCode.includes('(isStructured || looksStructuredByDom) && hasAdvancedPlan'), 'El toggle rápido de REV IA debe mostrarse con estructura por estado o DOM');
     assert(reviewCode.includes('const _hasInlineReviewPlan = () =>'), 'Revisión inline debe tener helper de plan permitido');
     assert(reviewCode.includes("CLIENT_CONFIG.type === 'PRO' || CLIENT_CONFIG.type === 'ADMIN'"), 'Revisión inline debe habilitarse para PRO y ADMIN');
 });
