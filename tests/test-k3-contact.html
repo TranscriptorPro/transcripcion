@@ -129,7 +129,7 @@ function initContactInline(cfg) {
         const nombre  = profData.nombre || 'M\u00e9dico';
         const mat     = profData.matricula || '';
         const contactEmail = (window.CLIENT_CONFIG && window.CLIENT_CONFIG.contactEmail)
-            ? window.CLIENT_CONFIG.contactEmail : 'soporte@transcriptorpro.app';
+            ? window.CLIENT_CONFIG.contactEmail : 'soporte@transcriptorpro.com';
         const subject = encodeURIComponent(`[TranscriptorPro] ${motivo}`);
         const body    = encodeURIComponent(`Motivo: ${motivo}\n\n${detalle}\n\n---\nDr./Dra. ${nombre} | Mat. ${mat}\nApp: TranscriptorPro`);
         window.open(`mailto:${contactEmail}?subject=${subject}&body=${body}`, '_blank');

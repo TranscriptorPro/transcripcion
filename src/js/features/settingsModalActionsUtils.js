@@ -39,8 +39,13 @@
             contactBtn.addEventListener('click', () => {
                 const overlay = document.getElementById('settingsModalOverlay');
                 if (overlay) overlay.classList.remove('active');
-                const btnContacto = document.getElementById('btnContacto');
-                if (btnContacto) btnContacto.click();
+                // Usar openContactModal si está disponible (siempre está para usuarios no-admin).
+                if (typeof window.openContactModal === 'function') {
+                    window.openContactModal();
+                } else {
+                    const btnContacto = document.getElementById('btnContacto');
+                    if (btnContacto) btnContacto.click();
+                }
             });
         }
 
@@ -66,6 +71,53 @@
                             repopulateAndOpenSettings();
                         }
                     });
+                }
+            });
+        }
+
+        const autoTourToggle = document.getElementById('settingsAutoTourToggle');
+        if (autoTourToggle) {
+            const syncAutoTourToggle = async () => {
+                if (typeof window.getAutoTourEnabled === 'function') {
+                    autoTourToggle.checked = !!(await window.getAutoTourEnabled());
+                }
+            };
+
+            syncAutoTourToggle();
+            autoTourToggle.addEventListener('change', () => {
+                if (typeof window.setAutoTourEnabled === 'function') {
+                    window.setAutoTourEnabled(!!autoTourToggle.checked);
+                }
+                if (typeof showToast === 'function') {
+                    showToast(
+                        autoTourToggle.checked ? '✅ Tutorial automático activado' : 'ℹ️ Tutorial automático desactivado',
+                        'success',
+                        2000
+                    );
+                }
+            });
+        }
+
+        const startTourNowBtn = document.getElementById('settingsStartTourNow');
+        if (startTourNowBtn) {
+            startTourNowBtn.addEventListener('click', () => {
+                const overlay = document.getElementById('settingsModalOverlay');
+                if (overlay) overlay.classList.remove('active');
+                if (typeof window.startGuideTour === 'function') {
+                    setTimeout(() => window.startGuideTour(), 150);
+                }
+            });
+        }
+
+        const restartTourNowBtn = document.getElementById('settingsRestartTourNow');
+        if (restartTourNowBtn) {
+            restartTourNowBtn.addEventListener('click', () => {
+                const overlay = document.getElementById('settingsModalOverlay');
+                if (overlay) overlay.classList.remove('active');
+                if (typeof window.restartGuideTour === 'function') {
+                    setTimeout(() => window.restartGuideTour(), 150);
+                } else if (typeof window.startGuideTour === 'function') {
+                    setTimeout(() => window.startGuideTour(), 150);
                 }
             });
         }

@@ -6,23 +6,53 @@ window.initPatientDataModalHandlers = function () {
     const btnSkipPatientData = document.getElementById('btnSkipPatientData');
     const btnClosePatientModal = document.getElementById('btnClosePatientModal');
 
+    const _cleanReferringDoctorName = (v) => String(v || '')
+        .replace(/^\s*(?:dr\.?|dra\.?)\s+/i, '')
+        .trim();
+
     window.openPatientDataModal = function () {
         const cfg = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        const extracted = (typeof extractPatientDataFromText === 'function')
+            ? extractPatientDataFromText((document.getElementById('editor')?.innerText || ''))
+            : {};
         const prefill = {
-            reqPatientName: cfg.patientName || '',
-            reqPatientDni: cfg.patientDni || '',
-            reqPatientAge: cfg.patientAge || '',
-            reqPatientSex: cfg.patientSex || '',
-            reqPatientInsurance: cfg.patientInsurance || '',
-            reqPatientAffiliateNum: cfg.patientAffiliateNum || '',
+            reqPatientName: cfg.patientName || extracted.name || '',
+            reqPatientDni: cfg.patientDni || extracted.dni || '',
+            reqPatientAge: cfg.patientAge || extracted.age || '',
+            reqPatientSex: cfg.patientSex || extracted.sex || '',
+            reqPatientInsurance: cfg.patientInsurance || extracted.insurance || '',
+            reqPatientAffiliateNum: cfg.patientAffiliateNum || extracted.affiliateNum || '',
+            reqStudyDate: cfg.studyDate || extracted.studyDate || '',
+            reqStudyTime: cfg.studyTime || extracted.studyTime || '',
+            reqReferringDoctor: _cleanReferringDoctorName(cfg.referringDoctor || extracted.referringDoctor || ''),
+            reqStudyReason: cfg.studyReason || extracted.studyReason || '',
+            reqStudyType: cfg.studyType || extracted.studyType || '',
             reqPatientSearch: ''
         };
         Object.entries(prefill).forEach(([id, val]) => {
             const el = document.getElementById(id);
             if (el) { el.value = val; el.style.borderColor = ''; }
         });
+        const showDateChk = document.getElementById('reqShowStudyDate');
+        if (showDateChk) showDateChk.checked = cfg.showStudyDate !== false;
+        const showTimeChk = document.getElementById('reqShowStudyTime');
+        if (showTimeChk) showTimeChk.checked = cfg.showStudyTime !== false;
+
+        // Default hora actual si está vacía
+        const timeInput = document.getElementById('reqStudyTime');
+        if (timeInput && !timeInput.value && !cfg.studyTime) {
+            const now = new Date();
+            timeInput.value = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+        }
+
+        // Toggle visibilidad fecha/hora
+        _applyToggleVisibility('reqShowStudyDate', 'reqStudyDate');
+        _applyToggleVisibility('reqShowStudyTime', 'reqStudyTime');
+
         patientOverlay?.classList.add('active');
         if (typeof initPatientRegistrySearch === 'function') initPatientRegistrySearch();
+        if (typeof initReferringDoctorSearch === 'function') initReferringDoctorSearch();
+        if (typeof initStudyReasonSearch === 'function') initStudyReasonSearch();
     };
 
     function closePatientModal() {
@@ -30,6 +60,17 @@ window.initPatientDataModalHandlers = function () {
     }
 
     if (btnClosePatientModal) btnClosePatientModal.addEventListener('click', closePatientModal);
+
+    // Fallback robusto: si el header se re-renderiza, el botón ✏️ sigue abriendo el modal.
+    if (!window._patientEditDelegationBound) {
+        document.addEventListener('click', (ev) => {
+            const btn = ev.target && ev.target.closest ? ev.target.closest('.patient-data-edit-btn') : null;
+            if (!btn) return;
+            ev.preventDefault();
+            if (typeof window.openPatientDataModal === 'function') window.openPatientDataModal();
+        });
+        window._patientEditDelegationBound = true;
+    }
     if (btnSkipPatientData) {
         btnSkipPatientData.addEventListener('click', () => {
             closePatientModal();
@@ -42,26 +83,40 @@ window.initPatientDataModalHandlers = function () {
     if (btnSavePatientData) {
         btnSavePatientData.addEventListener('click', () => {
             const name = document.getElementById('reqPatientName')?.value?.trim();
-            if (!name) {
-                if (typeof showToast === 'function') showToast('El nombre del paciente es obligatorio', 'error');
-                const nameEl = document.getElementById('reqPatientName');
-                if (nameEl) { nameEl.style.borderColor = '#ef4444'; nameEl.focus(); }
-                return;
-            }
 
             const config = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
-            config.patientName = name;
+            if (name) config.patientName = name;
+            else delete config.patientName;
             const dni = document.getElementById('reqPatientDni')?.value?.trim();
             const age = document.getElementById('reqPatientAge')?.value?.trim();
             const sex = document.getElementById('reqPatientSex')?.value;
             const insurance = document.getElementById('reqPatientInsurance')?.value?.trim();
             const affiliateNum = document.getElementById('reqPatientAffiliateNum')?.value?.trim();
+            const showStudyDate = document.getElementById('reqShowStudyDate')?.checked !== false;
+            const showStudyTime = document.getElementById('reqShowStudyTime')?.checked !== false;
+            const studyDate = document.getElementById('reqStudyDate')?.value?.trim() || '';
+            const studyTime = document.getElementById('reqStudyTime')?.value?.trim();
+            const referringDoctor = _cleanReferringDoctorName(document.getElementById('reqReferringDoctor')?.value?.trim());
+            const studyReason = document.getElementById('reqStudyReason')?.value?.trim();
+            const studyType = document.getElementById('reqStudyType')?.value?.trim();
 
             if (dni) config.patientDni = dni;
             if (age) config.patientAge = age;
             if (sex) config.patientSex = sex;
             if (insurance) config.patientInsurance = insurance;
             if (affiliateNum) config.patientAffiliateNum = affiliateNum;
+            config.showStudyDate = showStudyDate;
+            config.showStudyTime = showStudyTime;
+            if (showStudyDate && studyDate) config.studyDate = studyDate;
+            else delete config.studyDate;
+            if (showStudyTime && studyTime) config.studyTime = studyTime; else delete config.studyTime;
+            if (referringDoctor) config.referringDoctor = referringDoctor; else delete config.referringDoctor;
+            delete config.referringDoctorSex;
+            if (studyReason) config.studyReason = studyReason; else delete config.studyReason;
+            // Guardar en historiales para autocompletado futuro
+            if (referringDoctor && typeof saveReferringDoctor === 'function') saveReferringDoctor(referringDoctor);
+            if (studyReason && typeof saveStudyReason === 'function') saveStudyReason(studyReason);
+            if (studyType) config.studyType = studyType; else delete config.studyType;
 
             window._pdfConfigCache = config;
             if (typeof appDB !== 'undefined') appDB.set('pdf_config', config);
@@ -70,7 +125,20 @@ window.initPatientDataModalHandlers = function () {
             patientOverlay?.classList.remove('active');
             if (typeof showToast === 'function') showToast('Datos del paciente guardados', 'success');
 
-            window._insertPatientDataInEditor({ name, dni, age, sex, insurance, affiliateNum });
+            window._insertPatientDataInEditor({
+                name,
+                dni,
+                age,
+                sex,
+                insurance,
+                affiliateNum,
+                showStudyDate,
+                studyDate,
+                studyTime,
+                referringDoctor,
+                studyReason,
+                studyType
+            });
             if (typeof savePatientToRegistry === 'function') {
                 savePatientToRegistry({ name, dni, age, sex, insurance, affiliateNum });
                 if (typeof populatePatientDatalist === 'function') populatePatientDatalist();
@@ -82,26 +150,45 @@ window.initPatientDataModalHandlers = function () {
         const editorEl = document.getElementById('editor');
         if (!editorEl) return;
 
+        const esc = (v) => String(v ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+
         const oldPlaceholder = editorEl.querySelector('.patient-placeholder-banner');
         if (oldPlaceholder) oldPlaceholder.remove();
         const oldHeader = editorEl.querySelector('.patient-data-header');
         if (oldHeader) oldHeader.remove();
 
         const lines = [];
-        if (data.name) lines.push(`<strong>Paciente:</strong> ${data.name}`);
-        if (data.dni) lines.push(`<strong>DNI:</strong> ${data.dni}`);
-        if (data.age) lines.push(`<strong>Edad:</strong> ${data.age} años`);
-        if (data.sex) lines.push(`<strong>Sexo:</strong> ${data.sex}`);
-        if (data.insurance) lines.push(`<strong>Obra Social:</strong> ${data.insurance}`);
-        if (data.affiliateNum) lines.push(`<strong>Nº Afiliado:</strong> ${data.affiliateNum}`);
-        if (lines.length === 0) return;
+        if (data.name) lines.push(`<strong>Paciente:</strong> ${esc(data.name)}`);
+        if (data.dni) lines.push(`<strong>DNI:</strong> ${esc(data.dni)}`);
+        if (data.age) lines.push(`<strong>Edad:</strong> ${esc(data.age)} años`);
+        if (data.sex) lines.push(`<strong>Sexo:</strong> ${esc(data.sex)}`);
+        if (data.weight) lines.push(`<strong>Peso:</strong> ${esc(data.weight)} kg`);
+        if (data.height) lines.push(`<strong>Altura:</strong> ${esc(data.height)}`);
+        if (data.insurance) lines.push(`<strong>Obra Social:</strong> ${esc(data.insurance)}`);
+        if (data.affiliateNum) lines.push(`<strong>Nº Afiliado:</strong> ${esc(data.affiliateNum)}`);
+
+        const studyLines = [];
+        if (data.showStudyDate !== false && data.studyDate) {
+            const dateForDisplay = new Date(data.studyDate + 'T12:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            studyLines.push(`<strong>Fecha:</strong> ${esc(dateForDisplay)}${data.studyTime ? ' ' + esc(data.studyTime) + ' hs.' : ''}`);
+        }
+        if (data.studyType) studyLines.push(`<strong>Estudio:</strong> ${esc(data.studyType)}`);
+        if (data.referringDoctor) studyLines.push(`<strong>Médico solicitante:</strong> ${esc(data.referringDoctor)}`);
+        if (data.studyReason) studyLines.push(`<strong>Motivo:</strong> ${esc(data.studyReason)}`);
+
+        if (lines.length === 0 && studyLines.length === 0) return;
 
         const header = document.createElement('div');
         header.className = 'patient-data-header';
         header.setAttribute('contenteditable', 'false');
-        header.innerHTML = `<div class="patient-data-content">${lines.join(' &nbsp;·&nbsp; ')}</div>`
-            + `<button class="patient-data-edit-btn" title="Editar datos del paciente">✏️</button>`;
-        header.querySelector('.patient-data-edit-btn').addEventListener('click', () => {
+        const patientHtml = lines.length ? `<div class="patient-data-content">${lines.join(' &nbsp;·&nbsp; ')}</div>` : '';
+        const studyHtml = studyLines.length ? `<div class="patient-data-content study-data-content">${studyLines.join(' &nbsp;·&nbsp; ')}</div>` : '';
+        header.innerHTML = `${patientHtml}${studyHtml}<button class="patient-data-edit-btn" title="Editar datos del paciente y estudio">✏️</button>`;
+        header.querySelector('.patient-data-edit-btn')?.addEventListener('click', () => {
             if (typeof window.openPatientDataModal === 'function') window.openPatientDataModal();
         });
         editorEl.insertBefore(header, editorEl.firstChild);
@@ -114,7 +201,9 @@ window.initPatientDataModalHandlers = function () {
             if (oldH) oldH.remove();
             const oldP = temp.querySelector('.patient-placeholder-banner');
             if (oldP) oldP.remove();
-            const headerHTML = `<div class="patient-data-header" contenteditable="false"><div class="patient-data-content">${lines.join(' &nbsp;·&nbsp; ')}</div><button class="patient-data-edit-btn" title="Editar datos del paciente">✏️</button></div>`;
+            const patientHTML = lines.length ? `<div class="patient-data-content">${lines.join(' &nbsp;·&nbsp; ')}</div>` : '';
+            const studyHTML = studyLines.length ? `<div class="patient-data-content study-data-content">${studyLines.join(' &nbsp;·&nbsp; ')}</div>` : '';
+            const headerHTML = `<div class="patient-data-header" contenteditable="false">${patientHTML}${studyHTML}<button class="patient-data-edit-btn" title="Editar datos del paciente y estudio">✏️</button></div>`;
             temp.insertAdjacentHTML('afterbegin', headerHTML);
             window._lastStructuredHTML = temp.innerHTML;
         }
@@ -122,14 +211,27 @@ window.initPatientDataModalHandlers = function () {
 
     window._refreshPatientHeader = function () {
         const cfg = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
-        if (cfg.patientName) {
+        const hasAnyPatientData = !!(
+            cfg.patientName || cfg.patientDni || cfg.patientAge || cfg.patientSex ||
+            cfg.patientWeight || cfg.patientHeight || cfg.patientInsurance || cfg.patientAffiliateNum ||
+            cfg.studyDate || cfg.studyTime || cfg.referringDoctor || cfg.studyReason || cfg.studyType
+        );
+        if (hasAnyPatientData) {
             window._insertPatientDataInEditor({
                 name: cfg.patientName,
                 dni: cfg.patientDni,
                 age: cfg.patientAge,
                 sex: cfg.patientSex,
+                weight: cfg.patientWeight,
+                height: cfg.patientHeight,
                 insurance: cfg.patientInsurance,
-                affiliateNum: cfg.patientAffiliateNum
+                affiliateNum: cfg.patientAffiliateNum,
+                showStudyDate: cfg.showStudyDate,
+                studyDate: cfg.studyDate,
+                studyTime: cfg.studyTime,
+                referringDoctor: cfg.referringDoctor,
+                studyReason: cfg.studyReason,
+                studyType: cfg.studyType
             });
         } else if (typeof insertPatientPlaceholder === 'function') {
             insertPatientPlaceholder();
@@ -137,7 +239,120 @@ window.initPatientDataModalHandlers = function () {
         if (typeof window._insertInlineAppendBtn === 'function') window._insertInlineAppendBtn();
     };
 
-    document.getElementById('reqPatientName')?.addEventListener('input', (e) => {
-        e.target.style.borderColor = '';
+    // ── Toggle visibilidad de campos fecha/hora ──
+    function _applyToggleVisibility(checkId, inputId) {
+        const chk = document.getElementById(checkId);
+        const inp = document.getElementById(inputId);
+        if (!chk || !inp) return;
+        const wrap = inp.closest('.field-group') || inp.parentElement;
+        const container = inputId === 'reqStudyDate' ? inp.parentElement : inp; // date has wrapper div with Hoy btn
+        const target = inputId === 'reqStudyDate' ? wrap : wrap;
+        function applyVis() {
+            if (inputId === 'reqStudyDate') {
+                const row = inp.closest('div[style*="display:flex"]');
+                if (row) row.style.opacity = chk.checked ? '1' : '0.4';
+            }
+            inp.disabled = !chk.checked;
+        }
+        applyVis();
+        chk.addEventListener('change', applyVis);
+    }
+
+    // ── Botón "Hoy" para fecha ──
+    const btnToday = document.getElementById('btnStudyDateToday');
+    if (btnToday) {
+        btnToday.addEventListener('click', () => {
+            const dateInput = document.getElementById('reqStudyDate');
+            if (dateInput) {
+                dateInput.value = new Date().toISOString().split('T')[0];
+                dateInput.dispatchEvent(new Event('change'));
+            }
+        });
+    }
+
+    // ── Toggle listeners para fecha y hora ──
+    document.getElementById('reqShowStudyDate')?.addEventListener('change', () => {
+        _applyToggleVisibility('reqShowStudyDate', 'reqStudyDate');
     });
+    document.getElementById('reqShowStudyTime')?.addEventListener('change', () => {
+        _applyToggleVisibility('reqShowStudyTime', 'reqStudyTime');
+    });
+
+    // ── Autocomplete en el campo Nombre y Apellido ──
+    (function _initNameFieldAutocomplete() {
+        const nameInput = document.getElementById('reqPatientName');
+        if (!nameInput) return;
+
+        nameInput.addEventListener('input', (e) => {
+            e.target.style.borderColor = '';
+        });
+
+        // Crear dropdown personalizado para el campo nombre
+        let nameDropdown = document.getElementById('patientNameAutocompleteDropdown');
+        if (!nameDropdown) {
+            nameDropdown = document.createElement('div');
+            nameDropdown.id = 'patientNameAutocompleteDropdown';
+            Object.assign(nameDropdown.style, {
+                position: 'absolute', zIndex: '9999',
+                background: 'var(--bg-card)', border: '1px solid var(--border)',
+                borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+                maxHeight: '220px', overflowY: 'auto',
+                width: '100%', display: 'none', marginTop: '2px'
+            });
+            const wrap = nameInput.parentElement;
+            if (wrap) { wrap.style.position = 'relative'; wrap.appendChild(nameDropdown); }
+        }
+
+        function hideNameDropdown() { nameDropdown.style.display = 'none'; }
+
+        function showNameResults(results) {
+            if (!results.length) { hideNameDropdown(); return; }
+            const esc = typeof escapeHtml === 'function' ? escapeHtml : (s => (s||"").toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"));
+            nameDropdown.innerHTML = results.map((p, i) => {
+                const label = esc(p.name) + (p.dni ? ` — DNI ${esc(p.dni)}` : '') + (p.age ? `, ${esc(String(p.age))}a` : '');
+                return `<div data-idx="${i}" style="padding:0.5rem 0.85rem;cursor:pointer;font-size:0.82rem;border-bottom:1px solid var(--border);"
+                    onmouseenter="this.style.background='var(--bg-hover,#2a2a2a)'"
+                    onmouseleave="this.style.background=''">${label}</div>`;
+            }).join('');
+            nameDropdown.style.display = 'block';
+
+            nameDropdown.querySelectorAll('[data-idx]').forEach(el => {
+                el.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    const p = results[parseInt(el.dataset.idx)];
+                    const setVal = (id, v) => { const el2 = document.getElementById(id); if (el2 && v != null) el2.value = v; };
+                    setVal('reqPatientName',        p.name);
+                    setVal('reqPatientDni',         p.dni);
+                    setVal('reqPatientAge',         p.age);
+                    setVal('reqPatientInsurance',   p.insurance);
+                    setVal('reqPatientAffiliateNum',p.affiliateNum);
+                    setVal('reqPatientSearch',      p.name + (p.dni ? ` — DNI ${p.dni}` : ''));
+                    const sexEl = document.getElementById('reqPatientSex');
+                    if (sexEl && p.sex) sexEl.value = p.sex;
+                    hideNameDropdown();
+                    if (typeof showToast === 'function') showToast(`✅ ${p.name}`, 'success');
+                });
+            });
+        }
+
+        let nameDebounce;
+        nameInput.addEventListener('input', () => {
+            clearTimeout(nameDebounce);
+            const query = nameInput.value.trim();
+            if (query.length < 2) { hideNameDropdown(); return; }
+            nameDebounce = setTimeout(() => {
+                const results = (typeof searchPatientRegistry === 'function')
+                    ? searchPatientRegistry(query) : [];
+                showNameResults(results);
+            }, 120);
+        });
+
+        nameInput.addEventListener('blur', () => {
+            setTimeout(hideNameDropdown, 200);
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!nameInput.contains(e.target) && !nameDropdown.contains(e.target)) hideNameDropdown();
+        });
+    })();
 };

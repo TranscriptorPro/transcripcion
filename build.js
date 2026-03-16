@@ -20,6 +20,7 @@ const JS_FILES = [
     'src/js/config/templatesCatalog.js',
     'src/js/config/templatesCatalogPart2.js',
     'src/js/config/templatesCatalogPart3.js',
+    'src/js/config/templateCategoryRegistry.js',
     'src/js/config/templates.js',
     'src/js/config/studyTerminology.js',
     'src/js/utils/dom.js',
@@ -54,12 +55,19 @@ const JS_FILES = [
     'src/js/features/transcriptor.js',
     'src/js/features/structurerCoreUtils.js',
     'src/js/features/structurer.js',
+    'src/js/features/proSidebarSourceMode.js',
+    'src/js/features/fixedTooltips.js',
     'src/js/features/medDictionary.js',
     'src/js/features/contact.js',
     'src/js/features/diagnostic.js',
     'src/js/features/licenseCacheUtils.js',
     'src/js/features/licenseManager.js',
     'src/js/features/patientRegistry.js',
+    'src/js/features/referringDoctorRegistry.js',
+    'src/js/features/referringDoctorRegistryPanel.js',
+    'src/js/features/studyReasonHistory.js',
+    'src/js/features/studyReasonHistoryPanel.js',
+    'src/js/features/datosPanel.js',
     'src/js/features/formHandler.js',
     'src/js/features/themeManager.js',
     'src/js/features/settingsThemeUtils.js',
@@ -87,6 +95,7 @@ const JS_FILES = [
     'src/js/features/sessionAssistant.js',
     'src/js/features/outputProfiles.js',
     'src/js/features/pdfDataAccessUtils.js',
+    'src/js/features/reportContextResolver.js',
     'src/js/features/pdfPreview.js',
     'src/js/features/pdfPreviewActions.js',
     'src/js/features/pdfMakerSectionUtils.js',
@@ -231,12 +240,20 @@ async function build() {
         copyDirSync(path.join(__dirname, 'recursos'), path.join(DIST, 'recursos'));
     }
 
-    // Actualizar SW para que cachee el bundle en vez de los archivos individuales
+    // Actualizar SW para que cachee el bundle y fuerce invalidación por versión
     let sw = fs.readFileSync(path.join(DIST, 'sw.js'), 'utf8');
-    // Reemplazar lista de archivos JS/CSS individuales por los bundles
+    const swCacheName = `transcriptor-pro-${bundleName.replace('.min.js', '')}`;
+
+    // Versionar cache por build para evitar servir bundles viejos
     sw = sw.replace(
-        /const PRECACHE_URLS\s*=\s*\[[\s\S]*?\];/,
-        `const PRECACHE_URLS = [\n    './',\n    './index.html',\n    './${bundleName}',\n    './${cssBundleName}',\n    './manifest.json'\n];`
+        /const\s+CACHE_NAME\s*=\s*'[^']+';/,
+        `const CACHE_NAME   = '${swCacheName}';`
+    );
+
+    // Reemplazar app shell por bundles reales de este build
+    sw = sw.replace(
+        /const\s+APP_SHELL\s*=\s*\[[\s\S]*?\];/,
+        `const APP_SHELL = [\n    './',\n    './index.html',\n    './${bundleName}',\n    './${cssBundleName}',\n    './manifest.json',\n    './assets/icon-192.png',\n    './assets/icon-512.png'\n];`
     );
     fs.writeFileSync(path.join(DIST, 'sw.js'), sw, 'utf8');
 

@@ -1,8 +1,14 @@
 // ============ TEMPLATE CATEGORIES & HELPERS ============
 
-window.TEMPLATE_CATEGORIES = {
+if (window.TP_TEMPLATE_CATEGORY_REGISTRY && typeof window.TP_TEMPLATE_CATEGORY_REGISTRY.applyToMedicalTemplates === 'function') {
+    window.TP_TEMPLATE_CATEGORY_REGISTRY.applyToMedicalTemplates();
+}
+
+const _sharedTplCats = window.TP_TEMPLATE_CATEGORY_REGISTRY && window.TP_TEMPLATE_CATEGORY_REGISTRY.templateKeysByCategory;
+
+window.TEMPLATE_CATEGORIES = _sharedTplCats || {
     "Neumología": ["espirometria", "test_marcha", "pletismografia", "oximetria_nocturna"],
-    "Oftalmología": ["campimetria", "oct_retinal", "topografia_corneal", "fondo_ojo"],
+    "Oftalmología": ["campimetria", "oct_retinal", "topografia_corneal", "fondo_ojo", "gonioscopia"],
     "Imágenes": ["tac", "resonancia", "mamografia", "densitometria", "pet_ct", "radiografia", "ecografia_abdominal", "ecografia_renal", "ecografia_tiroidea", "ecografia_mamaria", "eco_doppler"],
     "Endoscopía": ["gastroscopia", "colonoscopia", "broncoscopia", "laringoscopia"],
     "Cardiología": ["gammagrafia_cardiaca", "holter", "mapa", "cinecoro", "ecg", "eco_stress", "ett"],

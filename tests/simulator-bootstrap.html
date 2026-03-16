@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulator Bootstrap</title>
+</head>
+<body>
+  <script>
+    (function () {
+      try {
+        var hash = String(window.location.hash || '');
+        var payloadRaw = '';
+        var target = '../index.html?simulator=gift-replica';
+
+        if (hash.startsWith('#')) hash = hash.slice(1);
+        var params = new URLSearchParams(hash);
+        payloadRaw = params.get('payload') || '';
+        target = params.get('target') || target;
+
+        if (payloadRaw) {
+          var data = JSON.parse(decodeURIComponent(payloadRaw));
+          Object.keys(data).forEach(function (k) {
+            var v = data[k];
+            if (typeof v === 'string') localStorage.setItem(k, v);
+            else localStorage.setItem(k, JSON.stringify(v));
+          });
+        }
+
+        window.location.replace(target);
+      } catch (e) {
+        document.body.textContent = 'Bootstrap error: ' + (e && e.message ? e.message : e);
+      }
+    })();
+  </script>
+</body>
+</html>

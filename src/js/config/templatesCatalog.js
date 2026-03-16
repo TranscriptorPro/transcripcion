@@ -195,11 +195,47 @@ Diagnóstico y recomendaciones.
 
 IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
     },
+    gonioscopia: {
+        name: "Gonioscopía",
+        category: "Oftalmología",
+        keywords: ["gonioscopia", "gonioscopía", "shaffer", "spaeth", "linea de schwalbe", "línea de schwalbe", "malla trabecular", "espolon escleral", "espolón escleral", "sinequias anteriores perifericas", "sinequias anteriores periféricas", "pas", "neovasos", "rubeosis", "indentacion", "indentación", "angulo camerular", "ángulo camerular"],
+        prompt: `Actúa como oftalmólogo especializado en glaucoma. Estructura este informe de gonioscopía.
+
+# INFORME DE GONIOSCOPÍA
+
+## OJO DERECHO (OD)
+Redactar 2-3 oraciones fluidas que cubran TODOS los campos obligatorios de una gonioscopía estándar. Campos obligatorios (siempre incluirlos; si no fueron dictados, usar [No especificado]):
+1. Ángulo iridocorneal: extensión visible y condición (abierto/estrecho/cerrado).
+2. Grado de Shaffer (I a IV) — SIEMPRE reportar.
+3. Estructuras angulares: línea de Schwalbe, malla trabecular, espolón escleral, banda del cuerpo ciliar.
+4. Pigmentación trabecular: grado (0 a 4+) — SIEMPRE reportar.
+5. Configuración del iris (plana, convexa, cóncava, plateau) — SIEMPRE reportar.
+6. Gonioscopía dinámica/indentación: resultado o si no se realizó.
+7. Hallazgos patológicos: sinequias anteriores periféricas (PAS), neovasos, línea de Sampaolesi.
+
+Formato ejemplo: "El ángulo iridocorneal es abierto en toda su extensión, grado Shaffer IV, con línea de Schwalbe bien definida, malla trabecular pigmentada grado 2+, espolón escleral visible y banda del cuerpo ciliar identificable. La configuración del iris es plana. Pigmentación trabecular grado 2+. Gonioscopía dinámica: ángulo se abre completamente a la indentación. No se observan sinequias anteriores periféricas, neovasos ni línea de Sampaolesi."
+
+## OJO IZQUIERDO (OI)
+Mismo formato y campos obligatorios que OD.
+
+## SISTEMA SPAETH
+Solo incluir si el médico dictó datos del sistema Spaeth. Si no se mencionó → NO incluir esta sección.
+
+## IMPRESIÓN DIAGNÓSTICA
+Síntesis clínica breve y objetiva.
+
+REGLAS (NO incluir en la salida):
+- Si dice "AO", "ambos ojos" o "bilateral" sin diferenciar OD/OI: duplicar los mismos hallazgos en ambos ojos.
+- PROHIBIDO: frases incompletas ("la configuración del iris es..."), texto condicional ("(si está reportado)"), descripciones genéricas ("Información sobre el sistema Spaeth"), muletillas ("Generalmente,", "Generally,", "En general,").
+- Cada oración: sujeto + verbo + predicado. Nunca terminar con "es..." ni con dos puntos sin contenido.
+- NO inventes datos. Si un campo obligatorio no fue dictado → [No especificado].
+- NO incluir datos identificatorios del paciente (nombre, DNI, obra social).`
+    },
 
     tac: {
         name: "TAC / Tomografía",
         category: "Imágenes",
-        keywords: ["TAC", "tomografía", "TC", "cortes axiales", "contraste", "Hounsfield"],
+        keywords: ["TAC", "tomografía", "TC", "cortes axiales", "contraste", "Hounsfield", "tomografía axial", "tomografía computarizada", "tomografía computada", "colecciones hemáticas"],
         prompt: `Actúa como radiólogo especializado. Estructura este informe de TAC:
 
 # INFORME DE TOMOGRAFÍA AXIAL COMPUTARIZADA
@@ -265,7 +301,7 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
     densitometria: {
         name: "Densitometría Ósea (DXA)",
         category: "Imágenes",
-        keywords: ["densitometría", "DXA", "T-score", "Z-score", "osteoporosis", "osteopenia", "densidad mineral ósea"],
+        keywords: ["densitometría", "DXA", "T-score", "Z-score", "osteoporosis", "osteopenia", "densidad mineral ósea", "cuello femoral", "T score", "columna lumbar"],
         prompt: `Actúa como radiólogo especializado. Estructura este informe de densitometría ósea:
 
 # INFORME DE DENSITOMETRÍA ÓSEA (DXA)
@@ -366,8 +402,8 @@ Hallazgos o s/p — incluir solo si fue evaluada
 ## CONCLUSIÓN
 Mencionar SOLO los hallazgos positivos o patológicos detectados, como párrafo fluido. No repetir datos normales.
 
-REGLA DE CONCLUSIÓN: Incluye TODOS los hallazgos patológicos o positivos — ninguno puede omitirse, aunque sea leve. No incluyas estructuras con resultado normal. Podés redactar una síntesis diagnóstica breve con terminología médica estándar derivada directamente de los hallazgos dictados. PROHIBIDO: inventar valores o datos que no estén en la transcripción. PROHIBIDO: indicar tratamientos o procedimientos concretos si el médico no los mencionó.
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si una estructura no fue evaluada ni mencionada, omití su sección o escribí s/p.`
+REGLA DE CONCLUSIÓN: Incluye TODOS los hallazgos patológicos o positivos — ninguno puede omitirse, aunque sea leve. No incluyas estructuras con resultado normal. Redactar una síntesis diagnóstica breve con terminología médica estándar derivada directamente de los hallazgos dictados. PROHIBIDO: inventar valores o datos que no estén en la transcripción. PROHIBIDO: indicar tratamientos o procedimientos concretos si el médico no los mencionó.
+IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si una estructura no fue evaluada ni mencionada, omitir su sección o marcar con [No especificado].`
     },
 
     gastroscopia: {
@@ -408,8 +444,8 @@ Biopsias tomadas (localización, número), polipectomías, otras intervenciones.
 ## CONCLUSIÓN
 Mencionar SOLO los hallazgos positivos o patológicos detectados, como párrafo fluido. No repetir datos normales.
 
-REGLA DE CONCLUSIÓN: Incluye TODOS los hallazgos patológicos o positivos — ninguno puede omitirse, aunque sea leve. No incluyas segmentos con resultado normal. Podés redactar una síntesis diagnóstica breve con terminología médica estándar derivada directamente de los hallazgos dictados. PROHIBIDO: inventar valores o datos que no estén en la transcripción. PROHIBIDO: indicar tratamientos o procedimientos concretos si el médico no los mencionó.
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si un segmento no fue evaluado ni mencionado, omití su sección o escribí s/p.`
+REGLA DE CONCLUSIÓN: Incluye TODOS los hallazgos patológicos o positivos — ninguno puede omitirse, aunque sea leve. No incluyas segmentos con resultado normal. Redactar una síntesis diagnóstica breve con terminología médica estándar derivada directamente de los hallazgos dictados. PROHIBIDO: inventar valores o datos que no estén en la transcripción. PROHIBIDO: indicar tratamientos o procedimientos concretos si el médico no los mencionó.
+IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si un segmento no fue evaluado ni mencionado, omitir su sección o marcar con [No especificado].`
     },
     colonoscopia: {
         name: "Colonoscopía",
@@ -449,8 +485,8 @@ Biopsias, polipectomías (localización, tamaño, morfología, técnica), otras 
 ## CONCLUSIÓN
 Mencionar SOLO los hallazgos positivos o patológicos detectados, como párrafo fluido. No repetir datos normales.
 
-REGLA DE CONCLUSIÓN: Incluye TODOS los hallazgos patológicos o positivos — ninguno puede omitirse, aunque sea leve. No incluyas segmentos con resultado normal. Podés redactar una síntesis diagnóstica breve con terminología médica estándar derivada directamente de los hallazgos dictados. PROHIBIDO: inventar valores o datos que no estén en la transcripción. PROHIBIDO: indicar tratamientos o procedimientos concretos si el médico no los mencionó.
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si un segmento no fue evaluado ni mencionado, omití su sección o escribí s/p.`
+REGLA DE CONCLUSIÓN: Incluye TODOS los hallazgos patológicos o positivos — ninguno puede omitirse, aunque sea leve. No incluyas segmentos con resultado normal. Redactar una síntesis diagnóstica breve con terminología médica estándar derivada directamente de los hallazgos dictados. PROHIBIDO: inventar valores o datos que no estén en la transcripción. PROHIBIDO: indicar tratamientos o procedimientos concretos si el médico no los mencionó.
+IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si un segmento no fue evaluado ni mencionado, omitir su sección o marcar con [No especificado].`
     },
     broncoscopia: {
         name: "Broncoscopía",
@@ -483,8 +519,8 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
 REGLAS OBLIGATORIAS PARA ESTE INFORME:
 - Crea una sección ## separada para CADA estructura anatómica evaluada.
 - Si una estructura fue evaluada y es normal, descríbela en prosa breve.
-- Usa s/p SOLO si una estructura NO fue mencionada ni evaluada en la transcripción.
-- En la CONCLUSIÓN: incluye ÚNICAMENTE los hallazgos positivos (patológicos o anormales). NUNCA dejar vacía ni como [No especificado].
+- Si una estructura NO fue mencionada ni evaluada en la transcripción, marcar con [No especificado].
+- En la CONCLUSIÓN: incluir ÚNICAMENTE los hallazgos positivos (patológicos o anormales). NUNCA dejar vacía ni como [No especificado].
 
 # INFORME DE LARINGOSCOPÍA
 

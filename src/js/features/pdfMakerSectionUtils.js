@@ -1,10 +1,9 @@
 window.PdfMakerSectionUtils = window.PdfMakerSectionUtils || {};
 
 window.PdfMakerSectionUtils.drawStudyInfoSection = function(ctx) {
-    const { studyType, reportNum, pDate, studyTime, refDoctor, studyReason, CW, ML, cyStart, doc, accent, ensureSpace, setBlack } = ctx;
+    const { studyType, reportNum, showReportNumber = true, pDate, studyTime, refDoctor, studyReason, CW, ML, cyStart, doc, accent, ensureSpace, setBlack } = ctx;
     const row1 = [];
-    row1.push({ label: 'ESTUDIO:', value: studyType || '—' });
-    row1.push({ label: 'INFORME Nº:', value: reportNum || '—' });
+    if (showReportNumber) row1.push({ label: 'INFORME Nº:', value: reportNum || '—' });
     row1.push({ label: 'FECHA:', value: `${pDate}${studyTime ? ' ' + studyTime : ''}` });
 
     const row2 = [];
@@ -38,7 +37,7 @@ window.PdfMakerSectionUtils.drawStudyInfoSection = function(ctx) {
     doc.setLineWidth(0.25);
     doc.roundedRect(ML, cy, CW, boxH, 1.2, 1.2, 'FD');
 
-    const col3W = innerW / 3;
+    const col3W = row1.length ? (innerW / row1.length) : innerW;
     let ry = cy + padY + 3.5;
     for (let i = 0; i < row1.length; i++) {
         const cx = ML + padX + i * col3W;
@@ -145,6 +144,16 @@ window.PdfMakerSectionUtils.drawPatientBlockSection = function(ctx) {
 
 window.PdfMakerSectionUtils.drawSignatureSection = function(ctx) {
     const { PAGE_W, MR, showSignLine, showSignName, showSignMat, profName, profDisplayName, matricula, especialidad, sigB64, doc, setBlack, setGray, mainFont, ensureSpace, cyStart } = ctx;
+    const canDrawSignatureImage = !!sigB64;
+    const canDrawSignLine = showSignLine === true;
+    const canDrawSignName = showSignName && !!profName;
+    const canDrawSignMat = showSignMat && (!!matricula || !!especialidad);
+
+    // Si no hay contenido visible en firma, no reservar espacio ni paginar.
+    if (!canDrawSignatureImage && !canDrawSignLine && !canDrawSignName && !canDrawSignMat) {
+        return cyStart;
+    }
+
     let cy = cyStart + 18;
     cy = ensureSpace(cy, 45);
 
@@ -153,22 +162,27 @@ window.PdfMakerSectionUtils.drawSignatureSection = function(ctx) {
     const sigStartX = PAGE_W - MR - sigBlockW;
     const sigCenterX = sigStartX + sigBlockW / 2;
     const lineX = sigCenterX - sigLineW / 2;
+    const signW = 40;
+    const signH = 16;
+
+    // Referencia unica: la linea de firma es el ancla.
+    // La firma siempre queda centrada respecto a esa linea y 3px por encima.
+    const lineY = cy + (sigB64 ? (signH + 3) : 0);
 
     if (sigB64) {
         try {
             const imgType = sigB64.includes('data:image/png') ? 'PNG' : 'JPEG';
             const b64data = sigB64.includes(',') ? sigB64.split(',')[1] : sigB64;
-            doc.addImage(b64data, imgType, sigCenterX - 20, cy, 40, 16);
-            cy += 16;
+            doc.addImage(b64data, imgType, sigCenterX - (signW / 2), lineY - signH - 3, signW, signH);
         } catch (_) {}
     }
     if (showSignLine) {
         doc.setDrawColor(51, 51, 51);
         doc.setLineWidth(0.4);
-        doc.line(lineX, cy, lineX + sigLineW, cy);
+        doc.line(lineX, lineY, lineX + sigLineW, lineY);
         doc.setDrawColor(0);
-        cy += 3;
     }
+    cy = lineY + 3;
     if (showSignName && profName) {
         doc.setFontSize(10);
         doc.setFont(mainFont, 'bold');

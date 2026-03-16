@@ -30,6 +30,18 @@ function _setReportHistory(arr) {
     }
 }
 
+async function _clearReportHistoryStorage() {
+    _reportHistCache = [];
+    try {
+        localStorage.setItem(REPORT_HISTORY_KEY, '[]');
+    } catch (_) { /* keep best-effort */ }
+    if (typeof appDB !== 'undefined' && appDB && typeof appDB.set === 'function') {
+        try {
+            await appDB.set(REPORT_HISTORY_KEY, []);
+        } catch (_) { /* keep best-effort */ }
+    }
+}
+
 function _isQuotaExceededError(e) {
     if (!e) return false;
     const name = String(e.name || '').toLowerCase();
@@ -67,6 +79,22 @@ window.resetReportHistoryMax = function () {
 window.saveReportToHistory = function (data) {
     if (!data || !data.htmlContent) return null;
 
+    // Limpiar HTML de elementos de UI que no deben estar en el historial almacenado
+    // (botones de revisión IA, badges de campo vacío, paneles de notas, etc.)
+    const _cleanHtml = (raw) => {
+        if (!raw || typeof document === 'undefined') return raw || '';
+        try {
+            const div = document.createElement('div');
+            div.innerHTML = raw;
+            div.querySelectorAll(
+                '.inline-review-btn, .no-data-edit-btn, .ai-note-panel, ' +
+                '#aiNotePanel, .patient-data-header, .patient-placeholder-banner, ' +
+                '.btn-append-inline, .original-text-banner, .no-print, .no-data-field'
+            ).forEach(el => el.remove());
+            return div.innerHTML;
+        } catch (_) { return raw; }
+    };
+
     const pdfConfig = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
     const patientName = data.patientName || pdfConfig.patientName || '';
     const patientDni  = data.patientDni  || pdfConfig.patientDni  || '';
@@ -84,7 +112,7 @@ window.saveReportToHistory = function (data) {
         templateName: templateName,
         date:         new Date().toISOString(),
         professionalName: data.professionalName || (pdfConfig.activeProfessional && pdfConfig.activeProfessional.nombre) || '',
-        htmlContent:  data.htmlContent,
+        htmlContent:  _cleanHtml(data.htmlContent),
         fileName:     data.fileName || 'informe',
         patientData: {
             name:         patientName,
@@ -252,6 +280,25 @@ window.getReportHistoryStats = function () {
     };
 };
 
+window.clearReportHistory = async function () {
+    await _clearReportHistoryStorage();
+
+    const reportSearchEl = document.getElementById('reportHistorySearch');
+    if (reportSearchEl) reportSearchEl.value = '';
+    const datosSearchEl = document.getElementById('dp-search-history');
+    if (datosSearchEl) datosSearchEl.value = '';
+
+    if (typeof window._refreshReportHistoryPanel === 'function') window._refreshReportHistoryPanel();
+    if (typeof window._refreshDatosPanel === 'function') window._refreshDatosPanel();
+
+    const reportViewer = document.getElementById('reportViewerOverlay');
+    if (reportViewer) reportViewer.classList.remove('active');
+    const patientReports = document.getElementById('patientReportsModal');
+    if (patientReports) patientReports.classList.remove('active');
+
+    return true;
+};
+
 // ============ UI: VISOR DE INFORME (solo lectura) ============
 window.viewReport = function (reportId) {
     const report = getReportById(reportId);
@@ -265,7 +312,7 @@ window.viewReport = function (reportId) {
     if (!overlay) {
         overlay = document.createElement('div');
         overlay.id = 'reportViewerOverlay';
-        overlay.className = 'overlay';
+        overlay.className = 'modal-overlay';
         overlay.innerHTML = `
             <div class="modal" style="max-width:900px;width:95%;max-height:92vh;display:flex;flex-direction:column;">
                 <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;border-bottom:1px solid var(--border);">
@@ -307,47 +354,54 @@ window.viewReport = function (reportId) {
 
     title.textContent = `${report.patientName || 'Sin nombre'} — ${report.templateName || report.templateKey}`;
     meta.textContent  = `${dateStr} · ${report.fileName}`;
-    // Sanitizar HTML del informe para prevenir XSS
-    content.innerHTML = typeof DOMPurify !== 'undefined'
-        ? DOMPurify.sanitize(report.htmlContent)
-        : report.htmlContent.replace(/<script[\s\S]*?<\/script>/gi, '');
+    // Sanitizar HTML del informe para prevenir XSS y eliminar íconos/botones de UI
+    const _rvCleanHtml = (raw) => {
+        if (!raw) return '';
+        try {
+            const div = document.createElement('div');
+            div.innerHTML = typeof DOMPurify !== 'undefined'
+                ? DOMPurify.sanitize(raw)
+                : raw.replace(/<script[\s\S]*?<\/script>/gi, '');
+            div.querySelectorAll(
+                '.inline-review-btn, .no-data-edit-btn, .ai-note-panel, ' +
+                '#aiNotePanel, .patient-data-header, .patient-placeholder-banner, ' +
+                '.btn-append-inline, .original-text-banner, .no-print, .no-data-field'
+            ).forEach(el => el.remove());
+            return div.innerHTML;
+        } catch (_) { return raw; }
+    };
+    content.innerHTML = _rvCleanHtml(report.htmlContent);
 
     // Botón re-exportar PDF
     const btnReExport = document.getElementById('btnReExportPdf');
     btnReExport.onclick = async () => {
-        if (typeof downloadPDFWrapper !== 'function') {
-            if (typeof showToast === 'function') showToast('Motor PDF no disponible', 'error');
+        const htmlDoc = String(report.htmlContent || '').trim();
+        if (!htmlDoc) {
+            if (typeof showToast === 'function') showToast('No hay contenido para re-exportar', 'error');
             return;
         }
-        // Cargar temporalmente los datos del paciente para el PDF
-        const pdfConfig = (typeof appDB !== 'undefined' ? await appDB.get('pdf_config') : null)
-            || window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
-        const origConfig = { ...pdfConfig };
 
-        if (report.patientData) {
-            if (report.patientData.name)    pdfConfig.patientName         = report.patientData.name;
-            if (report.patientData.dni)     pdfConfig.patientDni          = report.patientData.dni;
-            if (report.patientData.age)     pdfConfig.patientAge          = report.patientData.age;
-            if (report.patientData.sex)     pdfConfig.patientSex          = report.patientData.sex;
-            if (report.patientData.insurance)    pdfConfig.patientInsurance    = report.patientData.insurance;
-            if (report.patientData.affiliateNum) pdfConfig.patientAffiliateNum = report.patientData.affiliateNum;
-            window._pdfConfigCache = pdfConfig;
-            if (typeof appDB !== 'undefined') appDB.set('pdf_config', pdfConfig);
-            else localStorage.setItem('pdf_config', JSON.stringify(pdfConfig));
+        const printWin = window.open('', '_blank');
+        if (!printWin) {
+            if (typeof showToast === 'function') {
+                showToast('El navegador bloqueo la ventana de impresion. Permiti popups para exportar PDF exacto.', 'error');
+            }
+            return;
         }
 
-        try {
-            const fecha = new Date(report.date).toLocaleDateString('es-ES');
-            const fDate = report.date.split('T')[0];
-            window._skipReportSave = true; // evitar guardar duplicado al re-exportar
-            await downloadPDFWrapper(report.htmlContent, report.fileName + '_copia', fecha, fDate);
-            if (typeof showToast === 'function') showToast('PDF re-exportado ✓', 'success');
-        } finally {
-            window._skipReportSave = false;
-            // Restaurar config original
-            window._pdfConfigCache = origConfig;
-            if (typeof appDB !== 'undefined') appDB.set('pdf_config', origConfig);
-            else localStorage.setItem('pdf_config', JSON.stringify(origConfig));
+        printWin.document.open();
+        printWin.document.write(htmlDoc);
+        printWin.document.close();
+
+        setTimeout(() => {
+            try {
+                printWin.focus();
+                printWin.print();
+            } catch (_) {}
+        }, 300);
+
+        if (typeof showToast === 'function') {
+            showToast('Vista de impresion exacta abierta. Elegi "Guardar como PDF".', 'info');
         }
     };
 
@@ -498,8 +552,7 @@ window.initReportHistoryPanel = function () {
         const ok = await window.showCustomConfirm('🗑️ Limpiar historial', `¿Eliminar TODOS los informes del historial? (${stats.total} informes)\n\nEsta acción no se puede deshacer. Recomendamos exportar antes.`);
         if (!ok) return;
         try {
-            _setReportHistory([]);
-            renderTable();
+            await window.clearReportHistory();
             if (typeof showToast === 'function') showToast('Historial limpiado', 'info');
         } catch (e) {
             if (typeof showToast === 'function') showToast('No se pudo limpiar historial: ' + (e && e.message ? e.message : 'error de almacenamiento'), 'error');
@@ -520,7 +573,7 @@ window.viewPatientReportHistory = function (patientName, patientDni) {
     if (!modal) {
         modal = document.createElement('div');
         modal.id = 'patientReportsModal';
-        modal.className = 'overlay';
+        modal.className = 'modal-overlay';
         modal.innerHTML = `
             <div class="modal" style="max-width:650px;width:90%;">
                 <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;border-bottom:1px solid var(--border);">

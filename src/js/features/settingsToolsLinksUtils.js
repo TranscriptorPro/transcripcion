@@ -9,8 +9,12 @@
         const repopulateAndOpenSettings = opts.repopulateAndOpenSettings;
 
         const historyBtn = document.getElementById('settingsOpenHistory');
+        const patientRegistryBtn = document.getElementById('settingsOpenPatientRegistry');
+        const doctorRegistryBtn = document.getElementById('settingsOpenDoctorRegistry');
+        const reasonHistoryBtn = document.getElementById('settingsOpenReasonHistory');
         const dictBtn = document.getElementById('settingsOpenDictionary');
         const shortcutsBtn = document.getElementById('settingsOpenShortcuts');
+        const paymentsBtn = document.getElementById('settingsOpenPaymentsPortal');
         const overlay = document.getElementById('settingsModalOverlay');
 
         const reopenSettings = () => {
@@ -22,10 +26,43 @@
         if (historyBtn) {
             historyBtn.addEventListener('click', () => {
                 if (overlay) overlay.classList.remove('active');
-                const histOverlay = document.getElementById('reportHistoryOverlay');
-                if (histOverlay) {
-                    histOverlay.classList.add('active');
-                    if (typeof watchForClose === 'function') watchForClose(histOverlay, reopenSettings);
+                if (typeof window.openDatosPanel === 'function') {
+                    window.openDatosPanel('history');
+                    const dp = document.getElementById('datosPanelOverlay');
+                    if (dp && typeof watchForClose === 'function') watchForClose(dp, reopenSettings);
+                }
+            });
+        }
+
+        if (patientRegistryBtn) {
+            patientRegistryBtn.addEventListener('click', () => {
+                if (overlay) overlay.classList.remove('active');
+                if (typeof window.openDatosPanel === 'function') {
+                    window.openDatosPanel('patients');
+                    const dp = document.getElementById('datosPanelOverlay');
+                    if (dp && typeof watchForClose === 'function') watchForClose(dp, reopenSettings);
+                }
+            });
+        }
+
+        if (doctorRegistryBtn) {
+            doctorRegistryBtn.addEventListener('click', () => {
+                if (overlay) overlay.classList.remove('active');
+                if (typeof window.openDatosPanel === 'function') {
+                    window.openDatosPanel('doctors');
+                    const dp = document.getElementById('datosPanelOverlay');
+                    if (dp && typeof watchForClose === 'function') watchForClose(dp, reopenSettings);
+                }
+            });
+        }
+
+        if (reasonHistoryBtn) {
+            reasonHistoryBtn.addEventListener('click', () => {
+                if (overlay) overlay.classList.remove('active');
+                if (typeof window.openDatosPanel === 'function') {
+                    window.openDatosPanel('reasons');
+                    const dp = document.getElementById('datosPanelOverlay');
+                    if (dp && typeof watchForClose === 'function') watchForClose(dp, reopenSettings);
                 }
             });
         }
@@ -60,6 +97,55 @@
                     helpModal.classList.add('active');
                     if (typeof watchForClose === 'function') watchForClose(helpModal, reopenSettings);
                 }
+            });
+        }
+
+        if (paymentsBtn) {
+            paymentsBtn.addEventListener('click', () => {
+                if (overlay) overlay.classList.remove('active');
+
+                const medicoId = (window.CLIENT_CONFIG && window.CLIENT_CONFIG.medicoId)
+                    ? String(window.CLIENT_CONFIG.medicoId)
+                    : '';
+                if (!medicoId) {
+                    if (typeof showToast === 'function') showToast('No se encontró ID de médico para abrir pagos.', 'warning');
+                    return;
+                }
+
+                const configuredPortal = (window.CLIENT_CONFIG && window.CLIENT_CONFIG.paymentPortalUrl)
+                    ? String(window.CLIENT_CONFIG.paymentPortalUrl).trim()
+                    : '';
+                const fallbackPortal = (function () {
+                    const rawPath = String(window.location.pathname || '');
+                    const basePath = rawPath.replace(/index\.html?$/i, '');
+                    return window.location.origin + basePath + 'recursos/registro.html';
+                })();
+                const portalBase = configuredPortal || fallbackPortal;
+                const portalUrl = portalBase + '?id=' + encodeURIComponent(medicoId);
+
+                const pOverlay = document.getElementById('paymentsPortalOverlay');
+                const pFrame = document.getElementById('paymentsPortalFrame');
+                const pClose = document.getElementById('paymentsPortalCloseBtn');
+                const pNewTab = document.getElementById('paymentsPortalOpenNewTab');
+                if (!pOverlay || !pFrame || !pClose || !pNewTab) {
+                    window.open(portalUrl, '_blank');
+                    return;
+                }
+
+                pFrame.src = portalUrl;
+                pOverlay.style.display = 'block';
+
+                const closePortal = () => {
+                    pOverlay.style.display = 'none';
+                    pFrame.src = '';
+                    reopenSettings();
+                };
+
+                pClose.onclick = closePortal;
+                pOverlay.onclick = (ev) => {
+                    if (ev.target === pOverlay) closePortal();
+                };
+                pNewTab.onclick = () => window.open(portalUrl, '_blank');
             });
         }
     }

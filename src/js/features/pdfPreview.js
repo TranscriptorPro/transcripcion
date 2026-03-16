@@ -45,20 +45,341 @@ async function _pdfPreviewSafeGet(key, fallback) {
     }
 }
 
+async function _pdfPreviewSaveRaw(key, value) {
+    try {
+        if (typeof appDB !== 'undefined' && appDB && typeof appDB.set === 'function') {
+            await appDB.set(key, value);
+        }
+    } catch (_) { /* ignore */ }
+    try {
+        localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
+    } catch (_) { /* ignore */ }
+}
+
+async function _pdfPreviewSaveJson(key, value) {
+    try {
+        if (typeof appDB !== 'undefined' && appDB && typeof appDB.set === 'function') {
+            await appDB.set(key, value);
+        }
+    } catch (_) { /* ignore */ }
+    try {
+        localStorage.setItem(key, JSON.stringify(value));
+    } catch (_) { /* ignore */ }
+}
+
+function _pdfReadImageAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+        if (!file) return resolve('');
+        if (!/^image\//i.test(file.type || '')) return reject(new Error('Archivo invalido'));
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result || ''));
+        r.onerror = () => reject(new Error('No se pudo leer la imagen'));
+        r.readAsDataURL(file);
+    });
+}
+
+function _uniqDataUrls(list) {
+    const out = [];
+    (Array.isArray(list) ? list : []).forEach((v) => {
+        const s = String(v || '');
+        if (!s.startsWith('data:image/')) return;
+        if (!out.includes(s)) out.push(s);
+    });
+    return out;
+}
+
+function _assetOptionButton(src, selected, onClick) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-sm';
+    btn.style.cssText = 'padding:4px;border:1px solid ' + (selected ? 'var(--primary,#1a56a0)' : 'var(--border,#cbd5e1)') + ';background:' + (selected ? 'var(--primary-soft,#eff6ff)' : 'var(--bg-card,#fff)') + ';';
+    btn.title = selected ? 'Seleccionado' : 'Seleccionar';
+    btn.innerHTML = `<img src="${src}" alt="Asset" style="height:34px;width:auto;display:block;">`;
+    btn.addEventListener('click', onClick);
+    return btn;
+}
+
+function _resolveActiveIndexes(cfg) {
+    const wpSel = document.getElementById('pdfWorkplace');
+    const proSel = document.getElementById('pdfProfessional');
+    const wpValue = wpSel?.value;
+    const proValue = proSel?.value;
+    const wpIndex = (wpValue !== undefined && wpValue !== null && String(wpValue).trim() !== '' && Number.isFinite(Number(wpValue)))
+        ? Number(wpValue)
+        : Number(cfg.activeWorkplaceIndex);
+    const proIndex = (proValue !== undefined && proValue !== null && String(proValue).trim() !== '' && Number.isFinite(Number(proValue)))
+        ? Number(proValue)
+        : Number(cfg.activeProfessionalIndex);
+    return { wpIndex, proIndex };
+}
+
+async function _selectInstitutionLogo(dataUrl) {
+    const cfg = window._pdfConfigCache || (await _pdfPreviewSafeGet('pdf_config', {})) || {};
+    const { wpIndex } = _resolveActiveIndexes(cfg);
+    if (Number.isNaN(wpIndex)) {
+        if (typeof showToast === 'function') showToast('Selecciona un lugar de trabajo para elegir su logo', 'warning');
+        return false;
+    }
+
+    const profiles = (await _pdfPreviewSafeGet('workplace_profiles', [])) || [];
+    const wp = profiles[wpIndex];
+    if (!wp) {
+        if (typeof showToast === 'function') showToast('No se encontro el lugar de trabajo seleccionado', 'error');
+        return false;
+    }
+
+    wp.logoOptions = _uniqDataUrls([...(wp.logoOptions || []), wp.logo, dataUrl]);
+    wp.logo = dataUrl;
+    cfg.activeWorkplaceIndex = String(wpIndex);
+    window._pdfConfigCache = cfg;
+
+    await _pdfPreviewSaveJson('workplace_profiles', profiles);
+    await _pdfPreviewSaveJson('pdf_config', cfg);
+    await _pdfPreviewSaveRaw('pdf_logo', dataUrl);
+    await _refreshAssetSelectors();
+    return true;
+}
+
+async function _addInstitutionLogo(dataUrl) {
+    return _selectInstitutionLogo(dataUrl);
+}
+
+async function _selectProfessionalAsset(kind, dataUrl) {
+    const isSign = kind === 'firma';
+    const optionsKey = isSign ? 'firmaOptions' : 'logoOptions';
+    const cfg = window._pdfConfigCache || (await _pdfPreviewSafeGet('pdf_config', {})) || {};
+    const { wpIndex, proIndex } = _resolveActiveIndexes(cfg);
+
+    const profiles = (await _pdfPreviewSafeGet('workplace_profiles', [])) || [];
+    const wp = !Number.isNaN(wpIndex) ? profiles?.[wpIndex] : null;
+    const prof = (wp && !Number.isNaN(proIndex)) ? wp?.professionals?.[proIndex] : null;
+
+    // Si existe profesional en workplace_profiles, persistir allí.
+    // Si no existe (ej. setup sin profesional seleccionado), usar fallback en pdf_config.activeProfessional.
+    if (prof) {
+        prof[optionsKey] = _uniqDataUrls([...(prof[optionsKey] || []), prof[kind], dataUrl]);
+        prof[kind] = dataUrl;
+        await _pdfPreviewSaveJson('workplace_profiles', profiles);
+        cfg.activeWorkplaceIndex = String(wpIndex);
+        cfg.activeProfessionalIndex = String(proIndex);
+    }
+
+    const currentActive = (cfg.activeProfessional && typeof cfg.activeProfessional === 'object')
+        ? cfg.activeProfessional
+        : {};
+    const mergedOptions = _uniqDataUrls([...(currentActive[optionsKey] || []), currentActive[kind], dataUrl]);
+    cfg.activeProfessional = {
+        ...currentActive,
+        [optionsKey]: mergedOptions,
+        [kind]: dataUrl,
+        logo: (prof?.logo || currentActive.logo || (kind === 'logo' ? dataUrl : '')),
+        firma: (prof?.firma || currentActive.firma || (kind === 'firma' ? dataUrl : ''))
+    };
+
+    window._pdfConfigCache = cfg;
+    await _pdfPreviewSaveJson('pdf_config', cfg);
+
+    if (isSign) await _pdfPreviewSaveRaw('pdf_signature', dataUrl);
+    else await _pdfPreviewSaveRaw('pdf_logo', dataUrl);
+
+    await _refreshAssetSelectors();
+    return true;
+}
+
+async function _addProfessionalAsset(kind, dataUrl) {
+    return _selectProfessionalAsset(kind, dataUrl);
+}
+
+async function _refreshAssetSelectors() {
+    const cfg = window._pdfConfigCache || (await _pdfPreviewSafeGet('pdf_config', {})) || {};
+    const profiles = (await _pdfPreviewSafeGet('workplace_profiles', [])) || [];
+    const { wpIndex, proIndex } = _resolveActiveIndexes(cfg);
+
+    const wp = !Number.isNaN(wpIndex) ? profiles[wpIndex] : null;
+    const prof = (wp && !Number.isNaN(proIndex)) ? wp?.professionals?.[proIndex] : null;
+    const activeProFallback = (cfg.activeProfessional && typeof cfg.activeProfessional === 'object')
+        ? cfg.activeProfessional
+        : null;
+
+    const instCurrent = String(wp?.logo || '').startsWith('data:image/') ? wp.logo : '';
+    const instOptions = _uniqDataUrls([...(wp?.logoOptions || []), instCurrent]);
+    const instPreview = document.getElementById('pdfLogoPreview');
+    if (instPreview) {
+        instPreview.innerHTML = instCurrent
+            ? `<img src="${instCurrent}" alt="Logo institucional" style="max-height:80px;">`
+            : '<span style="color:var(--text-secondary);font-size:0.8rem;">Sin logo institucional</span>';
+    }
+    const instOptionsEl = document.getElementById('pdfInstLogoOptions');
+    if (instOptionsEl) {
+        instOptionsEl.innerHTML = '';
+        instOptions.forEach((src) => {
+            instOptionsEl.appendChild(_assetOptionButton(src, src === instCurrent, () => { _selectInstitutionLogo(src); }));
+        });
+    }
+
+    const profCurrentRaw = prof?.logo || activeProFallback?.logo || '';
+    const profCurrent = String(profCurrentRaw).startsWith('data:image/') ? profCurrentRaw : '';
+    const profOptions = _uniqDataUrls([...(prof?.logoOptions || []), ...(activeProFallback?.logoOptions || []), profCurrent]);
+    const profPreview = document.getElementById('pdfProfLogoPreview');
+    if (profPreview) {
+        profPreview.innerHTML = profCurrent
+            ? `<img src="${profCurrent}" alt="Logo profesional" style="max-height:70px;">`
+            : '<span style="color:var(--text-secondary);font-size:0.8rem;">Sin logo profesional</span>';
+    }
+    const profOptionsEl = document.getElementById('pdfProfLogoOptions');
+    if (profOptionsEl) {
+        profOptionsEl.innerHTML = '';
+        profOptions.forEach((src) => {
+            profOptionsEl.appendChild(_assetOptionButton(src, src === profCurrent, () => { _selectProfessionalAsset('logo', src); }));
+        });
+    }
+
+    const sigCurrentRaw = prof?.firma || activeProFallback?.firma || '';
+    const sigCurrent = String(sigCurrentRaw).startsWith('data:image/') ? sigCurrentRaw : '';
+    const sigOptions = _uniqDataUrls([...(prof?.firmaOptions || []), ...(activeProFallback?.firmaOptions || []), sigCurrent]);
+    const sigPreview = document.getElementById('pdfSignaturePreview');
+    if (sigPreview) {
+        sigPreview.innerHTML = sigCurrent
+            ? `<img src="${sigCurrent}" alt="Firma" style="max-height:70px;">`
+            : '<span style="color:var(--text-secondary);font-size:0.8rem;">Sin firma digital</span>';
+    }
+    const sigOptionsEl = document.getElementById('pdfSignatureOptions');
+    if (sigOptionsEl) {
+        sigOptionsEl.innerHTML = '';
+        sigOptions.forEach((src) => {
+            sigOptionsEl.appendChild(_assetOptionButton(src, src === sigCurrent, () => { _selectProfessionalAsset('firma', src); }));
+        });
+    }
+}
+
+function _initPdfAssetReplacementHandlers() {
+    if (window._pdfAssetReplaceHandlersBound) return;
+    window._pdfAssetReplaceHandlersBound = true;
+
+    const bindPicker = (btnId, inputId, onFile) => {
+        const btn = document.getElementById(btnId);
+        const input = document.getElementById(inputId);
+        if (!btn || !input) return;
+        btn.addEventListener('click', () => input.click());
+        input.addEventListener('change', async (e) => {
+            const file = e.target?.files?.[0];
+            if (!file) return;
+            try {
+                const dataUrl = await _pdfReadImageAsDataUrl(file);
+                if (!dataUrl.startsWith('data:image/')) throw new Error('Formato no valido');
+                const ok = await onFile(dataUrl);
+                if (ok && typeof showToast === 'function') showToast('Archivo reemplazado correctamente', 'success');
+            } catch (err) {
+                if (typeof showToast === 'function') showToast(String(err?.message || 'No se pudo reemplazar el archivo'), 'error');
+            } finally {
+                input.value = '';
+            }
+        });
+    };
+
+    bindPicker('btnReplaceInstLogo', 'pdfInstLogoUpload', _addInstitutionLogo);
+    bindPicker('btnReplaceProfLogo', 'pdfProfLogoUpload', (d) => _addProfessionalAsset('logo', d));
+    bindPicker('btnReplaceSignature', 'pdfSignUpload', (d) => _addProfessionalAsset('firma', d));
+
+    const wpSel = document.getElementById('pdfWorkplace');
+    if (wpSel) wpSel.addEventListener('change', () => { setTimeout(() => { _refreshAssetSelectors(); }, 80); });
+    const proSel = document.getElementById('pdfProfessional');
+    if (proSel) proSel.addEventListener('change', () => { setTimeout(() => { _refreshAssetSelectors(); }, 80); });
+}
+
+function _stripAccentsForCompare(text) {
+    return String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function _isGenericStudyType(text) {
+    const n = _stripAccentsForCompare(text).toLowerCase().trim();
+    return n === ''
+        || n === 'informe medico general'
+        || n === 'informe medico'
+        || n === 'informe general'
+        || n === 'informe generico'
+        || n === 'generico'
+        || n === 'general';
+}
+
+function _extractStudyTypeFromEditorHeading(editorEl) {
+    if (!editorEl) return '';
+    const probe = document.createElement('div');
+    probe.innerHTML = editorEl.innerHTML || '';
+    const heading = probe.querySelector('h1, h2, h3');
+    if (!heading) return '';
+    const raw = String(heading.textContent || '').trim();
+    const m = raw.match(/^INFORME\s+DE\s+(.+)$/i);
+    if (m && m[1]) return m[1].trim();
+    return '';
+}
+
+function _ensurePdfFormatToggles() {
+    const mkLabel = (id, text, checked) => {
+        const label = document.createElement('label');
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.id = id;
+        if (checked) input.checked = true;
+        label.appendChild(input);
+        label.appendChild(document.createTextNode(' ' + text));
+        return label;
+    };
+
+    const showHeaderEl = document.getElementById('pdfShowHeader');
+    const showQREl = document.getElementById('pdfShowQR');
+
+    if (showHeaderEl && !document.getElementById('pdfHideReportHeader')) {
+        const host = showHeaderEl.closest('label')?.parentElement;
+        const anchor = showHeaderEl.closest('label');
+        if (host && anchor) {
+            const newLabel = mkLabel(
+                'pdfHideReportHeader',
+                'Excluir encabezado de lugar de trabajo (en todas las páginas, solo usuarios persona)',
+                false
+            );
+            if (anchor.nextSibling) host.insertBefore(newLabel, anchor.nextSibling);
+            else host.appendChild(newLabel);
+        }
+    }
+
+    if (showQREl && !document.getElementById('pdfShowReportNumber')) {
+        const host = showQREl.closest('label')?.parentElement;
+        const anchor = showQREl.closest('label');
+        if (host && anchor) {
+            const newLabel = mkLabel('pdfShowReportNumber', 'Mostrar número de informe', true);
+            if (anchor.nextSibling) host.insertBefore(newLabel, anchor.nextSibling);
+            else host.appendChild(newLabel);
+        }
+    }
+}
+
+function _isClinicProfile() {
+    const type = String(window.CLIENT_CONFIG?.type || '').toUpperCase();
+    const planCode = String(window.CLIENT_CONFIG?.planCode || '').toUpperCase();
+    return type === 'CLINIC' || planCode === 'CLINIC';
+}
+
 window.openPdfConfigModal = async function () {
-    if (typeof loadPdfConfiguration === 'function') loadPdfConfiguration();
+    _ensurePdfFormatToggles();
+    _initPdfAssetReplacementHandlers();
+    if (typeof loadPdfConfiguration === 'function') await loadPdfConfiguration();
     const dataUtils = window.PdfDataAccessUtils || {};
     const safeGet = (typeof dataUtils.safeGet === 'function') ? dataUtils.safeGet : async (_k, fallback) => fallback;
+    const config = window._pdfConfigCache || (await safeGet('pdf_config', {})) || {};
 
     const profData = (await safeGet('prof_data', {})) || {};
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+    const normName = (v) => (typeof window.normalizeFieldText === 'function')
+        ? window.normalizeFieldText(String(v || ''), 'name')
+        : String(v || '');
     const isAdmin = typeof isAdminUser === 'function' && isAdminUser();
     const isPro = window.currentMode === 'pro';
 
-    set('pdfProfName', profData.nombre);
+    set('pdfProfName', normName(profData.nombre));
     set('pdfProfMatricula', profData.matricula);
     const specs = Array.isArray(profData.specialties) ? profData.specialties.join(' / ') : (profData.especialidad || '');
-    set('pdfProfEspecialidad', specs);
+    set('pdfProfEspecialidad', normName(specs));
 
     if (isAdmin) {
         ['pdfProfName', 'pdfProfMatricula', 'pdfProfEspecialidad'].forEach(id => {
@@ -67,6 +388,15 @@ window.openPdfConfigModal = async function () {
                 el.readOnly = false; el.disabled = false;
                 el.style.backgroundColor = '';
                 el.closest('.field-group')?.classList.remove('locked');
+            }
+        });
+    } else {
+        ['pdfProfName', 'pdfProfMatricula', 'pdfProfEspecialidad'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.readOnly = true;
+                el.disabled = true;
+                el.closest('.field-group')?.classList.add('locked');
             }
         });
     }
@@ -83,8 +413,11 @@ window.openPdfConfigModal = async function () {
         if (previewBar) previewBar.style.background = savedColor;
     }
 
+    const canManageWorkplaces = isPro || isAdmin;
     const btnAdd = document.getElementById('btnAddWorkplace');
-    if (btnAdd) btnAdd.style.display = isPro ? '' : 'none';
+    if (btnAdd) btnAdd.style.display = canManageWorkplaces ? '' : 'none';
+    const btnEdit = document.getElementById('btnEditWorkplace');
+    if (btnEdit) btnEdit.style.display = canManageWorkplaces ? '' : 'none';
 
     const detailsPanel = document.getElementById('workplaceDetailsPanel');
     if (detailsPanel) detailsPanel.style.display = 'none';
@@ -160,14 +493,21 @@ window.openPdfConfigModal = async function () {
     if (reportNumEl && !reportNumEl.value && typeof generateReportNumber === 'function') {
         reportNumEl.value = generateReportNumber();
     }
+    // Persistir el número de informe (auto-generado o existente) en el config cache
+    // para que TODOS los pipelines (captura DOM, createHTML fallback, email) lo vean.
+    if (reportNumEl && reportNumEl.value && config && !config.reportNum) {
+        config.reportNum = reportNumEl.value;
+        window._pdfConfigCache = config;
+        try {
+            localStorage.setItem('pdf_config', JSON.stringify(config));
+            if (typeof appDB !== 'undefined' && appDB && typeof appDB.set === 'function') {
+                appDB.set('pdf_config', config).catch(() => {});
+            }
+        } catch (_) {}
+    }
     const studyDateEl = document.getElementById('pdfStudyDate');
     if (studyDateEl && !studyDateEl.value) {
         studyDateEl.value = new Date().toISOString().split('T')[0];
-    }
-    const studyTimeEl = document.getElementById('pdfStudyTime');
-    if (studyTimeEl && !studyTimeEl.value) {
-        const now = new Date();
-        studyTimeEl.value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     }
 
     updatePdfModalByMode();
@@ -178,9 +518,9 @@ window.openPdfConfigModal = async function () {
     const pdfCfgRestore = (await safeGet('pdf_config', {})) || {};
     const activeProRestore = pdfCfgRestore.activeProfessional;
     if (activeProRestore) {
-        set('pdfProfName',        activeProRestore.nombre        || '');
+        set('pdfProfName',        normName(activeProRestore.nombre || ''));
         set('pdfProfMatricula',   activeProRestore.matricula     || '');
-        set('pdfProfEspecialidad',activeProRestore.especialidades|| '');
+        set('pdfProfEspecialidad',normName(activeProRestore.especialidades || ''));
     }
     const restoredWpIdx  = pdfCfgRestore.activeWorkplaceIndex;
     const restoredProIdx = pdfCfgRestore.activeProfessionalIndex;
@@ -199,7 +539,20 @@ window.openPdfConfigModal = async function () {
     }
 
     const showSignImageChk = document.getElementById('pdfShowSignImage');
-    if (showSignImageChk) showSignImageChk.checked = pdfCfgRestore.showSignImage ?? false;
+    if (showSignImageChk) showSignImageChk.checked = pdfCfgRestore.showSignImage ?? true;
+    const showInstLogoChk = document.getElementById('pdfShowInstLogo');
+    if (showInstLogoChk) showInstLogoChk.checked = pdfCfgRestore.showInstLogo ?? true;
+    const showProfLogoChk = document.getElementById('pdfShowProfLogo');
+    if (showProfLogoChk) showProfLogoChk.checked = pdfCfgRestore.showProfLogo ?? true;
+    const showReportNumChk = document.getElementById('pdfShowReportNumber');
+    if (showReportNumChk) showReportNumChk.checked = pdfCfgRestore.showReportNumber !== false;
+    const hideHeaderChk = document.getElementById('pdfHideReportHeader');
+    if (hideHeaderChk) {
+        const isClinic = _isClinicProfile();
+        hideHeaderChk.checked = !isClinic && (pdfCfgRestore.hideReportHeader === true);
+        hideHeaderChk.disabled = isClinic;
+        hideHeaderChk.title = isClinic ? 'Esta opción solo aplica a usuarios persona' : '';
+    }
 
     // No se oculta globalmente aquí porque el panel entero ya está oculto
 
@@ -211,6 +564,8 @@ window.openPdfConfigModal = async function () {
         }
     }
 
+    await _refreshAssetSelectors();
+
     document.getElementById('pdfModalOverlay')?.classList.add('active');
 }
 
@@ -221,6 +576,18 @@ window.openPrintPreview = async function () {
     // Priorizar _pdfConfigCache (actualizado en memoria de forma síncrona por el botón Previsualizar)
     // para que los cambios del formulario sean visibles ANTES de guardar en IndexedDB
     const config   = window._pdfConfigCache || (await safeGet('pdf_config', {})) || {};
+    const resolvedCtx = (typeof window.resolveReportContext === 'function')
+        ? await window.resolveReportContext({ includeEditorExtract: true, includeFormFallback: true })
+        : null;
+
+    // Check de robustez para debugging: confirma datos clave usados por preview.
+    console.log('[PDFPreview] Datos fuente:', {
+        hasProfName: !!((config.activeProfessional && config.activeProfessional.nombre) || (await safeGet('prof_data', {}))?.nombre),
+        hasMatricula: !!((config.activeProfessional && config.activeProfessional.matricula) || (await safeGet('prof_data', {}))?.matricula),
+        hasFirma: !!(await safeGet('pdf_signature', '')),
+        hasLogo: !!(await safeGet('pdf_logo', '')),
+        hasFooterText: !!(config.footerText || '')
+    });
 
     const esc = (t) => t != null ? String(t)
         .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
@@ -234,29 +601,42 @@ window.openPrintPreview = async function () {
 
     // Datos del profesional (profesional activo tiene prioridad)
     const activePro      = config.activeProfessional || null;
-    const profName       = escName(activePro?.nombre     || profData.nombre) || 'Profesional Médico';
-    const matricula      = esc(activePro?.matricula  || profData.matricula || '');
+    const rawProfName    = activePro?.nombre || profData.nombre || '';
+    const profDisplayObj = (typeof window.getProfessionalDisplay === 'function')
+        ? window.getProfessionalDisplay(rawProfName, activePro?.sexo || profData.sexo || '')
+        : {
+            fullName: (String(rawProfName || '').trim() || 'Profesional Médico'),
+            name: (String(rawProfName || '').trim() || 'Profesional Médico'),
+            title: 'Dr.'
+        };
+    const profName       = escName(profDisplayObj.fullName) || 'Profesional Médico';
+    const profDisplayTitle = profDisplayObj.title || 'Dr.';
+    const matriculaRaw   = String(activePro?.matricula || profData.matricula || '');
+    const matricula      = esc((typeof window.normalizeMatriculaDisplay === 'function')
+        ? window.normalizeMatriculaDisplay(matriculaRaw)
+        : matriculaRaw);
     const especialidadRaw = activePro?.especialidades
         || (Array.isArray(profData.specialties)
             ? profData.specialties.filter(s => s && s !== 'Todas').join(' / ')
             : (profData.especialidad || ''));
     const especialidad    = escSentence(especialidadRaw);
     const especialidadDisplay = esc((especialidadRaw || '').replace(/^ALL$/i, '').replace(/^General$/i, 'Medicina General').trim());
-    // Detectar título Dr./Dra. del nombre del profesional
-    const _rawNameStr = activePro?.nombre || profData.nombre || '';
-    const _titleMatch = _rawNameStr.match(/^(Dra?\.?\.?\s*)/i);
-    const profSexo = activePro?.sexo || profData.sexo || '';
-    const profDisplayTitle = profSexo === 'F' ? 'Dra.' : profSexo === 'M' ? 'Dr.' :
-        (_titleMatch ? (_titleMatch[1].trim().toLowerCase().startsWith('dra') ? 'Dra.' : 'Dr.') : 'Dr.');
-    const profDisplayName = escName(_rawNameStr.replace(/^(Dra?\.?\s*)/i, '').trim()) || profName;
-    // Contacto del profesional
+    const profDisplayName = escName(profDisplayObj.name || rawProfName || 'Profesional Médico');
+    const profDisplayFullName = escName(profDisplayObj.fullName || `${profDisplayTitle} ${profDisplayName}`);
+    // Contacto del profesional (con fallback socialMedia para clones)
+    const sm = (activePro?.socialMedia && typeof activePro.socialMedia === 'object')
+        ? activePro.socialMedia
+        : ((profData?.socialMedia && typeof profData.socialMedia === 'object') ? profData.socialMedia : {});
     const pvTelefono  = esc(activePro?.telefono  || profData.telefono  || '');
     const pvEmail     = esc(activePro?.email     || profData.email     || '');
-    const pvWhatsapp  = esc(activePro?.whatsapp  || '');
-    const pvInstagram = esc(activePro?.instagram || '');
-    const pvFacebook  = esc(activePro?.facebook  || '');
-    const pvXSocial   = esc(activePro?.x         || '');
-    const pvYoutube   = esc(activePro?.youtube   || '');
+    const pvWhatsapp  = esc(activePro?.whatsapp  || profData.whatsapp  || sm.whatsapp  || sm.WhatsApp  || '');
+    const pvInstagram = esc(activePro?.instagram || profData.instagram || sm.instagram || sm.Instagram || '');
+    const pvFacebook  = esc(activePro?.facebook  || profData.facebook  || sm.facebook  || sm.Facebook  || '');
+    const pvXSocial   = esc(activePro?.x         || profData.x         || sm.x || sm.X || sm.twitter || sm.Twitter || '');
+    const pvYoutube   = esc(activePro?.youtube   || profData.youtube   || sm.youtube   || sm.YouTube   || '');
+    const showPhone   = (activePro?.showPhone ?? config.showPhone ?? true) !== false;
+    const showEmail   = (activePro?.showEmail ?? config.showEmail ?? true) !== false;
+    const showSocial  = (activePro?.showSocial ?? config.showSocial ?? false) === true;
     const profLogoSize = config.logoSizePx || parseInt(localStorage.getItem('prof_logo_size_px') || '60');
     const firmaSize   = config.firmaSizePx || parseInt(localStorage.getItem('firma_size_px') || '60');
     const instLogoSize = config.instLogoSizePx || parseInt(localStorage.getItem('inst_logo_size_px') || '60');
@@ -287,29 +667,48 @@ window.openPrintPreview = async function () {
 
     // Preferir: 1) extraído del audio → 2) guardado en pdf_config → 3) formulario req* en pantalla
     // Normalización: nombres→name, cobertura→UPPER, resto→sentence
-    const patientName     = escName(extracted.name || config.patientName || formPatient.name || '');
-    const patientDni      = esc(extracted.dni   || config.patientDni   || formPatient.dni      || '');
-    const patientAge      = esc(extracted.age   || config.patientAge   || formPatient.age      || '');
-    const rawSex          = extracted.sex || config.patientSex || formPatient.sex || '';
+    const patientName     = escName((resolvedCtx && resolvedCtx.patientName) || extracted.name || config.patientName || formPatient.name || '');
+    const patientDni      = esc((resolvedCtx && resolvedCtx.patientDni) || extracted.dni || config.patientDni || formPatient.dni || '');
+    const patientAge      = esc((resolvedCtx && resolvedCtx.patientAge) || extracted.age || config.patientAge || formPatient.age || '');
+    const rawSex          = (resolvedCtx && resolvedCtx.patientSex) || extracted.sex || config.patientSex || formPatient.sex || '';
     const patientSex      = rawSex === 'M' ? 'Masculino' : rawSex === 'F' ? 'Femenino' : escName(rawSex);
-    const patientInsurance = escUpper(config.patientInsurance || formPatient.insurance || '');
-    const affiliateNum = esc(config.patientAffiliateNum || reqVal('reqPatientAffiliateNum') || reqVal('pdfPatientAffiliateNum') || '');
+    const patientInsurance = escUpper((resolvedCtx && resolvedCtx.patientInsurance) || config.patientInsurance || formPatient.insurance || '');
+    const affiliateNum = esc((resolvedCtx && resolvedCtx.patientAffiliateNum) || config.patientAffiliateNum || reqVal('reqPatientAffiliateNum') || reqVal('pdfPatientAffiliateNum') || '');
 
     // Datos del estudio (fallback: plantilla detectada → nombre de plantilla seleccionada)
     const tplKey = window.selectedTemplate || config.selectedTemplate || '';
     const tplName = (tplKey && window.MEDICAL_TEMPLATES?.[tplKey]?.name) || '';
-    const studyType    = escSentence(config.studyType || tplName || '');
-    const rawDate      = config.studyDate || '';
-    const studyDate    = rawDate
-        ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'})
-        : new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'});
-    const studyReason  = escSentence(config.studyReason || '');
-    const refDoctor    = escName(config.referringDoctor || '');
-    const reportNum    = esc(document.getElementById('pdfReportNumber')?.value || config.reportNum || '');
-    const footerText   = esc(config.footerText || 'Este informe es válido únicamente con la firma del profesional a cargo.');
+    const headingStudyType = _extractStudyTypeFromEditorHeading(editorEl);
+    const baseStudyType = config.studyType || document.getElementById('reqStudyType')?.value || tplName || '';
+    const effectiveStudyType = (resolvedCtx && resolvedCtx.studyType)
+        ? resolvedCtx.studyType
+        : ((_isGenericStudyType(baseStudyType) && headingStudyType)
+            ? headingStudyType
+            : baseStudyType);
+    const studyType    = escSentence(effectiveStudyType);
+    const showStudyDate = resolvedCtx ? resolvedCtx.showStudyDate : ((document.getElementById('reqShowStudyDate')?.checked ?? config.showStudyDate ?? true) !== false);
+    const studyDate    = resolvedCtx
+        ? (resolvedCtx.studyDateDisplay || '')
+        : ((config.studyDate || document.getElementById('reqStudyDate')?.value || '')
+            ? new Date((config.studyDate || document.getElementById('reqStudyDate')?.value || '') + 'T12:00').toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'})
+            : '');
+    const studyReason  = escSentence((resolvedCtx && resolvedCtx.studyReason) || config.studyReason || document.getElementById('reqStudyReason')?.value || '');
+    const _rawRefDoctor = String((resolvedCtx && resolvedCtx.referringDoctorRaw) || config.referringDoctor || document.getElementById('reqReferringDoctor')?.value || '')
+        .replace(/^\s*(?:dr\.?|dra\.?)\s+/i, '')
+        .trim();
+    const refDoctor    = (resolvedCtx && resolvedCtx.referringDoctorDisplay)
+        ? escName(resolvedCtx.referringDoctorDisplay)
+        : (_rawRefDoctor ? escName('Dr./a ' + _rawRefDoctor) : '');
+    const reportNum    = esc((resolvedCtx && resolvedCtx.reportNum) || document.getElementById('pdfReportNumber')?.value || config.reportNum || '');
+    const showReportNumber = (config.showReportNumber ?? true) === true;
+    const hideReportHeader = resolvedCtx ? !!resolvedCtx.hideReportHeader : (!_isClinicProfile() && (config.hideReportHeader === true));
+    const footerText   = esc((resolvedCtx && resolvedCtx.footerText) || config.footerText || 'Este informe es válido únicamente con la firma del profesional a cargo.');
     const wkAddr       = esc(config.workplaceAddress || activeWp?.address || '');
     const wkPhone      = esc(config.workplacePhone   || activeWp?.phone || '');
-    const studyTime    = esc(document.getElementById('pdfStudyTime')?.value || config.studyTime || '');
+    const showStudyTime = resolvedCtx ? resolvedCtx.showStudyTime : ((document.getElementById('reqShowStudyTime')?.checked ?? config.showStudyTime ?? true) !== false);
+    const studyTime    = showStudyTime
+        ? esc((resolvedCtx && resolvedCtx.studyTime) || document.getElementById('reqStudyTime')?.value || document.getElementById('pdfStudyTime')?.value || config.studyTime || '')
+        : '';
     const showSignLine = config.showSignLine ?? true;
     const showSignName = config.showSignName ?? true;
     const showSignMat  = config.showSignMatricula ?? true;
@@ -322,7 +721,9 @@ window.openPrintPreview = async function () {
     const sigSrc  = (activePro?.firma && activePro.firma.startsWith('data:')) ? activePro.firma : ((await safeGet('pdf_signature', '')) || '');
     const hasInstLogo = !!(instLogoSrc && instLogoSrc.startsWith('data:image/'));
     const hasProfLogo = !!(profLogoSrc && profLogoSrc.startsWith('data:image/'));
-    const hasLogo = hasInstLogo; // alias para compat. interna
+    const showInstLogo = (config.showInstLogo ?? true) === true;
+    const showProfLogo = (config.showProfLogo ?? true) === true;
+    const hasLogo = showInstLogo && hasInstLogo; // alias para compat. interna
     const hasSig  = !!(sigSrc && sigSrc.startsWith('data:image/'));
 
     // Aplicar color de acento a la página
@@ -349,12 +750,16 @@ window.openPrintPreview = async function () {
 
     const wpHeaderEl = document.getElementById('previewWorkplace');
     if (wpHeaderEl) {
+        if (hideReportHeader) {
+            wpHeaderEl.innerHTML = '';
+            wpHeaderEl.style.display = 'none';
+        } else {
         const hasWpData = wpName || wkAddr || wkPhone || wpEmail;
         if (hasWpData) {
             wpHeaderEl.style.display = '';
             let wpHtml = '<div class="pvw-block">';
             // Logo institucional (a la izquierda del nombre de la institución)
-            if (hasInstLogo) wpHtml += `<img class="pvw-logo" src="${instLogoSrc}" alt="Logo" style="max-height:${instLogoSize}px;width:auto;object-fit:contain;border:none;border-radius:0;background:transparent;box-shadow:none;">`;
+            if (showInstLogo && hasInstLogo) wpHtml += `<img class="pvw-logo" src="${instLogoSrc}" alt="Logo" style="max-height:${instLogoSize}px;width:auto;object-fit:contain;border:none;border-radius:0;background:transparent;box-shadow:none;">`;
             wpHtml += '<div class="pvw-text">';
             if (wpName)  wpHtml += `<div class="pvw-name">${wpName}</div>`;
             const wpDetails = [wkAddr, wkPhone ? 'Tel: ' + wkPhone : '', wpEmail].filter(Boolean);
@@ -365,10 +770,15 @@ window.openPrintPreview = async function () {
             wpHeaderEl.innerHTML = '';
             wpHeaderEl.style.display = 'none';
         }
+        }
     }
 
     const headerEl = document.getElementById('previewHeader');
     if (headerEl) {
+        if (hideReportHeader) {
+            headerEl.innerHTML = '';
+            headerEl.style.display = 'none';
+        } else {
         // Ocultar encabezado si es ADMIN sin profesional activo configurado
         const isAdminWithoutProf = (!activePro || !activePro.nombre) &&
             (!profData.nombre || profData.nombre === 'Administrador' || profData.nombre === 'Admin');
@@ -383,20 +793,20 @@ window.openPrintPreview = async function () {
             const pvBadgesHtml = pvEspArr.map(s => `<span class="pvh-badge">${esc(s)}</span>`).join('');
             // Contact right column
             const pvCItems = [];
-            if (pvTelefono)  pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#9742;</span>${pvTelefono}</div>`);
-            if (pvEmail)     pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#9993;</span>${pvEmail}</div>`);
-            if (pvWhatsapp)  pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#128241;</span>${pvWhatsapp}</div>`);
-            if (pvInstagram) pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">@</span>${pvInstagram}</div>`);
-            if (pvFacebook)  pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">f</span>${pvFacebook}</div>`);
-            if (pvXSocial)   pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#120143;</span>${pvXSocial}</div>`);
-            if (pvYoutube)   pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#9654;</span>${pvYoutube}</div>`);
+            if (showPhone && pvTelefono)  pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#9742;</span>${pvTelefono}</div>`);
+            if (showEmail && pvEmail)     pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#9993;</span>${pvEmail}</div>`);
+            if (showSocial && pvWhatsapp)  pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#128241;</span>${pvWhatsapp}</div>`);
+            if (showSocial && pvInstagram) pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">@</span>${pvInstagram}</div>`);
+            if (showSocial && pvFacebook)  pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">f</span>${pvFacebook}</div>`);
+            if (showSocial && pvXSocial)   pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#120143;</span>${pvXSocial}</div>`);
+            if (showSocial && pvYoutube)   pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#9654;</span>${pvYoutube}</div>`);
             const pvContactHtml = pvCItems.length ? `<div class="pvh-contact">${pvCItems.join('')}</div>` : '';
             headerEl.innerHTML = `
                 <div class="pvh-body" style="display:flex;align-items:center;gap:12px;">
-                    ${hasProfLogo ? `<img src="${profLogoSrc}" alt="Logo Prof" style="height:40px;max-height:40px;width:auto;object-fit:contain;flex-shrink:0;background:transparent;border:none;border-radius:0;">` : ''}
+                    ${(showProfLogo && hasProfLogo) ? `<img src="${profLogoSrc}" alt="Logo Prof" style="height:40px;max-height:40px;width:auto;object-fit:contain;flex-shrink:0;background:transparent;border:none;border-radius:0;">` : ''}
                     <div class="pvh-info" style="flex:1;min-width:0;">
                         <div>
-                            <span class="pvh-name">Estudio realizado por: ${profDisplayTitle} ${profDisplayName}</span>
+                            <span class="pvh-name">Estudio realizado por: ${profDisplayFullName}</span>
                         </div>
                         ${pvBadgesHtml ? `<div class="pvh-badges">${pvBadgesHtml}</div>` : ''}
                         ${matricula ? `<div class="pvh-mat">Mat. ${matricula}</div>` : ''}
@@ -404,6 +814,7 @@ window.openPrintPreview = async function () {
                     ${pvContactHtml}
                 </div>`;
         }
+            }
     }
 
     const patientEl = document.getElementById('previewPatient');
@@ -428,16 +839,19 @@ window.openPrintPreview = async function () {
     const studyEl = document.getElementById('previewStudy');
     if (studyEl) {
         const studyTitle = (studyType && String(studyType).trim()) ? `INFORME DE ${studyType}` : 'INFORME MEDICO';
-        // Fila 1: Estudio | Informe Nº | Fecha
+        // Fila 1: Informe Nº | Fecha
         // Fila 2: Solicitante | Motivo
         let row1 = '';
-        row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">ESTUDIO:</span><span class="pvs-val">${studyType || '—'}</span></div>`;
-        row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">INFORME Nº:</span><span class="pvs-val">${reportNum || '—'}</span></div>`;
-        row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">FECHA:</span><span class="pvs-val">${studyDate}${studyTime ? ' ' + studyTime : ''}</span></div>`;
+        if (showReportNumber) {
+            row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">INFORME Nº:</span><span class="pvs-val">${reportNum || '—'}</span></div>`;
+        }
+        if (showStudyDate && (studyDate || studyTime)) {
+            row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">FECHA:</span><span class="pvs-val">${studyDate}${studyTime ? ' ' + studyTime + ' hs.' : ''}</span></div>`;
+        }
         let row2 = '';
         if (refDoctor)   row2 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">SOLICITANTE:</span><span class="pvs-val">${refDoctor}</span></div>`;
         if (studyReason) row2 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">MOTIVO:</span><span class="pvs-val">${studyReason}</span></div>`;
-        studyEl.innerHTML = `<div style="text-align:center;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--primary,#1a56a0);font-size:13pt;border-bottom:2px solid var(--primary,#1a56a0);padding-bottom:4px;margin:2px 0 10px;">${studyTitle}</div><div class="pvs-grid pvs-3col">${row1}</div>`
+        studyEl.innerHTML = `<div style="text-align:center;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--pa,#1a56a0);font-size:13pt;border-bottom:2px solid var(--pa,#1a56a0);padding-bottom:4px;margin:2px 0 10px;">${studyTitle}</div><div class="pvs-grid pvs-3col">${row1}</div>`
             + (row2 ? `<div class="pvs-grid pvs-2col">${row2}</div>` : '');
     }
 
@@ -445,9 +859,15 @@ window.openPrintPreview = async function () {
     if (contentEl) {
         contentEl.innerHTML = editorEl ? editorEl.innerHTML : '';
         // Eliminar elementos de UI que no deben aparecer en la vista previa
-        contentEl.querySelectorAll('.patient-data-header, .patient-placeholder-banner, .btn-append-inline, .original-text-banner, .no-print, .ai-note-panel, #aiNotePanel').forEach(el => {
+        contentEl.querySelectorAll('.patient-data-header, .patient-placeholder-banner, .btn-append-inline, .original-text-banner, .no-print, .ai-note-panel, .inline-review-btn, #aiNotePanel').forEach(el => {
             el.remove();
         });
+        // Evitar doble título: si el contenido arranca con "INFORME DE ...",
+        // ese heading se reemplaza por el encabezado principal de la vista previa.
+        const firstEl = contentEl.firstElementChild;
+        if (firstEl && /^H[1-3]$/i.test(firstEl.tagName) && /^\s*INFORME\s+DE\b/i.test(firstEl.textContent || '')) {
+            firstEl.remove();
+        }
         // Eliminar campos vacíos [No especificado] completamente
         contentEl.querySelectorAll('.no-data-field').forEach(el => {
             el.remove();
@@ -470,7 +890,7 @@ window.openPrintPreview = async function () {
             // Imagen de firma va ENCIMA de la línea
             if (showSignImage && hasSig) sigHtml += `<img src="${sigSrc}" class="pvsig-img" alt="Firma" style="max-height:${firmaSize}px;">`;
             if (showSignLine) sigHtml += `<div class="pvsig-line"></div>`;
-            if (showSignName && profName) sigHtml += `<div class="pvsig-name">${profDisplayTitle} ${profDisplayName}</div>`;
+            if (showSignName && profName) sigHtml += `<div class="pvsig-name">${profDisplayFullName}</div>`;
             if (showSignMat  && matricula) sigHtml += `<div class="pvsig-mat">Mat. ${matricula}</div>`;
             if (especialidad) sigHtml += `<div class="pvsig-spec">${especialidad}</div>`;
             sigHtml += '</div>';
@@ -482,7 +902,9 @@ window.openPrintPreview = async function () {
     if (footerEl) {
         const parts = [];
         if (footerText) parts.push(`<span>${footerText}</span>`);
-        if (config.showDate) parts.push(`<span>Impreso: ${new Date().toLocaleDateString('es-ES')}</span>`);
+        if (resolvedCtx ? resolvedCtx.showDateInFooter : !!config.showDate) {
+            parts.push(`<span>Impreso: ${new Date().toLocaleDateString('es-ES')}</span>`);
+        }
         // Número de página real: calculado después de renderizar
         if (config.showPageNum) parts.push(`<span class="pvf-pagenum" style="margin-left:auto;">Página 1</span>`);
         footerEl.innerHTML = parts.length ? `<div class="pvf-wrap">${parts.join('')}</div>` : '';
@@ -496,7 +918,7 @@ window.openPrintPreview = async function () {
             // Construir texto de verificación con datos del informe
             const qrParts = [
                 'TPRO-VERIFY',
-                `ID:${reportNum || 'TPRO-' + Date.now()}`,
+                `ID:${(showReportNumber && reportNum) ? reportNum : 'TPRO-' + Date.now()}`,
                 `Fecha:${new Date().toLocaleDateString('es-ES')}`,
                 profName ? `Prof:${profName}` : '',
                 matricula ? `Mat:${matricula}` : '',
@@ -524,7 +946,46 @@ window.openPrintPreview = async function () {
         const pageNumEl = document.querySelector('.pvf-pagenum');
         const pageHeightMM = 297;
         const onePagePx = pageHeightMM * (96 / 25.4); // ~1122px
-        const totalPages = Math.max(1, Math.ceil((pageEl?.scrollHeight || 0) / onePagePx));
+
+        // Estimación más fiel: contar páginas por bloques de contenido reales,
+        // evitando falsos "Página 1 de 2" por redondeos de scrollHeight.
+        const contentEl = document.getElementById('previewContent');
+        const footerEl = document.getElementById('previewFooter');
+        const sigEl = document.getElementById('previewSignature');
+        const wpHeaderEl = document.getElementById('previewWorkplace');
+
+        const headerZoneH = contentEl ? contentEl.offsetTop : 0;
+        const footerZoneH = (footerEl?.offsetHeight || 0) + (sigEl?.offsetHeight || 0) + 40;
+        const firstPageContentH = Math.max(120, onePagePx - headerZoneH - footerZoneH);
+        const repeatedHeaderH = (wpHeaderEl?.offsetHeight || 0) + 20;
+        const nextPageContentH = Math.max(120, onePagePx - repeatedHeaderH - footerZoneH);
+
+        let totalPages = 1;
+        if (contentEl) {
+            const children = Array.from(contentEl.children).filter(ch => !ch.classList.contains('pv-pagebreak-marker'));
+            if (children.length > 0) {
+                let used = 0;
+                let currentCap = firstPageContentH;
+                let pageIdx = 1;
+                for (const child of children) {
+                    const styles = getComputedStyle(child);
+                    const childH = child.offsetHeight
+                        + parseInt(styles.marginTop || 0, 10)
+                        + parseInt(styles.marginBottom || 0, 10);
+
+                    if (used > 0 && used + childH > currentCap) {
+                        pageIdx++;
+                        used = childH;
+                        currentCap = nextPageContentH;
+                    } else {
+                        used += childH;
+                    }
+                }
+                totalPages = Math.max(1, pageIdx);
+            }
+        } else {
+            totalPages = Math.max(1, Math.ceil((pageEl?.scrollHeight || 0) / onePagePx));
+        }
 
         if (pageNumEl) {
             pageNumEl.textContent = totalPages > 1 ? `Página 1 de ${totalPages}` : 'Página 1 de 1';
@@ -537,22 +998,12 @@ window.openPrintPreview = async function () {
             pageEl.querySelectorAll('.pv-pagebreak-marker').forEach(m => m.remove());
 
             // Solo repetir el workplace banner (no el header profesional)
-            const wpHeaderEl = document.getElementById('previewWorkplace');
             const wpCloneHtml = wpHeaderEl && wpHeaderEl.style.display !== 'none' ? wpHeaderEl.outerHTML : '';
 
             // Insertar marcadores en el contenido en las posiciones de salto
-            const contentEl = document.getElementById('previewContent');
             if (contentEl) {
                 // Calcular la altura disponible para contenido en la primera página
-                const headerZoneH = contentEl.offsetTop; // todo lo que hay antes del contenido
-                const footerEl = document.getElementById('previewFooter');
-                const sigEl = document.getElementById('previewSignature');
-                const footerZoneH = (footerEl?.offsetHeight || 0) + (sigEl?.offsetHeight || 0) + 40;
-
-                const firstPageContentH = onePagePx - headerZoneH - footerZoneH;
-                // Páginas siguientes: solo workplace banner se repite (~50px aprox) + footer
-                const repeatedHeaderH = (wpHeaderEl?.offsetHeight || 0) + 20;
-                const nextPageContentH = onePagePx - repeatedHeaderH - footerZoneH;
+                // Reusar capacidades calculadas arriba para mantener consistencia.
 
                 let accumulatedH = 0;
                 let currentPageBreakAt = firstPageContentH;

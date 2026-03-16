@@ -53,7 +53,9 @@ window.showBlocker = function (msg, isContactRequired) {
 window.updateApiStatus = function (apiKey) {
     // If no argument was passed, read from window or localStorage instead of assuming no key
     if (apiKey === undefined) {
-        apiKey = window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '';
+        apiKey = (typeof window.getResolvedGroqApiKey === 'function')
+            ? window.getResolvedGroqApiKey()
+            : (window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '');
     }
 
     const apiStatus = document.getElementById('apiStatus');
@@ -122,6 +124,9 @@ window.handleApiKeyBannerAction = function () {
 
 // ============ MODALS & INTERFACE ============
 window.initModals = function () {
+    if (window._uiModalsInitialized === true) return;
+    window._uiModalsInitialized = true;
+
     const helpModal = document.getElementById('helpModal');
     const helpBtn = document.getElementById('helpBtn');
     const closeHelp = document.getElementById('closeHelp');
@@ -142,12 +147,31 @@ window.initModals = function () {
 
     // Workplace Modal — abrir
     document.getElementById('btnAddWorkplace')?.addEventListener('click', () => {
-        document.getElementById('workplaceModalOverlay')?.classList.add('active');
+        if (typeof window.openWorkplaceModalForCreate === 'function') {
+            window.openWorkplaceModalForCreate();
+        } else {
+            document.getElementById('workplaceModalOverlay')?.classList.add('active');
+        }
+    });
+
+    // Workplace Modal — editar lugar seleccionado
+    document.getElementById('btnEditWorkplace')?.addEventListener('click', () => {
+        const wpIdx = document.getElementById('pdfWorkplace')?.value;
+        if (wpIdx === '' || wpIdx == null) {
+            if (typeof showToast === 'function') showToast('Seleccioná un lugar primero', 'warning');
+            return;
+        }
+        if (typeof window.openWorkplaceModalForEdit === 'function') {
+            window.openWorkplaceModalForEdit(wpIdx);
+        }
     });
 
     // Workplace Modal — cerrar (X en header Y botón Cancelar en footer)
     const closeWorkplaceModal = () =>
+    {
         document.getElementById('workplaceModalOverlay')?.classList.remove('active');
+        if (typeof window.resetWorkplaceModalForm === 'function') window.resetWorkplaceModalForm();
+    };
     document.getElementById('btnCancelWorkplace')?.addEventListener('click', closeWorkplaceModal);
     document.getElementById('btnCancelWorkplaceBtn')?.addEventListener('click', closeWorkplaceModal);
     // Cerrar al click fuera del modal
@@ -168,6 +192,7 @@ window.initModals = function () {
     const closePdfConfig = document.getElementById('closePdfConfig');
     const btnClosePdfConfig = document.getElementById('btnClosePdfConfig');
     const btnSavePdfConfig = document.getElementById('btnSavePdfConfig');
+    const btnRestorePdfDefaults = document.getElementById('btnRestorePdfDefaults');
     const btnPreviewFromConfig = document.getElementById('btnPreviewFromConfig');
 
     const closePdfConfigModal = () => pdfModalOverlay?.classList.remove('active');
@@ -245,27 +270,6 @@ window.initModals = function () {
         });
     }
 
-    // Logo: registrar listener de carga de imagen (firma se configura en clones)
-    if (typeof handleImageUpload === 'function') {
-        handleImageUpload('pdfLogoUpload',      'pdfLogoPreview',      'pdf_logo');
-    }
-
-    // Sliders de tamaño de logo y firma — label en vivo
-    const logoSizeSlider = document.getElementById('pdfLogoSize');
-    const firmaSizeSlider = document.getElementById('pdfFirmaSize');
-    if (logoSizeSlider) {
-        logoSizeSlider.addEventListener('input', () => {
-            const lbl = document.getElementById('logoSizeValue');
-            if (lbl) lbl.textContent = logoSizeSlider.value;
-        });
-    }
-    if (firmaSizeSlider) {
-        firmaSizeSlider.addEventListener('input', () => {
-            const lbl = document.getElementById('firmaSizeValue');
-            if (lbl) lbl.textContent = firmaSizeSlider.value;
-        });
-    }
-
     if (btnSavePdfConfig) {
         btnSavePdfConfig.addEventListener('click', () => {
             if (typeof savePdfConfiguration === 'function') savePdfConfiguration();
@@ -301,6 +305,46 @@ window.initModals = function () {
         });
     }
 
+    if (btnRestorePdfDefaults) {
+        btnRestorePdfDefaults.addEventListener('click', () => {
+            const setVal = (id, value) => {
+                const el = document.getElementById(id);
+                if (el) el.value = value;
+            };
+            const setChk = (id, value = true) => {
+                const el = document.getElementById(id);
+                if (el) el.checked = !!value;
+            };
+
+            // Valores recomendados del panel Formato
+            setVal('pdfPageSize', 'a4');
+            setVal('pdfOrientation', 'portrait');
+            setVal('pdfMargins', 'normal');
+            setVal('pdfFont', 'helvetica');
+            setVal('pdfFontSize', '11');
+            setVal('pdfLineSpacing', '1.15');
+
+            // Checkboxes ON por defecto (incluye logos y firma)
+            setChk('pdfShowHeader', true);
+            setChk('pdfHideReportHeader', false);
+            setChk('pdfShowFooter', true);
+            setChk('pdfShowPageNum', true);
+            setChk('pdfShowDate', true);
+            setChk('pdfShowQR', false);
+            setChk('pdfShowReportNumber', true);
+            setChk('pdfShowInstLogo', true);
+            setChk('pdfShowProfLogo', true);
+            setChk('pdfShowSignLine', true);
+            setChk('pdfShowSignName', true);
+            setChk('pdfShowSignMatricula', true);
+            setChk('pdfShowSignImage', true);
+
+            if (typeof savePdfConfiguration === 'function') savePdfConfiguration();
+            if (typeof showToast === 'function') showToast('↺ Valores recomendados restaurados', 'success');
+            if (typeof updateConfigTrafficLight === 'function') updateConfigTrafficLight();
+        });
+    }
+
     if (btnPreviewFromConfig) {
         btnPreviewFromConfig.addEventListener('click', () => {
             // Save config silently before opening preview — preservando datos del profesional activo
@@ -308,45 +352,80 @@ window.initModals = function () {
                 const existing = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
                 const val = (id) => document.getElementById(id)?.value || '';
                 const chk = (id, def) => document.getElementById(id)?.checked ?? def;
+                const normName = (v) => (typeof window.normalizeFieldText === 'function')
+                    ? window.normalizeFieldText(String(v || ''), 'name')
+                    : String(v || '');
                 const config = {
-                    studyType: val('pdfStudyType'), studyDate: val('pdfStudyDate'),
-                    reportNum: val('pdfReportNumber'),
-                    studyTime: val('pdfStudyTime'), studyReason: val('pdfStudyReason'),
-                    referringDoctor: val('pdfReferringDoctor'), equipment: val('pdfEquipment'),
-                    technique: val('pdfTechnique'), patientName: val('pdfPatientName'),
+                    studyType: val('pdfStudyType') || existing.studyType || '',
+                    studyDate: val('pdfStudyDate') || existing.studyDate || '',
+                    showStudyDate: document.getElementById('reqShowStudyDate')?.checked ?? existing.showStudyDate ?? true,
+                    reportNum: val('pdfReportNumber') || existing.reportNum || '',
+                    studyTime: val('pdfStudyTime') || existing.studyTime || '',
+                    studyReason: val('pdfStudyReason') || existing.studyReason || '',
+                    referringDoctor: val('pdfReferringDoctor') || existing.referringDoctor || '',
+                    equipment: val('pdfEquipment') || existing.equipment || '',
+                    technique: val('pdfTechnique') || existing.technique || '',
+                    patientName: val('pdfPatientName'),
                     patientDni: val('pdfPatientDni'), patientAge: val('pdfPatientAge'),
                     patientSex: val('pdfPatientSex'), patientInsurance: val('pdfPatientInsurance'),
                     patientAffiliateNum: val('pdfPatientAffiliateNum'), patientPhone: val('pdfPatientPhone'),
                     patientBirthdate: val('pdfPatientBirthdate'), pageSize: val('pdfPageSize') || 'a4',
                     orientation: val('pdfOrientation') || 'portrait', margins: val('pdfMargins') || 'normal',
                     font: val('pdfFont') || 'helvetica', fontSize: val('pdfFontSize') || '11',
-                    lineSpacing: val('pdfLineSpacing') || '1.5',
+                    lineSpacing: val('pdfLineSpacing') || '1.15',
                     showHeader: chk('pdfShowHeader', true), showFooter: chk('pdfShowFooter', true),
-                    showPageNum: chk('pdfShowPageNum', true), showDate: chk('pdfShowDate', false),
-                    showQR: chk('pdfShowQR', false), showSignLine: chk('pdfShowSignLine', true),
+                    hideReportHeader: chk('pdfHideReportHeader', false),
+                    showPageNum: chk('pdfShowPageNum', true), showDate: chk('pdfShowDate', true),
+                    showQR: chk('pdfShowQR', false), showReportNumber: chk('pdfShowReportNumber', true), showInstLogo: chk('pdfShowInstLogo', true), showProfLogo: chk('pdfShowProfLogo', true), showSignLine: chk('pdfShowSignLine', true),
                     showSignName: chk('pdfShowSignName', true), showSignMatricula: chk('pdfShowSignMatricula', true),
-                    showSignImage: chk('pdfShowSignImage', false),
-                    showPhone: chk('pdfShowPhone', true), showEmail: chk('pdfShowEmail', true), showSocial: chk('pdfShowSocial', false),
-                    logoSizePx: parseInt(document.getElementById('pdfLogoSize')?.value || '60'),
-                    firmaSizePx: parseInt(document.getElementById('pdfFirmaSize')?.value || '60'),
+                    showSignImage: chk('pdfShowSignImage', true),
+                    showPhone: chk('pdfShowPhone', true), showEmail: chk('pdfShowEmail', true), showSocial: chk('pdfShowSocial', true),
                     footerText: val('pdfFooterText'), selectedWorkplace: val('pdfWorkplace'),
-                    workplaceAddress: val('pdfWorkplaceAddress'), workplacePhone: val('pdfWorkplacePhone'),
+                    workplaceAddress: normName(val('pdfWorkplaceAddress')), workplacePhone: val('pdfWorkplacePhone'),
                     workplaceEmail: val('pdfWorkplaceEmail')
                 };
+                if (existing.logoSizePx !== undefined) config.logoSizePx = existing.logoSizePx;
+                if (existing.firmaSizePx !== undefined) config.firmaSizePx = existing.firmaSizePx;
                 // Preservar campos de profesional activo (seteados por business.js)
                 if (existing.activeProfessional)                       config.activeProfessional      = existing.activeProfessional;
                 if (existing.activeProfessionalIndex !== undefined)     config.activeProfessionalIndex = existing.activeProfessionalIndex;
                 if (existing.activeWorkplaceIndex    !== undefined)     config.activeWorkplaceIndex    = existing.activeWorkplaceIndex;
-                if (config.activeProfessional && typeof config.activeProfessional === 'object') {
-                    const pName = (val('pdfProfName') || '').trim();
-                    const pMat = (val('pdfProfMatricula') || '').trim();
-                    const pEsp = (val('pdfProfEspecialidad') || '').trim();
-                    const cEl = document.getElementById('pdfHeaderColor');
-                    const hColor = cEl?.dataset?.selectedColor || cEl?.value || '';
-                    if (pName) config.activeProfessional.nombre = pName;
-                    if (pMat) config.activeProfessional.matricula = pMat;
-                    if (pEsp) config.activeProfessional.especialidades = pEsp;
-                    if (hColor) config.activeProfessional.headerColor = hColor;
+
+                // El workplace elegido en el modal debe ser el que vea la vista previa.
+                if (config.selectedWorkplace !== undefined && config.selectedWorkplace !== null && String(config.selectedWorkplace) !== '') {
+                    config.activeWorkplaceIndex = String(config.selectedWorkplace);
+                } else {
+                    delete config.activeWorkplaceIndex;
+                }
+
+                // Sincronizar datos visibles de profesional aunque no exista activo previo.
+                const pName = normName((val('pdfProfName') || '').trim());
+                const pMat = (val('pdfProfMatricula') || '').trim();
+                const pEsp = normName((val('pdfProfEspecialidad') || '').trim());
+                const cEl = document.getElementById('pdfHeaderColor');
+                const hColor = cEl?.dataset?.selectedColor || cEl?.value || '';
+                const hasAnyProfField = !!(pName || pMat || pEsp || hColor);
+                if (hasAnyProfField) {
+                    const mergedPro = (config.activeProfessional && typeof config.activeProfessional === 'object')
+                        ? { ...config.activeProfessional }
+                        : {};
+                    if (pName) mergedPro.nombre = pName;
+                    if (pMat) mergedPro.matricula = pMat;
+                    if (pEsp) mergedPro.especialidades = pEsp;
+                    if (hColor) mergedPro.headerColor = hColor;
+                    config.activeProfessional = mergedPro;
+                }
+
+                // Si es ADMIN, persistir también en prof_data para que al reabrir modal conserve matrícula/especialidad.
+                if (typeof isAdminUser === 'function' && isAdminUser()) {
+                    const profD = window._profDataCache || JSON.parse(localStorage.getItem('prof_data') || '{}');
+                    if (pName) profD.nombre = pName;
+                    if (pMat) profD.matricula = pMat;
+                    if (pEsp) profD.especialidad = pEsp;
+                    if (hColor) profD.headerColor = hColor;
+                    window._profDataCache = profD;
+                    if (typeof appDB !== 'undefined') appDB.set('prof_data', profD);
+                    localStorage.setItem('prof_data', JSON.stringify(profD));
                 }
                 window._pdfConfigCache = config;
                 if (typeof appDB !== 'undefined') appDB.set('pdf_config', config);
@@ -376,12 +455,12 @@ window.initModals = function () {
 
     if (btnDownloadFromPreview) {
         btnDownloadFromPreview.addEventListener('click', async () => {
-            // Si el plan no permite PDF, descargar TXT en su lugar
+            // Si el plan no permite PDF, descargar RTF en su lugar
             if (btnDownloadFromPreview._forceTxt) {
-                if (typeof window.downloadTXT === 'function') {
-                    window.downloadTXT();
+                if (typeof window.downloadRTF === 'function') {
+                    window.downloadRTF();
                 } else {
-                    if (typeof showToast === 'function') showToast('Formato TXT no disponible', 'info');
+                    if (typeof showToast === 'function') showToast('Formato no disponible', 'info');
                 }
                 return;
             }
@@ -390,13 +469,31 @@ window.initModals = function () {
                 if (typeof showToast === 'function') showToast('No hay contenido en el editor', 'error');
                 return;
             }
-            if (typeof downloadPDFWrapper === 'function') {
-                const safeT = typeof transcriptions !== 'undefined' ? transcriptions : [];
-                const safeI = typeof activeTabIndex !== 'undefined' ? activeTabIndex : 0;
-                const fName = (safeT[safeI]?.fileName || 'informe').replace(/\.[^/.]+$/, '');
-                const fecha = new Date().toLocaleDateString('es-ES');
-                const fDate = new Date().toISOString().split('T')[0];
-                await downloadPDFWrapper(editorEl.innerHTML, fName, fecha, fDate);
+            try {
+                // Priorizar flujo unificado principal.
+                if (typeof window.downloadFile === 'function') {
+                    await window.downloadFile('pdf');
+                    return;
+                }
+
+                // Fallback directo al generador PDF.
+                if (typeof window.downloadPDFWrapper === 'function') {
+                    const safeT = typeof transcriptions !== 'undefined' ? transcriptions : [];
+                    const safeI = typeof activeTabIndex !== 'undefined' ? activeTabIndex : 0;
+                    const fName = (safeT[safeI]?.fileName || 'informe').replace(/\.[^/.]+$/, '');
+                    const fecha = new Date().toLocaleDateString('es-ES');
+                    const fDate = new Date().toISOString().split('T')[0];
+                    await window.downloadPDFWrapper(editorEl.innerHTML, fName, fecha, fDate);
+                    return;
+                }
+
+                if (typeof showToast === 'function') showToast('No se encontró el módulo de descarga PDF', 'error');
+            } catch (err) {
+                console.error('Error descargando PDF desde vista previa:', err);
+                const detail = String(err?.message || '').trim();
+                if (typeof showToast === 'function') {
+                    showToast(detail ? (`Error al descargar PDF: ${detail}`) : 'Error al descargar PDF. Reintentá.', 'error');
+                }
             }
         });
     }
@@ -446,34 +543,48 @@ window.initModals = function () {
     window._insertInlineAppendBtn = function () {
         const editor = document.getElementById('editor');
         if (!editor) return;
+        const quickCtrl = document.getElementById('inlineReviewQuickControl');
+        const quickDock = document.getElementById('inlineReviewQuickDock');
 
         // Remover existente si hay
         const existing = editor.querySelector('.btn-append-inline');
-        if (existing) existing.remove();
+        if (existing) {
+            if (quickCtrl && existing.contains(quickCtrl) && quickDock) {
+                quickCtrl.classList.remove('inline-review-in-editor');
+                quickDock.appendChild(quickCtrl);
+            }
+            existing.remove();
+        }
 
         // No mostrar en vista de texto original ni en modo comparación
         if (document.getElementById('btnRestoreOriginal')?._showingOriginal) return;
         if (window._isComparisonMode) return;
 
-        // Solo Pro mode estricto con contenido estructurado en el editor
-        const _isPro = window.currentMode === 'pro'
-            || (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'PRO');
-        if (!_isPro) return;
+        // Disponible para PRO y ADMIN (admin debe poder probar).
+        const _canUseInlineAppend = (typeof CLIENT_CONFIG !== 'undefined'
+            && (CLIENT_CONFIG.type === 'PRO' || CLIENT_CONFIG.type === 'ADMIN'));
+        if (!_canUseInlineAppend) return;
         if (!editor.innerText.trim()) return;
         // No mostrar si el contenido no está estructurado (texto plano sin secciones)
-        if (!editor.querySelector('h3, h4, .section-header, strong')) return;
+        if (!editor.querySelector('h1, h2, h3, h4, .report-h1, .report-h2, .report-h3, .section-header, strong')) return;
 
         // Crear wrapper contenteditable=false
         const wrap = document.createElement('div');
         wrap.className = 'btn-append-inline';
         wrap.setAttribute('contenteditable', 'false');
-        wrap.innerHTML = `<button class="btn btn-pro-animated" title="Grabar y agregar texto al final del informe">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+        wrap.innerHTML = `<button class="btn btn-pro-animated" title="Grabar y agregar texto al final del informe" aria-label="Grabar y agregar texto al final del informe">
+            <svg class="append-mic-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
                 <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
                 <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
             </svg>
-            <span>Grabar y agregar +</span>
+            <span class="append-plus">+</span>
         </button>`;
+
+        // Reubicar REV IA junto al botón inline (a su izquierda)
+        if (quickCtrl) {
+            quickCtrl.classList.add('inline-review-in-editor');
+            wrap.prepend(quickCtrl);
+        }
 
         // Sincronizar estado de grabación si ya estaba activa
         if (window._appendRecordingActive) {
@@ -631,10 +742,20 @@ window.initModals = function () {
                         if (newText) {
                             const editor = document.getElementById('editor');
                             if (editor) {
-                                // Append as new paragraph
-                                const p = document.createElement('p');
-                                p.textContent = newText;
-                                editor.appendChild(p);
+                                // Mantener consistencia visual: agregar como párrafos de informe estructurado.
+                                const normalizedLines = String(newText || '')
+                                    .split(/\r?\n+/)
+                                    .map(line => line.trim())
+                                    .filter(Boolean);
+                                if (!normalizedLines.length) {
+                                    normalizedLines.push(String(newText || '').trim());
+                                }
+                                normalizedLines.filter(Boolean).forEach((line) => {
+                                    const p = document.createElement('p');
+                                    p.className = 'report-p';
+                                    p.textContent = line;
+                                    editor.appendChild(p);
+                                });
                                 editor.dispatchEvent(new Event('input', { bubbles: true }));
                                 if (typeof updateWordCount === 'function') updateWordCount();
                                 showToast('✅ Texto agregado al final del informe', 'success');
@@ -643,7 +764,8 @@ window.initModals = function () {
 
                                 // Sincronizar: agregar texto crudo al original para coherencia comparativa
                                 if (window._lastRawTranscription != null) {
-                                    window._lastRawTranscription = window._lastRawTranscription.trimEnd() + '\n' + newText;
+                                    const appendedRaw = normalizedLines.join('\n');
+                                    window._lastRawTranscription = window._lastRawTranscription.trimEnd() + '\n' + appendedRaw;
                                 }
                                 // Marcar flag según la vista actual
                                 const btnR = document.getElementById('btnRestoreOriginal');
@@ -702,7 +824,7 @@ window.initModals = function () {
                 inlineBtn.classList.remove('recording-pulse');
                 inlineBtn.classList.add('btn-pro-animated');
                 const span = inlineBtn.querySelector('span');
-                if (span) span.textContent = 'Grabar y agregar +';
+                if (span) span.textContent = '+';
             }
         }
     }

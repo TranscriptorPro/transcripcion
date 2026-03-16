@@ -1,28 +1,35 @@
 // ============ UI PROFESSIONAL PERSONALIZATION ============
+window.normalizeMatriculaDisplay = function (value) {
+    const src = String(value || '').trim();
+    if (!src) return '';
+    return src
+    .replace(/\bm\s*\.\s*p\s*\.?/gi, 'M. P.')
+    .replace(/\bM\s*\.\s*P\s*\.?/g, 'M. P.')
+    .replace(/\bmp\b/gi, 'MP')
+        .replace(/\br\s*\.\s*e\s*\.?/gi, 'R. E.')
+        .replace(/\bR\s*\.\s*E\s*\.?/g, 'R. E.')
+    .replace(/\bre\b/gi, 'RE')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+};
+
 window.applyProfessionalData = function (data) {
     if (!data) return;
-    const { nombre, matricula, specialties } = data;
+    const { nombre, matricula, specialties, sexo } = data;
+    const normalizedMatricula = (typeof window.normalizeMatriculaDisplay === 'function')
+        ? window.normalizeMatriculaDisplay(matricula)
+        : matricula;
 
     // Header: ADMIN siempre mantiene su banner intacto
     const isAdmin = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'ADMIN');
     const welcomeName = document.getElementById('doctorWelcomeName');
     if (welcomeName && !isAdmin) {
-        // Limpiar prefijos de titulo existentes del nombre
-        let cleanName = (nombre || '').trim();
-        let isFemale = false;
-        const titleMatch = cleanName.match(/^(Dra\.?|Dr\.?)\s+/i);
-        if (titleMatch) {
-            // Detectar genero por el prefijo que ya traia el nombre
-            isFemale = /^dra/i.test(titleMatch[1]);
-            cleanName = cleanName.slice(titleMatch[0].length).trim();
+        if (typeof window.getProfessionalDisplay === 'function') {
+            const prof = window.getProfessionalDisplay(nombre, sexo);
+            welcomeName.textContent = prof.fullName;
         } else {
-            // Heuristica: nombres que terminan en 'a' suelen ser femeninos en espanol
-            const firstName = cleanName.split(/\s+/)[0] || '';
-            const femNames = ['maria','ana','laura','paula','andrea','carolina','claudia','monica','patricia','sandra','silvia','gabriela','daniela','fernanda','valeria','cecilia','marcela','alejandra','rosa','elena','lucia','victoria','camila','sofia','natalia','adriana','liliana','lorena','soledad','florencia','agustina','romina','mariana','graciela','beatriz','susana','norma','marta','alicia','irene','ines','nora','mirta','gladys','raquel','esther','ruth','sara','noemi','mercedes','pilar','rocio','veronica','viviana','yanina','julia','magdalena','carmen','lourdes','micaela','julieta','aldana','gimena','nadia','melina','abigail','celeste','constanza','emilia','priscila','josefina','gisela','analia','carina','eugenia','silvana','sabrina','brenda','paola','marisa'];
-            isFemale = femNames.includes(firstName.toLowerCase());
+            welcomeName.textContent = (nombre || '').trim();
         }
-        const title = isFemale ? 'Dra.' : 'Dr.';
-        welcomeName.textContent = `${title} ${cleanName}`;
     }
 
     // Header logo: siempre mostrar logo-superhero2.png en la UI (el logo del profesional va solo en el PDF)
@@ -37,8 +44,14 @@ window.applyProfessionalData = function (data) {
     // Locked display in metadata card
     const lockName = document.getElementById('lockNameDisplay');
     const lockMatricula = document.getElementById('lockMatriculaDisplay');
-    if (lockName) lockName.textContent = nombre;
-    if (lockMatricula) lockMatricula.textContent = matricula;
+    if (lockName) {
+        if (typeof window.getProfessionalDisplay === 'function') {
+            lockName.textContent = window.getProfessionalDisplay(nombre, sexo).fullName;
+        } else {
+            lockName.textContent = nombre;
+        }
+    }
+    if (lockMatricula) lockMatricula.textContent = normalizedMatricula;
 
     // PDF Config Modal fields
     const pdfName = document.getElementById('pdfProfName');
@@ -46,7 +59,7 @@ window.applyProfessionalData = function (data) {
     const pdfSpecialty = document.getElementById('pdfProfEspecialidad');
 
     if (pdfName) pdfName.value = nombre;
-    if (pdfMatricula) pdfMatricula.value = matricula;
+    if (pdfMatricula) pdfMatricula.value = normalizedMatricula;
     if (pdfSpecialty) pdfSpecialty.value = Array.isArray(specialties) ? specialties.join(', ') : specialties;
 };
 

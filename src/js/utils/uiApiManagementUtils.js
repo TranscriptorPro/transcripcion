@@ -6,7 +6,9 @@ window.initApiManagement = function () {
     const apiTestResult = document.getElementById('apiTestResult');
 
     // Restaurar API key guardada al cargar la pagina
-    const savedKey = window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '';
+    const savedKey = (typeof window.getResolvedGroqApiKey === 'function')
+        ? window.getResolvedGroqApiKey()
+        : (window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '');
     if (savedKey) {
         window.GROQ_API_KEY = savedKey;
         if (apiKeyInput) {
@@ -64,9 +66,14 @@ window.initApiManagement = function () {
                 }
 
                 if (res.ok) {
-                    if (typeof appDB !== 'undefined') appDB.set('groq_api_key', key);
-                    localStorage.setItem('groq_api_key', key);
-                    window.GROQ_API_KEY = key;
+                    if (typeof window.setGroqApiKey === 'function') {
+                        window.setGroqApiKey(key, { source: 'ui-api-save-verified' });
+                    } else {
+                        // Fallback defensivo: state.js deberia exponer setGroqApiKey.
+                        if (typeof appDB !== 'undefined') appDB.set('groq_api_key', key);
+                        localStorage.setItem('groq_api_key', key);
+                        window.GROQ_API_KEY = key;
+                    }
                     if (typeof updateApiStatus === 'function') updateApiStatus(key);
                     if (typeof showToast === 'function') showToast('✅ Clave válida y guardada.', 'success');
                     return;
@@ -82,9 +89,14 @@ window.initApiManagement = function () {
                 // Error de red / sin conexion
                 const guardar = await window.showCustomConfirm('⚠️ Sin conexión', 'No se pudo verificar la clave (sin conexión a internet).\n\n¿Guardar de todas formas?');
                 if (guardar) {
-                    if (typeof appDB !== 'undefined') appDB.set('groq_api_key', key);
-                    localStorage.setItem('groq_api_key', key);
-                    window.GROQ_API_KEY = key;
+                    if (typeof window.setGroqApiKey === 'function') {
+                        window.setGroqApiKey(key, { source: 'ui-api-save-offline' });
+                    } else {
+                        // Fallback defensivo: state.js deberia exponer setGroqApiKey.
+                        if (typeof appDB !== 'undefined') appDB.set('groq_api_key', key);
+                        localStorage.setItem('groq_api_key', key);
+                        window.GROQ_API_KEY = key;
+                    }
                     if (typeof updateApiStatus === 'function') updateApiStatus(key);
                     if (typeof showToast === 'function') showToast('💾 Clave guardada sin verificar (sin conexión).', 'warning');
                 }

@@ -17,7 +17,6 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const { jsPDF } = window.jspdf;
         const profData  = (typeof safeJSONParse === 'function') ? await safeJSONParse('prof_data', {}) : (await appDB.get('prof_data')) || {};
         const config    = (typeof safeJSONParse === 'function') ? await safeJSONParse('pdf_config', {}) : (await appDB.get('pdf_config')) || {};
-        const activePro = config.activeProfessional || null;
         const pgSize = (config.pageSize || 'a4').toLowerCase();
         const orient = (config.orientation || 'portrait').toLowerCase();
         const doc = new jsPDF({ unit: 'mm', format: pgSize, orientation: orient });
@@ -32,13 +31,30 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const mainFont     = config.font || 'helvetica';
         const mainFontSize = parseInt(config.fontSize) || 10;
         const mainLineH    = mainFontSize * 0.5;
-        const cfgShowHeader  = config.showHeader  !== false;
+        const _edForCtx = typeof window !== 'undefined' ? (window.editor || document.getElementById('editor')) : null;
+        const resolvedCtx = (typeof window.resolveReportContext === 'function')
+            ? await window.resolveReportContext({ includeEditorExtract: true, includeFormFallback: true, editorEl: _edForCtx })
+            : null;
+        const clientType = String(window.CLIENT_CONFIG?.type || '').toUpperCase();
+        const planCode = String(window.CLIENT_CONFIG?.planCode || '').toUpperCase();
+        const isClinicProfile = clientType === 'CLINIC' || planCode === 'CLINIC';
+        const activePro = (resolvedCtx && resolvedCtx.activeProfessional) || config.activeProfessional || null;
+        const cfgHideReportHeader = resolvedCtx
+            ? !!resolvedCtx.hideReportHeader
+            : (!isClinicProfile && config.hideReportHeader === true);
+        const cfgShowHeader  = !cfgHideReportHeader && config.showHeader !== false;
         const cfgShowFooter  = config.showFooter  !== false;
         const cfgShowPageNum = config.showPageNum !== false;
-        const cfgShowDate    = config.showDate    === true;
+        const cfgShowDate    = resolvedCtx
+            ? !!resolvedCtx.showDateInFooter
+            : ((config.showDate ?? true) === true);
+        const cfgShowReportNumber = (resolvedCtx && typeof resolvedCtx.showReportNumber === 'boolean')
+            ? resolvedCtx.showReportNumber
+            : (config.showReportNumber !== false);
         const wpProfiles = (await appDB.get('workplace_profiles')) || [];
         const wpIdx = config.activeWorkplaceIndex;
-        const activeWp = (wpIdx !== undefined && wpIdx !== null) ? wpProfiles[Number(wpIdx)] : wpProfiles[0];
+        const activeWp = (resolvedCtx && resolvedCtx.activeWorkplace)
+            || ((wpIdx !== undefined && wpIdx !== null) ? wpProfiles[Number(wpIdx)] : wpProfiles[0]);
         const wpLogo = activeWp?.logo || '';
         const instLogoB64 = (wpLogo && wpLogo.startsWith('data:'))
             ? wpLogo : ((await appDB.get('pdf_logo')) || '');
@@ -53,16 +69,18 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         }
         const logoB64 = instLogoB64 || profLogoB64;
         const profName     = activePro?.nombre         || profData.nombre      || '';
-        const matricula    = activePro?.matricula      || profData.matricula   || '';
+        const matriculaRaw = activePro?.matricula      || profData.matricula   || '';
+        const matricula    = (typeof window.normalizeMatriculaDisplay === 'function')
+            ? window.normalizeMatriculaDisplay(matriculaRaw)
+            : matriculaRaw;
         const rawEsp       = activePro?.especialidades || profData.specialties || profData.especialidades || '';
         const especialidad = Array.isArray(rawEsp)
             ? rawEsp.filter(e => e && e !== 'Todas').join(' / ')
             : (rawEsp || '');
-        const profSexoRaw = (activePro?.sexo || profData.sexo || '').toString().trim().toUpperCase();
-        const nameTitleMatch = profName.match(/^(DRA?\.?\s*)/i);
-        const profTitle = profSexoRaw === 'F' ? 'Dra.' : profSexoRaw === 'M' ? 'Dr.' : (nameTitleMatch && /^dra/i.test(nameTitleMatch[1]) ? 'Dra.' : 'Dr.');
-        const profNameBase = profName.replace(/^(DRA?\.?\s*)/i, '').trim();
-        const profDisplayName = `${profTitle} ${profNameBase || profName}`.trim();
+        const profDisplayObj = (typeof window.getProfessionalDisplay === 'function')
+            ? window.getProfessionalDisplay(profName, activePro?.sexo || profData.sexo || '')
+            : { fullName: (String(profName || '').trim() || 'Profesional') };
+        const profDisplayName = String(profDisplayObj.fullName || '').trim() || 'Profesional';
         const specialtyBadges = (Array.isArray(rawEsp) ? rawEsp : String(rawEsp || '').split(/[\/,]/))
             .map(s => String(s || '').trim())
             .filter(Boolean)
@@ -74,16 +92,19 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         const wpPhone   = config.workplacePhone   || activeWp?.phone   || '';
         const wpName    = activeWp?.name || '';
         const wpEmail   = activeWp?.email || config.workplaceEmail || '';
-        const showPhone = config.showPhone !== false;
-        const showEmail = config.showEmail !== false;
-        const showSocial = config.showSocial === true;
+        const showPhone = (activePro?.showPhone ?? config.showPhone ?? true) !== false;
+        const showEmail = (activePro?.showEmail ?? config.showEmail ?? true) !== false;
+        const showSocial = (activePro?.showSocial ?? config.showSocial ?? false) === true;
+        const sm = (activePro?.socialMedia && typeof activePro.socialMedia === 'object')
+            ? activePro.socialMedia
+            : ((profData?.socialMedia && typeof profData.socialMedia === 'object') ? profData.socialMedia : {});
         const profPhone = activePro?.telefono || profData.telefono || '';
         const profEmail = activePro?.email || profData.email || '';
-        const profWhatsapp = activePro?.whatsapp || profData.whatsapp || '';
-        const profInstagram = activePro?.instagram || profData.instagram || '';
-        const profFacebook = activePro?.facebook || profData.facebook || '';
-        const profX = activePro?.x || profData.x || '';
-        const profYoutube = activePro?.youtube || profData.youtube || '';
+        const profWhatsapp = activePro?.whatsapp || profData.whatsapp || sm.whatsapp || sm.WhatsApp || '';
+        const profInstagram = activePro?.instagram || profData.instagram || sm.instagram || sm.Instagram || '';
+        const profFacebook = activePro?.facebook || profData.facebook || sm.facebook || sm.Facebook || '';
+        const profX = activePro?.x || profData.x || sm.x || sm.X || sm.twitter || sm.Twitter || '';
+        const profYoutube = activePro?.youtube || profData.youtube || sm.youtube || sm.YouTube || '';
         const _reqVal = (id) => { try { return document.getElementById(id)?.value?.trim() || ''; } catch(_) { return ''; } };
         const _edEl = typeof window !== 'undefined' ? (window.editor || document.getElementById('editor')) : null;
         const _extracted = (_edEl && typeof extractPatientDataFromText === 'function')
@@ -96,29 +117,42 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             insurance: _reqVal('reqPatientInsurance')  || _reqVal('pdfPatientInsurance'),
             affiliate: _reqVal('reqPatientAffiliateNum') || _reqVal('pdfPatientAffiliateNum'),
         };
-        const pName      = _extracted.name || config.patientName || _formP.name || '';
-        const pDni       = _extracted.dni  || config.patientDni  || _formP.dni  || '';
-        const _rawAge    = _extracted.age  || config.patientAge  || _formP.age  || '';
+        const pName      = (resolvedCtx && resolvedCtx.patientName) || _extracted.name || config.patientName || _formP.name || '';
+        const pDni       = (resolvedCtx && resolvedCtx.patientDni)  || _extracted.dni  || config.patientDni  || _formP.dni  || '';
+        const _rawAge    = (resolvedCtx && resolvedCtx.patientAge)  || _extracted.age  || config.patientAge  || _formP.age  || '';
         const pAge       = _rawAge ? `${_rawAge} años` : '';
-        const _rawSex    = _extracted.sex  || config.patientSex  || _formP.sex  || '';
+        const _rawSex    = (resolvedCtx && resolvedCtx.patientSex) || _extracted.sex || config.patientSex || _formP.sex || '';
         const pSex       = _rawSex === 'M' ? 'Masculino' : _rawSex === 'F' ? 'Femenino' : _rawSex;
-        const pInsurance = config.patientInsurance || _formP.insurance || '';
-        const pAffiliateNum = config.patientAffiliateNum || _formP.affiliate || '';
-        const rawDate    = config.studyDate        || '';
-        const pDate      = rawDate
-            ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'})
-            : new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'});
-        const studyTime   = _reqVal('pdfStudyTime') || config.studyTime || '';
+        const pInsurance = (resolvedCtx && resolvedCtx.patientInsurance) || config.patientInsurance || _formP.insurance || '';
+        const pAffiliateNum = (resolvedCtx && resolvedCtx.patientAffiliateNum) || config.patientAffiliateNum || _formP.affiliate || '';
+        const showStudyDate = resolvedCtx ? !!resolvedCtx.showStudyDate : ((config.showStudyDate ?? true) !== false);
+        const pDate      = showStudyDate
+            ? ((resolvedCtx && resolvedCtx.studyDateDisplay)
+                || (config.studyDate
+                    ? new Date(config.studyDate + 'T12:00').toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'})
+                    : ''))
+            : '';
+        const showStudyTime = resolvedCtx ? !!resolvedCtx.showStudyTime : ((config.showStudyTime ?? true) !== false);
+        const studyTime   = showStudyTime
+            ? ((resolvedCtx && resolvedCtx.studyTime) || _reqVal('pdfStudyTime') || _reqVal('reqStudyTime') || config.studyTime || '')
+            : '';
         const tplKey      = (typeof window !== 'undefined' && window.selectedTemplate) || config.selectedTemplate || '';
         const tplNameFb   = (tplKey && typeof MEDICAL_TEMPLATES !== 'undefined' && MEDICAL_TEMPLATES[tplKey]?.name) || '';
-        const studyType   = config.studyType || tplNameFb || '';
-        const reportNum   = _reqVal('pdfReportNumber') || config.reportNum || '';
-        const refDoctor   = config.referringDoctor   || '';
-        const studyReason = config.studyReason       || '';
-        const footerText  = config.footerText        || '';
+        const studyType   = (resolvedCtx && resolvedCtx.studyType) || config.studyType || tplNameFb || '';
+        const reportNum   = (resolvedCtx && resolvedCtx.reportNum) || _reqVal('pdfReportNumber') || config.reportNum || '';
+        const _rawRefDoctor = String((resolvedCtx && resolvedCtx.referringDoctorRaw) || config.referringDoctor || _reqVal('reqReferringDoctor') || _reqVal('pdfReferringDoctor') || '')
+            .replace(/^\s*(?:dr\.?|dra\.?)\s+/i, '')
+            .trim();
+        const refDoctor   = (resolvedCtx && resolvedCtx.referringDoctorDisplay)
+            ? resolvedCtx.referringDoctorDisplay
+            : (_rawRefDoctor ? ('Dr./a ' + _rawRefDoctor) : '');
+        const studyReason = (resolvedCtx && resolvedCtx.studyReason) || config.studyReason || '';
+        const footerText  = (resolvedCtx && resolvedCtx.footerText) || config.footerText || '';
         const showSignLine = config.showSignLine !== false;
         const showSignName = config.showSignName !== false;
         const showSignMat  = config.showSignMatricula !== false;
+        const showInstLogo = (config.showInstLogo ?? true) === true;
+        const showProfLogo = (config.showProfLogo ?? true) === true;
         let cy      = 10;
         let pageNum = 1;
         let headerH = 10;  // se actualiza tras dibujar el encabezado
@@ -183,21 +217,23 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
         function drawWorkplaceBanner() {
             if (!cfgShowHeader) { cy = 10; return; }
             const hasWpData = wpName || wpAddress || wpPhone || wpEmail;
-            if (!hasWpData && !instLogoB64) { cy = 10; return; }
+            if (!hasWpData && !(showInstLogo && instLogoB64)) { cy = 10; return; }
             const bannerH = 16;
             doc.setFillColor(accent.r, accent.g, accent.b);
             doc.rect(0, 0, PAGE_W, bannerH, 'F');
             let contentX = ML;
             if (instLogoB64) {
-                try {
-                    const instSizePx = parseInt(config.instLogoSizePx || localStorage.getItem('inst_logo_size_px') || '60');
-                    const instScale = instSizePx / 60;
-                    const imgW = Math.round(12 * instScale), imgH = Math.round(10 * instScale);
-                    const imgType = instLogoB64.includes('data:image/png') ? 'PNG' : 'JPEG';
-                    const b64data = instLogoB64.includes(',') ? instLogoB64.split(',')[1] : instLogoB64;
-                    doc.addImage(b64data, imgType, ML, (bannerH - imgH) / 2, imgW, imgH);
-                    contentX = ML + imgW + 4;
-                } catch (e) { /* imagen inválida */ }
+                if (showInstLogo) {
+                    try {
+                        const instSizePx = parseInt(config.instLogoSizePx || localStorage.getItem('inst_logo_size_px') || '60');
+                        const instScale = instSizePx / 60;
+                        const imgW = Math.round(12 * instScale), imgH = Math.round(10 * instScale);
+                        const imgType = instLogoB64.includes('data:image/png') ? 'PNG' : 'JPEG';
+                        const b64data = instLogoB64.includes(',') ? instLogoB64.split(',')[1] : instLogoB64;
+                        doc.addImage(b64data, imgType, ML, (bannerH - imgH) / 2, imgW, imgH);
+                        contentX = ML + imgW + 4;
+                    } catch (e) { /* imagen inválida */ }
+                }
             }
             doc.setTextColor(255, 255, 255);
             const wpDetails = [wpAddress, wpPhone ? 'Tel: ' + wpPhone : '', wpEmail].filter(Boolean);
@@ -234,16 +270,18 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             if (showSocial && profYoutube) contactItems.push(`YouTube: ${profYoutube}`);
             const contactColW = contactItems.length ? 54 : 0;
             const infoRightLimit = contactItems.length ? (PAGE_W - MR - contactColW - 3) : (PAGE_W - MR);
-            if (profLogoB64 && profLogoB64 !== instLogoB64) {
-                try {
-                    const profSizePx = parseInt(localStorage.getItem('prof_logo_size_px') || '60');
-                    const profScale = profSizePx / 60;
-                    const profImgW = Math.round(16 * profScale), profImgH = Math.round(16 * profScale);
-                    const profImgType = profLogoB64.includes('data:image/png') ? 'PNG' : 'JPEG';
-                    const profB64data = profLogoB64.includes(',') ? profLogoB64.split(',')[1] : profLogoB64;
-                    doc.addImage(profB64data, profImgType, ML, cy, profImgW, profImgH);
-                    infoX = ML + profImgW + 6;
-                } catch (e) { /* imagen inválida */ }
+            if (showProfLogo) {
+                if (profLogoB64 && profLogoB64 !== instLogoB64) {
+                    try {
+                        const profSizePx = parseInt(localStorage.getItem('prof_logo_size_px') || '60');
+                        const profScale = profSizePx / 60;
+                        const profImgW = Math.round(16 * profScale), profImgH = Math.round(16 * profScale);
+                        const profImgType = profLogoB64.includes('data:image/png') ? 'PNG' : 'JPEG';
+                        const profB64data = profLogoB64.includes(',') ? profLogoB64.split(',')[1] : profLogoB64;
+                        doc.addImage(profB64data, profImgType, ML, cy, profImgW, profImgH);
+                        infoX = ML + profImgW + 6;
+                    } catch (e) { /* imagen inválida */ }
+                }
             }
             let iy = cy + 5;
             if (profDisplayName) {
@@ -322,7 +360,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             const api = window.PdfMakerSectionUtils;
             if (api && typeof api.drawStudyInfoSection === 'function') {
                 const ensureSpaceAt = (cyIn, needed) => { cy = cyIn; ensureSpace(needed); return cy; };
-                cy = api.drawStudyInfoSection({ studyType, reportNum, pDate, studyTime, refDoctor, studyReason, CW, ML, cyStart: cy, doc, accent, ensureSpace: ensureSpaceAt, setBlack });
+                cy = api.drawStudyInfoSection({ studyType, reportNum, showReportNumber: cfgShowReportNumber, pDate, studyTime, refDoctor, studyReason, CW, ML, cyStart: cy, doc, accent, ensureSpace: ensureSpaceAt, setBlack });
             }
         }
         function drawPatientBlock() {
@@ -341,6 +379,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             if (node.classList.contains('no-print')                  ) return;
             if (node.classList.contains('ai-note-panel')             ) return;
             if (node.classList.contains('no-data-edit-btn')          ) return;
+            if (node.classList.contains('inline-review-btn')         ) return;
             if (node.classList.contains('patient-data-header')       ) return;
             if (node.classList.contains('patient-placeholder-banner')) return;
             if (node.classList.contains('btn-append-inline')         ) return;
@@ -350,7 +389,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             if (tag === 'h1') {
                 const txt = node.textContent.trim();
                 if (!txt) return;
-                ensureSpace(35);
+                ensureSpace(50);
                 cy += 6;
                 doc.setFontSize(13);
                 doc.setFont('helvetica', 'bold');
@@ -368,7 +407,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             if (tag === 'h2') {
                 const txt = node.textContent.trim();
                 if (!txt) return;
-                ensureSpace(30);
+                ensureSpace(45);
                 cy += 5;
                 doc.setFontSize(11);
                 doc.setFont('helvetica', 'bold');
@@ -386,7 +425,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             if (tag === 'h3') {
                 const txt = node.textContent.trim();
                 if (!txt) return;
-                ensureSpace(25);
+                ensureSpace(38);
                 cy += 4;
                 doc.setFontSize(10.5);
                 doc.setFont('helvetica', 'bolditalic');
@@ -588,7 +627,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             try {
                 const qrParts = [
                     'TPRO-VERIFY',
-                    `ID:${reportNum || 'TPRO-' + Date.now()}`,
+                    `ID:${(cfgShowReportNumber && reportNum) ? reportNum : 'TPRO-' + Date.now()}`,
                     `Fecha:${pDate}`,
                     profName ? `Prof:${profName}` : '',
                     matricula ? `Mat:${matricula}` : '',
@@ -614,6 +653,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                 }
             } catch (_) { /* QR no disponible */ }
         }
+        // ── NO eliminar páginas: el PDF debe ser réplica exacta de la vista previa ──
         const blob = doc.output('blob');
         const saveBlob = typeof window.saveToDisk === 'function'
             ? window.saveToDisk

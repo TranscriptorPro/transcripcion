@@ -9,7 +9,8 @@
     <!-- PURGE: auto-purge al detectar nueva versión + ?purge manual. Preserva tema y color -->
     <script>
     (function() {
-        var APP_VERSION = 'v58'; // ← bump esto en cada deploy para forzar auto-purge
+        var APP_VERSION = 'v62'; // ← bump esto en cada deploy para forzar auto-purge
+        try { window.APP_VERSION = APP_VERSION; } catch(_) {}
         var params = new URLSearchParams(window.location.search);
         var forcePurge = params.has('purge');
         var storedVersion = null;
@@ -49,9 +50,16 @@
                 if (savedSkin) try { localStorage.setItem('app_skin', savedSkin); } catch(_) {}
                 window.location.replace(window.location.pathname);
             });
-            // Bloquear el resto de la carga
-            document.write('<body style="font-family:Inter,sans-serif;padding:3rem;text-align:center;background:#f8fafc"><h2 style="color:#1a56a0">Actualizando...</h2><p style="color:#666">Se detect\u00f3 una nueva versi\u00f3n. La app se recargar\u00e1 en un instante.</p></body>');
-            document.close();
+            // Mostrar una pantalla de actualizacion sin usar document.write
+            var _renderUpdatingScreen = function() {
+                if (!document.body) return;
+                document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f8fafc;padding:3rem;text-align:center;font-family:Inter,sans-serif"><div><h2 style="color:#1a56a0;margin:0 0 .5rem 0">Actualizando...</h2><p style="color:#666;margin:0">Se detecto una nueva version. La app se recargara en un instante.</p></div></div>';
+            };
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', _renderUpdatingScreen, { once: true });
+            } else {
+                _renderUpdatingScreen();
+            }
             return;
         }
         // Primera visita o misma versión → guardar versión actual
@@ -116,6 +124,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
     <link rel="stylesheet" href="src/css/variables.css">
     <link rel="stylesheet" href="src/css/animations.css">
@@ -152,7 +162,7 @@
                     </svg>
                 </button>
                 <!-- K3: Botón Contacto (solo visible para usuarios no-admin) -->
-                <button class="theme-toggle" id="btnContacto" title="Contactar soporte" style="display:none">
+                <button class="theme-toggle" id="btnContacto" data-testid="btnContacto" title="Contactar soporte" style="display:none">
                     <svg viewBox="0 0 24 24">
                         <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
                     </svg>
@@ -201,10 +211,10 @@
     <main class="main-container">
 
         <!-- Banner: API Key inválida (activado por validación silenciosa al inicio) -->
-        <div id="apiKeyWarningBanner" style="display:none;background:#f59e0b;color:#1c1917;padding:8px 16px;font-size:0.83rem;font-weight:600;position:sticky;top:0;z-index:9999;gap:8px;align-items:center;justify-content:center;text-align:center;">
+        <div id="apiKeyWarningBanner" class="api-key-warning-banner" style="display:none;">
             <span>⚠️ Tu API Key parece inválida o expirada.</span>
-            <button onclick="if (typeof handleApiKeyBannerAction === 'function') { handleApiKeyBannerAction(); }" style="background:var(--bg-card);color:var(--text-primary);border:none;border-radius:4px;padding:2px 12px;cursor:pointer;font-weight:700;font-size:0.8rem;">⚙️ Configurar</button>
-            <button onclick="this.closest('#apiKeyWarningBanner').style.display='none';" style="background:transparent;border:none;cursor:pointer;font-size:1.1rem;font-weight:700;padding:0 4px;">✕</button>
+            <button class="api-key-banner-btn" onclick="if (typeof handleApiKeyBannerAction === 'function') { handleApiKeyBannerAction(); }">⚙️ Configurar</button>
+            <button class="api-key-banner-close" onclick="this.closest('#apiKeyWarningBanner').style.display='none';">✕</button>
         </div>
         <!-- Modals moved to top for early DOM parsing -->
 
@@ -243,7 +253,7 @@
         </div>
 
         <!-- Onboarding / Welcome Modal — Spectacular multi-step -->
-        <div class="modal-overlay" id="onboardingOverlay" style="background: linear-gradient(135deg, rgba(15,118,110,0.15), rgba(0,0,0,0.85));">
+        <div class="modal-overlay onboarding-overlay" id="onboardingOverlay">
             <div class="modal onboarding-modal" style="max-width: 520px; overflow: hidden; border: 2px solid var(--primary); position: relative;">
                 <!-- Animated particles background -->
                 <div class="onboarding-particles" id="onboardingParticles"></div>
@@ -411,7 +421,7 @@
                                     <div class="onb-toggle-row">
                                         <div><div class="onb-config-label">🌐 Mostrar redes sociales <span class="onb-pro-badge" id="onbSocialBadge">PRO</span></div>
                                         <small style="color: var(--text-secondary); font-size: 0.72rem;" id="onbSocialNote">Incluye tus redes en cada informe</small></div>
-                                        <label class="onb-switch"><input type="checkbox" id="onbToggleSocial"><span class="onb-slider"></span></label>
+                                        <label class="onb-switch"><input type="checkbox" id="onbToggleSocial" checked><span class="onb-slider"></span></label>
                                     </div>
                                 </div>
                                 <!-- Márgenes -->
@@ -626,6 +636,13 @@
                                     <span class="stg-switch-slider"></span>
                                 </label>
                             </div>
+                            <div class="stg-opt-row">
+                                <span class="stg-opt-label">▶ Revisión IA en párrafos</span>
+                                <label class="stg-switch">
+                                    <input type="checkbox" id="settingsInlineReviewToggle" checked>
+                                    <span class="stg-switch-slider"></span>
+                                </label>
+                            </div>
                         </div>
                     </div>
 
@@ -636,14 +653,39 @@
                             <span class="stg-chevron">▾</span>
                         </button>
                         <div class="stg-accordion-content">
-                            <button class="btn btn-outline btn-full stg-action-btn" id="settingsOpenHistory">
+                            <button class="btn btn-outline btn-full stg-action-btn" id="settingsOpenPatientRegistry">
+                                👥 Registro de pacientes
+                            </button>
+                            <button class="btn btn-outline btn-full stg-action-btn" id="settingsOpenHistory" style="margin-top: 0.4rem;">
                                 📋 Historial de informes
+                            </button>
+                            <button class="btn btn-outline btn-full stg-action-btn" id="settingsOpenDoctorRegistry" style="margin-top: 0.4rem;">
+                                🩺 Médicos solicitantes
+                            </button>
+                            <button class="btn btn-outline btn-full stg-action-btn" id="settingsOpenReasonHistory" style="margin-top: 0.4rem;">
+                                🧾 Motivos / indicación clínica
                             </button>
                             <button class="btn btn-outline btn-full stg-action-btn" id="settingsOpenDictionary" style="margin-top: 0.4rem;">
                                 📖 Diccionario médico
                             </button>
                             <button class="btn btn-outline btn-full stg-action-btn" id="settingsOpenShortcuts" style="margin-top: 0.4rem;">
                                 ⌨️ Atajos de teclado
+                            </button>
+                            <button class="btn btn-outline btn-full stg-action-btn" id="settingsOpenPaymentsPortal" style="margin-top: 0.4rem;">
+                                💳 Gestión de pagos
+                            </button>
+                            <div class="stg-opt-row" style="margin-top:0.6rem;">
+                                <span class="stg-opt-label">🎯 Tutorial automático</span>
+                                <label class="stg-switch">
+                                    <input type="checkbox" id="settingsAutoTourToggle" checked>
+                                    <span class="stg-switch-slider"></span>
+                                </label>
+                            </div>
+                            <button class="btn btn-outline btn-full stg-action-btn" id="settingsStartTourNow" style="margin-top: 0.4rem;">
+                                🎯 Iniciar tutorial ahora
+                            </button>
+                            <button class="btn btn-outline btn-full stg-action-btn" id="settingsRestartTourNow" style="margin-top: 0.4rem;">
+                                ♻️ Reiniciar tutorial desde el inicio
                             </button>
                         </div>
                     </div>
@@ -658,8 +700,8 @@
                             <div class="stg-opt-row">
                                 <span class="stg-opt-label">Tema</span>
                                 <div class="stg-theme-btns">
-                                    <button class="stg-theme-btn" id="settingsThemeLight" title="Tema claro">☀️ Claro</button>
-                                    <button class="stg-theme-btn" id="settingsThemeDark" title="Tema oscuro">🌙 Oscuro</button>
+                                    <button class="stg-theme-btn theme-btn" id="settingsThemeLight" data-theme="light" title="Tema claro">☀️ Claro</button>
+                                    <button class="stg-theme-btn theme-btn" id="settingsThemeDark" data-theme="dark" title="Tema oscuro">🌙 Oscuro</button>
                                 </div>
                             </div>
                             <div class="stg-opt-row">
@@ -829,7 +871,7 @@
                                 </label>
                             </div>
                             <hr style="border: none; border-top: 1px solid var(--border); margin: 0.75rem 0;">
-                            <button class="btn btn-outline btn-full stg-action-btn" id="settingsClearData" style="color: #ef4444; border-color: #ef4444;">
+                            <button class="btn btn-outline btn-full stg-action-btn stg-action-btn-danger" id="settingsClearData">
                                 🗑️ Borrar todos mis datos locales
                             </button>
                         </div>
@@ -883,6 +925,30 @@
                         </div>
                     </div>
 
+                    <!-- 11b. Actualizar App -->
+                    <div class="stg-accordion" data-stg="update">
+                        <button class="stg-accordion-btn" type="button">
+                            <span>🔄 Actualizar App</span>
+                            <span class="stg-chevron">▾</span>
+                        </button>
+                        <div class="stg-accordion-content">
+                            <p class="stg-hint" style="margin-bottom: 0.75rem;">
+                                Si los cambios nuevos no aparecen, usá este botón para forzar la descarga
+                                de la última versión. <strong>No se pierden tus datos ni tu API Key.</strong>
+                            </p>
+                            <div id="appVersionInfo" style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.75rem; padding:6px 10px; background:var(--bg-secondary,#f1f5f9); border-radius:6px;">
+                                Versión en caché: <span id="cachedVersionLabel">comprobando…</span>
+                            </div>
+                            <button class="btn btn-primary btn-full stg-action-btn" id="btnForceUpdate"
+                                style="background:#1a56a0; border-color:#1a56a0; font-weight:700; font-size:0.95rem;">
+                                🚀 Actualizar a la última versión
+                            </button>
+                            <p style="font-size:0.72rem; color:var(--text-secondary); margin-top:0.5rem; text-align:center;">
+                                La app se recargará automáticamente después de limpiar la caché.
+                            </p>
+                        </div>
+                    </div>
+
                     <!-- 12. Acerca de -->
                     <div class="stg-accordion" data-stg="about">
                         <button class="stg-accordion-btn" type="button">
@@ -931,7 +997,8 @@
         </div>
 
         <!-- Config Informe Modal (Tabs) -->
-        <div class="modal-overlay" id="pdfModalOverlay">
+        <div class="modal-overlay pdf-config-modal" id="pdfModalOverlay">
+            <div id="pdfConfigOverlay" style="display:none" aria-hidden="true"></div>
             <div class="modal" style="max-width: 680px; display: flex; flex-direction: column; max-height: 92vh;">
                 <div class="modal-header">
                     <h2>⚙️ Configurar Informe</h2>
@@ -952,7 +1019,6 @@
                 <!-- Tabs de navegación -->
                 <div class="config-tabs">
                     <button class="config-tab active" data-tab="cfgTabHeader">📄 Encabezado</button>
-                    <button class="config-tab" data-tab="cfgTabStudy">📝 Estudio</button>
                     <button class="config-tab" data-tab="cfgTabFormat">🎨 Formato</button>
                     <button class="config-tab" data-tab="cfgTabSignature">✍️ Firma</button>
                 </div>
@@ -963,6 +1029,7 @@
                             <div class="field-group locked">
                                 <label>🔒 Profesional</label>
                                 <input type="text" id="pdfProfName" readonly disabled placeholder="[Sin datos profesionales]">
+                                <input type="hidden" id="doctorName" aria-hidden="true">
                             </div>
                             <div class="field-row">
                                 <div class="field-group locked">
@@ -972,6 +1039,7 @@
                                 <div class="field-group locked">
                                     <label>🔒 Especialidad</label>
                                     <input type="text" id="pdfProfEspecialidad" readonly disabled placeholder="---">
+                                    <input type="hidden" id="doctorSpecialty" aria-hidden="true">
                                 </div>
                             </div>
                             <div class="field-group has-btn">
@@ -982,6 +1050,7 @@
                                     </select>
                                 </div>
                                 <button class="btn-sm btn-pro-only-feature" id="btnAddWorkplace" title="Agregar nuevo lugar (solo Pro)" style="display:none;">+ Agregar</button>
+                                <button class="btn-sm" id="btnEditWorkplace" title="Editar lugar seleccionado" style="display:none;">✏️ Editar</button>
                             </div>
                             <div class="field-group has-btn" id="pdfProfessionalGroup" style="display:none;">
                                 <div style="flex:1">
@@ -1009,20 +1078,33 @@
                                     </div>
                                 </div>
                                 <div class="field-group" id="logoUploadGroup">
-                                    <label>🖼️ Logo (opcional)</label>
-                                    <input type="file" id="pdfLogoUpload" accept="image/*">
-                                    <div id="pdfLogoPreview" class="logo-preview"></div>
+                                    <label>🖼️ Logo institucional precargado</label>
+                                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                                        <div id="pdfLogoPreview" class="logo-preview" style="margin:0;"></div>
+                                        <button type="button" class="btn btn-outline btn-sm" id="btnReplaceInstLogo">Cambiar</button>
+                                        <input type="file" id="pdfInstLogoUpload" accept="image/*" style="display:none;">
+                                    </div>
+                                    <label style="margin-top:8px;display:block;"><input type="checkbox" id="pdfShowInstLogo" checked> Incluir logo institucional en el encabezado (si está disponible)</label>
+                                    <div id="pdfInstLogoOptions" style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;"></div>
+                                    <small style="color:var(--text-secondary);">Puedes agregar varios y elegir uno. El tamaño de salida se mantiene.</small>
                                 </div>
-                                <div class="field-group" id="logoSizeGroup">
-                                    <label>📐 Tamaño del logo profesional: <span id="logoSizeValue">60</span>px</label>
-                                    <input type="range" id="pdfLogoSize" min="30" max="200" value="60" step="5" style="width:100%;accent-color:var(--primary);">
+                                <div class="field-group" id="profLogoPreviewGroup">
+                                    <label>🧑‍⚕️ Logo profesional precargado</label>
+                                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                                        <div id="pdfProfLogoPreview" class="logo-preview" style="margin:0;"></div>
+                                        <button type="button" class="btn btn-outline btn-sm" id="btnReplaceProfLogo">Cambiar</button>
+                                        <input type="file" id="pdfProfLogoUpload" accept="image/*" style="display:none;">
+                                    </div>
+                                    <label style="margin-top:8px;display:block;"><input type="checkbox" id="pdfShowProfLogo" checked> Incluir logo profesional en el encabezado (si está disponible)</label>
+                                    <div id="pdfProfLogoOptions" style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;"></div>
+                                    <small style="color:var(--text-secondary);">Puedes agregar varios y elegir uno. El tamaño de salida se mantiene.</small>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- TAB 2: Datos del Estudio -->
-                    <div class="config-tab-panel" id="cfgTabStudy">
+                    <!-- TAB legado: Datos del Estudio (oculto; ahora se completa desde el editor) -->
+                    <div class="config-tab-panel" id="cfgTabStudy" style="display:none !important;" aria-hidden="true">
                         <div class="pdf-config-section">
                             <div class="field-group">
                                 <label>Tipo de estudio</label>
@@ -1151,18 +1233,20 @@
                                     <label>Interlineado</label>
                                     <select id="pdfLineSpacing">
                                         <option value="1">Simple</option>
-                                        <option value="1.15">1.15</option>
-                                        <option value="1.5" selected>1.5</option>
+                                        <option value="1.15" selected>1.15</option>
+                                        <option value="1.5">1.5</option>
                                         <option value="2">Doble</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="checkbox-options">
                                 <label><input type="checkbox" id="pdfShowHeader" checked> Incluir encabezado en todas las páginas</label>
+                                <label><input type="checkbox" id="pdfHideReportHeader"> Excluir encabezado de lugar de trabajo (en todas las páginas, solo usuarios persona)</label>
                                 <label><input type="checkbox" id="pdfShowFooter" checked> Incluir pie de página con firma</label>
                                 <label><input type="checkbox" id="pdfShowPageNum" checked> Incluir número de página</label>
                                 <label><input type="checkbox" id="pdfShowDate" checked> Incluir fecha de impresión</label>
                                 <label><input type="checkbox" id="pdfShowQR" checked> Incluir código QR de verificación</label>
+                                <label><input type="checkbox" id="pdfShowReportNumber" checked> Mostrar número de informe</label>
                             </div>
                         </div>
                     </div>
@@ -1180,15 +1264,22 @@
                                 <label><input type="checkbox" id="pdfShowSignMatricula" checked> Incluir matrícula debajo de firma</label>
                                 <label><input type="checkbox" id="pdfShowSignImage" checked> Insertar firma digital (si está disponible)</label>
                             </div>
-                            <div class="field-group" style="margin-top:12px;">
-                                <label>📐 Tamaño de la firma digital: <span id="firmaSizeValue">60</span>px</label>
-                                <input type="range" id="pdfFirmaSize" min="30" max="150" value="60" step="5" style="width:100%;accent-color:var(--primary);">
+                            <div class="field-group" id="pdfSignaturePreviewGroup" style="margin-top:10px;">
+                                <label>✍️ Firma digital precargada</label>
+                                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                                    <div id="pdfSignaturePreview" class="signature-preview" style="margin:0;"></div>
+                                    <button type="button" class="btn btn-outline btn-sm" id="btnReplaceSignature">Cambiar</button>
+                                    <input type="file" id="pdfSignUpload" accept="image/*" style="display:none;">
+                                </div>
+                                <div id="pdfSignatureOptions" style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;"></div>
+                                <small style="color:var(--text-secondary);">Puedes agregar varias y elegir una. El tamaño de salida se mantiene.</small>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="pdf-modal-footer">
                     <button class="btn btn-secondary" id="btnSavePdfConfig">💾 Guardar configuración</button>
+                    <button class="btn btn-outline" id="btnRestorePdfDefaults">↺ Restaurar valores recomendados</button>
                     <button class="btn btn-outline" id="btnClosePdfConfig">Cerrar</button>
                 </div>
             </div>
@@ -1198,7 +1289,7 @@
         <div class="modal-overlay" id="workplaceModalOverlay">
             <div class="modal" style="max-width: 500px;">
                 <div class="modal-header">
-                    <h3 style="margin:0;">🏥 Agregar Lugar de Trabajo</h3>
+                    <h3 id="workplaceModalTitle" style="margin:0;">🏥 Agregar Lugar de Trabajo</h3>
                     <button class="modal-close" id="btnCancelWorkplace">&times;</button>
                 </div>
                 <div class="modal-body">
@@ -1335,8 +1426,8 @@
         <!-- Reset App Modal (solo admin) -->
         <div class="modal-overlay" id="resetAppModal">
             <div class="modal" style="max-width:440px;">
-                <div class="modal-header" style="background:#ef4444;">
-                    <h3 style="margin:0;color:white;">&#128465;&#65039; Resetear aplicación</h3>
+                <div class="modal-header reset-modal-header">
+                    <h3 class="reset-modal-title">&#128465;&#65039; Resetear aplicación</h3>
                     <button class="modal-close" id="btnCloseResetModal">&times;</button>
                 </div>
                 <div class="modal-body" style="padding:1.25rem 1.5rem;">
@@ -1354,7 +1445,7 @@
                 </div>
                 <div class="modal-footer" style="padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:.5rem;justify-content:flex-end;">
                     <button class="btn btn-outline" id="btnCancelResetApp">Cancelar</button>
-                    <button class="btn" id="btnConfirmResetApp" style="background:#ef4444;color:#fff;border-color:#ef4444;">&#128465;&#65039; Sí, borrar todo</button>
+                    <button class="btn reset-btn-danger" id="btnConfirmResetApp">&#128465;&#65039; Sí, borrar todo</button>
                 </div>
             </div>
         </div>
@@ -1389,7 +1480,6 @@
                         <div class="dropdown-content" id="previewDownloadDropdown" style="display:none;position:absolute;bottom:100%;left:0;right:auto;margin-bottom:4px;background:var(--bg-card,#1e293b);border:1px solid var(--border);border-radius:8px;z-index:10010;min-width:220px;width:max-content;box-shadow:0 4px 16px rgba(0,0,0,0.3);">
                             <button data-format="pdf" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:0.9rem;">📄 PDF Profesional</button>
                             <button data-format="rtf" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:0.9rem;">📝 Word (RTF)</button>
-                            <button data-format="txt" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:0.9rem;">🗒️ Texto Simple</button>
                             <button data-format="html" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:0.9rem;">🌐 HTML</button>
                         </div>
                     </div>
@@ -1431,7 +1521,7 @@
         <div class="modal-overlay" id="patientDataRequiredOverlay">
             <div class="modal" style="max-width: 460px;">
                 <div class="modal-header">
-                    <h2>👤 Datos del Paciente</h2>
+                    <h2>👤 Datos del Paciente y Estudio</h2>
                     <button class="modal-close" id="btnClosePatientModal">&times;</button>
                 </div>
                 <div class="modal-body">
@@ -1439,13 +1529,15 @@
                         Completá los datos del paciente para incluirlos en el informe.
                     </p>
                     <!-- Buscador del registro de pacientes -->
-                    <div class="patient-search-box">
+                    <div class="patient-search-box" style="display:none;">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.35rem;">
                             <label>Buscar paciente anterior</label>
-                            <button type="button" id="btnOpenRegistryPanel" class="btn btn-secondary"
-                                style="padding:.2rem .6rem;font-size:.72rem;">&#x1F4CB; Gestionar registro</button>
-                            <button type="button" id="btnOpenReportHistory" class="btn btn-secondary"
-                                style="padding:.2rem .6rem;font-size:.72rem;">&#x1F4C4; Historial informes</button>
+                            <span style="display:none;">
+                                <button type="button" id="btnOpenRegistryPanel" class="btn btn-secondary"
+                                    style="display:none;padding:.2rem .6rem;font-size:.72rem;">&#x1F4CB; Gestionar registro</button>
+                                <button type="button" id="btnOpenReportHistory" class="btn btn-secondary"
+                                    style="display:none;padding:.2rem .6rem;font-size:.72rem;">&#x1F4C4; Historial informes</button>
+                            </span>
                         </div>
                         <div class="search-input-wrap">
                             <input type="text" id="reqPatientSearch"
@@ -1454,7 +1546,7 @@
                         </div>
                     </div>
                     <div class="field-group">
-                        <label>Nombre y Apellido <span style="color:#ef4444;">*</span></label>
+                        <label>Nombre y Apellido <span class="field-required">*</span></label>
                         <input type="text" id="reqPatientName" class="toolbar-input" style="width:100%;" placeholder="Nombre completo del paciente">
                     </div>
                     <div style="display:flex; gap:0.75rem; margin-top:0.5rem;">
@@ -1486,6 +1578,50 @@
                             <input type="text" id="reqPatientAffiliateNum" class="toolbar-input" style="width:100%;" placeholder="Número de afiliado">
                         </div>
                     </div>
+                    <hr style="margin:0.9rem 0;border:none;border-top:1px solid var(--border);">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.25rem;">
+                        <strong style="font-size:0.86rem;">📝 Datos del estudio</strong>
+                        <small style="color:var(--text-secondary);font-size:0.75rem;">Solo se mostrarán los campos completos</small>
+                    </div>
+                    <div style="display:flex; gap:0.75rem; margin-top:0.5rem; align-items:flex-end;">
+                        <div class="field-group" style="flex:1">
+                            <label style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                                <span>Fecha del estudio</span>
+                                <label class="toggle-switch-sm" title="Mostrar/ocultar fecha en informe">
+                                    <input type="checkbox" id="reqShowStudyDate" checked>
+                                    <span class="toggle-slider-sm"></span>
+                                </label>
+                            </label>
+                            <div style="display:flex;gap:4px;">
+                                <input type="date" id="reqStudyDate" class="toolbar-input" style="flex:1;">
+                                <button type="button" id="btnStudyDateToday" class="btn btn-secondary" style="padding:0.3rem 0.5rem;font-size:0.72rem;white-space:nowrap;" title="Fecha de hoy">Hoy</button>
+                            </div>
+                        </div>
+                        <div class="field-group" style="flex:1">
+                            <label style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                                <span>Hora</span>
+                                <label class="toggle-switch-sm" title="Mostrar/ocultar hora en informe">
+                                    <input type="checkbox" id="reqShowStudyTime" checked>
+                                    <span class="toggle-slider-sm"></span>
+                                </label>
+                            </label>
+                            <input type="time" id="reqStudyTime" class="toolbar-input" style="width:100%;">
+                        </div>
+                    </div>
+                    <div class="field-group" style="margin-top:0.5rem;">
+                        <label>Médico solicitante (Dr./Dra.)</label>
+                        <div style="position:relative;">
+                            <input type="text" id="reqReferringDoctor" class="toolbar-input" style="width:100%;" placeholder="Nombre y apellido del solicitante">
+                        </div>
+                    </div>
+                    <div class="field-group" style="margin-top:0.5rem;">
+                        <label>Motivo / Indicación clínica</label>
+                        <input type="text" id="reqStudyReason" class="toolbar-input" style="width:100%;" placeholder="Ej: dolor abdominal, control anual">
+                    </div>
+                    <div class="field-group" style="margin-top:0.5rem;">
+                        <label>Tipo de estudio (opcional)</label>
+                        <input type="text" id="reqStudyType" class="toolbar-input" style="width:100%;" placeholder="Ej: Fondo de ojo, Ecografía abdominal">
+                    </div>
                 </div>
                 <div class="modal-footer" style="padding:1rem 1.5rem; border-top:1px solid var(--border); display:flex; gap:0.5rem; justify-content:flex-end;">
                     <button class="btn btn-secondary" id="btnSkipPatientData">Omitir</button>
@@ -1505,7 +1641,7 @@
                 </div>
                 <div class="modal-footer" style="padding:0.75rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:0.5rem;justify-content:flex-end;">
                     <button class="btn btn-outline" id="customConfirmCancel">Cancelar</button>
-                    <button class="btn btn-primary" id="customConfirmAccept" style="background:linear-gradient(135deg,#ef4444,#dc2626);">Aceptar</button>
+                    <button class="btn btn-primary" id="customConfirmAccept">Aceptar</button>
                 </div>
             </div>
         </div>
@@ -1530,7 +1666,7 @@
         <div class="modal-overlay" id="editFieldModal">
             <div class="modal" style="max-width:480px;">
                 <div class="modal-header">
-                    <h2 id="editFieldModalTitle">✏️ Completar campo</h2>
+                    <h2 id="editFieldModalTitle">▶ Revisión de campo</h2>
                     <button class="modal-close" id="closeEditFieldModal">&times;</button>
                 </div>
                 <div class="modal-body">
@@ -1567,7 +1703,7 @@
                 </div>
                 <div class="modal-footer" style="padding:0.9rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:0.5rem;align-items:center;">
                     <button class="btn btn-outline" id="btnBlankEditField" style="font-size:0.8rem;color:var(--text-secondary);border-color:var(--border);">🗑️ Dejar en blanco</button>
-                    <button class="btn btn-outline" id="btnDeleteFieldSection" style="font-size:0.8rem;color:#ef4444;border-color:#ef4444;" title="Eliminar esta sección completa del informe">🗑️ Eliminar campo</button>
+                    <button class="btn btn-outline edit-field-danger-btn" id="btnDeleteFieldSection" title="Eliminar esta sección completa del informe">🗑️ Eliminar campo</button>
                     <span style="flex:1;"></span>
                     <button class="btn btn-outline" id="btnCancelEditField">Cancelar</button>
                     <button class="btn btn-primary" id="btnConfirmEditField">✅ Aplicar</button>
@@ -1579,7 +1715,7 @@
         <div class="modal-overlay" id="medDictModal">
             <div class="modal" style="max-width:600px;">
                 <div class="modal-header">
-                    <h2>🩺 Revisor de Terminología Médica</h2>
+                    <h2>Diccionario Médico</h2>
                     <button class="modal-close" id="closeMedDictModal">&times;</button>
                 </div>
                 <!-- Tabs -->
@@ -1672,12 +1808,27 @@
                                     <p>Descargá como <strong>PDF profesional</strong> con encabezado, firma y logo, o exportá en Word (RTF), TXT o HTML.</p>
                                 </div>
                             </div>
+                            <div class="guide-step">
+                                <div class="guide-step-number">6</div>
+                                <div class="guide-step-body">
+                                    <h4>💳 Gestioná tus pagos</h4>
+                                    <p>Desde <strong>⚙️ Configuración → Gestión de pagos</strong> podés subir comprobantes cuando quieras. Si tu vencimiento está próximo, verás un recordatorio suave 24h antes.</p>
+                                </div>
+                            </div>
                         </div>
                         <div class="help-tip" style="margin-top:1rem;">
                             <strong>💡 Consejo:</strong> Configurá tus datos profesionales y lugar de trabajo en el botón <strong>🖨️ Configurar Impresión</strong> para que tus PDFs salgan completos desde el primer uso.
                         </div>
                         <div style="text-align:center; margin-top:1.25rem;">
                             <button class="btn btn-primary" id="btnStartTour">🎯 Iniciar tour interactivo</button>
+                            <button class="btn btn-outline" id="btnRestartTour" style="margin-left:0.5rem;">♻️ Reiniciar desde el inicio</button>
+                        </div>
+                        <div class="guide-tour-settings">
+                            <label class="guide-tour-toggle" for="tourAutoToggle">
+                                <input type="checkbox" id="tourAutoToggle" checked>
+                                <span>Mostrar tour automático al iniciar</span>
+                            </label>
+                            <small id="tourAutoHint">Se recomienda dejarlo activo para primeros usos.</small>
                         </div>
                     </div>
 
@@ -1796,6 +1947,21 @@
                     </div>
                 </div>
                 <iframe id="manualFrame" style="flex:1;border:none;width:100%;" src=""></iframe>
+            </div>
+        </div>
+
+        <div id="paymentsPortalOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.55);">
+            <div style="position:absolute;inset:12px;background:var(--bg-card,#fff);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.3);">
+                <div class="manual-overlay-header">
+                    <span class="manual-overlay-title">💳 Gestión de pagos</span>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <button id="paymentsPortalOpenNewTab" class="manual-newtab-btn" title="Abrir en pestaña nueva">
+                            Nueva pestaña
+                        </button>
+                        <button id="paymentsPortalCloseBtn" class="manual-close-btn" title="Cerrar">&times;</button>
+                    </div>
+                </div>
+                <iframe id="paymentsPortalFrame" style="flex:1;border:none;width:100%;" src=""></iframe>
             </div>
         </div>
 
@@ -1961,11 +2127,14 @@
                 <div id="textSourcePanel" style="display:none; margin-top:0.2rem;">
                     <label class="sidebar-label" style="margin-bottom:0.35rem;">Texto a estructurar</label>
                     <textarea id="proTextInput" class="toolbar-input" rows="7" style="width:100%; resize:vertical; min-height:140px;"
-                        placeholder="Pegá aquí el texto médico, o cargá un archivo .txt/.md/.rtf"></textarea>
-                    <input type="file" id="proTextFileInput" accept=".txt,.md,.rtf,.csv,.json,text/plain,text/markdown,text/rtf" style="display:none;">
+                        placeholder="Pegá aquí el texto médico, o cargá un archivo .txt/.doc/.docx/.pdf"></textarea>
+                    <input type="file" id="proTextFileInput" accept=".txt,.text,.md,.rtf,.csv,.json,.doc,.docx,.pdf,text/plain,text/markdown,text/rtf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none;">
                     <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
                         <button class="btn btn-secondary" id="btnAttachTextFile" style="flex:1;">📎 Adjuntar texto</button>
                         <button class="btn btn-primary" id="btnStructureTextPro" style="flex:1;">✨ Estructurar texto</button>
+                    </div>
+                    <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+                        <button class="btn btn-secondary btn-full" id="btnClearTextSource">Limpiar</button>
                     </div>
                     <small id="proTextFileName" style="display:block; margin-top:0.35rem; color:var(--text-secondary);"></small>
                 </div>
@@ -2079,7 +2248,7 @@
             </div>
 
             <!-- Tabs Container -->
-            <div class="tabs-container" id="tabsContainer">
+            <div class="tabs-container tab-bar" id="tabsContainer" data-testid="tabBar">
                 <!-- Tabs will be dynamically created here -->
             </div>
 
@@ -2100,6 +2269,15 @@
                             </svg>
                             <span>IA</span>
                         </button>
+                        <div id="inlineReviewQuickDock" style="display:contents;">
+                            <div id="inlineReviewQuickControl" style="display:flex;align-items:center;gap:0.35rem;padding:0.2rem 0.45rem;border:1px solid var(--border);border-radius:10px;background:var(--bg-card);">
+                                <span class="inline-review-quick-label">▶ Rev IA</span>
+                                <label class="toggle-switch-sm" style="margin:0;">
+                                    <input type="checkbox" id="inlineReviewQuickToggle" checked>
+                                    <span class="toggle-slider-sm"></span>
+                                </label>
+                            </div>
+                        </div>
                         <!-- Restore/Toggle original text -->
                         <button class="btn btn-outline btn-sm-icon toggle-comparison-btn" id="btnRestoreOriginal" style="display:none;" title="Ver texto original">↩ Original</button>
                         <!-- Side-by-side comparison -->
@@ -2141,7 +2319,7 @@
                             </svg>
                         </button>
 
-                        <button class="btn btn-action-green" id="printBtn" style="display:none; gap:2px;" title="Vista previa · Imprimir · Enviar por mail" aria-label="Vista previa e Imprimir">
+                        <button class="btn btn-action-green" id="printBtn" data-testid="togglePreviewBtn" style="display:none; gap:2px;" title="Vista previa · Imprimir · Enviar por mail" aria-label="Vista previa e Imprimir">
                             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
                                 <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
                             </svg>
@@ -2173,7 +2351,6 @@
                             <div class="dropdown-content" id="downloadDropdown">
                                 <button data-format="pdf" onclick="downloadPDF()">📄 PDF Profesional <span class="fav-star" data-fmt="pdf" title="Marcar como favorito">⭐</span></button>
                                 <button data-format="rtf" onclick="downloadRTF()">📝 Word (RTF) <span class="fav-star" data-fmt="rtf" title="Marcar como favorito">☆</span></button>
-                                <button data-format="txt" onclick="downloadTXT()">🗒️ Texto Simple <span class="fav-star" data-fmt="txt" title="Marcar como favorito">☆</span></button>
                                 <button data-format="html" onclick="downloadHTML()">🌐 HTML <span class="fav-star" data-fmt="html" title="Marcar como favorito">☆</span></button>
                             </div>
                         </div>
@@ -2185,7 +2362,7 @@
                     <div id="aiProgressFill" style="height:100%; width:40%; background:linear-gradient(90deg, var(--primary), var(--primary-light)); border-radius:2px; animation:aiProgressAnim 1.4s ease-in-out infinite;"></div>
                 </div>
                 <!-- Find and Replace Panel -->
-                <div id="findReplacePanel" class="find-replace-panel">
+                <div id="findReplacePanel" class="find-replace-panel" data-testid="findReplaceBar">
                     <input type="text" id="findInput" placeholder="Buscar...">
                     <button id="btnMatchCase" class="fr-toggle" title="Distinguir mayúsculas/minúsculas" aria-pressed="false">Aa</button>
                     <button id="btnWholeWord" class="fr-toggle" title="Solo palabras completas" aria-pressed="false">W</button>
@@ -2275,7 +2452,7 @@
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M20 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 2v3H5V5h15zm-9 5h4v4h-4v-4zM5 10h4v4H5v-4zm0 9v-3h4v3H5zm6 0v-3h4v3h-4zm6 0h-4v-3h4v3zm0-5h-4v-4h4v4z"/></svg>
                     </button>
                     <div class="toolbar-divider"></div>
-                    <button class="toolbar-btn" id="toggleFindReplace" title="Buscar y Reemplazar (Ctrl+F)">
+                    <button class="toolbar-btn" id="toggleFindReplace" data-testid="btnFindReplace" title="Buscar y Reemplazar (Ctrl+F)">
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
                     </button>
                     <button class="toolbar-btn" id="undoBtn" title="Deshacer (Ctrl+Z)">
@@ -2291,7 +2468,7 @@
 
                 <div class="editor-container"
                     style="flex: 1; position: relative; display: flex; flex-direction: column;">
-                    <div id="editor" class="editor-content" contenteditable="true" spellcheck="true"
+                    <div id="editor" class="editor-content" contenteditable="true" spellcheck="false" autocorrect="off" autocapitalize="off"
                         role="textbox" aria-label="Editor de informe médico" aria-multiline="true"
                         style="flex: 1; min-height: 450px; padding: 1.5rem; outline: none; line-height: 1.8; font-size: 16px; overflow-y: auto; background: var(--bg-card); color: var(--text-primary); border-radius: 8px; border: 1px solid var(--border);">
                     </div>
@@ -2340,6 +2517,7 @@
         <script src="src/js/config/templatesCatalog.js"></script>
         <script src="src/js/config/templatesCatalogPart2.js"></script>
         <script src="src/js/config/templatesCatalogPart3.js"></script>
+        <script src="src/js/config/templateCategoryRegistry.js"></script>
         <script src="src/js/config/templates.js"></script>
         <script src="src/js/config/studyTerminology.js"></script>
         <script src="src/js/utils/dom.js"></script>
@@ -2386,6 +2564,8 @@
         <script src="src/js/features/licenseCacheUtils.js"></script>
         <script src="src/js/features/licenseManager.js"></script>
         <script src="src/js/features/patientRegistry.js"></script>
+        <script src="src/js/features/referringDoctorRegistry.js"></script>
+        <script src="src/js/features/studyReasonHistory.js"></script>
         <script src="src/js/features/formHandler.js"></script>
         <script src="src/js/features/themeManager.js"></script>
         <script src="src/js/features/settingsThemeUtils.js"></script>
@@ -2413,6 +2593,7 @@
         <script src="src/js/features/sessionAssistant.js"></script>
         <script src="src/js/features/outputProfiles.js"></script>
         <script src="src/js/features/pdfDataAccessUtils.js"></script>
+        <script src="src/js/features/reportContextResolver.js"></script>
         <script src="src/js/features/pdfPreview.js"></script>
         <script src="src/js/features/pdfPreviewActions.js"></script>
         <script src="src/js/features/pdfMakerSectionUtils.js"></script>
@@ -2532,18 +2713,184 @@
             </div>
         </div>
 
+        <div class="modal-overlay" id="doctorRegistryOverlay">
+            <div class="modal" style="max-width:760px;">
+                <div class="modal-header">
+                    <h3 style="margin:0;">🩺 Médicos solicitantes</h3>
+                    <button class="btn-icon" id="btnCloseDoctorRegistryPanel" title="Cerrar">&times;</button>
+                </div>
+                <div class="modal-body" style="padding:1rem 1.25rem;">
+                    <input type="text" id="doctorRegistrySearch" class="toolbar-input" style="width:100%;margin-bottom:.85rem;" placeholder="🔎 Buscar por nombre o apellido...">
+                    <div style="overflow:auto;">
+                        <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+                            <thead>
+                                <tr style="border-bottom:1px solid var(--border);">
+                                    <th style="text-align:left;padding:.4rem .5rem;">Nombre</th>
+                                    <th style="text-align:left;padding:.4rem .5rem;">Último uso</th>
+                                    <th style="text-align:left;padding:.4rem .5rem;">Usos</th>
+                                    <th style="text-align:center;padding:.4rem .5rem;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="doctorRegistryTbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="studyReasonOverlay">
+            <div class="modal" style="max-width:760px;">
+                <div class="modal-header">
+                    <h3 style="margin:0;">🧾 Motivos / indicación clínica</h3>
+                    <button class="btn-icon" id="btnCloseStudyReasonPanel" title="Cerrar">&times;</button>
+                </div>
+                <div class="modal-body" style="padding:1rem 1.25rem;">
+                    <input type="text" id="studyReasonSearchPanel" class="toolbar-input" style="width:100%;margin-bottom:.85rem;" placeholder="🔎 Buscar motivo o indicación...">
+                    <div style="overflow:auto;">
+                        <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+                            <thead>
+                                <tr style="border-bottom:1px solid var(--border);">
+                                    <th style="text-align:left;padding:.4rem .5rem;">Motivo / indicación</th>
+                                    <th style="text-align:left;padding:.4rem .5rem;">Último uso</th>
+                                    <th style="text-align:left;padding:.4rem .5rem;">Usos</th>
+                                    <th style="text-align:center;padding:.4rem .5rem;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studyReasonTbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Unificado: Mis Datos (Historial · Pacientes · Médicos · Motivos) -->
+        <div class="modal-overlay" id="datosPanelOverlay">
+            <div class="modal" style="max-width:880px;width:96vw;display:flex;flex-direction:column;max-height:92vh;">
+                <div class="modal-header" style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;">
+                    <h3 style="margin:0;flex:1;">&#x1F4C2; Mis Datos</h3>
+                    <label class="btn btn-secondary" style="font-size:.76rem;cursor:pointer;padding:.3rem .7rem;" title="Importar backup completo">
+                        &#x2B06; Importar
+                        <input type="file" id="inputImportAllData" accept=".json" style="display:none;">
+                    </label>
+                    <button class="btn btn-secondary" id="btnExportAllData" style="font-size:.76rem;padding:.3rem .7rem;" title="Exportar backup completo">&#x2B07; Exportar</button>
+                    <button class="btn-icon" id="btnCloseDatosPanel" title="Cerrar">&times;</button>
+                </div>
+                <!-- Tabs -->
+                <div style="display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--surface);">
+                    <button class="dp-tab" data-tab="history" style="flex:1;padding:.55rem .4rem;font-size:.8rem;border:none;background:transparent;cursor:pointer;border-bottom:3px solid transparent;font-weight:600;color:var(--text-secondary);">&#x1F4C4; Historial</button>
+                    <button class="dp-tab" data-tab="patients" style="flex:1;padding:.55rem .4rem;font-size:.8rem;border:none;background:transparent;cursor:pointer;border-bottom:3px solid transparent;font-weight:600;color:var(--text-secondary);">&#x1F465; Pacientes</button>
+                    <button class="dp-tab" data-tab="doctors" style="flex:1;padding:.55rem .4rem;font-size:.8rem;border:none;background:transparent;cursor:pointer;border-bottom:3px solid transparent;font-weight:600;color:var(--text-secondary);">&#x1FA7A; M&#xe9;dicos</button>
+                    <button class="dp-tab" data-tab="reasons" style="flex:1;padding:.55rem .4rem;font-size:.8rem;border:none;background:transparent;cursor:pointer;border-bottom:3px solid transparent;font-weight:600;color:var(--text-secondary);">&#x1F9FE; Motivos</button>
+                </div>
+                <div class="modal-body" style="flex:1;overflow-y:auto;padding:.85rem 1rem;">
+
+                    <!-- Tab: Historial -->
+                    <div class="dp-tab-content" id="dp-tab-history">
+                        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem;align-items:center;">
+                            <input type="text" id="dp-search-history" class="toolbar-input" style="flex:1;min-width:160px;" placeholder="&#x1F50D; Filtrar por paciente o plantilla...">
+                            <small id="dp-history-stats" style="color:var(--text-secondary);font-size:.75rem;white-space:nowrap;"></small>
+                            <button class="btn" id="dp-clear-history" style="font-size:.75rem;padding:.3rem .6rem;background:var(--error,#ef4444);color:#fff;" title="Limpiar historial">&#x1F5D1; Limpiar</button>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table style="width:100%;border-collapse:collapse;font-size:.81rem;">
+                                <thead><tr style="border-bottom:1px solid var(--border);">
+                                    <th style="text-align:left;padding:.35rem .5rem;">Paciente</th>
+                                    <th style="text-align:left;padding:.35rem .5rem;">Estudio</th>
+                                    <th style="text-align:left;padding:.35rem .5rem;">Fecha</th>
+                                    <th style="text-align:left;padding:.35rem .5rem;">Hora</th>
+                                    <th style="text-align:center;padding:.35rem .5rem;">Acciones</th>
+                                </tr></thead>
+                                <tbody id="dp-tbody-history"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Pacientes -->
+                    <div class="dp-tab-content" id="dp-tab-patients" style="display:none;">
+                        <input type="text" id="dp-search-patients" class="toolbar-input" style="width:100%;margin-bottom:.75rem;" placeholder="&#x1F50D; Filtrar por nombre o DNI...">
+                        <!-- Formulario de edición -->
+                        <div id="dp-edit-patient-form" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:.4rem;padding:.65rem;margin-bottom:.75rem;">
+                            <p style="font-size:.8rem;font-weight:600;margin:0 0 .4rem;">&#x270F;&#xFE0F; Editar paciente</p>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;">
+                                <div><label class="sidebar-label">Nombre</label><input id="dp-re-name" type="text" class="toolbar-input" style="width:100%;"></div>
+                                <div><label class="sidebar-label">DNI</label><input id="dp-re-dni" type="text" class="toolbar-input" style="width:100%;"></div>
+                                <div><label class="sidebar-label">Edad</label><input id="dp-re-age" type="number" class="toolbar-input" style="width:100%;"></div>
+                                <div><label class="sidebar-label">Sexo</label>
+                                    <select id="dp-re-sex" class="toolbar-input" style="width:100%;">
+                                        <option value="">--</option><option value="M">M</option><option value="F">F</option><option value="X">X</option>
+                                    </select>
+                                </div>
+                                <div><label class="sidebar-label">Obra Social</label><input id="dp-re-insurance" type="text" class="toolbar-input" style="width:100%;"></div>
+                                <div><label class="sidebar-label">N&#xBA; Afiliado</label><input id="dp-re-affiliate" type="text" class="toolbar-input" style="width:100%;"></div>
+                            </div>
+                            <div style="display:flex;gap:.4rem;margin-top:.5rem;justify-content:flex-end;">
+                                <button id="dp-cancel-edit-patient" class="btn btn-secondary" style="font-size:.76rem;">Cancelar</button>
+                                <button id="dp-save-edit-patient" class="btn btn-primary" style="font-size:.76rem;">&#x1F4BE; Guardar</button>
+                            </div>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table style="width:100%;border-collapse:collapse;font-size:.81rem;">
+                                <thead><tr style="border-bottom:1px solid var(--border);">
+                                    <th style="text-align:left;padding:.35rem .5rem;">Nombre</th>
+                                    <th style="text-align:left;padding:.35rem .5rem;">DNI</th>
+                                    <th style="text-align:left;padding:.35rem .5rem;">Edad</th>
+                                    <th style="text-align:left;padding:.35rem .5rem;">&#xDA;ltima visita</th>
+                                    <th style="text-align:center;padding:.35rem .5rem;">Visitas</th>
+                                    <th style="text-align:center;padding:.35rem .5rem;">Acciones</th>
+                                </tr></thead>
+                                <tbody id="dp-tbody-patients"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Médicos solicitantes -->
+                    <div class="dp-tab-content" id="dp-tab-doctors" style="display:none;">
+                        <input type="text" id="dp-search-doctors" class="toolbar-input" style="width:100%;margin-bottom:.75rem;" placeholder="&#x1F50D; Buscar m&#xe9;dico...">
+                        <div style="overflow-x:auto;">
+                            <table style="width:100%;border-collapse:collapse;font-size:.81rem;">
+                                <thead><tr style="border-bottom:1px solid var(--border);">
+                                    <th style="text-align:left;padding:.35rem .5rem;">Nombre</th>
+                                    <th style="text-align:left;padding:.35rem .5rem;">&#xDA;ltimo uso</th>
+                                    <th style="text-align:center;padding:.35rem .5rem;">Usos</th>
+                                    <th style="text-align:center;padding:.35rem .5rem;">Acciones</th>
+                                </tr></thead>
+                                <tbody id="dp-tbody-doctors"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Motivos / indicación -->
+                    <div class="dp-tab-content" id="dp-tab-reasons" style="display:none;">
+                        <input type="text" id="dp-search-reasons" class="toolbar-input" style="width:100%;margin-bottom:.75rem;" placeholder="&#x1F50D; Buscar motivo o indicaci&#xF3;n...">
+                        <div style="overflow-x:auto;">
+                            <table style="width:100%;border-collapse:collapse;font-size:.81rem;">
+                                <thead><tr style="border-bottom:1px solid var(--border);">
+                                    <th style="text-align:left;padding:.35rem .5rem;">Motivo / indicaci&#xF3;n</th>
+                                    <th style="text-align:left;padding:.35rem .5rem;">&#xDA;ltimo uso</th>
+                                    <th style="text-align:center;padding:.35rem .5rem;">Usos</th>
+                                    <th style="text-align:center;padding:.35rem .5rem;">Acciones</th>
+                                </tr></thead>
+                                <tbody id="dp-tbody-reasons"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
         <!-- K3: Modal Contacto -->
         <div class="modal-overlay" id="contactModalOverlay">
-            <div class="modal" id="contactModal" style="max-width:520px;width:100%;border-radius:16px;overflow:hidden;">
-                <div class="modal-header" style="background:linear-gradient(135deg,#0f766e 0%,#0d9488 100%);padding:1.1rem 1.5rem;">
-                    <h3 style="margin:0;font-size:1.1rem;display:flex;align-items:center;gap:.5rem;color:#fff;">&#x1f4ac; Contactar soporte</h3>
+            <div class="modal contact-modal" id="contactModal">
+                <div class="modal-header contact-modal-header">
+                    <h3 class="contact-modal-title">&#x1f4ac; Contactar soporte</h3>
                     <button class="modal-close" id="btnCloseContactModal" title="Cerrar">&times;</button>
                 </div>
-                <div class="modal-body" style="padding:1.5rem;">
-                    <form id="contactForm" style="display:flex;flex-direction:column;gap:1.1rem;">
+                <div class="modal-body contact-modal-body">
+                    <form id="contactForm" class="contact-form">
                         <div>
-                            <label style="display:block;font-size:.82rem;font-weight:600;color:#475569;margin-bottom:6px;">Motivo <span style="color:#ef4444;">*</span></label>
-                            <select id="contactMotivo" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:.9rem;background:#f8fafc;color:#1e293b;cursor:pointer;appearance:auto;transition:border-color .2s;">
+                            <label class="contact-label">Motivo <span class="field-required">*</span></label>
+                            <select id="contactMotivo" class="contact-input">
                                 <option value="">Seleccion&#225; un motivo...</option>
                                 <option value="L&#237;mite de dispositivos alcanzado">L&#237;mite de dispositivos alcanzado</option>
                                 <option value="Problema con la API Key">Problema con la API Key</option>
@@ -2560,22 +2907,21 @@
                             </select>
                         </div>
                         <div>
-                            <label style="display:block;font-size:.82rem;font-weight:600;color:#475569;margin-bottom:6px;">Descripci&#243;n <span style="color:#ef4444;">*</span></label>
+                            <label class="contact-label">Descripci&#243;n <span class="field-required">*</span></label>
                             <textarea id="contactDetalle" rows="5"
                                 placeholder="Describ&#237; el problema o consulta en detalle..."
-                                style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:.9rem;background:#f8fafc;color:#1e293b;resize:vertical;font-family:inherit;line-height:1.5;transition:border-color .2s;box-sizing:border-box;"></textarea>
+                                class="contact-input contact-textarea"></textarea>
                         </div>
-                        <button type="submit" id="btnSendContact" class="btn" disabled
-                            style="padding:12px 20px;background:linear-gradient(135deg,#0f766e,#0d9488);color:#fff;border:none;border-radius:10px;font-size:.92rem;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.5rem;box-shadow:0 4px 12px rgba(15,118,110,.25);">
+                        <button type="submit" id="btnSendContact" class="btn contact-submit-btn" disabled>
                             &#x1f4e8; Enviar mensaje
                         </button>
                     </form>
-                    <div id="contactSuccess" style="display:none;text-align:center;padding:2rem 1rem;">
-                        <div style="width:56px;height:56px;background:#f0fdf4;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:.8rem;">
+                    <div id="contactSuccess" class="contact-success" style="display:none;">
+                        <div class="contact-success-icon">
                             <span style="font-size:1.6rem;">&#x2705;</span>
                         </div>
-                        <p style="color:#16a34a;font-weight:700;font-size:1.05rem;margin:0 0 .4rem;">&#161;Mensaje enviado!</p>
-                        <p style="font-size:.85rem;color:#64748b;margin:0;">Responderemos a la brevedad. Si no recib&#237;s respuesta, escribinos a <strong>soporte@transcriptorpro.app</strong>.</p>
+                        <p class="contact-success-title">&#161;Mensaje enviado!</p>
+                        <p class="contact-success-text">Responderemos a la brevedad. Si no recib&#237;s respuesta, reenvi&#225; la solicitud desde este mismo bot&#243;n de contacto.</p>
                     </div>
                 </div>
             </div>
@@ -2632,20 +2978,16 @@
         (function () {
             // Registrar Service Worker
             if ('serviceWorker' in navigator) {
-                // Recargar cuando un nuevo SW toma el control (solo en UPDATES, no en primera instalación)
-                let refreshing = false;
                 let hadController = !!navigator.serviceWorker.controller;
                 navigator.serviceWorker.addEventListener('controllerchange', () => {
-                    if (refreshing) return;
                     if (!hadController) {
-                        // Primera activación del SW — no recargar (evita interrumpir factory setup)
+                        // Primera activación del SW.
                         hadController = true;
-                        console.log('[SW] Primera activación del SW — sin recarga');
+                        console.log('[SW] Primera activación del SW');
                         return;
                     }
-                    refreshing = true;
-                    console.log('[SW] Nuevo SW tomó el control, recargando...');
-                    window.location.reload();
+                    // No recargar automáticamente: evita perder trabajo en el editor.
+                    console.log('[SW] Nuevo SW tomó el control; se aplicará plenamente al reabrir la app.');
                 });
 
                 window.addEventListener('load', () => {
@@ -2654,11 +2996,6 @@
                             console.log('[SW] Registrado:', reg.scope);
                             // Forzar check de update en cada carga
                             reg.update().catch(() => {});
-
-                            // Check periódico de updates cada 30 segundos
-                            setInterval(() => {
-                                reg.update().catch(() => {});
-                            }, 30000);
 
                             // Cuando hay un SW esperando (ej: de una visita anterior), activarlo
                             if (reg.waiting) {
@@ -2802,6 +3139,58 @@
         </div>
 
     </main>
+
+    <script>
+    // ── Forzar actualización de Service Worker sin perder datos ──────────
+    (function () {
+        // Mostrar versión actual en caché
+        var vLabel = document.getElementById('cachedVersionLabel');
+        if (vLabel && 'caches' in window) {
+            caches.keys().then(function (keys) {
+                var v = keys.find(function (k) { return k.startsWith('transcriptor-pro-'); });
+                vLabel.textContent = v ? v.replace('transcriptor-pro-', '') : 'desconocida';
+            });
+        }
+
+        var btn = document.getElementById('btnForceUpdate');
+        if (!btn) return;
+
+        btn.addEventListener('click', function () {
+            btn.disabled = true;
+            btn.textContent = '⏳ Limpiando caché…';
+
+            // 1. Desregistrar todos los Service Workers
+            var swPromise = ('serviceWorker' in navigator)
+                ? navigator.serviceWorker.getRegistrations().then(function (regs) {
+                    return Promise.all(regs.map(function (r) { return r.unregister(); }));
+                })
+                : Promise.resolve();
+
+            // 2. Limpiar todos los cachés del CacheStorage (NO toca localStorage)
+            var cachePromise = ('caches' in window)
+                ? caches.keys().then(function (keys) {
+                    return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+                })
+                : Promise.resolve();
+
+            Promise.all([swPromise, cachePromise])
+                .then(function () {
+                    btn.textContent = '✅ ¡Listo! Recargando…';
+                    // Forzar recarga desde servidor (ignora caché del navegador)
+                    setTimeout(function () {
+                        window.location.reload(true);
+                    }, 800);
+                })
+                .catch(function (err) {
+                    btn.disabled = false;
+                    btn.textContent = '🚀 Actualizar a la última versión';
+                    if (typeof showToast === 'function') {
+                        showToast('Error al limpiar caché: ' + err.message, 'error');
+                    }
+                });
+        });
+    })();
+    </script>
 </body>
 
 </html>

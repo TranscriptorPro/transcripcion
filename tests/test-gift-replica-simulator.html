@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador Replica GIFT - Transcriptor Pro</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: #0b1220;
+      color: #dbe5f2;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      min-height: 100vh;
+    }
+    @media (max-width: 1200px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+    .left {
+      border-right: 1px solid #243147;
+      padding: 16px;
+      background: linear-gradient(180deg, #10182a 0%, #0b1220 100%);
+      overflow-y: auto;
+    }
+    .right {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      min-height: 100vh;
+    }
+    .toolbar {
+      padding: 12px 14px;
+      border-bottom: 1px solid #243147;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      background: #111a2c;
+    }
+    .viewer {
+      position: relative;
+      background: #070d18;
+    }
+    #appFrame {
+      width: 100%;
+      height: calc(100vh - 58px);
+      border: 0;
+      background: #fff;
+    }
+    .compare-panel {
+      border-top: 1px solid #243147;
+      background: #0d1526;
+      padding: 12px;
+      display: none;
+    }
+    .compare-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 1200px) {
+      .compare-grid { grid-template-columns: 1fr; }
+    }
+    .compare-box {
+      border: 1px solid #2d3e5d;
+      border-radius: 8px;
+      background: #111a2c;
+      overflow: hidden;
+      min-height: 360px;
+    }
+    .compare-title {
+      padding: 8px 10px;
+      border-bottom: 1px solid #2d3e5d;
+      font-size: 0.8rem;
+      color: #cfe3ff;
+      background: #0f1b31;
+    }
+    .compare-view {
+      width: 100%;
+      height: 420px;
+      border: 0;
+      background: #fff;
+    }
+    .checklist {
+      margin-top: 10px;
+      border: 1px solid #2d3e5d;
+      border-radius: 8px;
+      background: #111a2c;
+      padding: 8px 10px;
+    }
+    .checklist ul {
+      margin: 6px 0 0;
+      padding-left: 18px;
+    }
+    .checklist li {
+      margin: 4px 0;
+      font-size: 0.78rem;
+      color: #cfe0f5;
+    }
+    .ok-t { color: #8effb2; }
+    .ko-t { color: #f7b9b9; }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 1.22rem;
+      color: #a5d8ff;
+    }
+    .muted { color: #93a4bd; font-size: 0.85rem; }
+    .card {
+      background: #111a2c;
+      border: 1px solid #25324a;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .row2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    @media (max-width: 600px) {
+      .row2 { grid-template-columns: 1fr; }
+    }
+    label { display: block; font-size: 0.78rem; color: #9cb0ca; margin-bottom: 4px; }
+    input, textarea, select, button {
+      font: inherit;
+    }
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid #334564;
+      border-radius: 8px;
+      padding: 8px;
+      background: #0b1323;
+      color: #e3ecf8;
+    }
+    textarea { min-height: 86px; resize: vertical; }
+    .btns { display: flex; gap: 8px; flex-wrap: wrap; }
+    button {
+      border: 1px solid #355183;
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: #123463;
+      color: #e8f2ff;
+      cursor: pointer;
+    }
+    button:hover { filter: brightness(1.1); }
+    .ok { background: #0f5f40; border-color: #0e7850; }
+    .warn { background: #754f08; border-color: #94620b; }
+    .danger { background: #7a1f32; border-color: #9b2e44; }
+    .chip {
+      display: inline-block;
+      font-size: 0.72rem;
+      padding: 3px 8px;
+      border: 1px solid #365176;
+      border-radius: 999px;
+      background: #0d1931;
+      margin-right: 6px;
+      margin-bottom: 6px;
+    }
+    .status-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .status-box {
+      border: 1px solid #2e4262;
+      border-radius: 8px;
+      padding: 8px;
+      background: #0b1323;
+      font-size: 0.8rem;
+    }
+    .on { color: #8effb2; }
+    .off { color: #fcb8b8; }
+    .downloads li {
+      margin-bottom: 6px;
+      font-size: 0.8rem;
+      word-break: break-all;
+    }
+    .downloads a { color: #8fc6ff; text-decoration: none; }
+    .downloads a:hover { text-decoration: underline; }
+    .small { font-size: 0.76rem; }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="left">
+      <h1>Simulador Replica GIFT</h1>
+      <p class="muted">Replica la app real en iframe con un usuario GIFT ficticio y herramientas para validar modales, configuraciones, preview y descargas.</p>
+
+      <div class="card">
+        <div class="row2">
+          <div>
+            <label>Nombre profesional</label>
+            <input id="profName" value="Dra. Ana Lucia Perez">
+          </div>
+          <div>
+            <label>Matricula</label>
+            <input id="profMat" value="MP 56789">
+          </div>
+        </div>
+        <div class="row2" style="margin-top:8px;">
+          <div>
+            <label>Email</label>
+            <input id="profEmail" value="ana.perez.sim@demo.com">
+          </div>
+          <div>
+            <label>Telefono</label>
+            <input id="profPhone" value="+54 11 4444-1234">
+          </div>
+        </div>
+        <div style="margin-top:8px;">
+          <label>Especialidad</label>
+          <input id="profSpec" value="Cardiologia">
+        </div>
+        <div style="margin-top:8px;">
+          <label>Lugar de trabajo</label>
+          <input id="wpName" value="Centro Medico San Isidro">
+        </div>
+        <div style="margin-top:8px;">
+          <label>Lugares extra (uno por linea: Nombre|Direccion|Telefono|Email)</label>
+          <textarea id="wpExtra" placeholder="Clinica Norte|Av. Libertad 100|+54 11 4000-1111|turnos@clinicanorte.com\nSanatorio Central|Calle 55 1200|+54 11 4222-8888|"></textarea>
+        </div>
+        <div style="margin-top:8px;">
+          <label>API key ficticia</label>
+          <input id="apiKey" value="gsk_FAKE_GIFT_SIMULATOR_KEY">
+        </div>
+        <div class="btns" style="margin-top:10px;">
+          <button class="ok" id="btnCreateGift">1) Crear usuario ficticio GIFT</button>
+          <button class="warn" id="btnResetSim">Limpiar entorno simulado</button>
+          <button class="danger" id="btnHardReset">Reset duro simulador</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="btns">
+          <button id="btnOpenApp">2) Abrir app simulada</button>
+          <button id="btnHookDownloads">3) Hook de descargas</button>
+          <button class="ok" id="btnMockApi">Modo sin API real</button>
+        </div>
+        <div class="btns" style="margin-top:8px;">
+          <button id="btnOpenSettings">Abrir modal Configuracion</button>
+          <button id="btnOpenPdfConfig">Abrir modal Configurar Informe</button>
+          <button id="btnOpenPreview">Abrir Vista previa</button>
+        </div>
+        <div class="btns" style="margin-top:8px;">
+          <button id="btnDownloadPDF">Simular descarga PDF</button>
+          <button id="btnDownloadRTF">Simular descarga RTF</button>
+          <button id="btnDownloadTXT">Simular descarga TXT</button>
+          <button id="btnDownloadHTML">Simular descarga HTML</button>
+        </div>
+        <div class="btns" style="margin-top:8px;">
+          <button class="ok" id="btnBuildCompare">4) Generar comparacion HTML vs PDF</button>
+          <button id="btnToggleCompare">Mostrar/Ocultar panel comparador</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="small" style="margin-bottom:6px;">Estado en vivo (iframe app real)</div>
+        <div class="status-grid">
+          <div class="status-box">Settings modal: <span id="stSettings" class="off">cerrado</span></div>
+          <div class="status-box">PDF config: <span id="stPdfConfig" class="off">cerrado</span></div>
+          <div class="status-box">Preview: <span id="stPreview" class="off">cerrado</span></div>
+          <div class="status-box">Usuario GIFT: <span id="stGift" class="off">no cargado</span></div>
+          <div class="status-box">Mock API: <span id="stMockApi" class="off">off</span></div>
+        </div>
+        <div style="margin-top:8px;" id="activeBadges"></div>
+      </div>
+
+      <div class="card">
+        <div class="small" style="margin-bottom:8px;">Archivos descargados capturados (simulados)</div>
+        <ul id="downloadsList" class="downloads"></ul>
+      </div>
+
+      <div class="card">
+        <label>Log de acciones</label>
+        <textarea id="log" readonly></textarea>
+      </div>
+    </aside>
+
+    <section class="right">
+      <div class="toolbar">
+        <span class="chip">Replica: app real en index.html</span>
+        <span class="chip">Modo: GIFT ficticio</span>
+        <span class="chip" id="frameState">iframe: no cargado</span>
+      </div>
+      <div class="viewer">
+        <iframe id="appFrame" title="App simulada"></iframe>
+      </div>
+      <div class="compare-panel" id="comparePanel">
+        <div class="compare-head">
+          <div class="small">Comparador visual: salida HTML exacta vs PDF generado para adjunto</div>
+          <span class="chip" id="compareState">sin generar</span>
+        </div>
+        <div class="compare-grid">
+          <div class="compare-box">
+            <div class="compare-title">HTML exacto (createHTML)</div>
+            <iframe id="compareHtmlFrame" class="compare-view" title="Comparador HTML"></iframe>
+          </div>
+          <div class="compare-box">
+            <div class="compare-title">PDF generado (generatePDFBase64)</div>
+            <iframe id="comparePdfFrame" class="compare-view" title="Comparador PDF"></iframe>
+          </div>
+        </div>
+        <div class="checklist">
+          <div class="small">Checklist automático</div>
+          <ul id="compareChecklist"></ul>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    (function() {
+      const frame = document.getElementById('appFrame');
+      const logEl = document.getElementById('log');
+      const downloadsList = document.getElementById('downloadsList');
+      const blobUrls = [];
+      let comparePdfUrl = '';
+      let pendingFixture = null;
+
+      function log(msg) {
+        const now = new Date().toLocaleTimeString();
+        logEl.value += `[${now}] ${msg}\n`;
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      function makeImageData(label, bg) {
+        const c = document.createElement('canvas');
+        c.width = 240;
+        c.height = 100;
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, c.width, c.height);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 20px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, c.width / 2, c.height / 2);
+        return c.toDataURL('image/png');
+      }
+
+      function getGiftFixture() {
+        const profName = document.getElementById('profName').value.trim() || 'Dra. Demo';
+        const profMat = document.getElementById('profMat').value.trim() || 'MP 00000';
+        const profEmail = document.getElementById('profEmail').value.trim() || '';
+        const profPhone = document.getElementById('profPhone').value.trim() || '';
+        const profSpec = document.getElementById('profSpec').value.trim() || 'Clinica Medica';
+        const wpName = document.getElementById('wpName').value.trim() || 'Consultorio Demo';
+        const wpExtraRaw = document.getElementById('wpExtra').value || '';
+        const apiKey = document.getElementById('apiKey').value.trim() || 'gsk_FAKE_GIFT_SIM';
+
+        const logo = makeImageData('LOGO', '#2563eb');
+        const firma = makeImageData('FIRMA', '#0f766e');
+
+        const clientConfig = {
+          id: 'SIM-GIFT-001',
+          medicoId: 'SIM-GIFT-001',
+          nombre: profName,
+          email: profEmail,
+          type: 'PRO',
+          planCode: 'gift',
+          hasProMode: true,
+          maxDevices: 2,
+          status: 'active',
+          backendUrl: 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec',
+          allowedTemplates: ['eco_doppler', 'ecg', 'ett', 'generico'],
+          setupComplete: true
+        };
+
+        const profData = {
+          nombre: profName,
+          matricula: profMat,
+          especialidad: profSpec,
+          specialties: [profSpec],
+          sexo: /\bdra\.?/i.test(profName) ? 'F' : 'M',
+          email: profEmail,
+          telefono: profPhone,
+          whatsapp: profPhone,
+          headerColor: '#1a56a0'
+        };
+
+        const workplaceProfiles = [{
+          name: wpName,
+          address: 'Direccion simulada 123',
+          phone: profPhone,
+          email: profEmail,
+          logo: logo
+        }];
+
+        wpExtraRaw.split('\n').map(s => s.trim()).filter(Boolean).forEach((line) => {
+          const parts = line.split('|').map(p => p.trim());
+          workplaceProfiles.push({
+            name: parts[0] || 'Lugar adicional',
+            address: parts[1] || '',
+            phone: parts[2] || '',
+            email: parts[3] || '',
+            logo: logo
+          });
+        });
+
+        const pdfConfig = {
+          selectedTemplate: 'ett',
+          studyType: 'Ecocardiograma transtoracico',
+          studyReason: 'Control anual',
+          referringDoctor: 'Dr. Solicitante Demo',
+          reportNum: 'ET-00001-' + new Date().toISOString().slice(2, 10).replace(/-/g, ''),
+          patientName: 'Paciente Simulado',
+          patientDni: '30111222',
+          patientAge: '56',
+          patientSex: 'F',
+          patientInsurance: 'OSDE 210',
+          patientAffiliateNum: 'A-998877',
+          showSignImage: true,
+          showSignLine: true,
+          showSignName: true,
+          showSignMatricula: true,
+          footerText: 'Informe generado en entorno simulado GIFT',
+          activeProfessional: {
+            nombre: profName,
+            matricula: profMat,
+            especialidades: profSpec,
+            sexo: profData.sexo,
+            email: profEmail,
+            telefono: profPhone,
+            headerColor: '#1a56a0',
+            logo: logo,
+            firma: firma,
+            showSocial: true,
+            whatsapp: profPhone,
+            instagram: '@demo.simulada'
+          },
+          activeProfessionalIndex: 0,
+          activeWorkplaceIndex: 0
+        };
+
+        return { clientConfig, profData, workplaceProfiles, pdfConfig, logo, firma, apiKey };
+      }
+
+      function applyFixtureToWindowStorage(win, fx) {
+        try {
+          win.localStorage.setItem('client_config_stored', JSON.stringify(fx.clientConfig));
+          win.localStorage.setItem('prof_data', JSON.stringify(fx.profData));
+          win.localStorage.setItem('workplace_profiles', JSON.stringify(fx.workplaceProfiles));
+          win.localStorage.setItem('pdf_config', JSON.stringify(fx.pdfConfig));
+          win.localStorage.setItem('pdf_logo', fx.logo);
+          win.localStorage.setItem('pdf_signature', fx.firma);
+          win.localStorage.setItem('groq_api_key', fx.apiKey);
+          win.localStorage.setItem('onboarding_accepted', '1');
+          win.localStorage.setItem('simulator_gift_fixture', '1');
+        } catch (_) {}
+
+        try {
+          if (win.appDB && typeof win.appDB.set === 'function') {
+            win.appDB.set('client_config_stored', fx.clientConfig);
+            win.appDB.set('prof_data', fx.profData);
+            win.appDB.set('workplace_profiles', fx.workplaceProfiles);
+            win.appDB.set('pdf_config', fx.pdfConfig);
+            win.appDB.set('pdf_logo', fx.logo);
+            win.appDB.set('pdf_signature', fx.firma);
+            win.appDB.set('groq_api_key', fx.apiKey);
+          }
+        } catch (_) {}
+      }
+
+      function setGiftFixture() {
+        const fx = getGiftFixture();
+        pendingFixture = fx;
+        applyFixtureToWindowStorage(window, fx);
+        withApp((w) => {
+          applyFixtureToWindowStorage(w, fx);
+          if (w.CLIENT_CONFIG && typeof w.CLIENT_CONFIG === 'object') {
+            Object.assign(w.CLIENT_CONFIG, fx.clientConfig);
+          }
+          if (typeof w.applyProfessionalData === 'function') {
+            try { w.applyProfessionalData(fx.profData); } catch (_) {}
+          }
+          if (typeof w.updatePersonalization === 'function') {
+            try { w.updatePersonalization(fx.profData); } catch (_) {}
+          }
+          if (typeof w.populateWorkplaceDropdown === 'function') {
+            try { w.populateWorkplaceDropdown(); } catch (_) {}
+          }
+        });
+        log('Usuario ficticio GIFT creado en localStorage.');
+        log('Lugares de trabajo cargados: ' + fx.workplaceProfiles.length);
+        document.getElementById('stGift').textContent = 'cargado';
+        document.getElementById('stGift').className = 'on';
+      }
+
+      function clearFixture() {
+        const keys = [
+          'client_config_stored', 'prof_data', 'workplace_profiles', 'pdf_config', 'pdf_logo',
+          'pdf_signature', 'groq_api_key', 'onboarding_accepted', 'simulator_gift_fixture',
+          'device_id', 'license_validation_cache'
+        ];
+        keys.forEach(k => localStorage.removeItem(k));
+        try { sessionStorage.clear(); } catch (_) {}
+        blobUrls.splice(0).forEach((u) => URL.revokeObjectURL(u));
+        if (comparePdfUrl) {
+          URL.revokeObjectURL(comparePdfUrl);
+          comparePdfUrl = '';
+        }
+        pendingFixture = null;
+        downloadsList.innerHTML = '';
+        log('Entorno simulado limpiado.');
+        document.getElementById('stGift').textContent = 'no cargado';
+        document.getElementById('stGift').className = 'off';
+      }
+
+      function getAppWindow() {
+        try {
+          return frame.contentWindow;
+        } catch (_) {
+          return null;
+        }
+      }
+
+      function withApp(cb, errMsg) {
+        let w = null;
+        try {
+          w = getAppWindow();
+          if (!w || !w.document) throw new Error('iframe no disponible');
+        } catch (_) {
+          log(errMsg || 'iframe no disponible.');
+          return;
+        }
+        cb(w);
+      }
+
+      function openApp() {
+        const fx = pendingFixture || getGiftFixture();
+        pendingFixture = fx;
+
+        const payload = encodeURIComponent(JSON.stringify({
+          client_config_stored: fx.clientConfig,
+          prof_data: fx.profData,
+          workplace_profiles: fx.workplaceProfiles,
+          pdf_config: fx.pdfConfig,
+          pdf_logo: fx.logo,
+          pdf_signature: fx.firma,
+          groq_api_key: fx.apiKey,
+          onboarding_accepted: '1',
+          simulator_gift_fixture: '1'
+        }));
+
+        const ts = Date.now();
+        const target = encodeURIComponent('../index.html?simulator=gift-replica&ts=' + ts);
+        frame.src = `./simulator-bootstrap.html#payload=${payload}&target=${target}`;
+        log('Abriendo app real en iframe con bootstrap estable...');
+      }
+
+      function hardResetSimulator() {
+        clearFixture();
+        frame.src = 'about:blank';
+        setTimeout(() => {
+          openApp();
+          setTimeout(() => setGiftFixture(), 500);
+        }, 250);
+        log('Reset duro ejecutado (cache-buster + recarga + fixture).');
+      }
+
+      function updateCompareState(text) {
+        document.getElementById('compareState').textContent = text;
+      }
+
+      function setChecklist(items) {
+        const ul = document.getElementById('compareChecklist');
+        ul.innerHTML = items.map((it) => {
+          const cls = it.ok ? 'ok-t' : 'ko-t';
+          const icon = it.ok ? 'OK' : 'FALTA';
+          return `<li class="${cls}">${icon}: ${it.label}${it.detail ? ' -> ' + it.detail : ''}</li>`;
+        }).join('');
+      }
+
+      async function buildComparison() {
+        withApp(async (w) => {
+          try {
+            updateCompareState('generando...');
+            const panel = document.getElementById('comparePanel');
+            panel.style.display = 'block';
+
+            if (typeof w.openPrintPreview === 'function') {
+              await w.openPrintPreview();
+            }
+
+            if (typeof w.createHTML !== 'function') {
+              log('createHTML no disponible en iframe.');
+              updateCompareState('error createHTML');
+              return;
+            }
+
+            const htmlDoc = await w.createHTML();
+            const htmlFrame = document.getElementById('compareHtmlFrame');
+            htmlFrame.srcdoc = htmlDoc || '<html><body>Sin HTML</body></html>';
+
+            if (typeof w.generatePDFBase64 !== 'function') {
+              log('generatePDFBase64 no disponible en iframe.');
+              updateCompareState('error PDF');
+              return;
+            }
+
+            const b64 = await w.generatePDFBase64();
+            if (!b64) {
+              log('No se pudo generar PDF base64 para comparacion.');
+              updateCompareState('sin PDF');
+              return;
+            }
+
+            const bin = atob(b64);
+            const bytes = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+            const pdfBlob = new Blob([bytes], { type: 'application/pdf' });
+
+            if (comparePdfUrl) URL.revokeObjectURL(comparePdfUrl);
+            comparePdfUrl = URL.createObjectURL(pdfBlob);
+            const pdfFrame = document.getElementById('comparePdfFrame');
+            pdfFrame.src = comparePdfUrl;
+
+            const cfg = w._pdfConfigCache || JSON.parse(w.localStorage.getItem('pdf_config') || '{}');
+            const ap = cfg.activeProfessional || {};
+
+            const includesText = (v) => {
+              if (!v) return false;
+              const vv = String(v).toLowerCase();
+              return String(htmlDoc || '').toLowerCase().includes(vv);
+            };
+
+            const checks = [
+              { label: 'Logo profesional configurado', ok: !!(ap.logo && ap.logo.startsWith('data:image/')) },
+              { label: 'Firma configurada', ok: !!(ap.firma && ap.firma.startsWith('data:image/')) },
+              { label: 'Paciente en HTML', ok: includesText(cfg.patientName), detail: cfg.patientName || '' },
+              { label: 'Afiliado en HTML', ok: includesText(cfg.patientAffiliateNum), detail: cfg.patientAffiliateNum || '' },
+              { label: 'Medico solicitante en HTML', ok: includesText(cfg.referringDoctor), detail: cfg.referringDoctor || '' },
+              { label: 'Motivo en HTML', ok: includesText(cfg.studyReason), detail: cfg.studyReason || '' },
+              { label: 'PDF generado', ok: pdfBlob.size > 1024, detail: (pdfBlob.size / 1024).toFixed(1) + ' KB' },
+              { label: 'Salida PDF basada en HTML activa', ok: true, detail: 'Ruta visual prioritaria + fallback seguro' }
+            ];
+            setChecklist(checks);
+            updateCompareState('comparacion lista');
+            log('Comparacion HTML vs PDF generada correctamente.');
+          } catch (e) {
+            updateCompareState('error en comparacion');
+            log('Error al generar comparacion: ' + (e.message || e));
+          }
+        }, 'No se puede comparar: app no cargada.');
+      }
+
+      function installDownloadHook() {
+        withApp((w) => {
+          if (w._simDownloadHookInstalled) {
+            log('Hook de descargas ya estaba instalado.');
+            return;
+          }
+          const originalSave = w.saveToDisk;
+          w.saveToDisk = async (blob, filename) => {
+            try {
+              const url = URL.createObjectURL(blob);
+              blobUrls.push(url);
+              const li = document.createElement('li');
+              li.innerHTML = `<a href="${url}" download="${filename}">${filename}</a> <span class="muted">(${blob.type || 'bin'}, ${(blob.size / 1024).toFixed(1)} KB)</span>`;
+              downloadsList.prepend(li);
+              log('Capturado archivo: ' + filename);
+            } catch (e) {
+              log('No se pudo capturar descarga: ' + (e.message || e));
+            }
+            if (typeof originalSave === 'function') return originalSave(blob, filename);
+            return undefined;
+          };
+          w._simDownloadHookInstalled = true;
+          log('Hook de descargas instalado dentro del iframe.');
+        }, 'No se pudo instalar hook: app no cargada.');
+      }
+
+      function installApiMockMode() {
+        withApp((w) => {
+          try {
+            if (w._simApiMockInstalled) {
+              log('Mock API ya estaba activo.');
+              document.getElementById('stMockApi').textContent = 'on';
+              document.getElementById('stMockApi').className = 'on';
+              return;
+            }
+
+            const mockText = [
+              'Paciente: Laura Gimenez. DNI: 30123456. Edad: 57 años. Sexo: femenino.',
+              'Obra social: OSDE 210. N de afiliado: AF-778899.',
+              'Medico solicitante: Dr. Roberto Salinas. Motivo: control anual.',
+              'Estudio: Ecocardiograma transtoracico. Fraccion de eyeccion 62%. Sin derrame pericardico.'
+            ].join(' ');
+
+            // Clave dummy siempre presente para superar validaciones de formato.
+            w.GROQ_API_KEY = 'gsk_SIMULATOR_BYPASS_KEY';
+            try {
+              w.localStorage.setItem('groq_api_key', w.GROQ_API_KEY);
+            } catch (_) {}
+
+            // Evitar guias/modales de error por key invalida.
+            w._showApiKeyGuidance = function() {
+              if (typeof w.showToast === 'function') w.showToast('Modo simulador: API real desactivada.', 'info', 2500);
+            };
+
+            // Banner de key invalida oculto en simulador.
+            const hideApiBanner = () => {
+              const b = w.document.getElementById('apiKeyWarningBanner');
+              if (b) b.style.display = 'none';
+            };
+            hideApiBanner();
+
+            // Transcripcion mock.
+            w.transcribeWithRetry = async function(_file, progressCb) {
+              if (typeof progressCb === 'function') progressCb('Simulador: transcripcion mock completada');
+              return mockText;
+            };
+            w.transcribeWithGroqParams = async function() {
+              return mockText;
+            };
+
+            // Estructuracion mock coherente con app.
+            w.checkStructurePrerequisites = function() { return true; };
+            w.structureTranscription = async function(text, _templateKey) {
+              const src = String(text || mockText).trim();
+              return [
+                '## DATOS DEL ESTUDIO',
+                'Ecocardiograma transtoracico realizado con tecnica Doppler color.',
+                '',
+                '## HALLAZGOS',
+                src,
+                '',
+                '## CONCLUSION',
+                'Funcion sistolica conservada. Sin derrame pericardico. Estudio dentro de parametros normales.'
+              ].join('\n');
+            };
+
+            // Si existe fetchWithTimeout, impedir que golpee Groq en modo simulador.
+            if (typeof w.fetchWithTimeout === 'function') {
+              const originalFetchWithTimeout = w.fetchWithTimeout;
+              w.fetchWithTimeout = async function(url, opts) {
+                const u = String(url || '');
+                if (u.includes('api.groq.com')) {
+                  return {
+                    ok: true,
+                    status: 200,
+                    text: async () => mockText,
+                    json: async () => ({
+                      choices: [{ message: { content: '## INFORME\n' + mockText } }]
+                    })
+                  };
+                }
+                return originalFetchWithTimeout(url, opts);
+              };
+            }
+
+            w._simApiMockInstalled = true;
+            setInterval(hideApiBanner, 1200);
+            document.getElementById('stMockApi').textContent = 'on';
+            document.getElementById('stMockApi').className = 'on';
+            log('Modo sin API real activado: transcripcion/estructuracion mock listas.');
+          } catch (e) {
+            document.getElementById('stMockApi').textContent = 'error';
+            document.getElementById('stMockApi').className = 'off';
+            log('Error activando mock API: ' + (e.message || e));
+          }
+        }, 'No se pudo activar mock API: app no cargada.');
+      }
+
+      function updateLiveStatus() {
+        withApp((w) => {
+          const d = w.document;
+          const isActive = (id) => d.getElementById(id)?.classList.contains('active');
+
+          const stSettings = document.getElementById('stSettings');
+          const stPdfConfig = document.getElementById('stPdfConfig');
+          const stPreview = document.getElementById('stPreview');
+
+          const settingsOn = isActive('settingsModalOverlay');
+          stSettings.textContent = settingsOn ? 'abierto' : 'cerrado';
+          stSettings.className = settingsOn ? 'on' : 'off';
+
+          const pdfCfgOn = isActive('pdfModalOverlay');
+          stPdfConfig.textContent = pdfCfgOn ? 'abierto' : 'cerrado';
+          stPdfConfig.className = pdfCfgOn ? 'on' : 'off';
+
+          const previewOn = isActive('printPreviewOverlay');
+          stPreview.textContent = previewOn ? 'abierto' : 'cerrado';
+          stPreview.className = previewOn ? 'on' : 'off';
+
+          const badges = [];
+          if (settingsOn) badges.push('Modal Configuracion');
+          if (pdfCfgOn) badges.push('Modal Configurar Informe');
+          if (previewOn) badges.push('Vista previa PDF');
+          document.getElementById('activeBadges').innerHTML = badges.map(b => `<span class="chip">${b}</span>`).join('') || '<span class="muted">Sin modal activo</span>';
+
+          const appType = (w.CLIENT_CONFIG && w.CLIENT_CONFIG.type) || 'N/D';
+          document.getElementById('frameState').textContent = 'iframe: cargado | tipo=' + appType;
+        });
+      }
+
+      document.getElementById('btnCreateGift').addEventListener('click', setGiftFixture);
+      document.getElementById('btnResetSim').addEventListener('click', clearFixture);
+      document.getElementById('btnHardReset').addEventListener('click', hardResetSimulator);
+      document.getElementById('btnOpenApp').addEventListener('click', openApp);
+      document.getElementById('btnHookDownloads').addEventListener('click', installDownloadHook);
+      document.getElementById('btnMockApi').addEventListener('click', installApiMockMode);
+      document.getElementById('btnBuildCompare').addEventListener('click', buildComparison);
+      document.getElementById('btnToggleCompare').addEventListener('click', () => {
+        const panel = document.getElementById('comparePanel');
+        panel.style.display = panel.style.display === 'none' || !panel.style.display ? 'block' : 'none';
+      });
+
+      frame.addEventListener('load', () => {
+        log('iframe cargado: app disponible para simulacion.');
+        if (pendingFixture) {
+          withApp((w) => {
+            applyFixtureToWindowStorage(w, pendingFixture);
+            log('Fixture pendiente reinyectado al iframe tras carga.');
+          });
+        }
+        installApiMockMode();
+        updateLiveStatus();
+      });
+
+      document.getElementById('btnOpenSettings').addEventListener('click', () => {
+        withApp((w) => {
+          if (typeof w.populateSettingsModal === 'function') w.populateSettingsModal();
+          const ov = w.document.getElementById('settingsModalOverlay');
+          if (ov) ov.classList.add('active');
+          log('Modal Configuracion abierto.');
+          updateLiveStatus();
+        });
+      });
+
+      document.getElementById('btnOpenPdfConfig').addEventListener('click', () => {
+        withApp(async (w) => {
+          if (typeof w.openPdfConfigModal === 'function') {
+            await w.openPdfConfigModal();
+            log('Modal Configurar Informe abierto.');
+          } else {
+            log('openPdfConfigModal no disponible.');
+          }
+          updateLiveStatus();
+        });
+      });
+
+      document.getElementById('btnOpenPreview').addEventListener('click', () => {
+        withApp(async (w) => {
+          if (typeof w.openPrintPreview === 'function') {
+            await w.openPrintPreview();
+            log('Vista previa abierta.');
+          } else {
+            log('openPrintPreview no disponible.');
+          }
+          updateLiveStatus();
+        });
+      });
+
+      function bindDownload(btnId, fmt) {
+        document.getElementById(btnId).addEventListener('click', () => {
+          withApp(async (w) => {
+            if (typeof w.downloadFile === 'function') {
+              await w.downloadFile(fmt);
+              log('Descarga simulada: ' + fmt.toUpperCase());
+            } else {
+              log('downloadFile no disponible para ' + fmt + '.');
+            }
+          });
+        });
+      }
+      bindDownload('btnDownloadPDF', 'pdf');
+      bindDownload('btnDownloadRTF', 'rtf');
+      bindDownload('btnDownloadTXT', 'txt');
+      bindDownload('btnDownloadHTML', 'html');
+
+      setInterval(updateLiveStatus, 1200);
+      log('Simulador listo. Paso recomendado: 1) Crear GIFT 2) Abrir app 3) Hook descargas.');
+    })();
+  </script>
+</body>
+</html>

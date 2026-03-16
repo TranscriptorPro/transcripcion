@@ -19,7 +19,9 @@ function _showClientOnboarding() {
     // K1: Si la API key ya fue precargada por el admin, ocultar el paso.
     const apiStep = document.getElementById('onboardingApiKeyStep');
     if (apiStep) {
-        const hasKey = !!(localStorage.getItem('groq_api_key'));
+        const hasKey = !!((typeof window.getResolvedGroqApiKey === 'function')
+            ? window.getResolvedGroqApiKey()
+            : localStorage.getItem('groq_api_key'));
         apiStep.style.display = hasKey ? 'none' : '';
     }
 
@@ -141,7 +143,7 @@ function _showClientOnboarding() {
         const socialBadge = document.getElementById('onbSocialBadge');
         if (socialToggle) {
             if (_isProUser) {
-                socialToggle.checked = false;
+                socialToggle.checked = true;
             } else {
                 socialToggle.checked = false;
                 socialToggle.disabled = true;
@@ -232,12 +234,14 @@ function _showClientOnboarding() {
         }
         const pdfCfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
         pdfCfg.showSignImage = document.getElementById('onbToggleFirma')?.checked ?? true;
-        pdfCfg.showHeader = document.getElementById('onbToggleLogoInst')?.checked ?? true;
-        pdfCfg.showLogoProfessional = document.getElementById('onbToggleLogoProf')?.checked ?? true;
+        pdfCfg.showInstLogo = document.getElementById('onbToggleLogoInst')?.checked ?? true;
+        pdfCfg.showProfLogo = document.getElementById('onbToggleLogoProf')?.checked ?? true;
+        // Compatibilidad con versiones previas que leian esta key legacy.
+        pdfCfg.showLogoProfessional = pdfCfg.showProfLogo;
         pdfCfg.showQR = document.getElementById('onbToggleQR')?.checked ?? false;
         pdfCfg.showPhone = document.getElementById('onbTogglePhone')?.checked ?? true;
         pdfCfg.showEmail = document.getElementById('onbToggleEmail')?.checked ?? true;
-        pdfCfg.showSocial = document.getElementById('onbToggleSocial')?.checked ?? false;
+        pdfCfg.showSocial = document.getElementById('onbToggleSocial')?.checked ?? true;
         const activeMarginBtn = document.querySelector('.onb-margin-btn.active');
         if (activeMarginBtn) pdfCfg.margins = activeMarginBtn.dataset.margin;
         localStorage.setItem('pdf_config', JSON.stringify(pdfCfg));
@@ -292,7 +296,9 @@ function _showClientOnboarding() {
 
             // K1: Si no hay API key precargada, exigir ingreso valido en primer uso.
             const apiStepVisible = apiStep && apiStep.style.display !== 'none';
-            const currentStoredKey = String(localStorage.getItem('groq_api_key') || '').trim();
+            const currentStoredKey = String(
+                (typeof window.getResolvedGroqApiKey === 'function' ? window.getResolvedGroqApiKey() : localStorage.getItem('groq_api_key')) || ''
+            ).trim();
             const onbKeyEl = document.getElementById('onboardingApiKey');
             const inputKey = String(onbKeyEl?.value || '').trim();
             const resolvedKey = currentStoredKey || inputKey;
@@ -321,11 +327,20 @@ function _showClientOnboarding() {
 
                 const onbKey = document.getElementById('onboardingApiKey');
                 if (onbKey && onbKey.value.trim() && onbKey.value.trim().startsWith('gsk_')) {
-                    if (typeof appDB !== 'undefined') appDB.set('groq_api_key', onbKey.value.trim());
-                    localStorage.setItem('groq_api_key', onbKey.value.trim());
+                    const finalKey = onbKey.value.trim();
+                    if (typeof window.setGroqApiKey === 'function') {
+                        window.setGroqApiKey(finalKey, { source: 'onboarding-submit' });
+                    } else {
+                        // Fallback defensivo: state.js deberia exponer setGroqApiKey.
+                        if (typeof appDB !== 'undefined') appDB.set('groq_api_key', finalKey);
+                        localStorage.setItem('groq_api_key', finalKey);
+                        window.GROQ_API_KEY = finalKey;
+                    }
                 }
 
-                window.GROQ_API_KEY = window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '';
+                window.GROQ_API_KEY = (typeof window.getResolvedGroqApiKey === 'function')
+                    ? window.getResolvedGroqApiKey()
+                    : (window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '');
                 console.info('[Onboarding] API Key loaded:', window.GROQ_API_KEY ? 'gsk_...' + window.GROQ_API_KEY.slice(-4) : 'NONE');
                 _initCommonModules();
 

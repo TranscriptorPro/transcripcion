@@ -69,6 +69,9 @@ function _initClient() {
     const btnAdminAccess = document.getElementById('btnAdminAccess');
     if (btnAdminAccess) btnAdminAccess.style.display = 'none';
 
+    // Contacto debe estar disponible para no-admin incluso antes de aceptar onboarding.
+    if (typeof initContact === 'function') initContact();
+
     // K1: el criterio de primer uso es la aceptacion de T&C, NO la ausencia de datos.
     // Los datos (nombre, matricula, API key) los precarga el admin antes de entregar la app.
     const accepted = localStorage.getItem('onboarding_accepted');
@@ -79,7 +82,9 @@ function _initClient() {
 
     // Ya acepto T&C: inicializar con los datos precargados por el admin
     const profData = window._profDataCache || JSON.parse(localStorage.getItem('prof_data') || '{}');
-    window.GROQ_API_KEY = window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '';
+    window.GROQ_API_KEY = (typeof window.getResolvedGroqApiKey === 'function')
+        ? window.getResolvedGroqApiKey()
+        : (window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '');
     _initCommonModules();
 
     try {
@@ -108,7 +113,9 @@ function _initClient() {
 // Modulos comunes (admin + cliente)
 function _initCommonModules() {
     // SIEMPRE cargar API Key desde localStorage (puede haber sido guardada por factory setup)
-    const storedKey = localStorage.getItem('groq_api_key') || '';
+    const storedKey = (typeof window.getResolvedGroqApiKey === 'function')
+        ? window.getResolvedGroqApiKey()
+        : (localStorage.getItem('groq_api_key') || '');
     if (storedKey && !window.GROQ_API_KEY) {
         window.GROQ_API_KEY = storedKey;
     }
@@ -125,5 +132,6 @@ function _initCommonModules() {
     if (typeof initStructurer === 'function') initStructurer();
     if (typeof initContact === 'function') initContact();
     if (typeof initDiagnostic === 'function') initDiagnostic();
-    if (typeof initPatientRegistryPanel === 'function') initPatientRegistryPanel();
+    if (typeof initDatosPanel === 'function') initDatosPanel();
+    if (typeof initLicenseManager === 'function') initLicenseManager();
 }

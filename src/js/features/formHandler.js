@@ -106,22 +106,125 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ---- Extract patient data from transcription ----
-const PATIENT_NAME_REGEX = /paciente\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)+)/i;
+const PATIENT_NAME_REGEX = /(?:nombre(?:\s+del\s+paciente)?\s*(?::|-)?\s*|paciente\s+(?:de\s+nombre\s+)?)([A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+){1,3})/i;
+const PATIENT_NAME_AFTER_COMMA_REGEX = /paciente\s+(?:masculino|femenino|femenina|masculina)[^,.;\n]{0,60},\s*([A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+){1,3})/i;
+const PATIENT_NAME_AFTER_AGE_REGEX = /\b(?:(?:paciente\s+)?(?:femenina|masculino|femenino|masculina|mujer|hombre)\s+(?:(?:posmenop[aá]usic[ao]|cr[oó]nic[ao]|diab[eé]tic[ao])\s+)?(?:de\s+)?|paciente\s+de\s+)\d{1,3}\s*años\s*,\s*([A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+){1,3})/i;
+const PATIENT_NAME_AT_START_REGEX = /^\s*([A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+){1,3}?)\s*(?:,\s*(?:[^\s,]+\s+){0,4}(?:de\s+)?|\s+de\s+)\d{1,3}\s*años/i;
 const DNI_REGEX = /(?:DNI|documento|D\.N\.I\.?)[:\s]*(?:N[°º]?\s*)?(\d{1,3}\.?\d{3}\.?\d{3})/i;
 const AGE_REGEX = /(\d{1,3})\s*años/i;
-const SEX_REGEX = /(?:sexo|género)\s*(?::|,)?\s*(masculino|femenino|masc|fem)/i;
+const SEX_REGEX = /(?:sexo|género)\s*(?::|,)?\s*(masculino|femenino|masculina|femenina|masc|fem)/i;
+const SEX_FROM_PATIENT_REGEX = /\bpaciente\s+(masculino|femenino)\b/i;
+const SEX_LEAD_REGEX = /^\s*(mujer|hombre)\b/i;
+const SEX_STANDALONE_REGEX = /\b(femenina|femenino|masculina|masculino|mujer|hombre)\b/i;
+const INSURANCE_REGEX = /(?:obra\s+social|prepaga)\s*(?::|-)?\s*([^,.;\n]+)/i;
+const AFFILIATE_REGEX = /(?:n[°º]\s*afiliado|afiliad[oa]|nro\.?\s*afiliado)\s*(?::|-)?\s*([A-Za-z0-9.-]{3,30})/i;
+const WEIGHT_REGEX = /(?:peso)\s*(?::|-)?\s*(\d{2,3}(?:[.,]\d{1,2})?)\s*(?:kg|kilogramos?)?/i;
+const HEIGHT_REGEX = /(?:altura|talla)\s*(?::|-)?\s*(\d(?:[.,]\d{1,2})|\d{2,3})\s*(?:m|mts?|cm)?/i;
+const STUDY_DATE_REGEX = /(?:fecha(?:\s+del\s+estudio)?|estudio\s+realizado\s+el)\s*(?::|-)?\s*(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})/i;
+const STUDY_TIME_REGEX = /(?:hora(?:\s+del\s+estudio)?|hs?)\s*(?::|-)?\s*(\d{1,2}:\d{2})/i;
+const REFERRING_DOCTOR_REGEX = /(?:m[eé]dico\s+solicitante|solicitado\s+por|derivado\s+por|solicitante)\s*(?::|-)?\s*([^\n.;]{3,90})/i;
+const STUDY_REASON_REGEX = /(?:motivo(?:\s+de\s+(?:consulta|solicitud|estudio))?|indicaci[oó]n(?:\s+cl[ií]nica)?|raz[oó]n\s+del\s+estudio)\s*(?::|-)?\s*([^\n]{3,140})/i;
+const STUDY_TYPE_LINE_REGEX = /(?:tipo\s+de\s+estudio|estudio|pr[aá]ctica)\s*(?::|-)?\s*([^\n.;]{3,90})/i;
+const STUDY_TYPE_HEADING_REGEX = /\bINFORME\s+DE\s+([^\n]+)/i;
+
+const _NAME_BLOCKLIST = new Set([
+    'masculino', 'femenino', 'sexo', 'genero', 'paciente', 'dni', 'documento',
+    'edad', 'anos', 'obra', 'social', 'afiliado', 'afiliada'
+]);
+
+const _NAME_STOPWORDS = new Set([
+    'que', 'por', 'para', 'con', 'sin', 'se', 'su', 'sus',
+    'un', 'una', 'el', 'en', 'es', 'como', 'pero', 'no',
+    'ya', 'ha', 'muy', 'hay', 'ante', 'sobre', 'entre',
+    'realiza', 'presenta', 'refiere', 'acude', 'consulta', 'ingresa'
+]);
+
+function _cleanPatientNameCandidate(raw) {
+    let c = String(raw || '').replace(/[.,;:]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!c) return '';
+    c = c.replace(/\b(?:de\s+\d{1,3}\s*años?|consulta|acude|ingresa|presenta|refiere)\b[\s\S]*$/i, '').trim();
+    if (!c) return '';
+    const tokens = c.split(/\s+/).filter(Boolean);
+    if (tokens.length < 2) return '';
+    // Reject if any token is a medical/form term
+    if (tokens.some(t => _NAME_BLOCKLIST.has(t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()))) return '';
+    // Truncate at first stopword (que, por, se, con, ...)
+    const nameTokens = [];
+    for (const t of tokens) {
+        const norm = t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        if (_NAME_STOPWORDS.has(norm)) break;
+        nameTokens.push(t);
+    }
+    // Strip trailing prepositions (artifacts of greedy capture)
+    while (nameTokens.length && /^(?:de|del|y)$/i.test(nameTokens[nameTokens.length - 1])) nameTokens.pop();
+    if (nameTokens.length < 2) return '';
+    const meaningful = nameTokens.filter(t => t.length > 2);
+    if (meaningful.length < 2) return '';
+    return nameTokens
+        .map(w => w ? (w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()) : w)
+        .join(' ');
+}
 
 window.extractPatientDataFromText = function (text) {
     if (!text) return {};
     const data = {};
-    const nameMatch = text.match(PATIENT_NAME_REGEX);
-    if (nameMatch) data.name = nameMatch[1];
+    const normalized = String(text).replace(/\s+/g, ' ').trim();
+    const nameMatchDirect = normalized.match(PATIENT_NAME_REGEX);
+    const nameMatchComma = normalized.match(PATIENT_NAME_AFTER_COMMA_REGEX);
+    const nameMatchAfterAge = normalized.match(PATIENT_NAME_AFTER_AGE_REGEX);
+    const nameMatchStart = normalized.match(PATIENT_NAME_AT_START_REGEX);
+    const candidateName = _cleanPatientNameCandidate(nameMatchStart && nameMatchStart[1])
+        || _cleanPatientNameCandidate(nameMatchAfterAge && nameMatchAfterAge[1])
+        || _cleanPatientNameCandidate(nameMatchComma && nameMatchComma[1])
+        || _cleanPatientNameCandidate(nameMatchDirect && nameMatchDirect[1]);
+    if (candidateName) data.name = candidateName;
     const dniMatch = text.match(DNI_REGEX);
     if (dniMatch) data.dni = dniMatch[1];
     const ageMatch = text.match(AGE_REGEX);
     if (ageMatch) data.age = parseInt(ageMatch[1]);
-    const sexMatch = text.match(SEX_REGEX);
-    if (sexMatch) data.sex = /^m/i.test(sexMatch[1]) ? 'M' : 'F';
+    const sexMatch = text.match(SEX_REGEX) || text.match(SEX_FROM_PATIENT_REGEX) || text.match(SEX_LEAD_REGEX) || text.match(SEX_STANDALONE_REGEX);
+    if (sexMatch) {
+        const sx = String(sexMatch[1] || '').toLowerCase();
+        data.sex = (sx.startsWith('h') || sx.startsWith('masc')) ? 'M' : 'F';
+    }
+    const insuranceMatch = text.match(INSURANCE_REGEX);
+    if (insuranceMatch && insuranceMatch[1]) data.insurance = insuranceMatch[1].trim().replace(/[.,;:]+$/g, '');
+    const affiliateMatch = text.match(AFFILIATE_REGEX);
+    if (affiliateMatch && affiliateMatch[1]) data.affiliateNum = affiliateMatch[1].trim().replace(/[.,;:]+$/g, '');
+    const weightMatch = text.match(WEIGHT_REGEX);
+    if (weightMatch && weightMatch[1]) data.weight = String(weightMatch[1]).replace(',', '.');
+    const heightMatch = text.match(HEIGHT_REGEX);
+    if (heightMatch && heightMatch[1]) data.height = String(heightMatch[1]).replace(',', '.');
+
+    const studyDateMatch = text.match(STUDY_DATE_REGEX);
+    if (studyDateMatch && studyDateMatch[1]) {
+        const raw = String(studyDateMatch[1]).trim();
+        const parts = raw.split(/[\/-]/).map(p => p.trim());
+        if (parts.length === 3) {
+            let dd = parseInt(parts[0], 10);
+            let mm = parseInt(parts[1], 10);
+            let yy = parseInt(parts[2], 10);
+            if (yy < 100) yy += 2000;
+            if (dd >= 1 && dd <= 31 && mm >= 1 && mm <= 12 && yy >= 2000 && yy <= 2100) {
+                data.studyDate = `${String(yy).padStart(4, '0')}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
+            }
+        }
+    }
+
+    const studyTimeMatch = text.match(STUDY_TIME_REGEX);
+    if (studyTimeMatch && studyTimeMatch[1]) data.studyTime = studyTimeMatch[1].trim();
+
+    const refMatch = text.match(REFERRING_DOCTOR_REGEX);
+    if (refMatch && refMatch[1]) data.referringDoctor = refMatch[1].trim().replace(/[.,;:]+$/g, '');
+
+    const reasonMatch = text.match(STUDY_REASON_REGEX);
+    if (reasonMatch && reasonMatch[1]) data.studyReason = reasonMatch[1].trim().replace(/[.,;:]+$/g, '');
+
+    const typeHeadingMatch = text.match(STUDY_TYPE_HEADING_REGEX);
+    const typeLineMatch = text.match(STUDY_TYPE_LINE_REGEX);
+    const studyType = (typeHeadingMatch && typeHeadingMatch[1]) ? typeHeadingMatch[1] : (typeLineMatch && typeLineMatch[1]);
+    if (studyType) data.studyType = String(studyType).trim().replace(/[.,;:]+$/g, '');
+
     return data;
 }
 
@@ -227,20 +330,24 @@ window.handleImageUpload = function (inputId, previewId, storageKey) {
 window.savePdfConfiguration = function () {
     const val = (id) => document.getElementById(id)?.value || '';
     const chk = (id, def) => document.getElementById(id)?.checked ?? def;
+    const normName = (v) => (typeof window.normalizeFieldText === 'function')
+        ? window.normalizeFieldText(String(v || ''), 'name')
+        : String(v || '');
 
     // Preservar datos del profesional activo que fueron seteados por business.js
     const existing = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
 
     const config = {
-        studyType: val('pdfStudyType'),
+        studyType: val('pdfStudyType') || existing.studyType || '',
         selectedTemplate: window.selectedTemplate || '',
-        reportNum: val('pdfReportNumber'),
-        studyDate: val('pdfStudyDate'),
-        studyTime: val('pdfStudyTime'),
-        studyReason: val('pdfStudyReason'),
-        referringDoctor: val('pdfReferringDoctor'),
-        equipment: val('pdfEquipment'),
-        technique: val('pdfTechnique'),
+        reportNum: val('pdfReportNumber') || existing.reportNum || '',
+        studyDate: val('pdfStudyDate') || existing.studyDate || '',
+        studyTime: val('pdfStudyTime') || existing.studyTime || '',
+        showStudyDate: document.getElementById('reqShowStudyDate')?.checked ?? existing.showStudyDate ?? true,
+        studyReason: val('pdfStudyReason') || existing.studyReason || '',
+        referringDoctor: val('pdfReferringDoctor') || existing.referringDoctor || '',
+        equipment: val('pdfEquipment') || existing.equipment || '',
+        technique: val('pdfTechnique') || existing.technique || '',
         patientName: val('pdfPatientName'),
         patientDni: val('pdfPatientDni'),
         patientAge: val('pdfPatientAge'),
@@ -254,56 +361,69 @@ window.savePdfConfiguration = function () {
         margins: val('pdfMargins') || 'normal',
         font: val('pdfFont') || 'helvetica',
         fontSize: val('pdfFontSize') || '11',
-        lineSpacing: val('pdfLineSpacing') || '1.5',
+        lineSpacing: val('pdfLineSpacing') || '1.15',
         showHeader: chk('pdfShowHeader', true),
+        hideReportHeader: chk('pdfHideReportHeader', false),
         showFooter: chk('pdfShowFooter', true),
         showPageNum: chk('pdfShowPageNum', true),
         showDate: chk('pdfShowDate', true),
-        showQR: chk('pdfShowQR', true),
+        showQR: chk('pdfShowQR', false),
+        showReportNumber: chk('pdfShowReportNumber', true),
+        showInstLogo: chk('pdfShowInstLogo', true),
+        showProfLogo: chk('pdfShowProfLogo', true),
         showSignLine: chk('pdfShowSignLine', true),
         showSignName: chk('pdfShowSignName', true),
         showSignMatricula: chk('pdfShowSignMatricula', true),
         showSignImage: chk('pdfShowSignImage', true),
         showPhone: chk('pdfShowPhone', true),
         showEmail: chk('pdfShowEmail', true),
-        showSocial: chk('pdfShowSocial', false),
-        logoSizePx: parseInt(document.getElementById('pdfLogoSize')?.value || '60'),
-        firmaSizePx: parseInt(document.getElementById('pdfFirmaSize')?.value || '60'),
+        showSocial: chk('pdfShowSocial', true),
         footerText: val('pdfFooterText'),
         selectedWorkplace: val('pdfWorkplace'),
-        workplaceAddress: val('pdfWorkplaceAddress'),
+        workplaceAddress: normName(val('pdfWorkplaceAddress')),
         workplacePhone: val('pdfWorkplacePhone'),
         workplaceEmail: val('pdfWorkplaceEmail')
     };
+
+    // Tamaños de logo/firma quedan fijados por configuración del administrador.
+    if (existing.logoSizePx !== undefined) config.logoSizePx = existing.logoSizePx;
+    if (existing.firmaSizePx !== undefined) config.firmaSizePx = existing.firmaSizePx;
 
     // Preservar campos de profesional activo (seteados por business.js)
     if (existing.activeProfessional)      config.activeProfessional      = existing.activeProfessional;
     if (existing.activeProfessionalIndex !== undefined) config.activeProfessionalIndex = existing.activeProfessionalIndex;
     if (existing.activeWorkplaceIndex    !== undefined) config.activeWorkplaceIndex    = existing.activeWorkplaceIndex;
 
+    // El lugar seleccionado en el modal debe gobernar la vista previa/export.
+    if (config.selectedWorkplace !== undefined && config.selectedWorkplace !== null && String(config.selectedWorkplace) !== '') {
+        config.activeWorkplaceIndex = String(config.selectedWorkplace);
+    } else {
+        delete config.activeWorkplaceIndex;
+    }
+
     // Si hay profesional activo, sincronizar los campos visibles del modal para evitar drift
-    if (config.activeProfessional && typeof config.activeProfessional === 'object') {
-        const profName = (val('pdfProfName') || '').trim();
+    {
+        const profName = normName((val('pdfProfName') || '').trim());
         const profMat = (val('pdfProfMatricula') || '').trim();
-        const profEsp = (val('pdfProfEspecialidad') || '').trim();
+        const profEsp = normName((val('pdfProfEspecialidad') || '').trim());
         const colEl = document.getElementById('pdfHeaderColor');
         const hdrColor = colEl?.dataset?.selectedColor || colEl?.value || '';
-        if (profName) config.activeProfessional.nombre = profName;
-        if (profMat) config.activeProfessional.matricula = profMat;
-        if (profEsp) config.activeProfessional.especialidades = profEsp;
-        if (hdrColor) config.activeProfessional.headerColor = hdrColor;
+        const hasAnyProfField = !!(profName || profMat || profEsp || hdrColor);
+        if (hasAnyProfField) {
+            const mergedPro = (config.activeProfessional && typeof config.activeProfessional === 'object')
+                ? { ...config.activeProfessional }
+                : {};
+            if (profName) mergedPro.nombre = profName;
+            if (profMat) mergedPro.matricula = profMat;
+            if (profEsp) mergedPro.especialidades = profEsp;
+            if (hdrColor) mergedPro.headerColor = hdrColor;
+            config.activeProfessional = mergedPro;
+        }
     }
 
     window._pdfConfigCache = config;
     if (typeof appDB !== 'undefined') appDB.set('pdf_config', config);
     else localStorage.setItem('pdf_config', JSON.stringify(config));
-    // Persistir tamaños de logo y firma en localStorage para acceso rápido
-    localStorage.setItem('prof_logo_size_px', String(config.logoSizePx || 60));
-    localStorage.setItem('firma_size_px', String(config.firmaSizePx || 60));
-    if (typeof appDB !== 'undefined') {
-        appDB.set('prof_logo_size_px', config.logoSizePx || 60);
-        appDB.set('firma_size_px', config.firmaSizePx || 60);
-    }
     if (typeof showToast === 'function') showToast('💾 Configuración PDF guardada', 'success');
 }
 
@@ -318,6 +438,10 @@ window.loadPdfConfiguration = async function () {
     set('pdfReportNumber', config.reportNum);
     set('pdfStudyDate', config.studyDate);
     set('pdfStudyTime', config.studyTime);
+    {
+        const chkShowDate = document.getElementById('reqShowStudyDate');
+        if (chkShowDate) chkShowDate.checked = config.showStudyDate !== false;
+    }
     set('pdfStudyReason', config.studyReason);
     set('pdfReferringDoctor', config.referringDoctor);
     set('pdfEquipment', config.equipment);
@@ -335,26 +459,23 @@ window.loadPdfConfiguration = async function () {
     set('pdfMargins', config.margins || 'normal');
     set('pdfFont', config.font || 'helvetica');
     set('pdfFontSize', config.fontSize || '11');
-    set('pdfLineSpacing', config.lineSpacing || '1.5');
+    set('pdfLineSpacing', config.lineSpacing || '1.15');
     setChk('pdfShowHeader', config.showHeader, true);
+    setChk('pdfHideReportHeader', config.hideReportHeader, false);
     setChk('pdfShowFooter', config.showFooter, true);
     setChk('pdfShowPageNum', config.showPageNum, true);
     setChk('pdfShowDate', config.showDate, true);
-    setChk('pdfShowQR', config.showQR, true);
+    setChk('pdfShowQR', config.showQR, false);
+    setChk('pdfShowReportNumber', config.showReportNumber, true);
+    setChk('pdfShowInstLogo', config.showInstLogo, true);
+    setChk('pdfShowProfLogo', config.showProfLogo, true);
     setChk('pdfShowSignLine', config.showSignLine, true);
     setChk('pdfShowSignName', config.showSignName, true);
     setChk('pdfShowSignMatricula', config.showSignMatricula, true);
     setChk('pdfShowSignImage', config.showSignImage, true);
     setChk('pdfShowPhone',     config.showPhone,  true);
     setChk('pdfShowEmail',     config.showEmail,  true);
-    setChk('pdfShowSocial',    config.showSocial, false);
-    // Sliders de tamaño
-    const logoSlider = document.getElementById('pdfLogoSize');
-    const firmaSlider = document.getElementById('pdfFirmaSize');
-    const lsVal = config.logoSizePx || parseInt(localStorage.getItem('prof_logo_size_px') || '60');
-    const fsVal = config.firmaSizePx || parseInt(localStorage.getItem('firma_size_px') || '60');
-    if (logoSlider) { logoSlider.value = lsVal; const lbl = document.getElementById('logoSizeValue'); if (lbl) lbl.textContent = lsVal; }
-    if (firmaSlider) { firmaSlider.value = fsVal; const lbl = document.getElementById('firmaSizeValue'); if (lbl) lbl.textContent = fsVal; }
+    setChk('pdfShowSocial',    config.showSocial, true);
     set('pdfFooterText', config.footerText);
     set('pdfWorkplace', config.selectedWorkplace);
     set('pdfWorkplaceAddress', config.workplaceAddress);

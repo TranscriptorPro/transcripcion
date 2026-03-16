@@ -60,6 +60,14 @@ function esc(s) {
     return String(s || '').replace(/[|]/g, '\\|').replace(/\n/g, ' ');
 }
 
+function normalizeText(s) {
+    return String(s || '')
+        .toLowerCase()
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
 function pickKeyword(template, idx = 0) {
     const kws = Array.isArray(template?.keywords) ? template.keywords.filter(Boolean) : [];
     if (!kws.length) return template?.name || template?.key || 'estudio';
@@ -169,10 +177,49 @@ async function main() {
         });
     });
 
+    // Mock de models para evitar 401 por claves fake en validaciones de UI.
+    await context.route('**/openai/v1/models', async (route) => {
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                object: 'list',
+                data: [
+                    { id: 'llama-3.3-70b-versatile', object: 'model', owned_by: 'groq' }
+                ]
+            })
+        });
+    });
+
     let page = null;
     const attachPageHandlers = (p) => {
         p.on('console', (msg) => {
             if (msg.type() === 'error') console.log('[browser:error]', msg.text());
+        });
+        p.on('response', (res) => {
+            try {
+                if (res.status() === 401) {
+                    const req = res.request();
+                    console.log('[browser:401]', JSON.stringify({
+                        url: res.url(),
+                        method: req.method(),
+                        resourceType: req.resourceType()
+                    }));
+                }
+            } catch (_) {}
+        });
+        p.on('requestfailed', (req) => {
+            try {
+                const err = req.failure()?.errorText || 'unknown_error';
+                if (!String(req.url()).includes('favicon')) {
+                    console.log('[browser:requestfailed]', JSON.stringify({
+                        url: req.url(),
+                        method: req.method(),
+                        resourceType: req.resourceType(),
+                        error: err
+                    }));
+                }
+            } catch (_) {}
         });
     };
     const ensurePage = async () => {
@@ -356,11 +403,10 @@ async function main() {
     try {
         await ensurePage();
         await page.evaluate(() => {
-            window.__savedFiles = [];
-            window.saveToDisk = async function(blob, filename) {
-                const text = await blob.text();
-                window.__savedFiles.push({ filename, textLength: text.length, textSnippet: text.slice(0, 160) });
-            };
+            // Contact test forces NORMAL mode; restore a Pro-like context for HTML export generation.
+            window.CLIENT_CONFIG = Object.assign({}, window.CLIENT_CONFIG || {}, { type: 'PRO', hasProMode: true });
+            window.currentMode = 'pro';
+            window._pdfConfigCache = Object.assign({}, window._pdfConfigCache || {}, { patientName: 'Paciente QA' });
         });
 
         const editorState = await page.evaluate(() => {
@@ -372,13 +418,33 @@ async function main() {
         });
 
         if ((editorState.text || '').trim().length > 50) {
-            await page.evaluate(() => { if (typeof window.downloadHTML === 'function') window.downloadHTML(); });
-            await page.waitForTimeout(500);
-            const saved = await page.evaluate(() => window.__savedFiles || []);
-            const htmlContent = saved.length ? String(saved[saved.length - 1].textSnippet || '') : '';
-            const sameSnippet = editorState.text.slice(0, 80).replace(/\s+/g, ' ').trim();
-            const inDownload = htmlContent.replace(/\s+/g, ' ').includes(sameSnippet.slice(0, 40));
-            addResult('DOWNLOAD-INTEGRITY-HTML', inDownload ? 'PASS' : 'WARN', inDownload ? 'HTML exportado consistente con editor' : 'Export HTML sin snippet esperado');
+            const htmlContent = await page.evaluate(async () => {
+                if (typeof window.createHTML === 'function') {
+                    return String(await window.createHTML());
+                }
+                return '';
+            });
+            const normEditor = normalizeText(editorState.text);
+            const normDownload = normalizeText(htmlContent);
+
+            const pivot = normEditor.slice(0, 180);
+            const minExpected = normEditor.slice(0, 60);
+            const hasEditorChunk = pivot.length >= 60 ? normDownload.includes(pivot) : normDownload.includes(minExpected);
+
+            const editorTokens = new Set(normEditor.split(' ').filter((w) => w.length > 4));
+            const downloadTokens = new Set(normDownload.split(' ').filter((w) => w.length > 4));
+            const sampleTokens = Array.from(editorTokens).slice(0, 40);
+            const common = sampleTokens.filter((t) => downloadTokens.has(t)).length;
+            const tokenOverlap = sampleTokens.length ? common / sampleTokens.length : 0;
+
+            const inDownload = hasEditorChunk || tokenOverlap >= 0.65;
+            addResult(
+                'DOWNLOAD-INTEGRITY-HTML',
+                inDownload ? 'PASS' : 'WARN',
+                inDownload
+                    ? `HTML exportado consistente con editor (overlap=${Math.round(tokenOverlap * 100)}%)`
+                    : `Export HTML sin coincidencia robusta (overlap=${Math.round(tokenOverlap * 100)}%, htmlLen=${htmlContent.length})`
+            );
         } else {
             addResult('DOWNLOAD-INTEGRITY-HTML', 'WARN', 'Editor sin contenido suficiente al final de la corrida');
         }

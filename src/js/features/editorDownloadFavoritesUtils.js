@@ -4,7 +4,7 @@
     const downloadDropdown = document.getElementById('downloadDropdown');
     const downloadBtnMain = document.getElementById('downloadBtnMain');
     const downloadBtnChevron = document.getElementById('downloadBtn');
-    const FORMAT_LABELS = { pdf: 'PDF', rtf: 'RTF', txt: 'TXT', html: 'HTML' };
+    const FORMAT_LABELS = { pdf: 'PDF', rtf: 'RTF', html: 'HTML' };
 
     let _prefFmtCache = null;
     if (typeof appDB !== 'undefined') {
@@ -34,9 +34,40 @@
     }
 
     if (downloadBtnMain) {
-        downloadBtnMain.addEventListener('click', (e) => {
+        downloadBtnMain.addEventListener('click', async (e) => {
             e.stopPropagation();
-            if (typeof downloadFile === 'function') downloadFile(getPreferredFormat());
+            const fmt = getPreferredFormat();
+            let pendingPdfTab = null;
+            try {
+                if (fmt === 'pdf' && typeof window.open === 'function') {
+                    pendingPdfTab = window.open('', '_blank');
+                    window._pendingPdfOpenTab = pendingPdfTab || null;
+                    if (pendingPdfTab && !pendingPdfTab.closed) {
+                        try {
+                            pendingPdfTab.document.open();
+                            pendingPdfTab.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Generando PDF...</title></head><body style="font-family:Segoe UI,Arial,sans-serif;padding:24px;color:#334155;"><h2 style="margin:0 0 12px;">Generando PDF...</h2><p style="margin:0;">La pestaña se actualizará automáticamente cuando el informe esté listo.</p></body></html>');
+                            pendingPdfTab.document.close();
+                        } catch (_) { /* ignore */ }
+                    }
+                }
+                if (typeof window.downloadFile === 'function') {
+                    await window.downloadFile(fmt);
+                    return;
+                }
+                const fallback = window['download' + String(fmt || '').toUpperCase()];
+                if (typeof fallback === 'function') {
+                    await fallback();
+                    return;
+                }
+                if (typeof showToast === 'function') showToast('No se encontró el módulo de descarga', 'error');
+            } catch (err) {
+                if (pendingPdfTab && !pendingPdfTab.closed) {
+                    try { pendingPdfTab.close(); } catch (_) { /* ignore */ }
+                }
+                window._pendingPdfOpenTab = null;
+                console.warn('Download main button error:', err);
+                if (typeof showToast === 'function') showToast('Error al descargar. Reintentá.', 'error');
+            }
         });
     }
 
@@ -66,9 +97,16 @@
     updateFavUI();
 
     document.querySelectorAll('.dropdown-item').forEach(item => {
-        item.addEventListener('click', () => {
+        item.addEventListener('click', async () => {
             const format = item.dataset.format;
-            if (typeof downloadFile === 'function') downloadFile(format);
+            try {
+                if (typeof window.downloadFile === 'function') {
+                    await window.downloadFile(format);
+                }
+            } catch (err) {
+                console.warn('Download dropdown item error:', err);
+                if (typeof showToast === 'function') showToast('Error al descargar formato', 'error');
+            }
             if (downloadDropdown) downloadDropdown.classList.remove('open');
         });
     });

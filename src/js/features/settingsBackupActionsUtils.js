@@ -31,12 +31,12 @@
             clearBtn.addEventListener('click', async () => {
                 const ok1 = typeof window.showCustomConfirm === 'function'
                     ? await window.showCustomConfirm('⚠️ Borrar datos', '¿Estás seguro? Esto borrará TODOS tus datos locales (historial, configuración, diccionario, etc.). Esta acción NO se puede deshacer.')
-                    : confirm('⚠️ ¿Estás seguro? Esto borrará TODOS tus datos locales?');
+                    : false;
                 if (!ok1) return;
 
                 const ok2 = typeof window.showCustomConfirm === 'function'
                     ? await window.showCustomConfirm('🔴 Última confirmación', 'Se borrarán todos los datos. ¿Continuar?')
-                    : confirm('🔴 Última confirmación: se borrarán todos los datos. ¿Continuar?');
+                    : false;
                 if (!ok2) return;
 
                 const keepKeys = ['groq_api_key', 'prof_data', 'workplace_profiles', 'CLIENT_CONFIG', 'device_id', 'onboarding_accepted'];

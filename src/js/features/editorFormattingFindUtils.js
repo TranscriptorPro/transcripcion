@@ -175,21 +175,39 @@
     const insertTableBtn = $('insertTableBtn');
     if (insertTableBtn && editor) {
         insertTableBtn.addEventListener('click', async () => {
-            const rows = await window.showCustomPrompt('Numero de filas:', '', '3');
+            const rows = await window.showCustomPrompt('Número de filas:', '', '3');
             if (!rows) return;
-            const cols = await window.showCustomPrompt('Numero de columnas:', '', '3');
+            const cols = await window.showCustomPrompt('Número de columnas:', '', '3');
             if (rows && cols) {
-                let tableHTML = '<table border="1" style="border-collapse: collapse; width: 100%; margin: 1rem 0;">';
-                for (let i = 0; i < parseInt(rows, 10); i++) {
-                    tableHTML += '<tr>';
-                    for (let j = 0; j < parseInt(cols, 10); j++) {
-                        tableHTML += '<td style="border: 1px solid var(--border, #ddd); padding: 8px;">&nbsp;</td>';
+                const nRows = parseInt(rows, 10) || 3;
+                const nCols = parseInt(cols, 10) || 3;
+                const table = document.createElement('table');
+                table.setAttribute('border', '1');
+                table.style.cssText = 'border-collapse:collapse;width:100%;margin:1rem 0;';
+                for (let i = 0; i < nRows; i++) {
+                    const tr = table.insertRow();
+                    for (let j = 0; j < nCols; j++) {
+                        const td = tr.insertCell();
+                        td.style.cssText = 'border:1px solid var(--border,#ddd);padding:8px;';
+                        td.innerHTML = '&nbsp;';
                     }
-                    tableHTML += '</tr>';
                 }
-                tableHTML += '</table>';
-                document.execCommand('insertHTML', false, tableHTML);
+                // Insert at cursor position or append to editor
+                const sel = window.getSelection();
+                if (sel.rangeCount && editor.contains(sel.anchorNode)) {
+                    const range = sel.getRangeAt(0);
+                    range.deleteContents();
+                    range.insertNode(table);
+                    // Move cursor after the table
+                    range.setStartAfter(table);
+                    range.collapse(true);
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                } else {
+                    editor.appendChild(table);
+                }
                 editor.focus();
+                if (typeof saveUndoState === 'function') saveUndoState();
             }
         });
     }
@@ -205,6 +223,14 @@
             findReplacePanel.classList.toggle('active');
             if (findReplacePanel.classList.contains('active')) findInput.focus();
         });
+
+        // Compatibilidad E2E: API global para abrir la barra Buscar/Reemplazar.
+        window.openFindReplace = function () {
+            if (!findReplacePanel.classList.contains('active')) {
+                toggleFindReplace.click();
+            }
+            findInput.focus();
+        };
     }
 
     if (closeFindReplace && findReplacePanel) {

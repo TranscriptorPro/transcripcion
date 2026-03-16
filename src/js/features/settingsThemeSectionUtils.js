@@ -214,6 +214,10 @@
                 const hsl = hexToHSL(defaultPrimary);
                 updateSatSliderGradient(hsl.h);
             }
+            if (colorCircle) colorCircle.style.background = defaultPrimary;
+            if (colorPicker) colorPicker.value = defaultPrimary;
+            if (hexLabel) hexLabel.textContent = defaultPrimary;
+            if (hexInput) hexInput.value = defaultPrimary.replace('#', '');
             applyCustomColor(defaultPrimary);
         }
     }
@@ -230,13 +234,11 @@
         const saved = localStorage.getItem('customPrimaryColor');
         const picker = document.getElementById('settingsColorPicker');
         const hexLabel = document.getElementById('settingsColorHex');
-        if (saved) {
-            if (picker) picker.value = saved;
-            if (hexLabel) hexLabel.textContent = saved;
-        } else {
-            if (picker) picker.value = defaultPrimary;
-            if (hexLabel) hexLabel.textContent = defaultPrimary;
-        }
+        const circle = document.getElementById('settingsColorCircle');
+        const hex = saved || defaultPrimary;
+        if (picker) picker.value = hex;
+        if (hexLabel) hexLabel.textContent = hex;
+        if (circle) circle.style.background = hex;
     }
 
     window.SettingsThemeSectionUtils = {

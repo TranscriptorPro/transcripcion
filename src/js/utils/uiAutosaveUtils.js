@@ -2,7 +2,7 @@
 (function initAutoSave() {
     const AUTOSAVE_KEY = 'editor_autosave';
     const AUTOSAVE_META_KEY = 'editor_autosave_meta';
-    const INTERVAL_MS = 30000;
+    const INTERVAL_MS = 8000;
     let _autoSaveTimer = null;
 
     function saveEditorContent() {
@@ -78,6 +78,10 @@
 
     // Guardar al cerrar/salir
     window.addEventListener('beforeunload', saveEditorContent);
+    window.addEventListener('pagehide', saveEditorContent);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') saveEditorContent();
+    });
 
     // Limpiar autosave al resetear
     const resetBtnEl = document.getElementById('resetBtn');

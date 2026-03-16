@@ -16,7 +16,8 @@
     const DB_NAME    = 'TranscriptorProDB';
     const DB_VERSION = 1;
     const STORE_NAME = 'appData';
-    const THEME_KEY  = 'theme';              // única clave que CSS lee sync
+    const THEME_KEY  = 'theme';              // clave de tema para render sync
+    const SKIN_KEY   = 'app_skin';           // skin visual actual (test/e2e + UI)
     const MIGRATED_FLAG = '_idb_migrated';  // flag para saber si ya migramos
 
     // ── helpers internos ──────────────────────────────────────────────────────
@@ -123,31 +124,36 @@
                 });
             },
             set: function (key, value) {
-                // Si es theme, también mantener en localStorage para CSS
-                if (key === THEME_KEY) {
-                    try { localStorage.setItem(THEME_KEY, value); } catch (e) {/* silencioso */}
+                // Mantener theme/skin también en localStorage para lectura sync.
+                if (key === THEME_KEY || key === SKIN_KEY) {
+                    try { localStorage.setItem(key, value); } catch (e) {/* silencioso */}
                 }
                 return tx(db, 'readwrite', function (store) {
                     return store.put(value, key);
                 });
             },
             remove: function (key) {
-                if (key === THEME_KEY) {
-                    try { localStorage.removeItem(THEME_KEY); } catch (e) {/* silencioso */}
+                if (key === THEME_KEY || key === SKIN_KEY) {
+                    try { localStorage.removeItem(key); } catch (e) {/* silencioso */}
                 }
                 return tx(db, 'readwrite', function (store) {
                     return store.delete(key);
                 });
             },
             clear: function () {
-                // Preservar theme en localStorage
+                // Preservar theme + skin en localStorage
                 let themeVal;
+                let skinVal;
                 try { themeVal = localStorage.getItem(THEME_KEY); } catch (e) { themeVal = null; }
+                try { skinVal = localStorage.getItem(SKIN_KEY); } catch (e) { skinVal = null; }
                 return tx(db, 'readwrite', function (store) {
                     return store.clear();
                 }).then(function () {
                     if (themeVal !== null) {
                         try { localStorage.setItem(THEME_KEY, themeVal); } catch (e) {/* silencioso */}
+                    }
+                    if (skinVal !== null) {
+                        try { localStorage.setItem(SKIN_KEY, skinVal); } catch (e) {/* silencioso */}
                     }
                 });
             },
@@ -230,11 +236,15 @@
                 // Marcar migración completa
                 return idbImpl.set(MIGRATED_FLAG, true);
             }).then(function () {
-                // Limpiar localStorage excepto theme
+                // Limpiar localStorage excepto theme + skin
                 const themeVal = localStorage.getItem(THEME_KEY);
+                const skinVal = localStorage.getItem(SKIN_KEY);
                 try { localStorage.clear(); } catch (e) {/* silencioso */}
                 if (themeVal !== null) {
                     try { localStorage.setItem(THEME_KEY, themeVal); } catch (e) {/* silencioso */}
+                }
+                if (skinVal !== null) {
+                    try { localStorage.setItem(SKIN_KEY, skinVal); } catch (e) {/* silencioso */}
                 }
                 console.log('[db.js] Migración localStorage → IndexedDB completada. ' + keysToMigrate.length + ' claves migradas.');
             });

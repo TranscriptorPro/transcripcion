@@ -63,15 +63,17 @@ window.handleFactorySetupCore = async function (medicoId) {
         const clientConfig = {
             medicoId:         medicoId,
             type:             pc.type,
+            planCode:         plan,
             status:           String(doctor.Estado || 'active'),
             specialties:      specialties,
             maxDevices:       Number(doctor.Devices_Max) || 2,
             trialDays:        plan === 'trial' ? 7 : 0,
             // regDatos.hasProMode puede venir del admin para override del plan
             hasProMode:       regDatos.hasProMode !== undefined ? !!regDatos.hasProMode : pc.hasProMode,
-            hasDashboard:     pc.hasDashboard,
-            canGenerateApps:  pc.canGenerateApps,
+            hasDashboard:     regDatos.hasDashboard !== undefined ? !!regDatos.hasDashboard : pc.hasDashboard,
+            canGenerateApps:  regDatos.canGenerateApps !== undefined ? !!regDatos.canGenerateApps : pc.canGenerateApps,
             allowedTemplates: allowedTemplates,
+            paymentPortalUrl: String(regDatos.paymentPortalUrl || '').trim(),
             backendUrl:       backendUrl
         };
 
@@ -83,6 +85,7 @@ window.handleFactorySetupCore = async function (medicoId) {
         // prof_data (nombre, matrícula, especialidad)
         const profData = {
             nombre:       doctor.Nombre      || 'Profesional',
+            sexo:         regDatos.sexo || doctor.Sexo || doctor.sexo || '',
             matricula:    doctor.Matricula    || '',
             workplace:    '',
             specialties:  specialties,
@@ -159,13 +162,13 @@ window.handleFactorySetupCore = async function (medicoId) {
                     if (typeof appDB !== 'undefined') appDB.set('workplace_profiles', workplaceProfiles);
                     localStorage.setItem('workplace_profiles', JSON.stringify(workplaceProfiles));
 
-                    // ── CLINIC mode: si vienen múltiples profesionales, poblar el primer workplace ──
+                    // ── CLINIC mode: si vienen profesionales, poblar el primer workplace ──
                     // regDatos.profesionales (de Registro_Datos) o doctor.Profesionales (campo top-level)
                     let clinicProfs = [];
                     try {
                         clinicProfs = regDatos.profesionales || JSON.parse(doctor.Profesionales || '[]');
                     } catch(_) {}
-                    if (Array.isArray(clinicProfs) && clinicProfs.length > 1) {
+                    if (Array.isArray(clinicProfs) && clinicProfs.length >= 1) {
                         workplaceProfiles[0].professionals = clinicProfs.map(function(p) {
                             const smp = (typeof p.socialMedia === 'object' && p.socialMedia) ? p.socialMedia : {};
                             return {
@@ -195,6 +198,11 @@ window.handleFactorySetupCore = async function (medicoId) {
 
                     // Actualizar prof_data con workplace
                     profData.workplace = wp.name || '';
+                    // En CLINIC, la identidad principal de la app es la institución.
+                    if (plan === 'clinic' && wp.name) {
+                        profData.nombre = wp.name;
+                        if (!profData.matricula) profData.matricula = '';
+                    }
                     window._profDataCache = profData;
                     if (typeof appDB !== 'undefined') appDB.set('prof_data', profData);
                     localStorage.setItem('prof_data', JSON.stringify(profData));
@@ -272,15 +280,6 @@ window.handleFactorySetupCore = async function (medicoId) {
             // es independiente del color primario de la app
         }
 
-        // Skin siempre arranca en 'default' en el primer uso — cada usuario parte
-        // de la app original. Si después quiere cambiar a cyberpunk, etc., ese
-        // cambio queda solo en SU dispositivo y no afecta a ningún otro clone.
-        localStorage.setItem('app_skin', 'default');
-        if (typeof appDB !== 'undefined') appDB.set('app_skin', 'default');
-        if (window.ThemeManager && typeof window.ThemeManager.apply === 'function') {
-            window.ThemeManager.apply('default', { save: false });
-        }
-
         // Estudios seleccionados
         if (regDatos.estudios) {
             try {
@@ -310,8 +309,14 @@ window.handleFactorySetupCore = async function (medicoId) {
         const apiKeyB1 = doctor.API_Key_B1 || regDatos.apiKeyB1 || '';
         const apiKeyB2 = doctor.API_Key_B2 || regDatos.apiKeyB2 || '';
         if (apiKey) {
-            if (typeof appDB !== 'undefined') appDB.set('groq_api_key', apiKey);
-            localStorage.setItem('groq_api_key', apiKey);
+            if (typeof window.setGroqApiKey === 'function') {
+                window.setGroqApiKey(apiKey, { source: 'factory-setup' });
+            } else {
+                // Fallback defensivo: state.js deberia exponer setGroqApiKey.
+                if (typeof appDB !== 'undefined') appDB.set('groq_api_key', apiKey);
+                localStorage.setItem('groq_api_key', apiKey);
+                window.GROQ_API_KEY = apiKey;
+            }
         }
         if (apiKeyB1) {
             if (typeof appDB !== 'undefined') appDB.set('groq_api_key_b1', apiKeyB1);
@@ -326,8 +331,27 @@ window.handleFactorySetupCore = async function (medicoId) {
         if (typeof appDB !== 'undefined') appDB.set('medico_id', medicoId);
         localStorage.setItem('medico_id', medicoId);
 
+        // Skin siempre arranca en 'default' en el primer uso — cada usuario parte
+        // de la app original. Si después quiere cambiar a cyberpunk, etc., ese
+        // cambio queda solo en SU dispositivo y no afecta a ningún otro clone.
+        // Se ejecuta al final del setup exitoso para asegurar persistencia.
+        localStorage.setItem('app_skin', 'default');
+        if (typeof appDB !== 'undefined') appDB.set('app_skin', 'default');
+        if (window.ThemeManager && typeof window.ThemeManager.apply === 'function') {
+            window.ThemeManager.apply('default', { save: false });
+        }
+
         // Limpiar la marca de setup pendiente
         delete window._PENDING_SETUP_ID;
+
+        console.log('[FactorySetup] Setup completado:', {
+            medicoId: localStorage.getItem('medico_id'),
+            type: JSON.parse(localStorage.getItem('client_config_stored') || '{}').type,
+            skin: localStorage.getItem('app_skin'),
+            workplaces: JSON.parse(localStorage.getItem('workplace_profiles') || '[]').length,
+            hasFirma: !!localStorage.getItem('pdf_signature'),
+            hasLogo: !!localStorage.getItem('pdf_logo')
+        });
 
         console.info('[Factory] Setup completado para', doctor.Nombre || medicoId, '— Plan:', plan);
 

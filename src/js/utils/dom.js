@@ -38,7 +38,7 @@ window.fetchWithTimeout = function(url, options, timeoutMs = 120000) {
         'FEVI','TAPSE','PSAP','FOP','CIA','CIV','DAP','VCS','VCI','AP','TP','AR','IT','EM',
         'NYHA','KPS','ECOG','ASA','PEEP','FIO2','CPAP','BIPAP','IV','VO','IM','SC','SL','EV',
         'DNI','NHC','HC','ID','OSDE','IAPOS','IOMA','PAMI','SOS',
-        'DR','DRA','LIC','ING','MP','MN'
+        'LIC','ING','MP','MN'
     ]);
 
     // Palabras pequeñas que van en minúscula (salvo inicio de oración)
@@ -66,17 +66,27 @@ window.fetchWithTimeout = function(url, options, timeoutMs = 120000) {
 
     function _isUpperSigla(word) {
         const clean = word.replace(/[.,;:!?()]+$/g, '');
+        const dottedCompact = clean.replace(/\s+/g, '');
         // Solo siglas explícitas del set
         if (SIGLAS.has(clean.toUpperCase())) return true;
         // Mayúsculas con números intercalados (VEF1, T4, PO2, FIO2, etc.)
         if (/^[A-Z]+\d+[A-Z]*$/i.test(clean) && clean.length <= 6) return true;
         // Con punto: D.N.I., M.P.
-        if (/^([A-Z]\.){2,}[A-Z]?$/i.test(clean)) return true;
+        if (/^([A-Z]\.){2,}[A-Z]?$/i.test(dottedCompact)) return true;
         return false;
+    }
+
+    function _normalizeProfessionalTitleToken(word) {
+        const m = String(word || '').match(/^([dD][rR][aA]?)(\.?)([,:;!?)]*)$/);
+        if (!m) return null;
+        const base = m[1].toLowerCase() === 'dra' ? 'Dra.' : 'Dr.';
+        return base + (m[3] || '');
     }
 
     function _capitalizeWord(word) {
         if (!word) return '';
+        const profTitle = _normalizeProfessionalTitleToken(word);
+        if (profTitle) return profTitle;
         if (_isUpperSigla(word)) return word.toUpperCase();
         return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
     }
@@ -95,6 +105,8 @@ window.fetchWithTimeout = function(url, options, timeoutMs = 120000) {
         return sentences.map(sent => {
             const words = sent.split(/\s+/);
             return words.map((w, i) => {
+                const profTitle = _normalizeProfessionalTitleToken(w);
+                if (profTitle) return profTitle;
                 if (_isUpperSigla(w)) return w.toUpperCase();
                 if (i === 0) return _capitalizeWord(w);
                 if (LOWER_WORDS.has(w.toLowerCase())) return w.toLowerCase();
@@ -102,6 +114,37 @@ window.fetchWithTimeout = function(url, options, timeoutMs = 120000) {
             }).join(' ');
         }).join(' ');
     }
+
+    /**
+     * Regla global de presentacion profesional:
+     * - Nunca duplicar prefijos (Dr./Dra. Dr./Dra.)
+     * - Si el nombre ya trae prefijo, se limpia y se recompone una sola vez
+     * - Si no hay sexo/prefijo, usa Dr. por defecto
+     */
+    window.getProfessionalDisplay = function(rawName, sexo) {
+        const original = String(rawName || '').trim();
+        let baseName = original;
+
+        // Limpia cualquier prefijo repetido al inicio (Dr., Dra., Dr./Dra.)
+        const leadingPrefix = /^(?:\s*(?:dr\.?\s*\/\s*dra\.?|dra\.?|dr\.?))\s+/i;
+        let loops = 0;
+        while (leadingPrefix.test(baseName) && loops < 6) {
+            baseName = baseName.replace(leadingPrefix, '').trim();
+            loops += 1;
+        }
+
+        const sx = String(sexo || '').trim().toUpperCase();
+        let title = '';
+        if (sx === 'F') title = 'Dra.';
+        else if (sx === 'M') title = 'Dr.';
+        else if (/^\s*dra\.?/i.test(original)) title = 'Dra.';
+        else if (/^\s*dr\.?/i.test(original)) title = 'Dr.';
+        else title = 'Dr.';
+
+        const safeName = (baseName || original || 'Profesional').replace(/\s+/g, ' ').trim();
+        const fullName = `${title} ${safeName}`.replace(/\s+/g, ' ').trim();
+        return { title, name: safeName, fullName };
+    };
 })();
 
 // ============ AUTO-NORMALIZACIÓN DE CAMPOS DE FORMULARIO ============
@@ -110,7 +153,10 @@ window.fetchWithTimeout = function(url, options, timeoutMs = 120000) {
     // Campos que se normalizan como NOMBRE (cada palabra capitalizada)
     const NAME_FIELDS = new Set([
         'reqPatientName', 'profName', 'profNombre', 'nombreProfesional',
-        'workplace', 'lugarTrabajo'
+        'workplace', 'lugarTrabajo',
+        'pdfProfName', 'proNombre', 'pdfPatientName',
+        'wpName', 'pdfWorkplaceAddress', 'wpAddress',
+        'reqReferringDoctor', 'reqStudyType'
     ]);
 
     // Campos que se fuerzan a MAYÚSCULAS completas
@@ -122,7 +168,8 @@ window.fetchWithTimeout = function(url, options, timeoutMs = 120000) {
     const SKIP_FIELDS = new Set([
         'reqPatientSearch', 'reqPatientDni', 'reqPatientAge',
         'reqPatientAffiliateNum', 'apiKeyInput', 'registrySearch',
-        'groqApiKey', 'deviceId', 'fieldSearchInput'
+        'groqApiKey', 'deviceId', 'fieldSearchInput',
+        'reqStudyDate', 'reqStudyTime'
     ]);
 
     function shouldNormalize(el) {

@@ -89,8 +89,50 @@ function autoDetectTemplateKey(text) {
 }
 
 // ============ MARKDOWN → HTML CONVERTER ============
+
+// Limpia marcadores [No especificado] de líneas que ya tienen contenido completo.
+// Solo mantiene el marcador en líneas donde realmente falta información.
+function _stripRedundantEmptyMarkers(md) {
+    const MARKER = /\[No especificado\]/g;
+    const MARKERS_ALL = /\[No especificado\]|\bNo se evaluó\.?|\bNo fue evaluad[ao]\.?|\bNo evaluad[ao]\.?|\bNo se realizó\.?|\bSin datos disponibles\.?/gi;
+    return md.split('\n').map(line => {
+        if (!MARKER.test(line)) return line;
+        // Strip markdown heading markers, bold labels, and every empty-field marker
+        const stripped = line
+            .replace(/^#{1,3}\s*/, '')
+            .replace(/\*\*[^*]+\*\*:?\s*/g, '')
+            .replace(MARKERS_ALL, '')
+            .replace(/[.,;:\s]+/g, ' ')
+            .trim();
+        // If meaningful content remains (≥30 chars) → it's a complete phrase, remove markers
+        if (stripped.length >= 30) {
+            return line.replace(MARKER, '').replace(/\s{2,}/g, ' ').replace(/\s+([.,;:])/g, '$1');
+        }
+        return line;
+    }).join('\n');
+}
+
+function _stripWeakLeadIns(md) {
+    return String(md || '')
+    .replace(/(^|\n)\s*(?:\*\*)?\s*(Generalmente|En general|Habitualmente|Generally|Usually|Typically|Commonly|In general|Overall)\s*,\s+/gim, '$1')
+    .replace(/([.!?]\s+)(?:\*\*)?\s*(Generalmente|En general|Habitualmente|Generally|Usually|Typically|Commonly|In general|Overall)\s*,\s+/gim, '$1');
+}
+
 function markdownToHtml(md) {
     if (!md) return '';
+
+    // Pre-process: remove redundant [No especificado] from complete phrases
+    md = _stripRedundantEmptyMarkers(md);
+    // Limpieza final de inicios vagos introducidos por el LLM.
+    md = _stripWeakLeadIns(md);
+    // Fallback defensivo: eliminar elipsis y frases de procedimiento no realizado/no especificado.
+    md = String(md || '')
+        .replace(/\.{3,}|…+/g, '. ')
+        .replace(/(?:la\s+)?gonioscop[ií]a\s+din[aá]mica(?:\/indentaci[oó]n)?\s+no\s+se\s+realiz[oó]\s+o\s+no\s+se\s+especific[oó]\.?(?:\s+|$)/gi, ' ')
+        .replace(/\s+([,.;:])/g, '$1')
+        .replace(/([,;:])\s*\./g, '.')
+        .replace(/[ \t]{2,}/g, ' ')
+        .trim();
 
     const inlineFormat = (text) => text
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
@@ -176,12 +218,17 @@ function markdownToHtml(md) {
     const EMPTY_FIELD_HTML =
         '<span class="no-data-field" contenteditable="false" data-field-empty="1">'
         + '<span class="no-data-text">— campo vacío —</span>'
-        + '<button class="no-data-edit-btn" tabindex="0" title="Completar campo" type="button">✏️</button>'
+        + '<button class="no-data-edit-btn" tabindex="0" title="Editar campo vacío" type="button">✏️</button>'
         + '</span>';
+
+    const INLINE_REVIEW_BTN_HTML =
+        '<button class="inline-review-btn" contenteditable="false" tabindex="0" title="2da/3ra revisión del párrafo" type="button">▶</button>';
 
     // Patrones que el AI puede generar cuando una estructura no fue evaluada
     const NO_EVAL_PATTERNS = [
         /\[No especificado\]/g,
+        /\[Sin datos disponibles\]/gi,
+        /\[No evaluado(?: en este estudio)?\]/gi,
         /\bNo se evalu\u00f3\.?/gi,
         /\bNo fue evaluad[ao]\.?/gi,
         /\bNo evaluad[ao]\.?/gi,
@@ -190,7 +237,41 @@ function markdownToHtml(md) {
     ];
 
     let result = html.join('\n');
-    NO_EVAL_PATTERNS.forEach(rx => { result = result.replace(rx, EMPTY_FIELD_HTML); });
+
+    // Convertir a badge solo cuando el marcador representa un campo completo (fin de línea/bloque).
+    // Evita mostrar botones en medio de frases clínicas.
+    const emptyToken = '(?:\\[No especificado\\]|\\[Sin datos disponibles\\]|\\[No evaluado(?: en este estudio)?\\]|No se evalu\\u00f3\\.?|No fue evaluad[ao]\\.?|No evaluad[ao]\\.?|No se realiz\\u00f3\\.?|Sin datos disponibles\\.?)';
+    const rxLabelField = new RegExp(`(:\\s*)${emptyToken}(?:\\s*[.,;:]?)(?=\\s*(?:<br\\s*\\/?>|<\\/p>|<\\/li>))`, 'gi');
+    const rxBareField = new RegExp(`(>\\s*)${emptyToken}(?:\\s*[.,;:]?)(?=\\s*(?:<br\\s*\\/?>|<\\/p>|<\\/li>))`, 'gi');
+    result = result
+        .replace(rxLabelField, `$1${EMPTY_FIELD_HTML}`)
+        .replace(rxBareField, `$1${EMPTY_FIELD_HTML}`);
+
+    // Añadir botón de revisión directa solo en párrafos/listas con contenido real.
+    // Nunca agregarlo en campos vacíos.
+    const wrapReview = document.createElement('div');
+    wrapReview.innerHTML = result;
+    wrapReview.querySelectorAll('p.report-p, li').forEach((node) => {
+        if (node.querySelector('.no-data-field')) return;
+        const clone = node.cloneNode(true);
+        clone.querySelectorAll('.inline-review-btn, .no-data-edit-btn, .no-data-field').forEach(el => el.remove());
+        const rawText = String(clone.textContent || '')
+            .replace(/[\u00A0\s]+/g, ' ')
+            .trim();
+        if (!rawText || !/[\p{L}\p{N}]/u.test(rawText)) return;
+        if (node.querySelector('.inline-review-btn')) return;
+        node.insertAdjacentHTML('beforeend', INLINE_REVIEW_BTN_HTML);
+    });
+    result = wrapReview.innerHTML;
+
+    // Limpiar fragmentos huérfanos adyacentes al badge (ej: "s.", ".s", puntuación suelta)
+    // que quedan cuando la IA genera variantes como "[No especificado]s." o "Sin datos."
+    const badgeEndTag = '</span></span>';
+    result = result.replace(new RegExp(badgeEndTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*[a-z]{0,3}[.,;:]+', 'gi'),
+        badgeEndTag);
+
+    // No eliminar headings aquí: el borrado de secciones debe depender de acciones del usuario.
+
     return result;
 }
 
@@ -294,5 +375,6 @@ function promptTemplateSelection(detectedKey) {
         markdownToHtml,
         parseAIResponse,
         promptTemplateSelection,
+        _stripRedundantEmptyMarkers,
     };
 })();

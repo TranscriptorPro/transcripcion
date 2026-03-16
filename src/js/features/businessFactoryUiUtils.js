@@ -7,11 +7,11 @@ function _showSetupLoadingOverlay() {
         overlay = document.createElement('div');
         overlay.id = 'factorySetupOverlay';
         overlay.innerHTML = `
-            <div style="background:white;border-radius:16px;padding:40px 32px;text-align:center;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+            <div style="background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);border-radius:16px;padding:40px 32px;text-align:center;max-width:400px;box-shadow:var(--shadow);">
                 <div style="font-size:48px;margin-bottom:16px;">⚙️</div>
-                <h2 style="margin:0 0 8px;color:#1a56a0;font-size:1.3rem;">Configurando tu app...</h2>
-                <p style="color:#666;font-size:.9rem;margin:0 0 20px;">Conectando con el servidor y preparando tu espacio de trabajo</p>
-                <div style="width:48px;height:48px;border:4px solid #e5e7eb;border-top-color:#1a56a0;border-radius:50%;animation:factorySpinner 1s linear infinite;margin:0 auto;"></div>
+                <h2 style="margin:0 0 8px;color:var(--primary);font-size:1.3rem;">Configurando tu app...</h2>
+                <p style="color:var(--text-secondary);font-size:.9rem;margin:0 0 20px;">Conectando con el servidor y preparando tu espacio de trabajo</p>
+                <div style="width:48px;height:48px;border:4px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:factorySpinner 1s linear infinite;margin:0 auto;"></div>
             </div>
         `;
         overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);';
@@ -50,11 +50,11 @@ function _showSetupError(message, code) {
     };
 
     overlay.innerHTML = `
-        <div style="background:white;border-radius:16px;padding:40px 32px;text-align:center;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+        <div style="background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);border-radius:16px;padding:40px 32px;text-align:center;max-width:420px;box-shadow:var(--shadow);">
             <div style="font-size:48px;margin-bottom:16px;">❌</div>
-            <h2 style="margin:0 0 8px;color:#dc2626;font-size:1.2rem;">No se pudo configurar la app</h2>
-            <p style="color:#666;font-size:.9rem;margin:0 0 20px;">${codeLabels[code] || message}</p>
-            <button onclick="location.reload()" style="background:#1a56a0;color:white;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:.9rem;">Reintentar</button>
+            <h2 style="margin:0 0 8px;color:var(--danger,#dc2626);font-size:1.2rem;">No se pudo configurar la app</h2>
+            <p style="color:var(--text-secondary);font-size:.9rem;margin:0 0 20px;">${codeLabels[code] || message}</p>
+            <button onclick="location.reload()" style="background:var(--primary);color:white;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:.9rem;">Reintentar</button>
         </div>
     `;
     overlay.style.display = 'flex';

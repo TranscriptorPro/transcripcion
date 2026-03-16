@@ -65,7 +65,8 @@
             { key: 'campimetria', name: 'Campimetría' },
             { key: 'oct_retinal', name: 'OCT Retinal' },
             { key: 'topografia_corneal', name: 'Topografía Corneal' },
-            { key: 'fondo_ojo', name: 'Fondo de Ojo' }
+            { key: 'fondo_ojo', name: 'Fondo de Ojo' },
+            { key: 'gonioscopia', name: 'Gonioscopía' }
         ],
         'Imágenes': [
             { key: 'tac', name: 'TAC' },
@@ -213,11 +214,12 @@
 
         const allKeys = _getAllTemplateKeys();
         assert('Retorna array', Array.isArray(allKeys));
-        assert('Tiene 37 plantillas', allKeys.length === 37, `${allKeys.length} plantillas`);
+        assert('Tiene 38 plantillas', allKeys.length === 38, `${allKeys.length} plantillas`);
         
         // Verificar que contiene plantillas de cada categoría
         assertIncludes('Incluye espirometria', allKeys, 'espirometria');
         assertIncludes('Incluye campimetria', allKeys, 'campimetria');
+        assertIncludes('Incluye gonioscopia', allKeys, 'gonioscopia');
         assertIncludes('Incluye tac', allKeys, 'tac');
         assertIncludes('Incluye gastroscopia', allKeys, 'gastroscopia');
         assertIncludes('Incluye holter', allKeys, 'holter');

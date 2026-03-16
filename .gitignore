@@ -4,7 +4,6 @@ npm-debug.log*
 yarn-error.log
 
 # Build outputs
-dist/
 build/
 
 # Environment variables
@@ -39,3 +38,6 @@ test_run_output.txt
 Informe Combinado*.pdf
 Informe Combinado*.rtf
 informe_*.rtf
+
+# Local assistant/worklog artifacts
+accesorios/

@@ -127,6 +127,7 @@ function makeRegDatos(wp1, wp2, opts = {}) {
     return JSON.stringify({
         workplace:       wp1,
         extraWorkplaces: wp2 ? [wp2] : [],
+        profesionales:   Array.isArray(opts.profesionales) ? opts.profesionales : [],
         headerColor:     opts.color    || '#1a56a0',
         footerText:      opts.footer   || '',
         firma:           '',
@@ -167,7 +168,7 @@ function buildUsers() {
             API_Key:           GROQ_KEY,
             API_Key_B1:        '',
             API_Key_B2:        '',
-            Devices_Max:       10,
+            Devices_Max:       2,
             Allowed_Templates: TPL_ALL,
             Usage_Count:       0,
             Devices_Logged:    '[]',
@@ -194,7 +195,7 @@ function buildUsers() {
             API_Key:           GROQ_KEY,
             API_Key_B1:        '',
             API_Key_B2:        '',
-            Devices_Max:       10,
+            Devices_Max:       2,
             Allowed_Templates: TPL_ALL,
             Usage_Count:       0,
             Devices_Logged:    '[]',
@@ -224,7 +225,7 @@ function buildUsers() {
             API_Key:           GROQ_KEY,
             API_Key_B1:        '',
             API_Key_B2:        '',
-            Devices_Max:       2,
+            Devices_Max:       1,
             Allowed_Templates: TPL_NORMAL_CARDIO,
             Usage_Count:       0,
             Devices_Logged:    '[]',
@@ -251,7 +252,7 @@ function buildUsers() {
             API_Key:           GROQ_KEY,
             API_Key_B1:        '',
             API_Key_B2:        '',
-            Devices_Max:       2,
+            Devices_Max:       1,
             Allowed_Templates: TPL_NORMAL_IMAG,
             Usage_Count:       0,
             Devices_Logged:    '[]',
@@ -281,7 +282,7 @@ function buildUsers() {
             API_Key:           GROQ_KEY,
             API_Key_B1:        '',
             API_Key_B2:        '',
-            Devices_Max:       5,
+            Devices_Max:       3,
             Allowed_Templates: TPL_PRO_NEUMOLOGIA,
             Usage_Count:       0,
             Devices_Logged:    '[]',
@@ -308,7 +309,7 @@ function buildUsers() {
             API_Key:           GROQ_KEY,
             API_Key_B1:        '',
             API_Key_B2:        '',
-            Devices_Max:       5,
+            Devices_Max:       3,
             Allowed_Templates: TPL_PRO_IMAGENES,
             Usage_Count:       0,
             Devices_Logged:    '[]',
@@ -335,7 +336,7 @@ function buildUsers() {
             API_Key:           GROQ_KEY,
             API_Key_B1:        '',
             API_Key_B2:        '',
-            Devices_Max:       5,
+            Devices_Max:       3,
             Allowed_Templates: TPL_NORMAL_CARDIO,
             Usage_Count:       0,
             Devices_Logged:    '[]',
@@ -353,11 +354,11 @@ function buildUsers() {
         // ────────────────────────────────────────────────
         {
             ID_Medico:         'CLINICDR_TEST001',
-            Nombre:            'Dr. Jorge Ramírez',
-            Email:             'jorge.ramirez.demo@txpro.test',
-            Matricula:         'MP 11122',
+            Nombre:            'Clínica Integral Patagonia',
+            Email:             'admin@clinicapatagonia.example.com',
+            Matricula:         'CUIT 30-71234567-8',
             Telefono:          '0294-440-1100',
-            Especialidad:      'Traumatología',
+            Especialidad:      'Institución Médica',
             Plan:              'CLINIC',
             Estado:            'active',
             Fecha_Registro:    now,
@@ -365,14 +366,19 @@ function buildUsers() {
             API_Key:           GROQ_KEY,
             API_Key_B1:        '',
             API_Key_B2:        '',
-            Devices_Max:       10,
+            Devices_Max:       5,
             Allowed_Templates: TPL_ALL,
             Usage_Count:       0,
             Devices_Logged:    '[]',
             Diagnostico_Pendiente: 'false',
-            Notas_Admin:       'Usuario demo CLINIC — Traumatología | Clínica Patagonia',
+            Notas_Admin:       'Usuario demo CLINIC institucional con equipo multi-profesional',
             Registro_Datos:    makeRegDatos(WP_CLINIC_A, WP_CLINIC_B, { color: '#1a56a0', proMode: true,
-                footer: 'Dr. Jorge Ramírez | Traumatología | MP 11122 | Clínica Integral Patagonia' })
+                footer: 'Clínica Integral Patagonia | Av. San Martín 2000 | Bariloche',
+                profesionales: [
+                    { nombre: 'Dr. Jorge Ramírez', matricula: 'MP 11122', especialidad: 'Traumatología', email: 'jorge.ramirez.demo@txpro.test', telefono: '0294-440-1101', showPhone: true, showEmail: true, showSocial: false },
+                    { nombre: 'Dra. Ana Castillo', matricula: 'MN 33344', especialidad: 'Gastroenterología', email: 'ana.castillo.demo@txpro.test', telefono: '0294-440-1102', showPhone: true, showEmail: true, showSocial: false },
+                    { nombre: 'Dr. Luis Pereira', matricula: 'MP 55566', especialidad: 'Neurología', email: 'luis.pereira.demo@txpro.test', telefono: '0294-440-1103', showPhone: true, showEmail: true, showSocial: false }
+                ] })
         },
 
         // ────────────────────────────────────────────────
@@ -380,11 +386,11 @@ function buildUsers() {
         // ────────────────────────────────────────────────
         {
             ID_Medico:         'CLINICDR_TEST002',
-            Nombre:            'Dra. Ana Castillo',
-            Email:             'ana.castillo.demo@txpro.test',
-            Matricula:         'MN 33344',
+            Nombre:            'Sanatorio Norte',
+            Email:             'direccion@sanatorionorte.example.com',
+            Matricula:         'CUIT 30-72345678-9',
             Telefono:          '0294-440-1200',
-            Especialidad:      'Gastroenterología',
+            Especialidad:      'Institución Médica',
             Plan:              'CLINIC',
             Estado:            'active',
             Fecha_Registro:    now,
@@ -392,14 +398,18 @@ function buildUsers() {
             API_Key:           GROQ_KEY,
             API_Key_B1:        '',
             API_Key_B2:        '',
-            Devices_Max:       10,
+            Devices_Max:       5,
             Allowed_Templates: TPL_ALL,
             Usage_Count:       0,
             Devices_Logged:    '[]',
             Diagnostico_Pendiente: 'false',
-            Notas_Admin:       'Usuario demo CLINIC — Gastroenterología | Clínica Patagonia',
+            Notas_Admin:       'Usuario demo CLINIC institucional con equipo de guardia',
             Registro_Datos:    makeRegDatos(WP_CLINIC_A, null, { color: '#0f766e', proMode: true,
-                footer: 'Dra. Ana Castillo | Gastroenterología | MN 33344 | Clínica Integral Patagonia' })
+                footer: 'Sanatorio Norte | Guardia 24h | Bariloche',
+                profesionales: [
+                    { nombre: 'Dra. Verónica Díaz', matricula: 'MN 48771', especialidad: 'Clínica Médica', email: 'veronica.diaz.demo@txpro.test', telefono: '0294-440-1201', showPhone: true, showEmail: true, showSocial: false },
+                    { nombre: 'Dr. Martín Ocampo', matricula: 'MP 55211', especialidad: 'Cardiología', email: 'martin.ocampo.demo@txpro.test', telefono: '0294-440-1202', showPhone: true, showEmail: true, showSocial: false }
+                ] })
         },
 
         // ────────────────────────────────────────────────
@@ -407,11 +417,11 @@ function buildUsers() {
         // ────────────────────────────────────────────────
         {
             ID_Medico:         'CLINICDR_TEST003',
-            Nombre:            'Dr. Luis Pereira',
-            Email:             'luis.pereira.demo@txpro.test',
-            Matricula:         'MP 55566',
+            Nombre:            'Centro Neurológico Andino',
+            Email:             'administracion@neurologicoandino.example.com',
+            Matricula:         'CUIT 30-73456789-0',
             Telefono:          '0294-440-1300',
-            Especialidad:      'Neurología',
+            Especialidad:      'Institución Médica',
             Plan:              'CLINIC',
             Estado:            'active',
             Fecha_Registro:    now,
@@ -419,14 +429,18 @@ function buildUsers() {
             API_Key:           GROQ_KEY,
             API_Key_B1:        '',
             API_Key_B2:        '',
-            Devices_Max:       10,
+            Devices_Max:       5,
             Allowed_Templates: JSON.stringify(['electromiografia','polisomnografia','resonancia','tac','nota_evolucion','epicrisis','generico']),
             Usage_Count:       0,
             Devices_Logged:    '[]',
             Diagnostico_Pendiente: 'false',
-            Notas_Admin:       'Usuario demo CLINIC — Neurología | Clínica Patagonia',
+            Notas_Admin:       'Usuario demo CLINIC institucional enfocado en neurología',
             Registro_Datos:    makeRegDatos(WP_CLINIC_A, WP_CLINIC_B, { color: '#7c3aed', proMode: true,
-                footer: 'Dr. Luis Pereira | Neurología | MP 55566 | Clínica Integral Patagonia' })
+                footer: 'Centro Neurológico Andino | Unidad de Neurofisiología',
+                profesionales: [
+                    { nombre: 'Dr. Luis Pereira', matricula: 'MP 55566', especialidad: 'Neurología', email: 'luis.pereira.demo@txpro.test', telefono: '0294-440-1301', showPhone: true, showEmail: true, showSocial: false },
+                    { nombre: 'Dra. Lucía Benítez', matricula: 'MN 66120', especialidad: 'Neurofisiología', email: 'lucia.benitez.demo@txpro.test', telefono: '0294-440-1302', showPhone: true, showEmail: true, showSocial: false }
+                ] })
         },
 
         // ────────────────────────────────────────────────
@@ -434,11 +448,11 @@ function buildUsers() {
         // ────────────────────────────────────────────────
         {
             ID_Medico:         'CLINICDR_TEST004',
-            Nombre:            'Dra. Cecilia Torres',
-            Email:             'cecilia.torres.demo@txpro.test',
-            Matricula:         'MN 77788',
+            Nombre:            'Instituto de la Mujer Patagonia',
+            Email:             'direccion@mujerpatagonia.example.com',
+            Matricula:         'CUIT 30-74567890-1',
             Telefono:          '0294-440-1400',
-            Especialidad:      'Ginecología',
+            Especialidad:      'Institución Médica',
             Plan:              'CLINIC',
             Estado:            'active',
             Fecha_Registro:    now,
@@ -446,16 +460,25 @@ function buildUsers() {
             API_Key:           GROQ_KEY,
             API_Key_B1:        '',
             API_Key_B2:        '',
-            Devices_Max:       10,
+            Devices_Max:       5,
             Allowed_Templates: JSON.stringify(['pap','colposcopia','ecografia_obstetrica','ecografia_mamaria','mamografia','nota_evolucion','epicrisis','generico']),
             Usage_Count:       0,
             Devices_Logged:    '[]',
             Diagnostico_Pendiente: 'false',
-            Notas_Admin:       'Usuario demo CLINIC — Ginecología | Clínica Patagonia',
+            Notas_Admin:       'Usuario demo CLINIC institucional de salud femenina',
             Registro_Datos:    makeRegDatos(
                 { name:'Clínica Integral Patagonia — Ginecología', address:'Av. San Martín 2000 P2, Bariloche', phone:'0294-440-1400', email:'ginecologia@clinicapatagonia.example.com' },
                 null,
-                { color: '#db2777', proMode: true, footer: 'Dra. Cecilia Torres | Ginecología | MN 77788 | Clínica Integral Patagonia' }
+                {
+                    color: '#db2777',
+                    proMode: true,
+                    footer: 'Instituto de la Mujer Patagonia | Salud femenina integral',
+                    profesionales: [
+                        { nombre: 'Dra. Cecilia Torres', matricula: 'MN 77788', especialidad: 'Ginecología', email: 'cecilia.torres.demo@txpro.test', telefono: '0294-440-1401', showPhone: true, showEmail: true, showSocial: false },
+                        { nombre: 'Dra. Paula Méndez', matricula: 'MN 70133', especialidad: 'Obstetricia', email: 'paula.mendez.demo@txpro.test', telefono: '0294-440-1402', showPhone: true, showEmail: true, showSocial: false }
+                    ]
+                }
+            )
             )
         },
 
@@ -476,7 +499,7 @@ function buildUsers() {
             API_Key:           GROQ_KEY,
             API_Key_B1:        '',
             API_Key_B2:        '',
-            Devices_Max:       1,
+            Devices_Max:       3,
             Allowed_Templates: JSON.stringify(['ecg','holter','nota_evolucion','generico']),
             Usage_Count:       0,
             Devices_Logged:    '[]',

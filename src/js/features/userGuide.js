@@ -2,6 +2,33 @@
 
 (function initUserGuide() {
 
+    const AUTO_TOUR_KEY = 'auto_tour_enabled';
+    const TOUR_PROGRESS_PREFIX = 'tour_last_step';
+
+    async function getAutoTourEnabled() {
+        try {
+            if (typeof appDB !== 'undefined') {
+                const fromDb = await appDB.get(AUTO_TOUR_KEY);
+                if (fromDb === true || fromDb === false) return fromDb;
+            }
+            const fromLs = localStorage.getItem(AUTO_TOUR_KEY);
+            if (fromLs === null) return true; // default: activado
+            return fromLs === 'true';
+        } catch (_) {
+            return true;
+        }
+    }
+
+    function setAutoTourEnabled(enabled) {
+        const value = !!enabled;
+        try {
+            localStorage.setItem(AUTO_TOUR_KEY, value ? 'true' : 'false');
+        } catch (_) {}
+        if (typeof appDB !== 'undefined') {
+            try { appDB.set(AUTO_TOUR_KEY, value); } catch (_) {}
+        }
+    }
+
     // ── Help Modal Tab Switching ──
     document.querySelectorAll('.help-tab').forEach(tab => {
         tab.addEventListener('click', () => {
@@ -30,38 +57,62 @@
     }
 
     // ── Interactive Tour (Spotlight) ──
-    const TOUR_STEPS = [
+    const TOUR_STEPS_BASE = [
         {
+            id: 'record',
             target: '#recordBtn',
             title: '🎙️ Paso 1: Grabá o subí tu audio',
             text: 'Tocá este botón para dictar en vivo. También podés arrastrar archivos de audio a la zona de carga que está debajo.',
             position: 'right'
         },
         {
+            id: 'drop-zone',
             target: '#dropZone',
             title: '📁 Zona de carga',
             text: 'Arrastrá archivos MP3, WAV, M4A u OGG acá. Podés subir varios a la vez.',
             position: 'right'
         },
         {
+            id: 'transcribe',
             target: '#transcribeBtn',
             title: '⚡ Paso 2: Transcribí',
             text: 'Una vez cargado el audio, pulsá este botón. La IA convierte tu dictado a texto en segundos.',
             position: 'right'
         },
         {
+            id: 'pro-activation',
             target: '#proToggleContainer',
             title: '✨ Modo Pro',
-            text: 'Activá el Modo Pro para que la app estructure automáticamente tus informes con plantillas médicas especializadas.',
-            position: 'bottom'
+            text: 'Si activás el Modo Pro, la app puede estructurar automáticamente tus informes con IA y plantillas médicas especializadas.',
+            position: 'bottom',
+            when: (ctx) => !!ctx.showProActivationStep
         },
         {
+            id: 'pro-input',
+            target: '#proInputSourceSwitch',
+            title: '🧠 Entrada de texto estructurada',
+            text: 'En contexto Pro podés estructurar directamente desde texto sin grabar audio.',
+            position: 'bottom',
+            when: (ctx) => !!ctx.isProLike
+        },
+        {
+            id: 'admin-panel',
+            target: '#btnAdminAccess',
+            title: '🛡️ Panel de administración',
+            text: 'Desde acá gestionás usuarios, planes y configuración avanzada de la plataforma.',
+            position: 'bottom'
+            ,
+            when: (ctx) => !!ctx.isAdmin && !!ctx.adminButtonVisible
+        },
+        {
+            id: 'editor',
             target: '#editor',
             title: '📝 Paso 3: Editá el informe',
             text: 'Acá aparece tu texto transcrito y estructurado. Podés editar directamente, usar negrita, cursiva, listas y tablas.',
             position: 'left'
         },
         {
+            id: 'export',
             target: '#btnConfigPdfMain, #downloadBtnContainer',
             title: '📄 Paso 4: Exportá',
             text: 'Configurá tus datos profesionales, previsualizá y descargá tu informe como PDF, Word, TXT o HTML.',
@@ -72,6 +123,199 @@
     let currentStep = -1;
     let tourActive = false;
     let tourElements = {};
+    let activeTourSteps = [];
+    let activeTourContext = null;
+
+    function getTourProfileId(ctx) {
+        const context = ctx || getTourContext();
+        const type = String(context.type || 'NORMAL').toUpperCase();
+        const planCode = String(context.planCode || '').toLowerCase() || 'base';
+        return `${type}:${planCode}`;
+    }
+
+    function getTourProgressKey(ctx) {
+        return `${TOUR_PROGRESS_PREFIX}:${getTourProfileId(ctx)}`;
+    }
+
+    function saveTourProgress(stepId, ctx) {
+        if (!stepId) return;
+        const key = getTourProgressKey(ctx || activeTourContext || getTourContext());
+        try { localStorage.setItem(key, String(stepId)); } catch (_) {}
+        if (typeof appDB !== 'undefined') {
+            try { appDB.set(key, String(stepId)); } catch (_) {}
+        }
+    }
+
+    function getSavedTourProgress(ctx) {
+        const key = getTourProgressKey(ctx || activeTourContext || getTourContext());
+        try {
+            const fromLs = localStorage.getItem(key);
+            if (fromLs) return fromLs;
+        } catch (_) {}
+        return '';
+    }
+
+    function clearTourProgress(ctx) {
+        const key = getTourProgressKey(ctx || activeTourContext || getTourContext());
+        try { localStorage.removeItem(key); } catch (_) {}
+        if (typeof appDB !== 'undefined') {
+            try { appDB.remove(key); } catch (_) {}
+        }
+    }
+
+    function getTourContext() {
+        const cfg = window.CLIENT_CONFIG || {};
+        const type = String(cfg.type || 'NORMAL').toUpperCase();
+        const planCode = String(cfg.planCode || '').toLowerCase();
+        const medicoId = String(cfg.medicoId || '').trim();
+        const mode = String(window.currentMode || 'normal').toLowerCase();
+        const proToggleContainer = document.getElementById('proToggleContainer');
+        const proToggleVisible = !!(proToggleContainer && proToggleContainer.offsetParent !== null);
+        const adminBtn = document.getElementById('btnAdminAccess');
+        const adminButtonVisible = !!(adminBtn && adminBtn.offsetParent !== null);
+        // Admin real = tipo ADMIN sin medicoId asignado (clones siempre tienen medicoId).
+        const isAdmin = type === 'ADMIN' && !medicoId;
+        const isNormal = type === 'NORMAL';
+        const isProLike = (type === 'PRO') || !!cfg.hasProMode || mode === 'pro';
+        const isClinic = !!cfg.canGenerateApps || planCode === 'clinic';
+        const isGift = planCode === 'gift';
+        const isPro = type === 'PRO' && !isClinic && !isGift;
+
+        return {
+            type,
+            planCode,
+            mode,
+            isAdmin,
+            isNormal,
+            isProLike,
+            isClinic,
+            isGift,
+            isPro,
+            adminButtonVisible,
+            showProActivationStep: isNormal && proToggleVisible && mode !== 'pro'
+        };
+    }
+
+    function resolveStepText(step, ctx) {
+        const id = step && step.id;
+        const context = ctx || {};
+
+        if (id === 'pro-input') {
+            if (context.isClinic) {
+                return 'Modo clínica: estructurá textos por profesional y mantené un flujo consistente para todo el equipo.';
+            }
+            if (context.isGift) {
+                return 'Tu clon GIFT ya viene listo para estructurar desde texto sin grabar audio.';
+            }
+            if (context.isAdmin) {
+                return 'Como admin podés validar la estructuración desde texto para testear plantillas y flujo IA.';
+            }
+            if (context.isPro) {
+                return 'Tu plan Pro permite estructurar directamente desde texto sin depender del audio.';
+            }
+        }
+
+        if (id === 'admin-panel' && context.isAdmin) {
+            return 'Desde este panel administrás usuarios, planes, licencias y configuración de clones.';
+        }
+
+        return step.text;
+    }
+
+    function buildTourSteps() {
+        const ctx = getTourContext();
+        const filtered = TOUR_STEPS_BASE.filter((step) => {
+            if (typeof step.when === 'function') {
+                try { return !!step.when(ctx); } catch (_) { return false; }
+            }
+            return true;
+        });
+
+        const ordered = reorderTourSteps(filtered, ctx);
+        return ordered.filter((step) => hasVisibleTarget(step && step.target));
+    }
+
+    function hasVisibleTarget(selector) {
+        if (!selector) return false;
+        const selectors = String(selector).split(',').map((s) => s.trim()).filter(Boolean);
+        for (const sel of selectors) {
+            const el = document.querySelector(sel);
+            if (el && el.offsetParent !== null) return true;
+        }
+        return false;
+    }
+
+    function reorderTourSteps(steps, ctx) {
+        const list = Array.isArray(steps) ? steps.slice() : [];
+        const context = ctx || {};
+
+        let preferredOrder = [
+            'record',
+            'drop-zone',
+            'transcribe',
+            'pro-activation',
+            'pro-input',
+            'editor',
+            'export',
+            'admin-panel'
+        ];
+
+        if (context.isAdmin) {
+            preferredOrder = [
+                'admin-panel',
+                'record',
+                'drop-zone',
+                'transcribe',
+                'pro-input',
+                'editor',
+                'export'
+            ];
+        } else if (context.isClinic) {
+            preferredOrder = [
+                'record',
+                'drop-zone',
+                'transcribe',
+                'pro-input',
+                'editor',
+                'export'
+            ];
+        } else if (context.isGift) {
+            preferredOrder = [
+                'record',
+                'transcribe',
+                'pro-input',
+                'editor',
+                'export',
+                'drop-zone'
+            ];
+        } else if (context.isPro) {
+            preferredOrder = [
+                'record',
+                'drop-zone',
+                'transcribe',
+                'pro-input',
+                'editor',
+                'export'
+            ];
+        }
+
+        const byId = new Map();
+        list.forEach((step) => {
+            if (step && step.id) byId.set(step.id, step);
+        });
+
+        const ordered = [];
+        preferredOrder.forEach((id) => {
+            const step = byId.get(id);
+            if (step) {
+                ordered.push(step);
+                byId.delete(id);
+            }
+        });
+
+        byId.forEach((step) => ordered.push(step));
+        return ordered;
+    }
 
     function findTarget(selector) {
         // Support comma-separated selectors (pick first visible)
@@ -80,8 +324,40 @@
             const el = document.querySelector(sel);
             if (el && el.offsetParent !== null) return el;
         }
-        // Fallback: first found even if hidden
-        return document.querySelector(selectors[0]);
+        return null;
+    }
+
+    function refreshActiveTourStepsLive() {
+        if (!tourActive) return;
+
+        const prevStep = (currentStep >= 0 && currentStep < activeTourSteps.length)
+            ? activeTourSteps[currentStep]
+            : null;
+        const prevId = prevStep && prevStep.id;
+
+        activeTourContext = getTourContext();
+        const rebuilt = buildTourSteps();
+        if (!Array.isArray(rebuilt) || rebuilt.length === 0) {
+            return;
+        }
+
+        activeTourSteps = rebuilt;
+
+        if (tourElements.dots) {
+            tourElements.dots.innerHTML = activeTourSteps.map((_, i) =>
+                `<div class="tour-dot ${i === 0 ? 'active' : ''}" data-step="${i}"></div>`
+            ).join('');
+        }
+
+        let nextIndex = 0;
+        if (prevId) {
+            const found = activeTourSteps.findIndex((s) => s && s.id === prevId);
+            if (found >= 0) nextIndex = found;
+        } else if (currentStep >= 0) {
+            nextIndex = Math.min(currentStep, activeTourSteps.length - 1);
+        }
+
+        showStep(nextIndex);
     }
 
     function createTourUI() {
@@ -121,29 +397,30 @@
         };
 
         // Build dots
-        tourElements.dots.innerHTML = TOUR_STEPS.map((_, i) =>
+        tourElements.dots.innerHTML = activeTourSteps.map((_, i) =>
             `<div class="tour-dot ${i === 0 ? 'active' : ''}" data-step="${i}"></div>`
         ).join('');
 
-        tourElements.skipBtn.addEventListener('click', endTour);
+        tourElements.skipBtn.addEventListener('click', () => endTour(false));
         tourElements.nextBtn.addEventListener('click', nextStep);
-        tourElements.backdrop.addEventListener('click', endTour);
+        tourElements.backdrop.addEventListener('click', () => endTour(false));
     }
 
     function showStep(index) {
-        if (index < 0 || index >= TOUR_STEPS.length) {
+        if (index < 0 || index >= activeTourSteps.length) {
             endTour();
             return;
         }
 
         currentStep = index;
-        const step = TOUR_STEPS[index];
+        const step = activeTourSteps[index];
         const target = findTarget(step.target);
+        if (step && step.id) saveTourProgress(step.id, activeTourContext || getTourContext());
 
         // Update text
         tourElements.title.textContent = step.title;
-        tourElements.text.textContent = step.text;
-        tourElements.nextBtn.textContent = index === TOUR_STEPS.length - 1 ? '✅ Finalizar' : 'Siguiente →';
+        tourElements.text.textContent = resolveStepText(step, activeTourContext || getTourContext());
+        tourElements.nextBtn.textContent = index === activeTourSteps.length - 1 ? '✅ Finalizar' : 'Siguiente →';
 
         // Update dots
         tourElements.dots.querySelectorAll('.tour-dot').forEach((dot, i) => {
@@ -170,7 +447,7 @@
             }, 350);
         } else {
             // Target not found — skip to next
-            if (index < TOUR_STEPS.length - 1) {
+            if (index < activeTourSteps.length - 1) {
                 showStep(index + 1);
             } else {
                 endTour();
@@ -225,11 +502,36 @@
     }
 
     function nextStep() {
+        if (currentStep >= activeTourSteps.length - 1) {
+            endTour(true);
+            return;
+        }
         showStep(currentStep + 1);
     }
 
-    function startTour() {
+    function startTour(options) {
         if (tourActive) return;
+
+        const opts = options || {};
+        const forceRestart = !!opts.forceRestart;
+
+        activeTourContext = getTourContext();
+        if (forceRestart) {
+            clearTourProgress(activeTourContext);
+        }
+        activeTourSteps = buildTourSteps();
+        if (!Array.isArray(activeTourSteps) || activeTourSteps.length === 0) {
+            if (typeof showToast === 'function') showToast('No hay pasos de guía disponibles para este perfil.', 'info');
+            return;
+        }
+
+        const savedStepId = getSavedTourProgress(activeTourContext);
+        let startIndex = 0;
+        if (savedStepId && !forceRestart) {
+            const found = activeTourSteps.findIndex((s) => s && s.id === savedStepId);
+            if (found >= 0) startIndex = found;
+        }
+
         tourActive = true;
 
         // Close help modal first
@@ -238,35 +540,82 @@
         setTimeout(() => {
             createTourUI();
             currentStep = -1;
-            showStep(0);
+            showStep(startIndex);
         }, 300);
     }
 
-    function endTour() {
+    function endTour(completed) {
         tourActive = false;
         currentStep = -1;
         document.getElementById('tourContainer')?.remove();
         tourElements = {};
 
-        // Mark tour as seen
-        if (typeof appDB !== 'undefined') {
-            appDB.set('tour_completed', true); // fire-and-forget
-        } else {
-            localStorage.setItem('tour_completed', 'true');
+        const done = !!completed;
+        if (done) {
+            clearTourProgress(activeTourContext || getTourContext());
         }
 
-        if (typeof showToast === 'function') {
+        // Mark tour as seen
+        if (done) {
+            if (typeof appDB !== 'undefined') {
+                appDB.set('tour_completed', true); // fire-and-forget
+            } else {
+                localStorage.setItem('tour_completed', 'true');
+            }
+        }
+
+        if (done && typeof showToast === 'function') {
             showToast('✅ Tour completado. Podés acceder a la ayuda desde el botón ❓', 'success', 3000);
         }
+
+        activeTourContext = null;
     }
 
     // Global access
     window.startGuideTour = startTour;
+    window.restartGuideTour = () => startTour({ forceRestart: true });
+    window.setAutoTourEnabled = setAutoTourEnabled;
+    window.getAutoTourEnabled = getAutoTourEnabled;
 
     // Button in help modal
     const btnStartTour = document.getElementById('btnStartTour');
     if (btnStartTour) {
         btnStartTour.addEventListener('click', startTour);
+    }
+
+    const btnRestartTour = document.getElementById('btnRestartTour');
+    if (btnRestartTour) {
+        btnRestartTour.addEventListener('click', () => startTour({ forceRestart: true }));
+    }
+
+    const tourAutoToggle = document.getElementById('tourAutoToggle');
+    const tourAutoHint = document.getElementById('tourAutoHint');
+    if (tourAutoToggle) {
+        getAutoTourEnabled().then((enabled) => {
+            tourAutoToggle.checked = !!enabled;
+            if (tourAutoHint) {
+                tourAutoHint.textContent = enabled
+                    ? 'El tour se mostrará automáticamente en primeros usos.'
+                    : 'Tour automático desactivado. Podés iniciarlo manualmente con el botón de arriba.';
+            }
+        });
+
+        tourAutoToggle.addEventListener('change', () => {
+            const enabled = !!tourAutoToggle.checked;
+            setAutoTourEnabled(enabled);
+            if (tourAutoHint) {
+                tourAutoHint.textContent = enabled
+                    ? 'El tour se mostrará automáticamente en primeros usos.'
+                    : 'Tour automático desactivado. Podés iniciarlo manualmente con el botón de arriba.';
+            }
+            if (typeof showToast === 'function') {
+                showToast(
+                    enabled ? '✅ Tutorial automático activado' : 'ℹ️ Tutorial automático desactivado',
+                    'success',
+                    2200
+                );
+            }
+        });
     }
 
     // ── Botón Guía Rápida (header) — abre helpModal en tab Guía ──
@@ -315,6 +664,9 @@
 
     // ── Auto-show tour on first visit ──
     async function maybeAutoTour() {
+        const autoTourEnabled = await getAutoTourEnabled();
+        if (!autoTourEnabled) return;
+
         const tourDone = typeof appDB !== 'undefined'
             ? await appDB.get('tour_completed')
             : localStorage.getItem('tour_completed');
@@ -336,14 +688,14 @@
     // Handle ESC key to close tour
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && tourActive) {
-            endTour();
+            endTour(false);
         }
     });
 
     // Handle window resize during tour
     window.addEventListener('resize', () => {
         if (tourActive && currentStep >= 0) {
-            showStep(currentStep);
+            refreshActiveTourStepsLive();
         }
     });
 

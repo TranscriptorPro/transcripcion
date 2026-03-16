@@ -614,7 +614,7 @@ body.dark .tip{background:linear-gradient(135deg,#064e3b33,#065f4633);}
 <tr><td><strong>⚡ Perfiles rápidos</strong></td><td>Gestión de perfiles de salida</td></tr>
 <tr><td><strong>📄 Config PDF</strong></td><td>Acceso al modal de impresión</td></tr>
 <tr><td><strong>✏️ Editor</strong></td><td>Tamaño de texto, auto-guardado, historial de cambios</td></tr>
-<tr><td><strong>🛠️ Herramientas</strong></td><td>Historial, diccionario, atajos</td></tr>
+<tr><td><strong>🛠️ Herramientas</strong></td><td>Historial, diccionario, atajos, gestión de pagos</td></tr>
 <tr><td><strong>🎨 Apariencia</strong></td><td>Tema claro/oscuro, color principal</td></tr>
 <tr><td><strong>🎭 Skins</strong></td><td>3 temas visuales (Por Defecto, Cyberpunk Neon, Light Minimal) + botón "Más skins"</td></tr>
 <tr><td><strong>💾 Respaldo</strong></td><td>Exportar/importar todo como JSON</td></tr>
@@ -623,6 +623,15 @@ body.dark .tip{background:linear-gradient(135deg,#064e3b33,#065f4633);}
 <tr><td><strong>🚀 Upgrade</strong></td><td>Ver planes y precios</td></tr>
 </table>
 <blockquote>Según el tipo de usuario (admin o cliente), algunas secciones pueden estar ocultas o bloqueadas.</blockquote>
+
+<h3>30.1 Gestión de pagos</h3>
+<p>Desde <strong>⚙️ Configuración → 🛠️ Herramientas → 💳 Gestión de pagos</strong> podés abrir el portal de pagos sin salir de la app. Ahí podés:</p>
+<ul>
+<li>Ver estado de pago actual</li>
+<li>Subir comprobantes (imagen o PDF)</li>
+<li>Consultar historial de comprobantes enviados</li>
+</ul>
+<p>Cuando el comprobante se carga, el panel de administración recibe el estado de pago para validación.</p>
 
 <!-- ═══ 31. TEMA ═══ -->
 <h2 id="s31">31. Tema y skins</h2>
@@ -663,6 +672,7 @@ body.dark .tip{background:linear-gradient(135deg,#064e3b33,#065f4633);}
 <ul>
 <li><strong>Válida:</strong> App funciona normalmente</li>
 <li><strong>Por vencer (≤7 días):</strong> Advertencia con días restantes</li>
+<li><strong>Recordatorio 24h:</strong> Aviso suave no intrusivo para subir comprobante antes del vencimiento</li>
 <li><strong>Expirada:</strong> Overlay de bloqueo</li>
 <li><strong>Suspendida:</strong> Bloqueo permanente</li>
 <li><strong>Offline:</strong> Licencia cacheada por 4 horas</li>

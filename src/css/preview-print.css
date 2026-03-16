@@ -313,7 +313,7 @@
     color: var(--pa, #1a56a0);
     margin: 16px 0 6px;
     padding-bottom: 3px;
-    border-bottom: 1px solid color-mix(in srgb, var(--pa, #1a56a0) 30%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--pa, #1a56a0) 30%, white);
 }
 .a4-page .preview-content h3 {
     font-size: 10.5pt;
@@ -387,12 +387,12 @@
 .a4-page .report-h2 {
     font-size: 11pt;
     font-weight: 700;
-    text-transform: uppercase;
+    text-transform: none;
     letter-spacing: 0.07em;
     color: var(--pa, #1a56a0);
     margin: 14px 0 6px;
     padding-bottom: 3px;
-    border-bottom: 1px solid color-mix(in srgb, var(--pa, #1a56a0) 30%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--pa, #1a56a0) 30%, white);
 }
 .a4-page .report-h3 {
     font-size: 10.5pt;
@@ -418,6 +418,7 @@
     font-style: italic;
 }
 .a4-page .no-data-edit-btn { display: none !important; }
+.a4-page .inline-review-btn { display: none !important; }
 
 /* ── Firma (centrada, fluye después del contenido) ── */
 .preview-signature { margin-top: 72px; margin-bottom: 8px; }

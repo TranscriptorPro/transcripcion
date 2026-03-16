@@ -32,18 +32,56 @@
 
     // PLANS se carga lazy cada vez que se abre el modal
     let PLANS = _loadDynamicPlans();
+    let ADDONS_CONFIG = null;
+
+    function _toNumberPrice(v, fallback) {
+        const n = Number(v);
+        return Number.isFinite(n) ? n : fallback;
+    }
+
+    function _getTemplateAddonUsd() {
+        const cfg = ADDONS_CONFIG || JSON.parse(localStorage.getItem('admin_addons_config') || '{}');
+        const price = cfg && cfg.template_individual ? cfg.template_individual.price : 3;
+        return _toNumberPrice(price, 3);
+    }
+
+    async function _refreshPlansFromBackend() {
+        try {
+            const cfg = window.CLIENT_CONFIG || JSON.parse(localStorage.getItem('client_config_stored') || '{}');
+            const backendUrl = cfg.backendUrl
+                || (typeof appDB !== 'undefined' ? await appDB.get('backend_url') : null)
+                || localStorage.getItem('backend_url');
+            if (!backendUrl) return;
+
+            const res = await fetch(`${backendUrl}?action=public_get_plans_config`, { method: 'GET' });
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data && data.plans) {
+                localStorage.setItem('admin_plans_config', JSON.stringify(data.plans));
+                PLANS = _loadDynamicPlans();
+            }
+            if (data && data.addons) {
+                localStorage.setItem('admin_addons_config', JSON.stringify(data.addons));
+                ADDONS_CONFIG = data.addons;
+            }
+        } catch (_) {
+            // Fallback silencioso: localStorage/defaults
+        }
+    }
 
     // ── Templates disponibles como addons ─────────────────────────────
     function _getTemplateAddons() {
         const templates = window.MEDICAL_TEMPLATES || {};
         const addons = [];
+        const templateAddonUsd = _getTemplateAddonUsd();
         for (const [key, tpl] of Object.entries(templates)) {
             if (key === 'generico') continue;
             addons.push({
                 key,
                 name: tpl.name || key,
                 category: tpl.category || 'General',
-                price: '$990'
+                priceUsd: templateAddonUsd,
+                price: `$${templateAddonUsd}`
             });
         }
         return addons;
@@ -188,11 +226,12 @@
         const cartItems = [];
         if (_cart.upgradePlan) {
             const p = PLANS[_cart.upgradePlan];
-            cartItems.push({ label: `Upgrade a ${p.label}`, price: p.price });
+            cartItems.push({ label: `Upgrade a ${p.label}`, price: p.price, displayPrice: _convertPrice(p.price) });
         }
         _cart.addonTemplates.forEach(key => {
             const tpl = (window.MEDICAL_TEMPLATES || {})[key];
-            if (tpl) cartItems.push({ label: tpl.name, price: '$990' });
+            const tplUsd = _getTemplateAddonUsd();
+            if (tpl) cartItems.push({ label: tpl.name, price: `$${tplUsd}`, displayPrice: _currency === 'ARS' ? _convertPrice(`$${tplUsd}`) : `$${tplUsd}` });
         });
 
         let summaryHtml = '';
@@ -201,7 +240,7 @@
                 <div class="pricing-summary">
                     <h4 class="pricing-summary-title">🛒 Tu selección</h4>
                     <ul class="pricing-summary-list">
-                        ${cartItems.map(i => `<li><span>${i.label}</span><strong>${i.price}</strong></li>`).join('')}
+                        ${cartItems.map(i => `<li><span>${i.label}</span><strong>${i.displayPrice || i.price}</strong></li>`).join('')}
                     </ul>
                     <button class="btn btn-primary btn-full pricing-submit" id="pricingSubmitRequest">
                         📩 Solicitar upgrade
@@ -280,14 +319,27 @@
         btn.textContent = '⏳ Enviando solicitud...';
 
         const cfg = window.CLIENT_CONFIG || {};
+        const templateAddonUsd = _getTemplateAddonUsd();
+        const estimatedAmount = (_cart.upgradePlan ? _toNumberPrice(String(PLANS[_cart.upgradePlan]?.price || '').replace(/[^0-9.,]/g, '').replace(',', '.'), 0) : 0)
+            + (Array.from(_cart.addonTemplates).length * templateAddonUsd);
+
         const payload = {
             action: 'upgrade_request',
             medicoId: cfg.medicoId
                 || (typeof appDB !== 'undefined' ? await appDB.get('medico_id') : null)
                 || localStorage.getItem('medico_id') || '—',
+            email: cfg.email || '',
+            nombre: cfg.doctorName || cfg.nombre || '',
             currentPlan: _getCurrentPlan(),
             requestedPlan: _cart.upgradePlan || _getCurrentPlan(),
             requestedTemplates: Array.from(_cart.addonTemplates),
+            requestedAddons: {
+                templates: Array.from(_cart.addonTemplates),
+                templateUnitPriceUsd: templateAddonUsd
+            },
+            estimatedAmount: Number(estimatedAmount.toFixed(2)),
+            currency: _currency,
+            exchangeRate: _currency === 'ARS' ? _getExchangeRate() : null,
             timestamp: new Date().toISOString(),
             deviceId: (typeof appDB !== 'undefined' ? await appDB.get('device_id') : null)
                 || localStorage.getItem('device_id') || '—'
@@ -300,11 +352,11 @@
             if (backendUrl) {
                 const response = await fetch(backendUrl, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'text/plain' },
                     body: JSON.stringify(payload)
                 });
                 const data = await response.json();
-                if (!data.ok) console.warn('Upgrade request server response:', data);
+                if (!data.ok && !data.success) console.warn('Upgrade request server response:', data);
             }
 
             // Guardar solicitud localmente
@@ -332,7 +384,8 @@
     }
 
     // ── API pública ──────────────────────────────────────────────────
-    window.openPricingCart = function () {
+    window.openPricingCart = async function () {
+        await _refreshPlansFromBackend();
         PLANS = _loadDynamicPlans(); // Refrescar precios dinámicos
         _cart = { upgradePlan: null, addonTemplates: new Set() };
         _renderPricingModal();

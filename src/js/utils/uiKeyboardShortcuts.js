@@ -47,7 +47,6 @@ document.addEventListener('keydown', (e) => {
             const fav = window._prefFmtCache || localStorage.getItem('preferred_download_format') || 'pdf';
             if (window.downloadPDF && fav === 'pdf') window.downloadPDF();
             else if (window.downloadRTF && fav === 'rtf') window.downloadRTF();
-            else if (window.downloadTXT && fav === 'txt') window.downloadTXT();
             else if (window.downloadHTML && fav === 'html') window.downloadHTML();
         }
         return;

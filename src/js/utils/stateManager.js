@@ -24,11 +24,15 @@ window.updateButtonsVisibility = function (state) {
     const btnStructureAI         = document.getElementById('btnStructureAI');
     const btnApplyTemplate       = document.getElementById('btnApplyTemplate');
     const applyTemplateWrapper   = document.getElementById('applyTemplateWrapper');
+    const inlineReviewQuickCtrl  = document.getElementById('inlineReviewQuickControl');
 
+    const isStructuring  = state === 'STRUCTURING';
     const isTranscribed  = ['TRANSCRIBED', 'STRUCTURED', 'PREVIEWED'].includes(state);
     const isStructured   = ['STRUCTURED', 'PREVIEWED'].includes(state);
     const isProMode      = window.currentMode === 'pro'
         || (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'PRO');
+    const hasAdvancedPlan = (typeof CLIENT_CONFIG !== 'undefined'
+        && (CLIENT_CONFIG.type === 'PRO' || CLIENT_CONFIG.type === 'ADMIN'));
     const isNormalMode   = isTranscribed && !isProMode;
 
     // btnStructureAI: visible in pro mode after transcription, hidden after structuring
@@ -48,6 +52,14 @@ window.updateButtonsVisibility = function (state) {
         }
     }
 
+    const editorEl = document.getElementById('editor');
+    const looksStructuredByDom = !!(editorEl && editorEl.querySelector('h1, h2, h3, h4, .report-h1, .report-h2, .report-h3, .section-header, strong'));
+
+    // Toggle rápido de revisión IA: visible con estructura detectada (estado o DOM) para planes avanzados.
+    if (inlineReviewQuickCtrl) {
+        inlineReviewQuickCtrl.style.display = ((isStructured || looksStructuredByDom) && hasAdvancedPlan) ? 'flex' : 'none';
+    }
+
     // Normal mode template controls
     if (applyTemplateWrapper) {
         applyTemplateWrapper.style.display = isNormalMode ? 'inline-block' : 'none';
@@ -58,10 +70,10 @@ window.updateButtonsVisibility = function (state) {
 
     // PDF buttons: visible after transcription
     if (btnConfigPdfMain) {
-        btnConfigPdfMain.style.display = isTranscribed ? 'inline-flex' : 'none';
-        btnConfigPdfMain.disabled = !isTranscribed;
+        btnConfigPdfMain.style.display = (isTranscribed && !isStructuring) ? 'inline-flex' : 'none';
+        btnConfigPdfMain.disabled = !isTranscribed || isStructuring;
         // Actualizar semáforo de completitud al mostrar el botón
-        if (isTranscribed && typeof updateConfigTrafficLight === 'function') {
+        if (isTranscribed && !isStructuring && typeof updateConfigTrafficLight === 'function') {
             updateConfigTrafficLight();
         }
     }
@@ -82,22 +94,22 @@ window.updateButtonsVisibility = function (state) {
 
     // Copy & Download: visible after transcription
     if (copyBtn) {
-        copyBtn.style.display = isTranscribed ? 'inline-flex' : 'none';
-        copyBtn.disabled = !isTranscribed;
+        copyBtn.style.display = (isTranscribed && !isStructuring) ? 'inline-flex' : 'none';
+        copyBtn.disabled = !isTranscribed || isStructuring;
     }
     if (printBtn) {
-        printBtn.style.display = isTranscribed ? 'inline-flex' : 'none';
-        printBtn.disabled = !isTranscribed;
+        printBtn.style.display = (isTranscribed && !isStructuring) ? 'inline-flex' : 'none';
+        printBtn.disabled = !isTranscribed || isStructuring;
     }
     if (downloadBtnContainer) {
-        downloadBtnContainer.style.display = isTranscribed ? 'block' : 'none';
+        downloadBtnContainer.style.display = (isTranscribed && !isStructuring) ? 'block' : 'none';
     }
     if (downloadBtn) {
-        downloadBtn.disabled = !isTranscribed;
+        downloadBtn.disabled = !isTranscribed || isStructuring;
     }
     const downloadBtnMain = document.getElementById('downloadBtnMain');
     if (downloadBtnMain) {
-        downloadBtnMain.disabled = !isTranscribed;
+        downloadBtnMain.disabled = !isTranscribed || isStructuring;
     }
 
     // downloadPdfBtn (separate button, if present)
@@ -134,7 +146,7 @@ window.updateButtonsVisibility = function (state) {
     // Botón diccionario médico: visible tras transcripción
     const btnMedicalCheck = document.getElementById('btnMedicalCheck');
     if (btnMedicalCheck) {
-        btnMedicalCheck.style.display = isTranscribed ? '' : 'none';
+        btnMedicalCheck.style.display = (isTranscribed && !isStructuring) ? '' : 'none';
     }
 
     if (typeof window.updateProSourceModeUI === 'function') {
@@ -154,8 +166,9 @@ if (proModeToggle) {
     proModeToggle.addEventListener('change', (e) => {
         const mode = e.target.checked ? 'pro' : 'normal';
         setMode(mode, true);
+        // Persist sync first so initializeMode can read it immediately on reload.
+        localStorage.setItem('last_profile_type', mode);
         if (typeof appDB !== 'undefined') appDB.set('last_profile_type', mode);
-        else localStorage.setItem('last_profile_type', mode);
         window._lastProfileTypeCache = mode;
 
         if (proToggleContainer) {
@@ -200,7 +213,7 @@ function initializeMode() {
         return;
     }
 
-    const savedMode = window._lastProfileTypeCache || localStorage.getItem('last_profile_type');
+    const savedMode = localStorage.getItem('last_profile_type') || window._lastProfileTypeCache;
     if (savedMode) {
         setMode(savedMode);
         return;

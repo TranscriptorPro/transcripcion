@@ -20,14 +20,69 @@ window.initWorkplaceManagement = function () {
         localStorage.setItem('pdf_config', JSON.stringify(cfg));
     }
 
+    let _editingWorkplaceIndex = null;
+
+    function _resetWorkplaceForm() {
+        ['wpName', 'wpAddress', 'wpPhone', 'wpEmail', 'wpFooter', 'wpLogo'].forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (el.tagName === 'INPUT' && el.type === 'file') {
+                el.value = '';
+            } else {
+                el.value = '';
+            }
+        });
+        const title = document.getElementById('workplaceModalTitle');
+        if (title) title.textContent = '🏥 Agregar Lugar de Trabajo';
+        const saveBtn = document.getElementById('btnSaveWorkplace');
+        if (saveBtn) saveBtn.textContent = '💾 Guardar lugar';
+        _editingWorkplaceIndex = null;
+    }
+
+    function openWorkplaceModalForCreate() {
+        _resetWorkplaceForm();
+        document.getElementById('workplaceModalOverlay')?.classList.add('active');
+    }
+
+    function openWorkplaceModalForEdit(index) {
+        const wpIndex = Number(index);
+        const profile = workplaceProfiles[wpIndex];
+        if (!profile) {
+            if (typeof showToast === 'function') showToast('Seleccioná un lugar válido para editar', 'warning');
+            return;
+        }
+        _editingWorkplaceIndex = wpIndex;
+        const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+        setVal('wpName', profile.name);
+        setVal('wpAddress', profile.address);
+        setVal('wpPhone', profile.phone);
+        setVal('wpEmail', profile.email);
+        setVal('wpFooter', profile.footer);
+        const wpLogoInput = document.getElementById('wpLogo');
+        if (wpLogoInput) wpLogoInput.value = '';
+
+        const title = document.getElementById('workplaceModalTitle');
+        if (title) title.textContent = '🏥 Editar Lugar de Trabajo';
+        const saveBtn = document.getElementById('btnSaveWorkplace');
+        if (saveBtn) saveBtn.textContent = '💾 Guardar cambios';
+        document.getElementById('workplaceModalOverlay')?.classList.add('active');
+    }
+
+    window.openWorkplaceModalForCreate = openWorkplaceModalForCreate;
+    window.openWorkplaceModalForEdit = openWorkplaceModalForEdit;
+    window.resetWorkplaceModalForm = _resetWorkplaceForm;
+
     // ── dropdown de lugares ──────────────────────────────────────────────────
     function populateWorkplaceDropdown() {
         const sel   = document.getElementById('pdfWorkplace');
         if (!sel) return;
+        const normName = (v) => (typeof window.normalizeFieldText === 'function')
+            ? window.normalizeFieldText(String(v || ''), 'name')
+            : String(v || '');
         const current = sel.value;
         sel.innerHTML = '<option value="">Seleccionar lugar...</option>';
         workplaceProfiles.forEach((p, i) => {
-            const label = p.name || `Lugar ${i + 1}`;
+            const label = normName(p.name || `Lugar ${i + 1}`);
             const o = document.createElement('option'); o.value = i; o.textContent = label; sel.appendChild(o);
         });
         if (current !== '') sel.value = current;
@@ -38,12 +93,15 @@ window.initWorkplaceManagement = function () {
     function loadWorkplaceProfile(index) {
         const profile = workplaceProfiles[index];
         if (!profile) return;
+        const normName = (v) => (typeof window.normalizeFieldText === 'function')
+            ? window.normalizeFieldText(String(v || ''), 'name')
+            : String(v || '');
         const addr    = document.getElementById('pdfWorkplaceAddress');
         const phone   = document.getElementById('pdfWorkplacePhone');
         const email   = document.getElementById('pdfWorkplaceEmail');
         const footer  = document.getElementById('pdfFooterText');
         const logo    = document.getElementById('pdfLogoPreview');
-        if (addr)   addr.value   = profile.address || '';
+        if (addr)   addr.value   = normName(profile.address || '');
         if (phone)  phone.value  = profile.phone   || '';
         if (email)  email.value  = profile.email   || '';
         if (footer) footer.value = profile.footer   || '';
@@ -335,11 +393,24 @@ window.initWorkplaceManagement = function () {
 
     document.getElementById('pdfWorkplace')?.addEventListener('change', (e) => {
         if (e.target.value !== '') {
-            loadWorkplaceProfile(parseInt(e.target.value));
+            const wpIndex = parseInt(e.target.value);
+            loadWorkplaceProfile(wpIndex);
+
+            // Sincronizar selección de lugar para preview/export aunque no cambie profesional.
+            const cfg = getProfConfig();
+            cfg.activeWorkplaceIndex = String(wpIndex);
+            // Al cambiar de lugar, el profesional seleccionado deja de ser confiable hasta nueva selección.
+            delete cfg.activeProfessionalIndex;
+            setProfConfig(cfg);
         } else {
             // Si se deselecciona el lugar, ocultar el grupo de profesionales
             const group = document.getElementById('pdfProfessionalGroup');
             if (group) group.style.display = 'none';
+
+            const cfg = getProfConfig();
+            delete cfg.activeWorkplaceIndex;
+            delete cfg.activeProfessionalIndex;
+            setProfConfig(cfg);
         }
     });
 
@@ -409,34 +480,55 @@ window.initWorkplaceManagement = function () {
     // (quickWorkplaceSelector eliminado — reemplazado por quickProfileSelector en outputProfiles.js)
 
     document.getElementById('btnSaveWorkplace')?.addEventListener('click', () => {
-        const name = document.getElementById('wpName')?.value?.trim();
+        const normName = (v) => (typeof window.normalizeFieldText === 'function')
+            ? window.normalizeFieldText(String(v || ''), 'name')
+            : String(v || '');
+        const name = normName(document.getElementById('wpName')?.value?.trim());
         if (!name) { showToast('Ingrese un nombre para el lugar', 'error'); return; }
 
         const logoInput = document.getElementById('wpLogo');
+        const isEditing = _editingWorkplaceIndex !== null;
+        const currentProfile = isEditing ? workplaceProfiles[_editingWorkplaceIndex] : null;
         const profile = {
             name,
-            address:       document.getElementById('wpAddress')?.value?.trim() || '',
+            address:       normName(document.getElementById('wpAddress')?.value?.trim() || ''),
             phone:         document.getElementById('wpPhone')?.value?.trim()   || '',
             email:         document.getElementById('wpEmail')?.value?.trim()   || '',
             footer:        document.getElementById('wpFooter')?.value?.trim()  || '',
-            logo:          null,
-            professionals: [],
+            logo:          currentProfile?.logo || null,
+            professionals: Array.isArray(currentProfile?.professionals) ? currentProfile.professionals : [],
         };
 
-        const save = () => {
-            workplaceProfiles.push(profile);
+        const save = (savedLogo) => {
+            if (savedLogo !== undefined) profile.logo = savedLogo;
+            let selectedIdx;
+            if (isEditing) {
+                workplaceProfiles[_editingWorkplaceIndex] = profile;
+                selectedIdx = _editingWorkplaceIndex;
+            } else {
+                workplaceProfiles.push(profile);
+                selectedIdx = workplaceProfiles.length - 1;
+            }
             saveProfiles();
             populateWorkplaceDropdown();
+
+            const wpSelect = document.getElementById('pdfWorkplace');
+            if (wpSelect) {
+                wpSelect.value = String(selectedIdx);
+                wpSelect.dispatchEvent(new Event('change'));
+            }
+
             document.getElementById('workplaceModalOverlay')?.classList.remove('active');
-            showToast('Lugar guardado ✓', 'success');
+            _resetWorkplaceForm();
+            showToast(isEditing ? 'Lugar actualizado ✓' : 'Lugar guardado ✓', 'success');
         };
 
         if (logoInput?.files?.[0]) {
             const reader = new FileReader();
-            reader.onload = (e) => { profile.logo = e.target.result; save(); };
+            reader.onload = (e) => { save(e.target.result); };
             reader.readAsDataURL(logoInput.files[0]);
         } else {
-            save();
+            save(profile.logo);
         }
     });
 
@@ -456,7 +548,7 @@ window.initBusinessSuite = async function () {
             && (path === '/transcripcion' || path === '/transcripcion/index.html')
         );
 
-        if (isOfficialAdminBase && !params.get('id')) {
+        if (isOfficialAdminBase && !params.get('id') && !window._PENDING_SETUP_ID) {
             try { localStorage.removeItem('client_config_stored'); } catch (_) {}
             try { sessionStorage.removeItem('pending_setup_id'); } catch (_) {}
             if (typeof window.CLIENT_CONFIG === 'object' && window.CLIENT_CONFIG) {
@@ -476,7 +568,7 @@ window.initBusinessSuite = async function () {
                     '⚠️ Atención',
                     'Estás abriendo un link de usuario en tu sesión de ADMINISTRADOR.\n\nSi continúas, tu sesión admin se convertirá en la del usuario "' + window._PENDING_SETUP_ID + '".\n\n¿Querés continuar?'
                 )
-                : confirm('⚠️ ATENCIÓN: ¿Querés convertir tu sesión admin en la del usuario "' + window._PENDING_SETUP_ID + '"?');
+                : false;
             if (!confirmar) {
                 // Limpiar y seguir como admin
                 delete window._PENDING_SETUP_ID;
@@ -568,7 +660,9 @@ function _initAdmin() {
     localStorage.setItem('onboarding_date', new Date().toISOString());
 
     // Admin siempre ve el card de API Key
-    window.GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
+    window.GROQ_API_KEY = (typeof window.getResolvedGroqApiKey === 'function')
+        ? window.getResolvedGroqApiKey()
+        : (localStorage.getItem('groq_api_key') || '');
 
     // Cargar datos de prueba ANTES de inicializar módulos (para que los dropdowns se pueblen)
     _loadAdminTestData();

@@ -12,32 +12,104 @@ async function _queuePendingEmail(payload) {
     }
 }
 
+async function _retryPendingOutboundEmails() {
+    if (window._pendingOutboundRetryRunning) return;
+    window._pendingOutboundRetryRunning = true;
+    try {
+        let pending = (typeof appDB !== 'undefined' ? await appDB.get('pending_outbound_emails') : null)
+            || JSON.parse(localStorage.getItem('pending_outbound_emails') || '[]');
+        if (!Array.isArray(pending) || pending.length === 0) return;
+
+        let backendUrl = '';
+        try {
+            backendUrl =
+                (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.backendUrl)
+                || (typeof appDB !== 'undefined' ? await appDB.get('backend_url') : '')
+                || localStorage.getItem('backend_url')
+                || '';
+        } catch (_) {
+            backendUrl = localStorage.getItem('backend_url') || '';
+        }
+        backendUrl = String(backendUrl || '').trim();
+        if (!/^https?:\/\//i.test(backendUrl)) return;
+
+        const remaining = [];
+        for (const msg of pending) {
+            try {
+                const sendUrl = backendUrl + (backendUrl.includes('?') ? '&' : '?') + 'action=send_email';
+                let pdfBase64 = null;
+                if (typeof window.generatePDFBase64 === 'function') {
+                    pdfBase64 = await window.generatePDFBase64();
+                }
+
+                const response = await fetch(sendUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({
+                        action: 'send_email',
+                        to: msg.to,
+                        subject: msg.subject,
+                        htmlBody: msg.htmlBody,
+                        pdfBase64: pdfBase64,
+                        fileName: `Informe_${new Date().toISOString().split('T')[0]}.pdf`,
+                        senderName: msg.senderName || msg.profName || 'Profesional',
+                        replyTo: msg.replyTo || ''
+                    })
+                });
+
+                const raw = await response.text();
+                let parsed = null;
+                try { parsed = raw ? JSON.parse(raw) : null; } catch (_) { parsed = null; }
+                const ok = !!(
+                    (parsed && (parsed.success === true || parsed.ok === true || String(parsed.status || '').toLowerCase() === 'ok'))
+                    || (response.ok && /email enviado|success|"success"\s*:\s*true/i.test(String(raw || '')))
+                );
+                if (!ok) throw new Error('SEND_FAILED');
+            } catch (_) {
+                remaining.push(msg);
+            }
+        }
+
+        if (typeof appDB !== 'undefined') await appDB.set('pending_outbound_emails', remaining);
+        localStorage.setItem('pending_outbound_emails', JSON.stringify(remaining));
+        if (remaining.length === 0 && typeof showToast === 'function') {
+            showToast('✅ Correos pendientes reenviados', 'success');
+        }
+    } catch (_) {
+        // No bloquear UI por fallas de reintento.
+    } finally {
+        window._pendingOutboundRetryRunning = false;
+    }
+}
+
 // ============ ENVIAR POR EMAIL DESDE VISTA PREVIA ============
 window.emailFromPreview = async function () {
+    const resolvedCtx = (typeof window.resolveReportContext === 'function')
+        ? await window.resolveReportContext({ includeEditorExtract: true, includeFormFallback: true })
+        : null;
     const config   = (await _pdfPreviewSafeGet('pdf_config', {})) || {};
     const profData = (await _pdfPreviewSafeGet('prof_data', {})) || {};
     const activePro = config.activeProfessional || null;
     const rawProfName = activePro?.nombre || profData.nombre || 'Profesional';
-    const profSexo = activePro?.sexo || profData.sexo || '';
-    const titleMatch = String(rawProfName).match(/^(Dra?\.?\s*)/i);
-    const profTitle = profSexo === 'F' ? 'Dra.' : profSexo === 'M' ? 'Dr.' : (titleMatch && /^dra/i.test(titleMatch[1]) ? 'Dra.' : 'Dr.');
-    const profBaseName = String(rawProfName).replace(/^(Dra?\.?\s*)/i, '').trim();
-    const profDisplay = `${profTitle} ${profBaseName || rawProfName}`.trim();
-    const patientName = config.patientName || '';
-    const studyType   = config.studyType   || 'Informe médico';
-    const reportNum   = config.reportNum   || '';
-    const rawDate     = config.studyDate   || '';
-    const studyDate   = rawDate
-        ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'})
-        : new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'});
+    const profDisplay = (typeof window.getProfessionalDisplay === 'function')
+        ? window.getProfessionalDisplay(rawProfName, activePro?.sexo || profData.sexo || '').fullName
+        : (String(rawProfName || '').trim() || 'Profesional');
+    const patientName = (resolvedCtx && resolvedCtx.patientName) || config.patientName || '';
+    const studyType   = (resolvedCtx && resolvedCtx.studyType)   || config.studyType   || 'Informe médico';
+    const reportNum   = (resolvedCtx && resolvedCtx.reportNum)   || config.reportNum   || '';
+    const studyDate   = (resolvedCtx && resolvedCtx.studyDateDisplay)
+        || (config.studyDate
+            ? new Date(config.studyDate + 'T12:00').toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'})
+            : new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'}));
 
     // Asunto automático
     const subject = `Informe de ${studyType}${patientName ? ' — ' + patientName : ''} — Fecha: ${studyDate}`;
 
     // Cuerpo HTML del email
     const wpProfiles = (await _pdfPreviewSafeGet('workplace_profiles', [])) || [];
+    const wpFromResolved = resolvedCtx && resolvedCtx.activeWorkplace;
     const wpIdx = config.activeWorkplaceIndex;
-    const activeWp = (wpIdx !== undefined && wpIdx !== null) ? wpProfiles[Number(wpIdx)] : wpProfiles[0];
+    const activeWp = wpFromResolved || ((wpIdx !== undefined && wpIdx !== null) ? wpProfiles[Number(wpIdx)] : wpProfiles[0]);
     const wpName = activeWp?.name || '';
     const wpPhone = activeWp?.phone || config.workplacePhone || '';
     const senderReplyTo = String(activePro?.email || profData.email || activeWp?.email || config.workplaceEmail || '').trim();
@@ -63,10 +135,10 @@ window.emailFromPreview = async function () {
             Ante cualquier consulta sobre los resultados, no dude en comunicarse con nosotros${wpPhone ? ' al <strong>' + _escHtml(wpPhone) + '</strong>' : ''}.
         </p>
         <hr style="border:none;border-top:1px solid #ddd;margin:16px 0;">
-        <p style="font-size:13px;color:#666;margin:0;line-height:1.5;text-transform:uppercase;">
+        <p style="font-size:13px;color:#666;margin:0;line-height:1.5;">
             Atentamente,<br>
-            <strong>${_escHtml(profDisplay).toUpperCase()}</strong><br>
-            ${_escHtml(wpName).toUpperCase()}
+            <strong>${_escHtml(profDisplay)}</strong><br>
+            ${_escHtml(wpName)}
         </p>
     </div>
     <p style="font-size:11px;color:#999;text-align:center;margin-top:12px;">
@@ -107,6 +179,11 @@ window.emailFromPreview = async function () {
         senderName: profDisplay,
         replyTo: senderReplyTo
     };
+
+    // Pre-generar PDF en segundo plano para acelerar el envío cuando el usuario confirma.
+    window._emailPdfBase64Promise = (typeof window.generatePDFBase64 === 'function')
+        ? window.generatePDFBase64().catch(() => null)
+        : null;
 };
 
 function _escHtml(s) {
@@ -120,6 +197,62 @@ window.generatePDFBase64 = function () {
     _pdfBase64Queue = _pdfBase64Queue.then(() => _generatePDFBase64Impl()).catch(() => null);
     return _pdfBase64Queue;
 };
+async function _blobToBase64(blob) {
+    return new Promise((resolve) => {
+        try {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result || '').split(',')[1] || null);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(blob);
+        } catch (_) {
+            resolve(null);
+        }
+    });
+}
+
+async function _generatePDFBase64FromHtmlSnapshot() {
+    if (typeof createHTML !== 'function') {
+        console.error('[email PDF] createHTML no disponible');
+        return null;
+    }
+    if (typeof window._buildPdfBlobForEmail !== 'function') {
+        console.error('[email PDF] _buildPdfBlobForEmail no disponible');
+        return null;
+    }
+    try {
+        const htmlDoc = await createHTML();
+        if (!htmlDoc) {
+            console.error('[email PDF] createHTML devolvió vacío');
+            return null;
+        }
+        // Reutiliza exactamente el mismo pipeline que el botón Descargar PDF.
+        const blob = await window._buildPdfBlobForEmail(htmlDoc);
+        if (!blob) {
+            console.error('[email PDF] _buildPdfBlobForEmail devolvió null');
+            return null;
+        }
+        return await _blobToBase64(blob);
+    } catch (err) {
+        console.error('[email PDF] Error generando PDF para email:', err);
+        return null;
+    }
+}
+
+async function _generatePDFBase64FromPreviewDom() {
+    // Mismo pipeline visual que la descarga manual para garantizar consistencia 1:1.
+    if (typeof window._buildPdfBlobFromPreviewCapture !== 'function') {
+        return null;
+    }
+    try {
+        const blob = await window._buildPdfBlobFromPreviewCapture();
+        if (!blob) return null;
+        return await _blobToBase64(blob);
+    } catch (err) {
+        console.error('[email PDF] Fallback preview DOM falló:', err);
+        return null;
+    }
+}
+
 async function _generatePDFBase64Impl() {
     if (typeof jspdf === 'undefined') {
         await new Promise(r => setTimeout(r, 600));
@@ -128,31 +261,34 @@ async function _generatePDFBase64Impl() {
         const editorEl  = window.editor || document.getElementById('editor');
         if (!editorEl || !editorEl.innerHTML.trim()) return null;
 
-        return new Promise((resolve) => {
-            const origSave = window.saveToDisk;
-            let restored = false;
-            const restore = () => { if (!restored) { restored = true; window.saveToDisk = origSave; } };
+        // Prioridad 1: exactamente el mismo pipeline que descargar PDF desde preview.
+        const fromPreview = await _generatePDFBase64FromPreviewDom();
+        if (fromPreview) return fromPreview;
 
-            window.saveToDisk = async (blob, name) => {
-                restore();
-                try {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result.split(',')[1]);
-                    reader.onerror = () => resolve(null);
-                    reader.readAsDataURL(blob);
-                } catch(_) { resolve(null); }
-            };
+        // Prioridad 2: fallback html snapshot si el pipeline visual no está disponible.
+        const exactLike = await _generatePDFBase64FromHtmlSnapshot();
+        if (exactLike) return exactLike;
 
-            // Timeout de seguridad: si saveToDisk nunca es llamado, resolver null
-            const timeout = setTimeout(() => { restore(); resolve(null); }, 30000);
+        // Ruta 3 (último recurso): PDF simple de texto para no bloquear el envío de correo.
+        if (window.jspdf?.jsPDF) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+            const plain = String(editorEl.innerText || '').trim();
+            const lines = doc.splitTextToSize(plain || 'Informe médico', 180);
+            doc.setFontSize(10);
+            let y = 12;
+            lines.forEach((line) => {
+                if (y > 285) {
+                    doc.addPage();
+                    y = 12;
+                }
+                doc.text(line, 15, y);
+                y += 5;
+            });
+            return await _blobToBase64(doc.output('blob'));
+        }
 
-            const fName = 'informe';
-            const fecha = new Date().toLocaleDateString('es-ES');
-            const fDate = new Date().toISOString().split('T')[0];
-            downloadPDFWrapper(editorEl.innerHTML, fName, fecha, fDate)
-                .then(() => { /* saveToDisk ya fue llamado */ })
-                .catch(() => { clearTimeout(timeout); restore(); resolve(null); });
-        });
+        return null;
     } catch (e) {
         console.error('Error generando PDF base64:', e);
         return null;
@@ -167,7 +303,14 @@ window.initEmailSendModal = function () {
     const sendBtn     = document.getElementById('btnSendEmailNow');
     const statusEl    = document.getElementById('emailSendStatus');
 
-    const closeModal = () => { overlay?.classList.remove('active'); };
+    if (!overlay || overlay.dataset.emailSendInitialized === '1') return;
+    overlay.dataset.emailSendInitialized = '1';
+
+    const closeModal = () => {
+        overlay?.classList.remove('active');
+        window._emailPendingData = null;
+        window._emailPdfBase64Promise = null;
+    };
 
     closeBtn?.addEventListener('click', closeModal);
     cancelBtn?.addEventListener('click', closeModal);
@@ -233,8 +376,13 @@ window.initEmailSendModal = function () {
         }
 
         try {
-            // Generar PDF en base64
-            const pdfBase64 = await window.generatePDFBase64();
+            // Reutilizar pre-generación en background si existe; fallback a generación inmediata.
+            let pdfBase64 = window._emailPdfBase64Promise
+                ? await window._emailPdfBase64Promise
+                : null;
+            if (!pdfBase64) {
+                pdfBase64 = await window.generatePDFBase64();
+            }
             if (!pdfBase64) throw new Error('No se pudo generar el PDF');
 
             sendBtn.textContent = '📨 Enviando...';
@@ -246,9 +394,13 @@ window.initEmailSendModal = function () {
             const fileDate = new Date().toISOString().split('T')[0];
             const fileName = `Informe_${(data.studyType || 'Medico').replace(/\s+/g, '_')}_${fileDate}.pdf`;
 
-            const response = await fetch(backendUrl, {
+            // Compatibilidad backend viejo/nuevo: action en query + body.
+            const sendUrl = backendUrl + (backendUrl.includes('?') ? '&' : '?') + 'action=send_email';
+
+            const response = await fetch(sendUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                // Request simple para evitar preflight OPTIONS en Apps Script (CORS 405).
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({
                     action: 'send_email',
                     to: to,
@@ -261,9 +413,20 @@ window.initEmailSendModal = function () {
                 })
             });
 
-            const result = await response.json();
+            const raw = await response.text();
+            let result = null;
+            try {
+                result = raw ? JSON.parse(raw) : null;
+            } catch (_) {
+                result = null;
+            }
 
-            if (result.success) {
+            const isSuccess = !!(
+                (result && (result.success === true || result.ok === true || String(result.status || '').toLowerCase() === 'ok'))
+                || (response.ok && /email enviado|success|"success"\s*:\s*true/i.test(String(raw || '')))
+            );
+
+            if (isSuccess) {
                 if (statusEl) {
                     statusEl.style.background = '#d1fae5';
                     statusEl.style.color = '#065f46';
@@ -272,7 +435,7 @@ window.initEmailSendModal = function () {
                 if (typeof showToast === 'function') showToast('✅ Email enviado correctamente', 'success');
                 setTimeout(closeModal, 2500);
             } else {
-                throw new Error(result.error || 'Error desconocido del servidor');
+                throw new Error((result && result.error) || `Error backend HTTP_${response.status}`);
             }
         } catch (err) {
             console.error('Error enviando email:', err);
@@ -297,6 +460,10 @@ window.initEmailSendModal = function () {
             sendBtn.textContent = '📨 Enviar ahora';
         }
     });
+
+    // Reintento suave de envios pendientes: al iniciar y al recuperar conectividad.
+    setTimeout(() => { _retryPendingOutboundEmails(); }, 2000);
+    window.addEventListener('online', () => { _retryPendingOutboundEmails(); });
 };
 window.workplaceProfiles = [];
 _pdfPreviewSafeGet('workplace_profiles', []).then(function(v) { window.workplaceProfiles = v || []; }).catch(function() {});
@@ -357,4 +524,133 @@ window.printFromPreview = async function () {
             }, 3000);
         }, 500);
     };
+};
+
+// ============ PDF VIA html-to-image (no parsea CSS — usa SVG foreignObject) ============
+window.downloadPDFFromCanvas = async function (fileName, fileDate) {
+    if (typeof showToast === 'function') showToast('\u23F3 Generando PDF...', 'info', 10000);
+    try {
+        const blob = await window._buildPdfBlobFromPreviewCapture();
+        if (!blob) throw new Error('No se pudo generar el PDF desde preview');
+
+        // Descargar
+        const saveHandler = (typeof window.saveToDisk === 'function') ? window.saveToDisk : async (b, name) => {
+            const url = URL.createObjectURL(b);
+            const a = document.createElement('a'); a.href = url; a.download = name;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        };
+        await saveHandler(blob, `${fileName}_${fileDate}.pdf`);
+        if (typeof showToast === 'function') showToast('PDF descargado \u2713', 'success');
+
+        // Guardar en historial
+        if (typeof saveReportToHistory === 'function' && !window._skipReportSave) {
+            try {
+                const editorEl = window.editor || document.getElementById('editor');
+                saveReportToHistory({ htmlContent: editorEl ? editorEl.innerHTML : '', fileName: fileName, patientName: '', patientDni: '' });
+            } catch (_) { /* no bloquear */ }
+        }
+    } catch (err) {
+        console.error('[downloadPDFFromCanvas] Error:', err);
+        if (typeof showToast === 'function') showToast('Error al generar PDF: ' + (err.message || String(err)), 'error');
+    }
+};
+
+window._buildPdfBlobFromPreviewCapture = async function (options) {
+    const opts = options || {};
+    // 1. Asegurar que la preview está renderizada
+    const previewPage = document.getElementById('previewPage');
+    if (!previewPage) throw new Error('Vista previa no disponible');
+
+    const overlay = document.getElementById('printPreviewOverlay');
+    const isOpen = overlay && overlay.classList.contains('active');
+    let captureNode = previewPage;
+    let tempCaptureHost = null;
+    let restoreOverlayVisibility = '';
+    let restoreOverlayPointerEvents = '';
+    if (!isOpen) {
+        if (opts.silentOpen && overlay) {
+            restoreOverlayVisibility = overlay.style.visibility;
+            restoreOverlayPointerEvents = overlay.style.pointerEvents;
+            overlay.style.visibility = 'hidden';
+            overlay.style.pointerEvents = 'none';
+        }
+        if (typeof window.openPrintPreview === 'function') {
+            await window.openPrintPreview();
+        }
+        await new Promise(r => setTimeout(r, 700));
+
+        if (opts.silentOpen) {
+            const livePreviewPage = document.getElementById('previewPage');
+            if (!livePreviewPage) throw new Error('Vista previa no disponible');
+            tempCaptureHost = document.createElement('div');
+            tempCaptureHost.style.cssText = 'position:fixed;left:-99999px;top:0;background:#fff;z-index:-1;pointer-events:none;';
+            captureNode = livePreviewPage.cloneNode(true);
+            tempCaptureHost.appendChild(captureNode);
+            document.body.appendChild(tempCaptureHost);
+        }
+    }
+
+    // Ocultar solo los separadores visuales de salto de página ("Fin pág. 1 / Inicio pág. 2")
+    // pero MANTENER los headers repetidos para que la altura total se preserve y el PDF
+    // genere todas las páginas correctamente.
+    const separators = Array.from(captureNode.querySelectorAll('.pv-pb-separator'));
+    separators.forEach(s => { s._savedDisplay = s.style.display; s.style.display = 'none'; });
+
+    let dataUrl;
+    try {
+        // html-to-image: captura pixel-perfect sin parsear CSS (SVG foreignObject)
+        const lib = window.htmlToImage || window['html-to-image'];
+        if (!lib) throw new Error('html-to-image no cargado');
+
+        dataUrl = await lib.toJpeg(captureNode, {
+            quality: 0.92,
+            pixelRatio: 2,
+            backgroundColor: '#ffffff',
+            skipFonts: false
+        });
+    } finally {
+        separators.forEach(s => { s.style.display = s._savedDisplay !== undefined ? s._savedDisplay : ''; });
+        if (tempCaptureHost && tempCaptureHost.parentNode) tempCaptureHost.parentNode.removeChild(tempCaptureHost);
+        if (!isOpen && opts.silentOpen && overlay) {
+            overlay.classList.remove('active');
+            overlay.style.visibility = restoreOverlayVisibility;
+            overlay.style.pointerEvents = restoreOverlayPointerEvents;
+        }
+    }
+
+    if (!dataUrl) throw new Error('html-to-image no produjo resultado');
+
+    // 3. Convertir dataUrl → canvas para paginar en A4
+    const img = new Image();
+    await new Promise(function (res, rej) { img.onload = res; img.onerror = rej; img.src = dataUrl; });
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    canvas.getContext('2d').drawImage(img, 0, 0);
+
+    // 4. Paginar en hojas A4
+    const { jsPDF } = window.jspdf;
+    const PAGE_W_MM = 210;
+    const PAGE_H_MM = 297;
+    const pageHeightPx = Math.round((PAGE_H_MM / PAGE_W_MM) * canvas.width);
+    const totalPages = Math.ceil(canvas.height / pageHeightPx);
+
+    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
+    for (let i = 0; i < totalPages; i++) {
+        if (i > 0) doc.addPage();
+        const srcY = i * pageHeightPx;
+        const srcH = Math.min(pageHeightPx, canvas.height - srcY);
+
+        const slice = document.createElement('canvas');
+        slice.width = canvas.width;
+        slice.height = srcH;
+        slice.getContext('2d').drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
+
+        const sliceHmm = (srcH / canvas.width) * PAGE_W_MM;
+        doc.addImage(slice.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, PAGE_W_MM, sliceHmm);
+    }
+
+    return doc.output('blob');
 };

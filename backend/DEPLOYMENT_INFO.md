@@ -46,7 +46,6 @@
 | `?action=admin_log_action` | GET | Registrar acción de admin |
 | `?action=admin_get_metrics` | GET | Métricas de un usuario |
 | `?action=admin_get_global_stats` | GET | Estadísticas globales |
-| `?action=admin_request_diagnostic` | GET | Solicitar diagnóstico remoto |
 | `?action=admin_get_diagnostic` | GET | Ver último diagnóstico |
 | `?action=admin_generate_config` | GET | Generar config.js para clon |
 

@@ -20,17 +20,30 @@ window._retryPendingContacts = async function () {
     if (!backendUrl) return; // sin backend no podemos reintentar
 
     const still = [];
+
+    const resolveProfessionalName = (name, sex) => {
+        if (typeof window.getProfessionalDisplay === 'function') {
+            return window.getProfessionalDisplay(name, sex).fullName;
+        }
+        return String(name || 'Profesional').trim() || 'Profesional';
+    };
+
+    const defaultSupportEmail = (typeof window.getResolvedSupportContactEmail === 'function')
+        ? window.getResolvedSupportContactEmail()
+        : 'aldowagner78@gmail.com';
+
     for (const msg of pending) {
         try {
+            const senderDisplay = resolveProfessionalName(msg.nombre, msg.sexo);
             const res = await fetch(backendUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify({
                     action: 'send_email',
-                    to: 'soporte@transcriptorpro.com',
+                    to: msg.to || defaultSupportEmail,
                     subject: `[Contacto pendiente] ${msg.motivo}`,
-                    htmlBody: `<p><b>Motivo:</b> ${(msg.motivo||"").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</p><p>${(msg.detalle||"").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</p><p><small>${(msg.nombre||"").replace(/</g,"&lt;")} — Mat. ${(msg.mat||"").replace(/</g,"&lt;")} — ${msg.date}</small></p>`,
-                    senderName: msg.senderName || (`Dr./Dra. ${msg.nombre || 'Profesional'}`),
+                    htmlBody: `<p><b>Motivo:</b> ${(msg.motivo||"").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</p><p>${(msg.detalle||"").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</p><p><small>${senderDisplay.replace(/</g,"&lt;")} - Mat. ${(msg.mat||"").replace(/</g,"&lt;")} - ${msg.date}</small></p>`,
+                    senderName: msg.senderName || senderDisplay,
                     replyTo: msg.replyTo || ''
                 })
             });
@@ -52,12 +65,50 @@ window._retryPendingContacts = async function () {
 };
 
 window.initContact = function () {
-    // No mostrar para ADMIN
-    const isAdmin = (typeof CLIENT_CONFIG === 'undefined' || CLIENT_CONFIG.type === 'ADMIN');
     const btn = document.getElementById('btnContacto');
     if (!btn) return;
-    if (isAdmin) { btn.style.display = 'none'; return; }
-    btn.style.display = '';
+
+    // Resolver rol de forma robusta (runtime + config persistida)
+    // para evitar falsos ADMIN durante hidratacion inicial.
+    const resolveClientType = () => {
+        if (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG && CLIENT_CONFIG.type) {
+            return CLIENT_CONFIG.type;
+        }
+        try {
+            const raw = localStorage.getItem('client_config_stored');
+            if (!raw) return 'ADMIN';
+            const parsed = JSON.parse(raw);
+            return parsed && parsed.type ? parsed.type : 'ADMIN';
+        } catch (_) {
+            return 'ADMIN';
+        }
+    };
+
+    const applyContactVisibility = () => {
+        const isAdmin =
+            (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'ADMIN') ||
+            resolveClientType() === 'ADMIN';
+        btn.style.display = isAdmin ? 'none' : '';
+        return !isAdmin;
+    };
+
+    // Evitar listeners duplicados si initContact se llama más de una vez.
+    if (btn.dataset.contactInitialized === '1') {
+        applyContactVisibility();
+        return;
+    }
+
+    if (!applyContactVisibility()) {
+        let retries = 0;
+        const retryTimer = setInterval(() => {
+            retries += 1;
+            const visible = applyContactVisibility();
+            if (visible || retries >= 10) clearInterval(retryTimer);
+        }, 250);
+        return;
+    }
+
+    btn.dataset.contactInitialized = '1';
 
     // Intentar reenviar contactos pendientes de sesiones anteriores
     // Reintento inicial a los 10s, luego cada 5 minutos si quedaron pendientes (máximo 10 reintentos)
@@ -159,10 +210,14 @@ window.initContact = function () {
             const medicoId = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.medicoId) || '—';
             const plan     = (typeof CLIENT_CONFIG !== 'undefined' && (CLIENT_CONFIG.plan || CLIENT_CONFIG.type)) || '—';
 
-            const contactEmail = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.contactEmail)
-                ? CLIENT_CONFIG.contactEmail
-                : 'soporte@transcriptorpro.app';
-            const senderName = `Dr./Dra. ${nombre}`;
+            const contactEmail = (typeof window.getResolvedSupportContactEmail === 'function')
+                ? window.getResolvedSupportContactEmail()
+                : ((typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.contactEmail)
+                    ? CLIENT_CONFIG.contactEmail
+                    : 'aldowagner78@gmail.com');
+            const senderName = (typeof window.getProfessionalDisplay === 'function')
+                ? window.getProfessionalDisplay(nombre, profData.sexo).fullName
+                : (String(nombre || 'Profesional').trim() || 'Profesional');
             const replyTo = String(
                 profData.email
                 || (typeof CLIENT_CONFIG !== 'undefined' ? CLIENT_CONFIG.email : '')
@@ -178,7 +233,7 @@ window.initContact = function () {
             const htmlBody = `
                 <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
                     <div style="background:#0f766e;color:white;padding:16px 20px;border-radius:10px 10px 0 0;">
-                        <h2 style="margin:0;font-size:1.1rem;">📧 Contacto desde TranscriptorPro</h2>
+                        <h2 style="margin:0;font-size:1.1rem;">Contacto desde TranscriptorPro</h2>
                     </div>
                     <div style="padding:20px;background:#ffffff;border:1px solid #e2e8f0;border-top:none;">
                         <p style="margin:0 0 4px;font-size:.85rem;color:#64748b;"><strong>Motivo:</strong> ${_esc(motivo)}</p>
@@ -186,7 +241,7 @@ window.initContact = function () {
                         ${safeDetalle}
                     </div>
                     <div style="padding:12px 20px;background:#f8fafc;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;font-size:.78rem;color:#64748b;">
-                        <strong>Dr./Dra. ${_esc(nombre)}</strong> | Mat. ${_esc(mat)}<br>
+                        <strong>${_esc(senderName)}</strong> | Mat. ${_esc(mat)}<br>
                         ID: ${_esc(medicoId)} | Plan: ${_esc(plan)} | Device: ${_esc(deviceId)}
                     </div>
                 </div>`;
@@ -200,7 +255,7 @@ window.initContact = function () {
                 try {
                     const response = await fetch(backendUrl, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'text/plain' },
                         body: JSON.stringify({
                             action: 'send_email',
                             to: contactEmail,
@@ -217,7 +272,7 @@ window.initContact = function () {
                         try {
                             await fetch(backendUrl, {
                                 method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
+                                headers: { 'Content-Type': 'text/plain' },
                                 body: JSON.stringify({
                                     action: 'log_support_request',
                                     medicoId: medicoId,
@@ -243,7 +298,7 @@ window.initContact = function () {
                     try {
                         const pending = (typeof appDB !== 'undefined' ? await appDB.get('pending_contacts') : null)
                             || JSON.parse(localStorage.getItem('pending_contacts') || '[]');
-                        pending.push({ motivo, detalle, nombre, mat, date: new Date().toISOString(), senderName, replyTo });
+                        pending.push({ motivo, detalle, nombre, mat, date: new Date().toISOString(), senderName, replyTo, to: contactEmail });
                         if (typeof appDB !== 'undefined') await appDB.set('pending_contacts', pending);
                         else localStorage.setItem('pending_contacts', JSON.stringify(pending));
                     } catch (_) {}
@@ -259,7 +314,7 @@ window.initContact = function () {
             try {
                 const pending = (typeof appDB !== 'undefined' ? await appDB.get('pending_contacts') : null)
                     || JSON.parse(localStorage.getItem('pending_contacts') || '[]');
-                pending.push({ motivo, detalle, nombre, mat, date: new Date().toISOString(), senderName, replyTo });
+                pending.push({ motivo, detalle, nombre, mat, date: new Date().toISOString(), senderName, replyTo, to: contactEmail });
                 if (typeof appDB !== 'undefined') await appDB.set('pending_contacts', pending);
                 else localStorage.setItem('pending_contacts', JSON.stringify(pending));
             } catch (_) {}

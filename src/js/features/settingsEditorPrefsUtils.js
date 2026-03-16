@@ -12,6 +12,15 @@
             editor.style.fontSize = sizes[prefs.editorFontSize] || sizes.medium;
         }
 
+        const inlineReviewEnabled = prefs.inlineParagraphReview !== false;
+        window.inlineParagraphReviewEnabled = inlineReviewEnabled;
+        if (typeof window._refreshInlineReviewButtons === 'function') {
+            window._refreshInlineReviewButtons(inlineReviewEnabled);
+        }
+        if (typeof window._syncInlineReviewQuickToggle === 'function') {
+            window._syncInlineReviewQuickToggle();
+        }
+
         if (prefs.autosave) {
             startAutosave();
         } else {
@@ -29,6 +38,7 @@
         const fontSize = document.getElementById('settingsEditorFontSize');
         const autosave = document.getElementById('settingsAutosave');
         const undoHistory = document.getElementById('settingsUndoHistory');
+        const inlineReview = document.getElementById('settingsInlineReviewToggle');
 
         if (fontSize) {
             fontSize.addEventListener('change', () => {
@@ -58,6 +68,23 @@
                 savePrefs(prefs);
             });
         }
+
+        if (inlineReview) {
+            inlineReview.addEventListener('change', () => {
+                const prefs = getPrefs();
+                prefs.inlineParagraphReview = inlineReview.checked;
+                savePrefs(prefs);
+                applyEditorPrefs(prefs);
+                if (typeof window.showToast === 'function') {
+                    window.showToast(
+                        inlineReview.checked
+                            ? 'Revisión IA en párrafos activada'
+                            : 'Revisión IA en párrafos desactivada',
+                        'info'
+                    );
+                }
+            });
+        }
     }
 
     function populateEditorPrefs(getPrefs) {
@@ -67,10 +94,15 @@
         const fontSize = document.getElementById('settingsEditorFontSize');
         const autosave = document.getElementById('settingsAutosave');
         const undoHistory = document.getElementById('settingsUndoHistory');
+        const inlineReview = document.getElementById('settingsInlineReviewToggle');
 
         if (fontSize) fontSize.value = prefs.editorFontSize;
         if (autosave) autosave.checked = prefs.autosave;
         if (undoHistory) undoHistory.checked = prefs.undoHistory;
+        if (inlineReview) inlineReview.checked = prefs.inlineParagraphReview !== false;
+        if (typeof window._syncInlineReviewQuickToggle === 'function') {
+            window._syncInlineReviewQuickToggle();
+        }
     }
 
     function startAutosave() {

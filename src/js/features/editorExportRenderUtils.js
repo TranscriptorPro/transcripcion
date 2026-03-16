@@ -1,30 +1,346 @@
 // ============ EDITOR: EXPORT RENDER HELPERS ============
 
 (function initEditorExportRenderUtils() {
-    function createRTF(text, fecha) {
-        const cleaned = text
+    function _stripAccentsForCompare(text) {
+        return String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function _isGenericStudyType(text) {
+        const n = _stripAccentsForCompare(text).toLowerCase().trim();
+        return n === ''
+            || n === 'informe medico general'
+            || n === 'informe medico'
+            || n === 'informe general'
+            || n === 'informe generico'
+            || n === 'generico'
+            || n === 'general';
+    }
+
+    function _extractStudyTypeFromHtmlHeading(html) {
+        const probe = document.createElement('div');
+        probe.innerHTML = html || '';
+        const heading = probe.querySelector('h1, h2, h3');
+        if (!heading) return '';
+        const raw = String(heading.textContent || '').trim();
+        const m = raw.match(/^INFORME\s+DE\s+(.+)$/i);
+        return (m && m[1]) ? m[1].trim() : '';
+    }
+
+    function _extractStudyTypeFromPlainText(text) {
+        const line = String(text || '').split(/\r?\n/).find(l => /^\s*INFORME\s+DE\s+/i.test(l || ''));
+        if (!line) return '';
+        const m = String(line).trim().match(/^INFORME\s+DE\s+(.+)$/i);
+        return (m && m[1]) ? m[1].trim() : '';
+    }
+
+    function _isClinicProfile() {
+        const type = String(window.CLIENT_CONFIG?.type || '').toUpperCase();
+        const planCode = String(window.CLIENT_CONFIG?.planCode || '').toUpperCase();
+        return type === 'CLINIC' || planCode === 'CLINIC';
+    }
+
+    function _computeEffectiveStudyType(baseStudyType, fallbackTemplateName, editorHtml, plainText) {
+        const base = String(baseStudyType || fallbackTemplateName || '').trim();
+        const headingStudy = _extractStudyTypeFromHtmlHeading(editorHtml) || _extractStudyTypeFromPlainText(plainText);
+        if (_isGenericStudyType(base) && headingStudy) return headingStudy;
+        return base;
+    }
+
+    function _cleanDoctorName(v) {
+        return String(v || '').replace(/^\s*(?:dr\.?|dra\.?)\s+/i, '').trim();
+    }
+
+    async function _loadExportContext(text) {
+        const editorEl = document.getElementById('editor');
+        const rawEditorText = editorEl?.innerText || '';
+        const sourceText = String(text || rawEditorText || '').trim();
+
+        const getCfg = async () => {
+            try {
+                if (window._pdfConfigCache && typeof window._pdfConfigCache === 'object') return window._pdfConfigCache;
+                if (typeof appDB !== 'undefined' && appDB && typeof appDB.get === 'function') {
+                    const fromDb = await appDB.get('pdf_config');
+                    if (fromDb && typeof fromDb === 'object') return fromDb;
+                }
+                return JSON.parse(localStorage.getItem('pdf_config') || '{}');
+            } catch (_) {
+                return {};
+            }
+        };
+
+        const cfg = await getCfg();
+        const profData = (typeof appDB !== 'undefined' && appDB && typeof appDB.get === 'function')
+            ? ((await appDB.get('prof_data')) || {})
+            : (() => {
+                try { return JSON.parse(localStorage.getItem('prof_data') || '{}') || {}; }
+                catch (_) { return {}; }
+            })();
+        const activePro = cfg.activeProfessional || null;
+        const rawProfName = activePro?.nombre || profData.nombre || '';
+        const profDisplayObj = (typeof window.getProfessionalDisplay === 'function')
+            ? window.getProfessionalDisplay(rawProfName, activePro?.sexo || profData.sexo || '')
+            : { fullName: String(rawProfName || '').trim() };
+        const professionalName = String(profDisplayObj.fullName || rawProfName || '').trim();
+        const professionalMatriculaRaw = String(activePro?.matricula || profData.matricula || '').trim();
+        const professionalMatricula = (typeof window.normalizeMatriculaDisplay === 'function')
+            ? window.normalizeMatriculaDisplay(professionalMatriculaRaw)
+            : professionalMatriculaRaw;
+        const professionalSpecialtyRaw = activePro?.especialidades
+            || (Array.isArray(profData.specialties)
+                ? profData.specialties.filter(s => s && s !== 'Todas').join(' / ')
+                : (profData.especialidad || ''));
+        const professionalSpecialty = String(professionalSpecialtyRaw || '').trim();
+        const wpProfiles = (typeof appDB !== 'undefined' && appDB && typeof appDB.get === 'function')
+            ? ((await appDB.get('workplace_profiles')) || [])
+            : (() => {
+                try { return JSON.parse(localStorage.getItem('workplace_profiles') || '[]') || []; }
+                catch (_) { return []; }
+            })();
+        const wpIdx = cfg.activeWorkplaceIndex;
+        const activeWp = (wpIdx !== undefined && wpIdx !== null) ? wpProfiles[Number(wpIdx)] : wpProfiles[0];
+        const workplaceName = String(activeWp?.name || '').trim();
+        const extracted = (typeof extractPatientDataFromText === 'function') ? extractPatientDataFromText(sourceText) : {};
+        const reqVal = (id) => document.getElementById(id)?.value?.trim() || '';
+        const drPrefix = () => 'Dr./a ';
+
+        const tplKey = window.selectedTemplate || cfg.selectedTemplate || '';
+        const tplName = (tplKey && window.MEDICAL_TEMPLATES?.[tplKey]?.name) || '';
+        const rawDate = cfg.studyDate || '';
+        const studyDate = rawDate
+            ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
+            : '';
+
+        const effectiveStudyType = _computeEffectiveStudyType(
+            cfg.studyType,
+            tplName,
+            editorEl?.innerHTML || '',
+            sourceText
+        );
+
+        const showStudyTime = (document.getElementById('reqShowStudyTime')?.checked ?? cfg.showStudyTime ?? true) !== false;
+        const resolvedStudyTime = showStudyTime
+            ? (cfg.studyTime || reqVal('reqStudyTime') || reqVal('pdfStudyTime') || '')
+            : '';
+
+        return {
+            text: sourceText,
+            patientName: extracted.name || cfg.patientName || reqVal('reqPatientName') || reqVal('pdfPatientName') || '',
+            patientDni: extracted.dni || cfg.patientDni || reqVal('reqPatientDni') || reqVal('pdfPatientDni') || '',
+            patientAge: extracted.age || cfg.patientAge || reqVal('reqPatientAge') || reqVal('pdfPatientAge') || '',
+            patientSex: extracted.sex || cfg.patientSex || reqVal('reqPatientSex') || reqVal('pdfPatientSex') || '',
+            patientInsurance: extracted.insurance || cfg.patientInsurance || reqVal('reqPatientInsurance') || reqVal('pdfPatientInsurance') || '',
+            patientAffiliateNum: extracted.affiliateNum || cfg.patientAffiliateNum || reqVal('reqPatientAffiliateNum') || reqVal('pdfPatientAffiliateNum') || '',
+            studyType: effectiveStudyType || reqVal('reqStudyType') || '',
+            studyDate,
+            showStudyDate: (document.getElementById('reqShowStudyDate')?.checked ?? cfg.showStudyDate ?? true) !== false,
+            showStudyTime,
+            studyTime: resolvedStudyTime,
+            studyReason: cfg.studyReason || reqVal('reqStudyReason') || reqVal('pdfStudyReason') || '',
+            referringDoctor: (() => {
+                const inputStr = cfg.referringDoctor || reqVal('reqReferringDoctor') || reqVal('pdfReferringDoctor') || '';
+                const raw = _cleanDoctorName(inputStr);
+                if (!raw) return '';
+                return 'Dr./a ' + raw;
+            })(),
+            reportNum: cfg.reportNum || reqVal('pdfReportNumber') || '',
+            showReportNumber: (cfg.showReportNumber ?? true) === true,
+            hideReportHeader: !_isClinicProfile() && (cfg.hideReportHeader === true),
+            professionalName,
+            professionalMatricula,
+            professionalSpecialty,
+            workplaceName,
+            lineSpacing: parseFloat(cfg.lineSpacing) || 1
+        };
+    }
+
+    function _rtfEscapeLine(line) {
+        let escaped = String(line || '')
+            .replace(/\\/g, '\\\\')
+            .replace(/\{/g, '\\{')
+            .replace(/\}/g, '\\}');
+
+        escaped = escaped.replace(/[^\x20-\x7E]/g, (ch) => {
+            const code = ch.charCodeAt(0);
+            if (code <= 255) return "\\'" + code.toString(16).padStart(2, '0');
+            const signed = code > 32767 ? code - 65536 : code;
+            return '\\u' + signed + '?';
+        });
+
+        return escaped;
+    }
+
+    async function createRTF(text, _fecha) {
+        const ctx = await _loadExportContext(text);
+        const cleaned = String(ctx.text || '')
             .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
             .replace(/[\u{2600}-\u{27BF}]/gu, '')
             .replace(/[\u{FE00}-\u{FE0F}]/gu, '')
             .replace(/[\u{200B}-\u{200D}\u{FEFF}]/gu, '')
             .replace(/✏️?/g, '');
+        const lineSpacing = Math.max(1, Math.min(2, parseFloat(ctx.lineSpacing) || 1));
+        const rtfSl = Math.round(240 * lineSpacing);
+        // Color de acento (azul profesional)
+        const accentR = 26, accentG = 86, accentB = 160;
 
-        const lines = cleaned.split('\n');
-        let body = '';
-        for (const line of lines) {
-            let escaped = line
-                .replace(/\\/g, '\\\\')
-                .replace(/\{/g, '\\{')
-                .replace(/\}/g, '\\}');
-            escaped = escaped.replace(/[^\x20-\x7E]/g, (ch) => {
-                const code = ch.charCodeAt(0);
-                if (code <= 255) return "\\'" + code.toString(16).padStart(2, '0');
-                const signed = code > 32767 ? code - 65536 : code;
-                return '\\u' + signed + '?';
-            });
-            body += escaped + '\\par\n';
+        const addField = (arr, label, value) => {
+            const v = String(value || '').trim();
+            if (!v) return;
+            arr.push({ label, value: v });
+        };
+
+        const meta = [];
+        if (ctx.showStudyDate) addField(meta, 'Fecha', `${ctx.studyDate}${ctx.studyTime ? ' ' + ctx.studyTime + ' hs.' : ''}`);
+        if (ctx.showReportNumber) addField(meta, 'Informe N\u00BA', ctx.reportNum);
+        addField(meta, 'Paciente', ctx.patientName);
+        addField(meta, 'DNI', ctx.patientDni);
+        addField(meta, 'Edad', ctx.patientAge ? `${ctx.patientAge} a\u00F1os` : '');
+        addField(meta, 'Sexo', ctx.patientSex === 'M' ? 'Masculino' : ctx.patientSex === 'F' ? 'Femenino' : ctx.patientSex);
+        addField(meta, 'Cobertura', ctx.patientInsurance);
+        addField(meta, 'N\u00BA Afiliado', ctx.patientAffiliateNum);
+        addField(meta, 'M\u00E9dico solicitante', ctx.referringDoctor);
+        addField(meta, 'Motivo de consulta', ctx.studyReason);
+        if (!ctx.hideReportHeader) {
+            addField(meta, 'Profesional', ctx.professionalName);
+            addField(meta, 'Matr\u00EDcula', ctx.professionalMatricula);
+            addField(meta, 'Especialidad', ctx.professionalSpecialty);
+            addField(meta, 'Lugar de trabajo', ctx.workplaceName);
         }
-        return `{\\rtf1\\ansi\\ansicpg1252\\deff0{\\fonttbl{\\f0 Arial;}}\\paperw12240\\paperh15840\\margl1440\\margr1440\\margt1440\\margb1440\\qc\\f0\\fs36\\b INFORME M\\'c9DICO\\b0\\par\\fs24\\i Fecha: ${fecha}\\i0\\par\\par\\ql\\fs24${body}}`;
+
+        // ── Cuerpo con detección de headings H1/H2/H3 ──
+        // titleText sin RTF-escape para comparar con el contenido del body
+        const _titleRaw = String(ctx.studyType || '').trim()
+            ? `INFORME DE ${String(ctx.studyType).toUpperCase()}`
+            : 'INFORME M\u00C9DICO';
+
+        const lines = cleaned.split(/\r?\n/);
+        const bodyParts = [];
+        let _firstH1Skipped = false;
+        for (const line of lines) {
+            const t = String(line || '');
+            if (!t.trim()) { bodyParts.push('\\par'); continue; }
+            const trimmed = t.trim();
+            const isH1 = trimmed.length <= 80 && trimmed === trimmed.toUpperCase() && /[A-Z\u00C1\u00C9\u00CD\u00D3\u00DA\u00D1]/.test(trimmed);
+            if (isH1) {
+                // Omitir el primer H1 si es el mismo título que ya muestra titleBlock
+                if (!_firstH1Skipped && trimmed === _titleRaw) {
+                    _firstH1Skipped = true;
+                    continue;
+                }
+                // Heading principal: centrado, bold, color acento, tamaño grande, línea inferior
+                bodyParts.push(`\\pard\\qc\\sb90\\sa30{\\f0\\fs21\\b\\cf1 ${_rtfEscapeLine(trimmed)}}\\par`);
+                bodyParts.push(`{\\pard\\brdrb\\brdrs\\brdrw10\\brdrcf1\\brsp40 \\par}`);
+                bodyParts.push('\\pard\\ql');
+            } else {
+                bodyParts.push(`\\pard\\ql\\sl${rtfSl}\\slmult1\\sa40{\\f0\\fs20 ${_rtfEscapeLine(t)}}\\par`);
+            }
+        }
+        const body = bodyParts.join('\n');
+
+        // ── Metadatos en tabla con bordes y color ──
+        const renderMetaCell = (entry) => {
+            if (!entry) return '\\intbl \\cell';
+            return `\\intbl {\\f0\\fs17\\cf1\\b ${_rtfEscapeLine(entry.label)}:}{\\f0\\fs17\\b0  ${_rtfEscapeLine(entry.value)}}\\cell`;
+        };
+
+        const metaRows = [];
+        for (let i = 0; i < meta.length; i += 2) {
+            const left = meta[i] || null;
+            const right = meta[i + 1] || null;
+            metaRows.push(`{\\trowd\\trgaph108\\trleft0\\trbrdrb\\brdrs\\brdrw5\\brdrcf2\\cellx5400\\cellx10800\n${renderMetaCell(left)}\n${renderMetaCell(right)}\n\\row}`);
+        }
+
+        const metaBlock = metaRows.length
+            ? `{\\pard\\sb50\\sa20\\f0\\fs17\\cf1\\b DATOS DEL ESTUDIO Y PACIENTE\\b0\\par}\n{\\pard\\brdrb\\brdrs\\brdrw10\\brdrcf1\\brsp20 \\par}\n${metaRows.join('\n')}\\par`
+            : '';
+
+        // ── Título centrado con línea decorativa ──
+        const titleText = String(ctx.studyType || '').trim()
+            ? `INFORME DE ${_rtfEscapeLine(String(ctx.studyType).toUpperCase())}`
+            : _rtfEscapeLine('INFORME M\u00C9DICO');
+        const titleBlock = `{\\pard\\qc\\sb0\\sa50{\\f0\\fs26\\b\\cf1 ${titleText}}\\par}\n{\\pard\\brdrb\\brdrs\\brdrw15\\brdrcf1\\brsp40 \\par}`;
+
+        // ── Bloque profesional (ahora solo en footer) ──
+        let profBlock = ''; // vacío — el profesional aparece en el pie de página
+
+        // ── Firma (centrada, con espacio generoso para firmar) ──
+        let sigBlock = '';
+        if (!ctx.hideReportHeader && ctx.professionalName) {
+            const sigIndent = 5400;
+            sigBlock = '\\par\\par\\par\\par';
+            sigBlock += `{\\pard\\qc\\li${sigIndent}\\sb80\\sa0 {\\f0\\fs18 ____________________________}\\par}`;
+            sigBlock += `{\\pard\\qc\\li${sigIndent}\\sb0\\sa0 {\\f0\\fs18\\b ${_rtfEscapeLine(ctx.professionalName)}}\\par}`;
+            if (ctx.professionalMatricula) sigBlock += `{\\pard\\qc\\li${sigIndent}\\sb0\\sa0 {\\f0\\fs16\\cf2 Mat. ${_rtfEscapeLine(ctx.professionalMatricula)}}\\par}`;
+            if (ctx.professionalSpecialty) sigBlock += `{\\pard\\qc\\li${sigIndent}\\sb0\\sa0 {\\f0\\fs16\\i\\cf2 ${_rtfEscapeLine(ctx.professionalSpecialty)}}\\par}`;
+        }
+
+        // ── Footer: linea 1 = profesional, linea 2 = disclaimer (pie real de pagina) ──
+        let footerLine = `{\\pard\\ql\\brdrt\\brdrs\\brdrw5\\brdrcf2\\brsp20\\sb0\\sa20 \\par}`;
+        if (!ctx.hideReportHeader && ctx.professionalName) {
+            const fp = [];
+            fp.push(_rtfEscapeLine('Estudio realizado por: ' + ctx.professionalName));
+            if (ctx.professionalMatricula) fp.push(_rtfEscapeLine('Mat. ' + ctx.professionalMatricula));
+            if (ctx.professionalSpecialty) fp.push(_rtfEscapeLine(ctx.professionalSpecialty));
+            footerLine += `\n{\\pard\\ql\\sb20\\sa0{\\f0\\fs16\\cf2 ${fp.join('  |  ')}}}\\par`;
+        }
+        footerLine += `\n{\\pard\\ql\\sb80\\sa0{\\f0\\fs14\\i\\cf2 ${_rtfEscapeLine('Este informe es v\u00E1lido \u00FAnicamente con la firma del profesional a cargo.')}}\\par}`;
+
+        // ── Documento RTF completo ──
+        // Color table: \cf1 = acento azul, \cf2 = gris
+        return `{\\rtf1\\ansi\\ansicpg1252\\deff0
+{\\fonttbl{\\f0 Arial;}}
+{\\colortbl;\\red${accentR}\\green${accentG}\\blue${accentB};\\red136\\green136\\blue136;}
+\\paperw12240\\paperh15840\\margl720\\margr720\\margt720\\margb720
+    \\uc1
+    {\\footer
+    ${footerLine}
+    }
+\\f0\\fs20\\ql
+${profBlock}
+${titleBlock}
+\\par
+${metaBlock}
+\\par
+${body}
+${sigBlock}
+    \\par
+}`;
+    }
+
+    async function createTXT(text) {
+        const ctx = await _loadExportContext(text);
+        const reportTitle = String(ctx.studyType || '').trim()
+            ? `INFORME DE ${String(ctx.studyType).toUpperCase()}`
+            : 'INFORME MEDICO';
+        const lines = [reportTitle];
+
+        const pushField = (label, value) => {
+            const v = String(value || '').trim();
+            if (!v) return;
+            lines.push(`${label}: ${v}`);
+        };
+
+        if (ctx.showStudyDate) pushField('Fecha', `${ctx.studyDate}${ctx.studyTime ? ' ' + ctx.studyTime + ' hs.' : ''}`);
+        if (ctx.showReportNumber) pushField('Informe N', ctx.reportNum);
+        pushField('Paciente', ctx.patientName);
+        pushField('DNI', ctx.patientDni);
+        pushField('Edad', ctx.patientAge ? `${ctx.patientAge} años` : '');
+        pushField('Sexo', ctx.patientSex === 'M' ? 'Masculino' : ctx.patientSex === 'F' ? 'Femenino' : ctx.patientSex);
+        pushField('Cobertura', ctx.patientInsurance);
+        pushField('N Afiliado', ctx.patientAffiliateNum);
+        pushField('Medico solicitante', ctx.referringDoctor);
+        pushField('Motivo de consulta', ctx.studyReason);
+        if (!ctx.hideReportHeader) {
+            pushField('Profesional', ctx.professionalName);
+            pushField('Matricula profesional', ctx.professionalMatricula);
+            pushField('Especialidad', ctx.professionalSpecialty);
+            pushField('Lugar de trabajo', ctx.workplaceName);
+        }
+
+        lines.push('');
+        lines.push('CONTENIDO DEL INFORME');
+        lines.push('');
+        lines.push(ctx.text || '');
+        return lines.join('\n');
     }
 
     async function createHTML() {
@@ -41,16 +357,20 @@
         const escSentence = (t) => esc(norm(t || '', 'sentence'));
 
         const activePro = config.activeProfessional || null;
-        const profName = escName(activePro?.nombre || profData.nombre) || '';
-        const matricula = esc(activePro?.matricula || profData.matricula || '');
+        const rawProfName = activePro?.nombre || profData.nombre || '';
+        const profDisplay = (typeof window.getProfessionalDisplay === 'function')
+            ? window.getProfessionalDisplay(rawProfName, activePro?.sexo || profData.sexo || '').fullName
+            : (String(rawProfName || '').trim() || 'Profesional');
+        const profName = escName(profDisplay) || '';
+        const matriculaRaw = String(activePro?.matricula || profData.matricula || '');
+        const matriculaNorm = (typeof window.normalizeMatriculaDisplay === 'function')
+            ? window.normalizeMatriculaDisplay(matriculaRaw)
+            : matriculaRaw;
+        const matricula = esc(matriculaNorm);
         const espRaw = activePro?.especialidades
             || (Array.isArray(profData.specialties) ? profData.specialties.filter(s => s && s !== 'Todas').join(' / ') : (profData.especialidad || ''));
         const especialidad = escSentence(espRaw);
-        const _rawN = activePro?.nombre || profData.nombre || '';
-        const _tM = _rawN.match(/^(Dra?\.\.?\s*)/i);
-        const profSexo = activePro?.sexo || profData.sexo || '';
-        const profTitle = profSexo === 'F' ? 'Dra.' : profSexo === 'M' ? 'Dr.' : (_tM ? (_tM[1].trim().toLowerCase().startsWith('dra') ? 'Dra.' : 'Dr.') : 'Dr.');
-        const profDispName = escName(_rawN.replace(/^(Dra?\.?\s*)/i, '').trim()) || profName;
+        const profDispName = profName;
         const accentColor = activePro?.headerColor || profData.headerColor || '#1a56a0';
 
         const profTelefono = esc(activePro?.telefono || profData.telefono || '');
@@ -75,45 +395,73 @@
         const sigSrc = (activePro?.firma && activePro.firma.startsWith('data:')) ? activePro.firma : (typeof appDB !== 'undefined' ? (await appDB.get('pdf_signature')) || '' : '');
         const hasInstLogo = !!(instLogoSrc && instLogoSrc.startsWith('data:image/'));
         const hasProfLogo = !!(profLogoSrc && profLogoSrc.startsWith('data:image/'));
+        const showInstLogo = (config.showInstLogo ?? true) === true;
+        const showProfLogo = (config.showProfLogo ?? true) === true;
         const hasSig = !!(sigSrc && sigSrc.startsWith('data:image/'));
         const instLogoSize = config.instLogoSizePx || 60;
         const firmaSize = config.firmaSizePx || 60;
 
+        const resolvedCtx = (typeof window.resolveReportContext === 'function')
+            ? await window.resolveReportContext({ includeEditorExtract: true, includeFormFallback: true, editorEl })
+            : null;
         const extracted = (typeof extractPatientDataFromText === 'function') ? extractPatientDataFromText(editorEl.innerText) : {};
         const reqVal = (id) => document.getElementById(id)?.value?.trim() || '';
-        const patientName = escName(extracted.name || config.patientName || reqVal('reqPatientName') || reqVal('pdfPatientName') || '');
-        const patientDni = esc(extracted.dni || config.patientDni || reqVal('reqPatientDni') || reqVal('pdfPatientDni') || '');
-        const patientAge = esc(extracted.age || config.patientAge || reqVal('reqPatientAge') || reqVal('pdfPatientAge') || '');
-        const rawSex = extracted.sex || config.patientSex || reqVal('reqPatientSex') || reqVal('pdfPatientSex') || '';
+        const patientName = escName((resolvedCtx && resolvedCtx.patientName) || extracted.name || config.patientName || reqVal('reqPatientName') || reqVal('pdfPatientName') || '');
+        const patientDni = esc((resolvedCtx && resolvedCtx.patientDni) || extracted.dni || config.patientDni || reqVal('reqPatientDni') || reqVal('pdfPatientDni') || '');
+        const patientAge = esc((resolvedCtx && resolvedCtx.patientAge) || extracted.age || config.patientAge || reqVal('reqPatientAge') || reqVal('pdfPatientAge') || '');
+        const rawSex = (resolvedCtx && resolvedCtx.patientSex) || extracted.sex || config.patientSex || reqVal('reqPatientSex') || reqVal('pdfPatientSex') || '';
         const patientSex = rawSex === 'M' ? 'Masculino' : rawSex === 'F' ? 'Femenino' : escName(rawSex);
-        const patientIns = escUpper(config.patientInsurance || reqVal('reqPatientInsurance') || reqVal('pdfPatientInsurance') || '');
-        const affiliateNum = esc(config.patientAffiliateNum || reqVal('reqPatientAffiliateNum') || reqVal('pdfPatientAffiliateNum') || '');
+        const patientIns = escUpper((resolvedCtx && resolvedCtx.patientInsurance) || config.patientInsurance || reqVal('reqPatientInsurance') || reqVal('pdfPatientInsurance') || '');
+        const affiliateNum = esc((resolvedCtx && resolvedCtx.patientAffiliateNum) || config.patientAffiliateNum || reqVal('reqPatientAffiliateNum') || reqVal('pdfPatientAffiliateNum') || '');
 
         const tplKey = window.selectedTemplate || config.selectedTemplate || '';
         const tplName = (tplKey && window.MEDICAL_TEMPLATES?.[tplKey]?.name) || '';
-        const studyType = escSentence(config.studyType || tplName || '');
-        const rawDate = config.studyDate || '';
-        const studyDate = rawDate ? new Date(rawDate + 'T12:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        const studyTime = esc(document.getElementById('pdfStudyTime')?.value || config.studyTime || '');
-        const studyReason = escSentence(config.studyReason || '');
-        const refDoctor = escName(config.referringDoctor || '');
-        const reportNum = esc(document.getElementById('pdfReportNumber')?.value || config.reportNum || '');
-        const footerText = esc(config.footerText || 'Este informe es válido únicamente con la firma del profesional a cargo.');
+        const studyType = escSentence(
+            (resolvedCtx && resolvedCtx.studyType)
+            || _computeEffectiveStudyType(
+                config.studyType || document.getElementById('reqStudyType')?.value || '',
+                tplName,
+                editorEl?.innerHTML || '',
+                editorEl?.innerText || ''
+            )
+        );
+        const showStudyDate = resolvedCtx ? resolvedCtx.showStudyDate : (config.showStudyDate !== false);
+        const studyDate = resolvedCtx ? (resolvedCtx.studyDateDisplay || '') : (config.studyDate ? new Date(config.studyDate + 'T12:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
+        const showStudyTime = resolvedCtx ? resolvedCtx.showStudyTime : ((document.getElementById('reqShowStudyTime')?.checked ?? config.showStudyTime ?? true) !== false);
+        const studyTime = showStudyTime
+            ? esc((resolvedCtx && resolvedCtx.studyTime) || document.getElementById('reqStudyTime')?.value || document.getElementById('pdfStudyTime')?.value || config.studyTime || '')
+            : '';
+        const studyReason = escSentence((resolvedCtx && resolvedCtx.studyReason) || config.studyReason || document.getElementById('reqStudyReason')?.value || '');
+        const _refDocInputStr = config.referringDoctor || document.getElementById('reqReferringDoctor')?.value || '';
+        const _refDocRaw = _cleanDoctorName(_refDocInputStr);
+        const refDoctor = (resolvedCtx && resolvedCtx.referringDoctorDisplay)
+            ? escName(resolvedCtx.referringDoctorDisplay)
+            : (_refDocRaw ? escName('Dr./a ' + _refDocRaw) : '');
+        const reportNum = esc((resolvedCtx && resolvedCtx.reportNum) || document.getElementById('pdfReportNumber')?.value || config.reportNum || '');
+        const showReportNumber = (config.showReportNumber ?? true) === true;
+        const hideReportHeader = resolvedCtx ? !!resolvedCtx.hideReportHeader : (!_isClinicProfile() && (config.hideReportHeader === true));
+        const footerText = esc((resolvedCtx && resolvedCtx.footerText) || config.footerText || 'Este informe es válido únicamente con la firma del profesional a cargo.');
         const showSignLine = config.showSignLine ?? true;
         const showSignName = config.showSignName ?? true;
         const showSignMat = config.showSignMatricula ?? true;
         const showSignImage = config.showSignImage ?? hasSig;
 
         const _clone = editorEl.cloneNode(true);
-        _clone.querySelectorAll('.patient-data-header, .patient-placeholder-banner, .btn-append-inline, .original-text-banner, .no-print, .ai-note-panel, .no-data-edit-btn, .no-data-field, #aiNotePanel').forEach(el => el.remove());
+        _clone.querySelectorAll('.patient-data-header, .patient-placeholder-banner, .btn-append-inline, .original-text-banner, .no-print, .ai-note-panel, .no-data-edit-btn, .inline-review-btn, #aiNotePanel').forEach(el => el.remove());
+        // En PDF/export: eliminar badges vacíos completamente (no deben aparecer en el informe final)
+        _clone.querySelectorAll('.no-data-field').forEach(el => el.remove());
+        const firstEl = _clone.firstElementChild;
+        if (firstEl && /^H[1-3]$/i.test(firstEl.tagName) && /^\s*INFORME\s+DE\b/i.test(firstEl.textContent || '')) {
+            firstEl.remove();
+        }
         const bodyContent = _clone.innerHTML;
 
         let wpSection = '';
         const hasWpData = wpName || wkAddr || wkPhone || wpEmail;
-        if (hasWpData) {
+        if (!hideReportHeader && hasWpData) {
             const wpDetails = [wkAddr, wkPhone ? 'Tel: ' + wkPhone : '', wpEmail].filter(Boolean);
             wpSection = `<div class="preview-workplace"><div class="pvw-block">`
-                + (hasInstLogo ? `<img class="pvw-logo" src="${instLogoSrc}" style="max-height:${instLogoSize}px;">` : '')
+                + ((showInstLogo && hasInstLogo) ? `<img class="pvw-logo" src="${instLogoSrc}" style="max-height:${instLogoSize}px;">` : '')
                 + `<div class="pvw-text">`
                 + (wpName ? `<div class="pvw-name">${wpName}</div>` : '')
                 + (wpDetails.length ? `<div class="pvw-details">${wpDetails.join(' &nbsp;•&nbsp; ')}</div>` : '')
@@ -122,7 +470,7 @@
 
         let headerSection = '';
         const isAdminNoProf = (!activePro || !activePro.nombre) && (!profData.nombre || profData.nombre === 'Administrador' || profData.nombre === 'Admin');
-        if (!isAdminNoProf && profName) {
+        if (!hideReportHeader && !isAdminNoProf && profName) {
             const espArr = (espRaw || '').replace(/^ALL$/i, 'Medicina General').split(/[,\/]/).map(s => s.replace(/^General$/i, 'Medicina General').trim()).filter(Boolean);
             const espBadgesHtml = espArr.map(s => `<span class="pvh-badge">${esc(s)}</span>`).join('');
             const cItems = [];
@@ -135,8 +483,8 @@
             if (profYoutube) cItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#9654;</span>${profYoutube}</div>`);
             const contactHtml = cItems.length ? `<div class="pvh-contact">${cItems.join('')}</div>` : '';
             headerSection = `<div class="preview-header"><div class="pvh-body">`
-                + (hasProfLogo ? `<img src="${profLogoSrc}" style="height:40px;max-height:40px;width:auto;object-fit:contain;flex-shrink:0;background:transparent;border:none;border-radius:0;">` : '')
-                + `<div class="pvh-info"><div><span class="pvh-name">Estudio realizado por: ${profTitle} ${profDispName}</span></div>`
+                + ((showProfLogo && hasProfLogo) ? `<img src="${profLogoSrc}" style="height:40px;max-height:40px;width:auto;object-fit:contain;flex-shrink:0;background:transparent;border:none;border-radius:0;">` : '')
+                + `<div class="pvh-info"><div><span class="pvh-name">Estudio realizado por: ${profDispName}</span></div>`
                 + (espBadgesHtml ? `<div class="pvh-badges">${espBadgesHtml}</div>` : '')
                 + (matricula ? `<div class="pvh-mat">Mat. ${matricula}</div>` : '')
                 + `</div>${contactHtml}</div></div>`;
@@ -153,9 +501,12 @@
         if (pCells.length) patientSection = `<div class="preview-patient"><div class="pvp-grid">${pCells.join('')}</div></div>`;
 
         let row1 = '';
-        row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">ESTUDIO:</span><span class="pvs-val">${studyType || '—'}</span></div>`;
-        row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">INFORME Nº:</span><span class="pvs-val">${reportNum || '—'}</span></div>`;
-        row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">FECHA:</span><span class="pvs-val">${studyDate}${studyTime ? ' ' + studyTime : ''}</span></div>`;
+        if (showReportNumber) {
+            row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">INFORME Nº:</span><span class="pvs-val">${reportNum || '—'}</span></div>`;
+        }
+        if (showStudyDate && (studyDate || studyTime)) {
+            row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">FECHA:</span><span class="pvs-val">${studyDate}${studyTime ? ' ' + studyTime + ' hs.' : ''}</span></div>`;
+        }
         let row2 = '';
         if (refDoctor) row2 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">SOLICITANTE:</span><span class="pvs-val">${refDoctor}</span></div>`;
         if (studyReason) row2 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">MOTIVO:</span><span class="pvs-val">${studyReason}</span></div>`;
@@ -167,7 +518,7 @@
             sigSection = '<div class="preview-signature"><div class="pvsig-block">';
             if (showSignImage && hasSig) sigSection += `<img src="${sigSrc}" class="pvsig-img" style="max-height:${firmaSize}px;">`;
             if (showSignLine) sigSection += '<div class="pvsig-line"></div>';
-            if (showSignName && profName) sigSection += `<div class="pvsig-name">${profTitle} ${profDispName}</div>`;
+            if (showSignName && profName) sigSection += `<div class="pvsig-name">${profDispName}</div>`;
             if (showSignMat && matricula) sigSection += `<div class="pvsig-mat">Mat. ${matricula}</div>`;
             if (especialidad) sigSection += `<div class="pvsig-spec">${especialidad}</div>`;
             sigSection += '</div></div>';
@@ -175,13 +526,37 @@
 
         const footerParts = [];
         if (footerText) footerParts.push(`<span>${footerText}</span>`);
-        footerParts.push(`<span style="margin-left:auto;">Fecha: ${new Date().toLocaleDateString('es-ES')}</span>`);
+        if (resolvedCtx ? resolvedCtx.showDateInFooter : ((config.showDate ?? true) === true)) {
+            footerParts.push(`<span style="margin-left:auto;">Fecha: ${new Date().toLocaleDateString('es-ES')}</span>`);
+        }
         const footerSection = `<div class="preview-footer"><div class="pvf-wrap">${footerParts.join('')}</div></div>`;
+
+        let qrSection = '';
+        const showQR = config.showQR ?? false;
+        if (showQR && typeof generateQRCode === 'function') {
+            const qrParts = [
+                'TPRO-VERIFY',
+                `ID:${(showReportNumber && reportNum) ? reportNum : 'TPRO-' + Date.now()}`,
+                `Fecha:${new Date().toLocaleDateString('es-ES')}`,
+                profName ? `Prof:${profName.replace(/<[^>]+>/g, '')}` : '',
+                matricula ? `Mat:${matricula.replace(/<[^>]+>/g, '')}` : '',
+                patientName ? `Pac:${patientName.replace(/<[^>]+>/g, '')}` : '',
+                patientDni ? `DNI:${patientDni.replace(/<[^>]+>/g, '')}` : '',
+                studyType ? `Estudio:${studyType.replace(/<[^>]+>/g, '')}` : '',
+                wpName ? `Inst:${wpName.replace(/<[^>]+>/g, '')}` : ''
+            ].filter(Boolean);
+            const qrData = qrParts.join('|');
+            const qrImgSrc = generateQRCode(qrData || 'Transcriptor Medico Pro');
+            if (qrImgSrc) {
+                qrSection = `<div class="preview-qr"><img src="${qrImgSrc}" alt="QR"><span class="pvqr-label">Codigo de verificacion</span></div>`;
+            }
+        }
 
         const fontMap = { helvetica: 'Helvetica, Arial, sans-serif', times: "'Times New Roman', Times, serif", courier: "'Courier New', Courier, monospace" };
         const cfgFont = (config.font || 'helvetica').toLowerCase();
         const fontFamily = fontMap[cfgFont] || fontMap.helvetica;
         const fontSize = parseInt(config.fontSize, 10) || 10;
+        const lineSpacing = Math.max(1, Math.min(2, parseFloat(config.lineSpacing) || 1));
         const marginCSS = { narrow: '10mm', normal: '18mm', wide: '28mm' }[config.margins] || '18mm';
 
         const _hexToRgb = (hex) => {
@@ -190,7 +565,8 @@
         };
         const [ar, ag, ab] = _hexToRgb(accentColor);
         const accentLight = `rgb(${Math.round(ar * 0.3 + 255 * 0.7)},${Math.round(ag * 0.3 + 255 * 0.7)},${Math.round(ab * 0.3 + 255 * 0.7)})`;
-
+        const accentBadgeBg = `rgb(${Math.round(ar * 0.15 + 255 * 0.85)},${Math.round(ag * 0.15 + 255 * 0.85)},${Math.round(ab * 0.15 + 255 * 0.85)})`;
+        const accentBadgeBorder = `rgb(${Math.round(ar * 0.25 + 255 * 0.75)},${Math.round(ag * 0.25 + 255 * 0.75)},${Math.round(ab * 0.25 + 255 * 0.75)})`;
         return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -201,7 +577,7 @@
 :root { --pa: ${accentColor}; }
 @page { size: A4; margin: ${marginCSS}; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: ${fontFamily}; font-size: ${fontSize}pt; line-height: 1.5; color: #111; background: #fff; max-width: 210mm; margin: 0 auto; padding: 0 ${marginCSS} ${marginCSS}; border-top: 5px solid var(--pa); }
+body { font-family: ${fontFamily}; font-size: ${fontSize}pt; line-height: ${lineSpacing}; color: #111; background: #fff; max-width: 210mm; margin: 0 auto; padding: 0 ${marginCSS} ${marginCSS}; border-top: 5px solid var(--pa); }
 .preview-workplace { background: var(--pa); color: white; margin: 0 -${marginCSS}; padding: 8px ${marginCSS} 7px; font-family: Helvetica, Arial, sans-serif; }
 .pvw-block { display: flex; align-items: center; justify-content: flex-start; gap: 14px; }
 .pvw-logo { max-height: 52px; max-width: 90px; object-fit: contain; flex-shrink: 0; border: none; border-radius: 0; background: transparent; }
@@ -213,7 +589,7 @@ body { font-family: ${fontFamily}; font-size: ${fontSize}pt; line-height: 1.5; c
 .pvh-info { flex: 1; }
 .pvh-name { font-size: 14pt; font-weight: 700; color: var(--pa); letter-spacing: 0.02em; }
 .pvh-badges { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px; }
-.pvh-badge { background: ${accentLight}; color: var(--pa); border: 1px solid ${accentLight}; border-radius: 12px; padding: 1px 8px; font-size: 8pt; font-weight: 600; white-space: nowrap; font-family: Helvetica, Arial, sans-serif; }
+.pvh-badge { background: ${accentBadgeBg}; color: var(--pa); border: 1px solid ${accentBadgeBorder}; border-radius: 12px; padding: 1px 8px; font-size: 8pt; font-weight: 600; white-space: nowrap; font-family: Helvetica, Arial, sans-serif; }
 .pvh-mat { font-size: 8.5pt; color: #555; margin-top: 3px; }
 .pvh-contact { margin-left: auto; text-align: right; font-size: 8pt; color: #555; font-family: Helvetica, Arial, sans-serif; min-width: 130px; }
 .pvh-ci { display: flex; align-items: center; gap: 5px; justify-content: flex-end; margin-bottom: 3px; white-space: nowrap; }
@@ -238,9 +614,9 @@ body { font-family: ${fontFamily}; font-size: ${fontSize}pt; line-height: 1.5; c
 .report-h2 { text-transform: uppercase; letter-spacing: 0.07em; margin: 14px 0 6px; }
 .preview-content h3,.report-h3 { font-size: 10.5pt; font-weight: 600; font-style: italic; color: #333; margin: 12px 0 5px; }
 .report-h3 { color: #222; margin: 10px 0 5px; font-style: normal; }
-.preview-content p,.report-p { margin: 2px 0 6px; line-height: 1.5; text-align: justify; }
+.preview-content p,.report-p { margin: 2px 0 6px; line-height: ${lineSpacing}; text-align: justify; }
 .preview-content ul,.preview-content ol { padding-left: 1.5em; margin: 4px 0 8px; }
-.preview-content li { margin-bottom: 4px; line-height: 1.5; }
+.preview-content li { margin-bottom: 4px; line-height: ${lineSpacing}; }
 .preview-content hr { border: none; border-top: 1px solid #ddd; margin: 14px 0; }
 .preview-content table { width: 100%; border-collapse: collapse; font-size: 9.5pt; margin: 10px 0 16px; }
 .preview-content thead th { background: var(--pa); color: white; font-weight: 700; padding: 6px 10px; text-align: center; font-family: Helvetica, Arial, sans-serif; font-size: 8.5pt; }
@@ -254,6 +630,9 @@ body { font-family: ${fontFamily}; font-size: ${fontSize}pt; line-height: 1.5; c
 .pvsig-name { font-size: 10pt; font-weight: 700; margin-top: 9px; text-align: center; }
 .pvsig-mat { font-size: 9pt; color: #555; margin-top: 2px; text-align: center; }
 .pvsig-spec { font-size: 8.5pt; color: #666; font-style: italic; margin-top: 1px; text-align: center; }
+.preview-qr { text-align: center; margin-top: 12px; }
+.preview-qr img { width: 64px; height: 64px; image-rendering: pixelated; }
+.pvqr-label { font-size: 6pt; color: #999; display: block; text-align: center; font-family: Helvetica, Arial, sans-serif; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
 .preview-footer { margin-top: 20px; border-top: 1.5px solid #ccc; padding-top: 8px; }
 .pvf-wrap { display: flex; flex-wrap: wrap; justify-content: space-between; font-size: 7.5pt; color: #888; font-family: Helvetica, Arial, sans-serif; gap: 4px; }
 @media print { body { border-top: none; padding: 0; margin: 0; max-width: none; } .preview-workplace { margin: 0; } h1,h2,h3,.report-h1,.report-h2,.report-h3 { break-after: avoid; page-break-after: avoid; } .preview-signature,.pvsig-block { break-inside: avoid; page-break-inside: avoid; } }
@@ -262,15 +641,17 @@ body { font-family: ${fontFamily}; font-size: ${fontSize}pt; line-height: 1.5; c
 <body>
 ${wpSection}
 ${headerSection}
-${patientSection}
 ${studySection}
+${patientSection}
 <div class="preview-content">${bodyContent}</div>
 ${sigSection}
+${qrSection}
 ${footerSection}
 </body>
 </html>`;
     }
 
     window.createRTF = createRTF;
+    window.createTXT = createTXT;
     window.createHTML = createHTML;
 })();

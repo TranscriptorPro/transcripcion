@@ -707,7 +707,9 @@ async function isAudioSilent(file, threshold = 0.01) {
 }
 
 window.transcribeAudioSimple = async function(file) {
-    const apiKey = window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '';
+    const apiKey = (typeof window.getResolvedGroqApiKey === 'function')
+        ? window.getResolvedGroqApiKey()
+        : (window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '');
     if (!apiKey) throw new Error('No hay API key configurada');
     const MAX_RETRIES = 3;
     let lastErr = null;
