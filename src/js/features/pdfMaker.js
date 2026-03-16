@@ -389,7 +389,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             if (tag === 'h1') {
                 const txt = node.textContent.trim();
                 if (!txt) return;
-                ensureSpace(35);
+                ensureSpace(50);
                 cy += 6;
                 doc.setFontSize(13);
                 doc.setFont('helvetica', 'bold');
@@ -407,7 +407,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             if (tag === 'h2') {
                 const txt = node.textContent.trim();
                 if (!txt) return;
-                ensureSpace(30);
+                ensureSpace(45);
                 cy += 5;
                 doc.setFontSize(11);
                 doc.setFont('helvetica', 'bold');
@@ -425,7 +425,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             if (tag === 'h3') {
                 const txt = node.textContent.trim();
                 if (!txt) return;
-                ensureSpace(25);
+                ensureSpace(38);
                 cy += 4;
                 doc.setFontSize(10.5);
                 doc.setFont('helvetica', 'bolditalic');
@@ -653,17 +653,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                 }
             } catch (_) { /* QR no disponible */ }
         }
-        // ── Eliminar última página si quedó vacía (solo banner/footer sin contenido real) ──
-        const totalPages = doc.internal.getNumberOfPages();
-        if (totalPages > 1) {
-            // Verificar si la última página tiene contenido más allá del banner y footer
-            // Si cy en la última página está cerca del tope (bajo el banner), la página está vacía
-            const bannerH = cfgShowHeader ? 18 : 0;
-            const contentStartY = bannerH + 2;
-            if (cy <= contentStartY + 5) {
-                doc.deletePage(totalPages);
-            }
-        }
+        // ── NO eliminar páginas: el PDF debe ser réplica exacta de la vista previa ──
         const blob = doc.output('blob');
         const saveBlob = typeof window.saveToDisk === 'function'
             ? window.saveToDisk

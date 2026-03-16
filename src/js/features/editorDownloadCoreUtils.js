@@ -557,7 +557,7 @@
             const isMostlyUpper = !!letters && letters === letters.toUpperCase();
             const hasWeirdMixedCase = /[a-záéíóúñü][A-ZÁÉÍÓÚÑÜ]/.test(t);
             if (isMostlyUpper || hasWeirdMixedCase) {
-                t = t.toLowerCase().replace(/\b([a-záéíóúñü])/g, (m, c) => c.toUpperCase());
+                t = t.toLowerCase().replace(/(^|\s)([a-záéíóúñü])/g, (m, pre, c) => pre + c.toUpperCase());
             }
             return t;
         };
@@ -572,13 +572,13 @@
                 const parts = _patientClean.split(',').map(p => p.trim()).filter(Boolean);
                 const last = _safePart(parts[0] || '');
                 const first = _safePart(parts.slice(1).join(' ') || '');
-                _patientPart = [last, first].filter(Boolean).join('_');
+                _patientPart = [last, first].filter(Boolean).join('-');
             } else {
                 const tokens = _patientClean.split(' ').filter(Boolean);
                 if (tokens.length >= 2) {
                     const last = _safePart(tokens[tokens.length - 1]);
                     const first = _safePart(tokens.slice(0, -1).join(' '));
-                    _patientPart = [last, first].filter(Boolean).join('_');
+                    _patientPart = [last, first].filter(Boolean).join('-');
                 } else {
                     _patientPart = _safePart(tokens[0] || '');
                 }

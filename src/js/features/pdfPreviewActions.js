@@ -591,9 +591,11 @@ window._buildPdfBlobFromPreviewCapture = async function (options) {
         }
     }
 
-    // 2. Ocultar marcadores de salto de página para captura limpia
-    const markers = Array.from(captureNode.querySelectorAll('.pv-pagebreak-marker'));
-    markers.forEach(m => { m._savedDisplay = m.style.display; m.style.display = 'none'; });
+    // Ocultar solo los separadores visuales de salto de página ("Fin pág. 1 / Inicio pág. 2")
+    // pero MANTENER los headers repetidos para que la altura total se preserve y el PDF
+    // genere todas las páginas correctamente.
+    const separators = Array.from(captureNode.querySelectorAll('.pv-pb-separator'));
+    separators.forEach(s => { s._savedDisplay = s.style.display; s.style.display = 'none'; });
 
     let dataUrl;
     try {
@@ -608,7 +610,7 @@ window._buildPdfBlobFromPreviewCapture = async function (options) {
             skipFonts: false
         });
     } finally {
-        markers.forEach(m => { m.style.display = m._savedDisplay !== undefined ? m._savedDisplay : ''; });
+        separators.forEach(s => { s.style.display = s._savedDisplay !== undefined ? s._savedDisplay : ''; });
         if (tempCaptureHost && tempCaptureHost.parentNode) tempCaptureHost.parentNode.removeChild(tempCaptureHost);
         if (!isOpen && opts.silentOpen && overlay) {
             overlay.classList.remove('active');
