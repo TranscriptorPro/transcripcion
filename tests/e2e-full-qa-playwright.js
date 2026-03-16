@@ -177,10 +177,49 @@ async function main() {
         });
     });
 
+    // Mock de models para evitar 401 por claves fake en validaciones de UI.
+    await context.route('**/openai/v1/models', async (route) => {
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                object: 'list',
+                data: [
+                    { id: 'llama-3.3-70b-versatile', object: 'model', owned_by: 'groq' }
+                ]
+            })
+        });
+    });
+
     let page = null;
     const attachPageHandlers = (p) => {
         p.on('console', (msg) => {
             if (msg.type() === 'error') console.log('[browser:error]', msg.text());
+        });
+        p.on('response', (res) => {
+            try {
+                if (res.status() === 401) {
+                    const req = res.request();
+                    console.log('[browser:401]', JSON.stringify({
+                        url: res.url(),
+                        method: req.method(),
+                        resourceType: req.resourceType()
+                    }));
+                }
+            } catch (_) {}
+        });
+        p.on('requestfailed', (req) => {
+            try {
+                const err = req.failure()?.errorText || 'unknown_error';
+                if (!String(req.url()).includes('favicon')) {
+                    console.log('[browser:requestfailed]', JSON.stringify({
+                        url: req.url(),
+                        method: req.method(),
+                        resourceType: req.resourceType(),
+                        error: err
+                    }));
+                }
+            } catch (_) {}
         });
     };
     const ensurePage = async () => {

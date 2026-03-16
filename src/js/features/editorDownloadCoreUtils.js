@@ -690,8 +690,8 @@
 
         if (blob) {
             const saveHandler = (typeof window.saveToDisk === 'function') ? window.saveToDisk : saveToDisk;
-            await saveHandler(blob, `${fileName}_${fileDate}.${ext}`);
-            showToast(`Descargado .${ext}`, 'success');
+            const saved = await saveHandler(blob, `${fileName}_${fileDate}.${ext}`);
+            if (saved) showToast(`Descargado .${ext}`, 'success');
         }
     }
 
@@ -713,9 +713,9 @@
                 const writable = await handle.createWritable();
                 await writable.write(blob);
                 await writable.close();
-                return;
+                return true;
             } catch (err) {
-                if (err.name === 'AbortError') return;
+                if (err.name === 'AbortError') return false;
                 console.warn('showSaveFilePicker fallo, usando fallback:', err);
             }
         }
@@ -728,6 +728,7 @@
         a.click();
         document.body.removeChild(a);
         setTimeout(() => URL.revokeObjectURL(url), 1000);
+        return true;
     }
 
     window.downloadFile = downloadFile;
