@@ -982,7 +982,7 @@
         .editor-sticky-head {
             position: sticky;
             top: 0;
-            z-index: 200;
+            z-index: 90;
             background: var(--bg-card);
             margin: -1.25rem -1.25rem 0;
             padding: 1.25rem 1.25rem 0;
