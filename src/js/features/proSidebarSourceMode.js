@@ -342,9 +342,16 @@
             els.sourceToggle.addEventListener('change', applySourceUI);
         }
 
-        if (els.fileBtn && els.fileInput && !els.fileBtn._bound) {
-            els.fileBtn._bound = true;
-            els.fileBtn.addEventListener('click', () => els.fileInput.click());
+        // Vincular fileInput.change independiente del botón (ahora el trigger es el textDropZone)
+        if (els.fileInput && !els.fileInput._bound) {
+            els.fileInput._bound = true;
+
+            // El antiguo btnAttachTextFile fue reemplazado por textDropZone con onclick directo
+            const legacyBtn = document.getElementById('btnAttachTextFile');
+            if (legacyBtn && !legacyBtn._bound) {
+                legacyBtn._bound = true;
+                legacyBtn.addEventListener('click', () => els.fileInput.click());
+            }
 
             els.fileInput.addEventListener('change', async () => {
                 const f = els.fileInput.files && els.fileInput.files[0];
@@ -358,7 +365,7 @@
                     if (!txt) throw new Error('El archivo no contiene texto legible');
 
                     if (els.textInput) els.textInput.value = txt;
-                    if (els.fileName) els.fileName.textContent = `Archivo cargado: ${f.name}`;
+                    if (els.fileName) els.fileName.textContent = `📎 ${f.name}`;
 
                     if (typeof showToast === 'function') {
                         showToast('✅ Archivo listo para estructurar', 'success', 1800);
@@ -408,6 +415,7 @@
                 if (els.textInput) els.textInput.value = '';
                 if (els.fileInput) els.fileInput.value = '';
                 if (els.fileName) els.fileName.textContent = '';
+                if (els.structureBtn) els.structureBtn.disabled = true;
                 // Reusar la misma lógica de limpieza del panel de audio.
                 const resetBtn = document.getElementById('resetBtn');
                 if (resetBtn) {
@@ -416,6 +424,16 @@
                     if (typeof showToast === 'function') showToast('Pantalla limpiada', 'success');
                 }
             });
+        }
+
+        // Habilitar/deshabilitar botón estructurar según haya texto
+        if (els.textInput && els.structureBtn && !els.textInput._structureBtnBound) {
+            els.textInput._structureBtnBound = true;
+            const syncBtn = () => {
+                els.structureBtn.disabled = !els.textInput.value.trim();
+            };
+            els.textInput.addEventListener('input', syncBtn);
+            syncBtn();
         }
     }
 

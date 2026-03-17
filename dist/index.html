@@ -127,7 +127,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
-        <link rel="stylesheet" href="app.mmupt75q.min.css">
+        <link rel="stylesheet" href="app.mmuq258g.min.css">
 </head>
 
 <body>
@@ -2138,18 +2138,33 @@
                 </div>
 
                 <div id="textSourcePanel" style="display:none; margin-top:0.2rem;">
-                    <label class="sidebar-label" style="margin-bottom:0.35rem;">Texto a estructurar</label>
-                    <textarea id="proTextInput" class="toolbar-input" rows="7" style="width:100%; resize:vertical; min-height:140px;"
-                        placeholder="Pegá aquí el texto médico, o cargá un archivo .txt/.doc/.docx/.pdf"></textarea>
+                    <!-- Drop zone de texto -->
+                    <div class="text-drop-zone" id="textDropZone" onclick="document.getElementById('proTextFileInput').click()" title="Clic o arrastrá un archivo de texto/PDF">
+                        <div class="drop-zone-icon">
+                            <svg viewBox="0 0 24 24" fill="white"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+                        </div>
+                        <div class="text-drop-label">Arrastrá un archivo aqui</div>
+                        <div class="text-drop-sub">TXT • DOC • DOCX • PDF • máx 12MB</div>
+                    </div>
                     <input type="file" id="proTextFileInput" accept=".txt,.text,.md,.rtf,.csv,.json,.doc,.docx,.pdf,text/plain,text/markdown,text/rtf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none;">
-                    <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
-                        <button class="btn btn-secondary" id="btnAttachTextFile" style="flex:1;">📎 Adjuntar texto</button>
-                        <button class="btn btn-primary" id="btnStructureTextPro" style="flex:1;">✨ Estructurar texto</button>
+                    <small id="proTextFileName" style="display:block; margin-top:0.3rem; color:var(--text-secondary); font-size:0.72rem; min-height:1rem;"></small>
+                    <!-- Textarea grande -->
+                    <textarea id="proTextInput" class="text-source-input" rows="10"
+                        placeholder="...o pegá el texto médico aquí"></textarea>
+                    <!-- Acciones -->
+                    <div class="text-source-actions">
+                        <button class="btn btn-secondary text-action-btn" id="btnClearTextSource" title="Limpiar texto">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                            Limpiar
+                        </button>
+                        <button class="btn btn-transcribe-structure text-action-btn-primary" id="btnStructureTextPro" disabled>
+                            <svg class="sparkle-icon" width="14" height="14" viewBox="0 0 24 24" fill="white">
+                                <path d="M12 2C12 2 13.5 8 20 12C13.5 16 12 22 12 22C12 22 10.5 16 4 12C10.5 8 12 2 12 2Z"/>
+                            </svg>
+                            Estructurar texto
+                            <span class="pro-badge-sm">Pro</span>
+                        </button>
                     </div>
-                    <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
-                        <button class="btn btn-secondary btn-full" id="btnClearTextSource">Limpiar</button>
-                    </div>
-                    <small id="proTextFileName" style="display:block; margin-top:0.35rem; color:var(--text-secondary);"></small>
                 </div>
             </div>
 
@@ -2533,7 +2548,7 @@
             </svg>
             <span id="toastMessage"></span>
         </div>
-        <script src="app.mmupt758.min.js"></script>
+        <script src="app.mmuq257l.min.js"></script>
 
         <!-- G1: Modal Panel Registro de Pacientes -->
         <div class="modal-overlay" id="registryPanelOverlay">
