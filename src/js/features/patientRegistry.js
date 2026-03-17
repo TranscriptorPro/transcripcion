@@ -220,6 +220,25 @@ window.initPatientRegistrySearch = function() {
         }, 120);
     });
 
+    // Navegación por teclado
+    searchInput.addEventListener('keydown', (e) => {
+        if (dropdown.style.display === 'none') return;
+        const items = dropdown.querySelectorAll('[data-idx]');
+        if (!items.length) return;
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setActive(selectedIdx < items.length - 1 ? selectedIdx + 1 : 0);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setActive(selectedIdx > 0 ? selectedIdx - 1 : items.length - 1);
+        } else if (e.key === 'Enter' && selectedIdx >= 0) {
+            e.preventDefault();
+            selectPatient(lastResults[selectedIdx]);
+        } else if (e.key === 'Escape') {
+            hideDropdown();
+        }
+    });
+
     // Cerrar dropdown al perder foco
     searchInput.addEventListener('blur', () => {
         setTimeout(hideDropdown, 200); // delay para permitir click en resultado

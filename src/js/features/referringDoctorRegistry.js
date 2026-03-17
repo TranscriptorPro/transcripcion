@@ -124,26 +124,49 @@ window.initReferringDoctorSearch = function() {
         if (wrap) { wrap.style.position = 'relative'; wrap.appendChild(dropdown); }
     }
 
-    function hideDropdown() { dropdown.style.display = 'none'; }
+    function hideDropdown() { dropdown.style.display = 'none'; selectedIdx = -1; }
+
+    let lastResults = [];
+    let selectedIdx = -1;
+
+    function setActive(idx) {
+        const items = dropdown.querySelectorAll('[data-idx]');
+        items.forEach((el, i) => {
+            if (i === idx) {
+                el.style.background = 'color-mix(in srgb, var(--primary) 12%, transparent)';
+                el.style.color = 'var(--primary)';
+                el.style.fontWeight = '600';
+                el.scrollIntoView({ block: 'nearest' });
+            } else {
+                el.style.background = '';
+                el.style.color = '';
+                el.style.fontWeight = '';
+            }
+        });
+        selectedIdx = idx;
+    }
+
+    function selectDoctor(d) {
+        input.value = d.name;
+        hideDropdown();
+    }
 
     function showResults(results) {
+        lastResults = results;
+        selectedIdx = -1;
         if (!results.length) { hideDropdown(); return; }
         const esc = typeof escapeHtml === 'function' ? escapeHtml
             : (s => (s || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'));
-        dropdown.innerHTML = results.map((d, i) => {
-            return `<div data-idx="${i}" style="padding:0.5rem 0.85rem;cursor:pointer;font-size:0.82rem;border-bottom:1px solid var(--border);"
-                onmouseenter="this.style.background='var(--bg-hover,#2a2a2a)'"
-                onmouseleave="this.style.background=''">${esc(d.name)}</div>`;
-        }).join('');
+        dropdown.innerHTML = results.map((d, i) =>
+            `<div data-idx="${i}" style="padding:0.5rem 0.85rem;cursor:pointer;font-size:0.82rem;border-bottom:1px solid var(--border);">${esc(d.name)}</div>`
+        ).join('');
         dropdown.style.display = 'block';
 
         dropdown.querySelectorAll('[data-idx]').forEach(el => {
-            el.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                const d = results[parseInt(el.dataset.idx)];
-                input.value = d.name;
-                hideDropdown();
-            });
+            const i = parseInt(el.dataset.idx);
+            el.addEventListener('mouseenter', () => setActive(i));
+            el.addEventListener('mouseleave', () => { el.style.background = ''; el.style.color = ''; el.style.fontWeight = ''; selectedIdx = -1; });
+            el.addEventListener('mousedown', (e) => { e.preventDefault(); selectDoctor(results[i]); });
         });
     }
 
@@ -153,6 +176,25 @@ window.initReferringDoctorSearch = function() {
         const query = input.value.trim();
         if (query.length < 3) { hideDropdown(); return; }
         debounce = setTimeout(() => showResults(window.searchReferringDoctors(query) || []), 120);
+    });
+
+    // Navegación por teclado
+    input.addEventListener('keydown', (e) => {
+        if (dropdown.style.display === 'none') return;
+        const items = dropdown.querySelectorAll('[data-idx]');
+        if (!items.length) return;
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setActive(selectedIdx < items.length - 1 ? selectedIdx + 1 : 0);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setActive(selectedIdx > 0 ? selectedIdx - 1 : items.length - 1);
+        } else if (e.key === 'Enter' && selectedIdx >= 0) {
+            e.preventDefault();
+            selectDoctor(lastResults[selectedIdx]);
+        } else if (e.key === 'Escape') {
+            hideDropdown();
+        }
     });
 
     input.addEventListener('blur', () => { setTimeout(hideDropdown, 200); });
