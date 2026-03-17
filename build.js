@@ -186,6 +186,23 @@ async function build() {
     console.log('📄 Generando index.html...');
     let html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
 
+    // Auto-incrementar APP_VERSION en el fuente y en el HTML generado
+    const verMatch = html.match(/var APP_VERSION = 'v(\d+)'/);
+    const nextVersion = verMatch ? parseInt(verMatch[1], 10) + 1 : 1;
+    const newVersionTag = `v${nextVersion}`;
+    html = html.replace(
+        /var APP_VERSION = 'v\d+';/,
+        `var APP_VERSION = '${newVersionTag}';`
+    );
+    // Persistir versión incremental en el fuente para el próximo build
+    const srcHtml = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+    fs.writeFileSync(
+        path.join(__dirname, 'index.html'),
+        srcHtml.replace(/var APP_VERSION = 'v\d+';/, `var APP_VERSION = '${newVersionTag}';`),
+        'utf8'
+    );
+    console.log(`   🔖 APP_VERSION → ${newVersionTag}`);
+
     // Reemplazar todas las etiquetas <script src="src/js/..."> por una sola
     // Encontrar el bloque de scripts
     const scriptRegex = /\s*<script src="src\/js\/[^"]+"><\/script>/g;
