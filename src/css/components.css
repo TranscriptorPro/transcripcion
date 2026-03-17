@@ -978,6 +978,20 @@
             fill: currentColor;
         }
 
+        /* Sticky header band (tabs + actions + toolbar) */
+        .editor-sticky-head {
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            background: var(--bg-card);
+            margin: -1.25rem -1.25rem 0;
+            padding: 1.25rem 1.25rem 0;
+            border-radius: var(--radius) var(--radius) 0 0;
+        }
+        .tabs-container.active + .card .editor-sticky-head {
+            border-radius: 0;
+        }
+
         /* Editor Toolbar */
         .editor-toolbar {
             display: flex;
@@ -1288,6 +1302,63 @@
 
         .inline-review-btn:hover {
             background: var(--primary-dark);
+        }
+
+        /* Undo button after inline AI review */
+        .report-p .inline-undo-btn,
+        li .inline-undo-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 4px;
+            width: 18px;
+            height: 18px;
+            border: none;
+            border-radius: 999px;
+            background: #6c757d;
+            color: #fff;
+            font-size: 0.65rem;
+            line-height: 1;
+            cursor: pointer;
+            opacity: 0.8;
+            pointer-events: auto;
+            transition: background 0.15s ease, opacity 0.15s ease;
+            vertical-align: middle;
+        }
+        .inline-undo-btn:hover {
+            background: #495057;
+            opacity: 1;
+        }
+
+        /* Field history chip wrapper (trash icon on hover) */
+        .ef-chip-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+        .ef-chip-del {
+            position: absolute;
+            right: -5px;
+            top: -5px;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #dc3545;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-size: 0.55rem;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.15s;
+            padding: 0;
+            z-index: 1;
+        }
+        .ef-chip-wrap:hover .ef-chip-del {
+            opacity: 1;
         }
 
         #inlineReviewQuickControl {

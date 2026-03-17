@@ -1,0 +1,1277 @@
+﻿
+ÔöÇÔöÇ Bloque 1: autoDetectTemplateKey ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Detecta cinecoronariograf├¡a correctamente (clave cinecoro)
+  Ô£à  Detecta laringoscop├¡a correctamente
+  Ô£à  Detecta espirometr├¡a correctamente
+  Ô£à  Detecta topograf├¡a corneal correctamente
+  Ô£à  Texto gen├®rico ÔåÆ retorna generico (no plantilla incorrecta)
+  Ô£à  Detecta eco-stress correctamente
+  Ô£à  Ecocardiograma transtor├ícico no matchea plantilla incorrecta
+  Ô£à  Detecta colonoscop├¡a correctamente
+  Ô£à  Laringoscop├¡a NO se confunde con topograf├¡a corneal
+  Ô£à  Topograf├¡a corneal NO se confunde con laringoscop├¡a
+
+ÔöÇÔöÇ Bloque 2: markdownToHtml ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  markdownToHtml genera h1 para # titulo
+  Ô£à  markdownToHtml genera h2 para ## secci├│n
+  Ô£à  markdownToHtml agrupa hallazgos en p├írrafo fluido
+  Ô£à  markdownToHtml capitaliza primer car├ícter del p├írrafo
+  Ô£à  markdownToHtml envuelve [No especificado] en span.no-data-field
+  Ô£à  markdownToHtml procesa cinecoronariograf├¡a sin errores
+  Ô£à  markdownToHtml no genera p├írrafos vac├¡os
+
+ÔöÇÔöÇ Bloque 3: Registro de pacientes ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  savePatientToRegistry guarda un paciente nuevo
+  Ô£à  savePatientToRegistry actualiza paciente existente por DNI
+  Ô£à  savePatientToRegistry agrega segundo paciente distinto
+  Ô£à  searchPatientRegistry encuentra por apellido parcial
+  Ô£à  searchPatientRegistry encuentra por DNI parcial
+  Ô£à  searchPatientRegistry devuelve vac├¡o para query sin coincidencias
+  Ô£à  savePatientToRegistry no guarda paciente sin nombre
+
+ÔöÇÔöÇ Bloque 4: Flujo completo simulado ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Flujo cinecoronariograf├¡a: texto ÔåÆ detecci├│n ÔåÆ plantilla correcta
+  Ô£à  Flujo texto gen├®rico: no usa plantilla espec├¡fica
+  Ô£à  markdownToHtml produce HTML v├ílido para resultado de cinecoronariograf├¡a
+
+ÔöÇÔöÇ Bloque 5: classifyStructError ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  401 ÔåÆ type auth, no espera, no cambia modelo
+  Ô£à  invalid_api_key en mensaje ÔåÆ type auth
+  Ô£à  429 ÔåÆ type rate_limit, espera 8s, mismo modelo
+  Ô£à  503 ÔåÆ type server_error, cambia modelo inmediatamente
+  Ô£à  504 ÔåÆ type server_error, cambia modelo
+  Ô£à  TypeError (failed to fetch) ÔåÆ type network
+  Ô£à  NetworkError string ÔåÆ type network
+  Ô£à  Error desconocido ÔåÆ type unknown, sin cambio de modelo
+
+ÔöÇÔöÇ Bloque 6: GROQ_MODELS y structureTranscription ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  GROQ_MODELS[0] es llama-3.3-70b-versatile
+  Ô£à  GROQ_MODELS[1] es llama-3.1-70b-versatile
+  Ô£à  GROQ_MODELS[2] es llama-3.1-8b-instant (no m├ís mixtral deprecado)
+  Ô£à  GROQ_MODELS tiene exactamente 3 entradas
+
+ÔöÇÔöÇ Bloque 7: structureWithRetry (fetch simulado) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  structureTranscription lanza HTTP_401 cuando no hay API key
+  Ô£à  structureWithRetry se detiene en el 1er intento con error 401 (sin reintentar)
+  Ô£à  structureWithRetry guarda en cola con error de red (sin reintentar)
+  Ô£à  structureWithRetry tiene ├®xito en el 2do intento (1er falla con 503)
+  Ô£à  structureWithRetry con 429 reintenta mismo modelo y luego tiene ├®xito
+  Ô£à  structureWithRetry: todos fallan ÔåÆ savedToPending + texto en cola
+
+ÔöÇÔöÇ Bloque 8: Cola de pendientes (struct_pending_queue) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  addToStructurePendingQueue guarda una entrada con todos los campos
+  Ô£à  addToStructurePendingQueue inserta al inicio (m├ís reciente primero)
+  Ô£à  addToStructurePendingQueue no supera 10 entradas
+  Ô£à  removeFromStructurePendingQueue elimina por id
+  Ô£à  getStructurePendingQueue retorna [] si localStorage est├í vac├¡o o corrupto
+
+ÔöÇÔöÇ Bloque 9: G2 ÔÇö patientHistory ÔåÆ patientRegistry unificado ÔöÇÔöÇ
+  Ô£à  G2 ÔÇö savePatientToHistory es funci├│n definida (alias)
+  Ô£à  G2 ÔÇö savePatientToHistory delega a patientRegistry
+  Ô£à  G2 ÔÇö savePatientToHistory NO escribe en patient_history
+  Ô£à  G2 ÔÇö migraci├│n autom├ítica de datos viejos al arrancar
+  Ô£à  G2 ÔÇö no duplica al migrar paciente que ya existe en registry
+  Ô£à  G2 ÔÇö populatePatientDatalist es funci├│n definida (no explota)
+  Ô£à  G2 ÔÇö b├║squeda en searchPatientRegistry funciona con datos migrados
+
+ÔöÇÔöÇ Bloque 10: D1-D4 ÔÇö Nuevas plantillas ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  D1 ÔÇö Plantilla ETT existe y tiene todos los campos
+  Ô£à  D2 ÔÇö Plantilla Eco Doppler vascular existe
+  Ô£à  D3 ÔÇö Plantilla Nota de evoluci├│n existe
+  Ô£à  D4 ÔÇö Plantilla Epicrisis existe con keywords
+  Ô£à  D1 ÔÇö autoDetect reconoce texto de ETT
+  Ô£à  D2 ÔÇö autoDetect reconoce texto de Eco Doppler
+  Ô£à  D4 ÔÇö autoDetect reconoce texto de Epicrisis
+  Ô£à  D1-D4 ÔÇö Todas las plantillas est├ín en TEMPLATE_CATEGORIES
+
+ÔöÇÔöÇ Bloque 11: E1 ÔÇö Toast plantilla detectada ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  E1 ÔÇö promptTemplateSelection es funci├│n interna cargada
+  Ô£à  E1 ÔÇö autoDetectTemplateKey retorna string v├ílido
+
+ÔöÇÔöÇ Bloque 12: K1/K2/K3 ÔÇö API Key + Contact ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  K3 ÔÇö initContact es funci├│n definida
+  Ô£à  K1/K2 ÔÇö CLIENT_CONFIG estructura v├ílida
+
+ÔöÇÔöÇ Bloque 13: PWA ÔÇö manifest + SW + ├¡conos ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  PWA1 ÔÇö manifest.json es JSON v├ílido con campos obligatorios
+  Ô£à  PWA1 ÔÇö manifest.json declara ├¡conos 192 y 512
+  Ô£à  PWA2 ÔÇö sw.js existe y tiene estrategia Cache-First
+  Ô£à  PWA2 ÔÇö sw.js excluye Groq API del cache
+  Ô£à  PWA4 ÔÇö ├ìconos 192x192 y 512x512 existen como archivos
+
+ÔöÇÔöÇ Bloque 14: A1+A2 ÔÇö Formato s/p en plantillas ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  A1 ÔÇö ecografia_abdominal usa formato por ├│rgano con s/p
+  Ô£à  A1 ÔÇö gastroscopia usa formato por segmento con s/p
+  Ô£à  A2 ÔÇö prompt del structurer menciona multi-├│rgano
+  Ô£à  A2 ÔÇö colonoscopia tiene formato por segmento
+
+ÔöÇÔöÇ Bloque 15: B1/C1/C2 ÔÇö Modal edici├│n de campo ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  B1/C1/C2 ÔÇö editor.js contiene editFieldModal l├│gica
+
+ÔöÇÔöÇ Bloque 16: index.html ÔÇö integridad estructural ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  index.html ÔÇö todos los <script> tienen su </script> de cierre
+  Ô£à  index.html ÔÇö onboardingOverlay existe (K1)
+  Ô£à  index.html ÔÇö btnInstallPwa existe (PWA3)
+  Ô£à  index.html ÔÇö btnResetApp existe (admin reset)
+  Ô£à  index.html ÔÇö contactModalOverlay existe (K3)
+  Ô£à  index.html ÔÇö editFieldModal existe (B1/C1/C2)
+  Ô£à  index.html ÔÇö registryPanelOverlay existe (G1)
+  Ô£à  index.html ÔÇö manifest.json est├í vinculado
+  Ô£à  index.html ÔÇö SW se registra
+
+ÔöÇÔöÇ Bloque 17: admin.html ÔÇö Sin caracteres ilegales ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  admin.html ÔÇö No contiene U+2500 fuera de comentarios JS
+
+ÔöÇÔöÇ Bloque 18: formHandler ÔÇö extract + report number ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  extractPatientDataFromText extrae nombre del paciente
+  Ô£à  extractPatientDataFromText extrae DNI
+  Ô£à  extractPatientDataFromText extrae edad
+  Ô£à  extractPatientDataFromText extrae sexo
+  Ô£à  extractPatientDataFromText evita nombre invalido y extrae nombre real tras coma
+  Ô£à  extractPatientDataFromText extrae mujer + nombre en min├║sculas
+  Ô£à  extractPatientDataFromText extrae nombre al inicio + sexo femenina
+  Ô£à  extractPatientDataFromText extrae nombre al inicio + de X a├▒os sin sexo
+  Ô£à  extractPatientDataFromText no confunde "paciente que" con nombre
+  Ô£à  extractPatientDataFromText extrae peso y altura
+  Ô£à  generateReportNumber genera formato XX-NNNNN-ddmmaa
+  Ô£à  generateReportNumber incrementa secuencialmente
+
+ÔöÇÔöÇ Bloque 19: Flujo Pro ÔÇö State Machine + Buttons ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  State Machine ÔÇö IDLE: todos los botones de acci├│n ocultos/deshabilitados
+  Ô£à  State Machine ÔÇö FILES_LOADED: a├║n sin botones de acci├│n post-transcripci├│n
+  Ô£à  State Machine ÔÇö TRANSCRIBED Pro: btnStructureAI visible, botonera activa
+  Ô£à  State Machine ÔÇö TRANSCRIBED Normal: applyTemplate visible, btnStructureAI oculto
+  Ô£à  State Machine ÔÇö STRUCTURED Pro: btnStructureAI oculto, downloadPdfBtn visible
+  Ô£à  State Machine ÔÇö PREVIEWED Pro: todo visible/activo como STRUCTURED
+  Ô£à  State Machine ÔÇö transcribeAndStructureBtn visible solo en Pro
+  Ô£à  State Machine ÔÇö transcribeAndStructureBtn sync disabled con transcribeBtn
+
+ÔöÇÔöÇ Bloque 20: Flag _shouldAutoStructure ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  _shouldAutoStructure flag ÔÇö inicia en false
+  Ô£à  _shouldAutoStructure flag ÔÇö se puede setear y resetear
+
+ÔöÇÔöÇ Bloque 21: triggerPatientDataCheck ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  triggerPatientDataCheck limpia datos del paciente anterior
+  Ô£à  triggerPatientDataCheck extrae nombre del audio y lo guarda
+  Ô£à  triggerPatientDataCheck extrae obra social y afiliado
+  Ô£à  triggerPatientDataCheck sin datos ÔåÆ no guarda nombre
+
+ÔöÇÔöÇ Bloque 22: Pipeline detecci├│n ÔåÆ structuring ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Pipeline: texto de cinecoro ÔåÆ detecta plantilla ÔåÆ tiene prompt
+  Ô£à  Pipeline: texto de eco_stress ÔåÆ detecta plantilla ÔåÆ prompt existe
+  Ô£à  Pipeline: todas las plantillas tienen nombre, prompt, keywords
+  Ô£à  Pipeline: markdownToHtml marca [No especificado] como editable
+  Ô£à  Pipeline: markdownToHtml marca [Sin datos disponibles] como editable
+  Ô£à  Pipeline: markdownToHtml marca [No evaluado] como editable
+
+ÔöÇÔöÇ Bloque 23: Toggle original/estructurado ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Toggle: _lastRawTranscription se preserva globalmente
+  Ô£à  Toggle: _lastStructuredHTML se preserva globalmente
+
+ÔöÇÔöÇ Bloque 24: Advertencia descarga sin paciente ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Descarga: pdf_config sin patientName ÔåÆ se detecta vac├¡o
+  Ô£à  Descarga: pdf_config con patientName ÔåÆ no necesita advertencia
+
+ÔöÇÔöÇ Bloque 25: Quick options modal edici├│n ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Quick options: index.html contiene s/p, Sin particularidades, No evaluado
+  Ô£à  Quick options: index.html tiene bot├│n Eliminar campo
+  Ô£à  Quick options: index.html tiene bot├│n Dejar en blanco
+
+ÔöÇÔöÇ Bloque 26: Botones Transcribir separados ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  index.html tiene bot├│n transcribeBtn
+  Ô£à  index.html tiene bot├│n transcribeAndStructureBtn
+  Ô£à  transcriptor.js setea _shouldAutoStructure en click de T+S
+  Ô£à  transcriptor.js auto-pipeline solo corre con shouldAutoStructureNow
+  Ô£à  stateManager.js oculta T+S btn en Normal mode
+
+ÔöÇÔöÇ Bloque 27: API Key collapse ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  ui.js colapsa API key card cuando est├í conectada
+  Ô£à  index.html tiene elementos con clase api-key-collapsible
+
+ÔöÇÔöÇ Bloque 28: Patient placeholder banner ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  structurer.js tiene insertPatientPlaceholder
+  Ô£à  structurer.js tiene removePatientPlaceholder
+  Ô£à  structurer.js NO abre modal autom├íticamente despu├®s de estructurar
+
+ÔöÇÔöÇ Bloque 29: Eliminar campo (deleteFieldSection) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  editor.js contiene funci├│n deleteFieldSection
+  Ô£à  editor.js: deleteFieldSection encuentra heading H2/H3
+
+ÔöÇÔöÇ Bloque 30: Download warning sin datos paciente ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  editor.js advierte al descargar sin datos del paciente
+
+ÔöÇÔöÇ Bloque 31: Integridad archivos de c├│digo ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  stateManager.js ÔÇö maneja todos los estados sin error
+  Ô£à  Transici├│n flujo completo Pro: IDLE ÔåÆ FILES ÔåÆ TRANSCRIBED ÔåÆ STRUCTURED ÔåÆ PREVIEWED
+  Ô£à  Transici├│n flujo completo Normal: IDLE ÔåÆ FILES ÔåÆ TRANSCRIBED ÔåÆ no STRUCTURED
+  Ô£à  Cambio de modo ProÔåÆNormal actualiza botones correctamente
+
+ÔöÇÔöÇ Bloque 32: Bot├│n Gemini + Vista comparativa ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  index.html ÔÇö bot├│n T+S tiene clase btn-transcribe-structure
+  Ô£à  CSS ÔÇö btn-transcribe-structure tiene animaci├│n Gemini
+  Ô£à  CSS ÔÇö animaciones Gemini definidas en animations.css
+  Ô£à  index.html ÔÇö bot├│n Comparar existe
+  Ô£à  index.html ÔÇö comparisonContainer con paneles
+  Ô£à  index.html ÔÇö botones copiar/imprimir en cada panel
+  Ô£à  CSS ÔÇö estilos de comparison-container presentes
+  Ô£à  ui.js ÔÇö l├│gica de comparaci├│n implementada
+  Ô£à  State Machine ÔÇö btnCompareView oculto antes de STRUCTURED
+  Ô£à  State Machine ÔÇö btnCompareView visible en STRUCTURED
+
+ÔöÇÔöÇ Bloque 33: Restaurar sesi├│n + Modal confirm + Append record ÔöÇÔöÇ
+  Ô£à  index.html ÔÇö bot├│n btnRestoreSession existe
+  Ô£à  index.html ÔÇö modal customConfirmModal existe
+  Ô£à  editor.js ÔÇö usa showCustomConfirm en vez de confirm()
+  Ô£à  editor.js ÔÇö deleteFieldSection elimina nodos vac├¡os residuales
+  Ô£à  index.html ÔÇö bot├│n btnAppendRecord existe (oculto en toolbar)
+  Ô£à  ui.js ÔÇö l├│gica de append recording + inline button
+  Ô£à  State Machine ÔÇö append inline invocado desde stateManager
+  Ô£à  CSS ÔÇö bot├│n append inline oculto en @media print
+  Ô£à  ui.js ÔÇö restoreAutoSave usa bot├│n btnRestoreSession
+
+ÔöÇÔöÇ Bloque 34: Auditor├¡a ÔÇö CRITICAL fixes ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  CRITICAL: editor.js downloadFile Promise tiene resolve()
+  Ô£à  CRITICAL: structurer.js optional chaining en data.choices
+  Ô£à  CRITICAL: formHandler.js migraci├│n no borra datos si falla
+  Ô£à  CRITICAL: patientRegistry.js incrementa visits correctamente
+  Ô£à  CRITICAL: pdfMaker.js firma usa posiciones din├ímicas
+
+ÔöÇÔöÇ Bloque 35: Auditor├¡a ÔÇö HIGH fixes ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  HIGH: audio.js usa mimeType din├ímico en grabaci├│n
+  Ô£à  HIGH: audio.js revoca Object URL
+  Ô£à  HIGH: audio.js tiene onerror handler
+  Ô£à  HIGH: audio.js stop() con try/catch
+  Ô£à  HIGH: editor.js HTTP validation (!res.ok)
+  Ô£à  HIGH: editor.js no-data-field class correcta
+  Ô£à  HIGH: editor.js undo guarda estado inicial
+  Ô£à  HIGH: ui.js clipboard con .catch()
+  Ô£à  HIGH: ui.js downloadFile guard correcto
+  Ô£à  HIGH: ui.js typo "Guardar" (no "Gauardar")
+  Ô£à  HIGH: ui.js showBlocker XSS safe
+  Ô£à  HIGH: formHandler.js extractPatientDataFromText null guard
+  Ô£à  HIGH: formHandler.js age 0 no es falsy
+  Ô£à  HIGH: patientRegistry.js XSS ÔÇö sin onclick inline
+  Ô£à  HIGH: business.js XSS ÔÇö escapa datos en HTML
+  Ô£à  HIGH: structurer.js mutex autoStructure
+  Ô£à  HIGH: structurer.js Notification guard
+
+ÔöÇÔöÇ Bloque 36: Auditor├¡a ÔÇö MEDIUM fixes ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  MEDIUM: structurer.js markdownToHtml soporta listas numeradas
+  Ô£à  MEDIUM: tabs.js closeTab guarda contenido
+  Ô£à  MEDIUM: toast.js askJoinAudiosPromise tiene timeout
+  Ô£à  MEDIUM: business.js FileReader tiene onerror
+  Ô£à  MEDIUM: medDictionary.js optional chaining
+  Ô£à  MEDIUM: ui.js doble-click append guard
+  Ô£à  MEDIUM: ui.js autoSave JSON.parse try/catch
+  Ô£à  MEDIUM: editor.js highlightText limpia marks previos
+  Ô£à  MEDIUM: editor.js applyNormalTemplate tiene guard
+  Ô£à  MEDIUM: transcriptor.js pipeline muestra warning en fallo
+  Ô£à  MEDIUM: transcriptor.js limpia blob URLs
+  Ô£à  MEDIUM: pdfMaker.js segundo p├ígina dibuja banner del lugar
+  Ô£à  MEDIUM: pdfMaker.js _hexToRgb soporta hex corto
+  Ô£à  MEDIUM: sw.js Groq fetch tiene .catch()
+  Ô£à  MEDIUM: templates.js detectStudyType usa toLowerCase
+  Ô£à  MEDIUM: audio.js formatSize soporta GB/TB
+  Ô£à  MEDIUM: audio.js SVG path corregido
+  Ô£à  CLEANED: transcriptor.js sin testGroqConnection muerto
+
+ÔöÇÔöÇ Bloque 37: normalizeFieldText ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  normalizeFieldText existe y es funci├│n
+  Ô£à  normalizeFieldText modo sentence ÔÇö texto gen├®rico
+  Ô£à  normalizeFieldText modo sentence ÔÇö respeta siglas m├®dicas
+  Ô£à  normalizeFieldText modo sentence ÔÇö primera letra may├║scula tras punto
+  Ô£à  normalizeFieldText modo name ÔÇö nombre y apellido
+  Ô£à  normalizeFieldText modo name ÔÇö respeta preposiciones
+  Ô£à  normalizeFieldText ÔÇö sigla corta no se toca
+  Ô£à  normalizeFieldText ÔÇö texto vac├¡o/null retorna vac├¡o
+
+ÔöÇÔöÇ Bloque 38: B├║squeda normalizada ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  b├║squeda insensible a may├║sculas
+  Ô£à  b├║squeda insensible a acentos
+  Ô£à  b├║squeda por DNI parcial
+  Ô£à  b├║squeda multi-token (nombre + apellido)
+  Ô£à  b├║squeda retorna vac├¡o si query < 2 caracteres
+
+ÔöÇÔöÇ Bloque 39: _hexToRgb ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  _hexToRgb convierte hex de 6 d├¡gitos correctamente
+  Ô£à  _hexToRgb convierte hex corto (#FFF) correctamente
+  Ô£à  _hexToRgb convierte negro (#000000)
+  Ô£à  _hexToRgb ÔÇö null retorna fallback azul
+  Ô£à  _hexToRgb ÔÇö string vac├¡o retorna fallback
+  Ô£à  _hexToRgb ÔÇö sin # retorna fallback
+
+ÔöÇÔöÇ Bloque 40: escapeHtml ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  escapeHtml escapa tags HTML
+  Ô£à  escapeHtml escapa comillas y ampersand
+  Ô£à  escapeHtml ÔÇö null retorna vac├¡o
+  Ô£à  escapeHtml ÔÇö string vac├¡o retorna vac├¡o
+  Ô£à  escapeHtml ÔÇö n├║mero se convierte a string
+
+ÔöÇÔöÇ Bloque 41: _normStr ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  _normStr quita acentos y pasa a min├║sculas
+  Ô£à  _normStr maneja MAY├ÜSCULAS con acentos
+  Ô£à  _normStr ÔÇö null retorna vac├¡o
+  Ô£à  _normStr ÔÇö string vac├¡o retorna vac├¡o
+
+ÔöÇÔöÇ Bloque 42: parseAIResponse ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  parseAIResponse separa body y nota correctamente
+  Ô£à  parseAIResponse sin nota retorna note null
+  Ô£à  parseAIResponse ÔÇö null retorna body vac├¡o y note null
+  Ô£à  parseAIResponse ÔÇö string vac├¡o
+  Ô£à  parseAIResponse detecta "Aclaraci├│n:" como nota
+
+ÔöÇÔöÇ Bloque 43: evaluateConfigCompleteness ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  evaluateConfigCompleteness ÔÇö sin datos retorna red
+  Ô£à  evaluateConfigCompleteness ÔÇö solo nombre retorna red (falta matricula)
+  Ô£à  evaluateConfigCompleteness ÔÇö nombre+mat+espec retorna yellow sin workplace
+  Ô£à  evaluateConfigCompleteness ÔÇö nombre+mat sin espec retorna yellow
+
+ÔöÇÔöÇ Bloque 44: validateBeforeDownload ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  validateBeforeDownload ÔÇö formato rtf siempre pasa
+  Ô£à  validateBeforeDownload ÔÇö pdf con green pasa
+  Ô£à  validateBeforeDownload ÔÇö pdf con red no pasa
+  Ô£à  validateBeforeDownload ÔÇö pdf con yellow/red depende de config
+
+ÔöÇÔöÇ Bloque 45: isAdminUser ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  isAdminUser retorna true para ADMIN
+  Ô£à  isAdminUser retorna false para NORMAL
+  Ô£à  isAdminUser retorna falsy sin CLIENT_CONFIG
+
+ÔöÇÔöÇ Bloque 46: extractPatientDataFromText (ext) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  extractPatientDataFromText ÔÇö DNI con puntos
+  Ô£à  extractPatientDataFromText ÔÇö texto vac├¡o retorna objeto vac├¡o
+  Ô£à  extractPatientDataFromText ÔÇö sin datos de paciente
+
+ÔöÇÔöÇ Bloque 47: pdfMaker ÔÇö header en todas las p├íginas ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  pdfMaker.js ensureSpace llama drawWorkplaceBanner()
+  Ô£à  pdfMaker.js drawHeader resetea cy correctamente
+  Ô£à  pdfMaker.js drawFooter soporta footerText
+  Ô£à  pdfPreviewActions.js expone downloadPDFFromCanvas
+  Ô£à  pdfPreviewActions.js expone helper de blob para pipeline ├║nico
+  Ô£à  pdfPreviewActions.js email prioriza pipeline de preview
+  Ô£à  reportHistory.js guarda htmlContent limpiado de botones IA
+  Ô£à  reportHistory.js viewReport elimina botones IA al mostrar
+  Ô£à  pdfPreview.js persiste reportNum auto-generado en _pdfConfigCache
+  Ô£à  pdfPreview.js declara config en openPdfConfigModal antes de usar reportNum
+  Ô£à  reportHistory.js expone clearReportHistory y limpia appDB/cache/ui
+  Ô£à  datosPanel.js usa clearReportHistory para el bot├│n Limpiar
+  Ô£à  editorDownloadFavoritesUtils.js preabre una pesta├▒a para PDF desde el bot├│n principal
+  Ô£à  editorDownloadCoreUtils.js usa pesta├▒a pendiente para PDF principal sin abrir preview
+  ÔØî  pdfPreviewActions.js soporta captura silenciosa offscreen
+        ÔåÆ Debe capturar en host offscreen
+  Ô£à  structurer.js oculta editor y acciones durante STRUCTURING
+  Ô£à  ui.js mueve REV IA al bot├│n inline de grabaci├│n
+  Ô£à  index.html incluye dock para REV IA y css pro-like inline
+  Ô£à  stateManager y revisi├│n inline restringen estas funciones a planes avanzados
+  Ô£à  registro/admin incluyen Gonioscop├¡a en opci├│n de Oftalmolog├¡a
+  Ô£à  cat├ílogo compartido de templates: app/admin/registro lo consumen con fallback
+  Ô£à  runtime de plantillas admin: registro compartido expone API de persistencia y merge
+  Ô£à  settings modal: bot├│n Configurar informes PDF mantiene flujo funcional
+  Ô£à  editorDownloadCoreUtils.js corrige estudios con may├║sculas mezcladas en filename
+  Ô£à  editorDownloadCoreUtils.js usa downloadPDFFromCanvas como primer intento
+
+ÔöÇÔöÇ Bloque 48: Preview modal ÔÇö dropdown multi-formato ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  index.html modal-footer del preview tiene position:relative
+  Ô£à  index.html dropdown del preview tiene z-index alto
+  Ô£à  index.html dropdown tiene 3 formatos (pdf, rtf, html)
+  Ô£à  ui.js maneja click en btnDownloadPreviewMore
+  Ô£à  ui.js formatos llaman window.downloadRTF/HTML
+
+ÔöÇÔöÇ Bloque 49: autoDetectTemplateKey ÔÇö textos crudos ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  autoDetectTemplateKey detecta "espirometria" desde texto crudo
+  Ô£à  autoDetectTemplateKey detecta "colonoscopia" desde texto crudo
+  Ô£à  autoDetectTemplateKey detecta "ecografia_abdominal" desde texto crudo
+  Ô£à  autoDetectTemplateKey detecta "gastroscopia" desde texto crudo
+  Ô£à  autoDetectTemplateKey detecta "holter" desde texto crudo
+  Ô£à  autoDetectTemplateKey detecta "cinecoro" desde texto crudo
+  Ô£à  autoDetectTemplateKey detecta "mamografia" desde texto crudo
+  Ô£à  autoDetectTemplateKey detecta "densitometria" desde texto crudo
+  Ô£à  autoDetectTemplateKey detecta "laringoscopia" desde texto crudo
+  Ô£à  autoDetectTemplateKey detecta "tac" desde texto crudo
+  Ô£à  autoDetectTemplateKey detecta "ett" desde texto crudo
+  Ô£à  autoDetectTemplateKey detecta "eco_doppler" desde texto crudo
+  Ô£à  autoDetectTemplateKey detecta "nota_evolucion" desde texto crudo
+  Ô£à  autoDetectTemplateKey detecta "epicrisis" desde texto crudo
+  Ô£à  autoDetectTemplateKey detecta "resonancia" desde texto crudo
+  Ô£à  autoDetectTemplateKey detecta "protocolo_quirurgico" desde texto crudo
+  Ô£à  autoDetectTemplateKey retorna generico para texto ambiguo
+
+ÔöÇÔöÇ Bloque 50: markdownToHtml ÔÇö renderizado realista ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  markdownToHtml convierte H1 + H2 + p├írrafo
+  Ô£à  markdownToHtml convierte lista con bullets
+  Ô£à  markdownToHtml reemplaza [No especificado] con campo editable
+  Ô£à  markdownToHtml preserva negritas markdown **texto**
+  Ô£à  markdownToHtml capitaliza primera letra de p├írrafo
+
+ÔöÇÔöÇ Bloque 51: parseAIResponse ÔÇö respuestas realistas ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  parseAIResponse extrae body HTML de ecograf├¡a
+  Ô£à  parseAIResponse maneja nota "Nota:" al final
+
+ÔöÇÔöÇ Bloque 52: templates coverage ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  MEDICAL_TEMPLATES contiene 42 plantillas
+  Ô£à  Todas las plantillas tienen name, prompt y keywords
+  Ô£à  Prompts contienen regla de [No especificado]
+
+ÔöÇÔöÇ Bloque 53: classifyStructError ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  classifyStructError ÔÇö 401 ÔåÆ auth
+  Ô£à  classifyStructError ÔÇö 429 ÔåÆ rate_limit
+  Ô£à  classifyStructError ÔÇö 503 ÔåÆ server_error + switch model
+  Ô£à  classifyStructError ÔÇö TypeError ÔåÆ network
+  Ô£à  classifyStructError ÔÇö error gen├®rico ÔåÆ unknown
+
+ÔöÇÔöÇ Bloque 54: pending queue ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  addToStructurePendingQueue agrega entry
+  Ô£à  pending queue m├íximo 10 entries
+  Ô£à  removeFromStructurePendingQueue elimina entry
+
+ÔöÇÔöÇ Bloque 55: F├íbrica de Clones ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Plan mapping: TRIAL ÔåÆ type TRIAL, no proMode
+  Ô£à  Plan mapping: NORMAL ÔåÆ type NORMAL, no proMode
+  Ô£à  Plan mapping: PRO ÔåÆ type PRO, con proMode
+  Ô£à  Plan mapping: GIFT ÔåÆ type PRO, con proMode (como PRO)
+  Ô£à  Plan mapping: CLINIC ÔåÆ type PRO, canGenerateApps=true
+  Ô£à  Plan mapping: desconocido ÔåÆ fallback a TRIAL
+  Ô£à  device_id se genera una sola vez y persiste
+  Ô£à  client_config_stored se guarda con todos los campos requeridos
+  Ô£à  prof_data se genera con nombre, matr├¡cula, especialidad
+  Ô£à  Firma base64 se guarda en pdf_signature (la key que pdfMaker lee)
+  Ô£à  Logo profesional se guarda en pdf_logo (la key que pdfMaker lee)
+  Ô£à  Color del tema (customPrimaryColor) se aplica desde regDatos.headerColor
+  Ô£à  API key se guarda y persiste en groq_api_key
+  Ô£à  wasAdmin flag: no false positive para nuevo gift user (stored=null)
+  Ô£à  wasAdmin flag: true para admin existente
+  Ô£à  wasAdmin flag: false para gift user existente
+  Ô£à  Factory: mock fetch exitoso ÔÇö clientConfig se almacena correctamente
+  Ô£à  Factory: backend ca├¡do ÔÇö fetch error no deja estado inconsistente
+  Ô£à  Factory: specialties se parsean correctamente (CSV)
+  Ô£à  Factory: specialties ALL queda como ["ALL"]
+  Ô£à  Factory: allowedTemplates se parsean como JSON array
+  Ô£à  Factory: allowedTemplates vac├¡o ÔåÆ array vac├¡o
+
+ÔöÇÔöÇ Bloque 56: PDF ÔÇö Firma, QR, Logo ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Firma: se lee desde activeProfessional.firma si existe
+  Ô£à  Firma: fallback a pdf_signature de localStorage si activePro no tiene firma
+  Ô£à  Firma: devuelve vac├¡o si no hay firma en ning├║n lado
+  Ô£à  Firma: setup factory guarda firma en pdf_signature (key correcta)
+  Ô£à  Firma: drawSignature() solo dibuja si sigB64 no es vac├¡o
+  Ô£à  Logo institucional: se lee desde workplace.logo o fallback pdf_logo
+  Ô£à  Logo profesional: se lee de activeProfessional.logo
+  Ô£à  Logo profesional: vac├¡o si no tiene data: prefix
+  Ô£à  QR: texto contiene TPRO-VERIFY y datos del informe
+  Ô£à  QR: no se genera si config.showQR es false
+  Ô£à  QR: se genera si config.showQR es true
+  Ô£à  QR: showQR undefined ÔåÆ default false
+
+ÔöÇÔöÇ Bloque 57: Descarga ÔÇö Formatos seg├║n plan ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Formatos: ADMIN puede descargar todos (pdf, rtf, html)
+  Ô£à  Formatos: PRO puede descargar todos (pdf, rtf, html)
+  Ô£à  Formatos: NORMAL solo puede descargar pdf
+  Ô£à  Formatos: TRIAL solo puede descargar pdf
+  Ô£à  Formatos: GIFT (mapeado como PRO) puede descargar todos
+  Ô£à  Formatos: CLINIC (mapeado como PRO) puede descargar todos
+  Ô£à  Formatos: bot├│n principal dice "Descargar PDF" si plan permite PDF
+  Ô£à  Formatos: bot├│n principal dice "Descargar PDF" para todos los planes
+  Ô£à  Formatos: chevron oculto si solo 1 formato disponible
+  Ô£à  Formatos: chevron visible si m├ís de 1 formato
+  Ô£à  Formatos: _forceTxt NO activo para ning├║n plan (todos tienen PDF)
+  Ô£à  Formatos: _forceTxt inactivo para Pro (con PDF)
+
+ÔöÇÔöÇ Bloque 58: PWA Install ÔÇö Tipos de usuario ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  PWA: _tryPwaInstall debe llamarse para ADMIN
+  Ô£à  PWA: _tryPwaInstall debe llamarse para TRIAL
+  Ô£à  PWA: _tryPwaInstall debe llamarse para NORMAL
+  Ô£à  PWA: _tryPwaInstall debe llamarse para PRO
+  Ô£à  PWA: _tryPwaInstall debe llamarse para GIFT (tipo PRO)
+  Ô£à  PWA: _tryPwaInstall debe llamarse para CLINIC
+  Ô£à  PWA: banner no se muestra si ya fue dismissed en esta sesi├│n
+  Ô£à  PWA: banner se muestra si NO fue dismissed
+  Ô£à  PWA: _pwaInstallPrompt se captura del evento beforeinstallprompt
+  Ô£à  PWA: fallback a instrucciones manuales si no hay prompt
+
+ÔöÇÔöÇ Bloque 59: Pricing ÔÇö Planes y moneda ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Pricing: Trial es gratis por 15 d├¡as
+  Ô£à  Pricing: Normal cuesta $15 USD/mes
+  Ô£à  Pricing: Pro cuesta $25 USD/mes
+  Ô£à  Pricing: Cl├¡nica dice Consultar
+  Ô£à  Pricing: orden correcto (trial < normal < pro < clinic)
+  Ô£à  Pricing: Trial incluye "Todas las plantillas"
+  Ô£à  Pricing: Normal incluye "Plantillas est├íticas" (no todas)
+  Ô£à  Pricing: Pro incluye "Modo Pro"
+  Ô£à  Pricing: Cl├¡nica incluye "Multi-dispositivo"
+  Ô£à  Pricing: conversi├│n USDÔåÆARS (l├│gica de display)
+  Ô£à  Pricing: conversi├│n mantiene Gratis para Trial
+  Ô£à  Pricing: conversi├│n mantiene Consultar para Cl├¡nica
+  Ô£à  Pricing: config din├ímica desde localStorage override defaults
+  Ô£à  Pricing: sin config din├ímica ÔåÆ usa defaults
+
+ÔöÇÔöÇ Bloque 60: API Key ÔÇö Persistencia ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  API key: se guarda desde doctor.API_Key
+  Ô£à  API key: fallback a regDatos.apiKey si doctor no tiene
+  Ô£à  API key: no se guarda si ninguno la provee
+  Ô£à  API key: onboarding no pide key si ya existe en localStorage
+  Ô£à  API key: onboarding pide key si NO existe
+  Ô£à  API key: persiste tras reload (simulado)
+  Ô£à  API key: factory setup completo guarda key y no se re-pide
+  Ô£à  API key race: core/state expone setGroqApiKey + getResolvedGroqApiKey
+  Ô£à  API key race: factory setup usa setter centralizado
+  Ô£à  API key race: onboarding usa lectura/escritura centralizada
+  Ô£à  API key race: settings API usa setter centralizado
+  Ô£à  API key race: UI API management usa setter centralizado
+
+ÔöÇÔöÇ Bloque 61: Integridad Factory ÔåÆ PDF ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Cadena completa: factory guarda firma ÔåÆ pdfMaker la lee
+  Ô£à  Cadena completa: factory guarda logo ÔåÆ pdfMaker lo lee
+  Ô£à  Cadena completa: factory guarda color ÔåÆ app lo aplica
+  Ô£à  Cadena completa: factory guarda footerText ÔåÆ PDF lo lee
+  Ô£à  Cadena completa: factory guarda workplace ÔåÆ PDF lo usa
+  Ô£à  Cadena completa: factory con datos completos ÔåÆ todo persiste
+
+ÔöÇÔöÇ Bloque 62: evaluateConfigCompleteness ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Sem├íforo GREEN: nombre + matr├¡cula + especialidad + workplace
+  Ô£à  Sem├íforo RED: sin nombre ni matr├¡cula (campos cr├¡ticos)
+  Ô£à  Sem├íforo YELLOW: nombre ok, falta matr├¡cula (1 campo faltante)
+  Ô£à  Sem├íforo YELLOW: nombre ok, falta especialidad y workplace (2 campos)
+  Ô£à  Sem├íforo RED: sin nombre (aunque tenga matr├¡cula)
+  Ô£à  Sem├íforo: validateBeforeDownload("txt") siempre retorna true
+  Ô£à  Sem├íforo: validateBeforeDownload("pdf") retorna true si green
+  Ô£à  Sem├íforo: validateBeforeDownload("pdf") retorna false si red
+  Ô£à  Sem├íforo: validateBeforeDownload("rtf") retorna true siempre
+
+ÔöÇÔöÇ Bloque 63: Registro_Datos malformado ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Registro_Datos: JSON v├ílido se parsea correctamente
+  Ô£à  Registro_Datos: JSON vac├¡o "{}" no rompe nada
+  Ô£à  Registro_Datos: string vac├¡o ÔåÆ objeto vac├¡o sin crash
+  Ô£à  Registro_Datos: null ÔåÆ objeto vac├¡o sin crash
+  Ô£à  Registro_Datos: undefined ÔåÆ objeto vac├¡o sin crash
+  Ô£à  Registro_Datos: JSON corrupto (syntax error) ÔåÆ objeto vac├¡o sin crash
+  Ô£à  Registro_Datos: firma sin prefijo data: ÔåÆ no se usa
+  Ô£à  Registro_Datos: workplace como string JSON se parsea
+  Ô£à  Registro_Datos: workplace como objeto directo funciona
+  Ô£à  Registro_Datos: workplace null no rompe
+  Ô£à  Registro_Datos: headerColor inv├ílido (no hex) se guarda pero no afecta
+  Ô£à  Registro_Datos: headerColor v├ílido pasa validaci├│n
+
+ÔöÇÔöÇ Bloque 64: _getAllowedFormats con tipos directos ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Formatos raw: GIFT directo (sin mapeo) ÔåÆ 4 formatos
+  Ô£à  Formatos raw: CLINIC directo ÔåÆ 4 formatos
+  Ô£à  Formatos raw: ENTERPRISE directo ÔåÆ solo TXT (cae en default)
+  Ô£à  Formatos: GIFT mapeado como PRO ÔåÆ 4 formatos (as├¡ funciona correctamente)
+  Ô£à  Formatos: CLINIC mapeado como PRO ÔåÆ 4 formatos
+  Ô£à  Formatos: GIFT directo y GIFT mapeado son equivalentes
+
+ÔöÇÔöÇ Bloque 65: themeManager ÔÇö API de skins ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  themeManager ÔÇö getRegistry retorna array con al menos 3 skins
+  Ô£à  themeManager ÔÇö getRegistry incluye default, cyberpunk y light-minimal
+  Ô£à  themeManager ÔÇö getCurrent retorna string
+  Ô£à  themeManager ÔÇö cada skin tiene id, name, description, icon y preview
+  Ô£à  themeManager ÔÇö skin default no tiene cssFile (usa base)
+  Ô£à  themeManager ÔÇö skins no-default tienen cssFile
+  Ô£à  themeManager ÔÇö getRegistry retorna copia (no la referencia interna)
+  Ô£à  themeManager ÔÇö apply es funci├│n async
+
+ÔöÇÔöÇ Bloque 66: reportHistory ÔÇö CRUD historial ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  reportHistory ÔÇö saveReportToHistory guarda un informe
+  Ô£à  reportHistory ÔÇö getAllReports retorna los informes guardados
+  Ô£à  reportHistory ÔÇö saveReportToHistory sin htmlContent retorna null
+  Ô£à  reportHistory ÔÇö saveReportToHistory sin data retorna null
+  Ô£à  reportHistory ÔÇö getReportById encuentra informe existente
+  Ô£à  reportHistory ÔÇö getReportById retorna null para id inexistente
+  Ô£à  reportHistory ÔÇö getPatientReports filtra por nombre
+  Ô£à  reportHistory ÔÇö getPatientReports filtra por DNI
+  Ô£à  reportHistory ÔÇö getPatientReports vac├¡o para query sin match
+  Ô£à  reportHistory ÔÇö getPatientReports vac├¡o para input vac├¡o
+  Ô£à  reportHistory ÔÇö deleteReport elimina un informe
+  Ô£à  reportHistory ÔÇö deletePatientReports elimina todos de un paciente
+  Ô£à  reportHistory ÔÇö importReportHistory agrega sin duplicados
+  Ô£à  reportHistory ÔÇö importReportHistory con JSON string
+  Ô£à  reportHistory ÔÇö importReportHistory ignora entries sin id o htmlContent
+  Ô£à  reportHistory ÔÇö importReportHistory con JSON inv├ílido retorna 0
+  Ô£à  reportHistory ÔÇö importReportHistory con no-array retorna 0
+  Ô£à  reportHistory ÔÇö getReportHistoryStats retorna estad├¡sticas correctas
+  Ô£à  reportHistory ÔÇö getReportHistoryStats vac├¡o
+  Ô£à  reportHistory ÔÇö entry tiene todos los campos requeridos
+
+ÔöÇÔöÇ Bloque 67: outputProfiles ÔÇö CRUD perfiles ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  outputProfiles ÔÇö getOutputProfiles retorna array
+  Ô£à  outputProfiles ÔÇö getOutputProfiles retorna vac├¡o con localStorage limpio
+  Ô£à  outputProfiles ÔÇö perfil guardado se puede leer
+  Ô£à  outputProfiles ÔÇö deleteProfile elimina perfil
+  Ô£à  outputProfiles ÔÇö setDefault marca perfil como predeterminado
+  Ô£à  outputProfiles ÔÇö getDefaultProfile retorna null sin perfiles
+  Ô£à  outputProfiles ÔÇö m├║ltiples perfiles solo uno es default
+
+ÔöÇÔöÇ Bloque 68: medDictionary ÔÇö diccionario m├®dico ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  medDictionary ÔÇö MEDICAL_DICT_BASE tiene m├ís de 100 entradas
+  Ô£à  medDictionary ÔÇö getMedCustomDict retorna objeto
+  Ô£à  medDictionary ÔÇö addMedDictEntry agrega entrada
+  Ô£à  medDictionary ÔÇö addMedDictEntry ignora entradas vac├¡as
+  Ô£à  medDictionary ÔÇö removeMedDictEntry elimina entrada
+  Ô£à  medDictionary ÔÇö getFullDict fusiona base + custom
+  Ô£à  medDictionary ÔÇö custom sobreescribe base en getFullDict
+  Ô£à  medDictionary ÔÇö findDictMatches encuentra errores en texto
+  Ô£à  medDictionary ÔÇö findDictMatches ordena por count desc
+  Ô£à  medDictionary ÔÇö findDictMatches sin errores retorna vac├¡o
+  Ô£à  medDictionary ÔÇö findDictMatches isBase identifica origen
+  Ô£à  medDictionary ÔÇö _escapeRegex escapa caracteres especiales
+  Ô£à  medDictionary ÔÇö findDictMatches con correcciones Whisper ASR
+
+ÔöÇÔöÇ Bloque 69: studyTerminology ÔÇö terminolog├¡a ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  studyTerminology ÔÇö STUDY_TERMINOLOGY es array con >= 50 estudios
+  Ô£à  studyTerminology ÔÇö cada estudio tiene campos requeridos
+  Ô£à  studyTerminology ÔÇö templateKey es ├║nico
+  Ô£à  studyTerminology ÔÇö getStudyTerminology encuentra por key
+  Ô£à  studyTerminology ÔÇö getStudyTerminology retorna null para key inexistente
+  Ô£à  studyTerminology ÔÇö getAllAbbreviations retorna objeto con entradas
+  Ô£à  studyTerminology ÔÇö getStudyUnits retorna unidades correctas
+  Ô£à  studyTerminology ÔÇö getStudyUnits retorna vac├¡o para key inexistente
+  Ô£à  studyTerminology ÔÇö getStudyClassifications retorna clasificaciones
+  Ô£à  studyTerminology ÔÇö getStudyClassifications vac├¡o para key inexistente
+  Ô£à  studyTerminology ÔÇö categor├¡as cubren especialidades principales
+
+ÔöÇÔöÇ Bloque 70: licenseManager ÔÇö cache y device ID ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  licenseManager ÔÇö _lmGetDeviceId genera ID determinista tras primera llamada
+  Ô£à  licenseManager ÔÇö _lmGetDeviceId usa el existente de localStorage
+  Ô£à  licenseManager ÔÇö _lmGetMedicoId lee de CLIENT_CONFIG
+  Ô£à  licenseManager ÔÇö _lmGetMedicoId fallback a localStorage
+  Ô£à  licenseManager ÔÇö _lmGetCache retorna null sin datos
+  Ô£à  licenseManager ÔÇö _lmGetCache retorna datos con TTL v├ílido
+  Ô£à  licenseManager ÔÇö _lmGetCache retorna null con TTL expirado
+  Ô£à  licenseManager ÔÇö _lmSetCache guarda y puede leer de nuevo
+
+ÔöÇÔöÇ Bloque 71: diagnostic ÔÇö funciones puras ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  diagnostic ÔÇö _diagDeviceId genera ID persistente
+  Ô£à  diagnostic ÔÇö _diagDeviceId usa el existente
+  Ô£à  diagnostic ÔÇö _safeJson retorna fallback con key inexistente
+  Ô£à  diagnostic ÔÇö _safeJson lee de localStorage
+  Ô£à  diagnostic ÔÇö buildDiagnosticReport retorna objeto con campos requeridos
+
+ÔöÇÔöÇ Bloque 72: contact ÔÇö validaci├│n b├ísica ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  contact ÔÇö initContact es funci├│n global
+  Ô£à  contact ÔÇö c├│digo contiene validaci├│n de formulario
+  Ô£à  contact ÔÇö c├│digo maneja pending_contacts en localStorage
+  Ô£à  contact ÔÇö c├│digo NO usa mailto (env├¡o directo desde app)
+  Ô£à  contact ÔÇö c├│digo env├¡a al backend
+
+ÔöÇÔöÇ Bloque 73: sessionAssistant ÔÇö helpers ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  sessionAssistant ÔÇö getGreeting genera saludo con nombre
+  Ô£à  sessionAssistant ÔÇö getGreeting en modo cl├¡nica omite nombre
+  Ô£à  sessionAssistant ÔÇö c├│digo tiene isProUser y isClinicMode
+  Ô£à  sessionAssistant ÔÇö c├│digo popula workplaces, professionals y templates
+  Ô£à  sessionAssistant ÔÇö c├│digo tiene confirm y skip
+
+ÔöÇÔöÇ Bloque 74: config.js ÔÇö apiUsageTracker ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  config ÔÇö apiUsageTracker existe como global
+  Ô£à  config ÔÇö CLIENT_CONFIG tiene campos de estructura base
+  Ô£à  config ÔÇö config.js carga configuraci├│n din├ímica
+  Ô£à  config ÔÇö config.js maneja _PENDING_SETUP_ID de URL
+  Ô£à  config ÔÇö apiUsageTracker tiene track/get/clear
+
+ÔöÇÔöÇ Bloque 75: transcriptor ÔÇö funciones puras ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  transcriptor ÔÇö cleanTranscriptionText limpia espacios m├║ltiples
+  Ô£à  transcriptor ÔÇö cleanTranscriptionText elimina saltos de l├¡nea excesivos
+  Ô£à  transcriptor ÔÇö classifyTranscriptionError clasifica 413 como file_too_large
+  Ô£à  transcriptor ÔÇö c├│digo tiene buildWhisperPrompt
+  Ô£à  transcriptor ÔÇö c├│digo tiene transcribeWithRetry
+  Ô£à  transcriptor ÔÇö c├│digo tiene repairAudioFile
+  Ô£à  transcriptor ÔÇö c├│digo tiene isAudioSilent
+  Ô£à  transcriptor ÔÇö c├│digo tiene autoApplyDictCorrections
+
+ÔöÇÔöÇ Bloque 76: editor ÔÇö funciones puras ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  editor ÔÇö escapeRegex escapa par├®ntesis y puntos
+  Ô£à  editor ÔÇö buildSearchRegex retorna RegExp
+  Ô£à  editor ÔÇö c├│digo tiene saveEditorSnapshot y restoreEditorSnapshot
+  Ô£à  editor ÔÇö c├│digo tiene clearEditorSnapshots
+  Ô£à  editor ÔÇö c├│digo tiene highlightText
+  Ô£à  editor ÔÇö c├│digo tiene replaceInTextNodes
+  Ô£à  editor ÔÇö c├│digo tiene saveUndoState
+  Ô£à  editor ÔÇö c├│digo tiene openEditFieldModal
+
+ÔöÇÔöÇ Bloque 77: pdfMaker ÔÇö funciones de renderizado ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  pdfMaker ÔÇö _hexToRgb convierte colores m├®dicos comunes
+  Ô£à  pdfMaker ÔÇö _hexToRgb convierte blanco
+  Ô£à  pdfMaker ÔÇö _hexToRgb maneja hex con lowercase y uppercase
+  Ô£à  pdfMaker ÔÇö c├│digo tiene drawHeader
+  Ô£à  pdfMaker ÔÇö c├│digo tiene drawFooter
+  Ô£à  pdfMaker ÔÇö c├│digo tiene drawPatientBlock
+  Ô£à  pdfMaker ÔÇö c├│digo tiene renderNode
+  Ô£à  pdfMaker ÔÇö c├│digo tiene drawSignature
+  Ô£à  pdfMaker ÔÇö c├│digo tiene ensureSpace
+  Ô£à  pdfMaker ÔÇö c├│digo tiene downloadPDFWrapper
+
+ÔöÇÔöÇ Bloque 78: pdfPreview ÔÇö QR y funciones adicionales ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  pdfPreview ÔÇö c├│digo tiene generateQRCode
+  Ô£à  pdfPreview ÔÇö c├│digo tiene updatePdfModalByMode
+  Ô£à  pdfPreview ÔÇö c├│digo tiene _escHtml
+  Ô£à  pdfPreview ÔÇö c├│digo tiene printFromPreview
+  Ô£à  pdfPreview ÔÇö c├│digo tiene updateConfigTrafficLight
+  Ô£à  pdfPreview ÔÇö evaluateConfigCompleteness con datos completos retorna green
+
+ÔöÇÔöÇ Bloque 79: dom.js ÔÇö funciones adicionales ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  dom.js ÔÇö normalizeFieldText con modo sentence preserva caps m├®dicas
+  Ô£à  dom.js ÔÇö normalizeFieldText maneja undefined
+  Ô£à  dom.js ÔÇö normalizeFieldText maneja n├║mero como input
+  Ô£à  dom.js ÔÇö safeJSONParse existe en el c├│digo
+  Ô£à  dom.js ÔÇö fetchWithTimeout existe en el c├│digo
+  Ô£à  dom.js ÔÇö shouldNormalize existe en el c├│digo
+
+ÔöÇÔöÇ Bloque 80: stateManager ÔÇö cobertura completa ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  stateManager ÔÇö tiene updateButtonsVisibility
+  Ô£à  stateManager ÔÇö tiene setMode
+  Ô£à  stateManager ÔÇö tiene initializeMode
+  Ô£à  stateManager ÔÇö tiene updateUIByMode
+  Ô£à  stateManager ÔÇö maneja estado IDLE
+  Ô£à  stateManager ÔÇö maneja estado TRANSCRIBED
+  Ô£à  stateManager ÔÇö maneja estado STRUCTURED
+  Ô£à  stateManager ÔÇö maneja estado PREVIEWED
+  Ô£à  stateManager ÔÇö distingue modo pro vs normal
+
+ÔöÇÔöÇ Bloque 81: ui.js ÔÇö funciones UI ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  ui.js ÔÇö escapeHtml escapa m├║ltiples entidades en secuencia
+  Ô£à  ui.js ÔÇö isAdminUser reconoce ADMIN
+  Ô£à  ui.js ÔÇö isAdminUser reconoce NORMAL como no admin
+  Ô£à  ui.js ÔÇö isAdminUser reconoce PRO como no admin
+  Ô£à  ui.js ÔÇö isAdminUser reconoce TRIAL como no admin
+  Ô£à  ui.js ÔÇö c├│digo tiene trapFocusInModal
+  Ô£à  ui.js ÔÇö c├│digo tiene releaseFocusTrap
+  Ô£à  ui.js ÔÇö c├│digo tiene updateWordCount
+  Ô£à  ui.js ÔÇö c├│digo tiene showBlocker
+  Ô£à  ui.js ÔÇö c├│digo tiene updateApiStatus
+  Ô£à  ui.js ÔÇö c├│digo tiene initShortcuts
+  Ô£à  ui.js ÔÇö c├│digo tiene enterComparisonMode
+  Ô£à  ui.js ÔÇö c├│digo tiene exitComparisonMode
+
+ÔöÇÔöÇ Bloque 82: tabs.js + toast.js ÔÇö estructura ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  tabs.js ÔÇö tiene createTabs
+  Ô£à  tabs.js ÔÇö tiene switchTab
+  Ô£à  tabs.js ÔÇö tiene closeTab
+  Ô£à  tabs.js ÔÇö closeTab maneja ajuste de ├¡ndice
+  Ô£à  tabs.js ÔÇö closeTab resetea a IDLE si vac├¡o
+  Ô£à  toast.js ÔÇö tiene showToast
+  Ô£à  toast.js ÔÇö tiene showToastWithAction
+  Ô£à  toast.js ÔÇö tiene askJoinAudiosPromise
+  Ô£à  toast.js ÔÇö showToast maneja tipos success/error/warning/info
+  Ô£à  toast.js ÔÇö askJoinAudiosPromise tiene timeout
+
+ÔöÇÔöÇ Bloque 83: audio.js ÔÇö estructura y formatSize ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  audio.js ÔÇö tiene toggleRecording
+  Ô£à  audio.js ÔÇö tiene handleFiles
+  Ô£à  audio.js ÔÇö tiene formatSize
+  Ô£à  audio.js ÔÇö formatSize formatea bytes correctamente
+  Ô£à  audio.js ÔÇö formatSize formatea KB
+  Ô£à  audio.js ÔÇö formatSize formatea 0 bytes
+  Ô£à  audio.js ÔÇö tiene updateRecordingUI
+  Ô£à  audio.js ÔÇö tiene togglePlayAudio
+  Ô£à  audio.js ÔÇö usa mimeType din├ímico
+  Ô£à  audio.js ÔÇö tiene onerror handler en MediaRecorder
+
+ÔöÇÔöÇ Bloque 84: db.js ÔÇö estructura de appDB ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  db.js ÔÇö appDB mock tiene get/set/remove/clear
+  Ô£à  db.js ÔÇö appDB mock tiene keys/getAll/sizeInBytes
+  Ô£à  db.js ÔÇö appDB.set y appDB.get funcionan correctamente
+  Ô£à  db.js ÔÇö appDB.get retorna undefined para key inexistente
+  Ô£à  db.js ÔÇö appDB.keys retorna array de claves
+  Ô£à  db.js ÔÇö appDB.clear limpia todos los datos
+  Ô£à  db.js ÔÇö appDB.sizeInBytes retorna n├║mero
+  Ô£à  db.js ÔÇö appDB.getAll retorna objeto con todos los datos
+  Ô£à  db.js ÔÇö c├│digo fuente tiene migrateFromLocalStorage
+  Ô£à  db.js ÔÇö c├│digo fuente tiene IndexedDB constants
+
+ÔöÇÔöÇ Bloque 85: business.js ÔÇö gesti├│n de profesionales ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  business.js ÔÇö tiene initWorkplaceManagement
+  Ô£à  business.js ÔÇö tiene saveProfessional
+  Ô£à  business.js ÔÇö tiene deleteProfessional
+  Ô£à  business.js ÔÇö tiene renderProfessionalList
+  Ô£à  business.js ÔÇö tiene _handleFactorySetup
+  Ô£à  business.js ÔÇö tiene _initAdmin
+  Ô£à  business.js ÔÇö tiene escapeHtml para XSS protection
+  Ô£à  business.js ÔÇö tiene populateWorkplaceDropdown
+  Ô£à  business.js ÔÇö tiene loadWorkplaceProfile
+  Ô£à  business.js ÔÇö tiene loadProfessionalProfile
+  Ô£à  business.js ÔÇö tiene FileReader para im├ígenes
+  Ô£à  business.js ÔÇö FileReader tiene onerror handler
+
+ÔöÇÔöÇ Bloque 86: settingsPanel + pricingCart ÔÇö estructura ÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  settingsPanel ÔÇö tiene initSettingsPanel
+  Ô£à  settingsPanel ÔÇö tiene populateSettingsModal
+  Ô£à  settingsPanel ÔÇö tiene _initApiKeySection
+  Ô£à  settingsPanel ÔÇö tiene _populateWorkplace
+  Ô£à  settingsPanel ÔÇö tiene _initQuickProfiles
+  Ô£à  pricingCart ÔÇö tiene _loadDynamicPlans
+  Ô£à  pricingCart ÔÇö tiene _convertPrice
+  Ô£à  pricingCart ÔÇö tiene openPricingCart
+  Ô£à  pricingCart ÔÇö tiene initPricingCart
+  Ô£à  pricingCart ÔÇö tiene _submitUpgradeRequest
+  Ô£à  pricingCart ÔÇö resumen usa displayPrice convertido
+  Ô£à  pricingCart ÔÇö payload incluye currency y exchangeRate
+  Ô£à  PWA client flow ÔÇö _initClient invoca _tryPwaInstall
+  Ô£à  PWA helper ÔÇö escucha beforeinstallprompt y muestra banner
+  Ô£à  PDF logos ÔÇö instituci├│n y profesional se renderizan en bloques separados
+
+ÔöÇÔöÇ Bloque 87: userGuide.js ÔÇö tour guiado ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  userGuide ÔÇö tiene startTour / startGuideTour
+  Ô£à  userGuide ÔÇö tiene endTour
+  Ô£à  userGuide ÔÇö tiene showStep
+  Ô£à  userGuide ÔÇö tiene positionTooltip
+  Ô£à  userGuide ÔÇö tiene maybeAutoTour
+  Ô£à  userGuide ÔÇö tiene findTarget
+  Ô£à  userGuide ÔÇö construye pasos adaptativos por contexto
+  Ô£à  userGuide ÔÇö adapta textos por perfil (PRO/GIFT/CLINIC/ADMIN)
+  Ô£à  userGuide ÔÇö reordena pasos por perfil
+  Ô£à  userGuide ÔÇö filtra pasos con targets visibles y recalcula en resize
+  Ô£à  userGuide ÔÇö guarda y reanuda progreso por perfil
+  Ô£à  userGuide ÔÇö permite reiniciar tour desde el inicio
+  Ô£à  settings actions ÔÇö bot├│n reiniciar tutorial disponible
+  Ô£à  proSidebarSourceMode ÔÇö soporta TXT/DOC/DOCX/PDF para estructurar texto
+  Ô£à  proSidebarSourceMode ÔÇö tiene extractores para PDF y DOCX
+  Ô£à  proSidebarSourceMode ÔÇö mejora calidad de extracci├│n .doc
+  Ô£à  proSidebarSourceMode ÔÇö valida tama├▒o y tipo de archivo para estructurar
+  Ô£à  proSidebarSourceMode ÔÇö limita extracci├│n para documentos extensos
+  Ô£à  factory setup ÔÇö persiste planCode en CLIENT_CONFIG
+
+ÔöÇÔöÇ Bloque 88: Integridad archivos CSS y assets ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  CSS base ÔÇö variables.css existe
+  Ô£à  CSS base ÔÇö base.css existe
+  Ô£à  CSS base ÔÇö components.css existe
+  Ô£à  CSS base ÔÇö layout.css existe
+  Ô£à  CSS base ÔÇö animations.css existe
+  Ô£à  CSS skin ÔÇö cyberpunk.css existe
+  Ô£à  CSS skin ÔÇö light-minimal.css existe
+  Ô£à  manifest.json ÔÇö es JSON v├ílido con campos PWA
+  Ô£à  sw.js ÔÇö service worker existe y tiene l├│gica de cache
+  Ô£à  build.js ÔÇö script de build existe
+
+ÔöÇÔöÇ Bloque 89: formHandler ÔÇö funciones adicionales ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  formHandler ÔÇö tiene handleImageUpload
+  Ô£à  formHandler ÔÇö tiene savePdfConfiguration
+  Ô£à  formHandler ÔÇö tiene _migratePatientHistory
+  Ô£à  formHandler ÔÇö generateReportNumber genera IDs secuenciales
+  Ô£à  formHandler ÔÇö extractPatientDataFromText con formato con puntos en DNI
+  Ô£à  formHandler ÔÇö extractPatientDataFromText extrae edad con "a├▒os"
+
+ÔöÇÔöÇ Bloque 90: Cross-module ÔÇö exports globales ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Global ÔÇö autoDetectTemplateKey existe
+  Ô£à  Global ÔÇö markdownToHtml existe
+  Ô£à  Global ÔÇö structureTranscription existe
+  Ô£à  Global ÔÇö parseAIResponse existe
+  Ô£à  Global ÔÇö normalizeFieldText existe
+  Ô£à  Global ÔÇö _normStr existe
+  Ô£à  Global ÔÇö escapeHtml existe
+  Ô£à  Global ÔÇö isAdminUser existe
+  Ô£à  Global ÔÇö evaluateConfigCompleteness existe
+  Ô£à  Global ÔÇö validateBeforeDownload existe
+  Ô£à  Global ÔÇö MEDICAL_TEMPLATES tiene al menos 30 plantillas
+  Ô£à  Global ÔÇö STUDY_TERMINOLOGY tiene al menos 50 estudios
+  Ô£à  Global ÔÇö savePatientToRegistry existe
+  Ô£à  Global ÔÇö searchPatientRegistry existe
+  Ô£à  Global ÔÇö extractPatientDataFromText existe
+  Ô£à  Global ÔÇö generateReportNumber existe
+
+ÔöÇÔöÇ Bloque 91: G1 ÔÇö PRICING defaults ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  G1 ÔÇö PRICING NORMAL devices = 1
+  Ô£à  G1 ÔÇö PRICING PRO devices = 3
+  Ô£à  G1 ÔÇö PRICING CLINIC devices = 5
+  Ô£à  G1 ÔÇö PRICING NORMAL historial = 10
+  Ô£à  G1 ÔÇö PRICING PRO workplaces = 2
+  Ô£à  G1 ÔÇö PRICING CLINIC pdfColor = true
+  Ô£à  G1 ÔÇö DEFAULT_PLANS en admin tiene trial
+  Ô£à  G1 ÔÇö DEFAULT_PLANS normal maxDevices=1
+  Ô£à  G1 ÔÇö DEFAULT_PLANS pro maxDevices=3
+  Ô£à  G1 ÔÇö DEFAULT_PLANS clinic maxDevices=5
+  Ô£à  G1 ÔÇö Admin header usa logo sin c├¡rculo (logo-superhero2)
+
+ÔöÇÔöÇ Bloque 92: G2 ÔÇö L├¡mites por plan ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  G2 ÔÇö addWorkplace respeta PRICING.workplaces
+  Ô£à  G2 ÔÇö _applyStep4PlanRestrictions color visible para todos los planes
+  Ô£à  G2 ÔÇö _applyStep4PlanRestrictions oculta logo si no pdfLogo
+  Ô£à  G2 ÔÇö Estudios limitados a 3 en NORMAL
+  Ô£à  G2 ÔÇö _applyStep3PlanRestrictions existe y usa workplaces
+  Ô£à  G2 ÔÇö Contador de estudios existe para NORMAL
+  Ô£à  G2 ÔÇö NORMAL no muestra bot├│n Seleccionar todos
+
+ÔöÇÔöÇ Bloque 93: G3 ÔÇö Degradaci├│n trialÔåÆnormal ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  G3 ÔÇö licenseManager detecta EXPIRED + trial
+  Ô£à  G3 ÔÇö Degrada CLIENT_CONFIG.type a NORMAL
+  Ô£à  G3 ÔÇö Degrada hasProMode a false
+  Ô£à  G3 ÔÇö Degrada maxDevices a 1
+  Ô£à  G3 ÔÇö Persiste degradaci├│n en localStorage
+  Ô£à  G3 ÔÇö Muestra toast de degradaci├│n
+  Ô£à  G3 ÔÇö No bloquea UI (retorna _lmValidated = true)
+  Ô£à  G3 ÔÇö Sync admin_plans_config existe en registro
+  Ô£à  G3 ÔÇö Sync admin_addons_config existe en registro
+
+ÔöÇÔöÇ Bloque 94: G4 ÔÇö Conversi├│n de moneda ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  G4 ÔÇö Variable selectedCurrency existe
+  Ô£à  G4 ÔÇö Variable arsRate existe
+  Ô£à  G4 ÔÇö Funci├│n _fetchArsRate usa bluelytics API
+  Ô£à  G4 ÔÇö Funci├│n _formatPrice maneja USD y ARS
+  Ô£à  G4 ÔÇö Funci├│n setCurrency existe
+  Ô£à  G4 ÔÇö setCurrency dispara _refreshAllPrices
+  Ô£à  G4 ÔÇö Selector de moneda en HTML (curr-btn)
+  Ô£à  G4 ÔÇö _updatePricingCards actualiza precios en tarjetas
+  Ô£à  G4 ÔÇö Formulario env├¡a currency y arsRate
+  Ô£à  G4 ÔÇö renderInvestmentSummary usa _formatPrice
+
+ÔöÇÔöÇ Bloque 95: Auditor├¡a Seguridad ÔÇö XSS fixes ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  XSS-1 ÔÇö reportHistory.viewReport sanitiza htmlContent
+  Ô£à  XSS-2 ÔÇö tabs.js sanitiza transcripciones en innerHTML
+  Ô£à  XSS-3 ÔÇö licenseManager._lmShowBlockedUI escapa result.error
+  Ô£à  XSS-4 ÔÇö contact.js escapa campos en htmlBody
+  Ô£à  XSS-5 ÔÇö contact.js escapa campos en retry de pendientes
+  Ô£à  XSS-6 ÔÇö patientRegistry dropdown escapa name/dni/age
+  Ô£à  XSS-7 ÔÇö patientRegistry renderTable escapa safeAge completo
+  Ô£à  XSS-8 ÔÇö escapeHtml funci├│n global existe y funciona
+
+ÔöÇÔöÇ Bloque 96: Device ID seguro ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  DeviceID-1 ÔÇö licenseManager usa crypto.randomUUID
+  Ô£à  DeviceID-2 ÔÇö business.js factory setup usa crypto.randomUUID
+  Ô£à  DeviceID-3 ÔÇö licenseManager tiene fallback para navegadores sin crypto
+
+ÔöÇÔöÇ Bloque 97: Business.js ÔÇö Fallback ADMIN seguro ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  ADMIN-1 ÔÇö NO asume ADMIN cuando CLIENT_CONFIG es undefined
+  Ô£à  ADMIN-2 ÔÇö Usa operador && para verificar ADMIN
+  Ô£à  ADMIN-3 ÔÇö Verifica client_config_stored antes de asumir ADMIN
+  Ô£à  ADMIN-4 ÔÇö Config corrupta va a modo cliente (no ADMIN)
+
+ÔöÇÔöÇ Bloque 98: License Manager ÔÇö Cache offline ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  LM-Cache-1 ÔÇö Validaci├│n de fecha_vencimiento en cache offline
+  Ô£à  LM-Cache-2 ÔÇö Cache expirado por fecha retorna EXPIRED
+  Ô£à  LM-Cache-3 ÔÇö Cache TTL de 4 horas implementado
+  Ô£à  LM-Cache-4 ÔÇö _lmStartMetricsSync tiene guard contra m├║ltiples timers
+  Ô£à  LM-Cache-5 ÔÇö Tamper guard detecta escalaci├│n a ADMIN
+
+ÔöÇÔöÇ Bloque 99: Contact.js ÔÇö Retry cap ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Contact-Retry-1 ÔÇö Tiene m├íximo de reintentos
+  Ô£à  Contact-Retry-2 ÔÇö L├¡mite es razonable (Ôëñ20)
+  Ô£à  Contact-Retry-3 ÔÇö Verifica contador antes de reintentar
+  Ô£à  Contact-Retry-4 ÔÇö Formulario de contacto valida motivo+descripci├│n
+  Ô£à  Contact-Formato-1 ÔÇö contact.js no usa prefijo Dr./Dra. hardcodeado
+  Ô£à  Contact-Formato-2 ÔÇö contact.js usa getProfessionalDisplay
+  Ô£à  Contact-Formato-3 ÔÇö email de contacto evita emoji en cabecera
+  Ô£à  Contact-Formato-4 ÔÇö fallback de soporte usa dominio v├ílido .com
+  Ô£à  ProfessionalDisplay-1 ÔÇö preview/export/PDF usan helper global
+
+ÔöÇÔöÇ Bloque 100: ThemeManager ÔÇö Robustez ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  TM-1 ÔÇö apply() usa try/finally para resetear _applying
+  Ô£à  TM-2 ÔÇö apply() tiene fallback a default si falla
+  Ô£à  TM-3 ÔÇö _injectSkinCSS no bloquea en error
+  Ô£à  TM-4 ÔÇö SKIN_REGISTRY valida skins conocidos
+  Ô£à  TM-5 ÔÇö Reentrance guard previene apply() concurrente
+
+ÔöÇÔöÇ Bloque 101: Report History ÔÇö L├¡mite + Quota ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  RH-Limit-1 ÔÇö Historial tiene l├¡mite m├íximo de informes
+  Ô£à  RH-Limit-2 ÔÇö L├¡mite es razonable (100-500)
+  Ô£à  RH-Quota-1 ÔÇö QuotaExceeded notifica ├®xito o error
+  Ô£à  RH-Quota-2 ÔÇö Notifica al usuario si no se pudo guardar
+  Ô£à  RH-Quota-3 ÔÇö saveReportToHistory valida htmlContent
+  Ô£à  RH-Func-1 ÔÇö saveReportToHistory funcional
+  Ô£à  RH-Func-2 ÔÇö L├¡mite de 200 informes se aplica
+  Ô£à  RH-Func-3 ÔÇö getPatientReports filtra por nombre
+  Ô£à  RH-Func-4 ÔÇö deleteReport elimina por ID
+  Ô£à  RH-Func-5 ÔÇö exportReportHistory retorna JSON
+  Ô£à  RH-Func-6 ÔÇö importReportHistory evita duplicados
+
+ÔöÇÔöÇ Bloque 102: Patient Registry ÔÇö CRUD completo ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  PR-CRUD-1 ÔÇö savePatientToRegistry crea nuevo paciente
+  Ô£à  PR-CRUD-2 ÔÇö savePatientToRegistry actualiza por DNI
+  Ô£à  PR-CRUD-3 ÔÇö savePatientToRegistry incrementa visits
+  Ô£à  PR-CRUD-4 ÔÇö searchPatientRegistry por nombre parcial
+  Ô£à  PR-CRUD-5 ÔÇö searchPatientRegistry por DNI parcial
+  Ô£à  PR-CRUD-6 ÔÇö searchPatientRegistry insensible a acentos
+  Ô£à  PR-CRUD-7 ÔÇö C├│digo valida m├íximo de pacientes
+  Ô£à  PR-SEC-1 ÔÇö C├│digo tiene escape en dropdown
+
+ÔöÇÔöÇ Bloque 103: Factory Clone ÔÇö Tipos de usuario ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Factory-1 ÔÇö planMap tiene todos los tipos de plan
+  Ô£à  Factory-2 ÔÇö TRIAL no tiene proMode
+  Ô£à  Factory-3 ÔÇö NORMAL no tiene proMode
+  Ô£à  Factory-4 ÔÇö PRO tiene proMode
+  Ô£à  Factory-5 ÔÇö GIFT mapea a tipo PRO con proMode
+  Ô£à  Factory-6 ÔÇö CLINIC puede generar apps
+  Ô£à  Factory-7 ÔÇö ENTERPRISE no puede generar apps
+  Ô£à  Factory-8 ÔÇö _handleFactorySetup persiste client_config_stored
+  Ô£à  Factory-9 ÔÇö Factory guarda prof_data
+  Ô£à  Factory-10 ÔÇö Factory protege sesi├│n admin existente
+
+ÔöÇÔöÇ Bloque 104: Circuito Transcripci├│n ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Trans-1 ÔÇö Usa Whisper large-v3-turbo
+  Ô£à  Trans-2 ÔÇö Tiene retry con 4 intentos
+  Ô£à  Trans-3 ÔÇö Usa studyTerminology para prompt contextual
+  Ô£à  Struct-1 ÔÇö structureTranscription usa LLaMA models
+  Ô£à  Struct-2 ÔÇö autoDetectTemplateKey tiene umbral m├¡nimo
+  Ô£à  Struct-3 ÔÇö cross-tab mutex con navigator.locks
+  Ô£à  Struct-4 ÔÇö Prompt exige ortograf├¡a y gram├ítica impecables
+  Ô£à  Struct-5 ÔÇö Prompt fija OROFARINGE sin tilde incorrecta
+  Ô£à  Struct-6 ÔÇö Postproceso ortogr├ífico m├®dico est├í activo
+  Ô£à  Editor-3 ÔÇö spellcheck/autocorrect desactivados en editor m├®dico
+  Ô£à  Editor-1 ÔÇö Editor tiene snapshots para undo
+  Ô£à  Editor-2 ÔÇö Editor soporta pegado limpio
+
+ÔöÇÔöÇ Bloque 105: Circuito PDF ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  PDF-1 ÔÇö pdfPreview tiene funci├│n esc() para sanitizaci├│n
+  Ô£à  PDF-2 ÔÇö pdfPreview extrae datos de paciente con fallback
+  Ô£à  PDF-3 ÔÇö pdfPreview soporta m├║ltiples formatos de descarga
+  Ô£à  PDF-4 ÔÇö pdfMaker genera header/footer/firma
+  Ô£à  PDF-5 ÔÇö pdfMaker soporta QR
+
+ÔöÇÔöÇ Bloque 106: Detecci├│n ÔÇö Corpus de entrenamiento ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Corpus-espirometria
+  Ô£à  Corpus-test_marcha
+  Ô£à  Corpus-pletismografia
+  Ô£à  Corpus-oximetria_nocturna
+  Ô£à  Corpus-campimetria
+  Ô£à  Corpus-oct_retinal
+  Ô£à  Corpus-topografia_corneal
+  Ô£à  Corpus-fondo_ojo
+  Ô£à  Corpus-gonioscopia
+  Ô£à  Corpus-tac
+  Ô£à  Corpus-resonancia
+  Ô£à  Corpus-mamografia
+  Ô£à  Corpus-densitometria
+  Ô£à  Corpus-pet_ct
+  Ô£à  Corpus-radiografia
+  Ô£à  Corpus-ecografia_abdominal
+  Ô£à  Corpus-ecografia_renal
+  Ô£à  Corpus-ecografia_tiroidea
+  Ô£à  Corpus-ecografia_mamaria
+  Ô£à  Corpus-eco_doppler
+  Ô£à  Corpus-gastroscopia
+  Ô£à  Corpus-colonoscopia
+  Ô£à  Corpus-broncoscopia
+  Ô£à  Corpus-laringoscopia
+  Ô£à  Corpus-gammagrafia_cardiaca
+  Ô£à  Corpus-holter
+  Ô£à  Corpus-mapa
+  Ô£à  Corpus-cinecoro
+  Ô£à  Corpus-ecg
+  Ô£à  Corpus-eco_stress
+  Ô£à  Corpus-ett
+  Ô£à  Corpus-pap
+  Ô£à  Corpus-colposcopia
+  Ô£à  Corpus-ecografia_obstetrica
+  Ô£à  Corpus-electromiografia
+  Ô£à  Corpus-polisomnografia
+  Ô£à  Corpus-naso
+  Ô£à  Corpus-protocolo_quirurgico
+  Ô£à  Corpus-nota_evolucion
+  Ô£à  Corpus-epicrisis
+  Ô£à  Corpus-generico
+
+ÔöÇÔöÇ Bloque 107: Coherencia tipos de usuario ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  UserType-1 ÔÇö Bot├│n contacto solo para no-ADMIN
+  Ô£à  UserType-2 ÔÇö structureTranscription verifica API key
+  Ô£à  UserType-3 ÔÇö licenseManager bypass total para ADMIN
+  Ô£à  UserType-4 ÔÇö isAdminUser funci├│n existe
+  Ô£à  UserType-5 ÔÇö stateManager tiene updateButtonsVisibility
+
+ÔöÇÔöÇ Bloque 108: PWA completo ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  PWA-SW-1 ÔÇö Service Worker tiene estrategia de cache
+  Ô£à  PWA-SW-2 ÔÇö SW no cachea API de Groq
+  Ô£à  PWA-SW-3 ÔÇö SW registra versi├│n de cache
+  Ô£à  PWA-Manifest-1 ÔÇö Manifest tiene datos correctos
+  Ô£à  PWA-Manifest-2 ÔÇö Manifest tiene ├¡conos
+  Ô£à  PWA-Install-1 ÔÇö index.html registra Service Worker
+  Ô£à  PWA-Install-2 ÔÇö index.html tiene link al manifest
+  Ô£à  PWA-Install-3 ÔÇö index.html captura beforeinstallprompt
+
+ÔöÇÔöÇ Bloque 109: Storage y Persistencia ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  DB-1 ÔÇö appDB tiene operaciones CRUD
+  Ô£à  DB-2 ÔÇö appDB.set y appDB.get funcionan
+  Ô£à  DB-3 ÔÇö Claves de storage documentadas existen en c├│digo
+  Ô£à  DB-4 ÔÇö formHandler usa pdf_config y patient_history
+
+ÔöÇÔöÇ Bloque 110: MedDictionary ÔÇö Seguridad ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  MedDict-1 ÔÇö _escapeRegex existe y se usa
+  Ô£à  MedDict-2 ÔÇö _htmlEncode existe para sanitizaci├│n
+  Ô£à  MedDict-3 ÔÇö renderReviewList usa _htmlEncode
+  Ô£à  MedDict-4 ÔÇö AI scan tiene l├¡mite de caracteres
+  Ô£à  MedDict-5 ÔÇö Glosario can├│nico 2026-03 cargado
+  Ô£à  MedDict-6 ÔÇö Extensi├│n autom├ítica por acentos/guiones activa
+  Ô£à  MedDict-5 ÔÇö vocabulario neumolog├¡a ampliado
+  Ô£à  MedDict-6 ÔÇö vocabulario cardiolog├¡a/oncolog├¡a/gineco ampliado
+  Ô£à  MedDict-7 ÔÇö normalizaci├│n expl├¡cita de OROFARINGE
+
+ÔöÇÔöÇ Bloque 111: Cross-module ÔÇö Funciones de seguridad ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Global-1 ÔÇö escapeHtml disponible globalmente
+  Ô£à  Global-2 ÔÇö escapeHtml maneja XSS payloads comunes
+  Ô£à  Global-3 ÔÇö autoDetectTemplateKey disponible
+  Ô£à  Global-4 ÔÇö saveReportToHistory disponible
+  Ô£à  Global-5 ÔÇö savePatientToRegistry disponible
+  Ô£à  Global-6 ÔÇö searchPatientRegistry disponible
+
+ÔöÇÔöÇ Bloque 112: Admin Panel ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Admin-1 ÔÇö Admin panel tiene escapeHtml propia
+  Ô£à  Admin-2 ÔÇö Admin panel verifica token de sesi├│n
+  Ô£à  Admin-3 ÔÇö Admin panel verifica sesi├│n con token
+  Ô£à  Admin-4 ÔÇö Admin panel tiene CRUD de usuarios
+  Ô£à  Admin-5 ÔÇö Admin panel tiene sistema de logs
+
+ÔöÇÔöÇ Bloque 113: Admin Base URL + Tooltips fijos ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  AdminBase-1 ÔÇö config.js detecta URL oficial /transcripcion
+  Ô£à  AdminBase-2 ÔÇö config.js prioriza ?id= para links de f├íbrica
+  Ô£à  AdminBase-3 ÔÇö business.js tiene guardia dura para ADMIN base
+  Ô£à  Tooltips-1 ÔÇö app principal carga fixedTooltips.js
+  Ô£à  Tooltips-2 ÔÇö admin panel carga fixedTooltips.js
+  Ô£à  Tooltips-3 ÔÇö fixed tooltips evita duplicar tooltips nativos
+  Ô£à  Guide-1 ÔÇö tutorial autom├ítico configurable (on/off)
+  Ô£à  Version-1 ÔÇö index expone APP_VERSION en runtime
+  Ô£à  Version-2 ÔÇö settings usa APP_VERSION/app_version y no hardcode 2.0 fijo
+  Ô£à  Modal-1 ÔÇö editorDialogUtils no usa window.confirm/window.prompt nativos
+  Ô£à  Modal-2 ÔÇö no hay fallback a confirm() nativo en m├│dulos cr├¡ticos
+  Ô£à  Modal-3 ÔÇö banner API y modales clave usan clases tem├íticas
+  Ô£à  Modal-4 ÔÇö onboarding y acciones destructivas usan clases coherentes
+  Ô£à  Struct-NonMedical-1 ÔÇö fallback general sin conclusion + advertencia contextual
+
+ÔöÇÔöÇ Bloque 114: _stripRedundantEmptyMarkers (badges inteligentes) ÔöÇÔöÇ
+  Ô£à  Badge-1 ÔÇö conserva [No especificado] cuando es el ├║nico contenido
+  Ô£à  Badge-2 ÔÇö conserva badge en l├¡nea con solo label + marker
+  Ô£à  Badge-3 ÔÇö elimina badge cuando la l├¡nea tiene frase completa (>30 chars)
+  Ô£à  Badge-4 ÔÇö elimina badge en frase de hallazgo completo
+  Ô£à  Badge-5 ÔÇö markdownToHtml no genera badge en frase completa
+  Ô£à  Badge-6 ÔÇö markdownToHtml genera badge en campo vac├¡o
+  Ô£à  Badge-7 ÔÇö conserva badge en l├¡nea corta sin frase coherente
+  Ô£à  Gonio-AO-1 ÔÇö AO bilateral replica OD en OI cuando OI queda vac├¡o
+  Ô£à  Gonio-AO-2 ÔÇö sin se├▒al bilateral no replica OD hacia OI
+  Ô£à  Gonio-Quality-1 ÔÇö corrige frases incompletas frecuentes
+  Ô£à  Gonio-Quality-2 ÔÇö limpia texto condicional de Spaeth
+  Ô£à  Gonio-Quality-3 ÔÇö normaliza abreviatura r.e. a R. E.
+  Ô£à  Gonio-Quality-4 ÔÇö limpia artefactos gramaticales severos del caso real
+  Ô£à  Gonio-Quality-5 ÔÇö corrige variantes con elipsis unicode y "es." sin contenido
+
+ÔöÇÔöÇ Bloque 115: Extracci├│n paciente ÔÇö 41 casos cl├¡nicos ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Caso 1 ÔÇö extrae nombre "Carlos Mendoza" y edad 58
+  Ô£à  Caso 2 ÔÇö extrae nombre "Ana Rojas" y edad 65
+  Ô£à  Caso 3 ÔÇö extrae nombre "Juan P├®rez" y edad 45
+  Ô£à  Caso 4 ÔÇö extrae nombre "Luis Torres" y edad 52
+  Ô£à  Caso 5 ÔÇö extrae nombre "Mar├¡a G├│mez" y edad 60
+  Ô£à  Caso 6 ÔÇö extrae nombre "Carlos L├│pez" y edad 62
+  Ô£à  Caso 7 ÔÇö extrae nombre "Sof├¡a Ram├¡rez" y edad 24
+  Ô£à  Caso 8 ÔÇö extrae nombre "Roberto Fern├índez" y edad 70
+  Ô£à  Caso 9 ÔÇö extrae nombre "Luc├¡a Mart├¡nez" y edad 55
+  Ô£à  Caso 10 ÔÇö extrae nombre "Miguel S├ínchez" y edad 64
+  Ô£à  Caso 11 ÔÇö extrae nombre "Elena Castro" y edad 50
+  Ô£à  Caso 12 ÔÇö extrae nombre "Rosa Silva" y edad 68
+  Ô£à  Caso 13 ÔÇö extrae nombre "Andr├®s Fuentes" y edad 61
+  Ô£à  Caso 14 ÔÇö extrae nombre "Jos├® Dom├¡nguez" y edad 34
+  Ô£à  Caso 15 ÔÇö extrae nombre "Carmen Ruiz" y edad 48
+  Ô£à  Caso 16 ÔÇö extrae nombre "Fernando G├│mez" y edad 59
+  Ô£à  Caso 17 ÔÇö extrae nombre "Patricia Vega" y edad 35
+  Ô£à  Caso 18 ÔÇö extrae nombre "Laura M├®ndez" y edad 28
+  Ô£à  Caso 19 ÔÇö extrae nombre "Luis Castro" y edad 66
+  Ô£à  Caso 20 ÔÇö extrae nombre "Javier Blanco" y edad 42
+  Ô£à  Caso 21 ÔÇö extrae nombre "Silvia Ortiz" y edad 54
+  Ô£à  Caso 22 ÔÇö extrae nombre "Ricardo Morales" y edad 65
+  Ô£à  Caso 23 ÔÇö extrae nombre "M├│nica Herrera" y edad 40
+  Ô£à  Caso 24 ÔÇö extrae nombre "Tom├ís Aguilar" y edad 68
+  Ô£à  Caso 25 ÔÇö extrae nombre "Beatriz Guzm├ín" y edad 72
+  Ô£à  Caso 26 ÔÇö extrae nombre "Hugo Navarro" y edad 55
+  Ô£à  Caso 27 ÔÇö extrae nombre "Mario Santos" y edad 60
+  Ô£à  Caso 28 ÔÇö extrae nombre "Rosa Mendoza" y edad 45
+  Ô£à  Caso 29 ÔÇö extrae nombre "Carlos Vega" y edad 58
+  Ô£à  Caso 30 ÔÇö extrae nombre "In├®s Pe├▒a" y edad 67
+  Ô£à  Caso 31 ÔÇö extrae nombre "Andrea R├¡os" y edad 32
+  Ô£à  Caso 32 ÔÇö extrae nombre "Valeria Montes" y edad 38
+  Ô£à  Caso 33 ÔÇö extrae nombre "Daniela Torres" y edad 28
+  Ô£à  Caso 34 ÔÇö extrae nombre "Jorge Ruiz" y edad 45
+  Ô£à  Caso 35 ÔÇö extrae nombre "Felipe Ortega" y edad 50
+  Ô£à  Caso 36 ÔÇö extrae nombre "Clara Guzm├ín" y edad 29
+  Ô£à  Caso 37 ÔÇö extrae nombre "Mart├¡n Su├írez" y edad 34
+  Ô£à  Caso 38 ÔÇö extrae nombre "Lorena P├íez" y edad 41
+  Ô£à  Caso 39 ÔÇö extrae nombre "Arturo Blanco" y edad 56
+  Ô£à  Caso 40 ÔÇö extrae nombre "Carmen Paredes" y edad 60
+  Ô£à  Caso 41 ÔÇö extrae nombre "Ernesto G├│mez" y edad 48
+
+ÔöÇÔöÇ Bloque 116: autoDetectTemplateKey ÔÇö 42 casos cl├¡nicos ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Template caso 1 ÔÇö detecta "espirometria"
+  Ô£à  Template caso 2 ÔÇö detecta "test_marcha"
+  Ô£à  Template caso 3 ÔÇö detecta "pletismografia"
+  Ô£à  Template caso 4 ÔÇö detecta "oximetria_nocturna"
+  Ô£à  Template caso 5 ÔÇö detecta "campimetria"
+  Ô£à  Template caso 6 ÔÇö detecta "oct_retinal"
+  Ô£à  Template caso 7 ÔÇö detecta "topografia_corneal"
+  Ô£à  Template caso 8 ÔÇö detecta "fondo_ojo"
+  Ô£à  Template caso 9 ÔÇö detecta "gonioscopia"
+  Ô£à  Template caso 10 ÔÇö detecta "tac"
+  Ô£à  Template caso 11 ÔÇö detecta "resonancia"
+  Ô£à  Template caso 12 ÔÇö detecta "mamografia"
+  Ô£à  Template caso 13 ÔÇö detecta "densitometria"
+  Ô£à  Template caso 14 ÔÇö detecta "pet_ct"
+  Ô£à  Template caso 15 ÔÇö detecta "radiografia"
+  Ô£à  Template caso 16 ÔÇö detecta "ecografia_abdominal"
+  Ô£à  Template caso 17 ÔÇö detecta "ecografia_renal"
+  Ô£à  Template caso 18 ÔÇö detecta "ecografia_tiroidea"
+  Ô£à  Template caso 19 ÔÇö detecta "ecografia_mamaria"
+  Ô£à  Template caso 20 ÔÇö detecta "eco_doppler"
+  Ô£à  Template caso 21 ÔÇö detecta "gastroscopia"
+  Ô£à  Template caso 22 ÔÇö detecta "colonoscopia"
+  Ô£à  Template caso 23 ÔÇö detecta "broncoscopia"
+  Ô£à  Template caso 24 ÔÇö detecta "laringoscopia"
+  Ô£à  Template caso 25 ÔÇö detecta "gammagrafia_cardiaca"
+  Ô£à  Template caso 26 ÔÇö detecta "holter"
+  Ô£à  Template caso 27 ÔÇö detecta "mapa"
+  Ô£à  Template caso 28 ÔÇö detecta "cinecoro"
+  Ô£à  Template caso 29 ÔÇö detecta "ecg"
+  Ô£à  Template caso 30 ÔÇö detecta "eco_stress"
+  Ô£à  Template caso 31 ÔÇö detecta "ett"
+  Ô£à  Template caso 32 ÔÇö detecta "pap"
+  Ô£à  Template caso 33 ÔÇö detecta "colposcopia"
+  Ô£à  Template caso 34 ÔÇö detecta "ecografia_obstetrica"
+  Ô£à  Template caso 35 ÔÇö detecta "electromiografia"
+  Ô£à  Template caso 36 ÔÇö detecta "polisomnografia"
+  Ô£à  Template caso 37 ÔÇö detecta "naso"
+  Ô£à  Template caso 38 ÔÇö detecta "endoscopia_otologica"
+  Ô£à  Template caso 39 ÔÇö detecta "protocolo_quirurgico"
+  Ô£à  Template caso 40 ÔÇö detecta "nota_evolucion"
+  Ô£à  Template caso 41 ÔÇö detecta "epicrisis"
+  Ô£à  Template caso 42 ÔÇö detecta "generico"
+
+ÔöÇÔöÇ Bloque 117: Editor ÔÇö tabla y herramientas ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Editor-Table ÔÇö index.html tiene bot├│n insertTableBtn
+  Ô£à  Editor-Table ÔÇö handler usa DOM (no execCommand insertHTML)
+
+ÔöÇÔöÇ Bloque 118: reportContextResolver ÔÇö slider hora on/off ÔöÇÔöÇÔöÇÔöÇÔöÇ
+[ThemeManager] Skin aplicado: Por Defecto
+  Ô£à  Hora OFF: resolveReportContext.studyTime debe quedar vac├¡o
+  Ô£à  Hora ON: resolveReportContext.studyTime debe conservar valor
+
+ÔöÇÔöÇ Bloque 119: reportContextResolver ÔÇö t├¡tulo por plantilla ÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  T├¡tulo: gen├®rico + heading => toma heading (GONIOSCOP├ìA)
+  Ô£à  T├¡tulo: gen├®rico + sin heading => toma nombre de plantilla
+
+ÔöÇÔöÇ Bloque 120: reportContextResolver ÔÇö N┬║ informe on/off ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  N┬║ informe OFF: resolveReportContext.showReportNumber debe ser false
+  Ô£à  N┬║ informe ON: resolveReportContext.showReportNumber debe ser true
+
+ÔöÇÔöÇ Bloque 121: PDF firma vac├¡a sin paginaci├│n extra ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Firma vac├¡a: drawSignatureSection retorna cyStart y no llama ensureSpace
+
+ÔöÇÔöÇ Bloque 122: Sin duplicar campo ESTUDIO en metadatos ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Preview/PDF/HTML: no renderizan la celda ESTUDIO en la grilla de metadatos
+  Ô£à  TXT/RTF: no agregan campo Estudio en cabecera de metadatos
+  Ô£à  Paridad Preview/PDF-HTML: orden de bloques estudio antes que paciente
+
+ÔöÇÔöÇ Bloque 123: Nombre del paciente presente en todos los canales de render ÔöÇÔöÇ
+  Ô£à  Preview: pdfPreview.js tiene renderizado de patientName en previewPatient
+  Ô£à  HTML export: createHTML tiene renderizado de patientName en patientSection
+  Ô£à  RTF export: createRTF incluye campo Paciente con ctx.patientName
+  Ô£à  TXT export: createTXT incluye campo Paciente con ctx.patientName
+  Ô£à  PDF jsPDF: drawPatientBlockSection dibuja pName en el bloque paciente
+  Ô£à  PDF jsPDF: pdfMaker.js resuelve pName y llama drawPatientBlock
+  Ô£à  reportContextResolver devuelve patientName desde config
+  Ô£à  index.html tiene el div previewPatient para mostrar datos del paciente
+  Ô£à  Simulaci├│n: _loadExportContext con config.patientName devuelve nombre
+  Ô£à  Simulaci├│n: resolveReportContext incluye patientName desde pdf_config
+  Ô£à  Pipeline createHTML: patientSection se genera con datos no vac├¡os
+  Ô£à  Pipeline Preview: previewPatient se muestra si hay celdas de paciente
+  Ô£à  Ning├║n pipeline tiene c├│digo que borre o anule patientName innecesariamente
+
+ÔöÇÔöÇ Bloque 124: Settings modal ÔÇö fixes regresi├│n ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Ô£à  Settings-Fix1 ÔÇö secci├│n update incluida en allSections (K2)
+  Ô£à  Settings-Fix2 ÔÇö colorCircle inicializado con defaultPrimary cuando no hay color guardado
+  Ô£à  Settings-Fix3 ÔÇö populateThemeButtons actualiza colorCircle al reabrir modal
+  Ô£à  Settings-Fix4 ÔÇö bot├│n Contactar soporte usa openContactModal() directo
+  Ô£à  Settings-Fix5 ÔÇö bot├│n Contactar soporte oculto para admin en populateInfo
+
+ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Total: 1022 | Ô£à Pasaron: 1021 | ÔØî Fallaron: 1
+ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+

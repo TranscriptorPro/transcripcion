@@ -512,3 +512,112 @@
     .pvh-name { font-size: 12pt; }
     .pvh-logo { max-height: 50px; max-width: 90px; }
 }
+
+/* ══════════════════════════════════════════════════
+   PAGINACIÓN MULTI-HOJA (páginas A4 reales)
+════════════════════════════════════════════════════ */
+
+/* Contenedor con páginas apiladas verticalmente */
+.print-preview-container.pv-paginated {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 24px;
+    padding: 24px;
+}
+
+/* Cada página A4 con altura fija */
+.a4-page.pv-real-page {
+    height: 297mm;
+    min-height: 297mm;
+    max-height: 297mm;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
+    margin: 0;
+}
+
+/* Workplace dentro de pv-real-page: sin margen negativo extra */
+.pv-real-page > .pv-page-inner > .preview-workplace {
+    margin-left: calc(-1 * var(--pv-side, 18mm));
+    margin-right: calc(-1 * var(--pv-side, 18mm));
+    padding-left: var(--pv-side, 18mm);
+    padding-right: var(--pv-side, 18mm);
+}
+
+/* Interior de cada página con padding lateral */
+.pv-page-inner {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* Contenido de la página */
+.pv-page-content {
+    overflow: hidden;
+}
+
+/* Espaciador flex: empuja la zona inferior al borde de la página */
+.pv-page-spacer {
+    flex: 1;
+    min-height: 0;
+}
+
+/* Zona inferior (firma + QR + footer) — anclada al fondo */
+.pv-page-bottom {
+    flex-shrink: 0;
+    padding-bottom: 10mm;
+}
+
+/* Firma en la zona inferior: alineada a la derecha */
+.pv-page-bottom .preview-signature {
+    margin-top: 16px;
+    margin-bottom: 8px;
+}
+.pv-page-bottom .pvsig-block {
+    margin-left: auto;
+    margin-right: 0;
+}
+
+/* QR centrado en la zona inferior */
+.pv-page-bottom .preview-qr {
+    text-align: center;
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+/* Footer en zona inferior */
+.pv-page-bottom .preview-footer {
+    margin-top: 8px;
+    border-top: 1.5px solid #ccc;
+    padding-top: 6px;
+}
+
+/* Ocultar página original cuando está paginada */
+#previewPage.pv-hidden {
+    display: none !important;
+}
+
+/* Responsive: multi-page en móvil */
+@media (max-width: 768px) {
+    .a4-page.pv-real-page {
+        width: 100%;
+        height: auto;
+        min-height: auto;
+        max-height: none;
+        padding: 0;
+    }
+    .pv-page-inner {
+        padding: 0 8mm;
+    }
+    .pv-real-page > .pv-page-inner > .preview-workplace {
+        margin-left: -8mm;
+        margin-right: -8mm;
+        padding-left: 8mm;
+        padding-right: 8mm;
+    }
+}

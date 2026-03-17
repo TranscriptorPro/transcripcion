@@ -68,6 +68,18 @@
         else { try { localStorage.setItem(_FIELD_HISTORY_KEY, JSON.stringify(h)); } catch (_) {} }
     }
 
+    function _removeFieldHistoryEntry(fieldName, value) {
+        if (!fieldName || !value) return;
+        const h = _getFieldHistory();
+        const key = fieldName.toLowerCase().trim();
+        if (!h[key]) return;
+        h[key] = h[key].filter(v => v !== value);
+        if (h[key].length === 0) delete h[key];
+        _fldHistCache = h;
+        if (typeof appDB !== 'undefined') appDB.set(_FIELD_HISTORY_KEY, h);
+        else { try { localStorage.setItem(_FIELD_HISTORY_KEY, JSON.stringify(h)); } catch (_) {} }
+    }
+
     function _renderDynamicChips(fieldName) {
         const container = document.getElementById('efDynamicChips');
         if (!container) return;
@@ -99,11 +111,24 @@
                 btn.style.borderColor = 'var(--primary)';
                 btn.style.color = 'var(--primary)';
                 btn.title = 'Usado anteriormente';
+                // Wrap with delete button for history items
+                const wrap = document.createElement('span');
+                wrap.className = 'ef-chip-wrap';
+                const delBtn = document.createElement('button');
+                delBtn.type = 'button';
+                delBtn.className = 'ef-chip-del';
+                delBtn.title = 'Eliminar sugerencia';
+                delBtn.dataset.key = fieldName.toLowerCase().trim();
+                delBtn.dataset.val = val;
+                delBtn.textContent = '✕';
+                wrap.appendChild(btn);
+                wrap.appendChild(delBtn);
+                container.appendChild(wrap);
             } else {
                 btn.style.borderColor = 'var(--border)';
                 btn.title = 'Sugerencia';
+                container.appendChild(btn);
             }
-            container.appendChild(btn);
         });
 
         container.style.display = 'flex';
@@ -265,6 +290,15 @@
     });
 
     document.getElementById('efPanelWrite')?.addEventListener('click', (e) => {
+        const delBtn = e.target.closest('.ef-chip-del');
+        if (delBtn) {
+            e.stopPropagation();
+            _removeFieldHistoryEntry(delBtn.dataset.key, delBtn.dataset.val);
+            const titleEl = document.getElementById('editFieldModalTitle');
+            const fieldLabel = titleEl ? titleEl.textContent.replace(/^[▶✏️]\s*/, '').trim() : '';
+            _renderDynamicChips(fieldLabel);
+            return;
+        }
         const btn = e.target.closest('.ef-quick-btn');
         if (!btn) return;
         applyFieldValue(btn.dataset.val);
@@ -328,7 +362,7 @@
         if (!editor) return;
         editor.querySelectorAll('p.report-p, li').forEach((n) => {
             const clone = n.cloneNode(true);
-            clone.querySelectorAll('.inline-review-btn, .no-data-edit-btn, .no-data-field').forEach(el => el.remove());
+            clone.querySelectorAll('.inline-review-btn, .inline-undo-btn, .no-data-edit-btn, .no-data-field').forEach(el => el.remove());
             const txt = String(clone.textContent || '').replace(/[\u00A0\s]+/g, '').trim();
             const htmlNoBreaks = String(clone.innerHTML || '')
                 .replace(/<br\s*\/?>/gi, '')
@@ -379,7 +413,7 @@
                 ownButtons.slice(0, -1).forEach((b) => b.remove());
             }
             const clone = node.cloneNode(true);
-            clone.querySelectorAll('.inline-review-btn, .no-data-edit-btn, .no-data-field').forEach(el => el.remove());
+            clone.querySelectorAll('.inline-review-btn, .inline-undo-btn, .no-data-edit-btn, .no-data-field').forEach(el => el.remove());
             const txt = String(clone.textContent || '').replace(/[\u00A0\s]+/g, ' ').trim();
             if (!txt || !/[\p{L}\p{N}]/u.test(txt)) return;
             const already = Array.from(node.children || []).some(ch => ch.classList && ch.classList.contains('inline-review-btn'));
@@ -508,7 +542,7 @@
             let hasContent = false;
             while (node && !/^H[23]$/.test(node.tagName)) {
                 const clone = node.cloneNode(true);
-                clone.querySelectorAll('.inline-review-btn, .no-data-edit-btn').forEach(el => el.remove());
+                clone.querySelectorAll('.inline-review-btn, .inline-undo-btn, .no-data-edit-btn').forEach(el => el.remove());
                 const txt = String(clone.textContent || '').replace(/[\u00A0\s]+/g, '').trim();
                 const hasEmptyField = !!node.querySelector?.('.no-data-field');
                 if (txt || hasEmptyField) {
@@ -538,7 +572,7 @@
             // Si quedan otros badges, no tocar la línea.
             if (!para.querySelector('.no-data-field')) {
                 const clone = para.cloneNode(true);
-                clone.querySelectorAll('.inline-review-btn, .no-data-edit-btn').forEach(el => el.remove());
+                clone.querySelectorAll('.inline-review-btn, .inline-undo-btn, .no-data-edit-btn').forEach(el => el.remove());
                 const remaining = String(clone.textContent || '')
                     .replace(/[\u00A0]+/g, ' ').trim();
                 // Quitar patrones "Etiqueta:" y ver si queda contenido útil.
@@ -566,7 +600,7 @@
         let node = heading?.nextElementSibling;
         while (node && !/^H[23]$/.test(node.tagName)) {
             const clone = node.cloneNode(true);
-            clone.querySelectorAll('.inline-review-btn, .no-data-edit-btn').forEach(el => el.remove());
+            clone.querySelectorAll('.inline-review-btn, .inline-undo-btn, .no-data-edit-btn').forEach(el => el.remove());
             const txt = String(clone.textContent || '').replace(/[\u00A0]+/g, ' ').trim();
             if (txt) parts.push(txt);
             node = node.nextElementSibling;
@@ -588,10 +622,13 @@
             ? _getSectionBodyForHeading(targetNode)
             : (() => {
                 const clone = targetNode.cloneNode(true);
-                clone.querySelectorAll('.inline-review-btn, .no-data-edit-btn').forEach(el => el.remove());
+                clone.querySelectorAll('.inline-review-btn, .inline-undo-btn, .no-data-edit-btn').forEach(el => el.remove());
                 return String(clone.textContent || '').replace(/[\u00A0]+/g, ' ').trim();
             })();
         if (!paragraph) return;
+
+        // Save original HTML before modifying (for undo)
+        const originalHTML = isHeadingTarget ? null : targetNode.innerHTML;
 
         if (btn) {
             btn.disabled = true;
@@ -663,6 +700,23 @@
                 }
             }
             _decorateInlineReviewButtons();
+            // Add undo button (non-heading case only)
+            if (!isHeadingTarget && originalHTML !== null) {
+                targetNode.querySelectorAll('.inline-undo-btn').forEach(b => b.remove());
+                const undoBtn = document.createElement('button');
+                undoBtn.type = 'button';
+                undoBtn.className = 'inline-undo-btn';
+                undoBtn.title = 'Deshacer revisión IA';
+                undoBtn.setAttribute('contenteditable', 'false');
+                undoBtn.textContent = '↩';
+                undoBtn.dataset.originalHtml = originalHTML;
+                const existingReviewBtn = targetNode.querySelector('.inline-review-btn');
+                if (existingReviewBtn) {
+                    targetNode.insertBefore(undoBtn, existingReviewBtn);
+                } else {
+                    targetNode.appendChild(undoBtn);
+                }
+            }
             editor.dispatchEvent(new Event('input', { bubbles: true }));
             if (typeof showToast === 'function') showToast('✅ Párrafo revisado', 'success');
         } catch (err) {
@@ -719,6 +773,18 @@
                 e.stopPropagation();
                 const container = reviewBtn.closest('p.report-p, li');
                 if (container) _runInlineParagraphReview(container);
+                return;
+            }
+            const undoBtn = e.target.closest('.inline-undo-btn');
+            if (undoBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                const container = undoBtn.closest('p.report-p, li');
+                if (container && undoBtn.dataset.originalHtml !== undefined) {
+                    container.innerHTML = undoBtn.dataset.originalHtml;
+                    editor.dispatchEvent(new Event('input', { bubbles: true }));
+                    if (typeof showToast === 'function') showToast('↩ Revisión deshecha', 'info');
+                }
                 return;
             }
             const btn = e.target.closest('.no-data-edit-btn');

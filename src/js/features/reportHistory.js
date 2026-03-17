@@ -87,10 +87,11 @@ window.saveReportToHistory = function (data) {
             const div = document.createElement('div');
             div.innerHTML = raw;
             div.querySelectorAll(
-                '.inline-review-btn, .no-data-edit-btn, .ai-note-panel, ' +
+                '.inline-review-btn, .inline-undo-btn, .no-data-edit-btn, .ai-note-panel, ' +
                 '#aiNotePanel, .patient-data-header, .patient-placeholder-banner, ' +
                 '.btn-append-inline, .original-text-banner, .no-print, .no-data-field'
             ).forEach(el => el.remove());
+
             return div.innerHTML;
         } catch (_) { return raw; }
     };
@@ -363,7 +364,7 @@ window.viewReport = function (reportId) {
                 ? DOMPurify.sanitize(raw)
                 : raw.replace(/<script[\s\S]*?<\/script>/gi, '');
             div.querySelectorAll(
-                '.inline-review-btn, .no-data-edit-btn, .ai-note-panel, ' +
+                '.inline-review-btn, .inline-undo-btn, .no-data-edit-btn, .ai-note-panel, ' +
                 '#aiNotePanel, .patient-data-header, .patient-placeholder-banner, ' +
                 '.btn-append-inline, .original-text-banner, .no-print, .no-data-field'
             ).forEach(el => el.remove());

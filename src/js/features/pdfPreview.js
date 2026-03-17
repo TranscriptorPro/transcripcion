@@ -569,7 +569,287 @@ window.openPdfConfigModal = async function () {
     document.getElementById('pdfModalOverlay')?.classList.add('active');
 }
 
+/**
+ * Pagina la vista previa en páginas A4 reales separadas.
+ * Cada página tiene altura fija de 297mm, pie de página en el borde inferior,
+ * firma y QR solo en la última página. Los títulos no se separan de su contenido.
+ */
+function _paginatePreview() {
+    const container = document.getElementById('printPreviewContainer');
+    const origPage = document.getElementById('previewPage');
+    if (!container || !origPage) return;
+
+    // Limpiar paginación previa
+    container.querySelectorAll('.pv-real-page').forEach(p => p.remove());
+    container.classList.remove('pv-paginated');
+    origPage.classList.remove('pv-hidden');
+
+    // --- CONSTANTES ---
+    const MM_PX = 96 / 25.4;
+    const PAGE_H = Math.round(297 * MM_PX);
+    const BOTTOM_PAD = Math.round(10 * MM_PX);
+
+    // --- ELEMENTOS ORIGINALES ---
+    const els = {
+        wp: document.getElementById('previewWorkplace'),
+        hdr: document.getElementById('previewHeader'),
+        study: document.getElementById('previewStudy'),
+        patient: document.getElementById('previewPatient'),
+        content: document.getElementById('previewContent'),
+        sig: document.getElementById('previewSignature'),
+        qr: document.getElementById('previewQR'),
+        footer: document.getElementById('previewFooter')
+    };
+
+    // Medir altura exterior incluyendo márgenes
+    const mH = (el) => {
+        if (!el || el.style.display === 'none' || !el.offsetParent) return 0;
+        const s = getComputedStyle(el);
+        return el.offsetHeight + parseInt(s.marginTop || 0) + parseInt(s.marginBottom || 0);
+    };
+
+    const hWp = mH(els.wp);
+    const hHdr = mH(els.hdr);
+    const hStudy = mH(els.study);
+    const hPatient = mH(els.patient);
+    const hSig = mH(els.sig);
+    const hQr = mH(els.qr);
+    const hFoot = mH(els.footer);
+
+    // --- AGRUPAR: título + primer bloque de contenido juntos ---
+    const rawKids = Array.from(els.content.children).filter(c =>
+        !c.classList.contains('pv-pagebreak-marker')
+    );
+    const groups = [];
+    for (let i = 0; i < rawKids.length;) {
+        const el = rawKids[i];
+        if (/^H[1-3]$/i.test(el.tagName)) {
+            const grp = [el];
+            if (i + 1 < rawKids.length && !/^H[1-3]$/i.test(rawKids[i + 1].tagName)) {
+                grp.push(rawKids[i + 1]);
+                i += 2;
+            } else {
+                i++;
+            }
+            groups.push(grp);
+        } else {
+            groups.push([el]);
+            i++;
+        }
+    }
+    const gH = groups.map(g => g.reduce((s, e) => s + mH(e), 0));
+
+    // --- CAPACIDADES DE PÁGINA ---
+    const hFirstTop = hWp + hHdr + hStudy + hPatient;
+    const hOtherTop = hWp;
+    const hTail = hSig + hQr + 20;
+    const cap = (topH, hasTail) => PAGE_H - topH - hFoot - BOTTOM_PAD - (hasTail ? hTail : 0) - 20;
+
+    // --- DISTRIBUIR GRUPOS EN PÁGINAS ---
+    const pageGroups = [];
+    let cur = [];
+    let curH = 0;
+    let isFirst = true;
+
+    for (let gi = 0; gi < groups.length; gi++) {
+        const h = gH[gi];
+        const curCap = cap(isFirst ? hFirstTop : hOtherTop, false);
+        if (curH + h > curCap && curH > 0) {
+            pageGroups.push(cur);
+            cur = [gi];
+            curH = h;
+            isFirst = false;
+        } else {
+            cur.push(gi);
+            curH += h;
+        }
+    }
+    pageGroups.push(cur);
+
+    // Verificar que la última página cabe con firma+QR
+    if (pageGroups.length > 0) {
+        const li = pageGroups.length - 1;
+        const lastIsFirst = li === 0;
+        const lastCH = pageGroups[li].reduce((s, gi) => s + gH[gi], 0);
+        const lastCap = cap(lastIsFirst ? hFirstTop : hOtherTop, true);
+        if (lastCH > lastCap && pageGroups[li].length > 1) {
+            const overflow = [];
+            let h = lastCH;
+            while (h > lastCap && pageGroups[li].length > 1) {
+                const removed = pageGroups[li].pop();
+                h -= gH[removed];
+                overflow.unshift(removed);
+            }
+            if (overflow.length > 0) pageGroups.push(overflow);
+        }
+    }
+
+    // Asegurar firma no quede sola
+    if (pageGroups.length > 1 && pageGroups[pageGroups.length - 1].length === 0) {
+        const prev = pageGroups[pageGroups.length - 2];
+        if (prev.length > 1) {
+            pageGroups[pageGroups.length - 1].unshift(prev.pop());
+        }
+    }
+
+    const totalPages = pageGroups.length;
+
+    // --- LEER ESTILOS Y HTML DE SECCIONES ---
+    const accentColor = origPage.style.getPropertyValue('--pa') || '#1a56a0';
+    const fontFamily = origPage.style.fontFamily;
+    const fontSize = origPage.style.fontSize;
+    const sideMargin = origPage.style.paddingLeft || '18mm';
+    const vis = (el) => el && el.style.display !== 'none';
+    const oHTML = (el) => vis(el) ? el.outerHTML : '';
+    const iHTML = (el) => (vis(el) && el.innerHTML.trim()) ? el.innerHTML : '';
+    const wpHtml = oHTML(els.wp);
+    const hdrHtml = oHTML(els.hdr);
+    const studyHtml = oHTML(els.study);
+    const patientHtml = oHTML(els.patient);
+    const sigHtml = iHTML(els.sig);
+    const qrHtml = iHTML(els.qr);
+    const footHtml = iHTML(els.footer);
+    const footHidden = els.footer?.style.display === 'none';
+
+    // --- CONSTRUIR PÁGINAS ---
+    for (let pi = 0; pi < totalPages; pi++) {
+        const isFirstPg = (pi === 0);
+        const isLastPg = (pi === totalPages - 1);
+        const pgNum = pi + 1;
+
+        const pg = document.createElement('div');
+        pg.className = 'a4-page pv-real-page';
+        pg.dataset.page = pgNum;
+        pg.style.setProperty('--pa', accentColor);
+        if (fontFamily) pg.style.fontFamily = fontFamily;
+        if (fontSize) pg.style.fontSize = fontSize;
+
+        const inner = document.createElement('div');
+        inner.className = 'pv-page-inner';
+        inner.style.paddingLeft = sideMargin;
+        inner.style.paddingRight = sideMargin;
+
+        // Workplace (en toda página, con margen negativo para ancho completo)
+        if (wpHtml) {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = wpHtml;
+            const clone = tmp.firstElementChild;
+            if (clone) { clone.removeAttribute('id'); inner.appendChild(clone); }
+        }
+
+        // Primera página: encabezados profesional, estudio, paciente
+        if (isFirstPg) {
+            [hdrHtml, studyHtml, patientHtml].forEach(html => {
+                if (html) {
+                    const tmp = document.createElement('div');
+                    tmp.innerHTML = html;
+                    const el = tmp.firstElementChild;
+                    if (el) { el.removeAttribute('id'); inner.appendChild(el); }
+                }
+            });
+        }
+
+        // Contenido de esta página
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'pv-page-content preview-content';
+        for (const gi of pageGroups[pi]) {
+            for (const el of groups[gi]) {
+                contentDiv.appendChild(el.cloneNode(true));
+            }
+        }
+        inner.appendChild(contentDiv);
+
+        // Espaciador flex (empuja la zona inferior al borde de la página)
+        const spacer = document.createElement('div');
+        spacer.className = 'pv-page-spacer';
+        inner.appendChild(spacer);
+
+        // Zona inferior
+        const bottom = document.createElement('div');
+        bottom.className = 'pv-page-bottom';
+
+        // Firma + QR solo en última página
+        if (isLastPg) {
+            if (sigHtml) {
+                const s = document.createElement('div');
+                s.className = 'preview-signature';
+                s.innerHTML = sigHtml;
+                bottom.appendChild(s);
+            }
+            if (qrHtml) {
+                const q = document.createElement('div');
+                q.className = 'preview-qr';
+                q.innerHTML = qrHtml;
+                bottom.appendChild(q);
+            }
+        }
+
+        // Footer en toda página
+        if (footHtml && !footHidden) {
+            const f = document.createElement('div');
+            f.className = 'preview-footer';
+            f.innerHTML = footHtml.replace(
+                /Página\s+\d+(\s+de\s+\d+)?/,
+                `Página ${pgNum} de ${totalPages}`
+            );
+            bottom.appendChild(f);
+        }
+
+        inner.appendChild(bottom);
+        pg.appendChild(inner);
+        container.appendChild(pg);
+    }
+
+    // Ocultar página original
+    origPage.classList.add('pv-hidden');
+    container.classList.add('pv-paginated');
+
+    // --- NAVEGACIÓN ---
+    const navEl = document.getElementById('previewPageNav');
+    if (navEl && totalPages > 1) {
+        navEl.style.display = 'flex';
+        navEl.innerHTML = `
+            <button class="btn btn-outline btn-sm" id="pvNavPrev" disabled>◀ Anterior</button>
+            <span class="pvnav-info">Página <strong>1</strong> de ${totalPages}</span>
+            <button class="btn btn-outline btn-sm" id="pvNavNext">Siguiente ▶</button>`;
+        let curPg = 1;
+        const upd = () => {
+            document.getElementById('pvNavPrev').disabled = curPg <= 1;
+            document.getElementById('pvNavNext').disabled = curPg >= totalPages;
+            navEl.querySelector('.pvnav-info').innerHTML = `Página <strong>${curPg}</strong> de ${totalPages}`;
+        };
+        const scrollTo = (n) => {
+            const allPages = container.querySelectorAll('.pv-real-page');
+            if (allPages[n - 1]) allPages[n - 1].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+        document.getElementById('pvNavPrev')?.addEventListener('click', () => {
+            if (curPg > 1) { curPg--; scrollTo(curPg); upd(); }
+        });
+        document.getElementById('pvNavNext')?.addEventListener('click', () => {
+            if (curPg < totalPages) { curPg++; scrollTo(curPg); upd(); }
+        });
+        container.addEventListener('scroll', () => {
+            const pvPages = container.querySelectorAll('.pv-real-page');
+            let closest = 1, minD = Infinity;
+            const cR = container.getBoundingClientRect();
+            pvPages.forEach((p, i) => {
+                const d = Math.abs(p.getBoundingClientRect().top - cR.top);
+                if (d < minD) { minD = d; closest = i + 1; }
+            });
+            if (closest !== curPg) { curPg = closest; upd(); }
+        });
+    } else if (navEl) {
+        navEl.style.display = totalPages > 1 ? 'flex' : 'none';
+    }
+}
+
 window.openPrintPreview = async function () {
+    // Limpiar paginación previa
+    const _pvC = document.getElementById('printPreviewContainer');
+    if (_pvC) { _pvC.querySelectorAll('.pv-real-page').forEach(p => p.remove()); _pvC.classList.remove('pv-paginated'); }
+    const _origP = document.getElementById('previewPage');
+    if (_origP) { _origP.classList.remove('pv-hidden'); _origP.style.display = ''; }
+
     const dataUtils = window.PdfDataAccessUtils || {};
     const safeGet = (typeof dataUtils.safeGet === 'function') ? dataUtils.safeGet : async (_k, fallback) => fallback;
     const profData = (await safeGet('prof_data', {})) || {};
@@ -940,139 +1220,8 @@ window.openPrintPreview = async function () {
 
     document.getElementById('printPreviewOverlay')?.classList.add('active');
 
-    // Calcular número de páginas y configurar navegación
-    setTimeout(() => {
-        const pageEl = document.getElementById('previewPage');
-        const pageNumEl = document.querySelector('.pvf-pagenum');
-        const pageHeightMM = 297;
-        const onePagePx = pageHeightMM * (96 / 25.4); // ~1122px
-
-        // Estimación más fiel: contar páginas por bloques de contenido reales,
-        // evitando falsos "Página 1 de 2" por redondeos de scrollHeight.
-        const contentEl = document.getElementById('previewContent');
-        const footerEl = document.getElementById('previewFooter');
-        const sigEl = document.getElementById('previewSignature');
-        const wpHeaderEl = document.getElementById('previewWorkplace');
-
-        const headerZoneH = contentEl ? contentEl.offsetTop : 0;
-        const footerZoneH = (footerEl?.offsetHeight || 0) + (sigEl?.offsetHeight || 0) + 40;
-        const firstPageContentH = Math.max(120, onePagePx - headerZoneH - footerZoneH);
-        const repeatedHeaderH = (wpHeaderEl?.offsetHeight || 0) + 20;
-        const nextPageContentH = Math.max(120, onePagePx - repeatedHeaderH - footerZoneH);
-
-        let totalPages = 1;
-        if (contentEl) {
-            const children = Array.from(contentEl.children).filter(ch => !ch.classList.contains('pv-pagebreak-marker'));
-            if (children.length > 0) {
-                let used = 0;
-                let currentCap = firstPageContentH;
-                let pageIdx = 1;
-                for (const child of children) {
-                    const styles = getComputedStyle(child);
-                    const childH = child.offsetHeight
-                        + parseInt(styles.marginTop || 0, 10)
-                        + parseInt(styles.marginBottom || 0, 10);
-
-                    if (used > 0 && used + childH > currentCap) {
-                        pageIdx++;
-                        used = childH;
-                        currentCap = nextPageContentH;
-                    } else {
-                        used += childH;
-                    }
-                }
-                totalPages = Math.max(1, pageIdx);
-            }
-        } else {
-            totalPages = Math.max(1, Math.ceil((pageEl?.scrollHeight || 0) / onePagePx));
-        }
-
-        if (pageNumEl) {
-            pageNumEl.textContent = totalPages > 1 ? `Página 1 de ${totalPages}` : 'Página 1 de 1';
-        }
-
-        // Muestran dónde caería cada salto de página con un separador
-        // y una mini-repetición del banner del lugar de trabajo (como hace el PDF real)
-        if (pageEl && totalPages > 1) {
-            // Limpiar marcadores previos
-            pageEl.querySelectorAll('.pv-pagebreak-marker').forEach(m => m.remove());
-
-            // Solo repetir el workplace banner (no el header profesional)
-            const wpCloneHtml = wpHeaderEl && wpHeaderEl.style.display !== 'none' ? wpHeaderEl.outerHTML : '';
-
-            // Insertar marcadores en el contenido en las posiciones de salto
-            if (contentEl) {
-                // Calcular la altura disponible para contenido en la primera página
-                // Reusar capacidades calculadas arriba para mantener consistencia.
-
-                let accumulatedH = 0;
-                let currentPageBreakAt = firstPageContentH;
-                let pageIdx = 1;
-                const children = Array.from(contentEl.children);
-                const insertions = []; // {beforeChild, pageNum}
-
-                for (let i = 0; i < children.length; i++) {
-                    const child = children[i];
-                    const childH = child.offsetHeight + parseInt(getComputedStyle(child).marginTop || 0) +
-                                   parseInt(getComputedStyle(child).marginBottom || 0);
-
-                    if (accumulatedH + childH > currentPageBreakAt && accumulatedH > 0) {
-                        pageIdx++;
-                        insertions.push({ beforeChild: child, pageNum: pageIdx });
-                        accumulatedH = childH;
-                        currentPageBreakAt = nextPageContentH;
-                    } else {
-                        accumulatedH += childH;
-                    }
-                }
-
-                // Insertar los marcadores (en orden inverso para no desplazar índices)
-                insertions.reverse().forEach(({ beforeChild, pageNum }) => {
-                    const marker = document.createElement('div');
-                    marker.className = 'pv-pagebreak-marker';
-                    marker.innerHTML = `
-                        <div class="pv-pb-separator">
-                            <span class="pv-pb-label">— Fin pág. ${pageNum - 1} / Inicio pág. ${pageNum} —</span>
-                        </div>
-                        <div class="pv-pb-repeated-header">
-                            ${wpCloneHtml}
-                        </div>`;
-                    contentEl.insertBefore(marker, beforeChild);
-                });
-            }
-        }
-
-        // Navegación multi-página
-        const navEl = document.getElementById('previewPageNav');
-        if (navEl && totalPages > 1) {
-            navEl.style.display = 'flex';
-            navEl.innerHTML = `
-                <button class="btn btn-outline btn-sm" id="pvNavPrev" disabled>◀ Anterior</button>
-                <span class="pvnav-info">Página <strong>1</strong> de ${totalPages}</span>
-                <button class="btn btn-outline btn-sm" id="pvNavNext">Siguiente ▶</button>`;
-            let currentPage = 1;
-            const container = document.getElementById('printPreviewContainer');
-            const update = () => {
-                document.getElementById('pvNavPrev').disabled = currentPage <= 1;
-                document.getElementById('pvNavNext').disabled = currentPage >= totalPages;
-                navEl.querySelector('.pvnav-info').innerHTML = `Página <strong>${currentPage}</strong> de ${totalPages}`;
-                if (pageNumEl) pageNumEl.textContent = `Página ${currentPage} de ${totalPages}`;
-            };
-            document.getElementById('pvNavPrev')?.addEventListener('click', () => {
-                if (currentPage > 1) { currentPage--; container.scrollTop = (currentPage - 1) * onePagePx; update(); }
-            });
-            document.getElementById('pvNavNext')?.addEventListener('click', () => {
-                if (currentPage < totalPages) { currentPage++; container.scrollTop = (currentPage - 1) * onePagePx; update(); }
-            });
-            // Sincronizar página con scroll manual
-            container?.addEventListener('scroll', () => {
-                const newPage = Math.min(totalPages, Math.max(1, Math.floor(container.scrollTop / onePagePx) + 1));
-                if (newPage !== currentPage) { currentPage = newPage; update(); }
-            });
-        } else if (navEl) {
-            navEl.style.display = 'none';
-        }
-    }, 150);
+    // Paginar en páginas A4 independientes con footer, firma y QR
+    setTimeout(() => { _paginatePreview(); }, 200);
 }
 
 // Extraido a pdfPreviewActions.js para reducir tamano del modulo principal.
