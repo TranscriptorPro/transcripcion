@@ -1862,9 +1862,9 @@
 
         #inlineReviewQuickControl.inline-review-in-editor {
             gap: 0.35rem;
-            padding: 0.15rem 0.3rem 0.15rem 0;
+            padding: 0.15rem 0.45rem 0.15rem 0.35rem;
             border-radius: 18px;
-            border: none;
+            border: 1.5px solid rgba(249, 115, 22, 0.55);
             background: none;
             box-shadow: none;
             animation: none;
