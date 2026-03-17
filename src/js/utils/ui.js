@@ -539,76 +539,32 @@ window.initModals = function () {
         window.initPatientDataModalHandlers();
     }
 
-    // ── Botón inline "Grabar y agregar" dentro del editor (Pro only) ──
+    // ── Botón "Grabar y agregar" en la toolbar (Pro only) ──
+    // Ahora se muestra/oculta directamente el #btnAppendRecord en la toolbar
+    // junto al control Rev IA, sin crear elementos flotantes en el editor.
     window._insertInlineAppendBtn = function () {
         const editor = document.getElementById('editor');
-        if (!editor) return;
-        const quickCtrl = document.getElementById('inlineReviewQuickControl');
-        const quickDock = document.getElementById('inlineReviewQuickDock');
+        const btnAppend = document.getElementById('btnAppendRecord');
+        if (!editor || !btnAppend) return;
 
-        // Remover existente si hay
-        const existing = editor.querySelector('.btn-append-inline');
-        if (existing) {
-            if (quickCtrl && existing.contains(quickCtrl) && quickDock) {
-                quickCtrl.classList.remove('inline-review-in-editor');
-                quickDock.appendChild(quickCtrl);
-            }
-            existing.remove();
+        // Ocultar en vista original o modo comparación
+        if (document.getElementById('btnRestoreOriginal')?._showingOriginal ||
+            window._isComparisonMode) {
+            btnAppend.style.display = 'none';
+            return;
         }
 
-        // No mostrar en vista de texto original ni en modo comparación
-        if (document.getElementById('btnRestoreOriginal')?._showingOriginal) return;
-        if (window._isComparisonMode) return;
-
-        // Disponible para PRO y ADMIN (admin debe poder probar).
+        // Disponible solo para PRO y ADMIN
         const _canUseInlineAppend = (typeof CLIENT_CONFIG !== 'undefined'
             && (CLIENT_CONFIG.type === 'PRO' || CLIENT_CONFIG.type === 'ADMIN'));
-        if (!_canUseInlineAppend) return;
-        if (!editor.innerText.trim()) return;
-        // No mostrar si el contenido no está estructurado (texto plano sin secciones)
-        if (!editor.querySelector('h1, h2, h3, h4, .report-h1, .report-h2, .report-h3, .section-header, strong')) return;
-
-        // Crear wrapper contenteditable=false
-        const wrap = document.createElement('div');
-        wrap.className = 'btn-append-inline';
-        wrap.setAttribute('contenteditable', 'false');
-        wrap.innerHTML = `<button class="btn btn-pro-animated" title="Grabar y agregar texto al final del informe" aria-label="Grabar y agregar texto al final del informe">
-            <svg class="append-mic-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
-                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
-            </svg>
-            <span class="append-plus">+</span>
-        </button>`;
-
-        // Reubicar REV IA junto al botón inline (a su izquierda)
-        if (quickCtrl) {
-            quickCtrl.classList.add('inline-review-in-editor');
-            wrap.prepend(quickCtrl);
+        if (!_canUseInlineAppend || !editor.innerText.trim() ||
+            !editor.querySelector('h1, h2, h3, h4, .report-h1, .report-h2, .report-h3, .section-header, strong')) {
+            btnAppend.style.display = 'none';
+            return;
         }
 
-        // Sincronizar estado de grabación si ya estaba activa
-        if (window._appendRecordingActive) {
-            const innerBtn = wrap.querySelector('button');
-            innerBtn.classList.add('recording-pulse');
-            innerBtn.classList.remove('btn-pro-animated');
-            innerBtn.querySelector('span').textContent = '⏹ Grabando…';
-        }
-
-        // Click → delegar al botón oculto original (mantiene toda la lógica de grabación)
-        wrap.querySelector('button').addEventListener('click', () => {
-            const hiddenBtn = document.getElementById('btnAppendRecord');
-            if (hiddenBtn) hiddenBtn.click();
-        });
-
-        // Insertar después del header de paciente/placeholder (NO después del banner de texto original)
-        const anchor = editor.querySelector('.patient-data-header') ||
-                       editor.querySelector('.patient-placeholder-banner');
-        if (anchor) {
-            anchor.after(wrap);
-        } else {
-            // Si no hay header de paciente, insertar al inicio del editor
-            editor.insertBefore(wrap, editor.firstChild);
-        }
+        // Mostrar el botón en la toolbar
+        btnAppend.style.display = 'inline-flex';
     };
 
     // Restore/toggle original button
@@ -811,19 +767,17 @@ window.initModals = function () {
             }
         });
 
-        // Sincronizar estado visual del botón inline con la grabación
+        // Sincronizar estado visual del botón toolbar con la grabación
         function _syncInlineAppendBtn() {
-            const inlineBtn = document.querySelector('.btn-append-inline button');
-            if (!inlineBtn) return;
             if (window._appendRecordingActive) {
-                inlineBtn.classList.add('recording-pulse');
-                inlineBtn.classList.remove('btn-pro-animated');
-                const span = inlineBtn.querySelector('span');
+                btnAppendRecord.classList.add('recording-pulse');
+                btnAppendRecord.classList.remove('btn-pro-animated');
+                const span = btnAppendRecord.querySelector('span');
                 if (span) span.textContent = '⏹ Grabando…';
             } else {
-                inlineBtn.classList.remove('recording-pulse');
-                inlineBtn.classList.add('btn-pro-animated');
-                const span = inlineBtn.querySelector('span');
+                btnAppendRecord.classList.remove('recording-pulse');
+                btnAppendRecord.classList.add('btn-pro-animated');
+                const span = btnAppendRecord.querySelector('span');
                 if (span) span.textContent = '+';
             }
         }

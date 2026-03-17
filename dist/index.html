@@ -127,7 +127,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
-        <link rel="stylesheet" href="app.mmun9bpp.min.css">
+        <link rel="stylesheet" href="app.mmuo4wre.min.css">
 </head>
 
 <body>
@@ -2295,6 +2295,14 @@
                                 </label>
                             </div>
                         </div>
+                        <!-- Botón grabar y agregar (Pro only) — visible tras estructurar informe -->
+                        <button class="btn btn-pro-animated" id="btnAppendRecord" style="display:none;" title="Grabar y agregar texto al final del informe">
+                            <svg class="append-mic-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+                                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                            </svg>
+                            <span class="append-plus">+</span>
+                        </button>
                         <!-- Restore/Toggle original text -->
                         <button class="btn btn-outline btn-sm-icon toggle-comparison-btn" id="btnRestoreOriginal" style="display:none;" title="Ver texto original">↩ Original</button>
                         <!-- Side-by-side comparison -->
@@ -2349,8 +2357,7 @@
                                 <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
                             </svg>
                         </button>
-                        <!-- Botón continuar grabando (Pro only) — lógica JS, permanece oculto en toolbar -->
-                        <button class="btn" id="btnAppendRecord" style="display:none!important;" aria-hidden="true"></button>
+                        <!-- btnAppendRecord fue movido a junto al control Rev IA (ver arriba) -->
                         <div class="dropdown-container" id="downloadBtnContainer" style="display:none;">
                             <div class="download-split">
                                 <button class="btn btn-accent btn-download-main" id="downloadBtnMain" title="Descargar formato favorito">
@@ -2528,7 +2535,7 @@
             </svg>
             <span id="toastMessage"></span>
         </div>
-        <script src="app.mmun9bo9.min.js"></script>
+        <script src="app.mmuo4wqx.min.js"></script>
 
         <!-- G1: Modal Panel Registro de Pacientes -->
         <div class="modal-overlay" id="registryPanelOverlay">

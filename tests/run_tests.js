@@ -1815,10 +1815,12 @@ test('editor.js — deleteFieldSection elimina nodos vacíos residuales', () => 
     assert(code.includes('nextNode') || code.includes('nextSibling'), 'Debe limpiar nodos vacíos entre secciones');
 });
 
-test('index.html — botón btnAppendRecord existe (oculto en toolbar)', () => {
+test('index.html — botón btnAppendRecord existe (en toolbar junto a Rev IA)', () => {
     const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
     assert(html.includes('id="btnAppendRecord"'), 'Debe tener botón continuar grabando');
-    assert(html.includes('display:none!important'), 'btnAppendRecord debe estar oculto permanentemente en toolbar');
+    // El botón ahora está en la toolbar próximo al control Rev IA (sin !important)
+    assert(html.includes('btn-pro-animated') && html.includes('id="btnAppendRecord"'), 'btnAppendRecord debe tener clase btn-pro-animated');
+    assert(html.includes('append-plus'), 'btnAppendRecord debe contener el span append-plus');
 });
 
 test('ui.js — lógica de append recording + inline button', () => {
@@ -2547,15 +2549,15 @@ test('structurer.js oculta editor y acciones durante STRUCTURING', () => {
     assert(css.includes('body.structuring-active #editorToolbar,'), 'Debe ocultar la barra del editor mientras estructura');
 });
 
-test('ui.js mueve REV IA al botón inline de grabación', () => {
+test('ui.js botón append graba y agrega desde toolbar (no flotante en editor)', () => {
     const code = fs.readFileSync(path.join(root, 'src/js/utils/ui.js'), 'utf-8');
-    assert(code.includes("const quickDock = document.getElementById('inlineReviewQuickDock');"), 'Debe existir dock para REV IA');
-    assert(code.includes("wrap.prepend(quickCtrl);"), 'REV IA debe insertarse a la izquierda del botón inline');
+    // El botón ahora es part de la toolbar permanente, no un div flotante en el editor
     assert(code.includes("const _canUseInlineAppend = (typeof CLIENT_CONFIG !== 'undefined'"), 'El botón inline debe limitarse por tipo de plan');
     assert(code.includes("CLIENT_CONFIG.type === 'PRO' || CLIENT_CONFIG.type === 'ADMIN'"), 'El botón inline debe habilitarse para PRO y ADMIN');
     assert(code.includes("h1, h2, h3, h4, .report-h1, .report-h2, .report-h3, .section-header, strong"), 'La detección de contenido estructurado debe contemplar h1/h2 y clases report-*');
-    assert(code.includes('<span class="append-plus">+</span>'), 'El botón inline debe usar versión compacta con +');
     assert(code.includes("p.className = 'report-p';"), 'El texto agregado debe mantener formato report-p para consistencia de preview/export');
+    assert(code.includes("btnAppend.style.display = 'inline-flex'"), 'La función debe mostrar el botón en toolbar al detectar contenido estructurado');
+    assert(code.includes("btnAppend.style.display = 'none'"), 'La función debe ocultar el botón en toolbar cuando no aplica');
 });
 
 test('index.html incluye dock para REV IA y css pro-like inline', () => {
