@@ -1006,28 +1006,21 @@
         .tabs-container {
             display: none;
             gap: 0.2rem;
-            padding: 0.2rem 0.6rem 0;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-bottom: none;
-            border-radius: var(--radius) var(--radius) 0 0;
+            padding: 0.25rem 0 0;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--border);
+            border-radius: 0;
             overflow-x: auto;
             scrollbar-width: none;
-            /* Sticky: siempre visible al hacer scroll */
-            position: sticky;
-            top: 0;
-            z-index: 91;
+            margin: 0 -1.25rem 0.5rem;
+            padding-left: 1.25rem;
+            padding-right: 1.25rem;
         }
         .tabs-container::-webkit-scrollbar { display: none; }
 
         .tabs-container.active {
             display: flex;
-        }
-
-        /* Acoplar tabs al editor card debajo */
-        .tabs-container.active + .card {
-            border-radius: 0 0 var(--radius) var(--radius);
-            border-top: none;
         }
 
         .tab {
@@ -1093,17 +1086,12 @@
         /* Sticky header band (tabs + actions + toolbar) */
         .editor-sticky-head {
             position: sticky;
-            top: 0;          /* top:0 del .editor-area que ya es el scroll container */
+            top: 0;
             z-index: 90;
             background: var(--bg-card);
             margin: -1.25rem -1.25rem 0;
             padding: 1.25rem 1.25rem 0;
             border-radius: var(--radius) var(--radius) 0 0;
-        }
-        /* Tabs presentes: sticky head baja para no tapar las pestañas */
-        .tabs-container.active + .card .editor-sticky-head {
-            border-radius: 0;
-            top: 30px;
         }
 
         /* Editor Toolbar */
@@ -3880,28 +3868,22 @@
             align-items: center;
             justify-content: center;
             gap: 6px;
-            background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899, #06b6d4);
+            background: linear-gradient(135deg, #f59e0b 0%, #f97316 35%, #ea580c 65%, #f97316 85%, #f59e0b 100%);
             background-size: 300% 300%;
-            animation: ai-gradient 3s ease infinite;
-            box-shadow: 0 0 16px rgba(139, 92, 246, 0.5);
+            animation: orangeWave 3s ease infinite;
+            box-shadow: 0 0 14px rgba(249, 115, 22, 0.5);
             transition: box-shadow 0.3s;
             cursor: pointer;
         }
 
         .btn-ai-magic:hover:not(:disabled) {
-            box-shadow: 0 0 24px rgba(236, 72, 153, 0.7);
+            box-shadow: 0 0 24px rgba(249, 115, 22, 0.75);
         }
 
         .btn-ai-magic:disabled {
             opacity: 0.4;
             cursor: not-allowed;
             animation: none;
-        }
-
-        @keyframes ai-gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
         }
 
         .gemini-icon {
