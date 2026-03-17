@@ -3640,9 +3640,9 @@
         .config-tab.active {
             color: var(--primary);
             font-weight: 600;
-            background: var(--bg-card);
+            background: color-mix(in srgb, var(--primary) 10%, var(--bg-card));
             border-color: var(--primary);
-            border-bottom: 2px solid var(--bg-card);
+            border-bottom: 2px solid color-mix(in srgb, var(--primary) 10%, var(--bg-card));
             z-index: 1;
         }
         .config-tab-panel {
@@ -3663,8 +3663,13 @@
             border: none;
             border-radius: 0;
             padding: 0;
-            margin-bottom: 0;
+            margin-bottom: 1.25rem;
             background: transparent;
+        }
+
+        .pdf-config-section + .pdf-config-section {
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
         }
 
         .pdf-config-section h3 {

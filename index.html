@@ -1155,26 +1155,6 @@
                     <div class="config-tab-panel" id="cfgTabFormat">
                         <div class="pdf-config-section">
                             <div class="field-group">
-                                <label>📤 Comportamiento al generar PDF</label>
-                                <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px;">
-                                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                                        <input type="radio" name="pdfOutputMode" value="tab" id="pdfModeTab">
-                                        <span><strong>Abrir en nueva pestaña</strong> — el navegador muestra el PDF y vos decidís dónde guardarlo</span>
-                                    </label>
-                                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                                        <input type="radio" name="pdfOutputMode" value="download" id="pdfModeDownload">
-                                        <span><strong>Descarga automática</strong> — se guarda directo en la carpeta de descargas del navegador</span>
-                                    </label>
-                                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                                        <input type="radio" name="pdfOutputMode" value="both" id="pdfModeBoth">
-                                        <span><strong>Ambos</strong> — abre en pestaña y también descarga automáticamente</span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                        </div><!-- /.pdf-config-section output mode -->
-                        <div class="pdf-config-section">
-                            <div class="field-group">
                                 <label>🎨 Color del encabezado del informe</label>
                                 <div id="pdfHeaderColor" class="header-color-palette" data-selected-color="#1a56a0" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;">
                                     <div class="hdr-color-opt" style="text-align:center;">
@@ -1274,6 +1254,26 @@
                     <!-- TAB 4: Pie de Página y Firma -->
                     <div class="config-tab-panel" id="cfgTabSignature">
                         <div class="pdf-config-section">
+                            <!-- Comportamiento al generar PDF — movido aquí desde Formato -->
+                            <div class="field-group">
+                                <label>📤 Comportamiento al generar PDF</label>
+                                <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;">
+                                    <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:8px 10px;border-radius:8px;border:1px solid var(--border);transition:background .15s;">
+                                        <input type="radio" name="pdfOutputMode" value="tab" id="pdfModeTab" style="margin-top:3px;flex-shrink:0;">
+                                        <span><strong>Abrir en nueva pestaña</strong> — el navegador muestra el PDF y vos decidís dónde guardarlo</span>
+                                    </label>
+                                    <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:8px 10px;border-radius:8px;border:1px solid var(--border);transition:background .15s;">
+                                        <input type="radio" name="pdfOutputMode" value="download" id="pdfModeDownload" style="margin-top:3px;flex-shrink:0;">
+                                        <span><strong>Descarga automática</strong> — se guarda directo en la carpeta de descargas del navegador</span>
+                                    </label>
+                                    <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:8px 10px;border-radius:8px;border:1px solid var(--border);transition:background .15s;">
+                                        <input type="radio" name="pdfOutputMode" value="both" id="pdfModeBoth" style="margin-top:3px;flex-shrink:0;">
+                                        <span><strong>Ambos</strong> — abre en pestaña y también descarga automáticamente</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="pdf-config-section">
                             <div class="field-group">
                                 <label>Texto personalizado del pie</label>
                                 <textarea id="pdfFooterText" rows="2" placeholder="Ej: Este informe es confidencial y de uso exclusivo del paciente"></textarea>
@@ -1298,7 +1298,7 @@
                     </div>
                 </div>
                 <div class="pdf-modal-footer">
-                    <button class="btn btn-secondary" id="btnSavePdfConfig">💾 Guardar configuración</button>
+                    <button class="btn btn-primary" id="btnSavePdfConfig">💾 Guardar configuración</button>
                     <button class="btn btn-outline" id="btnRestorePdfDefaults">↺ Restaurar valores recomendados</button>
                     <button class="btn btn-outline" id="btnClosePdfConfig">Cerrar</button>
                 </div>
