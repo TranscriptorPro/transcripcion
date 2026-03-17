@@ -91,6 +91,79 @@
             font-size: 0.82rem !important;
         }
 
+        /* ── Panel de Texto (modo Pro) — misma estética que el sidebar de audio ── */
+        .text-drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius-sm);
+            padding: 0.7rem 0.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: linear-gradient(135deg, rgba(15, 118, 110, 0.03), rgba(15, 118, 110, 0.08));
+            margin-bottom: 0;
+        }
+        .text-drop-zone:hover {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, rgba(15, 118, 110, 0.05), rgba(15, 118, 110, 0.12));
+            transform: scale(1.01);
+        }
+        .text-drop-zone .drop-zone-icon {
+            width: 34px;
+            height: 34px;
+            margin: 0 auto 0.3rem;
+        }
+        .text-drop-label {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.1rem;
+        }
+        .text-drop-sub {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+        }
+        .text-source-input {
+            width: 100%;
+            box-sizing: border-box;
+            resize: vertical;
+            min-height: 180px;
+            margin-top: 0.45rem;
+            padding: 0.6rem 0.7rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg-main);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.82rem;
+            line-height: 1.55;
+            transition: border-color 0.2s;
+        }
+        .text-source-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 15%, transparent);
+        }
+        .text-source-input::placeholder {
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        .text-source-actions {
+            display: flex;
+            gap: 0.4rem;
+            margin-top: 0.45rem;
+            align-items: stretch;
+        }
+        .text-action-btn {
+            padding: 0.42rem 0.6rem !important;
+            font-size: 0.78rem !important;
+            flex-shrink: 0;
+        }
+        .text-action-btn-primary {
+            flex: 1;
+            padding: 0.5rem 0.75rem !important;
+            font-size: 0.8rem !important;
+        }
+
         .file-input {
             display: none;
         }
