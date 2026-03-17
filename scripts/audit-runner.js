@@ -433,7 +433,11 @@ async function main() {
       roleScope: 'mixed',
       criticality: 'critical',
       tags: ['regression', 'core', 'release-gate']
-    },
+    }
+  ];
+
+  const stepsFull = [
+    ...stepsQuick,
     {
       id: 'e2e-admin-edit',
       title: 'E2E admin edit wizard',
@@ -443,11 +447,7 @@ async function main() {
       roleScope: 'admin',
       criticality: 'high',
       tags: ['admin', 'crud']
-    }
-  ];
-
-  const stepsFull = [
-    ...stepsQuick,
+    },
     {
       id: 'e2e-full-local',
       title: 'E2E full QA local',
