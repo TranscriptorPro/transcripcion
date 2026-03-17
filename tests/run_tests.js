@@ -1792,7 +1792,7 @@ console.log('\n── Bloque 33: Restaurar sesión + Modal confirm + Append reco
 test('index.html — botón btnRestoreSession existe', () => {
     const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
     assert(html.includes('id="btnRestoreSession"'), 'Debe tener botón restaurar sesión');
-    assert(html.includes('Restaurar sesión anterior'), 'Texto del botón visible');
+    assert(html.includes('Restaurar sesión'), 'Texto del botón visible');
 });
 
 test('index.html — modal customConfirmModal existe', () => {

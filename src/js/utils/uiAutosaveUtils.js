@@ -49,7 +49,7 @@
         // Mostrar boton de restaurar sesion
         const restoreBtn = document.getElementById('btnRestoreSession');
         if (restoreBtn) {
-            restoreBtn.textContent = `♻️ Restaurar sesión anterior (hace ${timeLabel})`;
+            restoreBtn.textContent = `♻️ Restaurar sesión (hace ${timeLabel})`;
             restoreBtn.style.display = '';
             restoreBtn.onclick = () => {
                 editor.innerHTML = saved;

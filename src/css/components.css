@@ -26,11 +26,18 @@
             fill: var(--primary);
         }
 
+        /* Toggle Audio/Texto en el título del sidebar (Modo Pro) */
+        #proInputSourceSwitch {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
         /* Drop Zone */
         .drop-zone {
             border: 2px dashed var(--border);
             border-radius: var(--radius-sm);
-            padding: 1.25rem 0.75rem;
+            padding: 0.7rem 0.5rem;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
@@ -45,9 +52,9 @@
         }
 
         .drop-zone-icon {
-            width: 44px;
-            height: 44px;
-            margin: 0 auto 0.5rem;
+            width: 34px;
+            height: 34px;
+            margin: 0 auto 0.35rem;
             background: linear-gradient(135deg, var(--primary), var(--primary-light));
             border-radius: 50%;
             display: grid;
@@ -61,21 +68,27 @@
         }
 
         .drop-zone h3 {
-            font-size: 0.9rem;
+            font-size: 0.82rem;
             font-weight: 600;
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.15rem;
         }
 
         .drop-zone p {
-            font-size: 0.8rem;
+            font-size: 0.74rem;
             color: var(--text-secondary);
         }
 
         .drop-zone small {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: var(--text-secondary);
-            margin-top: 0.5rem;
+            margin-top: 0.25rem;
             display: block;
+        }
+
+        /* Botón Grabar Audio compacto */
+        .btn-record-compact {
+            padding: 0.48rem 0.75rem !important;
+            font-size: 0.82rem !important;
         }
 
         .file-input {
@@ -85,24 +98,26 @@
         /* Audio Enhancement Options */
         .audio-options {
             display: flex;
-            flex-wrap: wrap;
-            gap: 0.4rem;
-            margin-top: 0.6rem;
-            padding-top: 0.6rem;
+            flex-wrap: nowrap;
+            gap: 0.35rem;
+            margin-top: 0.45rem;
+            padding-top: 0.45rem;
             border-top: 1px solid var(--border);
         }
 
         .audio-option {
             display: flex;
             align-items: center;
-            gap: 0.4rem;
-            font-size: 0.75rem;
+            gap: 0.3rem;
+            font-size: 0.72rem;
             color: var(--text-secondary);
             cursor: pointer;
-            padding: 0.4rem 0.6rem;
+            padding: 0.28rem 0.45rem;
             background: var(--bg-main);
             border-radius: 6px;
             transition: all 0.2s;
+            flex: 1;
+            white-space: nowrap;
         }
 
         .audio-option:hover {
@@ -172,12 +187,18 @@
             min-height: unset !important;
         }
 
+        /* Botones Transcribir y Limpiar en grid */
+        #transcribeButtonsGrid .btn {
+            padding: 0.42rem 0.5rem;
+            font-size: 0.78rem;
+        }
+
         .join-audios-option {
             background: rgba(99, 102, 241, 0.1);
-            border: 2px solid rgba(99, 102, 241, 0.3);
+            border: 1.5px solid rgba(99, 102, 241, 0.3);
             border-radius: 8px;
-            padding: 12px;
-            margin: 10px 0;
+            padding: 5px 10px;
+            margin: 6px 0;
             transition: all 0.3s ease;
             cursor: pointer;
         }
@@ -190,7 +211,7 @@
 
         .join-audios-option label {
             font-weight: 600;
-            font-size: 0.95rem;
+            font-size: 0.8rem;
             cursor: pointer;
             width: 100%;
             display: flex;
@@ -200,8 +221,8 @@
         }
 
         .join-audios-option input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
+            width: 16px;
+            height: 16px;
             cursor: pointer;
             accent-color: #6366f1;
         }
@@ -209,7 +230,7 @@
         .join-audios-option span {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             color: var(--text-primary);
         }
 
@@ -228,19 +249,19 @@
         .file-item {
             display: flex;
             align-items: center;
-            gap: 0.6rem;
-            padding: 0.5rem;
+            gap: 0.5rem;
+            padding: 0.3rem 0.45rem;
             background: var(--bg-main);
             border-radius: var(--radius-sm);
             border: 1px solid var(--border);
-            font-size: 0.8rem;
+            font-size: 0.78rem;
         }
 
         .file-item-icon {
-            width: 28px;
-            height: 28px;
+            width: 24px;
+            height: 24px;
             background: var(--accent);
-            border-radius: 6px;
+            border-radius: 5px;
             display: grid;
             place-items: center;
             flex-shrink: 0;
@@ -480,18 +501,19 @@
             justify-content: center;
             gap: 0.3rem;
             font-weight: 700;
-            font-size: 0.88rem;
+            font-size: 0.82rem;
+            padding: 0.5rem 0.75rem;
             border: none;
             color: #fff;
             position: relative;
             z-index: 1;
-            background: linear-gradient(135deg, #4285f4, #9b72cb, #d96570, #f4b400, #9b72cb, #4285f4);
-            background-size: 400% 400%;
-            animation: geminiGradient 3s ease infinite;
-            box-shadow: 0 2px 12px rgba(66,133,244,0.3), 0 0 24px rgba(155,114,203,0.2);
+            background: linear-gradient(135deg, #f59e0b 0%, #f97316 35%, #ea580c 65%, #f97316 85%, #f59e0b 100%);
+            background-size: 300% 300%;
+            animation: orangeWave 3s ease infinite;
+            box-shadow: 0 3px 12px rgba(249, 115, 22, 0.45);
             transition: box-shadow 0.3s, transform 0.15s;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-            border: 2px solid rgba(255,255,255,0.15);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.18);
+            border: 2px solid rgba(255,255,255,0.18);
         }
         .btn-transcribe-structure::before {
             content: '';
@@ -499,15 +521,13 @@
             inset: -3px;
             z-index: -1;
             border-radius: inherit;
-            background: linear-gradient(135deg, #4285f4, #9b72cb, #d96570, #f4b400, #0f9d58, #4285f4);
-            background-size: 400% 400%;
-            animation: geminiBorder 3s ease infinite;
-            opacity: 0.7;
+            background: linear-gradient(135deg, #f59e0b, #f97316, #ea580c);
+            opacity: 0.6;
             filter: blur(8px);
         }
         .btn-transcribe-structure:hover:not(:disabled) {
             transform: translateY(-2px) scale(1.01);
-            box-shadow: 0 6px 28px rgba(66,133,244,0.4), 0 0 40px rgba(155,114,203,0.3), 0 0 15px rgba(217,101,112,0.25);
+            box-shadow: 0 6px 24px rgba(249, 115, 22, 0.55), 0 0 28px rgba(245, 158, 11, 0.32);
         }
         .btn-transcribe-structure:hover:not(:disabled)::before {
             opacity: 1;
@@ -531,6 +551,11 @@
         .btn-transcribe-structure .sparkle-icon {
             filter: drop-shadow(0 0 4px rgba(255,255,255,0.8));
             animation: geminiSparkle 2s ease-in-out infinite;
+        }
+        @keyframes orangeWave {
+            0%   { background-position: 0% 50%; }
+            50%  { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
         .pro-badge-sm {
             display: inline-block;
@@ -1374,39 +1399,17 @@
             display: flex;
             align-items: center;
             gap: 0.45rem;
-            padding: 0.24rem 0.52rem;
-            border: 1px solid color-mix(in srgb, var(--primary) 52%, var(--border));
-            border-radius: 10px;
-            background:
-                linear-gradient(135deg, color-mix(in srgb, var(--primary) 14%, var(--bg-card)) 0%, var(--bg-card) 62%),
-                repeating-linear-gradient(90deg, transparent 0 8px, color-mix(in srgb, var(--primary) 10%, transparent) 8px 9px);
-            box-shadow:
-                inset 0 0 0 1px color-mix(in srgb, var(--primary) 20%, transparent),
-                0 0 10px color-mix(in srgb, var(--primary) 22%, transparent);
-            overflow: hidden;
-            animation: inline-review-panel-glow 2.2s ease-in-out infinite;
-        }
-
-        #inlineReviewQuickControl::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -45%;
-            width: 42%;
-            height: 100%;
-            background: linear-gradient(110deg, transparent 0%, color-mix(in srgb, #ffffff 35%, transparent) 50%, transparent 100%);
-            pointer-events: none;
-            animation: inline-review-panel-scan 2.4s linear infinite;
+            padding: 0.12rem 0;
         }
 
         #inlineReviewQuickControl .inline-review-quick-label {
-            font-size: 0.74rem;
+            font-size: 0.68rem;
             color: var(--text-secondary);
             font-weight: 700;
             letter-spacing: 0.02em;
             white-space: nowrap;
             text-transform: uppercase;
-            text-shadow: 0 0 8px color-mix(in srgb, var(--primary) 38%, transparent);
+            text-shadow: none;
         }
 
         :root:not([data-theme="dark"]) #inlineReviewQuickControl .inline-review-quick-label,
@@ -1432,24 +1435,6 @@
         #inlineReviewQuickControl .toggle-switch-sm input:checked + .toggle-slider-sm {
             background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 88%, #0284c7), color-mix(in srgb, var(--primary-dark) 70%, #0f172a));
             box-shadow: inset 0 0 6px color-mix(in srgb, #ffffff 22%, transparent), 0 0 8px color-mix(in srgb, var(--primary) 45%, transparent);
-        }
-
-        @keyframes inline-review-panel-glow {
-            0%, 100% {
-                box-shadow:
-                    inset 0 0 0 1px color-mix(in srgb, var(--primary) 20%, transparent),
-                    0 0 8px color-mix(in srgb, var(--primary) 16%, transparent);
-            }
-            50% {
-                box-shadow:
-                    inset 0 0 0 1px color-mix(in srgb, var(--primary) 34%, transparent),
-                    0 0 14px color-mix(in srgb, var(--primary) 32%, transparent);
-            }
-        }
-
-        @keyframes inline-review-panel-scan {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(340%); }
         }
 
         @media print {

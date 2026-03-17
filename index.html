@@ -2013,30 +2013,28 @@
         <aside class="sidebar">
             <!-- Capture Card -->
             <div class="card">
-                <div class="card-title">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
-                        <path
-                            d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-                    </svg>
-                    Grabar o Subir
-                </div>
-
-                <div id="proInputSourceSwitch" style="display:none; margin-bottom:0.75rem; padding:0.55rem; border:1px solid var(--border); border-radius:10px; background:var(--bg-hover);">
-                    <div style="font-size:0.72rem; color:var(--text-secondary); margin-bottom:0.45rem;">Fuente para estructuración (Modo Pro)</div>
-                    <div style="display:flex; align-items:center; justify-content:center; gap:0.6rem;">
-                        <span style="font-size:0.8rem;">🎙️ Audio</span>
-                        <label class="pro-toggle-switch" style="margin:0;">
+                <div class="card-title" style="justify-content:space-between;">
+                    <span style="display:flex;align-items:center;gap:0.5rem;">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+                            <path
+                                d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+                        </svg>
+                        Grabar o Subir
+                    </span>
+                    <div id="proInputSourceSwitch" style="display:none;align-items:center;gap:0.3rem;" title="Fuente para estructuración (Modo Pro)">
+                        <span style="font-size:0.88rem;line-height:1;" title="Modo Audio">🎙️</span>
+                        <label class="pro-toggle-switch" style="margin:0;transform:scale(0.8);transform-origin:center;">
                             <input type="checkbox" id="proSourceToggle">
                             <span class="pro-toggle-slider"></span>
                         </label>
-                        <span style="font-size:0.8rem;">📝 Texto</span>
+                        <span style="font-size:0.88rem;line-height:1;" title="Modo Texto">📝</span>
                     </div>
                 </div>
 
                 <div id="audioSourcePanel">
 
-                <button class="btn btn-primary btn-full" id="recordBtn">
+                <button class="btn btn-primary btn-full btn-record-compact" id="recordBtn">
                     <span id="recordBtnIcon" class="btn-icon">🎙️</span>
                     <span id="recordBtnText">Grabar Audio</span>
                 </button>
@@ -2125,8 +2123,8 @@
                     </button>
                 </div>
                 <!-- Botón restaurar sesión anterior (visible solo si hay borrador guardado) -->
-                <button class="btn btn-secondary btn-full" id="btnRestoreSession" style="display:none; margin-top:0.5rem; font-size:0.82rem; gap:0.4rem;">
-                    ♻️ Restaurar sesión anterior
+                <button class="btn btn-secondary btn-full" id="btnRestoreSession" style="display:none; margin-top:0.4rem; font-size:0.75rem; gap:0.35rem; padding:0.38rem 0.6rem;">
+                    ♻️ Restaurar sesión
                 </button>
                 <!-- RA-2: Botón reintentar archivos fallidos (oculto por defecto) -->
                 <button class="btn btn-secondary btn-full" id="btnRetryFailed" style="display:none; margin-top:0.5rem; font-size:0.82rem; gap:0.4rem;"
@@ -2293,9 +2291,9 @@
                         </button>
                         <div id="inlineReviewQuickDock" style="display:contents;">
                             <div id="inlineReviewQuickControl" class="inline-review-in-editor">
-                                <span class="inline-review-quick-label">▶ Rev IA</span>
-                                <label class="toggle-switch-sm" style="margin:0;">
-                                    <input type="checkbox" id="inlineReviewQuickToggle" checked>
+                                <span class="inline-review-quick-label" title="Revisión IA inline">▶ Rev IA</span>
+                                <label class="toggle-switch-sm" style="margin:0;" title="Activar o desactivar revisión IA inline">
+                                    <input type="checkbox" id="inlineReviewQuickToggle" checked title="Activar o desactivar revisión IA inline" aria-label="Activar o desactivar revisión IA inline">
                                     <span class="toggle-slider-sm"></span>
                                 </label>
                             </div>
