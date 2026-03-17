@@ -4,6 +4,8 @@
   "description": "Transcriptor Médico Pro — Audio → Informe profesional con IA",
   "private": true,
   "scripts": {
+    "deploy": "node deploy.js",
+    "dev": "npx serve .",
     "build": "node build.js",
     "test": "node tests/run_tests.js",
     "audit:quick": "node scripts/audit-runner.js --profile=quick",
