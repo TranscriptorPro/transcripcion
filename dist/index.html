@@ -127,7 +127,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
-        <link rel="stylesheet" href="app.mmulxgmz.min.css">
+        <link rel="stylesheet" href="app.mmum8y4z.min.css">
 </head>
 
 <body>
@@ -1148,6 +1148,26 @@
 
                     <!-- TAB 3: Formato del archivo -->
                     <div class="config-tab-panel" id="cfgTabFormat">
+                        <div class="pdf-config-section">
+                            <div class="field-group">
+                                <label>📤 Comportamiento al generar PDF</label>
+                                <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px;">
+                                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                        <input type="radio" name="pdfOutputMode" value="tab" id="pdfModeTab">
+                                        <span><strong>Abrir en nueva pestaña</strong> — el navegador muestra el PDF y vos decidís dónde guardarlo</span>
+                                    </label>
+                                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                        <input type="radio" name="pdfOutputMode" value="download" id="pdfModeDownload">
+                                        <span><strong>Descarga automática</strong> — se guarda directo en la carpeta de descargas del navegador</span>
+                                    </label>
+                                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                        <input type="radio" name="pdfOutputMode" value="both" id="pdfModeBoth">
+                                        <span><strong>Ambos</strong> — abre en pestaña y también descarga automáticamente</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        </div><!-- /.pdf-config-section output mode -->
                         <div class="pdf-config-section">
                             <div class="field-group">
                                 <label>🎨 Color del encabezado del informe</label>
@@ -2508,7 +2528,7 @@
             </svg>
             <span id="toastMessage"></span>
         </div>
-        <script src="app.mmulxgjy.min.js"></script>
+        <script src="app.mmum8y4e.min.js"></script>
 
         <!-- G1: Modal Panel Registro de Pacientes -->
         <div class="modal-overlay" id="registryPanelOverlay">

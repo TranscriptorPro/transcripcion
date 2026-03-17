@@ -665,17 +665,8 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             }
         }
         const blob = doc.output('blob');
-        const saveBlob = typeof window.saveToDisk === 'function'
-            ? window.saveToDisk
-            : async (b, name) => {
-                const url = URL.createObjectURL(b);
-                const a   = document.createElement('a');
-                a.href = url; a.download = name;
-                document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                setTimeout(() => URL.revokeObjectURL(url), 1000);
-            };
-        await saveBlob(blob, `${fileName}_${fileDate}.pdf`);
-        showToast('PDF descargado ✓', 'success');
+        const outputBlob = typeof window.outputPdf === 'function' ? window.outputPdf : window.saveToDisk;
+        await outputBlob(blob, `${fileName}_${fileDate}.pdf`);
         if (typeof saveReportToHistory === 'function' && !window._skipReportSave) {
             try {
                 saveReportToHistory({

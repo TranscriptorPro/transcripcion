@@ -533,15 +533,9 @@ window.downloadPDFFromCanvas = async function (fileName, fileDate) {
         const blob = await window._buildPdfBlobFromPreviewCapture();
         if (!blob) throw new Error('No se pudo generar el PDF desde preview');
 
-        // Descargar
-        const saveHandler = (typeof window.saveToDisk === 'function') ? window.saveToDisk : async (b, name) => {
-            const url = URL.createObjectURL(b);
-            const a = document.createElement('a'); a.href = url; a.download = name;
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-        };
-        await saveHandler(blob, `${fileName}_${fileDate}.pdf`);
-        if (typeof showToast === 'function') showToast('PDF descargado \u2713', 'success');
+        // Abrir en pestaña nueva o descargar según configuración del usuario
+        const outputHandler = (typeof window.outputPdf === 'function') ? window.outputPdf : window.saveToDisk;
+        await outputHandler(blob, `${fileName}_${fileDate}.pdf`);
 
         // Guardar en historial
         if (typeof saveReportToHistory === 'function' && !window._skipReportSave) {

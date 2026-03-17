@@ -731,8 +731,24 @@
         return true;
     }
 
+    // ─── outputPdf: abre en pestaña y/o descarga según setting ──────────────
+    async function outputPdf(blob, filename) {
+        const mode = localStorage.getItem('pdf_output_mode') || 'tab';
+        const openInTab  = mode === 'tab' || mode === 'both';
+        const autoDownload = mode === 'download' || mode === 'both';
+
+        if (openInTab) {
+            await _openPdfBlobInNewTab(blob, filename, null);
+        }
+        if (autoDownload) {
+            await saveToDisk(blob, filename);
+            if (!openInTab && typeof showToast === 'function') showToast('PDF descargado ✓', 'success');
+        }
+    }
+
     window.downloadFile = downloadFile;
     window.saveToDisk = saveToDisk;
+    window.outputPdf = outputPdf;
     window.downloadRTF = () => downloadFile('rtf');
     window.downloadHTML = () => downloadFile('html');
     window.downloadPDF = () => downloadFile('pdf');

@@ -424,6 +424,11 @@ window.savePdfConfiguration = function () {
     window._pdfConfigCache = config;
     if (typeof appDB !== 'undefined') appDB.set('pdf_config', config);
     else localStorage.setItem('pdf_config', JSON.stringify(config));
+
+    // Guardar modo de salida del PDF por separado (no forma parte del config de diseño)
+    const modeEl = document.querySelector('input[name="pdfOutputMode"]:checked');
+    if (modeEl) localStorage.setItem('pdf_output_mode', modeEl.value);
+
     if (typeof showToast === 'function') showToast('💾 Configuración PDF guardada', 'success');
 }
 
@@ -481,6 +486,11 @@ window.loadPdfConfiguration = async function () {
     set('pdfWorkplaceAddress', config.workplaceAddress);
     set('pdfWorkplacePhone', config.workplacePhone);
     set('pdfWorkplaceEmail', config.workplaceEmail);
+
+    // Restaurar modo de salida del PDF
+    const savedMode = localStorage.getItem('pdf_output_mode') || 'tab';
+    const modeRadio = document.getElementById(`pdfMode${savedMode.charAt(0).toUpperCase() + savedMode.slice(1)}`);
+    if (modeRadio) modeRadio.checked = true;
 
     // Restore logo preview
     const savedLogo = typeof appDB !== 'undefined' ? await appDB.get('pdf_logo') : localStorage.getItem('pdf_logo');
