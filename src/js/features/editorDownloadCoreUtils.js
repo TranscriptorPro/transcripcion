@@ -69,25 +69,48 @@
             if (safeTab) {
                 safeTab.location.href = url;
                 try { safeTab.focus(); } catch (_) { /* ignore */ }
-            } else {
-                const opened = window.open(url, '_blank');
-                if (!opened) return false;
-            }
-            setTimeout(() => URL.revokeObjectURL(url), 10 * 60 * 1000);
-            if (typeof showToast === 'function') showToast(`PDF abierto en nueva pestaña: ${filename}`, 'success');
-            return true;
-        } catch (_) {
-            try {
-                const opened = window.open(url, '_blank');
-                if (!opened) return false;
                 setTimeout(() => URL.revokeObjectURL(url), 10 * 60 * 1000);
                 if (typeof showToast === 'function') showToast(`PDF abierto en nueva pestaña: ${filename}`, 'success');
                 return true;
-            } catch (err) {
-                console.warn('No se pudo abrir la pestaña PDF:', err);
-                return false;
+            } else {
+                // Intentar con window.open (puede ser bloqueado en Firefox)
+                const opened = window.open(url, '_blank');
+                if (opened) {
+                    setTimeout(() => URL.revokeObjectURL(url), 10 * 60 * 1000);
+                    if (typeof showToast === 'function') showToast(`PDF abierto en nueva pestaña: ${filename}`, 'success');
+                    return true;
+                }
+                // Fallback: link clickeable que el usuario abre manualmente (evita configurar Firefox)
+                _showPdfFallbackLink(url, filename);
+                return true; // considerado exitoso: el usuario tiene la opción
             }
+        } catch (_) {
+            _showPdfFallbackLink(url, filename);
+            return true;
         }
+    }
+
+    function _showPdfFallbackLink(blobUrl, filename) {
+        // Crea un toast/modal con un enlace directo al PDF para cuando el popup está bloqueado
+        let el = document.getElementById('_pdfFallbackNotice');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = '_pdfFallbackNotice';
+            el.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:20000;' +
+                'background:#1e293b;color:#f1f5f9;padding:14px 20px;border-radius:12px;' +
+                'box-shadow:0 8px 32px rgba(0,0,0,.45);display:flex;align-items:center;gap:14px;' +
+                'font-family:system-ui,Arial,sans-serif;font-size:0.9rem;max-width:min(580px,94vw);';
+            document.body.appendChild(el);
+        }
+        el.innerHTML = `<span>🔒 El navegador bloqueó la apertura automática.</span>
+            <a href="${blobUrl}" target="_blank" download="${filename.replace(/"/g,'')}"
+               style="color:#f97316;font-weight:700;text-decoration:none;white-space:nowrap;
+                      border:1.5px solid #f97316;border-radius:7px;padding:5px 12px;">Abrir PDF</a>
+            <button onclick="document.getElementById('_pdfFallbackNotice').remove()" 
+                style="background:transparent;border:none;color:#94a3b8;font-size:1.2rem;cursor:pointer;line-height:1;padding:0;margin-left:4px;">×</button>`;
+        el.style.display = 'flex';
+        // Auto-cerrar luego de 30s
+        setTimeout(() => { if (el && el.parentNode) el.remove(); }, 30000);
     }
 
     function _ensurePdfReadyModal() {
@@ -630,10 +653,7 @@
                         return;
                     }
                     const opened = await _openPdfBlobInNewTab(pdfBlob, targetPdfFileName, pendingPdfTab);
-                    if (!opened) {
-                        try { pendingPdfTab.close(); } catch (_) { /* ignore */ }
-                        if (typeof showToast === 'function') showToast('El navegador bloqueó la pestaña del PDF. Permití popups e intentá de nuevo.', 'error');
-                    }
+                    void opened; // fallback ya manejado internamente en _openPdfBlobInNewTab
                     return;
                 }
 

@@ -226,12 +226,11 @@
                     _firstH1Skipped = true;
                     continue;
                 }
-                // Heading principal: centrado, bold, color acento, tamaño grande, línea inferior
-                bodyParts.push(`\\pard\\qc\\sb90\\sa30{\\f0\\fs21\\b\\cf1 ${_rtfEscapeLine(trimmed)}}\\par`);
-                bodyParts.push(`{\\pard\\brdrb\\brdrs\\brdrw10\\brdrcf1\\brsp40 \\par}`);
-                bodyParts.push('\\pard\\ql');
+                // Heading: alineado a la IZQUIERDA, bold, color acento, keepn (evita quedar sin contenido en la misma hoja)
+                bodyParts.push(`{\\pard\\ql\\keepn\\sb120\\sa20{\\f0\\fs21\\b\\cf1 ${_rtfEscapeLine(trimmed)}}\\par}`);
+                bodyParts.push(`{\\pard\\keepn\\brdrb\\brdrs\\brdrw10\\brdrcf1\\brsp30 \\par}`);
             } else {
-                bodyParts.push(`\\pard\\ql\\sl${rtfSl}\\slmult1\\sa40{\\f0\\fs20 ${_rtfEscapeLine(t)}}\\par`);
+                bodyParts.push(`{\\pard\\ql\\sl${rtfSl}\\slmult1\\sa40{\\f0\\fs20 ${_rtfEscapeLine(t)}}\\par}`);
             }
         }
         const body = bodyParts.join('\n');
@@ -262,14 +261,16 @@
         // ── Bloque profesional (ahora solo en footer) ──
         let profBlock = ''; // vacío — el profesional aparece en el pie de página
 
-        // ── Firma (centrada, con espacio generoso para firmar) ──
+        // ── Firma (izquierda, space-before con keepn para nunca quedar sola en la última hoja) ──
         let sigBlock = '';
         if (!ctx.hideReportHeader && ctx.professionalName) {
             const sigIndent = 5400;
-            sigBlock = '\\par\\par\\par\\par';
-            sigBlock += `{\\pard\\qc\\li${sigIndent}\\sb80\\sa0 {\\f0\\fs18 ____________________________}\\par}`;
-            sigBlock += `{\\pard\\qc\\li${sigIndent}\\sb0\\sa0 {\\f0\\fs18\\b ${_rtfEscapeLine(ctx.professionalName)}}\\par}`;
-            if (ctx.professionalMatricula) sigBlock += `{\\pard\\qc\\li${sigIndent}\\sb0\\sa0 {\\f0\\fs16\\cf2 Mat. ${_rtfEscapeLine(ctx.professionalMatricula)}}\\par}`;
+            // Usamos \sb1440 (1 pulgada de espacio antes) en lugar de 4 \par sueltos.
+            // \keepn encadena cada línea con la siguiente: si el bloque no entra en la
+            // página actual, se mueve COMPLETO a la siguiente (nunca queda solo).
+            sigBlock = `{\\pard\\keepn\\qc\\li${sigIndent}\\sb1440\\sa0 {\\f0\\fs18 ____________________________}\\par}`;
+            sigBlock += `{\\pard\\keepn\\qc\\li${sigIndent}\\sb0\\sa0 {\\f0\\fs18\\b ${_rtfEscapeLine(ctx.professionalName)}}\\par}`;
+            if (ctx.professionalMatricula) sigBlock += `{\\pard\\keepn\\qc\\li${sigIndent}\\sb0\\sa0 {\\f0\\fs16\\cf2 Mat. ${_rtfEscapeLine(ctx.professionalMatricula)}}\\par}`;
             if (ctx.professionalSpecialty) sigBlock += `{\\pard\\qc\\li${sigIndent}\\sb0\\sa0 {\\f0\\fs16\\i\\cf2 ${_rtfEscapeLine(ctx.professionalSpecialty)}}\\par}`;
         }
 
