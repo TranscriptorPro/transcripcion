@@ -30,7 +30,7 @@
         .drop-zone {
             border: 2px dashed var(--border);
             border-radius: var(--radius-sm);
-            padding: 2rem 1rem;
+            padding: 1.25rem 0.75rem;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
@@ -45,9 +45,9 @@
         }
 
         .drop-zone-icon {
-            width: 56px;
-            height: 56px;
-            margin: 0 auto 0.75rem;
+            width: 44px;
+            height: 44px;
+            margin: 0 auto 0.5rem;
             background: linear-gradient(135deg, var(--primary), var(--primary-light));
             border-radius: 50%;
             display: grid;
@@ -86,9 +86,9 @@
         .audio-options {
             display: flex;
             flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-top: 1rem;
-            padding-top: 1rem;
+            gap: 0.4rem;
+            margin-top: 0.6rem;
+            padding-top: 0.6rem;
             border-top: 1px solid var(--border);
         }
 
@@ -218,7 +218,9 @@
             display: flex;
             flex-direction: column;
             gap: 0.4rem;
-            max-height: 180px;
+            flex: 1;
+            min-height: 0;
+            max-height: 160px;
             overflow-y: auto;
             margin-top: 0.75rem;
         }
@@ -676,7 +678,13 @@
             display: flex;
             flex-direction: column;
             gap: 1rem;
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: thin;
         }
+        .editor-area::-webkit-scrollbar { width: 4px; }
+        .editor-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
         .editor-header {
             display: flex;
@@ -981,7 +989,7 @@
         /* Sticky header band (tabs + actions + toolbar) */
         .editor-sticky-head {
             position: sticky;
-            top: 0;
+            top: 0;          /* top:0 del .editor-area que ya es el scroll container */
             z-index: 90;
             background: var(--bg-card);
             margin: -1.25rem -1.25rem 0;

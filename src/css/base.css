@@ -8,7 +8,11 @@
             font-family: 'Inter', -apple-system, sans-serif;
             background: var(--bg-main);
             color: var(--text-primary);
-            min-height: 100vh;
+            /* App-shell layout: sin scroll a nivel body, cada columna scrollea independiente */
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
             line-height: 1.6;
             transition: background 0.3s, color 0.3s;
         }
