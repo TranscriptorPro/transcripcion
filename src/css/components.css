@@ -1046,6 +1046,8 @@
             color: var(--primary);
             border-bottom-color: var(--primary);
             font-weight: 600;
+            background: color-mix(in srgb, var(--primary) 12%, transparent);
+            border-radius: 4px 4px 0 0;
         }
 
         .tab-close {
