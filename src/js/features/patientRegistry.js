@@ -173,36 +173,58 @@ window.initPatientRegistrySearch = function() {
         if (wrap) { wrap.style.position = 'relative'; wrap.appendChild(dropdown); }
     }
 
-    function hideDropdown() { dropdown.style.display = 'none'; }
+    function hideDropdown() { dropdown.style.display = 'none'; selectedIdx = -1; }
+
+    let lastResults = [];
+    let selectedIdx = -1;
+
+    function setActive(idx) {
+        const items = dropdown.querySelectorAll('[data-idx]');
+        items.forEach((el, i) => {
+            if (i === idx) {
+                el.style.background = 'color-mix(in srgb, var(--primary) 12%, transparent)';
+                el.style.color = 'var(--primary)';
+                el.style.fontWeight = '600';
+                el.scrollIntoView({ block: 'nearest' });
+            } else {
+                el.style.background = '';
+                el.style.color = '';
+                el.style.fontWeight = '';
+            }
+        });
+        selectedIdx = idx;
+    }
+
+    function selectPatient(p) {
+        const setVal = (id, v) => { const el2 = document.getElementById(id); if (el2 && v != null) el2.value = v; };
+        setVal('reqPatientSearch',      p.name + (p.dni ? ` — DNI ${p.dni}` : ''));
+        setVal('reqPatientName',        p.name);
+        setVal('reqPatientDni',         p.dni);
+        setVal('reqPatientAge',         p.age);
+        setVal('reqPatientInsurance',   p.insurance);
+        setVal('reqPatientAffiliateNum',p.affiliateNum);
+        const sexEl = document.getElementById('reqPatientSex');
+        if (sexEl && p.sex) sexEl.value = p.sex;
+        hideDropdown();
+        if (typeof showToast === 'function') showToast(`✅ ${p.name}`, 'success');
+    }
 
     function showResults(results) {
+        lastResults = results;
+        selectedIdx = -1;
         if (!results.length) { hideDropdown(); return; }
-        const esc = typeof escapeHtml === 'function' ? escapeHtml : (s => (s||"").toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"));
+        const esc = typeof escapeHtml === 'function' ? escapeHtml : (s => (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'));
         dropdown.innerHTML = results.map((p, i) => {
             const label = esc(p.name) + (p.dni ? ` — DNI ${esc(p.dni)}` : '') + (p.age ? `, ${esc(String(p.age))}a` : '');
-            return `<div data-idx="${i}" style="padding:0.5rem 0.85rem;cursor:pointer;font-size:0.82rem;border-bottom:1px solid var(--border);"
-                onmouseenter="this.style.background='var(--bg-hover,#2a2a2a)'"
-                onmouseleave="this.style.background=''">${label}</div>`;
+            return `<div data-idx="${i}" style="padding:0.5rem 0.85rem;cursor:pointer;font-size:0.82rem;border-bottom:1px solid var(--border);">${label}</div>`;
         }).join('');
         dropdown.style.display = 'block';
 
-        // Click en resultado
         dropdown.querySelectorAll('[data-idx]').forEach(el => {
-            el.addEventListener('mousedown', (e) => {
-                e.preventDefault(); // evita que el input pierda foco antes
-                const p = results[parseInt(el.dataset.idx)];
-                const setVal = (id, v) => { const el2 = document.getElementById(id); if (el2 && v != null) el2.value = v; };
-                setVal('reqPatientSearch',      p.name + (p.dni ? ` — DNI ${p.dni}` : ''));
-                setVal('reqPatientName',        p.name);
-                setVal('reqPatientDni',         p.dni);
-                setVal('reqPatientAge',         p.age);
-                setVal('reqPatientInsurance',   p.insurance);
-                setVal('reqPatientAffiliateNum',p.affiliateNum);
-                const sexEl = document.getElementById('reqPatientSex');
-                if (sexEl && p.sex) sexEl.value = p.sex;
-                hideDropdown();
-                if (typeof showToast === 'function') showToast(`✅ ${p.name}`, 'success');
-            });
+            const i = parseInt(el.dataset.idx);
+            el.addEventListener('mouseenter', () => setActive(i));
+            el.addEventListener('mouseleave', () => { el.style.background = ''; el.style.color = ''; el.style.fontWeight = ''; selectedIdx = -1; });
+            el.addEventListener('mousedown', (e) => { e.preventDefault(); selectPatient(results[i]); });
         });
     }
 

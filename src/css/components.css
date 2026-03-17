@@ -3692,7 +3692,7 @@
             color: var(--text-secondary);
         }
 
-        .field-group input,
+        .field-group input:not([type="radio"]):not([type="checkbox"]),
         .field-group select,
         .field-group textarea {
             width: 100%;
