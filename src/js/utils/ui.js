@@ -771,12 +771,10 @@ window.initModals = function () {
         function _syncInlineAppendBtn() {
             if (window._appendRecordingActive) {
                 btnAppendRecord.classList.add('recording-pulse');
-                btnAppendRecord.classList.remove('btn-pro-animated');
                 const span = btnAppendRecord.querySelector('span');
                 if (span) span.textContent = '⏹ Grabando…';
             } else {
                 btnAppendRecord.classList.remove('recording-pulse');
-                btnAppendRecord.classList.add('btn-pro-animated');
                 const span = btnAppendRecord.querySelector('span');
                 if (span) span.textContent = '+';
             }
