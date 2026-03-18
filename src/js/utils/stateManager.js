@@ -1,19 +1,6 @@
 // ============ MODE SELECTOR (PRO/NORMAL) & STATE MANAGER ============
 
 /**
- * Auto-colapsa el sidebar en móvil cuando llegan resultados,
- * para dar espacio máximo al editor en pantallas pequeñas.
- */
-function _mobileSidebarAutoCollapse() {
-    if (window.innerWidth > 768) return;
-    var sidebar = document.querySelector('.sidebar');
-    if (!sidebar) return;
-    sidebar.classList.remove('mobile-open');
-    var btn = document.getElementById('btnMobileSidebarToggle');
-    if (btn) btn.title = 'Mostrar panel lateral';
-}
-
-/**
  * Detecta si el HTML del editor parece un informe ya estructurado.
  * Criterio: contiene encabezados (h1-h4) o al menos 2 secciones con <strong>.
  */
@@ -41,7 +28,6 @@ window.updateButtonsVisibility = function (state) {
 
     const isStructuring  = state === 'STRUCTURING';
     const isTranscribed  = ['TRANSCRIBED', 'STRUCTURED', 'PREVIEWED'].includes(state);
-    if (isTranscribed) _mobileSidebarAutoCollapse();
     const isStructured   = ['STRUCTURED', 'PREVIEWED'].includes(state);
     const isProMode      = window.currentMode === 'pro'
         || (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'PRO');
@@ -376,14 +362,3 @@ window.disableButtons = function () {
                  'structureBtn', 'downloadPdfBtn', 'btnConfigPdfMain'];
     ids.forEach(id => { const b = document.getElementById(id); if (b) b.disabled = true; });
 }
-
-// ---- Botón hamburguesa: toggle sidebar en móvil ----
-(function _initMobileSidebarToggle() {
-    var btn = document.getElementById('btnMobileSidebarToggle');
-    var sidebar = document.querySelector('.sidebar');
-    if (!btn || !sidebar) return;
-    btn.addEventListener('click', function () {
-        var isOpen = sidebar.classList.toggle('mobile-open');
-        btn.title = isOpen ? 'Ocultar panel lateral' : 'Mostrar panel lateral';
-    });
-})();
