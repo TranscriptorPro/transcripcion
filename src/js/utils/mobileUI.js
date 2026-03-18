@@ -26,7 +26,7 @@
         buildSidebarCollapseButton();
         hookSidebarAutoCollapse();
         hookTranscriptionButtons();
-        hookMobileViewModeButtons();
+        optimizeEditorActionsForMobile();
     }
 
     /* ─── 1. Menú overflow (⋮): eliminado — todos los botones visibles en header */
@@ -125,85 +125,87 @@
             } else if (state === 'IDLE') {
                 showSidebar();
             }
+
+            optimizeEditorActionsForMobile();
         };
     }
 
-    function getEyeIconSvg(withLashes) {
-        var lashes = withLashes
-            ? '<path d="M8 8L6.9 6.7M12 7V5.3M16 8l1.1-1.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"></path>'
-            : '';
-        return ''
-            + '<svg class="mv-eye-icon" viewBox="0 0 24 24" aria-hidden="true">'
-            + '<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5z" fill="currentColor" opacity="0.22"></path>'
-            + '<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 11.7c-2.04 0-3.7-1.66-3.7-3.7S9.96 8.8 12 8.8s3.7 1.66 3.7 3.7-1.66 3.7-3.7 3.7z" fill="currentColor"></path>'
-            + lashes
-            + '</svg>';
+    function optimizeEditorActionsForMobile() {
+        if (!isMobile()) return;
+
+        compactInlineReviewLabel();
+        hideQuickProfileSelector();
+        moveCopyButtonIntoToolbar();
+        compactDownloadButton();
+        syncCompactViewButtons();
     }
 
-    function getComparisonIconHtml() {
-        return ''
-            + '<span class="mv-comp-icon-wrap" aria-hidden="true">'
-            + getEyeIconSvg(false)
-            + '<span class="mv-comp-slash">/</span>'
-            + getEyeIconSvg(true)
-            + '</span>';
+    function compactInlineReviewLabel() {
+        var label = document.querySelector('#inlineReviewQuickControl .inline-review-quick-label');
+        if (!label) return;
+        label.textContent = '▶';
+        label.title = 'Revisión IA inline';
     }
 
-    function hookMobileViewModeButtons() {
+    function hideQuickProfileSelector() {
+        var selector = document.getElementById('quickProfileSelector');
+        if (!selector) return;
+        selector.style.display = 'none';
+
+        [selector.previousElementSibling, selector.nextElementSibling].forEach(function (el) {
+            if (!el) return;
+            var style = String(el.getAttribute('style') || '');
+            if (style.indexOf('width: 1px') !== -1) {
+                el.style.display = 'none';
+            }
+        });
+    }
+
+    function moveCopyButtonIntoToolbar() {
+        var copyBtn = document.getElementById('copyBtn');
+        var toolbar = document.getElementById('editorToolbar');
+        if (!copyBtn || !toolbar) return;
+        if (copyBtn.parentElement === toolbar) return;
+
+        copyBtn.classList.remove('btn-action-green');
+        copyBtn.classList.add('toolbar-btn');
+        copyBtn.title = 'Copiar todo';
+        copyBtn.setAttribute('aria-label', 'Copiar todo');
+        toolbar.appendChild(copyBtn);
+    }
+
+    function compactDownloadButton() {
+        var btnMain = document.getElementById('downloadBtnMain');
+        var btnChevron = document.getElementById('downloadBtn');
+        var label = document.getElementById('downloadFavLabel');
+        if (btnMain) btnMain.style.display = 'none';
+        if (label) label.style.display = 'none';
+        if (!btnChevron) return;
+
+        btnChevron.title = 'Descargar';
+        btnChevron.setAttribute('aria-label', 'Descargar');
+        btnChevron.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M5 20h14v-2H5v2zm7-17v9.17l3.59-3.58L17 10l-5 5-5-5 1.41-1.41L11 12.17V3h1z"/></svg>';
+    }
+
+    function syncCompactViewButtons() {
         var btnRestoreOriginal = document.getElementById('btnRestoreOriginal');
         var btnCompareView = document.getElementById('btnCompareView');
         if (!btnRestoreOriginal && !btnCompareView) return;
 
-        var applying = false;
-
-        function applyMobileViewVisuals() {
-            if (!isMobile() || applying) return;
-            applying = true;
-            try {
-                if (btnRestoreOriginal) {
-                    var showingOriginal = !!btnRestoreOriginal._showingOriginal;
-                    var restoreLabel = showingOriginal ? 'Estruct.' : 'Original';
-                    btnRestoreOriginal.innerHTML = getEyeIconSvg(showingOriginal) + '<span class="mv-label">' + restoreLabel + '</span>';
-                    btnRestoreOriginal.setAttribute('data-mobile-view-state', showingOriginal ? 'structured' : 'original');
-                    btnRestoreOriginal.title = showingOriginal
-                        ? 'Volver a vista estructurada'
-                        : 'Ver vista original';
-                }
-
-                if (btnCompareView) {
-                    var isCompareActive = !!window._isComparisonMode || btnCompareView.classList.contains('toggle-active');
-                    var compareLabel = isCompareActive ? 'Cerrar comparativa' : 'Vista comparativa';
-                    btnCompareView.innerHTML = getComparisonIconHtml() + '<span class="mv-label">' + compareLabel + '</span>';
-                    btnCompareView.setAttribute('data-mobile-compare-state', isCompareActive ? 'active' : 'idle');
-                    btnCompareView.title = isCompareActive
-                        ? 'Cerrar vista comparativa'
-                        : 'Abrir vista comparativa';
-                }
-            } finally {
-                applying = false;
-            }
+        if (btnRestoreOriginal) {
+            var showingOriginal = !!btnRestoreOriginal._showingOriginal;
+            btnRestoreOriginal.textContent = showingOriginal ? 'Estruct.' : 'Original';
+            btnRestoreOriginal.title = showingOriginal
+                ? 'Volver a vista estructurada'
+                : 'Ver vista original';
         }
 
-        function observeButton(buttonEl) {
-            if (!buttonEl) return;
-
-            var observer = new MutationObserver(function () {
-                if (!applying) {
-                    setTimeout(applyMobileViewVisuals, 0);
-                }
-            });
-            observer.observe(buttonEl, { childList: true, subtree: false, characterData: true });
-
-            buttonEl.addEventListener('click', function () {
-                setTimeout(applyMobileViewVisuals, 0);
-            });
+        if (btnCompareView) {
+            var isCompareActive = !!window._isComparisonMode || btnCompareView.classList.contains('toggle-active');
+            btnCompareView.textContent = isCompareActive ? 'Cerrar' : 'Comparativa';
+            btnCompareView.title = isCompareActive
+                ? 'Cerrar vista comparativa'
+                : 'Abrir vista comparativa';
         }
-
-        observeButton(btnRestoreOriginal);
-        observeButton(btnCompareView);
-
-        setTimeout(applyMobileViewVisuals, 0);
-        setTimeout(applyMobileViewVisuals, 250);
-        setTimeout(applyMobileViewVisuals, 900);
     }
 })();

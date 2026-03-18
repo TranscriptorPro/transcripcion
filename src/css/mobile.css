@@ -240,67 +240,129 @@
         font-size: 0.75rem;
     }
 
-    /* ── Acciones sobre herramientas de edición: iconos más legibles ───── */
-    #btnConfigPdfMain svg:first-child {
-        width: 20px !important;
-        height: 20px !important;
-    }
-
-    #btnConfigPdfMain svg:last-child {
-        width: 16px !important;
-        height: 16px !important;
-        margin-left: -3px !important;
-    }
-
-    #printBtn svg {
-        width: 20px !important;
-        height: 20px !important;
-    }
-
-    /* ── Botones de vista (original / estructurada / comparativa) ───────── */
-    #btnRestoreOriginal,
-    #btnCompareView {
-        min-height: 32px;
-        padding: 0.22rem 0.45rem !important;
-        gap: 0.3rem !important;
+    /* ── Barra de acciones móvil: compacta y legible ───────────────────── */
+    .editor-actions {
+        flex-wrap: wrap !important;
+        gap: 0.28rem !important;
         align-items: center;
     }
 
-    #btnRestoreOriginal .mv-label,
-    #btnCompareView .mv-label {
-        display: inline-block;
-        font-size: 0.64rem;
-        line-height: 1.05;
-        font-weight: 700;
+    /* Ocultar selector rápido de perfil en móvil para liberar espacio */
+    #quickProfileSelector {
+        display: none !important;
+    }
+
+    .editor-actions > div[style*="width: 1px"] {
+        display: none !important;
+    }
+
+    /* Botón Revisión IA: solo flecha (texto mínimo) */
+    #inlineReviewQuickControl.inline-review-in-editor {
+        padding: 0.14rem 0.32rem !important;
+        gap: 0.25rem !important;
+        min-width: 0;
+    }
+
+    #inlineReviewQuickControl .inline-review-quick-label {
+        font-size: 0.7rem !important;
+        line-height: 1 !important;
+        max-width: 1ch;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+    /* Micrófono + agregar: más compacto y circular */
+    #btnAppendRecord {
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+        padding: 0 !important;
+        border-radius: 50% !important;
+        gap: 0 !important;
+        position: relative;
+    }
+
+    #btnAppendRecord .append-mic-icon {
+        width: 13px;
+        height: 13px;
+    }
+
+    #btnAppendRecord .append-plus {
+        position: absolute;
+        right: 4px;
+        bottom: 2px;
+        font-size: 0.7rem;
+        min-width: 0;
+        line-height: 1;
+    }
+
+    /* Segunda fila de acciones: iconos bastante más grandes */
+    .editor-actions .btn-action-green svg {
+        width: 22px !important;
+        height: 22px !important;
+    }
+
+    #btnConfigPdfMain svg:last-child {
+        width: 18px !important;
+        height: 18px !important;
+        margin-left: -2px !important;
+    }
+
+    /* Botones de vista: texto corto y coherente (sin desborde) */
+    #btnRestoreOriginal,
+    #btnCompareView {
+        min-height: 30px;
+        padding: 0.2rem 0.45rem !important;
+        font-size: 0.64rem !important;
+        font-weight: 700 !important;
         letter-spacing: 0.01em;
         white-space: nowrap;
     }
 
-    #btnCompareView .mv-label {
+    #btnCompareView {
         white-space: normal;
+        line-height: 1.05;
         text-align: center;
-        max-width: 74px;
+        max-width: 78px;
     }
 
-    .mv-eye-icon {
-        width: 15px;
-        height: 15px;
-        color: currentColor;
-        flex: 0 0 auto;
+    /* Descarga: un solo botón pequeño con flecha hacia abajo */
+    #downloadBtnMain,
+    #downloadFavLabel {
+        display: none !important;
     }
 
-    .mv-comp-icon-wrap {
-        display: inline-flex;
-        align-items: center;
-        gap: 2px;
-        flex: 0 0 auto;
+    #downloadBtnContainer .download-split {
+        overflow: visible;
     }
 
-    .mv-comp-slash {
-        font-size: 0.72rem;
-        font-weight: 700;
-        line-height: 1;
-        opacity: 0.85;
+    #downloadBtn {
+        width: 30px !important;
+        height: 30px !important;
+        min-width: 30px !important;
+        padding: 0 !important;
+        border-radius: 999px !important;
+    }
+
+    #downloadBtn svg {
+        width: 15px !important;
+        height: 15px !important;
+    }
+
+    /* Copiar: estilo de herramienta en toolbar (móvil) */
+    #editorToolbar #copyBtn {
+        min-width: 28px;
+        height: 28px;
+        padding: 0;
+        border-radius: 6px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+    }
+
+    #editorToolbar #copyBtn svg {
+        width: 15px !important;
+        height: 15px !important;
     }
 
     /* ── Botones de acción del editor ────────────────────────────── */
