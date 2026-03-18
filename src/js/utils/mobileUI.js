@@ -50,10 +50,13 @@
         });
     }
 
-    /* ─── 3. Botón hamburguesa (☰) dentro del sidebar (esquina sup-izq) ─── */
+    /* ─── 3. Botón hamburguesa (☰) dentro del sidebar, junto al título principal ─── */
     function buildSidebarCollapseButton() {
         var sidebar = document.querySelector('.sidebar');
         if (!sidebar) return;
+
+        var firstCardTitle = sidebar.querySelector('.card .card-title');
+        if (!firstCardTitle) return;
 
         var btn = document.createElement('button');
         btn.className = 'mobile-sidebar-collapser';
@@ -66,8 +69,8 @@
             hideSidebar();
         });
 
-        // Insertar al inicio del sidebar
-        sidebar.insertBefore(btn, sidebar.firstChild);
+        // Insertar al inicio del título "Grabar o Subir" (a la izquierda del ícono)
+        firstCardTitle.insertBefore(btn, firstCardTitle.firstChild);
     }
 
     /** Muestra sidebar y oculta editor */
