@@ -359,10 +359,18 @@
         opacity: 0.95;
     }
 
-    /* Toggle Original/Estructurado */
+    /* Toggle Original/Estructurado — SVG icon grande */
     #btnRestoreOriginal {
-        font-size: 1.4rem;
         line-height: 1;
+    }
+
+    #btnRestoreOriginal svg {
+        width: 26px !important;
+        height: 26px !important;
+    }
+
+    #btnRestoreOriginal.toggle-active {
+        background: transparent !important;
     }
 
     #btnCompareView { display: none !important; }
@@ -430,19 +438,54 @@
     #editorToolbar.mobile-grouped .mobile-toolbar-group.open .mobile-toolbar-panel {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 0.28rem;
+        gap: 0.32rem;
     }
 
     #editorToolbar.mobile-grouped .mobile-toolbar-panel .toolbar-btn,
     #editorToolbar.mobile-grouped .mobile-toolbar-panel .toolbar-select {
         min-width: 0;
         width: 100%;
-        height: 30px;
+        height: 36px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: var(--bg-secondary, #f5f5f5);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.82rem;
     }
 
     #editorToolbar.mobile-grouped .mobile-toolbar-panel .toolbar-select {
-        font-size: 0.7rem;
+        font-size: 0.75rem;
         padding: 0.2rem 0.32rem;
+    }
+
+    /* Panel Tamaño: layout especial 2 columnas para select + botones */
+    #editorToolbar.mobile-grouped .mobile-toolbar-panel .toolbar-btn.mobile-group-item[id="increaseFontBtn"],
+    #editorToolbar.mobile-grouped .mobile-toolbar-panel .toolbar-btn.mobile-group-item[id="decreaseFontBtn"] {
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+
+    /* Shape picker dentro del panel Insertar */
+    .mobile-shape-picker {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 4px;
+        padding: 6px;
+        background: var(--bg-secondary);
+        border-radius: 8px;
+        margin-top: 2px;
+    }
+
+    .mobile-shape-btn {
+        width: 100% !important;
+        height: 36px !important;
+        font-size: 1.2rem !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 6px !important;
+        background: var(--bg-card) !important;
     }
 
     #editorToolbar.mobile-grouped .mobile-toolbar-standalone {
@@ -455,28 +498,30 @@
         justify-content: center;
         padding: 0;
         border-radius: 6px;
+        border: none !important;
     }
 
     /* Copiar y diccionario como herramientas del toolbar (móvil) */
     #editorToolbar #copyBtn,
     #editorToolbar #btnMedicalCheck {
         display: inline-flex;
-        min-width: 30px;
-        height: 30px;
+        min-width: 32px;
+        width: 32px;
+        height: 32px;
         padding: 0;
         border-radius: 6px;
-        background: var(--bg-card);
-        border: 1px solid var(--border);
+        background: transparent;
+        border: none !important;
         color: var(--text-secondary);
     }
 
     #editorToolbar #copyBtn svg {
-        width: 15px !important;
-        height: 15px !important;
+        width: 16px !important;
+        height: 16px !important;
     }
 
     #editorToolbar #btnMedicalCheck {
-        font-size: 0.9rem;
+        font-size: 1rem;
         line-height: 1;
     }
 
@@ -489,6 +534,81 @@
     .fixed-buttons-container .btn {
         font-size: 0.75rem;
         padding: 0.35rem 0.6rem;
+    }
+
+    /* ── Medical Dictionary modal: adaptación móvil ──────────────── */
+    #medDictModal .modal {
+        max-width: 96vw !important;
+        width: 96vw !important;
+        max-height: 92vh !important;
+        margin: 0 auto;
+        border-radius: 12px;
+    }
+
+    #medDictModal .modal-header {
+        padding: 0.75rem 1rem;
+    }
+
+    #medDictModal .modal-header h2 {
+        font-size: 1.1rem;
+    }
+
+    #medDictModal .med-dict-tabs {
+        gap: 0;
+    }
+
+    #medDictModal .med-dict-tab {
+        font-size: 0.78rem;
+        padding: 0.5rem 0.5rem;
+    }
+
+    #medDictModal #medDictTabReview,
+    #medDictModal #medDictTabDictionary {
+        padding: 0.75rem 0.75rem !important;
+    }
+
+    #medDictModal .med-dict-item {
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        padding: 0.4rem 0.5rem;
+        font-size: 0.8rem;
+    }
+
+    #medDictModal .med-dict-from,
+    #medDictModal .med-dict-to {
+        font-size: 0.78rem;
+        word-break: break-word;
+    }
+
+    #medDictModal .med-dict-badge {
+        font-size: 0.6rem;
+    }
+
+    #medDictModal .med-dict-add-row {
+        flex-wrap: wrap;
+        gap: 0.35rem;
+    }
+
+    #medDictModal .med-dict-add-row input {
+        min-width: 0;
+        flex: 1 1 40%;
+        font-size: 0.8rem;
+    }
+
+    #medDictModal .modal-footer {
+        padding: 0.6rem 0.75rem !important;
+        flex-wrap: wrap;
+        gap: 0.5rem !important;
+    }
+
+    #medDictModal .modal-footer .btn {
+        font-size: 0.78rem;
+        padding: 0.4rem 0.75rem;
+    }
+
+    #medDictModal #medDictSelCount {
+        font-size: 0.72rem;
+        width: 100%;
     }
 
 }
