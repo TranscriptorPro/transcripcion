@@ -108,6 +108,10 @@ window.initReferringDoctorSearch = function() {
     const input = document.getElementById('reqReferringDoctor');
     if (!input) return;
 
+    // Guard: no re-inicializar si ya está vinculado
+    if (input._doctorSearchBound) return;
+    input._doctorSearchBound = true;
+
     // Dropdown reutilizable
     let dropdown = document.getElementById('referringDoctorDropdown');
     if (!dropdown) {

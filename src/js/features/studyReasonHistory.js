@@ -94,6 +94,10 @@ window.initStudyReasonSearch = function() {
     const input = document.getElementById('reqStudyReason');
     if (!input) return;
 
+    // Guard: no re-inicializar si ya está vinculado
+    if (input._reasonSearchBound) return;
+    input._reasonSearchBound = true;
+
     let dropdown = document.getElementById('studyReasonDropdown');
     if (!dropdown) {
         dropdown = document.createElement('div');

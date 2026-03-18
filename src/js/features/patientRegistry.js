@@ -153,6 +153,16 @@ window.initPatientRegistrySearch = function() {
     const searchInput = document.getElementById('reqPatientSearch');
     if (!searchInput) return;
 
+    // Mostrar/ocultar la caja de búsqueda según si hay pacientes guardados
+    const searchBox = searchInput.closest('.patient-search-box');
+    if (searchBox) {
+        searchBox.style.display = getRegistry().length > 0 ? 'block' : 'none';
+    }
+
+    // Guard: no re-inicializar si ya está vinculado — evita listeners duplicados
+    if (searchInput._patientSearchBound) return;
+    searchInput._patientSearchBound = true;
+
     // Desconectar el datalist nativo (no filtra en tiempo real)
     searchInput.removeAttribute('list');
 
