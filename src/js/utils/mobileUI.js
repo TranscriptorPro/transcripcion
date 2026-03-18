@@ -25,6 +25,7 @@
         buildOverflowMenu();
         buildHamburgerButton();
         hookSidebarAutoCollapse();
+        hookTranscriptionButtons();
         closeOverflowOnOutsideClick();
     }
 
@@ -130,14 +131,46 @@
         header.insertBefore(btn, header.firstChild);
 
         btn.addEventListener('click', function () {
-            var sidebar = document.querySelector('.sidebar');
-            if (!sidebar) return;
-            sidebar.classList.toggle('mobile-hidden');
-            document.body.classList.toggle('mobile-sidebar-collapsed');
+            showSidebar();
         });
     }
 
-    /* ─── 3. Auto-colapsar sidebar al terminar de estructurar ────── */
+    /** Muestra sidebar y oculta editor */
+    function showSidebar() {
+        var sidebar = document.querySelector('.sidebar');
+        if (!sidebar) return;
+        sidebar.classList.remove('mobile-hidden');
+        document.body.classList.remove('mobile-sidebar-collapsed');
+    }
+
+    /** Oculta sidebar y muestra editor */
+    function hideSidebar() {
+        var sidebar = document.querySelector('.sidebar');
+        if (!sidebar) return;
+        sidebar.classList.add('mobile-hidden');
+        document.body.classList.add('mobile-sidebar-collapsed');
+    }
+
+    /* ─── 3. Hookear botones del sidebar que disparan transcripción ─ */
+    function hookTranscriptionButtons() {
+        // Estos botones, al ser clickeados, deben ocultar sidebar → mostrar editor
+        var btnIds = [
+            'transcribeAndStructureBtn',  // Transcribir + Estructurar
+            'btnStructureTextPro',        // Estructurar texto (Pro)
+            'btnStructureAI',             // Botón IA magic
+        ];
+        btnIds.forEach(function (id) {
+            var btn = document.getElementById(id);
+            if (!btn) return;
+            btn.addEventListener('click', function () {
+                if (!isMobile()) return;
+                // Pequeño delay para que la acción original arranque primero
+                setTimeout(hideSidebar, 150);
+            });
+        });
+    }
+
+    /* ─── 4. Auto-colapsar sidebar al terminar de estructurar ────── */
     function hookSidebarAutoCollapse() {
         var orig = window.updateButtonsVisibility;
         if (typeof orig !== 'function') return;
@@ -148,19 +181,10 @@
 
             if (!isMobile()) return;
 
-            if (state === 'STRUCTURED') {
-                var sidebar = document.querySelector('.sidebar');
-                if (sidebar && !sidebar.classList.contains('mobile-hidden')) {
-                    sidebar.classList.add('mobile-hidden');
-                    document.body.classList.add('mobile-sidebar-collapsed');
-                }
+            if (state === 'STRUCTURED' || state === 'STRUCTURING' || state === 'TRANSCRIBED') {
+                hideSidebar();
             } else if (state === 'IDLE') {
-                // Al resetear, volver a mostrar sidebar
-                var sidebar2 = document.querySelector('.sidebar');
-                if (sidebar2) {
-                    sidebar2.classList.remove('mobile-hidden');
-                    document.body.classList.remove('mobile-sidebar-collapsed');
-                }
+                showSidebar();
             }
         };
     }

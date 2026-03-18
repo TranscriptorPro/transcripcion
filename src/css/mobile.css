@@ -57,9 +57,9 @@
         display: none !important;
     }
 
-    /* ── Botón hamburguesa: visible solo en mobile, oculto inicialmente ── */
+    /* ── Botón hamburguesa: creado por JS, oculto inicialmente ────── */
     .mobile-hamburger {
-        display: flex;
+        display: none;
         width: 32px;
         height: 32px;
         border: none;
@@ -146,39 +146,44 @@
         flex-shrink: 0;
     }
 
-    /* ── LAYOUT: sidebar ocultable ──────────────────────────────── */
+    /* ── LAYOUT: una sola columna, un panel a la vez ─────────── */
     .main-container {
         grid-template-columns: 1fr !important;
-        padding: 0.75rem;
-        gap: 0.75rem;
+        padding: 0.5rem;
+        gap: 0;
     }
 
-    /* Estado por defecto en mobile: sidebar visible, ocupa full width */
+    /* ── SIDEBAR: ocupa toda la pantalla por defecto ─────────────── */
     .sidebar {
         width: 100%;
         max-height: none;
         overflow-y: auto;
     }
 
-    /* Cuando se colapsa tras estructurar */
+    /* ── EDITOR: oculto por defecto en mobile ────────────────────── */
+    .editor-area {
+        display: none !important;
+    }
+
+    /* ── Cuando sidebar se oculta → editor aparece ──────────────── */
+    body.mobile-sidebar-collapsed .sidebar,
     .sidebar.mobile-hidden {
         display: none !important;
     }
 
-    /* hamburguesa oculta mientras sidebar es visible */
+    body.mobile-sidebar-collapsed .editor-area {
+        display: block !important;
+        min-height: 80vh;
+    }
+
+    /* ── Hamburguesa: oculta cuando sidebar visible ──────────────── */
     .mobile-hamburger {
-        display: none;
+        display: none !important;
     }
 
-    /* hamburguesa se muestra cuando sidebar está oculto */
-    .sidebar.mobile-hidden ~ .mobile-hamburger,
+    /* Hamburguesa visible solo cuando sidebar está oculto */
     body.mobile-sidebar-collapsed .mobile-hamburger {
-        display: flex;
-    }
-
-    /* ── EDITOR AREA: ajustes mobile ────────────────────────────── */
-    .editor-area {
-        min-height: 60vh;
+        display: flex !important;
     }
 
     /* Toolbar del editor: wrap para que quepan los botones */
