@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transcriptor Pro - Diseño V2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        neon: {
+                            blue: '#00d4ff',
+                            cyan: '#00ffff',
+                            dark: '#0a0f1e',
+                            hover: 'rgba(0, 212, 255, 0.1)',
+                            bg: '#050811'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #050811;
+            background-image: radial-gradient(circle at 50% -10%, #0d1b3e 0%, #0a0f1e 40%, #050811 100%);
+            color: white;
+            min-height: 100vh;
+            background-attachment: fixed;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: linear-gradient(145deg, rgba(20, 30, 50, 0.5) 0%, rgba(10, 15, 30, 0.8) 100%);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 212, 255, 0.15);
+            border-radius: 12px;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 20px rgba(0, 0, 0, 0.3);
+            transition: border-color 0.3s;
+        }
+        .glass-panel:hover {
+            border-color: rgba(0, 212, 255, 0.3);
+        }
+
+        /* Header buttons */
+        .icon-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            color: #d1d5db;
+            cursor: pointer;
+        }
+        .icon-btn:hover {
+            background: rgba(0, 212, 255, 0.15);
+            color: #00d4ff;
+            border-color: rgba(0, 212, 255, 0.3);
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        /* Toggles */
+        .toggle-switch {
+            appearance: none;
+            width: 44px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            outline: none;
+            transition: 0.3s;
+        }
+        .toggle-switch:checked {
+            background: #00d4ff;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .toggle-switch:checked::after { left: calc(100% - 22px); }
+
+        /* Pro Medals */
+        .pro-badge {
+            background: rgba(0, 212, 255, 0.15);
+            color: #00d4ff;
+            border: 1px solid rgba(0, 212, 255, 0.4);
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            box-shadow: 0 0 8px rgba(0, 212, 255, 0.3);
+        }
+
+        /* Neon Animated Border */
+        .neon-border { position: relative; }
+        .neon-border::before {
+            content: "";
+            position: absolute;
+            inset: -1.5px;
+            border-radius: inherit;
+            padding: 1.5px;
+            background: linear-gradient(90deg, #00d4ff, #0055ff, #00d4ff);
+            background-size: 200% auto;
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+            animation: shine 3s linear infinite;
+        }
+        @keyframes shine { to { background-position: 200% center; } }
+
+        /* Waves Animation */
+        .wave-container {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 0;
+            overflow: hidden;
+            border-radius: inherit;
+        }
+        .wave-svg {
+            width: 150%;
+            height: 100%;
+            filter: drop-shadow(0 0 8px #00d4ff);
+            animation: waveSlide 8s linear infinite;
+            opacity: 0.7;
+        }
+        @keyframes waveSlide {
+            0% { transform: translateX(-15%); }
+            50% { transform: translateX(15%) scaleY(1.2); }
+            100% { transform: translateX(-15%); }
+        }
+
+        /* Small Record Button Floating */
+        .record-orb {
+            position: absolute;
+            right: 12px;
+            bottom: 12px;
+            z-index: 10;
+            background: rgba(10, 15, 30, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), inset 0 0 10px rgba(0, 212, 255, 0.1);
+            color: white;
+            font-size: 0.8rem;
+            font-weight: 500;
+            padding: 6px 14px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .record-orb:hover {
+            background: rgba(0, 136, 255, 0.2);
+            border-color: #00d4ff;
+            box-shadow: 0 4px 20px rgba(0, 150, 255, 0.4), inset 0 0 15px rgba(0, 212, 255, 0.3);
+            transform: scale(1.05);
+        }
+        .record-dot {
+            width: 10px;
+            height: 10px;
+            background: #ef4444;
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+            animation: pulse-red 2s infinite;
+        }
+        @keyframes pulse-red {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        /* Inputs & Textareas */
+        .form-input {
+            background: rgba(5, 10, 20, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e5e7eb;
+            font-size: 0.875rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            width: 100%;
+            outline: none;
+            transition: 0.2s;
+        }
+        .form-input:focus {
+            border-color: rgba(0, 212, 255, 0.5);
+            box-shadow: 0 0 8px rgba(0, 212, 255, 0.15);
+            background: rgba(10, 15, 30, 0.8);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 212, 255, 0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 212, 255, 0.5); }
+    </style>
+</head>
+<body class="p-2 sm:p-4 md:p-6 lg:p-8 flex justify-center">
+
+    <div class="w-full max-w-[1400px] flex flex-col gap-4 md:gap-6 relative z-10">
+        
+        <!-- Header Completo -->
+        <header class="glass-panel px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
+            <!-- Logo & Titulo -->
+            <div class="flex items-center gap-3 w-full md:w-auto justify-center md:justify-start">
+                <div class="text-[#00d4ff] text-3xl drop-shadow-[0_0_8px_rgba(0,212,255,0.6)]">
+                    <i class="fa-solid fa-brain"></i>
+                </div>
+                <div class="flex flex-col">
+                    <h1 class="text-xl md:text-2xl font-bold tracking-tight flex items-center gap-2">
+                        Transcriptor <span class="text-[#00d4ff] font-medium">Pro</span>
+                    </h1>
+                    <p class="text-[10px] md:text-xs text-gray-400 -mt-0.5 tracking-wide">Audio &rarr; Texto con IA</p>
+                </div>
+            </div>
+            
+            <!-- Acciones Header -->
+            <div class="flex items-center gap-2 flex-wrap justify-center md:justify-end">
+                <!-- Toggle Pro Mode -->
+                <div class="flex items-center gap-2 bg-[rgba(0,0,0,0.3)] rounded-full px-2 py-1 border border-[rgba(255,255,255,0.05)]">
+                    <span class="text-[10px] text-gray-400 font-semibold uppercase pl-1 hidden sm:inline">Modo</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" class="sr-only peer" checked>
+                        <div class="w-7 h-4 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#00d4ff] shadow-[0_0_5px_rgba(0,212,255,0.4)]"></div>
+                    </label>
+                    <span class="pro-badge mr-0.5">Pro</span>
+                </div>
+
+                <div class="w-px h-6 bg-[rgba(255,255,255,0.1)] hidden sm:block mx-1"></div>
+
+                <button class="icon-btn" title="Panel de Administraci�n"><i class="fa-solid fa-shield-halved text-[13px]"></i></button>
+                <button class="icon-btn" title="Contactar soporte"><i class="fa-solid fa-envelope text-[13px]"></i></button>
+                <button class="icon-btn" title="Enviar diagn�stico al soporte"><i class="fa-solid fa-bug text-[13px]"></i></button>
+                <button class="icon-btn" title="Manual profesional"><i class="fa-solid fa-book-medical text-[13px]"></i></button>
+                <button class="icon-btn" title="Ayuda / Centro de ayuda"><i class="fa-solid fa-circle-question text-[13px]"></i></button>
+                <button class="icon-btn" title="Instalar App (PWA)"><i class="fa-solid fa-download text-[13px]"></i></button>
+                <button class="icon-btn text-red-400 hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/10" title="Resetear app (borrar todos los datos)"><i class="fa-solid fa-trash-can text-[13px]"></i></button>
+                
+                <div class="w-px h-6 bg-[rgba(255,255,255,0.1)] hidden sm:block mx-1"></div>
+
+                <button class="icon-btn" title="Cambiar tema (Modo Noche/D�a)"><i class="fa-solid fa-moon text-[13px]"></i></button>
+                <button class="icon-btn" title="Configuraci�n"><i class="fa-solid fa-gear text-[13px]"></i></button>
+            </div>
+        </header>
+
+        <!-- Layout Principal: Sidebar (Capture) + Main Editor -->
+        <main class="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 items-start">
+            
+            <!-- ================= SIDEBAR (Controles de Audio) ================= -->
+            <aside class="lg:col-span-4 xl:col-span-3 flex flex-col gap-4">
+                
+                <!-- Grabar y Subir Container -->
+                <div class="glass-panel p-4 md:p-5 flex flex-col gap-4">
+                    
+                    <div class="flex items-center justify-between border-b border-[rgba(255,255,255,0.05)] pb-2 mb-1">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-microphone-lines text-[#00d4ff]"></i>
+                            <h2 class="font-semibold text-sm tracking-wide text-gray-200 uppercase">Captura de Audio</h2>
+                        </div>
+                    </div>
+
+                    <!-- Cuadro de Animaci�n con Bot�n Flotante Esquina Inferior Derecha -->
+                    <div class="relative w-full h-[150px] rounded-xl overflow-hidden glass-panel border-[rgba(0,212,255,0.2)] bg-[#080d1a]">
+                        <!-- SVG Animation Background  -->
+                        <div class="wave-container pointer-events-none">
+                            <svg class="wave-svg" viewBox="0 0 200 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M0 50 Q 25 20 50 50 T 100 50 T 150 50 T 200 50" stroke="#00d4ff" stroke-width="2.5" stroke-linecap="round"/>
+                                <path d="M-20 50 Q 25 70 50 50 T 100 50 T 150 50 T 200 50" stroke="rgba(0,212,255,0.5)" stroke-width="1.5" stroke-linecap="round"/>
+                                <path d="M0 50 Q 25 50 50 50 T 100 50 T 150 50 T 200 50" stroke="rgba(0,212,255,0.2)" stroke-width="6" stroke-linecap="round" filter="blur(4px)"/>
+                            </svg>
+                        </div>
+                        
+                        <!-- Mini Record Button Floating -->
+                        <button class="record-orb" title="Iniciar grabaci�n">
+                            <div class="record-dot"></div>
+                            Grabar
+                        </button>
+                    </div>
+
+                    <!-- Upload Zone -->
+                    <div class="border-2 border-dashed border-[rgba(0,212,255,0.3)] bg-[rgba(10,15,30,0.4)] hover:bg-[rgba(0,212,255,0.08)] rounded-xl p-4 flex flex-col items-center text-center cursor-pointer transition relative">
+                        <i class="fa-solid fa-arrow-up-from-bracket text-2xl text-[#00d4ff] mb-2 drop-shadow-[0_0_5px_rgba(0,212,255,0.5)]"></i>
+                        <h3 class="font-medium text-white text-sm mb-1">Arrastra audios aqu�</h3>
+                        <p class="text-[11px] text-gray-400">o toca para seleccionar<br>MP3, WAV, OGG, M4A (m�x 25MB)</p>
+                    </div>
+                </div>
+
+                <!-- Opciones / Toggles -->
+                <div class="glass-panel p-2 flex flex-col gap-1.5">
+                    <label class="flex justify-between items-center bg-[rgba(10,15,30,0.4)] hover:bg-[rgba(20,30,50,0.6)] px-4 py-3 rounded-lg cursor-pointer transition">
+                        <span class="text-[13px] text-gray-300 flex items-center gap-2"><i class="fa-solid fa-volume-high text-[#00d4ff] opacity-80 w-4 text-center"></i> Normalizar</span>
+                        <input type="checkbox" class="toggle-switch" checked>
+                    </label>
+                    <label class="flex justify-between items-center bg-[rgba(10,15,30,0.4)] hover:bg-[rgba(20,30,50,0.6)] px-4 py-3 rounded-lg cursor-pointer transition">
+                        <span class="text-[13px] text-gray-300 flex items-center gap-2"><i class="fa-solid fa-wand-magic-sparkles text-[#00d4ff] opacity-80 w-4 text-center"></i> Reducir ruido</span>
+                        <input type="checkbox" class="toggle-switch" checked>
+                    </label>
+                    <label class="flex justify-between items-center bg-[rgba(10,15,30,0.4)] hover:bg-[rgba(20,30,50,0.6)] px-4 py-3 rounded-lg cursor-pointer transition">
+                        <span class="text-[13px] text-gray-300 flex items-center gap-2"><i class="fa-solid fa-link text-[#00d4ff] opacity-80 w-4 text-center"></i> Unir todos los audios</span>
+                        <input type="checkbox" class="toggle-switch">
+                    </label>
+                </div>
+
+                <!-- Botones Transcribir (Normal y Pro) -->
+                <div class="flex flex-col gap-2">
+                    <div class="grid grid-cols-2 gap-2">
+                        <button class="bg-gray-100 hover:bg-white text-[#0a0f1e] font-semibold py-3 px-3 rounded-xl transition shadow-[0_0_15px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2 text-[13px]">
+                            <i class="fa-solid fa-play"></i> Transcribir
+                        </button>
+                        <button class="glass-panel bg-[rgba(20,30,50,0.6)] hover:bg-[rgba(40,50,70,0.8)] text-gray-300 font-semibold py-3 px-3 rounded-xl transition text-[13px] flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-broom"></i> Limpiar
+                        </button>
+                    </div>
+
+                    <!-- Botones Secundarios Ocultos -->
+                    <button class="glass-panel border-dashed border-[rgba(255,255,255,0.1)] bg-[rgba(20,30,50,0.3)] hover:bg-[rgba(40,50,70,0.6)] text-gray-400 py-2.5 px-4 rounded-xl transition text-xs flex justify-center gap-2 items-center">
+                        <i class="fa-solid fa-clock-rotate-left"></i> Restaurar sesi�n anterior
+                    </button>
+                    
+                    <button class="glass-panel border-dashed border-[rgba(255,255,255,0.1)] bg-[rgba(20,30,50,0.3)] hover:bg-[rgba(40,50,70,0.6)] text-gray-400 py-2.5 px-4 rounded-xl transition text-xs flex justify-center gap-2 items-center">
+                        <i class="fa-solid fa-rotate-right"></i> Reintentar archivos fallidos
+                    </button>
+
+                    <!-- PRO Button (Gigante Neon) -->
+                    <button class="neon-border glass-panel bg-[rgba(10,15,30,0.8)] hover:bg-[rgba(0,100,255,0.15)] text-white font-bold py-4 px-4 rounded-xl transition flex justify-center items-center gap-2 mt-2 w-full text-[15px]">
+                        <i class="fa-solid fa-notes-medical text-[#00d4ff] text-lg drop-shadow-[0_0_5px_rgba(0,212,255,0.8)]"></i>
+                        Transcribir y Estructurar
+                        <span class="pro-badge shadow-[0_0_10px_rgba(0,212,255,0.4)] ml-1 scale-110">Pro</span>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- ================= MAIN EDITOR AREA ================= -->
+            <section class="lg:col-span-8 xl:col-span-9 flex flex-col gap-4">
+                
+                <!-- Report Metadata Info (Paciente, etc) -->
+                <div class="glass-panel p-4 border-l-4 border-l-[#00d4ff]">
+                    <div class="flex items-center justify-between border-b border-[rgba(255,255,255,0.05)] pb-3 mb-4">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-file-invoice text-[#00d4ff]"></i>
+                            <h2 class="font-semibold text-sm tracking-wide text-gray-200 uppercase">Informaci�n del Informe</h2>
+                        </div>
+                        <button class="icon-btn" title="Expandir/Contraer Metadata" style="width:24px; height:24px;"><i class="fa-solid fa-chevron-up text-[10px]"></i></button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[11px] text-gray-400 font-medium uppercase tracking-wider">Paciente:</label>
+                            <input type="text" class="form-input" placeholder="Nombre completo">
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[11px] text-gray-400 font-medium uppercase tracking-wider">DNI / ID:</label>
+                            <input type="text" class="form-input" placeholder="Documento">
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[11px] text-gray-400 font-medium uppercase tracking-wider">Fecha del Estudio:</label>
+                            <input type="date" class="form-input text-gray-300">
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[11px] text-gray-400 font-medium uppercase tracking-wider">Lugar de Realizaci�n:</label>
+                            <div class="relative">
+                                <select class="form-input appearance-none w-full cursor-pointer pr-8 text-gray-300">
+                                    <option>Seleccionar lugar...</option>
+                                    <option>Hospital Central</option>
+                                    <option>Consultorio Privado</option>
+                                </select>
+                                <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs pointer-events-none"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Datos del Profesional Locked -->
+                    <div class="mt-4 p-3 bg-[rgba(0,212,255,0.03)] border border-[rgba(0,212,255,0.1)] rounded-lg flex justify-between items-center text-xs text-gray-400">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-[rgba(0,212,255,0.1)] text-[#00d4ff] flex items-center justify-center"><i class="fa-solid fa-user-doctor"></i></div>
+                            <div>
+                                <strong class="text-gray-200">Dr. Nombre Generico</strong>
+                                <span class="mx-1">�</span> <span class="text-gray-400">Matr�cula: 123456</span>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-lock text-[#00d4ff] opacity-60"></i>
+                    </div>
+                </div>
+
+                <!-- Area de Editor Principal -->
+                <div class="glass-panel overflow-hidden flex flex-col flex-1 min-h-[450px]">
+                    <!-- Toolbar del Editor -->
+                    <div class="bg-[rgba(5,10,20,0.8)] border-b border-[rgba(255,255,255,0.05)] px-3 py-2 flex flex-wrap gap-2 items-center sticky top-0 z-10 w-full auto-cols-auto">
+                        <!-- Botones de estilo -->
+                        <div class="flex gap-1 bg-[rgba(255,255,255,0.03)] p-1 rounded-md border border-[rgba(255,255,255,0.02)]">
+                            <button class="w-8 h-8 rounded flex items-center justify-center text-[#00d4ff] bg-[rgba(0,212,255,0.1)] transition" title="Negrita"><i class="fa-solid fa-bold text-sm"></i></button>
+                            <button class="w-8 h-8 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-[rgba(255,255,255,0.05)] transition" title="Cursiva"><i class="fa-solid fa-italic text-sm"></i></button>
+                            <button class="w-8 h-8 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-[rgba(255,255,255,0.05)] transition" title="Subrayado"><i class="fa-solid fa-underline text-sm"></i></button>
+                            <button class="w-8 h-8 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-[rgba(255,255,255,0.05)] transition" title="Tachar"><i class="fa-solid fa-strikethrough text-sm"></i></button>
+                        </div>
+                        
+                        <!-- Listas -->
+                        <div class="flex gap-1 bg-[rgba(255,255,255,0.03)] p-1 rounded-md border border-[rgba(255,255,255,0.02)]">
+                            <button class="w-8 h-8 rounded flex items-center justify-center text-[#00d4ff] transition" title="Lista Vi�etas"><i class="fa-solid fa-list-ul text-sm"></i></button>
+                            <button class="w-8 h-8 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-[rgba(255,255,255,0.05)] transition" title="Lista N�meros"><i class="fa-solid fa-list-ol text-sm"></i></button>
+                        </div>
+
+                        <!-- Alineaci�n -->
+                        <div class="flex gap-1 bg-[rgba(255,255,255,0.03)] p-1 rounded-md border border-[rgba(255,255,255,0.02)] hidden sm:flex">
+                            <button class="w-8 h-8 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-[rgba(255,255,255,0.05)] transition" title="Alinear a la izquierda"><i class="fa-solid fa-align-left text-sm"></i></button>
+                            <button class="w-8 h-8 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-[rgba(255,255,255,0.05)] transition" title="Centrar"><i class="fa-solid fa-align-center text-sm"></i></button>
+                            <button class="w-8 h-8 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-[rgba(255,255,255,0.05)] transition" title="Justificar"><i class="fa-solid fa-align-justify text-sm"></i></button>
+                        </div>
+
+                        <!-- Insertar y Tools (Right side) -->
+                        <div class="flex gap-1 bg-[rgba(255,255,255,0.03)] p-1 rounded-md border border-[rgba(255,255,255,0.02)] ml-auto">
+                            <button class="w-8 h-8 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-[rgba(255,255,255,0.05)] transition" title="Insertar enlace"><i class="fa-solid fa-link text-sm"></i></button>
+                            <div class="w-px h-5 bg-[rgba(255,255,255,0.1)] self-center mx-1"></div>
+                            <button class="w-8 h-8 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-[rgba(255,255,255,0.05)] transition" title="Deshacer"><i class="fa-solid fa-rotate-left text-sm"></i></button>
+                            <button class="w-8 h-8 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-[rgba(255,255,255,0.05)] transition" title="Rehacer"><i class="fa-solid fa-rotate-right text-sm"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Area de Texto -->
+                    <div class="p-6 md:p-8 bg-[rgba(5,10,20,0.4)] flex-1 text-gray-300 text-[15px] leading-relaxed outline-none overflow-y-auto" contenteditable="true">
+                        <h3 class="text-lg font-bold text-white mb-6 border-b border-[rgba(255,255,255,0.1)] pb-2 uppercase tracking-wide text-center" style="color: #00d4ff;">Informe M�dico Estructurado por IA</h3>
+                        
+                        <p class="mb-4"><strong class="text-white">Motivo de consulta:</strong><br>Paciente acude por dolor abdominal de 48 hs de evoluci�n.</p>
+                        
+                        <p class="mb-4"><strong class="text-white">Examen F�sico:</strong><br>Abdomen blando, depresible, doloroso a la palpaci�n profunda en fosa il�aca derecha. Signo de Blumberg positivo. Ruidos hidroa�reos conservados.</p>
+
+                        <p class="mb-4"><strong class="text-white">Estudios complementarios solicitados:</strong></p>
+                        <ul class="list-disc pl-6 mb-4 space-y-1">
+                            <li>Laboratorio completo con recuento de blancos.</li>
+                            <li>Ecograf�a abdominal.</li>
+                        </ul>
+
+                        <p class="text-gray-400 italic">Transcripci�n generada por IA... el resto del audio sigue proces�ndose en tiempo real.<span class="inline-block w-[2px] h-[1em] bg-[#00d4ff] ml-[1px] relative top-[2px] animate-pulse shadow-[0_0_8px_#00d4ff]"></span></p>
+                    </div>
+
+                    <!-- Footer del Editor (API Status + Word count) -->
+                    <div class="bg-[rgba(10,15,30,0.8)] px-4 py-3 border-t border-[rgba(255,255,255,0.05)] flex flex-wrap gap-4 justify-between items-center text-xs">
+                        
+                        <!-- API KEY Status Inline -->
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] text-gray-400 font-bold tracking-widest uppercase">API de Groq</span>
+                            <div class="flex items-center gap-1.5 text-xs text-[#00d4ff] font-medium bg-[rgba(0,212,255,0.1)] px-2.5 py-1 rounded shadow-[inset_0_0_8px_rgba(0,212,255,0.1)] border border-[rgba(0,212,255,0.2)]">
+                                <span class="w-1.5 h-1.5 rounded-full bg-[#00d4ff] shadow-[0_0_5px_#00d4ff]"></span> Conectada
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-4">
+                            <!-- Stats -->
+                            <div class="flex items-center gap-3 text-gray-400 bg-[rgba(0,0,0,0.3)] px-3 py-1 rounded-full border border-[rgba(255,255,255,0.05)]">
+                                <span><strong class="text-white font-medium">142</strong> Palabras</span>
+                                <span class="w-1 h-1 rounded-full bg-gray-600"></span>
+                                <span><strong class="text-white font-medium">845</strong> Caracteres</span>
+                            </div>
+                            
+                            <!-- Export options -->
+                            <div class="flex items-center gap-2">
+                                <button class="px-3 py-1.5 rounded-lg bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(0,212,255,0.1)] hover:border-[#00d4ff]/40 hover:text-[#00d4ff] transition border border-[rgba(255,255,255,0.05)] text-gray-300 font-medium flex items-center gap-1.5">
+                                    <i class="fa-solid fa-copy"></i> <span class="hidden sm:inline">Copiar</span>
+                                </button>
+                                <button class="px-3 py-1.5 rounded-lg bg-[rgba(0,212,255,0.1)] hover:bg-[rgba(0,212,255,0.2)] transition border border-[rgba(0,212,255,0.3)] text-[#00d4ff] font-medium flex items-center gap-1.5 shadow-[0_0_10px_rgba(0,212,255,0.1)]">
+                                    <i class="fa-solid fa-file-pdf"></i> <span class="hidden sm:inline">PDF</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+        </main>
+    </div>
+
+</body>
+</html>

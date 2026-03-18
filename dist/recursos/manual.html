@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📘 Manual Profesional — Transcriptor Médico Pro v2.0</title>
+<style>
+:root{--bg:#f8fafc;--bg-card:#fff;--text:#1e293b;--text2:#64748b;--border:#e2e8f0;--primary:#0f766e;--primary-light:#14b8a6;--accent:#1a56a0;--hover:#f1f5f9;}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:15px;}
+a{color:var(--primary);text-decoration:none;}a:hover{text-decoration:underline;}
+
+/* Layout */
+.wrapper{display:flex;min-height:100vh;}
+.sidebar{width:280px;background:var(--bg-card);border-right:1px solid var(--border);padding:1.5rem 0;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;z-index:10;}
+.sidebar h2{font-size:1rem;padding:0 1.25rem;margin-bottom:1rem;color:var(--primary);}
+.sidebar .toc a{display:block;padding:5px 1.25rem;font-size:0.82rem;color:var(--text2);border-left:3px solid transparent;transition:all .15s;}
+.sidebar .toc a:hover,.sidebar .toc a.active{background:var(--hover);color:var(--text);border-left-color:var(--primary);text-decoration:none;}
+.sidebar .toc a.h3{padding-left:2.2rem;font-size:0.78rem;}
+.main{margin-left:280px;max-width:860px;padding:2rem 3rem 4rem;}
+
+/* Header */
+.doc-header{text-align:center;padding:2rem 0 1.5rem;border-bottom:2px solid var(--border);margin-bottom:2rem;}
+.doc-header h1{font-size:1.8rem;margin-bottom:.5rem;}
+.doc-header .meta{font-size:.85rem;color:var(--text2);}
+.doc-header .meta span{margin:0 .5rem;}
+
+/* Content */
+h2{font-size:1.35rem;margin:2.5rem 0 1rem;padding-bottom:.5rem;border-bottom:2px solid var(--primary);color:var(--primary);}
+h3{font-size:1.05rem;margin:1.5rem 0 .6rem;color:var(--text);}
+h4{font-size:.95rem;margin:1rem 0 .4rem;}
+p{margin-bottom:.8rem;}
+ul,ol{margin:0 0 1rem 1.5rem;}
+li{margin-bottom:.3rem;}
+strong{font-weight:600;}
+code{background:var(--hover);padding:1px 5px;border-radius:3px;font-size:.88em;}
+blockquote{border-left:4px solid var(--primary);background:var(--hover);padding:.8rem 1.2rem;margin:1rem 0;border-radius:0 6px 6px 0;font-size:.9rem;color:var(--text2);}
+
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.88rem;}
+th{background:var(--hover);text-align:left;padding:8px 12px;border-bottom:2px solid var(--border);font-weight:600;}
+td{padding:7px 12px;border-bottom:1px solid var(--border);vertical-align:top;}
+tr:hover td{background:var(--hover);}
+
+.tip{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid var(--primary);padding:.8rem 1.2rem;border-radius:0 8px 8px 0;margin:1rem 0;font-size:.9rem;}
+
+
+kbd{display:inline-block;padding:2px 7px;font-size:.8rem;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,.1);font-family:inherit;}
+
+.back-top{position:fixed;bottom:2rem;right:2rem;width:44px;height:44px;border-radius:50%;background:var(--primary);color:#fff;border:none;font-size:1.2rem;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2);display:none;z-index:99;align-items:center;justify-content:center;}
+.back-top.show{display:flex;}
+
+/* Theme toggle */
+.theme-toggle{position:fixed;top:1rem;right:1rem;z-index:20;width:42px;height:42px;border-radius:50%;border:1px solid var(--border);background:var(--bg-card);color:var(--text);font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.12);transition:all .2s;}
+.theme-toggle:hover{background:var(--hover);transform:scale(1.1);}
+
+/* Dark mode overrides */
+body.dark{--bg:#0f172a;--bg-card:#1e293b;--text:#e2e8f0;--text2:#94a3b8;--border:#334155;--hover:#334155;}
+body.dark .tip{background:linear-gradient(135deg,#064e3b33,#065f4633);}
+
+/* Mobile */
+@media(max-width:800px){
+.sidebar{display:none;}
+.main{margin-left:0;padding:1.5rem 1.2rem 3rem;}
+.menu-toggle{display:flex;position:fixed;top:1rem;left:1rem;z-index:20;width:40px;height:40px;border-radius:8px;background:var(--primary);color:#fff;border:none;align-items:center;justify-content:center;font-size:1.3rem;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2);}
+.sidebar.open{display:block;width:260px;box-shadow:4px 0 20px rgba(0,0,0,.3);}
+}
+@media(min-width:801px){.menu-toggle{display:none;}}
+
+/* Print */
+@media print{.sidebar,.back-top,.menu-toggle{display:none!important;}.main{margin-left:0;max-width:100%;padding:1rem;}h2{page-break-after:avoid;}table{page-break-inside:avoid;}}
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" id="themeToggle" title="Cambiar tema">🌙</button>
+<button class="menu-toggle" id="menuToggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+
+<div class="wrapper">
+<nav class="sidebar" id="sidebar">
+<h2>📘 Manual</h2>
+<div class="toc" id="toc"></div>
+</nav>
+
+<div class="main" id="mainContent">
+<div class="doc-header">
+<h1>📘 Manual Profesional</h1>
+<p style="font-size:1.1rem;font-weight:600;">Transcriptor Médico Pro</p>
+</div>
+
+<!-- ═══ 1. INTRODUCCIÓN ═══ -->
+<h2 id="s1">1. Introducción</h2>
+<p><strong>Transcriptor Médico Pro</strong> es una aplicación web profesional diseñada para profesionales de la salud que necesitan convertir dictados médicos en informes estructurados de calidad.</p>
+<h3>¿Qué hace la app?</h3>
+<ol>
+<li><strong>Graba</strong> dictados médicos en tiempo real o acepta archivos de audio</li>
+<li><strong>Transcribe</strong> automáticamente usando inteligencia artificial (Whisper de Groq)</li>
+<li><strong>Detecta</strong> el tipo de estudio médico (entre 37 especialidades)</li>
+<li><strong>Estructura</strong> el informe con plantillas profesionales por especialidad (LLaMA 3.3-70b)</li>
+<li><strong>Exporta</strong> como PDF profesional con encabezado, firma digital, QR y datos del paciente</li>
+<li><strong>Guarda</strong> historial de informes y registro de pacientes</li>
+</ol>
+<h3>Características destacadas</h3>
+<ul>
+<li>37 plantillas médicas especializadas</li>
+<li>Detección automática de tipo de estudio</li>
+<li>PDF profesional con logo, firma y código QR</li>
+<li>Diccionario médico con corrección automática de términos</li>
+<li>Registro de pacientes con autocompletado</li>
+<li>Historial de informes con búsqueda</li>
+<li>Versionado automático del editor (snapshots)</li>
+<li>Autocompletado inteligente en campos médicos</li>
+<li>Funciona offline para edición y exportación (PWA)</li>
+<li>Modo oscuro / claro</li>
+<li>4 formatos de exportación: PDF, RTF (Word), TXT, HTML</li>
+</ul>
+
+<!-- ═══ 2. REQUISITOS ═══ -->
+<h2 id="s2">2. Requisitos del sistema</h2>
+<table>
+<tr><th>Requisito</th><th>Detalle</th></tr>
+<tr><td><strong>Navegador</strong></td><td>Google Chrome 90+, Microsoft Edge 90+, Firefox 90+, Safari 15+</td></tr>
+<tr><td><strong>Conexión a internet</strong></td><td>Necesaria para transcripción y estructuración con IA</td></tr>
+<tr><td><strong>Micrófono</strong></td><td>Necesario solo para grabación en vivo</td></tr>
+<tr><td><strong>Sistema operativo</strong></td><td>Windows, macOS, Linux, Android, iOS</td></tr>
+<tr><td><strong>Espacio</strong></td><td>~10 MB en localStorage</td></tr>
+<tr><td><strong>Pantalla</strong></td><td>Mínimo 320px (responsive). Recomendado: 1024px+</td></tr>
+</table>
+<blockquote>El editor, la configuración, la exportación a PDF y el registro de pacientes funcionan sin conexión a internet si la app fue instalada como PWA.</blockquote>
+
+<!-- ═══ 3. INSTALACIÓN ═══ -->
+<h2 id="s3">3. Instalación y acceso</h2>
+<h3>3.1 Acceso web</h3>
+<p>Abrí la URL proporcionada por tu administrador en un navegador compatible. No requiere instalación.</p>
+<h3>3.2 Instalar como app (PWA)</h3>
+<h4>En Chrome o Edge (escritorio):</h4>
+<ol>
+<li>Abrí la app en el navegador</li>
+<li>Si aparece el botón <strong>📥 Instalar app</strong> en el encabezado, hacé clic</li>
+<li>Confirmá la instalación en el diálogo del navegador</li>
+<li>La app aparece en tu escritorio como una aplicación independiente</li>
+</ol>
+<h4>En Android (Chrome):</h4>
+<ol><li>Abrí la URL en Chrome</li><li>Tocá el menú ⋮ → <strong>"Instalar aplicación"</strong></li><li>Confirmá</li></ol>
+<h4>En iOS (Safari):</h4>
+<ol><li>Abrí la URL en Safari</li><li>Tocá <strong>Compartir</strong> (↑)</li><li>Seleccioná <strong>"Agregar a pantalla de inicio"</strong></li><li>Confirmá</li></ol>
+<h3>3.3 Ventajas de instalar como PWA</h3>
+<ul>
+<li>Se abre en ventana propia (sin barra del navegador)</li>
+<li>Acceso rápido desde escritorio o pantalla de inicio</li>
+<li>Funciona offline para edición, configuración y exportación</li>
+<li>Actualizaciones automáticas transparentes</li>
+<li>Menor consumo de memoria</li>
+</ul>
+
+<!-- ═══ 4. ONBOARDING ═══ -->
+<h2 id="s4">4. Primer uso — Onboarding</h2>
+<p>Al abrir la app por primera vez, se muestra un flujo de bienvenida de 3 pasos:</p>
+<h3>Paso 1 — Bienvenida</h3>
+<p>Pantalla de presentación con el nombre de la app y una descripción breve de sus capacidades.</p>
+<h3>Paso 2 — Datos del profesional</h3>
+<ul>
+<li><strong>Nombre completo:</strong> Tu nombre profesional (puede estar precargado por el administrador)</li>
+<li><strong>Especialidad:</strong> Tu especialidad médica principal</li>
+<li><strong>Lugar de trabajo:</strong> Institución o consultorio</li>
+<li><strong>API Key (opcional):</strong> Si tu administrador no la preconfiguró, podés ingresarla acá. Debe comenzar con <code>gsk_</code></li>
+</ul>
+<h3>Paso 3 — Términos y condiciones</h3>
+<p>Lectura y aceptación obligatoria de los términos de uso. Después del onboarding, la app inicia un <strong>tour interactivo</strong>. Podés repetirlo desde <strong>❓ Ayuda → 🎯 Iniciar tour interactivo</strong>.</p>
+
+<!-- ═══ 5. ASISTENTE ═══ -->
+<h2 id="s5">5. Asistente de sesión</h2>
+<p>Al iniciar la app (tras el onboarding), el <strong>Asistente de Sesión</strong> se presenta como un overlay con:</p>
+<ul>
+<li><strong>Selección de lugar de trabajo:</strong> Si tenés más de uno configurado, elegí cuál usarás. Cada lugar tiene su logo, dirección y datos para el PDF.</li>
+<li><strong>Selección de profesional:</strong> Si hay más de uno asociado, elegí cuál firmará los informes.</li>
+<li><strong>Selección de plantilla (opcional):</strong> Preseleccioná la plantilla o dejá "Detección automática".</li>
+<li><strong>Saludo personalizado:</strong> Según la hora: "Buenos días/tardes/noches, Dr. [nombre]".</li>
+</ul>
+
+<!-- ═══ 6. INTERFAZ ═══ -->
+<h2 id="s6">6. Interfaz principal</h2>
+<h3>6.1 Encabezado (Header)</h3>
+<table>
+<tr><th>Control</th><th>Descripción</th></tr>
+<tr><td><strong>Logo y título</strong></td><td>Identidad de la app</td></tr>
+<tr><td><strong>Toggle Pro/Normal</strong></td><td>Interruptor para cambiar entre modos</td></tr>
+<tr><td>🛡️ <strong>Admin</strong></td><td>Panel de administración (solo administradores)</td></tr>
+<tr><td>✉️ <strong>Contacto</strong></td><td>Formulario de contacto/soporte</td></tr>
+<tr><td>📡 <strong>Diagnóstico</strong></td><td>Reporte técnico al soporte</td></tr>
+<tr><td>ℹ️ <strong>Guía rápida</strong></td><td>Abre la guía rápida de uso</td></tr>
+<tr><td>📘 <strong>Manual</strong></td><td>Abre este manual completo</td></tr>
+<tr><td>❓ <strong>Ayuda</strong></td><td>Centro de ayuda + tour interactivo</td></tr>
+<tr><td>📥 <strong>Instalar app</strong></td><td>Instala la PWA</td></tr>
+<tr><td>⚙️ <strong>Configuración</strong></td><td>Panel de ajustes completo</td></tr>
+<tr><td>🌙/☀️ <strong>Tema</strong></td><td>Alterna modo claro/oscuro</td></tr>
+</table>
+<h3>6.2 Panel lateral (Sidebar)</h3>
+<ul>
+<li><strong>🎙️ Grabar Audio:</strong> Grabación en vivo</li>
+<li><strong>Zona de carga:</strong> Arrastrar y soltar archivos de audio</li>
+<li><strong>Opciones de audio:</strong> Normalizar volumen, reducir ruido, unir audios</li>
+<li><strong>⚡ Transcribir Todo:</strong> Inicia la transcripción</li>
+<li><strong>✨ Transcribir + Estructurar:</strong> (Modo Pro) Pipeline completo en un clic</li>
+<li><strong>Datos del paciente:</strong> Formulario con nombre, DNI, edad, sexo, obra social</li>
+<li><strong>📋 Registro de pacientes:</strong> CRUD completo</li>
+<li><strong>🕒 Historial de informes:</strong> Informes previos</li>
+</ul>
+<h3>6.3 Área principal (Editor)</h3>
+<ul>
+<li><strong>Pestañas:</strong> Una por cada transcripción</li>
+<li><strong>Barra de herramientas:</strong> Formato, buscar/reemplazar, versiones, diccionario</li>
+<li><strong>Editor WYSIWYG:</strong> Texto editable con formato visual</li>
+<li><strong>Botones de acción:</strong> Configurar impresión, previsualizar, comparar, copiar, imprimir, descargar</li>
+</ul>
+
+<!-- ═══ 7. GRABACIÓN ═══ -->
+<h2 id="s7">7. Grabación de audio</h2>
+<h3>7.1 Iniciar grabación</h3>
+<ol>
+<li>Pulsá <strong>🎙️ Grabar Audio</strong> en el panel lateral</li>
+<li>El navegador pedirá permiso para acceder al micrófono — pulsá <strong>Permitir</strong></li>
+<li>El botón cambia a rojo y muestra un cronómetro</li>
+<li>Dictá tu informe</li>
+</ol>
+<h3>7.2 Detener grabación</h3>
+<p>Pulsá <strong>⏹️ Detener</strong>. El audio se agrega automáticamente a la lista. Formato: WebM.</p>
+<h3>7.3 Consejos para mejor calidad</h3>
+<div class="tip">
+<strong>💡 Consejos:</strong> Ambiente silencioso, micrófono a 15-20 cm de la boca, ritmo constante. No es necesario deletrear términos médicos — Whisper los reconoce. Evitar golpes en la mesa, teclado sonando y conversaciones de fondo.
+</div>
+
+<!-- ═══ 8. CARGA DE ARCHIVOS ═══ -->
+<h2 id="s8">8. Carga de archivos de audio</h2>
+<h3>8.1 Formatos soportados</h3>
+<p>MP3, WAV, OGG, M4A, WebM — máximo <strong>25 MB</strong> por archivo.</p>
+<h3>8.2 Cómo cargar archivos</h3>
+<ul>
+<li><strong>Arrastrar y soltar:</strong> Arrastrá archivos a la zona punteada</li>
+<li><strong>Explorador de archivos:</strong> Hacé clic en la zona de carga</li>
+</ul>
+<h3>8.3 Múltiples archivos</h3>
+<ul>
+<li><strong>🔗 Unir todos los audios:</strong> Combina en una sola transcripción</li>
+<li><strong>Sin unir:</strong> Cada archivo en su propia pestaña</li>
+</ul>
+<h3>8.4 Opciones de preprocesamiento</h3>
+<table>
+<tr><th>Opción</th><th>Qué hace</th></tr>
+<tr><td>🔊 <strong>Normalizar volumen</strong></td><td>Ajusta el nivel de audio</td></tr>
+<tr><td>🪄 <strong>Reducir ruido</strong></td><td>Filtra ruido de fondo</td></tr>
+</table>
+
+<!-- ═══ 9. TRANSCRIPCIÓN ═══ -->
+<h2 id="s9">9. Transcripción automática</h2>
+<h3>9.1 Iniciar transcripción</h3>
+<ol><li>Cargá o grabá tu(s) audio(s)</li><li>Pulsá <strong>⚡ Transcribir Todo</strong></li><li>Barra de progreso muestra el estado</li></ol>
+<h3>9.2 Tecnología</h3>
+<p>Utiliza <strong>Whisper</strong> de Groq, enriquecido con vocabulario específico de la plantilla seleccionada.</p>
+<h3>9.3 Tiempos estimados</h3>
+<p>~5-15 segundos por cada minuto de audio, según conexión y carga del servidor.</p>
+<h3>9.4 Después de la transcripción</h3>
+<ul>
+<li>El texto aparece en el editor</li>
+<li>Se aplican correcciones del <strong>Diccionario Médico</strong> automáticamente</li>
+<li>Se habilitan los botones de estructurado y exportación</li>
+</ul>
+<h3>9.5 Si hay errores</h3>
+<ol><li>Editá directamente en el editor</li><li>Usá el <strong>Diccionario Médico</strong> (📚) para correcciones recurrentes</li><li>Agregá la corrección al diccionario para futuras transcripciones</li></ol>
+<h3>9.6 Errores de conexión</h3>
+<p>La app clasifica el error (red, API key, servidor, rate limit), puede reintentar automáticamente. Si falla repetidamente, muestra modal de <strong>reparación de audio</strong>.</p>
+
+<!-- ═══ 10. MODOS ═══ -->
+<h2 id="s10">10. Modo Normal vs Modo Pro</h2>
+<table>
+<tr><th>Modo</th><th>Características</th></tr>
+<tr><td><strong>Normal</strong></td><td>Transcripción directa, texto libre, sin estructurar. Ideal para notas rápidas.</td></tr>
+<tr><td><strong>Pro ✨</strong></td><td>Detección automática + estructuración inteligente + campos editables + conclusión generada. Pipeline completo: audio → transcripción → detección → estructura → PDF.</td></tr>
+</table>
+<p>Toggle <strong>Pro/Normal</strong> en el encabezado. La preferencia persiste entre sesiones.</p>
+
+<!-- ═══ 11. ESTRUCTURACIÓN ═══ -->
+<h2 id="s11">11. Estructuración inteligente (Modo Pro)</h2>
+<h3>11.1 Flujo automático</h3>
+<ol>
+<li>Tras la transcripción, la app detecta el tipo de estudio</li>
+<li>Selecciona la plantilla más adecuada</li>
+<li>Un <strong>toast</strong> muestra: <em>"Plantilla detectada: [nombre]"</em> con opción de <strong>Cambiar</strong></li>
+<li>Si no hacés nada en 5 segundos, la IA estructura el texto</li>
+</ol>
+<h3>11.2 Flujo manual</h3>
+<ol><li>Activá Modo Pro</li><li>Seleccioná la plantilla</li><li>Pulsá <strong>🤖 Estructurar con IA</strong> o <kbd>Ctrl+Shift+R</kbd></li></ol>
+<h3>11.3 Qué genera la IA</h3>
+<ul>
+<li><strong>Encabezado</strong> con tipo de estudio</li>
+<li><strong>Secciones</strong> organizadas por especialidad</li>
+<li><strong>Formato s/p</strong> para hallazgos normales</li>
+<li><strong>Conclusión</strong> con solo hallazgos positivos o relevantes</li>
+<li><strong>Nota de la IA</strong> con observaciones (si corresponde)</li>
+</ul>
+<h3>11.4 Campos vacíos</h3>
+<p>Aparecen como <strong>[No especificado]</strong>, resaltados en amarillo. Son editables individualmente.</p>
+<h3>11.5 Re-estructurar</h3>
+<p>Editá el texto → <kbd>Ctrl+Shift+R</kbd> → la IA reprocesa con el texto actualizado.</p>
+<h3>11.6 Cola de pendientes</h3>
+<p>Si falla la estructuración, el texto se guarda en cola (hasta 10 entradas). Procesá más tarde.</p>
+
+<!-- ═══ 12. PLANTILLAS ═══ -->
+<h2 id="s12">12. Plantillas médicas</h2>
+<p>La app incluye <strong>37 plantillas</strong> organizadas por especialidad:</p>
+<h3>Cardiología (6)</h3>
+<table><tr><th>Plantilla</th><th>Descripción</th></tr>
+<tr><td>Ecocardiograma transtorácico (ETT)</td><td>Dimensiones, función sistólica/diastólica, valvulopatías</td></tr>
+<tr><td>Electrocardiograma (ECG)</td><td>Ritmo, eje, intervalos, segmento ST</td></tr>
+<tr><td>Eco-stress</td><td>Función en reposo y estrés, motilidad segmentaria</td></tr>
+<tr><td>Holter</td><td>Ritmo predominante, arritmias, pausas, variabilidad</td></tr>
+<tr><td>Cinecoronariografía</td><td>Dominancia, lesiones por arteria, flujo TIMI</td></tr>
+<tr><td>Eco Doppler vascular</td><td>Arterias y venas, flujo, índice tobillo-brazo</td></tr></table>
+<h3>Gastroenterología (3)</h3>
+<table><tr><th>Plantilla</th><th>Descripción</th></tr>
+<tr><td>Endoscopía digestiva alta</td><td>Esófago, estómago, duodeno por segmento</td></tr>
+<tr><td>Colonoscopía</td><td>Segmento por segmento del colon</td></tr>
+<tr><td>CPRE</td><td>Vía biliar, wirsung, esfinterotomía</td></tr></table>
+<h3>Neumología (5)</h3>
+<table><tr><th>Plantilla</th><th>Descripción</th></tr>
+<tr><td>Espirometría</td><td>CVF, VEF1, FEF25-75, interpretación</td></tr>
+<tr><td>Broncoscopía</td><td>Vía aérea por segmento</td></tr>
+<tr><td>Polisomnografía</td><td>AHI, saturación, eficiencia del sueño</td></tr>
+<tr><td>Test de marcha (6MWT)</td><td>Distancia, SpO2, FC, Borg</td></tr>
+<tr><td>Pletismografía</td><td>Volúmenes pulmonares, resistencia</td></tr></table>
+<h3>Diagnóstico por imagen (6)</h3>
+<table><tr><th>Plantilla</th><th>Descripción</th></tr>
+<tr><td>Ecografía abdominal</td><td>Hallazgos por órgano con s/p</td></tr>
+<tr><td>Tomografía computada (TC)</td><td>Por región anatómica</td></tr>
+<tr><td>Resonancia magnética (RMN)</td><td>Por región, secuencias, contraste</td></tr>
+<tr><td>Mamografía</td><td>Categoría BI-RADS, hallazgos</td></tr>
+<tr><td>Densitometría ósea</td><td>T-score, Z-score, categoría OMS</td></tr>
+<tr><td>PET-CT</td><td>SUV, hallazgos metabólicos</td></tr></table>
+<h3>Oftalmología (4)</h3>
+<table><tr><th>Plantilla</th><th>Descripción</th></tr>
+<tr><td>Topografía corneal</td><td>Curvatura, astigmatismo, asfericidad</td></tr>
+<tr><td>Campimetría</td><td>Defectos, DM, DSM, GHT</td></tr>
+<tr><td>OCT retinal</td><td>Espesor macular, fibras peripapilares</td></tr>
+<tr><td>Fondo de ojo</td><td>Papila, mácula, vasos, retina periférica</td></tr></table>
+<h3>Ginecología (3)</h3>
+<table><tr><th>Plantilla</th><th>Descripción</th></tr>
+<tr><td>Ecografía obstétrica</td><td>Biometría fetal, placenta, líquido amniótico</td></tr>
+<tr><td>Colposcopía</td><td>Zona de transformación, hallazgos, biopsia</td></tr>
+<tr><td>Papanicolaou (PAP)</td><td>Citología, categoría Bethesda</td></tr></table>
+<h3>Neurología (2)</h3>
+<table><tr><th>Plantilla</th><th>Descripción</th></tr>
+<tr><td>Electromiografía (EMG)</td><td>Conducción, amplitud, latencia</td></tr>
+<tr><td>Polisomnografía</td><td>Arquitectura del sueño, eventos respiratorios</td></tr></table>
+<h3>ORL (3)</h3>
+<table><tr><th>Plantilla</th><th>Descripción</th></tr>
+<tr><td>Laringoscopía</td><td>Cuerdas vocales, epiglotis, senos piriformes</td></tr>
+<tr><td>Nasofibrolaringoscopía</td><td>Fosas nasales, nasofaringe, laringe</td></tr>
+<tr><td>Endoscopía otológica</td><td>CAE, membrana timpánica, oído medio</td></tr></table>
+<h3>Otros (4)</h3>
+<table><tr><th>Plantilla</th><th>Descripción</th></tr>
+<tr><td>Protocolo quirúrgico</td><td>Procedimiento, técnica, hallazgos intraoperatorios</td></tr>
+<tr><td>Radiografía</td><td>Según región anatómica</td></tr>
+<tr><td>Gammagrafía cardíaca</td><td>Perfusión, función ventricular, viabilidad</td></tr>
+<tr><td>Oximetría nocturna</td><td>SpO2 promedio, índice de desaturación</td></tr></table>
+<h3>General (3)</h3>
+<table><tr><th>Plantilla</th><th>Descripción</th></tr>
+<tr><td>Nota de evolución</td><td>Subjetivo, objetivo, análisis, plan (SOAP)</td></tr>
+<tr><td>Epicrisis / Resumen de internación</td><td>Motivo de ingreso, evolución, tratamiento, alta</td></tr>
+<tr><td>Genérico (universal)</td><td>Estructura flexible para cualquier estudio</td></tr></table>
+<blockquote>Cada plantilla incluye: nombre, campos específicos, prompt optimizado para la IA y keywords de detección automática.</blockquote>
+
+<!-- ═══ 13. EDITOR ═══ -->
+<h2 id="s13">13. Editor de informes</h2>
+<h3>13.1 Barra de herramientas</h3>
+<table>
+<tr><th>Control</th><th>Descripción</th></tr>
+<tr><td><strong>B</strong></td><td>Negrita (<kbd>Ctrl+B</kbd>)</td></tr>
+<tr><td><strong>I</strong></td><td>Cursiva (<kbd>Ctrl+I</kbd>)</td></tr>
+<tr><td><strong>U</strong></td><td>Subrayado (<kbd>Ctrl+U</kbd>)</td></tr>
+<tr><td><strong>S</strong></td><td>Tachado</td></tr>
+<tr><td><strong>Tamaño de fuente</strong></td><td>Selector desplegable + botones A+ / A-</td></tr>
+<tr><td><strong>Interlineado</strong></td><td>Selector: 1.0, 1.15, 1.5, 2.0</td></tr>
+<tr><td><strong>Limpiar formato</strong></td><td>Elimina todo el formato del texto seleccionado</td></tr>
+<tr><td><strong>Insertar enlace</strong></td><td>Agrega un hipervínculo</td></tr>
+<tr><td><strong>Insertar tabla</strong></td><td>Tabla personalizable</td></tr>
+<tr><td><strong>Buscar y reemplazar</strong></td><td>Panel de búsqueda con navegación y reemplazo</td></tr>
+<tr><td><strong>Deshacer</strong></td><td><kbd>Ctrl+Z</kbd> — hasta 50 niveles</td></tr>
+<tr><td><strong>Rehacer</strong></td><td><kbd>Ctrl+Y</kbd> — hasta 50 niveles</td></tr>
+<tr><td><strong>🕒 Versiones</strong></td><td>Panel de snapshots/versionado</td></tr>
+</table>
+<h3>13.2 Edición de texto</h3>
+<p>Editor <strong>WYSIWYG</strong> (What You See Is What You Get): escribí y formateá como en Word. Soporta encabezados (H1, H2, H3), párrafos, listas, tablas.</p>
+<h3>13.3 Buscar y reemplazar</h3>
+<ol><li>Pulsá 🔍 o <kbd>Ctrl+F</kbd></li><li>Escribí el término a buscar</li><li>Usá las flechas ↑↓ para navegar</li><li>Pulsá "Reemplazar" o "Reemplazar todo"</li></ol>
+
+<!-- ═══ 14. EDICIÓN DE CAMPOS ═══ -->
+<h2 id="s14">14. Edición de campos estructurados</h2>
+<h3>14.1 Modal de edición</h3>
+<p>Al hacer clic en ✏️ de un campo:</p>
+<ol>
+<li>Se abre un modal con el <strong>nombre del campo</strong> como título</li>
+<li>Dos tabs: <strong>📝 Escribir</strong> (textarea) y <strong>🎙️ Grabar</strong> (audio directo al campo)</li>
+</ol>
+<h3>14.2 Opciones rápidas</h3>
+<ul>
+<li><strong>s/p (Sin particularidades):</strong> Rellena con "Sin particularidades"</li>
+<li><strong>No evaluado:</strong> Marca como no evaluado</li>
+<li><strong>Dejar en blanco:</strong> Vacía el campo</li>
+<li><strong>🗑️ Eliminar campo:</strong> Elimina la sección</li>
+</ul>
+
+<!-- ═══ 15. CHIPS ═══ -->
+<h2 id="s15">15. Autocompletado inteligente (Chips)</h2>
+<h3>15.1 ¿Qué son?</h3>
+<p><strong>Sugerencias contextuales</strong> como botones debajo del campo de edición. Al hacer clic, el texto se inserta automáticamente.</p>
+<h3>15.2 Tipos de sugerencias</h3>
+<ol>
+<li><strong>Diccionario de campo:</strong> Sugerencias predefinidas por tipo de campo médico</li>
+<li><strong>Aprendizaje del usuario:</strong> La app memoriza valores previos y los ofrece como sugerencias</li>
+</ol>
+<h3>15.3 Campos con sugerencias predefinidas</h3>
+<table>
+<tr><th>Campo</th><th>Ejemplos</th></tr>
+<tr><td>Ritmo cardíaco</td><td>Ritmo sinusal, FA, Flutter, Taquicardia</td></tr>
+<tr><td>Función ventricular</td><td>Conservada, Leve depresión, Moderada, Severa</td></tr>
+<tr><td>Válvula mitral/aórtica</td><td>Insuficiencia leve, Estenosis, s/p</td></tr>
+<tr><td>Hígado</td><td>Ecoestructura homogénea, Esteatosis, Hepatomegalia</td></tr>
+<tr><td>Vesícula biliar</td><td>Alitiásica, Litiasis, Murphy negativo</td></tr>
+<tr><td>Riñones</td><td>Forma y tamaño conservados, Dilatación pielocalicial</td></tr>
+<tr><td>Esófago</td><td>Mucosa rosada, Esofagitis, Barrett</td></tr>
+<tr><td>Estómago</td><td>Mucosa eritematosa, Gastritis, Úlcera</td></tr>
+<tr><td>Colon</td><td>Mucosa normal, Pólipos, Divertículos</td></tr>
+<tr><td>Cuerdas vocales</td><td>Móviles, Nódulos, Parálisis</td></tr>
+<tr><td>Córnea</td><td>Transparente, Astigmatismo regular, Queratocono</td></tr>
+<tr><td>Conclusión</td><td>Normal, Sin hallazgos significativos, Compatible con...</td></tr>
+</table>
+<h3>15.4 Aprendizaje</h3>
+<p>Cada valor guardado se almacena localmente. En la próxima edición del mismo campo, tus valores previos aparecen como chips. El aprendizaje es por nombre de campo.</p>
+
+<!-- ═══ 16. VERSIONADO ═══ -->
+<h2 id="s16">16. Versionado y snapshots</h2>
+<h3>16.1 Cuándo se crean</h3>
+<table><tr><th>Evento</th><th>Tipo</th><th>Automático</th></tr>
+<tr><td>Cada 5 minutos</td><td>auto</td><td>✅</td></tr>
+<tr><td>Al completar transcripción</td><td>transcription</td><td>✅</td></tr>
+<tr><td>Al completar estructuración</td><td>structuring</td><td>✅</td></tr></table>
+<h3>16.2 Panel de versiones</h3>
+<ol><li>Pulsá <strong>🕒</strong> en la barra de herramientas</li><li>Lista de versiones: fecha, hora, tipo, etiqueta</li><li>Botón <strong>Restaurar</strong> para cada versión</li></ol>
+<h3>16.3 Límites</h3>
+<p>Hasta <strong>30 snapshots</strong>. Deduplicación por hash (no repite si no cambió). Botón "Limpiar historial".</p>
+
+<!-- ═══ 17. VISTA COMPARATIVA ═══ -->
+<h2 id="s17">17. Vista comparativa</h2>
+<p>Botón <strong>📊 Comparar</strong> (visible después de estructurar): muestra lado a lado <strong>transcripción original</strong> vs. <strong>informe estructurado</strong>. Cada panel tiene botones de copiar e imprimir.</p>
+
+<!-- ═══ 18. DATOS DEL PACIENTE ═══ -->
+<h2 id="s18">18. Datos del paciente</h2>
+<h3>18.1 Formulario</h3>
+<table>
+<tr><th>Campo</th><th>Ejemplo</th><th>Auto</th></tr>
+<tr><td>Nombre completo</td><td>Juan Pérez</td><td>✅</td></tr>
+<tr><td>DNI</td><td>30.456.789</td><td>✅</td></tr>
+<tr><td>Fecha de nacimiento</td><td>15/05/1971</td><td>❌</td></tr>
+<tr><td>Edad</td><td>54 años</td><td>✅</td></tr>
+<tr><td>Sexo</td><td>Masculino</td><td>✅</td></tr>
+<tr><td>Obra social</td><td>OSDE</td><td>✅</td></tr>
+<tr><td>Nº de afiliado</td><td>12345678</td><td>❌</td></tr>
+<tr><td>Teléfono</td><td>(011) 4567-8901</td><td>❌</td></tr>
+</table>
+<h3>18.2 Extracción automática</h3>
+<p>La app extrae automáticamente datos del dictado (nombre, DNI, edad, sexo, obra social) y los precarga en el formulario.</p>
+<h3>18.3 Autocompletado desde registro</h3>
+<p>Al escribir un nombre o DNI, la app busca coincidencias en el registro y carga todos los datos automáticamente.</p>
+<h3>18.4 Validación antes de exportar</h3>
+<p>Antes del PDF, si faltan datos, se muestra un modal para completar al menos nombre y DNI. Se guardan en el registro.</p>
+
+<!-- ═══ 19. REGISTRO ═══ -->
+<h2 id="s19">19. Registro de pacientes</h2>
+<table>
+<tr><th>Función</th><th>Descripción</th></tr>
+<tr><td><strong>Ver todos</strong></td><td>Tabla: nombre, DNI, última visita, Nº informes</td></tr>
+<tr><td><strong>Buscar</strong></td><td>Filtro en tiempo real (insensible a acentos/mayúsculas)</td></tr>
+<tr><td><strong>Editar</strong></td><td>Formulario prellenado</td></tr>
+<tr><td><strong>Eliminar</strong></td><td>Con confirmación</td></tr>
+<tr><td><strong>Exportar JSON</strong></td><td>Descarga todo el registro</td></tr>
+<tr><td><strong>Exportar CSV</strong></td><td>Compatible con Excel</td></tr>
+<tr><td><strong>Importar JSON</strong></td><td>Restaurar registros exportados</td></tr>
+</table>
+<p><strong>Deduplicación:</strong> Mismo DNI → se actualizan datos, no se duplica.</p>
+
+<!-- ═══ 20. HISTORIAL ═══ -->
+<h2 id="s20">20. Historial de informes</h2>
+<table>
+<tr><th>Función</th><th>Descripción</th></tr>
+<tr><td><strong>Listar</strong></td><td>Paciente, plantilla, fecha, preview</td></tr>
+<tr><td><strong>Buscar</strong></td><td>Por nombre o fecha</td></tr>
+<tr><td><strong>Ver informe</strong></td><td>HTML completo en modal viewer</td></tr>
+<tr><td><strong>Informes por paciente</strong></td><td>Filtro por paciente</td></tr>
+<tr><td><strong>Exportar/Importar</strong></td><td>JSON</td></tr>
+<tr><td><strong>Limpiar</strong></td><td>Eliminar todo (con confirmación)</td></tr>
+</table>
+<p>Cada informe estructurado se guarda automáticamente con: contenido HTML, plantilla, datos del paciente, fecha.</p>
+
+<!-- ═══ 21. CONFIG IMPRESIÓN ═══ -->
+<h2 id="s21">21. Configuración de impresión (PDF)</h2>
+<h3>Datos del profesional</h3>
+<table><tr><th>Campo</th><th>Descripción</th></tr>
+<tr><td>Nombre completo</td><td>Aparece en encabezado y firma</td></tr>
+<tr><td>Matrícula</td><td>Número de matrícula</td></tr>
+<tr><td>Especialidad(es)</td><td>Ej: "Cardiología — Ecocardiografía"</td></tr></table>
+<h3>Lugar de trabajo</h3>
+<table><tr><th>Campo</th><th>Descripción</th></tr>
+<tr><td>Institución</td><td>Ej: "Sanatorio de la Trinidad"</td></tr>
+<tr><td>Dirección</td><td>Dirección completa</td></tr>
+<tr><td>Teléfono / Email</td><td>Institucional</td></tr>
+<tr><td>Logo</td><td>Imagen PNG para el encabezado</td></tr></table>
+<h3>Datos del estudio</h3>
+<table><tr><th>Campo</th><th>Descripción</th></tr>
+<tr><td>Tipo de estudio</td><td>Precarga según plantilla</td></tr>
+<tr><td>Fecha y hora</td><td>Del estudio</td></tr>
+<tr><td>Motivo de consulta</td><td>Indicación clínica</td></tr>
+<tr><td>Médico derivante</td><td>Nombre del derivante</td></tr>
+<tr><td>Equipo utilizado</td><td>Marca y modelo</td></tr>
+<tr><td>Técnica empleada</td><td>Descripción</td></tr></table>
+<h3>Opciones del documento</h3>
+<table><tr><th>Campo</th><th>Valores</th></tr>
+<tr><td>Tamaño de página</td><td>A4, Carta, Legal, Oficio</td></tr>
+<tr><td>Orientación</td><td>Vertical / Horizontal</td></tr>
+<tr><td>Márgenes</td><td>Normal / Estrecho / Amplio</td></tr>
+<tr><td>Fuente</td><td>Times, Arial, Courier, etc.</td></tr>
+<tr><td>Tamaño de fuente</td><td>8-16 pt</td></tr>
+<tr><td>Interlineado</td><td>1.0, 1.15, 1.5, 2.0</td></tr></table>
+<h3>Encabezado, pie y firma</h3>
+<ul>
+<li>Mostrar/ocultar encabezado con logo + datos</li>
+<li>Pie de página: número de página, fecha, texto personalizado</li>
+<li>QR de verificación</li>
+<li>Línea de firma, nombre, matrícula, firma digital PNG</li>
+</ul>
+<h3>Semáforo de completitud</h3>
+<ul>
+<li>🟢 <strong>Verde:</strong> Todo completo — PDF listo</li>
+<li>🟡 <strong>Amarillo:</strong> Faltan datos secundarios</li>
+<li>🔴 <strong>Rojo:</strong> Faltan datos críticos — se abre configurador automáticamente</li>
+</ul>
+
+<!-- ═══ 22. PERFILES ═══ -->
+<h2 id="s22">22. Perfiles de salida</h2>
+<p>Configuraciones guardadas para distintos consultorios/instituciones.</p>
+<table>
+<tr><th>Acción</th><th>Descripción</th></tr>
+<tr><td><strong>Selector rápido</strong></td><td>Dropdown en la barra de herramientas</td></tr>
+<tr><td><strong>💾 Guardar</strong></td><td>Guarda la configuración actual como perfil</td></tr>
+<tr><td><strong>🔄 Actualizar</strong></td><td>Sobrescribe el perfil seleccionado</td></tr>
+<tr><td><strong>⭐ Predeterminado</strong></td><td>Se carga automáticamente al iniciar</td></tr>
+<tr><td><strong>🗑️ Eliminar</strong></td><td>Borra el perfil (con confirmación)</td></tr>
+</table>
+
+<!-- ═══ 23. EXPORTACIÓN ═══ -->
+<h2 id="s23">23. Exportación de informes</h2>
+<table>
+<tr><th>Formato</th><th>Ext.</th><th>Descripción</th></tr>
+<tr><td>📄 <strong>PDF Profesional</strong></td><td>.pdf</td><td>Encabezado institucional, logo, firma digital, QR, pie de página</td></tr>
+<tr><td>📝 <strong>Word (RTF)</strong></td><td>.rtf</td><td>Compatible con Word, LibreOffice, Google Docs</td></tr>
+<tr><td>🗒️ <strong>Texto Simple</strong></td><td>.txt</td><td>Archivo plano sin formato</td></tr>
+<tr><td>🌐 <strong>HTML</strong></td><td>.html</td><td>Página web con formato visual</td></tr>
+</table>
+<p>Hacé clic en la ⭐ junto a un formato para marcarlo como <strong>favorito</strong> (descarga con un solo clic).</p>
+<p>Nombre del archivo: <code>Ecocardiograma_Juan_Perez_2026-02-27.pdf</code></p>
+
+<!-- ═══ 24. VISTA PREVIA ═══ -->
+<h2 id="s24">24. Vista previa de impresión</h2>
+<p><kbd>Ctrl+Shift+P</kbd> — Simulación fiel del PDF: formato A4, paginación real, encabezado con logo, firma, pie de página.</p>
+<p>Acciones: 🖨️ Imprimir, ⬇️ Descargar, ✉️ Enviar por email, ✕ Cerrar.</p>
+
+<!-- ═══ 25. EMAIL ═══ -->
+<h2 id="s25">25. Envío por email</h2>
+<p>Desde la vista previa: pulsá ✉️ → completá destinatario, asunto y mensaje → Enviar. Usa <code>mailto:</code> o endpoint backend.</p>
+
+<!-- ═══ 26. DICCIONARIO ═══ -->
+<h2 id="s26">26. Diccionario médico</h2>
+<h3>26.1 Diccionario predefinido</h3>
+<p>Correcciones incluidas: "ipertrofia" → "hipertrofia", "hinsuficiencia" → "insuficiencia", "regurjitación" → "regurgitación", y muchas más.</p>
+<h3>26.2 Diccionario personalizado</h3>
+<ol><li>Abrí 📚</li><li>Ingresá término erróneo → corrección</li><li>Pulsá Agregar</li></ol>
+<h3>26.3 Aplicación automática</h3>
+<p>Tras cada transcripción, se aplican todas las correcciones automáticamente.</p>
+<h3>26.4 Escaneo con IA</h3>
+<p>La IA analiza el texto y sugiere posibles errores. Aprobá o rechazá cada sugerencia.</p>
+
+<!-- ═══ 27. PESTAÑAS ═══ -->
+<h2 id="s27">27. Pestañas de transcripción</h2>
+<p>Múltiples archivos sin unir → cada uno tiene su pestaña. Clic para ver, ✕ para cerrar. Con un solo archivo, se ocultan.</p>
+
+<!-- ═══ 28. AUTOGUARDADO ═══ -->
+<h2 id="s28">28. Guardado automático y restauración</h2>
+<h3>Autoguardado</h3>
+<p>Cada <strong>30 segundos</strong>: contenido del editor, estado, datos del paciente, archivos cargados.</p>
+<h3>Restauración</h3>
+<p>Al reabrir: botón <strong>♻️ Restaurar sesión</strong> si tiene menos de 2 horas. Detecta múltiples pestañas para evitar conflictos.</p>
+
+<!-- ═══ 29. APPEND ═══ -->
+<h2 id="s29">29. Grabación adicional (Append)</h2>
+<p>Después de transcribir, botón <strong>🎙️+</strong> graba audio adicional y lo agrega al final del texto actual sin reemplazarlo.</p>
+
+<!-- ═══ 30. CONFIGURACIÓN ═══ -->
+<h2 id="s30">30. Panel de configuración</h2>
+<p>Pulsá <strong>⚙️</strong> en el encabezado. 12 secciones (accordions):</p>
+<table>
+<tr><th>Sección</th><th>Contenido</th></tr>
+<tr><td><strong>🩺 Mi Cuenta</strong></td><td>Nombre, matrícula, especialidad, plan actual</td></tr>
+<tr><td><strong>🔑 API Key</strong></td><td>Input, validar, indicador, tutorial</td></tr>
+<tr><td><strong>📍 Lugar de trabajo</strong></td><td>Gestión de workplaces</td></tr>
+<tr><td><strong>⚡ Perfiles rápidos</strong></td><td>Gestión de perfiles de salida</td></tr>
+<tr><td><strong>📄 Config PDF</strong></td><td>Acceso al modal de impresión</td></tr>
+<tr><td><strong>✏️ Editor</strong></td><td>Tamaño de texto, auto-guardado, historial de cambios</td></tr>
+<tr><td><strong>🛠️ Herramientas</strong></td><td>Historial, diccionario, atajos, gestión de pagos</td></tr>
+<tr><td><strong>🎨 Apariencia</strong></td><td>Tema claro/oscuro, color principal</td></tr>
+<tr><td><strong>🎭 Skins</strong></td><td>3 temas visuales (Por Defecto, Cyberpunk Neon, Light Minimal) + botón "Más skins"</td></tr>
+<tr><td><strong>💾 Respaldo</strong></td><td>Exportar/importar todo como JSON</td></tr>
+<tr><td><strong>📊 Estadísticas</strong></td><td>Transcripciones, estructurados, palabras</td></tr>
+<tr><td><strong>ℹ️ Info</strong></td><td>Versión, Device ID, licencia</td></tr>
+<tr><td><strong>🚀 Upgrade</strong></td><td>Ver planes y precios</td></tr>
+</table>
+<blockquote>Según el tipo de usuario (admin o cliente), algunas secciones pueden estar ocultas o bloqueadas.</blockquote>
+
+<h3>30.1 Gestión de pagos</h3>
+<p>Desde <strong>⚙️ Configuración → 🛠️ Herramientas → 💳 Gestión de pagos</strong> podés abrir el portal de pagos sin salir de la app. Ahí podés:</p>
+<ul>
+<li>Ver estado de pago actual</li>
+<li>Subir comprobantes (imagen o PDF)</li>
+<li>Consultar historial de comprobantes enviados</li>
+</ul>
+<p>Cuando el comprobante se carga, el panel de administración recibe el estado de pago para validación.</p>
+
+<!-- ═══ 31. TEMA ═══ -->
+<h2 id="s31">31. Tema y skins</h2>
+<p>🌙/☀️ en el encabezado alterna entre tema claro y oscuro. La preferencia persiste. PDF siempre fondo blanco.</p>
+
+<h3>Skins (temas visuales)</h3>
+<p>Además del modo claro/oscuro, la app ofrece <strong>skins completos</strong> que cambian toda la estética visual:</p>
+<ol>
+<li>Abrí <strong>⚙️ Configuración</strong> (botón de engranaje en el encabezado)</li>
+<li>Desplegá el acordeón <strong>🎭 Skins</strong></li>
+<li>Hacé clic en la tarjeta del skin que querés aplicar</li>
+<li>El cambio es inmediato y se guarda automáticamente</li>
+</ol>
+<table>
+<tr><th>Skin</th><th>Descripción</th></tr>
+<tr><td>🎨 <strong>Por Defecto</strong></td><td>Tema original, equilibrado y profesional</td></tr>
+<tr><td>🌃 <strong>Cyberpunk Neon</strong></td><td>Glassmorphism oscuro con acentos neón azul</td></tr>
+<tr><td>☀️ <strong>Light Minimal</strong></td><td>Limpio, luminoso y minimalista</td></tr>
+</table>
+<p>Pulsá <strong>🛒 Más skins y complementos</strong> debajo de la galería para ver opciones adicionales.</p>
+
+<h3>Color corporativo</h3>
+<p>En <strong>⚙️ Configuración → 🎨 Apariencia</strong>, usá el selector de color para adaptar la paleta de la app a tu institución.</p>
+
+<!-- ═══ 32. PLANES ═══ -->
+<h2 id="s32">32. Planes de suscripción</h2>
+<table>
+<tr><th>Plan</th><th>Precio</th><th>Incluye</th></tr>
+<tr><td>🧪 <strong>Trial</strong></td><td>Gratis (7 días)</td><td>Transcripción básica, 1 plantilla, exportar TXT</td></tr>
+<tr><td>📝 <strong>Normal</strong></td><td>$4.990/mes</td><td>Transcripción ilimitada, 1 plantilla, PDF básico, diccionario</td></tr>
+<tr><td>⚡ <strong>Pro</strong></td><td>$9.990/mes</td><td>Todo de Normal + Modo Pro + todas las plantillas + PDF profesional + historial</td></tr>
+<tr><td>🏥 <strong>Clínica</strong></td><td>$24.990/mes</td><td>Todo de Pro + multi-profesional + multi-dispositivo + dashboard</td></tr>
+</table>
+<p><strong>Add-ons:</strong> Plantillas individuales a $990 cada una.</p>
+
+<!-- ═══ 33. LICENCIAS ═══ -->
+<h2 id="s33">33. Sistema de licencias</h2>
+<ul>
+<li><strong>Válida:</strong> App funciona normalmente</li>
+<li><strong>Por vencer (≤7 días):</strong> Advertencia con días restantes</li>
+<li><strong>Recordatorio 24h:</strong> Aviso suave no intrusivo para subir comprobante antes del vencimiento</li>
+<li><strong>Expirada:</strong> Overlay de bloqueo</li>
+<li><strong>Suspendida:</strong> Bloqueo permanente</li>
+<li><strong>Offline:</strong> Licencia cacheada por 4 horas</li>
+<li><strong>Dispositivos:</strong> Límite según plan. Si se excede, aviso.</li>
+</ul>
+
+<!-- ═══ 34. API KEY ═══ -->
+<h2 id="s34">34. API Key de Groq</h2>
+<p>Credencial para usar IA. Gratuita en <a href="https://console.groq.com/keys" target="_blank">console.groq.com/keys</a>. El admin puede preconfigurarla.</p>
+<p>Indicador: 🟢 conectada | 🔴 no configurada. Se colapsa cuando está activa.</p>
+
+<!-- ═══ 35. CONTACTO ═══ -->
+<h2 id="s35">35. Contacto y soporte</h2>
+<p>Botón ✉️ Contacto o desde ❓ Ayuda. Formulario: motivo (selector), detalle (textarea), enviar. Toast de confirmación.</p>
+
+<!-- ═══ 36. DIAGNÓSTICO ═══ -->
+<h2 id="s36">36. Diagnóstico remoto</h2>
+<p>Botón 📡: envía reporte técnico (navegador, SO, Device ID, API, errores) al soporte. Sin datos de pacientes. Puede enviarse automáticamente por solicitud del admin.</p>
+
+<!-- ═══ 37. RESPALDO ═══ -->
+<h2 id="s37">37. Recordatorio de respaldo</h2>
+<p>Toast cada <strong>7 días</strong> recordando exportar datos. Todo está en localStorage — si se borra, se pierde.</p>
+<h3>Cómo hacer un respaldo</h3>
+<ol>
+<li><strong>Registro:</strong> 📋 → Exportar JSON</li>
+<li><strong>Historial:</strong> 🕒 → Exportar historial</li>
+<li><strong>Configuración:</strong> ⚙️ → Respaldo → Exportar</li>
+</ol>
+
+<!-- ═══ 38. ATAJOS ═══ -->
+<h2 id="s38">38. Atajos de teclado</h2>
+<table>
+<tr><th>Atajo</th><th>Acción</th></tr>
+<tr><td><kbd>Ctrl+B</kbd></td><td>Negrita</td></tr>
+<tr><td><kbd>Ctrl+I</kbd></td><td>Cursiva</td></tr>
+<tr><td><kbd>Ctrl+U</kbd></td><td>Subrayado</td></tr>
+<tr><td><kbd>Ctrl+Z</kbd></td><td>Deshacer</td></tr>
+<tr><td><kbd>Ctrl+Y</kbd></td><td>Rehacer</td></tr>
+<tr><td><kbd>Ctrl+F</kbd></td><td>Buscar y reemplazar</td></tr>
+<tr><td><kbd>Ctrl+Enter</kbd></td><td>Estructurar con IA</td></tr>
+<tr><td><kbd>Ctrl+Shift+R</kbd></td><td>Re-estructurar</td></tr>
+<tr><td><kbd>Ctrl+Shift+S</kbd></td><td>Guardar configuración</td></tr>
+<tr><td><kbd>Ctrl+Shift+P</kbd></td><td>Vista previa</td></tr>
+<tr><td><kbd>Ctrl+Shift+D</kbd></td><td>Descargar formato favorito</td></tr>
+<tr><td><kbd>Esc</kbd></td><td>Cerrar modal / tour</td></tr>
+</table>
+
+<!-- ═══ 39. PWA ═══ -->
+<h2 id="s39">39. Instalación PWA</h2>
+<p>Botón <strong>📥 Instalar app</strong> en el encabezado. Se instala como app independiente, funciona offline, actualizaciones automáticas. Si ya está instalada, el botón se oculta.</p>
+
+<!-- ═══ 40. PRIVACIDAD ═══ -->
+<h2 id="s40">40. Privacidad y seguridad</h2>
+<table>
+<tr><th>Aspecto</th><th>Detalle</th></tr>
+<tr><td><strong>Almacenamiento</strong></td><td>Todo en localStorage (local, tu dispositivo)</td></tr>
+<tr><td><strong>Audio</strong></td><td>Se envía a Groq solo para transcribir, se descarta luego</td></tr>
+<tr><td><strong>Datos del paciente</strong></td><td>Nunca se transmiten a servidores</td></tr>
+<tr><td><strong>Conexión</strong></td><td>HTTPS cifrado</td></tr>
+<tr><td><strong>Backend</strong></td><td>Solo para licencias y métricas (sin datos de pacientes)</td></tr>
+<tr><td><strong>Código</strong></td><td>Ofuscado y minificado</td></tr>
+<tr><td><strong>Anti-manipulación</strong></td><td>Protecciones contra escalación de privilegios</td></tr>
+<tr><td><strong>Respaldo</strong></td><td>Exportar periódicamente — tu responsabilidad</td></tr>
+</table>
+<p><strong>Responsabilidad profesional:</strong> Es responsabilidad del profesional la custodia y manejo ético de los datos clínicos según las regulaciones aplicables en tu jurisdicción.</p>
+
+<!-- ═══ 41. FLUJO COMPLETO ═══ -->
+<h2 id="s41">41. Flujo completo — Paso a paso</h2>
+<h3>Escenario: Ecocardiograma transtorácico en Modo Pro</h3>
+<ol>
+<li><strong>Abrir la app</strong> → Asistente de sesión</li>
+<li><strong>Seleccionar lugar de trabajo:</strong> "Sanatorio San Martín"</li>
+<li><strong>Seleccionar profesional:</strong> "Dr. Roberto Gómez"</li>
+<li><strong>Grabar audio:</strong> 🎙️ Grabar → dictar → ⏹️ Detener</li>
+<li><strong>Transcribir + Estructurar:</strong> Botón ✨</li>
+<li>La app: envía a Whisper → transcribe → detecta "ETT" → toast confirmación → envía a LLaMA 3.3 → estructura</li>
+<li><strong>Revisar informe:</strong> Texto estructurado en el editor</li>
+<li><strong>Completar campos vacíos:</strong> Click en [No especificado] → chips → guardar</li>
+<li><strong>Datos del paciente:</strong> Nombre, DNI, etc.</li>
+<li><strong>Configurar impresión</strong> (primera vez): Logo, firma, encabezado</li>
+<li><strong>Vista previa:</strong> 👁️ → verificar</li>
+<li><strong>Descargar PDF:</strong> ⬇️ → PDF profesional con firma y QR</li>
+<li>El informe se guarda en el <strong>historial</strong></li>
+<li>El paciente se guarda en el <strong>registro</strong></li>
+</ol>
+
+<!-- ═══ 42. FAQ ═══ -->
+<h2 id="s42">42. Solución de problemas (FAQ)</h2>
+
+<h3>"No transcribe / se queda cargando"</h3>
+<ul><li>Verificá tu conexión a internet</li><li>Verificá la API Key (indicador 🟢)</li><li>Si es rate limit (429), esperá y reintentá</li><li>Persistente: 📡 Diagnóstico + contactar soporte</li></ul>
+
+<h3>"La plantilla detectada no es correcta"</h3>
+<ul><li>Pulsá <strong>Cambiar</strong> en el toast</li><li>Seleccioná manualmente</li><li><kbd>Ctrl+Shift+R</kbd> para re-estructurar</li></ul>
+
+<h3>"El informe tiene datos incorrectos"</h3>
+<ul><li>Editá directamente en el editor</li><li>Usá ✏️ en cada campo</li><li><kbd>Ctrl+Shift+R</kbd> para reprocesar</li></ul>
+
+<h3>"El PDF no muestra logo o firma"</h3>
+<ul><li>🖨️ Configurar Impresión → subí logo (PNG) y firma (PNG fondo transparente)</li></ul>
+
+<h3>"Se perdió mi trabajo"</h3>
+<ul><li>Autoguardado cada 30 seg</li><li>♻️ Restaurar sesión</li><li>🕒 Versiones → restaurar snapshot</li><li>🕒 Historial de informes</li></ul>
+
+<h3>"La app no funciona sin internet"</h3>
+<ul><li>Transcripción y estructuración requieren internet</li><li>Editor, configuración, exportación y registro sí funcionan offline</li><li>Instalá como PWA</li></ul>
+
+<h3>"¿Cómo cambio mis datos profesionales?"</h3>
+<ul><li>🖨️ Configurar Impresión → "Datos del Profesional"</li><li>O ⚙️ Configuración → Lugar de trabajo</li></ul>
+
+<h3>"¿Dónde se guardan mis datos?"</h3>
+<ul><li>En localStorage del navegador (local)</li><li>No se guardan datos de pacientes en servidores</li><li>Si borrás datos del navegador, se pierden</li><li>Exportá periódicamente</li></ul>
+
+<h3>"¿Puedo usar en celular / tablet?"</h3>
+<ul><li>Sí, app responsive</li><li>Instalá como PWA</li><li>iOS: Safari → Compartir → Agregar a pantalla de inicio</li></ul>
+
+<h3>"¿Cuántas plantillas hay?"</h3>
+<ul><li>37 plantillas por especialidad</li><li>Para solicitar nuevas: ✉️ Contacto</li></ul>
+
+<h3>"¿Puedo trabajar con múltiples consultorios?"</h3>
+<ul><li>Sí, con Perfiles de salida y Lugares de trabajo</li><li>Selector rápido en la barra de herramientas</li></ul>
+
+<h3>"Dice 'Licencia expirada'"</h3>
+<ul><li>Tu suscripción venció</li><li>Contactá al administrador</li><li>✉️ Contacto o botón en el overlay</li></ul>
+
+<h3>"Alcancé el límite de dispositivos"</h3>
+<ul><li>Tu plan tiene un límite</li><li>Contactá al administrador para liberar o ampliar</li></ul>
+
+<!-- ═══ 43. GLOSARIO ═══ -->
+<h2 id="s43">43. Glosario técnico</h2>
+<table>
+<tr><th>Término</th><th>Definición</th></tr>
+<tr><td><strong>PWA</strong></td><td>Progressive Web App — app web instalable como nativa</td></tr>
+<tr><td><strong>Whisper</strong></td><td>Modelo de IA de OpenAI para reconocimiento de voz, vía Groq</td></tr>
+<tr><td><strong>LLaMA 3.3</strong></td><td>Modelo de lenguaje de Meta para estructurar informes</td></tr>
+<tr><td><strong>Groq</strong></td><td>Plataforma de IA que ejecuta Whisper y LLaMA</td></tr>
+<tr><td><strong>API Key</strong></td><td>Credencial de acceso a los servicios de IA</td></tr>
+<tr><td><strong>localStorage</strong></td><td>Almacenamiento del navegador (local)</td></tr>
+<tr><td><strong>WYSIWYG</strong></td><td>"What You See Is What You Get" — editor visual</td></tr>
+<tr><td><strong>RTF</strong></td><td>Rich Text Format — compatible con Word</td></tr>
+<tr><td><strong>QR</strong></td><td>Código de respuesta rápida en el PDF</td></tr>
+<tr><td><strong>Snapshot</strong></td><td>Fotografía del estado del editor</td></tr>
+<tr><td><strong>Pipeline</strong></td><td>Flujo completo: audio → texto → detección → estructura</td></tr>
+<tr><td><strong>s/p</strong></td><td>"Sin particularidades" — hallazgo normal</td></tr>
+<tr><td><strong>Toast</strong></td><td>Notificación breve en pantalla</td></tr>
+<tr><td><strong>Service Worker</strong></td><td>Tecnología para funcionalidad offline</td></tr>
+<tr><td><strong>Backend</strong></td><td>Servidor Google Apps Script para licencias</td></tr>
+<tr><td><strong>Device ID</strong></td><td>Identificador único del navegador/dispositivo</td></tr>
+</table>
+
+<hr style="margin-top:3rem;">
+<p style="text-align:center;color:var(--text2);font-size:.85rem;padding:1rem 0;">
+<strong>Transcriptor Médico Pro v2.0 — Manual Profesional</strong><br>
+Documento generado el 27/02/2026<br>
+© TranscriptorPro — Todos los derechos reservados
+</p>
+
+</div><!-- /main -->
+</div><!-- /wrapper -->
+
+<button class="back-top" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+// Build TOC from h2/h3
+(function(){
+const toc=document.getElementById('toc');
+const headings=document.querySelectorAll('.main h2, .main h3');
+let autoIdx=0;
+headings.forEach(h=>{
+// Auto-generate id for headings that don't have one (fixes h3 links)
+if(!h.id){
+    h.id='auto-heading-'+(++autoIdx);
+}
+const a=document.createElement('a');
+a.textContent=h.textContent;
+a.href='#'+h.id;
+if(h.tagName==='H3')a.classList.add('h3');
+a.addEventListener('click',()=>{
+document.getElementById('sidebar').classList.remove('open');
+});
+toc.appendChild(a);
+});
+// Scroll spy
+const obs=new IntersectionObserver(entries=>{
+entries.forEach(e=>{
+if(e.isIntersecting){
+toc.querySelectorAll('a').forEach(a=>a.classList.remove('active'));
+const match=toc.querySelector('a[href="#'+e.target.id+'"]');
+if(match){match.classList.add('active');match.scrollIntoView({block:'nearest',behavior:'smooth'});}
+}
+});
+},{rootMargin:'-80px 0px -70% 0px'});
+headings.forEach(h=>{if(h.id)obs.observe(h);});
+// Back to top
+window.addEventListener('scroll',()=>{
+document.getElementById('backTop').classList.toggle('show',window.scrollY>400);
+});
+// Theme toggle
+const themeBtn=document.getElementById('themeToggle');
+function applyTheme(dark,notify){
+document.body.classList.toggle('dark',dark);
+themeBtn.textContent=dark?'\u2600\ufe0f':'\ud83c\udf19';
+themeBtn.title=dark?'Modo claro':'Modo oscuro';
+try{localStorage.setItem('theme',dark?'dark':'light');}catch(_){}
+// Notify parent app (if inside iframe)
+if(notify!==false&&window.parent&&window.parent!==window){
+try{window.parent.postMessage({type:'manual-theme-changed',theme:dark?'dark':'light'},'*');}catch(_){}
+}
+}
+// Init: read from same key the app uses
+const saved=localStorage.getItem('theme');
+if(saved==='dark')applyTheme(true,false);
+themeBtn.addEventListener('click',()=>applyTheme(!document.body.classList.contains('dark')));
+// Listen for theme changes from parent app
+window.addEventListener('message',(e)=>{
+if(e.data&&e.data.type==='app-theme-changed'){
+applyTheme(e.data.theme==='dark',false);
+}
+});
+})();
+</script>
+</body>
+</html>

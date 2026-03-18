@@ -575,6 +575,8 @@ function _scrollEditorToTop() {
         if (editor) editor.scrollTop = 0;
     }, 0);
 }
+
+function _postProcessStructuredMarkdown(md) {
     let out = String(md || '');
     if (!out) return out;
 

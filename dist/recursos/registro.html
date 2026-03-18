@@ -1,0 +1,3013 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Registro — Transcriptor Médico Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0f766e;
+            --primary-light: #14b8a6;
+            --primary-dark: #0d5c56;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #0f172a;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --accent: #f59e0b;
+            --danger: #ef4444;
+            --success: #10b981;
+            --radius: 14px;
+            --shadow: 0 4px 24px rgba(0,0,0,0.07);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ── Header ── */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 2rem 1rem;
+            text-align: center;
+        }
+        .header h1 { font-size: 1.6rem; margin-bottom: .3rem; }
+        .header p { font-size: .9rem; opacity: .85; }
+
+        /* ── Container ── */
+        .container {
+            max-width: 780px;
+            margin: -2rem auto 2rem;
+            padding: 0 1rem;
+        }
+
+        /* ── Steps indicator ── */
+        .steps {
+            display: flex;
+            justify-content: center;
+            gap: .5rem;
+            margin-bottom: 1.5rem;
+            padding-top: 1rem;
+        }
+        .step {
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+            font-size: .78rem;
+            color: var(--text-light);
+            background: var(--card);
+            padding: .4rem .8rem;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            transition: all .3s;
+        }
+        .step.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            font-weight: 600;
+        }
+        .step.done {
+            background: #f0fdf4;
+            color: var(--success);
+            border-color: #bbf7d0;
+        }
+        .step-num {
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: .72rem; font-weight: 700;
+            background: var(--border);
+            color: var(--text-light);
+        }
+        .step.active .step-num { background: rgba(255,255,255,.25); color: white; }
+        .step.done .step-num { background: var(--success); color: white; }
+
+        /* ── Card / Section ── */
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 1.8rem;
+            margin-bottom: 1.2rem;
+            border: 1px solid var(--border);
+        }
+        .section-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+        .section-subtitle {
+            font-size: .82rem;
+            color: var(--text-light);
+            margin-bottom: 1.2rem;
+            line-height: 1.4;
+        }
+
+        /* ── Form grid ── */
+        .field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: .8rem 1.2rem;
+            margin-bottom: .8rem;
+        }
+        .field-row.triple {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+        .field-full {
+            grid-column: 1/-1;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .field-group label {
+            font-size: .8rem;
+            font-weight: 600;
+            color: var(--text-light);
+        }
+        .field-group label .req {
+            color: var(--danger);
+        }
+        .field-group input,
+        .field-group select,
+        .field-group textarea {
+            padding: 9px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: .88rem;
+            font-family: inherit;
+            background: #f8fafc;
+            transition: border-color .2s, box-shadow .2s;
+        }
+        .field-group input:focus,
+        .field-group select:focus,
+        .field-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(20,184,166,.12);
+            background: #fff;
+        }
+        .field-group textarea { resize: vertical; }
+        .field-group small {
+            font-size: .73rem;
+            color: #94a3b8;
+        }
+
+        /* ── Checkbox grid ── */
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 6px;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: .84rem;
+            padding: 6px 8px;
+            border-radius: 6px;
+            transition: background .15s;
+            cursor: pointer;
+        }
+        .checkbox-item:hover { background: #f0fdf4; }
+        .checkbox-item input[type="checkbox"] {
+            accent-color: var(--primary);
+            width: 16px; height: 16px;
+        }
+
+        /* ── Image upload ── */
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: 10px;
+            padding: 1.2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all .2s;
+            background: #fafbfc;
+            position: relative;
+        }
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: var(--primary-light);
+            background: #f0fdfa;
+        }
+        .upload-zone .upload-icon { font-size: 1.8rem; margin-bottom: .3rem; }
+        .upload-zone .upload-text { font-size: .82rem; color: var(--text-light); }
+        .upload-zone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .upload-preview {
+            margin-top: 8px;
+            text-align: center;
+        }
+        .upload-preview img {
+            max-height: 80px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        /* ── Color picker ── */
+        .color-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .color-row input[type="color"] {
+            width: 40px; height: 36px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            padding: 2px;
+        }
+        .color-preview {
+            height: 8px;
+            border-radius: 4px;
+            flex: 1;
+        }
+
+        /* ── Buttons ── */
+        .btn-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: .9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s;
+            font-family: inherit;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(15,118,110,.25);
+        }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15,118,110,.35); }
+        .btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+        .btn-secondary {
+            background: var(--card);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover { background: #f1f5f9; }
+
+        /* ── Paso oculto ── */
+        .form-step { display: none; }
+        .form-step.active { display: block; }
+
+        /* ── Success state ── */
+        .success-card {
+            text-align: center;
+            padding: 3rem 2rem;
+        }
+        .success-card .check-icon {
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            background: #f0fdf4;
+            display: flex;
+            align-items: center; justify-content: center;
+            margin: 0 auto 1.2rem;
+            font-size: 2.5rem;
+        }
+        .success-card h2 { font-size: 1.3rem; margin-bottom: .5rem; }
+        .success-card p { color: var(--text-light); font-size: .9rem; line-height: 1.5; }
+
+        /* ── Footer ── */
+        .footer {
+            text-align: center;
+            padding: 1.5rem;
+            color: var(--text-light);
+            font-size: .78rem;
+        }
+
+        /* ── Workplace Accordion ── */
+        .wp-accordion {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            margin-bottom: .8rem;
+            overflow: hidden;
+            transition: all .3s ease;
+        }
+        .wp-accordion.collapsed .wp-body { display: none; }
+        .wp-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.4rem;
+            cursor: pointer;
+            background: #f8fafc;
+            border-bottom: 1px solid var(--border);
+            transition: background .2s;
+            user-select: none;
+        }
+        .wp-header:hover { background: #f0fdf4; }
+        .wp-accordion.collapsed .wp-header { border-bottom: none; }
+        .wp-header-info {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            font-weight: 600;
+            font-size: .92rem;
+        }
+        .wp-badge {
+            background: var(--primary);
+            color: white;
+            font-size: .68rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        .wp-badge.extra { background: var(--accent); }
+        .wp-header-actions {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+        }
+        .wp-chevron {
+            font-size: .8rem;
+            color: var(--text-light);
+            transition: transform .3s;
+        }
+        .wp-accordion.collapsed .wp-chevron { transform: rotate(-90deg); }
+        .wp-remove {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: .85rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            opacity: .7;
+            transition: opacity .2s;
+        }
+        .wp-remove:hover { opacity: 1; }
+        .wp-body {
+            padding: 1.4rem;
+            animation: wpSlideDown .3s ease;
+        }
+        @keyframes wpSlideDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .btn-add-wp {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: .5rem;
+            width: 100%;
+            padding: 12px;
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            background: transparent;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: .88rem;
+            cursor: pointer;
+            transition: all .2s;
+            font-family: inherit;
+            margin-bottom: 1rem;
+        }
+        .btn-add-wp:hover {
+            border-color: var(--primary-light);
+            background: #f0fdfa;
+        }
+
+        /* ── Color Palette ── */
+        .color-palette {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: .5rem;
+        }
+        .color-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .color-swatch {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all .2s;
+            position: relative;
+            box-shadow: 0 2px 6px rgba(0,0,0,.15);
+        }
+        .color-swatch:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,.25);
+        }
+        .color-swatch.selected {
+            border-color: var(--text);
+            transform: scale(1.1);
+        }
+        .color-swatch.selected::after {
+            content: '\2713';
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-shadow: 0 1px 3px rgba(0,0,0,.5);
+        }
+        .color-swatch-label {
+            font-size: .7rem;
+            color: var(--text-light);
+        }
+        .color-preview-bar {
+            height: 8px;
+            border-radius: 4px;
+            width: 100%;
+            margin-top: .6rem;
+            transition: background .3s;
+        }
+
+        /* ── Custom Modal ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.45);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            animation: modalFadeIn .2s ease;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,.2);
+            animation: modalBoxIn .25s ease;
+        }
+        @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes modalBoxIn {
+            from { opacity: 0; transform: scale(.92) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .modal-box .modal-icon { font-size: 2.5rem; margin-bottom: .8rem; }
+        .modal-box .modal-msg {
+            font-size: .92rem;
+            color: var(--text);
+            line-height: 1.5;
+            margin-bottom: 1.4rem;
+        }
+        .modal-box .modal-actions {
+            display: flex;
+            gap: .6rem;
+            justify-content: center;
+        }
+
+        /* ── Pricing Cards ── */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .pricing-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            border: 2px solid var(--border);
+            padding: 1.5rem 1.2rem;
+            text-align: center;
+            transition: all .3s;
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        .pricing-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,.12); }
+        .pricing-card.selected { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(15,118,110,.15); }
+        .pricing-card.popular { border-color: #b8860b; }
+        .pricing-card.popular .pricing-badge { display: block; }
+        .pricing-badge {
+            display: none;
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #b8860b, #daa520);
+            color: white;
+            font-size: .7rem;
+            font-weight: 700;
+            padding: 3px 14px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+        .pricing-plan-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: .3rem;
+        }
+        .pricing-plan-icon { font-size: 2rem; margin-bottom: .5rem; }
+        .pricing-price {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary-dark);
+            margin: .3rem 0;
+        }
+        .pricing-price small { font-size: .65rem; font-weight: 500; color: var(--text-light); }
+        .pricing-sub {
+            font-size: .82rem;
+            color: var(--text-light);
+            margin-bottom: .8rem;
+            padding-bottom: .8rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .pricing-features {
+            list-style: none;
+            text-align: left;
+            font-size: .78rem;
+            flex: 1;
+        }
+        .pricing-features li {
+            padding: 4px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+        }
+        .pricing-features li .feat-icon { flex-shrink: 0; width: 18px; text-align: center; }
+        .pricing-select-btn {
+            margin-top: 1rem;
+            padding: 10px 16px;
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            background: transparent;
+            color: var(--primary);
+            font-weight: 700;
+            font-size: .88rem;
+            cursor: pointer;
+            transition: all .2s;
+            font-family: inherit;
+        }
+        .pricing-select-btn:hover, .pricing-card.selected .pricing-select-btn {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* ── Cart ── */
+        .cart-section { margin-bottom: 1rem; }
+        .cart-section-title {
+            font-size: .88rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: .6rem;
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+        }
+        .cart-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: .5rem .8rem;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: .4rem;
+            font-size: .82rem;
+            transition: all .2s;
+        }
+        .cart-item:hover { border-color: var(--primary-light); }
+        .cart-item .cart-item-name { flex: 1; }
+        .cart-item .cart-item-price {
+            font-weight: 700;
+            color: var(--primary-dark);
+            white-space: nowrap;
+            margin: 0 .8rem;
+        }
+        .cart-add-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 4px 12px;
+            font-size: .75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .15s;
+            font-family: inherit;
+        }
+        .cart-add-btn:hover { background: var(--primary-dark); }
+        .cart-add-btn.added { background: #94a3b8; }
+        .cart-remove-btn {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: .85rem;
+            padding: 2px 6px;
+        }
+
+        /* ── Investment Summary ── */
+        .invest-block {
+            background: var(--card);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+        }
+        .invest-block-title {
+            font-size: .85rem;
+            font-weight: 700;
+            color: var(--text-light);
+            margin-bottom: .6rem;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+        .invest-line {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: .85rem;
+        }
+        .invest-line.total {
+            font-weight: 700;
+            font-size: 1rem;
+            border-top: 2px solid var(--primary);
+            padding-top: .6rem;
+            margin-top: .4rem;
+            color: var(--primary-dark);
+        }
+        .invest-toggle {
+            display: flex;
+            gap: .5rem;
+            margin: .6rem 0;
+        }
+        .invest-toggle-btn {
+            flex: 1;
+            padding: 8px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: var(--card);
+            cursor: pointer;
+            text-align: center;
+            font-size: .82rem;
+            font-family: inherit;
+            transition: all .2s;
+        }
+        .invest-toggle-btn.active {
+            border-color: var(--primary);
+            background: #f0fdfa;
+            font-weight: 600;
+        }
+        .invest-toggle-btn .save-badge {
+            display: inline-block;
+            background: var(--success);
+            color: white;
+            font-size: .65rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 4px;
+            font-weight: 700;
+        }
+        .curr-btn {
+            padding: 5px 14px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: var(--card);
+            cursor: pointer;
+            font-size: .82rem;
+            font-family: inherit;
+            transition: all .2s;
+            margin: 0 2px;
+        }
+        .curr-btn.active {
+            border-color: var(--primary);
+            background: #f0fdfa;
+            font-weight: 600;
+        }
+
+        /* ── Mobile ── */
+        @media (max-width: 600px) {
+            .field-row, .field-row.triple { grid-template-columns: 1fr; }
+            .steps { flex-wrap: wrap; }
+            .card { padding: 1.2rem; }
+            .btn-row { flex-direction: column; }
+            .btn { width: 100%; text-align: center; }
+            .color-palette { justify-content: center; }
+            .pricing-grid { grid-template-columns: 1fr; }
+            .pricing-card.popular { order: -1; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ════ HEADER ════ -->
+    <div class="header">
+        <h1>📋 Registro de Profesional</h1>
+        <p>Transcriptor Médico Pro — Completá tus datos para configurar tu app</p>
+    </div>
+
+    <!-- ════ CONTAINER ════ -->
+    <div class="container">
+
+        <!-- Steps -->
+        <div class="steps" id="stepsBar">
+            <div class="step active" data-step="0"><span class="step-num">1</span> Plan</div>
+            <div class="step" data-step="1"><span class="step-num">2</span> Datos</div>
+            <div class="step" data-step="2"><span class="step-num">3</span> Especialidades</div>
+            <div class="step" data-step="3"><span class="step-num">4</span> Trabajo</div>
+            <div class="step" data-step="4"><span class="step-num">5</span> PDF</div>
+            <div class="step" data-step="5"><span class="step-num">6</span> Carrito</div>
+            <div class="step" data-step="6"><span class="step-num">7</span> Resumen</div>
+        </div>
+
+        <form id="registroForm" autocomplete="off">
+
+            <!-- ═══ PASO 0: BIENVENIDA + SELECCIÓN DE PLAN ═══ -->
+            <div class="form-step active" id="step0">
+                <div class="card" style="text-align:center;padding:2rem 1.5rem 1rem;">
+                    <div style="font-size:2.5rem;margin-bottom:.5rem;">🩺</div>
+                    <h2 style="font-size:1.3rem;margin-bottom:.4rem;">¡Bienvenido/a a Transcriptor Médico Pro!</h2>
+                    <p style="color:var(--text-light);font-size:.88rem;line-height:1.5;max-width:560px;margin:0 auto;">
+                        La herramienta que transforma tu voz en informes médicos profesionales.<br>
+                        Elegí el plan que mejor se adapte a tu práctica. <b>Pago único + suscripción mensual.</b>
+                    </p>
+                </div>
+
+                <div class="pricing-grid">
+                    <!-- NORMAL -->
+                    <div class="pricing-card" data-plan="NORMAL" onclick="selectPlan('NORMAL')">
+                        <div class="pricing-badge"></div>
+                        <div class="pricing-plan-icon">📋</div>
+                        <div class="pricing-plan-name">Normal</div>
+                        <div class="pricing-price">$102<small>.99</small></div>
+                        <div class="pricing-sub">pago único + $10/mes</div>
+                        <ul class="pricing-features">
+                            <li><span class="feat-icon">✅</span> Transcripción de audio a texto</li>
+                            <li><span class="feat-icon">✋</span> Estructuración manual (campo por campo)</li>
+                            <li><span class="feat-icon">❌</span> <span style="opacity:.6;">Grabar sobre texto editado</span></li>
+                            <li><span class="feat-icon">📄</span> 3 plantillas a elección</li>
+                            <li><span class="feat-icon">✍️</span> PDF con firma</li>
+                            <li><span class="feat-icon">📂</span> Historial: últimos 10 informes</li>
+                            <li><span class="feat-icon">❌</span> <span style="opacity:.6;">Asistente de sesión IA</span></li>
+                            <li><span class="feat-icon">📖</span> Diccionario médico personalizable</li>
+                            <li id="pricingNormalDevices"><span class="feat-icon">💻</span> 1 dispositivo</li>
+                            <li><span class="feat-icon">1️⃣</span> 1 perfil de salida</li>
+                            <li><span class="feat-icon">🏥</span> 1 lugar de trabajo</li>
+                        </ul>
+                        <button type="button" class="pricing-select-btn" onclick="selectPlan('NORMAL')">Elegir Normal</button>
+                    </div>
+
+                    <!-- PRO -->
+                    <div class="pricing-card popular" data-plan="PRO" onclick="selectPlan('PRO')">
+                        <div class="pricing-badge">⭐ Más popular</div>
+                        <div class="pricing-plan-icon">⭐</div>
+                        <div class="pricing-plan-name">Pro</div>
+                        <div class="pricing-price">$152<small>.99</small></div>
+                        <div class="pricing-sub">pago único + $15/mes</div>
+                        <ul class="pricing-features">
+                            <li><span class="feat-icon">✅</span> Transcripción de audio a texto</li>
+                            <li><span class="feat-icon">🤖</span> <b>Estructuración automática con IA</b></li>
+                            <li><span class="feat-icon">✅</span> <b>Grabar sobre texto editado</b></li>
+                            <li><span class="feat-icon">📄</span> <b>Todas las plantillas de tu especialidad</b></li>
+                            <li><span class="feat-icon">✍️</span> PDF con logo + firma</li>
+                            <li><span class="feat-icon">📂</span> <b>Historial: últimos 30 informes</b></li>
+                            <li><span class="feat-icon">🧠</span> <b>Asistente de sesión IA</b></li>
+                            <li><span class="feat-icon">📖</span> Diccionario personalizable</li>
+                            <li id="pricingProDevices"><span class="feat-icon">💻</span> 3 dispositivos</li>
+                            <li><span class="feat-icon">🔀</span> Hasta 3 perfiles de salida</li>
+                            <li><span class="feat-icon">🏥</span> 2 lugares de trabajo</li>
+                        </ul>
+                        <button type="button" class="pricing-select-btn" onclick="selectPlan('PRO')">Elegir Pro</button>
+                    </div>
+
+                    <!-- CLÍNICA -->
+                    <div class="pricing-card" data-plan="CLINIC" onclick="selectPlan('CLINIC')">
+                        <div class="pricing-badge"></div>
+                        <div class="pricing-plan-icon">🏥</div>
+                        <div class="pricing-plan-name">Clínica</div>
+                        <div class="pricing-price">$352<small>.99</small></div>
+                        <div class="pricing-sub">pago único + $30/mes</div>
+                        <ul class="pricing-features">
+                            <li><span class="feat-icon">✅</span> Todo lo de Pro, más:</li>
+                            <li><span class="feat-icon">📦</span> <b>3 packs completos de especialidad</b></li>
+                            <li><span class="feat-icon">🎨</span> <b>PDF con logo + firma + color</b></li>
+                            <li><span class="feat-icon">👥</span> <b>Hasta 5 profesionales</b></li>
+                            <li id="pricingClinicDevices"><span class="feat-icon">💻</span> 5 dispositivos</li>
+                            <li><span class="feat-icon">♾️</span> <b>Historial ilimitado</b></li>
+                            <li><span class="feat-icon">🤖</span> Estructuración automática con IA</li>
+                            <li><span class="feat-icon">✅</span> Grabar sobre texto editado</li>
+                            <li><span class="feat-icon">🧠</span> Asistente de sesión IA</li>
+                            <li><span class="feat-icon">📖</span> Diccionario personalizable</li>
+                            <li><span class="feat-icon">🔀</span> Múltiples perfiles de salida</li>
+                        </ul>
+                        <button type="button" class="pricing-select-btn" onclick="selectPlan('CLINIC')">Elegir Clínica</button>
+                    </div>
+                </div>
+
+                <div style="text-align:center;margin-top:1rem;">
+                    <small style="color:var(--text-light);">💡 Todos los planes incluyen actualizaciones gratuitas de por vida. La suscripción cubre: acceso a IA, soporte técnico y almacenamiento.</small>
+                </div>
+
+                <!-- Selector de moneda -->
+                <div style="text-align:center;margin-top:.8rem;" id="currencySelector">
+                    <span style="font-size:.85rem;color:var(--text-secondary);margin-right:.5rem;">Moneda:</span>
+                    <button type="button" class="curr-btn active" data-curr="USD" onclick="setCurrency('USD')">🇺🇸 USD</button>
+                    <button type="button" class="curr-btn" data-curr="ARS" onclick="setCurrency('ARS')">🇦🇷 ARS</button>
+                    <span id="arsRateLabel" style="font-size:.75rem;color:var(--text-light);margin-left:.6rem;display:none;"></span>
+                </div>
+
+                <div class="btn-row" style="justify-content:center;">
+                    <button type="button" class="btn btn-primary" id="btnStep0Next" onclick="goStep(1)" disabled>Seleccioná un plan para continuar</button>
+                </div>
+            </div>
+
+            <!-- ═══ PASO 1: DATOS PERSONALES ═══ -->
+            <div class="form-step" id="step1">
+                <div class="card">
+                    <div class="section-title" id="step1Title">👤 Datos del Profesional</div>
+                    <p class="section-subtitle" id="step1Subtitle">
+                        Estos datos aparecerán en todos los informes que generés.
+                        Los campos con <span style="color:var(--danger);">*</span> son obligatorios.
+                    </p>
+
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label id="labelNombre">Nombre y Apellido <span class="req">*</span></label>
+                            <input type="text" id="regNombre" required placeholder="Dr. Juan Pérez">
+                        </div>
+                        <div class="field-group">
+                            <label id="labelMatricula">Matrícula <span class="req">*</span></label>
+                            <input type="text" id="regMatricula" required placeholder="MN 12345">
+                        </div>
+                    </div>
+
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label id="labelEmail">Email <span class="req">*</span></label>
+                            <input type="email" id="regEmail" required placeholder="doctor@ejemplo.com">
+                        </div>
+                        <div class="field-group">
+                            <label id="labelTelefono">Teléfono</label>
+                            <input type="tel" id="regTelefono" placeholder="+54 9 11 1234-5678">
+                        </div>
+                    </div>
+                    <div class="field-group" style="margin-top:.7rem;">
+                        <label>🌐 Redes Sociales <small style="font-weight:400;color:#94a3b8;">(dejá vacío las que no querés publicar en informes)</small></label>
+                        <div style="display:flex;flex-direction:column;gap:5px;margin-top:5px;">
+                            <div style="display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;border-radius:50%;background:#1877f2;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M9.198 21.5h4v-8.01h3.604l.396-3.98h-4V7.5a1 1 0 011-1h3v-4h-3a5 5 0 00-5 5v2.01h-2l-.396 3.98h2.396v8.01z"/></svg></span><input type="url" id="regSocialFb" placeholder="facebook.com/tu-perfil" style="flex:1;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;font-family:inherit;"></div>
+                            <div style="display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 30% 107%,#fdf497 0%,#fd5949 45%,#d6249f 60%,#285AEB 90%);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill="#fff" stroke="none"/></svg></span><input type="text" id="regSocialIg" placeholder="@tu_usuario (Instagram)" style="flex:1;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;font-family:inherit;"></div>
+                            <div style="display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;border-radius:50%;background:#ff0000;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="14" height="10" viewBox="0 0 28 20" fill="#fff"><path d="M27.543 3.11A3.5 3.5 0 0025.08.637C22.88 0 14 0 14 0S5.12 0 2.92.637A3.5 3.5 0 00.457 3.11 36.6 36.6 0 000 10a36.6 36.6 0 00.457 6.89A3.5 3.5 0 002.92 19.363C5.12 20 14 20 14 20s8.88 0 11.08-.637a3.5 3.5 0 002.463-2.473A36.6 36.6 0 0028 10a36.6 36.6 0 00-.457-6.89zM11.2 14.286V5.714L18.4 10l-7.2 4.286z"/></svg></span><input type="url" id="regSocialYt" placeholder="youtube.com/@tu-canal" style="flex:1;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;font-family:inherit;"></div>
+                            <div style="display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;border-radius:50%;background:#000;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></span><input type="text" id="regSocialX" placeholder="@tu_usuario (X / Twitter)" style="flex:1;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;font-family:inherit;"></div>
+                            <div style="display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;border-radius:50%;background:#25d366;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></span><input type="tel" id="regSocialWa" placeholder="+54 9 11 1234-5678 (WhatsApp)" style="flex:1;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;font-family:inherit;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button type="button" class="btn btn-secondary" onclick="goStep(0)">← Anterior</button>
+                    <button type="button" class="btn btn-primary" onclick="goStep(2)">Siguiente →</button>
+                </div>
+            </div>
+
+            <!-- ═══ PASO 2: ESPECIALIDADES Y ESTUDIOS ═══ -->
+            <div class="form-step" id="step2">
+                <div class="card">
+                    <div class="section-title" id="step2TitleEsp">🩺 Especialidades</div>
+                    <p class="section-subtitle" id="step2SubtitleEsp">Seleccioná las especialidades que ejercés. Esto determina qué plantillas de estudio tendrás disponibles.</p>
+
+                    <div class="checkbox-grid" id="especialidadesGrid">
+                        <!-- Generado por JS -->
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="section-title" id="step2TitleEstudios">📋 Estudios que Realizás</div>
+                    <p class="section-subtitle" id="step2SubtitleEstudios">Basado en tus especialidades, seleccioná los estudios que realizás habitualmente.</p>
+
+                    <div id="estudiosGrid" style="color:var(--text-light);font-style:italic;font-size:.85rem;">
+                        Seleccioná al menos una especialidad arriba ☝️
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button type="button" class="btn btn-secondary" onclick="goStep(1)">← Anterior</button>
+                    <button type="button" class="btn btn-primary" onclick="goStep(3)">Siguiente →</button>
+                </div>
+            </div>
+
+            <!-- ═══ PASO 3: LUGAR DE TRABAJO ═══ -->
+            <div class="form-step" id="step3">
+                <div style="margin-bottom:.6rem;">
+                    <div class="section-title" id="step3Title">🏥 Lugares de Trabajo</div>
+                    <p class="section-subtitle" id="step3Subtitle">Configurá tu/s lugar/es de trabajo. Estos datos aparecen en el encabezado de los informes.</p>
+                </div>
+
+                <div id="workplacesContainer">
+                    <!-- Rendered by JS (renderWorkplace) -->
+                </div>
+
+                <button type="button" class="btn-add-wp" id="btnAddWorkplace" onclick="addWorkplace()">
+                    ➕ Agregar otro lugar de trabajo
+                </button>
+
+                <!-- Sección Profesionales — solo visible para CLINIC (F1) -->
+                <div id="clinicProfessionalsSection" style="display:none;margin-top:1.5rem;">
+                    <div style="margin-bottom:.6rem;">
+                        <div class="section-title">👨‍⚕️ Profesionales del equipo</div>
+                        <p class="section-subtitle">Agregá los profesionales que usarán la app. Cada uno tendrá su firma y datos en los informes.</p>
+                    </div>
+                    <div id="professionalsContainer"></div>
+                    <button type="button" class="btn-add-wp" id="btnAddProfessional" onclick="addProfessional()">
+                        ➕ Agregar profesional
+                    </button>
+                    <div id="profCounter" style="font-size:.82rem;margin-top:.4rem;color:var(--text-secondary);"></div>
+                </div>
+
+                <div class="btn-row">
+                    <button type="button" class="btn btn-secondary" onclick="goStep(2)">← Anterior</button>
+                    <button type="button" class="btn btn-primary" onclick="goStep(4)">Siguiente →</button>
+                </div>
+            </div>
+
+            <!-- ═══ PASO 4: PDF, FIRMA, COLOR ═══ -->
+            <div class="form-step" id="step4">
+                <div class="card">
+                    <div class="section-title">🎨 Apariencia del Informe</div>
+                    <p class="section-subtitle">Estos ajustes definen cómo se ven tus informes en PDF e impresión.</p>
+
+                    <!-- Color del encabezado -->
+                    <div class="field-group" style="margin-bottom: 1rem;">
+                        <label>Color del encabezado del informe</label>
+                        <div class="color-palette" id="colorPalette">
+                            <div class="color-option">
+                                <div class="color-swatch selected" data-color="#1a56a0" style="background:#1a56a0;" onclick="selectHeaderColor('#1a56a0', this)" title="Azul"></div>
+                                <span class="color-swatch-label">Azul</span>
+                            </div>
+                            <div class="color-option">
+                                <div class="color-swatch" data-color="#0f766e" style="background:#0f766e;" onclick="selectHeaderColor('#0f766e', this)" title="Verde"></div>
+                                <span class="color-swatch-label">Verde</span>
+                            </div>
+                            <div class="color-option">
+                                <div class="color-swatch" data-color="#db2777" style="background:#db2777;" onclick="selectHeaderColor('#db2777', this)" title="Rosa"></div>
+                                <span class="color-swatch-label">Rosa</span>
+                            </div>
+                            <div class="color-option">
+                                <div class="color-swatch" data-color="#1e293b" style="background:#1e293b;" onclick="selectHeaderColor('#1e293b', this)" title="Negro"></div>
+                                <span class="color-swatch-label">Negro</span>
+                            </div>
+                            <div class="color-option">
+                                <div class="color-swatch" data-color="#b8860b" style="background:#b8860b;" onclick="selectHeaderColor('#b8860b', this)" title="Dorado"></div>
+                                <span class="color-swatch-label">Dorado</span>
+                            </div>
+                            <div class="color-option">
+                                <div class="color-swatch" data-color="#708090" style="background:#708090;" onclick="selectHeaderColor('#708090', this)" title="Plateado"></div>
+                                <span class="color-swatch-label">Plateado</span>
+                            </div>
+                        </div>
+                        <div class="color-preview-bar" id="colorPreviewBar" style="background:#1a56a0;"></div>
+                        <small>Se aplica al banner superior de cada página del informe</small>
+                    </div>
+
+                </div>
+
+                <div class="card">
+                    <div class="section-title">✍️ Firma</div>
+                    <p class="section-subtitle">Subí una imagen de tu firma escaneada. Aparece al pie de cada informe.</p>
+
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label>Imagen de Firma</label>
+                            <div class="upload-zone" id="firmaDropZone">
+                                <div class="upload-icon">✍️</div>
+                                <div class="upload-text">Clic o arrastrá para subir<br><small>PNG con fondo transparente ideal</small></div>
+                                <input type="file" id="regFirma" accept="image/png,image/jpeg,image/webp" onchange="previewImage(this, 'firmaPreview')">
+                            </div>
+                            <div class="upload-preview" id="firmaPreview"></div>
+                        </div>
+
+                        <div class="field-group" id="step4ProLogoGroup">
+                            <label>Logo Profesional</label>
+                            <div class="upload-zone" id="proLogoDropZone">
+                                <div class="upload-icon">🩺</div>
+                                <div class="upload-text">Logo personal (opcional)<br><small>Si diferente del lugar</small></div>
+                                <input type="file" id="regProLogo" accept="image/png,image/jpeg,image/webp" onchange="previewImage(this, 'proLogoPreview')">
+                            </div>
+                            <div class="upload-preview" id="proLogoPreview"></div>
+                        </div>
+                        <div class="field-group" id="step4ProLogoHint" style="display:none;">
+                            <div style="background:#f8f9fa;border:1px dashed #ccc;border-radius:8px;padding:.8rem 1rem;text-align:center;color:#888;font-size:.82rem;">
+                                🔒 <b>Logo Profesional</b> disponible en plan <b>Pro</b> y <b>Clínica</b>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" id="step4ContactCard">
+                    <div class="section-title">📋 Contacto en los Informes</div>
+                    <p class="section-subtitle">Elegí qué datos tuyos aparecen impresos en cada informe PDF.</p>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.3rem;">
+                        <label style="display:flex;align-items:center;gap:.4rem;font-size:.84rem;cursor:pointer;">
+                            <input type="checkbox" id="regShowPhone" checked style="accent-color:var(--primary);width:15px;height:15px;"> 📞 Mostrar teléfono
+                        </label>
+                        <label style="display:flex;align-items:center;gap:.4rem;font-size:.84rem;cursor:pointer;">
+                            <input type="checkbox" id="regShowEmail" checked style="accent-color:var(--primary);width:15px;height:15px;"> 📧 Mostrar email
+                        </label>
+                        <label style="display:flex;align-items:center;gap:.4rem;font-size:.84rem;cursor:pointer;" id="regShowSocialLabel">
+                            <input type="checkbox" id="regShowSocial" style="accent-color:var(--primary);width:15px;height:15px;"> 🌐 Mostrar redes sociales
+                        </label>
+                        <div id="regShowSocialHint" style="display:none;font-size:.75rem;color:#94a3b8;align-self:center;">🔒 Redes: solo plan PRO y Clínica</div>
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button type="button" class="btn btn-secondary" onclick="goStep(3)">← Anterior</button>
+                    <button type="button" class="btn btn-primary" onclick="goStep(5)">Siguiente →</button>
+                </div>
+            </div>
+
+            <!-- ═══ PASO 5: CARRITO DE COMPRAS ═══ -->
+            <div class="form-step" id="step5">
+                <div class="card">
+                    <div class="section-title">🛒 Potenciá tu experiencia</div>
+                    <p class="section-subtitle">
+                        Tu plan <b id="cartPlanName">—</b> ya incluye mucho. Acá podés agregar extras opcionales. <b>Pago único, para siempre.</b>
+                    </p>
+
+                    <!-- Plan summary -->
+                    <div style="background:#f0fdfa;border:1px solid #bbf7d0;border-radius:10px;padding:.8rem 1rem;margin-bottom:1.2rem;">
+                        <div style="font-weight:700;font-size:.85rem;margin-bottom:.3rem;">✅ Tu plan incluye:</div>
+                        <div id="cartPlanIncludes" style="font-size:.8rem;color:var(--text-light);"></div>
+                    </div>
+
+                    <!-- Add-ons: Plantillas extra -->
+                    <div class="cart-section" id="cartTemplatesSection">
+                        <div class="cart-section-title">📄 Plantillas adicionales</div>
+                        <div id="cartTemplatesList">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Add-ons: Dispositivos extra -->
+                    <div class="cart-section" id="cartDevicesSection">
+                        <div class="cart-section-title">💻 Dispositivos extra</div>
+                        <div class="cart-item">
+                            <span class="cart-item-name">+1 dispositivo adicional</span>
+                            <span class="cart-item-price">$8.99</span>
+                            <div style="display:flex;align-items:center;gap:6px;">
+                                <button type="button" class="cart-add-btn" onclick="changeExtraDevices(-1)" style="padding:4px 8px;">−</button>
+                                <span id="extraDevicesCount" style="font-weight:700;min-width:20px;text-align:center;">0</span>
+                                <button type="button" class="cart-add-btn" onclick="changeExtraDevices(1)" style="padding:4px 8px;">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add-ons: Lugares de trabajo extra -->
+                    <div class="cart-section" id="cartWorkplacesSection">
+                        <div class="cart-section-title">🏥 Lugares de trabajo extra</div>
+                        <div class="cart-item">
+                            <span class="cart-item-name">+1 lugar de trabajo adicional</span>
+                            <span class="cart-item-price">$12.99</span>
+                            <div style="display:flex;align-items:center;gap:6px;">
+                                <button type="button" class="cart-add-btn" onclick="changeExtraWorkplaces(-1)" style="padding:4px 8px;">−</button>
+                                <span id="extraWorkplacesCount" style="font-weight:700;min-width:20px;text-align:center;">0</span>
+                                <button type="button" class="cart-add-btn" onclick="changeExtraWorkplaces(1)" style="padding:4px 8px;">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add-ons: Profesionales extra (solo CLINIC) -->
+                    <div class="cart-section" id="cartProfessionalsSection" style="display:none;">
+                        <div class="cart-section-title">👥 Profesionales extra</div>
+                        <div class="cart-item">
+                            <span class="cart-item-name">+1 profesional adicional</span>
+                            <span class="cart-item-price">$19.99</span>
+                            <div style="display:flex;align-items:center;gap:6px;">
+                                <button type="button" class="cart-add-btn" onclick="changeExtraProfessionals(-1)" style="padding:4px 8px;">−</button>
+                                <span id="extraProfessionalsCount" style="font-weight:700;min-width:20px;text-align:center;">0</span>
+                                <button type="button" class="cart-add-btn" onclick="changeExtraProfessionals(1)" style="padding:4px 8px;">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add-ons: Branding (logo+color) -->
+                    <div class="cart-section" id="cartBrandingSection" style="display:none;">
+                        <div class="cart-section-title">🎨 Pack Branding</div>
+                        <div class="cart-item" id="cartBrandingItem">
+                            <span class="cart-item-name" id="cartBrandingName">Logo + color en PDF</span>
+                            <span class="cart-item-price" id="cartBrandingPrice">$14.99</span>
+                            <button type="button" class="cart-add-btn" id="cartBrandingBtn" onclick="toggleBranding()">+ Agregar</button>
+                        </div>
+                    </div>
+
+                    <!-- Mini cart summary -->
+                    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:.8rem 1rem;margin-top:1rem;">
+                        <div style="font-weight:700;font-size:.85rem;margin-bottom:.4rem;">🛒 Tu carrito</div>
+                        <div id="cartSummaryItems" style="font-size:.82rem;"></div>
+                        <div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid #fde68a;padding-top:.4rem;margin-top:.4rem;">
+                            <span>Total add-ons (único):</span>
+                            <span id="cartTotalAddons">$0</span>
+                        </div>
+                    </div>
+
+                    <p style="font-size:.75rem;color:var(--text-light);margin-top:.8rem;text-align:center;">💡 Podés saltar este paso sin agregar nada. Los extras se pueden comprar después también.</p>
+                </div>
+
+                <div class="btn-row">
+                    <button type="button" class="btn btn-secondary" onclick="goStep(4)">← Anterior</button>
+                    <button type="button" class="btn btn-primary" onclick="goStep(6)">Ver resumen →</button>
+                </div>
+            </div>
+
+            <!-- ═══ PASO 6: RESUMEN DE INVERSIÓN ═══ -->
+            <div class="form-step" id="step6">
+                <div class="card">
+                    <div class="section-title">💰 Resumen de tu inversión</div>
+                    <p class="section-subtitle">Revisá el detalle de tu plan y los costos antes de enviar tu registro.</p>
+
+                    <!-- Pago único -->
+                    <div class="invest-block" style="border-left:4px solid var(--primary);">
+                        <div class="invest-block-title">💳 Pago único (licencia de por vida)</div>
+                        <div id="investOneTimeItems"></div>
+                        <div class="invest-line total">
+                            <span>Subtotal único</span>
+                            <span id="investOneTimeTotal">$0</span>
+                        </div>
+                    </div>
+
+                    <!-- Suscripción -->
+                    <div class="invest-block" style="border-left:4px solid var(--accent);">
+                        <div class="invest-block-title">📅 Suscripción recurrente</div>
+                        <div class="invest-toggle">
+                            <button type="button" class="invest-toggle-btn active" data-billing="monthly" onclick="setBilling('monthly')">Mensual</button>
+                            <button type="button" class="invest-toggle-btn" data-billing="annual" onclick="setBilling('annual')">
+                                Anual <span class="save-badge">Ahorrás 2 meses</span>
+                            </button>
+                        </div>
+                        <div id="investSubItems"></div>
+                        <div class="invest-line total">
+                            <span id="investSubLabel">Total mensual</span>
+                            <span id="investSubTotal">$0/mes</span>
+                        </div>
+                    </div>
+
+                    <!-- Resumen final -->
+                    <div class="invest-block" style="background:linear-gradient(135deg,#f0fdfa,#ecfdf5);border:2px solid var(--primary);">
+                        <div style="font-size:1rem;font-weight:800;color:var(--primary-dark);margin-bottom:.6rem;">📋 Hoy pagás:</div>
+                        <div class="invest-line" style="font-size:1.1rem;">
+                            <span>Licencia + primer período</span>
+                            <span id="investTodayTotal" style="font-weight:800;font-size:1.2rem;color:var(--primary-dark);">$0</span>
+                        </div>
+                        <div style="font-size:.78rem;color:var(--text-light);margin-top:.5rem;" id="investRenewalNote"></div>
+                    </div>
+
+                    <div style="text-align:center;font-size:.75rem;color:var(--text-light);margin-top:.6rem;">
+                        ℹ️ Pago único = tuyo para siempre. La suscripción cubre: acceso a IA, soporte técnico, actualizaciones y almacenamiento.
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button type="button" class="btn btn-secondary" onclick="goStep(5)">← Volver al carrito</button>
+                    <button type="button" class="btn btn-primary" id="btnSubmit" onclick="submitRegistro()">
+                        📨 Confirmar y Enviar Registro
+                    </button>
+                </div>
+            </div>
+
+            <!-- ═══ PASO 7: ÉXITO ═══ -->
+            <div class="form-step" id="step7">
+                <div class="card success-card">
+                    <div class="check-icon">✅</div>
+                    <h2 id="step7Title">¡Registro enviado!</h2>
+                    <p id="step7Message">
+                        Tus datos fueron recibidos correctamente.<br>
+                        Revisá tu email para los datos de transferencia.<br>
+                        Una vez confirmada, activaremos tu cuenta en un máximo de 48 horas.<br>
+                    </p>
+                    <div id="successPlanSummary" style="margin-top:1.2rem;padding:1rem;background:#f0fdfa;border-radius:10px;border:1px solid #bbf7d0;text-align:left;font-size:.82rem;"></div>
+                    <div id="paymentPortalPanel" style="display:none;margin-top:1rem;padding:1rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;text-align:left;">
+                        <div id="paymentPortalStatus" style="font-size:.85rem;font-weight:600;margin-bottom:.5rem;">Estado: —</div>
+                        <div id="paymentPortalMeta" style="font-size:.8rem;color:var(--text-light);margin-bottom:.7rem;"></div>
+                        <div id="paymentTransferData" style="font-size:.78rem;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:.65rem;margin-bottom:.7rem;color:#334155;"></div>
+                        <div id="paymentExtraFields" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+                            <input type="number" id="paymentAmountInput" step="0.01" min="0" placeholder="Monto (opcional)" style="max-width:180px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:.82rem;">
+                            <input type="text" id="paymentNoteInput" placeholder="Nota (opcional)" style="flex:1;min-width:180px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:.82rem;">
+                        </div>
+                        <div style="margin-top:.6rem;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+                            <input type="file" id="paymentReceiptInput" accept="image/*,application/pdf" style="display:none;">
+                            <button type="button" class="btn btn-secondary" id="btnUploadReceipt">📎 Seleccionar comprobante</button>
+                            <button type="button" class="btn btn-primary" id="btnSendReceipt" disabled>📨 Enviar comprobante</button>
+                            <span id="paymentUploadStatus" style="font-size:.78rem;color:var(--text-light);display:block;flex:1 1 100%;line-height:1.45;"></span>
+                        </div>
+                        <div id="paymentHistorySection" style="margin-top:.8rem;font-size:.8rem;">
+                            <div id="paymentHistoryList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+    <div class="footer">
+        © 2026 Transcriptor Médico Pro — Todos los derechos reservados
+    </div>
+
+    <!-- ════ CUSTOM MODAL ════ -->
+    <div class="modal-overlay" id="customModalOverlay">
+        <div class="modal-box">
+            <div class="modal-icon" id="customModalIcon">⚠️</div>
+            <div class="modal-msg" id="customModalMsg"></div>
+            <div class="modal-actions" id="customModalActions">
+                <button class="btn btn-primary" onclick="closeModal(true)">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════ JAVASCRIPT ════ -->
+    <script src="../src/js/config/templateCategoryRegistry.js"></script>
+    <script>
+        // ── Config ──────────────────────────────────────────────────────────────
+        const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec';
+
+        // ── Pricing ────────────────────────────────────────────────────────────
+        const PRICING = {
+            NORMAL: { license: 102.99, monthly: 10, annual: 100, devices: 1, templates: 3, historial: 10, workplaces: 1, outputProfiles: 1, pdfLogo: false, pdfColor: false, label: 'Normal' },
+            PRO:    { license: 152.99, monthly: 15, annual: 150, devices: 3, templates: 'all_specialty', historial: 30, workplaces: 2, outputProfiles: 3, pdfLogo: true, pdfColor: false, label: 'Pro' },
+            CLINIC: { license: 352.99, monthly: 30, annual: 300, devices: 5, templates: '3_packs', historial: Infinity, workplaces: 1, outputProfiles: Infinity, pdfLogo: true, pdfColor: true, maxProfessionals: 5, label: 'Clínica' }
+        };
+
+        function _syncAdminPlanConfigFromObject(adminPlans) {
+            try {
+                if (!adminPlans || typeof adminPlans !== 'object') return;
+                const map = { normal: 'NORMAL', pro: 'PRO', clinic: 'CLINIC' };
+                for (const [adminKey, pricingKey] of Object.entries(map)) {
+                    const ap = adminPlans[adminKey];
+                    if (!ap || !PRICING[pricingKey]) continue;
+                    if (ap.price) {
+                        const num = parseFloat(String(ap.price).replace(/[^0-9.]/g, ''));
+                        if (!isNaN(num)) PRICING[pricingKey].license = num;
+                    }
+                    if (ap.monthly != null) PRICING[pricingKey].monthly = Number(ap.monthly) || PRICING[pricingKey].monthly;
+                    if (ap.annual != null) PRICING[pricingKey].annual = Number(ap.annual) || PRICING[pricingKey].annual;
+                    if (ap.label) PRICING[pricingKey].label = ap.label;
+                    if (ap.maxDevices != null) PRICING[pricingKey].devices = ap.maxDevices;
+                    if (ap.historial != null) PRICING[pricingKey].historial = ap.historial === -1 ? Infinity : ap.historial;
+                    if (ap.workplaces != null) PRICING[pricingKey].workplaces = ap.workplaces;
+                    if (ap.outputProfiles != null) PRICING[pricingKey].outputProfiles = ap.outputProfiles === -1 ? Infinity : ap.outputProfiles;
+                    if (ap.pdfLogo != null) PRICING[pricingKey].pdfLogo = ap.pdfLogo;
+                    if (ap.pdfColor != null) PRICING[pricingKey].pdfColor = ap.pdfColor;
+                    if (ap.maxProfessionals != null) PRICING[pricingKey].maxProfessionals = ap.maxProfessionals;
+                }
+            } catch(_) {}
+        }
+
+        async function _loadPricingConfig() {
+            try {
+                const res = await fetch(`${BACKEND_URL}?action=public_get_plans_config`, { method: 'GET' });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.plans) {
+                        localStorage.setItem('admin_plans_config', JSON.stringify(data.plans));
+                        _syncAdminPlanConfigFromObject(data.plans);
+                    }
+                    if (data && data.addons) {
+                        localStorage.setItem('admin_addons_config', JSON.stringify(data.addons));
+                        _syncAdminAddonsConfigFromObject(data.addons);
+                    }
+                    return;
+                }
+            } catch(_) {}
+
+            try {
+                const stored = localStorage.getItem('admin_plans_config');
+                if (stored) _syncAdminPlanConfigFromObject(JSON.parse(stored));
+            } catch(_) {}
+        }
+
+        const ADDON_PRICES = {
+            template_individual: 3,
+            pack_small: 7,    // 3-5 plantillas
+            pack_large: 12,   // 6+ plantillas
+            device_extra: 8.99,
+            workplace_extra: 12.99,
+            professional_extra: 19.99,
+            branding_normal: 14.99,  // logo + color para NORMAL
+            branding_pro: 9.99       // color para PRO (ya tiene logo)
+        };
+
+        function _syncAdminAddonsConfigFromObject(cfg) {
+            try {
+                if (!cfg || typeof cfg !== 'object') return;
+                for (const key of Object.keys(ADDON_PRICES)) {
+                    if (cfg[key] && cfg[key].price != null) ADDON_PRICES[key] = cfg[key].price;
+                }
+            } catch(_) {}
+        }
+
+        // ── Sync with admin_addons_config (D3) ──
+        (function _syncAdminAddonsConfig() {
+            try {
+                const raw = localStorage.getItem('admin_addons_config');
+                if (!raw) return;
+                _syncAdminAddonsConfigFromObject(JSON.parse(raw));
+            } catch(_) {}
+        })();
+
+        // ── Template map (same as admin.html) ──
+        const _sharedTplReg = window.TP_TEMPLATE_CATEGORY_REGISTRY || null;
+
+        const TEMPLATE_MAP = (_sharedTplReg && _sharedTplReg.templateMapByCategory) || {
+            'Neumología': [
+                { key: 'espirometria', name: 'Espirometría' },
+                { key: 'test_marcha', name: 'Test Marcha 6 min' },
+                { key: 'pletismografia', name: 'Pletismografía' },
+                { key: 'oximetria_nocturna', name: 'Oximetría Nocturna' }
+            ],
+            'Oftalmología': [
+                { key: 'campimetria', name: 'Campimetría' },
+                { key: 'oct_retinal', name: 'OCT Retinal' },
+                { key: 'topografia_corneal', name: 'Topografía Corneal' },
+                { key: 'fondo_ojo', name: 'Fondo de Ojo' },
+                { key: 'gonioscopia', name: 'Gonioscopía' }
+            ],
+            'Imágenes': [
+                { key: 'tac', name: 'TAC' },
+                { key: 'resonancia', name: 'Resonancia' },
+                { key: 'mamografia', name: 'Mamografía' },
+                { key: 'densitometria', name: 'Densitometría' },
+                { key: 'pet_ct', name: 'PET-CT' },
+                { key: 'radiografia', name: 'Radiografía' },
+                { key: 'ecografia_abdominal', name: 'Ecografía Abdominal' },
+                { key: 'eco_doppler', name: 'Eco-Doppler' }
+            ],
+            'Endoscopía': [
+                { key: 'gastroscopia', name: 'Gastroscopía' },
+                { key: 'colonoscopia', name: 'Colonoscopía' },
+                { key: 'broncoscopia', name: 'Broncoscopía' },
+                { key: 'laringoscopia', name: 'Laringoscopía' }
+            ],
+            'Cardiología': [
+                { key: 'gammagrafia_cardiaca', name: 'Gammagrafía Cardíaca' },
+                { key: 'holter', name: 'Holter' },
+                { key: 'mapa', name: 'MAPA' },
+                { key: 'cinecoro', name: 'Cinecoronariografía' },
+                { key: 'ecg', name: 'ECG' },
+                { key: 'eco_stress', name: 'Eco-Stress' },
+                { key: 'ett', name: 'Ecocardiograma TT' }
+            ],
+            'Ginecología': [
+                { key: 'pap', name: 'PAP' },
+                { key: 'colposcopia', name: 'Colposcopía' }
+            ],
+            'Neurología': [
+                { key: 'electromiografia', name: 'Electromiografía' },
+                { key: 'polisomnografia', name: 'Polisomnografía' }
+            ],
+            'ORL': [
+                { key: 'naso', name: 'Nasofibroscopía' },
+                { key: 'endoscopia_otologica', name: 'Endoscopía Otológica' }
+            ],
+            'Quirúrgico': [
+                { key: 'protocolo_quirurgico', name: 'Protocolo Quirúrgico' }
+            ],
+            'General': [
+                { key: 'nota_evolucion', name: 'Nota de Evolución' },
+                { key: 'epicrisis', name: 'Epicrisis' },
+                { key: 'generico', name: 'Informe Genérico' }
+            ]
+        };
+
+        // Form specialty → template category mapping
+        const FORM_ESP_TO_CAT = (_sharedTplReg && _sharedTplReg.formSpecialtyToTemplateCategories) || {
+            'Cardiología': ['Cardiología'],
+            'Ecografía General': ['Imágenes'],
+            'Eco-Doppler Vascular': ['Imágenes'],
+            'Diagnóstico por Imágenes': ['Imágenes'],
+            'Gastroenterología / Endoscopía': ['Endoscopía'],
+            'ORL (Otorrinolaringología)': ['ORL'],
+            'Ginecología': ['Ginecología'],
+            'Obstetricia': [],
+            'Neumonología / Neumología': ['Neumología'],
+            'Neurología': ['Neurología'],
+            'Oftalmología': ['Oftalmología'],
+            'Cirugía / Quirúrgico': ['Quirúrgico'],
+            'Medicina General / Interna': ['General'],
+            'Traumatología / Ortopedia': [],
+            'Dermatología': [],
+            'Endocrinología': [],
+            'Urología': []
+        };
+
+        // ── Especialidades y estudios (sincronizado con MEDICAL_TEMPLATES) ─────
+        const ESPECIALIDADES = {
+            'Cardiología': [
+                'Ecocardiograma transtorácico (ETT)',
+                'Ecocardiograma Doppler color',
+                'Eco-Doppler cardíaco con strain',
+                'Ecocardiograma transesofágico (ETE)',
+                'Eco-Stress (ecocardiograma de estrés)',
+                'Holter ECG (24-48h)',
+                'Monitoreo Ambulatorio de Presión Arterial (MAPA)',
+                'Ergometría / Prueba de esfuerzo',
+                'Electrocardiograma (ECG)',
+                'Cinecoronariografía',
+                'Gammagrafía Cardíaca (SPECT)',
+                'Consulta cardiológica'
+            ],
+            'Ecografía General': [
+                'Ecografía abdominal completa',
+                'Ecografía renal y de vías urinarias',
+                'Ecografía hepática / hepatobiliopancreática',
+                'Ecografía pelviana / ginecológica',
+                'Ecografía testicular',
+                'Ecografía de partes blandas',
+                'Ecografía tiroidea',
+                'Ecografía mamaria',
+                'Ecografía prostática (transabdominal)',
+                'Ecografía articular / musculoesquelética'
+            ],
+            'Eco-Doppler Vascular': [
+                'Eco-Doppler venoso de miembros inferiores',
+                'Eco-Doppler arterial de miembros inferiores',
+                'Eco-Doppler venoso de miembros superiores',
+                'Eco-Doppler arterial de miembros superiores',
+                'Eco-Doppler de vasos de cuello (carótidas y vertebrales)',
+                'Eco-Doppler de aorta abdominal',
+                'Eco-Doppler renal',
+                'Eco-Doppler de injertos vasculares',
+                'Eco-Doppler de fístula arteriovenosa'
+            ],
+            'Diagnóstico por Imágenes': [
+                'TAC / Tomografía Computada',
+                'Resonancia Magnética (RMN)',
+                'Mamografía Digital',
+                'Densitometría Ósea (DXA)',
+                'PET-CT',
+                'Radiografía Convencional'
+            ],
+            'Gastroenterología / Endoscopía': [
+                'Gastroscopía / Endoscopía Digestiva Alta (EDA)',
+                'Colonoscopía',
+                'Broncoscopía',
+                'Video-Cápsula Endoscópica',
+                'Consulta gastroenterológica'
+            ],
+            'ORL (Otorrinolaringología)': [
+                'Videonaso / Laringoscopía',
+                'Endoscopía Otológica',
+                'Audiometría',
+                'Consulta ORL'
+            ],
+            'Ginecología': [
+                'Papanicolaou (PAP)',
+                'Colposcopía',
+                'Ecografía ginecológica transvaginal',
+                'Consulta ginecológica'
+            ],
+            'Obstetricia': [
+                'Ecografía obstétrica de primer trimestre',
+                'Ecografía obstétrica de segundo trimestre (morfológica)',
+                'Ecografía obstétrica de tercer trimestre',
+                'Perfil biofísico fetal',
+                'Doppler obstétrico (arteria umbilical, uterina)',
+                'Ecografía transvaginal obstétrica',
+                'Control obstétrico / Nota de evolución'
+            ],
+            'Neumonología / Neumología': [
+                'Espirometría',
+                'Test de Marcha 6 minutos (TM6M)',
+                'Pletismografía corporal',
+                'Oximetría Nocturna',
+                'Informe de polisomnografía',
+                'Consulta neumonológica'
+            ],
+            'Neurología': [
+                'Electromiografía (EMG)',
+                'Polisomnografía (PSG)',
+                'Electroencefalograma (EEG)',
+                'Consulta neurológica'
+            ],
+            'Oftalmología': [
+                'Campimetría Humphrey',
+                'OCT Retinal',
+                'Topografía Corneal',
+                'Fondo de Ojo',
+                'Gonioscopía',
+                'Consulta oftalmológica'
+            ],
+            'Cirugía / Quirúrgico': [
+                'Protocolo Quirúrgico / Operatorio',
+                'Parte de Cirugía',
+                'Nota pre-quirúrgica',
+                'Nota post-quirúrgica'
+            ],
+            'Medicina General / Interna': [
+                'Historia clínica',
+                'Consulta médica general',
+                'Nota de evolución',
+                'Epicrisis / Resumen de internación',
+                'Informe Médico General',
+                'Control de salud / Check-up',
+                'Certificado médico'
+            ],
+            'Traumatología / Ortopedia': [
+                'Informe de radiografía ósea',
+                'Consulta traumatológica',
+                'Nota de evolución traumatológica'
+            ],
+            'Dermatología': [
+                'Consulta dermatológica',
+                'Informe de biopsia de piel'
+            ],
+            'Endocrinología': [
+                'Consulta endocrinológica',
+                'Ecografía tiroidea con informe endocrinológico'
+            ],
+            'Urología': [
+                'Consulta urológica',
+                'Ecografía vesico-prostática',
+                'Uroflujometría'
+            ]
+        };
+
+        let selectedEspecialidades = [];
+        let selectedEstudios = [];
+        let imageData = { firma: null, proLogo: null };
+        let wpLogoData = {};
+        let wpCounter = 0;
+        let selectedHeaderColor = '#1a56a0';
+        let _modalResolve = null;
+        let _lastRegistrationId = '';
+        let _paymentPortalId = '';
+
+        // ── Plan & Cart State ──
+        let selectedPlan = null;
+        let billingCycle = 'monthly'; // 'monthly' or 'annual'
+        let selectedCurrency = 'USD';
+        let arsRate = null; // tipo de cambio ARS/USD (blue venta)
+        let cartAddons = {
+            templates: [],   // { key, name, category, price }
+            packs: [],       // { category, templates: [...], price }
+            extraDevices: 0,
+            extraWorkplaces: 0,
+            extraProfessionals: 0,
+            branding: false
+        };
+
+        function _resolvePaymentPortalBaseUrl() {
+            const path = String(window.location.pathname || '');
+            if (path.toLowerCase().includes('/recursos/registro.html')) return window.location.origin + path;
+            const base = path.replace(/\/[^/]*$/, '/');
+            return window.location.origin + base + 'recursos/registro.html';
+        }
+
+        function _setStep7DefaultMessage() {
+            const title = document.getElementById('step7Title');
+            const msg = document.getElementById('step7Message');
+            if (title) title.textContent = '¡Registro enviado!';
+            if (msg) {
+                msg.innerHTML = 'Tus datos fueron recibidos correctamente.<br>Revisá tu email para los datos de transferencia.<br>Una vez confirmada, activaremos tu cuenta en un máximo de 48 horas.';
+            }
+        }
+
+        function _renderPaymentHistory(history) {
+            const el = document.getElementById('paymentHistoryList');
+            if (!el) return;
+            if (!Array.isArray(history) || history.length === 0) {
+                el.innerHTML = '<div style="color:var(--text-light);">Sin comprobantes cargados todavía.</div>';
+                return;
+            }
+            const rows = history.slice().reverse().slice(0, 6).map((item) => {
+                const ts = item.createdAt ? new Date(item.createdAt).toLocaleString('es-AR') : '—';
+                const amount = Number(item.amount || 0);
+                const amountLabel = amount > 0 ? `${amount.toFixed(2)} ${item.currency || 'USD'}` : 'Monto no informado';
+                return `<div style="padding:.45rem .55rem;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:.35rem;background:#fff;">🧾 ${amountLabel} · ${ts}</div>`;
+            });
+            el.innerHTML = '<div style="font-weight:600;margin-bottom:.35rem;">Historial de comprobantes</div>' + rows.join('');
+        }
+
+        function _paymentStateLabel(status, kind) {
+            const s = String(status || '').toLowerCase();
+            if (kind === 'registro') {
+                if (s === 'comprobante_recibido' || s === 'en_revision') return '📨 Comprobante enviado';
+                if (s === 'pago_confirmado' || s === 'aprobado') return '✅ Verificación completada';
+                if (s === 'rechazado') return '❌ Requiere revisión';
+                return '⏳ Pendiente de comprobante';
+            }
+            if (s === 'pago_confirmado') return '💳 Pago confirmado';
+            if (s === 'aprobado') return '✅ Aprobado';
+            if (s === 'rechazado') return '❌ Rechazado';
+            return '⏳ Pendiente de pago';
+        }
+
+        async function _loadPaymentPortal(id) {
+            const panel = document.getElementById('paymentPortalPanel');
+            const statusEl = document.getElementById('paymentPortalStatus');
+            const metaEl = document.getElementById('paymentPortalMeta');
+            const transferEl = document.getElementById('paymentTransferData');
+            const uploadStatus = document.getElementById('paymentUploadStatus');
+            const extrasEl = document.getElementById('paymentExtraFields');
+            const historySection = document.getElementById('paymentHistorySection');
+            const amountInput = document.getElementById('paymentAmountInput');
+            const noteInput = document.getElementById('paymentNoteInput');
+            if (!panel || !statusEl || !metaEl) return;
+            panel.style.display = 'block';
+            if (uploadStatus) uploadStatus.textContent = '';
+
+            try {
+                const res = await fetch(`${BACKEND_URL}?action=public_get_payment_portal&id=${encodeURIComponent(id)}`);
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                _paymentPortalId = id;
+                const isInitialRegistration = data.kind === 'registro';
+                statusEl.textContent = `Estado: ${_paymentStateLabel(data.estado, data.kind)}`;
+                const metaParts = [];
+                if (data.nombre) metaParts.push(`Profesional: ${data.nombre}`);
+                if (data.email) metaParts.push(`Email: ${data.email}`);
+                if (data.totalHoy) metaParts.push(`Importe inicial: ${data.totalHoy}`);
+                if (data.monthlyAmount) metaParts.push(`Renovación estimada: ${Number(data.monthlyAmount).toFixed(2)} USD/mes`);
+                if (data.fechaVencimiento) metaParts.push(`Vencimiento: ${String(data.fechaVencimiento).split('T')[0]}`);
+                metaEl.textContent = metaParts.join(' · ');
+
+                statusEl.style.display = isInitialRegistration ? 'none' : 'block';
+                metaEl.style.display = isInitialRegistration ? 'none' : 'block';
+
+                if (extrasEl) extrasEl.style.display = isInitialRegistration ? 'none' : 'flex';
+                if (historySection) historySection.style.display = isInitialRegistration ? 'none' : 'block';
+                if (amountInput && isInitialRegistration) amountInput.value = '';
+                if (noteInput && isInitialRegistration) noteInput.value = '';
+
+                if (transferEl) {
+                    const p = data.paymentData || {};
+                    transferEl.innerHTML = `
+                        <div style="font-weight:700;margin-bottom:.35rem;">Datos de transferencia</div>
+                        <div><b>Para pagos en pesos argentinos:</b></div>
+                        <div>Alias: ${p.arsAlias || '—'}</div>
+                        <div>CVU: ${p.arsCvu || '—'}</div>
+                        <div>Nombre: ${p.arsNombre || '—'}</div>
+                        <div style="margin-top:.35rem;"><b>Para pagos en dolares:</b></div>
+                        <div>Alias: ${p.usdAlias || '—'}</div>
+                        <div>CBU: ${p.usdCbu || '—'}</div>
+                        <div>Nombre: ${p.usdNombre || '—'}</div>
+                        ${p.bank ? `<div>Banco: ${p.bank}</div>` : ''}
+                        ${p.destinationNote ? `<div style="margin-top:.3rem;color:#0f766e;">ℹ️ ${p.destinationNote}</div>` : ''}
+                    `;
+                }
+                if (!isInitialRegistration) {
+                    _renderPaymentHistory(data.history || []);
+                }
+
+                if (amountInput && !amountInput.value && data.totalHoy) {
+                    const n = Number(data.totalHoy);
+                    if (Number.isFinite(n) && n > 0 && !isInitialRegistration) amountInput.value = n.toFixed(2);
+                }
+            } catch (err) {
+                statusEl.textContent = 'Estado: Error al cargar';
+                metaEl.textContent = String(err.message || err);
+            }
+        }
+
+        async function _uploadPaymentReceipt() {
+            const input = document.getElementById('paymentReceiptInput');
+            const statusEl = document.getElementById('paymentUploadStatus');
+            const amountInput = document.getElementById('paymentAmountInput');
+            const noteInput = document.getElementById('paymentNoteInput');
+            const sendBtn = document.getElementById('btnSendReceipt');
+            if (!input || !input.files || !input.files[0]) {
+                if (statusEl) statusEl.textContent = 'Seleccioná un archivo primero.';
+                return;
+            }
+            if (!_paymentPortalId) {
+                if (statusEl) statusEl.textContent = 'No se encontró ID de pago.';
+                return;
+            }
+
+            const file = input.files[0];
+            if (sendBtn) sendBtn.disabled = true;
+            if (statusEl) statusEl.textContent = 'Subiendo comprobante...';
+
+            const reader = new FileReader();
+            reader.onload = async (ev) => {
+                try {
+                    const payload = {
+                        action: 'public_upload_payment_receipt',
+                        id: _paymentPortalId,
+                        receiptDataUrl: ev.target.result,
+                        amount: Number((amountInput && amountInput.value) || 0),
+                        currency: selectedCurrency || 'USD',
+                        note: (noteInput && noteInput.value) ? noteInput.value.trim() : ''
+                    };
+                    const res = await fetch(BACKEND_URL, { method: 'POST', body: JSON.stringify(payload) });
+                    const data = await res.json();
+                    if (data.error) throw new Error(data.error);
+                    if (statusEl) {
+                        statusEl.textContent = '✅ Comprobante enviado. Revisaremos tu pago dentro de las próximas 48 horas hábiles. Si se aprueba, te enviaremos por mail el vínculo de tu app con instrucciones de primer uso.';
+                    }
+                    input.value = '';
+                    if (sendBtn) sendBtn.disabled = true;
+                    _loadPaymentPortal(_paymentPortalId);
+                } catch (err) {
+                    if (statusEl) statusEl.textContent = '❌ ' + String(err.message || err);
+                    if (sendBtn) sendBtn.disabled = false;
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ── Currency (E1-E3) ────────────────────────────────────────────────────
+        async function _fetchArsRate() {
+            try {
+                const res = await fetch('https://api.bluelytics.com.ar/v2/latest');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                arsRate = data.blue?.value_sell || data.blue?.value_avg || null;
+                if (arsRate) {
+                    const label = document.getElementById('arsRateLabel');
+                    if (label) { label.textContent = `(1 USD ≈ ${arsRate} ARS)`; label.style.display = ''; }
+                }
+            } catch(e) {
+                console.warn('[registro] No se pudo obtener tipo de cambio ARS:', e.message);
+                arsRate = null;
+            }
+        }
+
+        function _formatPrice(usdAmount) {
+            if (selectedCurrency === 'ARS' && arsRate) {
+                const ars = (usdAmount * arsRate);
+                return 'AR$' + ars.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            }
+            return '$' + usdAmount.toFixed(2);
+        }
+
+        function _formatPriceSub(usdAmount, period) {
+            if (selectedCurrency === 'ARS' && arsRate) {
+                const ars = (usdAmount * arsRate);
+                return 'AR$' + ars.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + period;
+            }
+            return '$' + usdAmount + period;
+        }
+
+        function setCurrency(curr) {
+            selectedCurrency = curr;
+            document.querySelectorAll('.curr-btn').forEach(b => b.classList.toggle('active', b.dataset.curr === curr));
+            if (curr === 'ARS' && !arsRate) {
+                _fetchArsRate().then(_refreshAllPrices);
+            } else {
+                _refreshAllPrices();
+            }
+        }
+
+        function _refreshAllPrices() {
+            // Tarjetas paso 0
+            _updatePricingCards();
+            // Carrito paso 5
+            if (typeof updateCartSummary === 'function') updateCartSummary();
+            // Resumen paso 6
+            if (typeof renderInvestmentSummary === 'function' && selectedPlan) renderInvestmentSummary();
+        }
+
+        function _updatePricingCards() {
+            const cards = { NORMAL: PRICING.NORMAL, PRO: PRICING.PRO, CLINIC: PRICING.CLINIC };
+            for (const [key, plan] of Object.entries(cards)) {
+                const card = document.querySelector(`.pricing-card[data-plan="${key}"]`);
+                if (!card) continue;
+                const priceEl = card.querySelector('.pricing-price');
+                if (priceEl) {
+                    if (selectedCurrency === 'ARS' && arsRate) {
+                        const ars = Math.round(plan.license * arsRate);
+                        priceEl.innerHTML = `AR$${ars.toLocaleString('es-AR')}`;
+                    } else {
+                        const int = Math.floor(plan.license);
+                        const dec = ((plan.license % 1) * 100).toFixed(0).padStart(2, '0');
+                        priceEl.innerHTML = `$${int}<small>.${dec}</small>`;
+                    }
+                }
+                const subEl = card.querySelector('.pricing-sub');
+                if (subEl) {
+                    if (selectedCurrency === 'ARS' && arsRate) {
+                        const mo = Math.round(plan.monthly * arsRate).toLocaleString('es-AR');
+                        subEl.textContent = `pago único + AR$${mo}/mes`;
+                    } else {
+                        subEl.textContent = `pago único + $${plan.monthly}/mes`;
+                    }
+                }
+            }
+            // Actualizar features dinámicas (dispositivos) según PRICING
+            const devMap = { NORMAL: 'pricingNormalDevices', PRO: 'pricingProDevices', CLINIC: 'pricingClinicDevices' };
+            for (const [key, id] of Object.entries(devMap)) {
+                const el = document.getElementById(id);
+                const d = PRICING[key]?.devices;
+                if (el && d != null) el.innerHTML = `<span class="feat-icon">💻</span> ${d} dispositivo${d > 1 ? 's' : ''}`;
+            }
+        }
+
+        // ── Plan Selection ──────────────────────────────────────────────────────
+        function selectPlan(plan) {
+            selectedPlan = plan;
+            document.querySelectorAll('.pricing-card').forEach(c => {
+                c.classList.toggle('selected', c.dataset.plan === plan);
+            });
+            const btn = document.getElementById('btnStep0Next');
+            btn.disabled = false;
+            btn.textContent = `Continuar con plan ${PRICING[plan].label} →`;
+            // Adaptar toda la UI al tipo de usuario
+            _applyClinicMode(plan === 'CLINIC');
+        }
+
+        // ── Clinic Mode: adaptar textos de pasos 1-3 según plan ──────────────
+        function _applyClinicMode(isClinic) {
+            // Stepper
+            const stepDatos   = document.querySelector('#stepsBar .step[data-step="1"]');
+            const stepTrabajo = document.querySelector('#stepsBar .step[data-step="3"]');
+            if (stepDatos)   stepDatos.innerHTML   = `<span class="step-num">2</span> ${isClinic ? 'Clínica' : 'Datos'}`;
+            if (stepTrabajo) stepTrabajo.innerHTML = `<span class="step-num">4</span> ${isClinic ? 'Sedes' : 'Trabajo'}`;
+
+            // ── Paso 1 ────────────────────────────────────────────────────────
+            const s1Title    = document.getElementById('step1Title');
+            const s1Subtitle = document.getElementById('step1Subtitle');
+            const lNombre    = document.getElementById('labelNombre');
+            const lMatricula = document.getElementById('labelMatricula');
+            const lEmail     = document.getElementById('labelEmail');
+            const lTelefono  = document.getElementById('labelTelefono');
+            const inNombre   = document.getElementById('regNombre');
+            const inMatricula= document.getElementById('regMatricula');
+            const inEmail    = document.getElementById('regEmail');
+            const inTelefono = document.getElementById('regTelefono');
+
+            if (isClinic) {
+                if (s1Title)    s1Title.textContent    = '🏥 Datos de la Clínica';
+                if (s1Subtitle) s1Subtitle.textContent = 'Ingresá los datos institucionales de la clínica. Aparecerán en el encabezado de todos los informes generados.';
+                if (lNombre)    lNombre.innerHTML      = 'Nombre de la Clínica <span class="req">*</span>';
+                if (lMatricula) lMatricula.innerHTML   = 'CUIT / Nro. Habilitación <span class="req">*</span>';
+                if (lEmail)     lEmail.innerHTML       = 'Email institucional <span class="req">*</span>';
+                if (lTelefono)  lTelefono.textContent  = 'Teléfono institucional';
+                if (inNombre)   inNombre.placeholder   = 'Ej: Clínica San Juan';
+                if (inMatricula)inMatricula.placeholder= 'Ej: 30-12345678-9';
+                if (inEmail)    inEmail.placeholder    = 'contacto@clinica.com';
+                if (inTelefono) inTelefono.placeholder = '+54 11 4321-5678';
+            } else {
+                if (s1Title)    s1Title.textContent    = '👤 Datos del Profesional';
+                if (s1Subtitle) s1Subtitle.innerHTML  = 'Estos datos aparecerán en todos los informes que generés. Los campos con <span style="color:var(--danger);">*</span> son obligatorios.';
+                if (lNombre)    lNombre.innerHTML      = 'Nombre y Apellido <span class="req">*</span>';
+                if (lMatricula) lMatricula.innerHTML   = 'Matrícula <span class="req">*</span>';
+                if (lEmail)     lEmail.innerHTML       = 'Email <span class="req">*</span>';
+                if (lTelefono)  lTelefono.textContent  = 'Teléfono';
+                if (inNombre)   inNombre.placeholder   = 'Dr. Juan Pérez';
+                if (inMatricula)inMatricula.placeholder= 'MN 12345';
+                if (inEmail)    inEmail.placeholder    = 'doctor@ejemplo.com';
+                if (inTelefono) inTelefono.placeholder = '+54 9 11 1234-5678';
+            }
+
+            // ── Paso 2 ────────────────────────────────────────────────────────
+            const s2TitleEsp  = document.getElementById('step2TitleEsp');
+            const s2SubEsp    = document.getElementById('step2SubtitleEsp');
+            const s2TitleEst  = document.getElementById('step2TitleEstudios');
+            const s2SubEst    = document.getElementById('step2SubtitleEstudios');
+            if (isClinic) {
+                if (s2TitleEsp) s2TitleEsp.textContent = '🩺 Especialidades de la Clínica';
+                if (s2SubEsp)   s2SubEsp.textContent   = 'Seleccioná las especialidades que atiende la clínica. Determinan las plantillas disponibles para cada profesional.';
+                if (s2TitleEst) s2TitleEst.textContent = '📋 Estudios que se realizan';
+                if (s2SubEst)   s2SubEst.textContent   = 'Seleccioná los estudios que se realizan en la clínica. Los profesionales elegirán su selección particular.';
+            } else {
+                if (s2TitleEsp) s2TitleEsp.textContent = '🩺 Especialidades';
+                if (s2SubEsp)   s2SubEsp.textContent   = 'Seleccioná las especialidades que ejercés. Esto determina qué plantillas de estudio tendrás disponibles.';
+                if (s2TitleEst) s2TitleEst.textContent = '📋 Estudios que Realizás';
+                if (s2SubEst)   s2SubEst.textContent   = 'Basado en tus especialidades, seleccioná los estudios que realizás habitualmente.';
+            }
+
+            // ── Paso 3 ────────────────────────────────────────────────────────
+            const s3Title    = document.getElementById('step3Title');
+            const s3Subtitle = document.getElementById('step3Subtitle');
+            const btnAddWp   = document.getElementById('btnAddWorkplace');
+            if (isClinic) {
+                if (s3Title)    s3Title.textContent    = '🏥 Sedes de la Clínica';
+                if (s3Subtitle) s3Subtitle.textContent = 'Configurá la/s sede/s de la clínica. Estos datos aparecen en el encabezado de los informes.';
+                if (btnAddWp)   btnAddWp.textContent   = '➕ Agregar otra sede';
+            } else {
+                if (s3Title)    s3Title.textContent    = '🏥 Lugares de Trabajo';
+                if (s3Subtitle) s3Subtitle.textContent = 'Configurá tu/s lugar/es de trabajo. Estos datos aparecen en el encabezado de los informes.';
+                if (btnAddWp)   btnAddWp.textContent   = '➕ Agregar otro lugar de trabajo';
+            }
+        }
+
+        function validateStep0() {
+            if (!selectedPlan) {
+                showAlert('Seleccioná un plan para continuar', '📋');
+                return false;
+            }
+            return true;
+        }
+
+        // ── Cart Functions ──────────────────────────────────────────────────────
+        function getDoctorTemplateCats() {
+            const cats = new Set();
+            selectedEspecialidades.forEach(esp => {
+                const mapped = FORM_ESP_TO_CAT[esp];
+                if (mapped) mapped.forEach(c => cats.add(c));
+            });
+            cats.add('General');
+            return cats;
+        }
+
+        function getPackPrice(category) {
+            const count = (TEMPLATE_MAP[category] || []).length;
+            if (count >= 6) return ADDON_PRICES.pack_large;
+            if (count >= 3) return ADDON_PRICES.pack_small;
+            return ADDON_PRICES.template_individual * count;
+        }
+
+        function renderCartStep() {
+            if (!selectedPlan) return;
+            const plan = PRICING[selectedPlan];
+
+            // Plan name
+            document.getElementById('cartPlanName').textContent = plan.label;
+
+            // Plan includes
+            const includes = [];
+            if (selectedPlan === 'NORMAL') {
+                includes.push('✅ Transcripción de audio', '✋ Estructuración manual', `📄 ${plan.templates} plantillas a elección`, `💻 ${plan.devices} dispositivo${plan.devices > 1 ? 's' : ''}`);
+            } else if (selectedPlan === 'PRO') {
+                includes.push('✅ Transcripción + IA', '🤖 Estructuración automática', '📄 Todas las plantillas de tu especialidad', `💻 ${plan.devices} dispositivos`, '🧠 Asistente IA');
+            } else {
+                includes.push('✅ Todo lo de Pro', '📦 3 packs de especialidad', `💻 ${plan.devices} dispositivos`, '👥 Multi-profesional');
+            }
+            document.getElementById('cartPlanIncludes').innerHTML = includes.join(' · ');
+
+            // Template add-ons
+            renderCartTemplates();
+
+            // Devices section (hide for CLINIC — already has 5)
+            document.getElementById('cartDevicesSection').style.display = selectedPlan === 'CLINIC' ? 'none' : 'block';
+
+            // Workplaces section (show for PRO only — NORMAL=1 fixed, CLINIC=1 fixed)
+            document.getElementById('cartWorkplacesSection').style.display = selectedPlan === 'PRO' ? 'block' : 'none';
+
+            // Professionals section (CLINIC only)
+            document.getElementById('cartProfessionalsSection').style.display = selectedPlan === 'CLINIC' ? 'block' : 'none';
+
+            // Branding section (NORMAL gets logo+color, PRO gets color only, CLINIC already has both)
+            const brandingSection = document.getElementById('cartBrandingSection');
+            if (selectedPlan === 'NORMAL') {
+                brandingSection.style.display = 'block';
+                document.getElementById('cartBrandingName').textContent = 'Logo + color personalizado en PDF';
+                document.getElementById('cartBrandingPrice').textContent = '$' + ADDON_PRICES.branding_normal.toFixed(2);
+            } else if (selectedPlan === 'PRO') {
+                brandingSection.style.display = 'block';
+                document.getElementById('cartBrandingName').textContent = 'Color personalizado en PDF';
+                document.getElementById('cartBrandingPrice').textContent = '$' + ADDON_PRICES.branding_pro.toFixed(2);
+            } else {
+                brandingSection.style.display = 'none';
+            }
+
+            updateCartSummary();
+        }
+
+        function renderCartTemplates() {
+            const container = document.getElementById('cartTemplatesList');
+            const doctorCats = getDoctorTemplateCats();
+            const allCats = Object.keys(TEMPLATE_MAP);
+            let html = '';
+
+            if (selectedPlan === 'NORMAL') {
+                // Show templates NOT in their included 3 (from other categories)
+                allCats.forEach(cat => {
+                    if (doctorCats.has(cat)) return; // Their specialty templates are selectable in approval
+                    const templates = TEMPLATE_MAP[cat];
+                    const packPrice = getPackPrice(cat);
+                    const isPack = cartAddons.packs.some(p => p.category === cat);
+
+                    // Pack option
+                    html += `<div class="cart-item" style="border-left:3px solid var(--accent);">
+                        <span class="cart-item-name">📦 Pack ${cat} (${templates.length} plantillas)</span>
+                        <span class="cart-item-price">$${packPrice}</span>
+                        ${isPack
+                            ? `<button type="button" class="cart-remove-btn" onclick="removeCartPack('${cat}')">✕</button>`
+                            : `<button type="button" class="cart-add-btn" onclick="addCartPack('${cat}')">+ Agregar</button>`
+                        }
+                    </div>`;
+
+                    // Individual templates
+                    templates.forEach(t => {
+                        if (isPack) return; // Already in pack
+                        const isAdded = cartAddons.templates.some(a => a.key === t.key);
+                        html += `<div class="cart-item" style="padding-left:1.5rem;">
+                            <span class="cart-item-name">${t.name}</span>
+                            <span class="cart-item-price">$${ADDON_PRICES.template_individual}</span>
+                            ${isAdded
+                                ? `<button type="button" class="cart-remove-btn" onclick="removeCartTemplate('${t.key}')">✕</button>`
+                                : `<button type="button" class="cart-add-btn" onclick="addCartTemplate('${t.key}','${t.name}','${cat}')">+ Agregar</button>`
+                            }
+                        </div>`;
+                    });
+                });
+            } else if (selectedPlan === 'PRO') {
+                // Show templates from OTHER specialties (not theirs)
+                allCats.forEach(cat => {
+                    if (doctorCats.has(cat)) return;
+                    const templates = TEMPLATE_MAP[cat];
+                    const isPack = cartAddons.packs.some(p => p.category === cat);
+
+                    templates.forEach(t => {
+                        if (isPack) return;
+                        const isAdded = cartAddons.templates.some(a => a.key === t.key);
+                        html += `<div class="cart-item">
+                            <span class="cart-item-name">${t.name} <small style="color:var(--text-light);">(${cat})</small></span>
+                            <span class="cart-item-price">$${ADDON_PRICES.template_individual}</span>
+                            ${isAdded
+                                ? `<button type="button" class="cart-remove-btn" onclick="removeCartTemplate('${t.key}')">✕</button>`
+                                : `<button type="button" class="cart-add-btn" onclick="addCartTemplate('${t.key}','${t.name}','${cat}')">+ Agregar</button>`
+                            }
+                        </div>`;
+                    });
+                });
+            } else {
+                // CLINIC: extra packs (beyond their included 3)
+                allCats.forEach(cat => {
+                    if (doctorCats.has(cat)) return;
+                    const templates = TEMPLATE_MAP[cat];
+                    const packPrice = getPackPrice(cat);
+                    const isPack = cartAddons.packs.some(p => p.category === cat);
+
+                    html += `<div class="cart-item" style="border-left:3px solid var(--accent);">
+                        <span class="cart-item-name">📦 Pack ${cat} (${templates.length} plantillas)</span>
+                        <span class="cart-item-price">$${packPrice}</span>
+                        ${isPack
+                            ? `<button type="button" class="cart-remove-btn" onclick="removeCartPack('${cat}')">✕</button>`
+                            : `<button type="button" class="cart-add-btn" onclick="addCartPack('${cat}')">+ Agregar</button>`
+                        }
+                    </div>`;
+                });
+            }
+
+            if (!html) {
+                html = '<div style="text-align:center;color:var(--text-light);font-size:.82rem;padding:1rem;">🎉 Tu plan ya cubre todas las plantillas disponibles para tus especialidades.</div>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        function addCartTemplate(key, name, category) {
+            if (!cartAddons.templates.some(t => t.key === key)) {
+                cartAddons.templates.push({ key, name, category, price: ADDON_PRICES.template_individual });
+            }
+            renderCartTemplates();
+            updateCartSummary();
+        }
+
+        function removeCartTemplate(key) {
+            cartAddons.templates = cartAddons.templates.filter(t => t.key !== key);
+            renderCartTemplates();
+            updateCartSummary();
+        }
+
+        function addCartPack(category) {
+            const templates = TEMPLATE_MAP[category] || [];
+            const price = getPackPrice(category);
+            // Remove any individual templates from this category
+            cartAddons.templates = cartAddons.templates.filter(t => t.category !== category);
+            cartAddons.packs.push({ category, templates: templates.map(t => t.key), price });
+            renderCartTemplates();
+            updateCartSummary();
+        }
+
+        function removeCartPack(category) {
+            cartAddons.packs = cartAddons.packs.filter(p => p.category !== category);
+            renderCartTemplates();
+            updateCartSummary();
+        }
+
+        function changeExtraDevices(delta) {
+            cartAddons.extraDevices = Math.max(0, Math.min(10, cartAddons.extraDevices + delta));
+            document.getElementById('extraDevicesCount').textContent = cartAddons.extraDevices;
+            updateCartSummary();
+        }
+
+        function changeExtraWorkplaces(delta) {
+            cartAddons.extraWorkplaces = Math.max(0, Math.min(5, cartAddons.extraWorkplaces + delta));
+            document.getElementById('extraWorkplacesCount').textContent = cartAddons.extraWorkplaces;
+            updateCartSummary();
+        }
+
+        function changeExtraProfessionals(delta) {
+            cartAddons.extraProfessionals = Math.max(0, Math.min(10, cartAddons.extraProfessionals + delta));
+            document.getElementById('extraProfessionalsCount').textContent = cartAddons.extraProfessionals;
+            updateCartSummary();
+        }
+
+        function toggleBranding() {
+            cartAddons.branding = !cartAddons.branding;
+            const btn = document.getElementById('cartBrandingBtn');
+            if (btn) {
+                btn.textContent = cartAddons.branding ? '✕ Quitar' : '+ Agregar';
+                btn.classList.toggle('added', cartAddons.branding);
+            }
+            updateCartSummary();
+        }
+
+        function _getBrandingPrice() {
+            if (selectedPlan === 'NORMAL') return ADDON_PRICES.branding_normal;
+            if (selectedPlan === 'PRO') return ADDON_PRICES.branding_pro;
+            return 0;
+        }
+
+        function getCartAddonTotal() {
+            let total = 0;
+            cartAddons.templates.forEach(t => total += t.price);
+            cartAddons.packs.forEach(p => total += p.price);
+            total += cartAddons.extraDevices * ADDON_PRICES.device_extra;
+            total += cartAddons.extraWorkplaces * ADDON_PRICES.workplace_extra;
+            total += cartAddons.extraProfessionals * ADDON_PRICES.professional_extra;
+            if (cartAddons.branding) total += _getBrandingPrice();
+            return total;
+        }
+
+        function updateCartSummary() {
+            const items = [];
+            const fp = _formatPrice;
+            cartAddons.templates.forEach(t => items.push(`${t.name} — ${fp(t.price)}`));
+            cartAddons.packs.forEach(p => items.push(`📦 Pack ${p.category} — ${fp(p.price)}`));
+            if (cartAddons.extraDevices > 0) {
+                items.push(`+${cartAddons.extraDevices} dispositivo(s) — ${fp(cartAddons.extraDevices * ADDON_PRICES.device_extra)}`);
+            }
+            if (cartAddons.extraWorkplaces > 0) {
+                items.push(`+${cartAddons.extraWorkplaces} lugar(es) de trabajo — ${fp(cartAddons.extraWorkplaces * ADDON_PRICES.workplace_extra)}`);
+            }
+            if (cartAddons.extraProfessionals > 0) {
+                items.push(`+${cartAddons.extraProfessionals} profesional(es) — ${fp(cartAddons.extraProfessionals * ADDON_PRICES.professional_extra)}`);
+            }
+            if (cartAddons.branding) {
+                items.push(`🎨 Pack Branding — ${fp(_getBrandingPrice())}`);
+            }
+
+            const summaryEl = document.getElementById('cartSummaryItems');
+            if (items.length === 0) {
+                summaryEl.innerHTML = '<div style="color:var(--text-light);font-style:italic;">Sin extras por ahora</div>';
+            } else {
+                summaryEl.innerHTML = items.map(i => `<div style="padding:2px 0;">• ${i}</div>`).join('');
+            }
+            document.getElementById('cartTotalAddons').textContent = fp(getCartAddonTotal());
+        }
+
+        // ── Investment Summary ──────────────────────────────────────────────────
+        function setBilling(cycle) {
+            billingCycle = cycle;
+            document.querySelectorAll('.invest-toggle-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.billing === cycle);
+            });
+            renderInvestmentSummary();
+        }
+
+        function renderInvestmentSummary() {
+            if (!selectedPlan) return;
+            const plan = PRICING[selectedPlan];
+            const fp = _formatPrice;
+
+            // One-time items
+            const oneTimeEl = document.getElementById('investOneTimeItems');
+            let oneTimeHtml = `<div class="invest-line"><span>Licencia Plan ${plan.label}</span><span>${fp(plan.license)}</span></div>`;
+
+            cartAddons.templates.forEach(t => {
+                oneTimeHtml += `<div class="invest-line"><span>📄 ${t.name}</span><span>${fp(t.price)}</span></div>`;
+            });
+            cartAddons.packs.forEach(p => {
+                oneTimeHtml += `<div class="invest-line"><span>📦 Pack ${p.category}</span><span>${fp(p.price)}</span></div>`;
+            });
+            if (cartAddons.extraDevices > 0) {
+                const devCost = cartAddons.extraDevices * ADDON_PRICES.device_extra;
+                oneTimeHtml += `<div class="invest-line"><span>💻 +${cartAddons.extraDevices} dispositivo(s)</span><span>${fp(devCost)}</span></div>`;
+            }
+            if (cartAddons.extraWorkplaces > 0) {
+                const wpCost = cartAddons.extraWorkplaces * ADDON_PRICES.workplace_extra;
+                oneTimeHtml += `<div class="invest-line"><span>🏥 +${cartAddons.extraWorkplaces} lugar(es) de trabajo</span><span>${fp(wpCost)}</span></div>`;
+            }
+            if (cartAddons.extraProfessionals > 0) {
+                const proCost = cartAddons.extraProfessionals * ADDON_PRICES.professional_extra;
+                oneTimeHtml += `<div class="invest-line"><span>👨‍⚕️ +${cartAddons.extraProfessionals} profesional(es)</span><span>${fp(proCost)}</span></div>`;
+            }
+            if (cartAddons.branding) {
+                oneTimeHtml += `<div class="invest-line"><span>🎨 Branding personalizado</span><span>${fp(_getBrandingPrice())}</span></div>`;
+            }
+            oneTimeEl.innerHTML = oneTimeHtml;
+
+            const totalOneTime = plan.license + getCartAddonTotal();
+            document.getElementById('investOneTimeTotal').textContent = fp(totalOneTime);
+
+            // Subscription
+            const subEl = document.getElementById('investSubItems');
+            if (billingCycle === 'monthly') {
+                subEl.innerHTML = `<div class="invest-line"><span>Plan ${plan.label} (mensual)</span><span>${_formatPriceSub(plan.monthly, '/mes')}</span></div>`;
+                document.getElementById('investSubLabel').textContent = 'Total mensual';
+                document.getElementById('investSubTotal').textContent = _formatPriceSub(plan.monthly, '/mes');
+            } else {
+                const saved = (plan.monthly * 12) - plan.annual;
+                subEl.innerHTML = `<div class="invest-line"><span>Plan ${plan.label} (anual)</span><span>${_formatPriceSub(plan.annual, '/año')}</span></div>
+                    <div class="invest-line" style="color:var(--success);font-size:.8rem;"><span>Ahorro vs mensual</span><span>-${fp(saved)}</span></div>`;
+                document.getElementById('investSubLabel').textContent = 'Total anual';
+                document.getElementById('investSubTotal').textContent = _formatPriceSub(plan.annual, '/año');
+            }
+
+            // Today total
+            const firstPeriod = billingCycle === 'monthly' ? plan.monthly : plan.annual;
+            const todayTotal = totalOneTime + firstPeriod;
+            document.getElementById('investTodayTotal').textContent = fp(todayTotal);
+
+            const renewalText = billingCycle === 'monthly'
+                ? `📅 Luego: ${_formatPriceSub(plan.monthly, '/mes')} (renovación automática)`
+                : `📅 Luego: ${_formatPriceSub(plan.annual, '/año')} (renovación anual)`;
+            document.getElementById('investRenewalNote').textContent = renewalText;
+
+            // Success step summary
+            const successSummary = document.getElementById('successPlanSummary');
+            if (successSummary) {
+                let sHtml = `<div style="font-weight:700;margin-bottom:.4rem;">📋 Detalle de tu registro:</div>`;
+                sHtml += `<div>• Plan: <b>${plan.label}</b></div>`;
+                sHtml += `<div>• Licencia: <b>${fp(plan.license)}</b></div>`;
+                if (cartAddons.templates.length || cartAddons.packs.length || cartAddons.extraDevices) {
+                    sHtml += `<div>• Extras: <b>${fp(getCartAddonTotal())}</b></div>`;
+                }
+                sHtml += `<div>• Suscripción: <b>${billingCycle === 'monthly' ? _formatPriceSub(plan.monthly, '/mes') : _formatPriceSub(plan.annual, '/año')}</b></div>`;
+                sHtml += `<div style="margin-top:.5rem;font-weight:700;color:var(--primary-dark);">💳 Total hoy: ${fp(todayTotal)}</div>`;
+                successSummary.innerHTML = sHtml;
+            }
+        }
+
+        // ── Custom Modal ────────────────────────────────────────────────────────
+        function showAlert(msg, icon = '⚠️') {
+            return new Promise(resolve => {
+                _modalResolve = resolve;
+                document.getElementById('customModalIcon').textContent = icon;
+                document.getElementById('customModalMsg').innerHTML = msg;
+                const actions = document.getElementById('customModalActions');
+                actions.innerHTML = '<button class="btn btn-primary" onclick="closeModal(true)">Aceptar</button>';
+                document.getElementById('customModalOverlay').classList.add('show');
+            });
+        }
+
+        function showConfirm(msg, icon = '❓') {
+            return new Promise(resolve => {
+                _modalResolve = resolve;
+                document.getElementById('customModalIcon').textContent = icon;
+                document.getElementById('customModalMsg').innerHTML = msg;
+                const actions = document.getElementById('customModalActions');
+                actions.innerHTML = `
+                    <button class="btn btn-secondary" onclick="closeModal(false)">Cancelar</button>
+                    <button class="btn btn-primary" onclick="closeModal(true)">Aceptar</button>
+                `;
+                document.getElementById('customModalOverlay').classList.add('show');
+            });
+        }
+
+        function closeModal(result) {
+            document.getElementById('customModalOverlay').classList.remove('show');
+            if (_modalResolve) { _modalResolve(result); _modalResolve = null; }
+        }
+
+        // ── Workplace Accordion ──────────────────────────────────────────────────
+        function renderWorkplace(index, collapsed) {
+            const container = document.getElementById('workplacesContainer');
+            const isMain = index === 0;
+            const div = document.createElement('div');
+            div.className = 'wp-accordion' + (collapsed ? ' collapsed' : '');
+            div.id = 'wp-' + index;
+            div.dataset.wpIndex = index;
+
+            div.innerHTML = `
+                <div class="wp-header" onclick="toggleWorkplace(${index})">
+                    <div class="wp-header-info">
+                        <span class="wp-badge ${isMain ? '' : 'extra'}">${isMain ? 'Principal' : 'Adicional'}</span>
+                        <span id="wpNameDisplay${index}">${isMain ? '🏥 Lugar de Trabajo Principal' : '🏢 Lugar adicional'}</span>
+                    </div>
+                    <div class="wp-header-actions">
+                        ${!isMain ? '<button type="button" class="wp-remove" onclick="event.stopPropagation();removeWorkplace(' + index + ')" title="Eliminar">✕</button>' : ''}
+                        <span class="wp-chevron">▾</span>
+                    </div>
+                </div>
+                <div class="wp-body">
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label>Nombre del lugar ${isMain ? '<span class="req">*</span>' : ''}</label>
+                            <input type="text" id="regWpName${index}" placeholder="Clínica San Martín" oninput="updateWpName(${index})">
+                        </div>
+                        <div class="field-group">
+                            <label>Dirección</label>
+                            <input type="text" id="regWpAddress${index}" placeholder="Av. Corrientes 1234, CABA">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label>Teléfono del lugar</label>
+                            <input type="tel" id="regWpPhone${index}" placeholder="(011) 4567-8901">
+                        </div>
+                        <div class="field-group">
+                            <label>Email institucional</label>
+                            <input type="email" id="regWpEmail${index}" placeholder="info@clinica.com">
+                        </div>
+                    </div>
+                    <div class="field-group" style="margin-top:.8rem;">
+                        <label>Logo del Lugar / Institución</label>
+                        <div class="upload-zone">
+                            <div class="upload-icon">🖼️</div>
+                            <div class="upload-text">Clic o arrastrá para subir<br><small>PNG o JPG, máx 2 MB</small></div>
+                            <input type="file" accept="image/png,image/jpeg,image/webp" onchange="previewWpLogo(this, ${index})">
+                        </div>
+                        <div class="upload-preview" id="wpLogoPreview${index}"></div>
+                    </div>
+                    <div class="field-group" style="margin-top:.8rem;">
+                        <label>Texto del pie de página</label>
+                        <input type="text" id="regWpFooter${index}" placeholder="Consultorio médico — Tel: (011) 4567-8901">
+                        <small>Aparece al pie de cada informe generado en este lugar</small>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function toggleWorkplace(index) {
+            const acc = document.getElementById('wp-' + index);
+            if (!acc) return;
+            const wasCollapsed = acc.classList.contains('collapsed');
+            if (wasCollapsed) {
+                document.querySelectorAll('.wp-accordion').forEach(a => a.classList.add('collapsed'));
+                acc.classList.remove('collapsed');
+            } else {
+                acc.classList.add('collapsed');
+            }
+        }
+
+        function addWorkplace() {
+            // Contar workplaces actuales (solo dentro del contenedor de workplaces, no profesionales)
+            const currentCount = document.querySelectorAll('#workplacesContainer .wp-accordion').length;
+            const maxWp = selectedPlan ? (PRICING[selectedPlan].workplaces || 1) + (cartAddons.extraWorkplaces || 0) : 1;
+            if (currentCount >= maxWp) {
+                showAlert(`Tu plan ${PRICING[selectedPlan]?.label || ''} permite máximo ${maxWp} lugar${maxWp > 1 ? 'es' : ''} de trabajo`, '🏥');
+                return;
+            }
+            document.querySelectorAll('.wp-accordion').forEach(a => a.classList.add('collapsed'));
+            wpCounter++;
+            renderWorkplace(wpCounter, false);
+            const el = document.getElementById('wp-' + wpCounter);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        async function removeWorkplace(index) {
+            const ok = await showConfirm('¿Eliminar este lugar de trabajo?', '🗑️');
+            if (!ok) return;
+            const el = document.getElementById('wp-' + index);
+            if (el) {
+                el.style.opacity = '0';
+                el.style.transform = 'scale(.95)';
+                el.style.transition = 'all .2s ease';
+                setTimeout(() => el.remove(), 200);
+            }
+            delete wpLogoData[index];
+        }
+
+        function updateWpName(index) {
+            const input = document.getElementById('regWpName' + index);
+            const display = document.getElementById('wpNameDisplay' + index);
+            if (input && display) {
+                const icon = index === 0 ? '🏥' : '🏢';
+                display.textContent = input.value.trim() || (icon + ' ' + (index === 0 ? 'Lugar de Trabajo Principal' : 'Lugar adicional'));
+            }
+        }
+
+        function previewWpLogo(input, index) {
+            const file = input.files[0];
+            if (!file) return;
+            if (file.size > 2 * 1024 * 1024) {
+                showAlert('La imagen no puede superar 2 MB', '📷');
+                input.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('wpLogoPreview' + index).innerHTML = '<img src="' + e.target.result + '" alt="Logo">';
+                wpLogoData[index] = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ── Professionals (F1-F2, solo CLINIC) ──────────────────────────────────
+        let profCounter = 0;
+        let profFirmaData = {}; // { index: base64 }
+
+        function renderProfessional(index) {
+            const container = document.getElementById('professionalsContainer');
+            const div = document.createElement('div');
+            div.className = 'wp-accordion';
+            div.id = 'prof-' + index;
+            div.innerHTML = `
+                <div class="wp-header" onclick="toggleProfessional(${index})">
+                    <span id="profNameDisplay${index}">👨‍⚕️ Profesional ${index + 1}</span>
+                    <div style="display:flex;gap:.5rem;align-items:center;">
+                        ${index > 0 ? '<button type="button" class="btn-remove-wp" onclick="event.stopPropagation();removeProfessional(' + index + ')" title="Eliminar">🗑️</button>' : ''}
+                        <span class="wp-toggle">▼</span>
+                    </div>
+                </div>
+                <div class="wp-body">
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label>Nombre completo *</label>
+                            <input type="text" id="regProfName${index}" placeholder="Dr. Juan Pérez" oninput="updateProfName(${index})">
+                        </div>
+                        <div class="field-group">
+                            <label>Matrícula *</label>
+                            <input type="text" id="regProfMatricula${index}" placeholder="MN 12345">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label>Especialidad *</label>
+                            <input type="text" id="regProfEspecialidad${index}" placeholder="Cardiología">
+                        </div>
+                        <div class="field-group">
+                            <label>Teléfono</label>
+                            <input type="tel" id="regProfTelefono${index}" placeholder="+54 9 11 1234-5678">
+                        </div>
+                    </div>
+                    <div class="field-group" style="margin-top:.4rem;">
+                        <label>Email</label>
+                        <input type="email" id="regProfEmail${index}" placeholder="doctor@clinica.com">
+                    </div>
+                    <div class="field-group" style="margin-top:.5rem;">
+                        <label>🌐 Redes Sociales <small style="font-weight:400;color:#94a3b8;">(vacío = no mostrar)</small></label>
+                        <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px;">
+                            <div style="display:flex;align-items:center;gap:6px;"><span style="width:22px;height:22px;border-radius:50%;background:#1877f2;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="11" height="11" viewBox="0 0 24 24" fill="#fff"><path d="M9.198 21.5h4v-8.01h3.604l.396-3.98h-4V7.5a1 1 0 011-1h3v-4h-3a5 5 0 00-5 5v2.01h-2l-.396 3.98h2.396v8.01z"/></svg></span><input type="url" id="regProfSocialFb${index}" placeholder="facebook.com/perfil" style="flex:1;padding:4px 7px;border:1px solid #d1d5db;border-radius:6px;font-size:.78rem;"></div>
+                            <div style="display:flex;align-items:center;gap:6px;"><span style="width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 30% 107%,#fdf497 0%,#fd5949 45%,#d6249f 60%,#285AEB 90%);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill="#fff" stroke="none"/></svg></span><input type="text" id="regProfSocialIg${index}" placeholder="@usuario Instagram" style="flex:1;padding:4px 7px;border:1px solid #d1d5db;border-radius:6px;font-size:.78rem;"></div>
+                            <div style="display:flex;align-items:center;gap:6px;"><span style="width:22px;height:22px;border-radius:50%;background:#ff0000;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="13" height="9" viewBox="0 0 28 20" fill="#fff"><path d="M27.543 3.11A3.5 3.5 0 0025.08.637C22.88 0 14 0 14 0S5.12 0 2.92.637A3.5 3.5 0 00.457 3.11 36.6 36.6 0 000 10a36.6 36.6 0 00.457 6.89A3.5 3.5 0 002.92 19.363C5.12 20 14 20 14 20s8.88 0 11.08-.637a3.5 3.5 0 002.463-2.473A36.6 36.6 0 0028 10a36.6 36.6 0 00-.457-6.89zM11.2 14.286V5.714L18.4 10l-7.2 4.286z"/></svg></span><input type="url" id="regProfSocialYt${index}" placeholder="youtube.com/@canal" style="flex:1;padding:4px 7px;border:1px solid #d1d5db;border-radius:6px;font-size:.78rem;"></div>
+                            <div style="display:flex;align-items:center;gap:6px;"><span style="width:22px;height:22px;border-radius:50%;background:#000;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="11" height="11" viewBox="0 0 24 24" fill="#fff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></span><input type="text" id="regProfSocialX${index}" placeholder="@usuario X/Twitter" style="flex:1;padding:4px 7px;border:1px solid #d1d5db;border-radius:6px;font-size:.78rem;"></div>
+                            <div style="display:flex;align-items:center;gap:6px;"><span style="width:22px;height:22px;border-radius:50%;background:#25d366;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></span><input type="tel" id="regProfSocialWa${index}" placeholder="+54 9 11... (WhatsApp)" style="flex:1;padding:4px 7px;border:1px solid #d1d5db;border-radius:6px;font-size:.78rem;"></div>
+                        </div>
+                    </div>
+                    <div class="field-group" style="margin-top:.5rem;">
+                        <label>📋 Incluir en informes</label>
+                        <div style="display:flex;flex-wrap:wrap;gap:.4rem .8rem;margin-top:.3rem;">
+                            <label style="display:flex;align-items:center;gap:.3rem;font-size:.82rem;cursor:pointer;"><input type="checkbox" id="regProfShowPhone${index}" checked style="accent-color:var(--primary);"> 📞 Teléfono</label>
+                            <label style="display:flex;align-items:center;gap:.3rem;font-size:.82rem;cursor:pointer;"><input type="checkbox" id="regProfShowEmail${index}" checked style="accent-color:var(--primary);"> 📧 Email</label>
+                            <label style="display:flex;align-items:center;gap:.3rem;font-size:.82rem;cursor:pointer;"><input type="checkbox" id="regProfShowSocial${index}" checked style="accent-color:var(--primary);"> 🌐 Redes</label>
+                        </div>
+                    </div>
+                    <div class="field-group" style="margin-top:.5rem;">
+                        <label>Firma digital</label>
+                        <input type="file" accept="image/*" onchange="previewProfFirma(this, ${index})">
+                        <div class="upload-preview" id="profFirmaPreview${index}"></div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function toggleProfessional(index) {
+            const acc = document.getElementById('prof-' + index);
+            if (!acc) return;
+            const wasCollapsed = acc.classList.contains('collapsed');
+            if (wasCollapsed) {
+                document.querySelectorAll('#professionalsContainer .wp-accordion').forEach(a => a.classList.add('collapsed'));
+                acc.classList.remove('collapsed');
+            } else {
+                acc.classList.add('collapsed');
+            }
+        }
+
+        function addProfessional() {
+            const currentCount = document.querySelectorAll('#professionalsContainer .wp-accordion').length;
+            const maxProf = PRICING[selectedPlan]?.maxProfessionals || 5;
+            if (currentCount >= maxProf) {
+                showAlert(`Tu plan permite máximo ${maxProf} profesionales`, '👨‍⚕️');
+                return;
+            }
+            document.querySelectorAll('#professionalsContainer .wp-accordion').forEach(a => a.classList.add('collapsed'));
+            profCounter++;
+            renderProfessional(profCounter);
+            _updateProfCounter();
+            const el = document.getElementById('prof-' + profCounter);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        async function removeProfessional(index) {
+            const ok = await showConfirm('¿Eliminar este profesional?', '🗑️');
+            if (!ok) return;
+            const el = document.getElementById('prof-' + index);
+            if (el) {
+                el.style.opacity = '0';
+                el.style.transform = 'scale(.95)';
+                el.style.transition = 'all .2s ease';
+                setTimeout(() => el.remove(), 200);
+            }
+            delete profFirmaData[index];
+            _updateProfCounter();
+        }
+
+        function updateProfName(index) {
+            const input = document.getElementById('regProfName' + index);
+            const display = document.getElementById('profNameDisplay' + index);
+            if (input && display) {
+                display.textContent = input.value.trim() || ('👨‍⚕️ Profesional ' + (index + 1));
+            }
+        }
+
+        function previewProfFirma(input, index) {
+            const file = input.files[0];
+            if (!file) return;
+            if (file.size > 2 * 1024 * 1024) {
+                showAlert('La imagen no puede superar 2 MB', '📷');
+                input.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('profFirmaPreview' + index).innerHTML = '<img src="' + e.target.result + '" alt="Firma">';
+                profFirmaData[index] = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function _updateProfCounter() {
+            const count = document.querySelectorAll('#professionalsContainer .wp-accordion').length;
+            const max = PRICING[selectedPlan]?.maxProfessionals || 5;
+            const el = document.getElementById('profCounter');
+            if (el) el.textContent = `${count} de ${max} profesionales`;
+        }
+
+        function _collectProfessionals() {
+            const profs = [];
+            document.querySelectorAll('#professionalsContainer .wp-accordion').forEach(acc => {
+                const idx = parseInt(acc.id.replace('prof-', ''));
+                const name        = (document.getElementById('regProfName'        + idx) || {}).value || '';
+                const matricula   = (document.getElementById('regProfMatricula'   + idx) || {}).value || '';
+                const especialidad= (document.getElementById('regProfEspecialidad'+ idx) || {}).value || '';
+                const telefono    = (document.getElementById('regProfTelefono'    + idx) || {}).value || '';
+                const email       = (document.getElementById('regProfEmail'       + idx) || {}).value || '';
+                const socialMedia = {
+                    facebook:  (document.getElementById('regProfSocialFb' + idx) || {}).value?.trim() || '',
+                    instagram: (document.getElementById('regProfSocialIg' + idx) || {}).value?.trim() || '',
+                    youtube:   (document.getElementById('regProfSocialYt' + idx) || {}).value?.trim() || '',
+                    x:         (document.getElementById('regProfSocialX'  + idx) || {}).value?.trim() || '',
+                    whatsapp:  (document.getElementById('regProfSocialWa' + idx) || {}).value?.trim() || ''
+                };
+                const showPhone  = document.getElementById('regProfShowPhone'  + idx)?.checked ?? true;
+                const showEmail  = document.getElementById('regProfShowEmail'  + idx)?.checked ?? true;
+                const showSocial = document.getElementById('regProfShowSocial' + idx)?.checked ?? true;
+                if (name.trim()) {
+                    profs.push({ nombre: name.trim(), matricula: matricula.trim(), especialidad: especialidad.trim(), telefono: telefono.trim(), email: email.trim(), firma: profFirmaData[idx] || null, socialMedia, showPhone, showEmail, showSocial });
+                }
+            });
+            return profs;
+        }
+
+        // ── Color selection ──────────────────────────────────────────────────────
+        function selectHeaderColor(color, el) {
+            selectedHeaderColor = color;
+            document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+            el.classList.add('selected');
+            document.getElementById('colorPreviewBar').style.background = color;
+        }
+
+        // ── Init ────────────────────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', async () => {
+            const params = new URLSearchParams(window.location.search);
+            const portalId = params.get('id');
+            const isPortalMode = !!portalId;
+
+            if (isPortalMode) {
+                const stepsBar = document.getElementById('stepsBar');
+                if (stepsBar) stepsBar.style.display = 'none';
+                const title = document.getElementById('step7Title');
+                const msg = document.getElementById('step7Message');
+                if (title) title.textContent = 'Portal de pagos';
+                if (msg) msg.innerHTML = 'Este portal es solo para tu pago inicial.<br>Enviá tu comprobante y te responderemos por mail dentro de 48 horas hábiles con el vínculo de tu app si el pago se aprueba.';
+                const summary = document.getElementById('successPlanSummary');
+                if (summary) summary.style.display = 'none';
+                goStep(7, { force: true });
+            }
+
+            await _loadPricingConfig();
+            _refreshAllPrices();
+            renderEspecialidades();
+            renderWorkplace(0, false);
+            renderProfessional(0); // Primer profesional (visible solo en CLINIC)
+            if (!isPortalMode) {
+                _setStep7DefaultMessage();
+            }
+
+            const uploadBtn = document.getElementById('btnUploadReceipt');
+            const sendBtn = document.getElementById('btnSendReceipt');
+            const uploadInput = document.getElementById('paymentReceiptInput');
+            if (uploadBtn && uploadInput) {
+                uploadBtn.addEventListener('click', () => uploadInput.click());
+                uploadInput.addEventListener('change', () => {
+                    const status = document.getElementById('paymentUploadStatus');
+                    if (uploadInput.files && uploadInput.files[0]) {
+                        if (status) status.textContent = 'Archivo listo para enviar: ' + uploadInput.files[0].name;
+                        if (sendBtn) sendBtn.disabled = false;
+                    } else {
+                        if (status) status.textContent = '';
+                        if (sendBtn) sendBtn.disabled = true;
+                    }
+                });
+            }
+            if (sendBtn) sendBtn.addEventListener('click', _uploadPaymentReceipt);
+
+            // Delegated drag & drop for all upload zones (present and future)
+            document.addEventListener('dragover', (e) => {
+                const zone = e.target.closest('.upload-zone');
+                if (zone) { e.preventDefault(); zone.classList.add('dragover'); }
+            });
+            document.addEventListener('dragleave', (e) => {
+                const zone = e.target.closest('.upload-zone');
+                if (zone) zone.classList.remove('dragover');
+            });
+            document.addEventListener('drop', (e) => {
+                const zone = e.target.closest('.upload-zone');
+                if (zone) {
+                    e.preventDefault();
+                    zone.classList.remove('dragover');
+                    const input = zone.querySelector('input[type="file"]');
+                    if (e.dataTransfer.files.length) {
+                        input.files = e.dataTransfer.files;
+                        input.dispatchEvent(new Event('change'));
+                    }
+                }
+            });
+
+            // Close modal on overlay click
+            document.getElementById('customModalOverlay').addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) closeModal(false);
+            });
+
+            if (portalId) {
+                _loadPaymentPortal(portalId);
+            }
+        });
+
+        // ── Especialidades ──────────────────────────────────────────────────────
+        function renderEspecialidades() {
+            const grid = document.getElementById('especialidadesGrid');
+            grid.innerHTML = '';
+            Object.keys(ESPECIALIDADES).forEach(esp => {
+                const label = document.createElement('label');
+                label.className = 'checkbox-item';
+                label.innerHTML = `<input type="checkbox" value="${esp}" onchange="toggleEspecialidad('${esp}', this.checked)"> ${esp}`;
+                grid.appendChild(label);
+            });
+        }
+
+        function toggleEspecialidad(esp, checked) {
+            if (checked && !selectedEspecialidades.includes(esp)) {
+                selectedEspecialidades.push(esp);
+            } else if (!checked) {
+                selectedEspecialidades = selectedEspecialidades.filter(e => e !== esp);
+            }
+            renderEstudios();
+        }
+
+        function renderEstudios() {
+            const grid = document.getElementById('estudiosGrid');
+            if (selectedEspecialidades.length === 0) {
+                grid.innerHTML = '<p style="color:var(--text-light);font-style:italic;font-size:.85rem;">Seleccioná al menos una especialidad arriba ☝️</p>';
+                return;
+            }
+
+            grid.innerHTML = '';
+            const checkboxGrid = document.createElement('div');
+            checkboxGrid.className = 'checkbox-grid';
+
+            selectedEspecialidades.forEach(esp => {
+                const estudios = ESPECIALIDADES[esp] || [];
+                const groupTitle = document.createElement('div');
+                groupTitle.style.cssText = 'grid-column:1/-1;font-weight:600;font-size:.85rem;color:var(--primary);margin-top:.5rem;border-bottom:1px solid var(--border);padding-bottom:4px;';
+                groupTitle.textContent = esp;
+                checkboxGrid.appendChild(groupTitle);
+
+                estudios.forEach(est => {
+                    const label = document.createElement('label');
+                    label.className = 'checkbox-item';
+                    const isChecked = selectedEstudios.some(s => s.nombre === est);
+                    label.innerHTML = `<input type="checkbox" value="${est}" data-esp="${esp}" ${isChecked ? 'checked' : ''} onchange="toggleEstudio('${est.replace(/'/g,"\\'")}', '${esp}', this.checked)"> ${est}`;
+                    checkboxGrid.appendChild(label);
+                });
+            });
+
+            grid.appendChild(checkboxGrid);
+
+            // Contador de estudios para NORMAL
+            let counter = document.getElementById('estudioCounter');
+            if (!counter) {
+                counter = document.createElement('div');
+                counter.id = 'estudioCounter';
+                counter.style.cssText = 'font-size:.82rem;margin-top:.5rem;font-weight:500;';
+                grid.appendChild(counter);
+            } else {
+                grid.appendChild(counter);
+            }
+            _updateEstudioCounter();
+
+            // Botón "Seleccionar todos" — solo para planes sin límite de plantillas
+            if (selectedPlan === 'NORMAL') return; // NORMAL solo puede elegir 3
+            const btnAll = document.createElement('button');
+            btnAll.type = 'button';
+            btnAll.className = 'btn btn-secondary';
+            btnAll.style.cssText = 'margin-top:.8rem;font-size:.8rem;padding:6px 14px;';
+            btnAll.textContent = '☑️ Seleccionar todos';
+            btnAll.onclick = () => {
+                selectedEspecialidades.forEach(esp => {
+                    (ESPECIALIDADES[esp] || []).forEach(est => {
+                        if (!selectedEstudios.some(s => s.nombre === est)) {
+                            selectedEstudios.push({ nombre: est, especialidad: esp });
+                        }
+                    });
+                });
+                renderEstudios();
+            };
+            grid.appendChild(btnAll);
+        }
+
+        function toggleEstudio(nombre, esp, checked) {
+            if (checked) {
+                // Limitar a 3 estudios en plan NORMAL
+                if (selectedPlan === 'NORMAL' && selectedEstudios.length >= 3) {
+                    showAlert('Tu plan Normal permite máximo 3 estudios. Podés ampliar con un plan superior.', '📄');
+                    // Desmarcar el checkbox que se acaba de clickear
+                    const cb = document.querySelector(`input[type="checkbox"][value="${CSS.escape(nombre)}"]`);
+                    if (cb) cb.checked = false;
+                    return;
+                }
+                if (!selectedEstudios.some(s => s.nombre === nombre)) {
+                    selectedEstudios.push({ nombre, especialidad: esp });
+                }
+            } else {
+                selectedEstudios = selectedEstudios.filter(s => s.nombre !== nombre);
+            }
+            // Actualizar contador en NORMAL
+            _updateEstudioCounter();
+        }
+
+        function _updateEstudioCounter() {
+            const counter = document.getElementById('estudioCounter');
+            if (!counter) return;
+            if (selectedPlan === 'NORMAL') {
+                counter.textContent = `${selectedEstudios.length}/3 estudios seleccionados`;
+                counter.style.color = selectedEstudios.length >= 3 ? '#ef4444' : 'var(--text-light)';
+                counter.style.display = '';
+            } else {
+                counter.style.display = 'none';
+            }
+        }
+
+        // ── Steps navigation ────────────────────────────────────────────────────
+        let currentStep = 0;
+
+        function goStep(n, opts) {
+            const force = !!(opts && opts.force);
+            // Validación antes de avanzar
+            if (!force && n > currentStep) {
+                if (currentStep === 0 && !validateStep0()) return;
+                if (currentStep === 1 && !validateStep1()) return;
+                if (currentStep === 2 && !validateStep2()) return;
+                if (currentStep === 3 && !validateStep3()) return;
+            }
+
+            // Render dynamic steps when entering them
+            if (n === 3) _applyStep3PlanRestrictions();
+            if (n === 4) _applyStep4PlanRestrictions();
+            if (n === 5) renderCartStep();
+            if (n === 6) renderInvestmentSummary();
+
+            // Ocultar paso actual, mostrar nuevo
+            document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+            const target = document.getElementById('step' + n);
+            if (target) target.classList.add('active');
+
+            // Actualizar indicadores
+            document.querySelectorAll('.step').forEach(s => {
+                const sn = parseInt(s.dataset.step);
+                s.classList.remove('active', 'done');
+                if (sn === n) s.classList.add('active');
+                else if (sn < n) s.classList.add('done');
+            });
+
+            currentStep = n;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function validateStep1() {
+            const isClinic = selectedPlan === 'CLINIC';
+            const nombre = document.getElementById('regNombre').value.trim();
+            const matricula = document.getElementById('regMatricula').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            if (!nombre)   { showAlert(isClinic ? 'Ingresá el nombre de la clínica' : 'Ingresá tu nombre y apellido', isClinic ? '🏥' : '👤'); document.getElementById('regNombre').focus(); return false; }
+            if (!matricula){ showAlert(isClinic ? 'Ingresá el CUIT o número de habilitación' : 'Ingresá tu matrícula', '🪪'); document.getElementById('regMatricula').focus(); return false; }
+            if (!email || !email.includes('@')) { showAlert('Ingresá un email válido', '📧'); document.getElementById('regEmail').focus(); return false; }
+            return true;
+        }
+
+        function validateStep2() {
+            if (selectedEspecialidades.length === 0) { showAlert('Seleccioná al menos una especialidad', '🩺'); return false; }
+            return true;
+        }
+
+        // ── Plan-based restrictions for steps ─────────────────────────────────
+        function _applyStep3PlanRestrictions() {
+            const maxWp = selectedPlan ? (PRICING[selectedPlan].workplaces || 1) : 1;
+            const btn = document.getElementById('btnAddWorkplace');
+            if (btn) btn.style.display = maxWp <= 1 ? 'none' : '';
+            // CLINIC: mostrar sección de profesionales
+            const profSection = document.getElementById('clinicProfessionalsSection');
+            if (profSection) {
+                profSection.style.display = selectedPlan === 'CLINIC' ? '' : 'none';
+                if (selectedPlan === 'CLINIC') _updateProfCounter();
+            }
+        }
+
+        function _applyStep4PlanRestrictions() {
+            const plan = PRICING[selectedPlan] || {};
+            // Color del encabezado: disponible para TODOS los planes
+            // Logo profesional: solo PRO y CLINIC
+            const proLogoGroup = document.getElementById('step4ProLogoGroup');
+            const proLogoHint  = document.getElementById('step4ProLogoHint');
+            if (proLogoGroup) proLogoGroup.style.display = plan.pdfLogo ? '' : 'none';
+            if (proLogoHint)  proLogoHint.style.display  = plan.pdfLogo ? 'none' : '';
+            // Redes sociales: solo PRO y CLINIC (pdfLogo === true en ambos)
+            const showSocialLabel = document.getElementById('regShowSocialLabel');
+            const showSocialHint  = document.getElementById('regShowSocialHint');
+            const showSocialChk   = document.getElementById('regShowSocial');
+            if (showSocialLabel) showSocialLabel.style.display = plan.pdfLogo ? '' : 'none';
+            if (showSocialHint)  showSocialHint.style.display  = plan.pdfLogo ? 'none' : '';
+            if (showSocialChk)  { showSocialChk.disabled = !plan.pdfLogo; if (!plan.pdfLogo) showSocialChk.checked = false; }
+        }
+
+        function validateStep3() {
+            const isClinic = selectedPlan === 'CLINIC';
+            const wpName = (document.getElementById('regWpName0') || {}).value || '';
+            if (!wpName.trim()) {
+                showAlert(isClinic ? 'Ingresá el nombre de la sede principal' : 'Ingresá el nombre de tu lugar de trabajo principal', '🏥');
+                const el = document.getElementById('regWpName0');
+                if (el) el.focus();
+                return false;
+            }
+            return true;
+        }
+
+        // ── Image preview ───────────────────────────────────────────────────────
+        function previewImage(input, previewId) {
+            const file = input.files[0];
+            if (!file) return;
+
+            if (file.size > 2 * 1024 * 1024) {
+                showAlert('La imagen no puede superar 2 MB', '📷');
+                input.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const container = document.getElementById(previewId);
+                container.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+                if (input.id === 'regFirma') imageData.firma = e.target.result;
+                else if (input.id === 'regProLogo') imageData.proLogo = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ── Submit ──────────────────────────────────────────────────────────────
+        async function submitRegistro() {
+            const btn = document.getElementById('btnSubmit');
+            btn.disabled = true;
+            btn.textContent = '⏳ Enviando...';
+
+            // Collect all workplaces from accordion (only from workplacesContainer)
+            const allWorkplaces = [];
+            document.querySelectorAll('#workplacesContainer .wp-accordion').forEach(acc => {
+                const idx = acc.dataset.wpIndex;
+                allWorkplaces.push({
+                    name:    (document.getElementById('regWpName' + idx) || {}).value || '',
+                    address: (document.getElementById('regWpAddress' + idx) || {}).value || '',
+                    phone:   (document.getElementById('regWpPhone' + idx) || {}).value || '',
+                    email:   (document.getElementById('regWpEmail' + idx) || {}).value || '',
+                    footer:  (document.getElementById('regWpFooter' + idx) || {}).value || '',
+                    logo:    wpLogoData[idx] || null
+                });
+            });
+
+            // Build cart/addon summary
+            const plan = PRICING[selectedPlan];
+            const addonTotal = getCartAddonTotal();
+            const subAmount = billingCycle === 'monthly' ? plan.monthly : plan.annual;
+            const todayTotal = plan.license + addonTotal + subAmount;
+
+            const data = {
+                action: 'register_doctor',
+                nombre: document.getElementById('regNombre').value.trim(),
+                matricula: document.getElementById('regMatricula').value.trim(),
+                email: document.getElementById('regEmail').value.trim(),
+                telefono: document.getElementById('regTelefono').value.trim(),
+                especialidades: selectedEspecialidades,
+                estudios: selectedEstudios,
+                workplace: allWorkplaces[0] || {},
+                extraWorkplaces: JSON.stringify(allWorkplaces.slice(1)),
+                headerColor: selectedHeaderColor,
+                firma: imageData.firma || null,
+                proLogo: imageData.proLogo || null,
+                socialMedia: {
+                    facebook:  document.getElementById('regSocialFb')?.value?.trim() || '',
+                    instagram: document.getElementById('regSocialIg')?.value?.trim() || '',
+                    youtube:   document.getElementById('regSocialYt')?.value?.trim() || '',
+                    x:         document.getElementById('regSocialX')?.value?.trim()  || '',
+                    whatsapp:  document.getElementById('regSocialWa')?.value?.trim() || ''
+                },
+                showPhone:  document.getElementById('regShowPhone')?.checked  ?? true,
+                showEmail:  document.getElementById('regShowEmail')?.checked  ?? true,
+                showSocial: document.getElementById('regShowSocial')?.checked ?? false,
+                // Plan & pricing data
+                planSeleccionado: selectedPlan,
+                billingCycle: billingCycle,
+                currency: selectedCurrency,
+                arsRate: arsRate || null,
+                addons: JSON.stringify({
+                    templates: cartAddons.templates.map(t => ({ key: t.key, name: t.name, price: t.price })),
+                    packs: cartAddons.packs.map(p => ({ category: p.category, price: p.price })),
+                    extraDevices: cartAddons.extraDevices,
+                    extraWorkplaces: cartAddons.extraWorkplaces,
+                    extraProfessionals: cartAddons.extraProfessionals,
+                    branding: cartAddons.branding,
+                    addonTotal: addonTotal
+                }),
+                licenseAmount: plan.license,
+                subscriptionAmount: subAmount,
+                subscriptionCycle: billingCycle,
+                totalHoy: todayTotal,
+                fechaRegistro: new Date().toISOString(),
+                origen: 'formulario_web',
+                paymentPortalUrl: _resolvePaymentPortalBaseUrl(),
+                profesionales: selectedPlan === 'CLINIC' ? JSON.stringify(_collectProfessionals()) : null
+            };
+
+            try {
+                const response = await fetch(BACKEND_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    _lastRegistrationId = String(result.regId || '');
+                    _setStep7DefaultMessage();
+                    const summary = document.getElementById('successPlanSummary');
+                    if (summary) summary.style.display = 'block';
+                    goStep(7);
+                    if (_lastRegistrationId) {
+                        const status = document.getElementById('paymentUploadStatus');
+                        if (status) status.textContent = '';
+                        const paymentPanel = document.getElementById('paymentPortalPanel');
+                        if (paymentPanel) paymentPanel.style.display = 'block';
+                        const msg = document.getElementById('step7Message');
+                        const portalLink = result.paymentLink || (_resolvePaymentPortalBaseUrl() + '?id=' + encodeURIComponent(_lastRegistrationId));
+                        if (msg) {
+                            msg.innerHTML = 'Revisá tu email para los datos de transferencia.<br>Si pagás más tarde, podés retomar desde este link:<br><a href="' + portalLink + '">' + portalLink + '</a><br>Una vez confirmada, activaremos tu cuenta en un máximo de 48 horas.';
+                        }
+                        _loadPaymentPortal(_lastRegistrationId);
+                    }
+                } else {
+                    throw new Error(result.error || 'Error al enviar');
+                }
+            } catch (err) {
+                await showAlert('Error al enviar el registro:<br><br>' + err.message + '<br><br>Probá de nuevo en unos minutos.', '❌');
+                btn.disabled = false;
+                btn.textContent = '📨 Confirmar y Enviar Registro';
+            }
+        }
+    </script>
+</body>
+</html>
