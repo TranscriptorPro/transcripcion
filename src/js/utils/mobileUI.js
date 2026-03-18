@@ -136,6 +136,9 @@
         compactInlineReviewLabel();
         hideQuickProfileSelector();
         moveCopyButtonIntoToolbar();
+        moveMedicalCheckIntoToolbar();
+        disableComparisonOnMobile();
+        applyActionOrder();
         compactDownloadButton();
         enforceBigActionIcons();
         syncCompactViewButtons();
@@ -175,6 +178,49 @@
         toolbar.appendChild(copyBtn);
     }
 
+    function moveMedicalCheckIntoToolbar() {
+        var medBtn = document.getElementById('btnMedicalCheck');
+        var toolbar = document.getElementById('editorToolbar');
+        var decreaseFontBtn = document.getElementById('decreaseFontBtn');
+        if (!medBtn || !toolbar || !decreaseFontBtn) return;
+
+        medBtn.classList.remove('btn', 'btn-outline', 'btn-sm-icon');
+        medBtn.classList.add('toolbar-btn');
+        medBtn.title = 'Revisar terminología médica';
+        medBtn.setAttribute('aria-label', 'Revisar terminología médica');
+        medBtn.innerHTML = '🩺';
+
+        if (decreaseFontBtn.nextSibling !== medBtn) {
+            decreaseFontBtn.insertAdjacentElement('afterend', medBtn);
+        }
+    }
+
+    function disableComparisonOnMobile() {
+        var btnCompareView = document.getElementById('btnCompareView');
+        if (btnCompareView) {
+            btnCompareView.style.display = 'none';
+        }
+        if (window._isComparisonMode && typeof window.exitComparisonMode === 'function') {
+            try { window.exitComparisonMode(); } catch (_) {}
+        }
+    }
+
+    function applyActionOrder() {
+        var inlineDock = document.getElementById('inlineReviewQuickDock');
+        var appendBtn = document.getElementById('btnAppendRecord');
+        var configBtn = document.getElementById('btnConfigPdfMain');
+        var printBtn = document.getElementById('printBtn');
+        var downloadWrap = document.getElementById('downloadBtnContainer');
+        var restoreBtn = document.getElementById('btnRestoreOriginal');
+
+        if (inlineDock) inlineDock.style.order = '1';
+        if (appendBtn) appendBtn.style.order = '2';
+        if (configBtn) configBtn.style.order = '3';
+        if (printBtn) printBtn.style.order = '4';
+        if (downloadWrap) downloadWrap.style.order = '5';
+        if (restoreBtn) restoreBtn.style.order = '10';
+    }
+
     function compactDownloadButton() {
         var btnMain = document.getElementById('downloadBtnMain');
         var btnChevron = document.getElementById('downloadBtn');
@@ -191,12 +237,19 @@
     function enforceBigActionIcons() {
         var btnConfig = document.getElementById('btnConfigPdfMain');
         if (btnConfig) {
-            btnConfig.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>';
+            btnConfig.innerHTML = ''
+                + '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">'
+                + '<path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z"></path>'
+                + '<path d="M9 13h1.5v1.5H9V13zm4.5 0H15v1.5h-1.5V13zm-2.25 0h1.5v1.5h-1.5V13z" opacity="0.6"></path>'
+                + '</svg>'
+                + '<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" style="margin-left:-4px;opacity:0.95;" aria-hidden="true">'
+                + '<path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"></path>'
+                + '</svg>';
         }
 
         var btnPrint = document.getElementById('printBtn');
         if (btnPrint) {
-            btnPrint.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 11.2c-2.04 0-3.7-1.66-3.7-3.7S9.96 8.3 12 8.3s3.7 1.66 3.7 3.7-1.66 3.7-3.7 3.7z"/></svg>';
+            btnPrint.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"></path></svg>';
         }
     }
 
@@ -207,18 +260,14 @@
 
         if (btnRestoreOriginal) {
             var showingOriginal = !!btnRestoreOriginal._showingOriginal;
-            btnRestoreOriginal.textContent = showingOriginal ? 'Estruc.' : 'Orig.';
+            btnRestoreOriginal.textContent = showingOriginal ? 'Estruct.' : 'Original';
             btnRestoreOriginal.title = showingOriginal
                 ? 'Volver a vista estructurada'
                 : 'Ver vista original';
         }
 
         if (btnCompareView) {
-            var isCompareActive = !!window._isComparisonMode || btnCompareView.classList.contains('toggle-active');
-            btnCompareView.textContent = isCompareActive ? 'Cerrar' : 'Comp.';
-            btnCompareView.title = isCompareActive
-                ? 'Cerrar vista comparativa'
-                : 'Abrir vista comparativa';
+            btnCompareView.style.display = 'none';
         }
     }
 })();

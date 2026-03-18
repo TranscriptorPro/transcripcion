@@ -240,11 +240,20 @@
         font-size: 0.75rem;
     }
 
-    /* ── Barra de acciones móvil: compacta y legible ───────────────────── */
+    /* ── Barra de acciones móvil: compacta, ordenada y sin solapes ─────── */
     .editor-actions {
+        display: flex;
         flex-wrap: wrap !important;
-        gap: 0.28rem !important;
+        gap: 0.32rem !important;
         align-items: center;
+        justify-content: flex-start;
+    }
+
+    .editor-actions .btn,
+    .editor-actions .toolbar-btn,
+    .editor-actions .dropdown-container,
+    #inlineReviewQuickDock {
+        flex: 0 0 auto !important;
     }
 
     /* Ocultar selector rápido de perfil en móvil para liberar espacio */
@@ -269,6 +278,10 @@
         max-width: 1ch;
         overflow: hidden;
         white-space: nowrap;
+    }
+
+    #inlineReviewQuickDock {
+        order: 1;
     }
 
     /* Micrófono + agregar: más compacto y circular */
@@ -296,13 +309,17 @@
         line-height: 1;
     }
 
-    /* Segunda fila de acciones: iconos bien visibles y claros */
+    #btnAppendRecord {
+        order: 2;
+    }
+
+    /* Configurar + imprimir + descargar en primera línea */
     #btnConfigPdfMain,
     #printBtn,
     #downloadBtn {
-        width: 36px !important;
-        height: 36px !important;
-        min-width: 36px !important;
+        width: 40px !important;
+        height: 40px !important;
+        min-width: 40px !important;
         padding: 0 !important;
         border-radius: 10px !important;
         display: inline-flex;
@@ -310,26 +327,40 @@
         justify-content: center;
     }
 
+    #btnConfigPdfMain { order: 3; }
+    #printBtn { order: 4; }
+    #downloadBtnContainer { order: 5; }
+
     #btnConfigPdfMain svg,
     #printBtn svg,
     #downloadBtn svg {
-        width: 24px !important;
-        height: 24px !important;
+        width: 22px !important;
+        height: 22px !important;
     }
 
-    /* Evitar iconos dobles diminutos que se leen como "puntos" */
-    #btnConfigPdfMain svg + svg,
     #printBtn svg + svg {
         display: none !important;
     }
 
-    /* Botones de vista: texto corto y coherente (sin desborde) */
-    #btnRestoreOriginal,
-    #btnCompareView {
+    #btnConfigPdfMain svg:first-child {
+        width: 20px !important;
+        height: 20px !important;
+    }
+
+    #btnConfigPdfMain svg:last-child {
+        width: 17px !important;
+        height: 17px !important;
+        margin-left: -4px !important;
+        opacity: 0.95;
+    }
+
+    /* Segunda línea: solo alternar Original/Estructurado */
+    #btnRestoreOriginal {
+        order: 10;
         min-height: 32px;
         height: 32px;
-        min-width: 56px;
-        padding: 0 0.4rem !important;
+        min-width: 98px;
+        padding: 0 0.5rem !important;
         font-size: 0.62rem !important;
         font-weight: 700 !important;
         letter-spacing: 0.01em;
@@ -340,10 +371,14 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        border-radius: 8px !important;
     }
 
-    #btnCompareView {
-        min-width: 62px;
+    #btnCompareView { display: none !important; }
+
+    /* El diccionario se mueve al toolbar en móvil */
+    #btnMedicalCheck {
+        display: none !important;
     }
 
     /* Descarga: un solo botón pequeño con flecha hacia abajo */
@@ -360,8 +395,10 @@
         border-radius: 999px !important;
     }
 
-    /* Copiar: estilo de herramienta en toolbar (móvil) */
-    #editorToolbar #copyBtn {
+    /* Copiar y diccionario como herramientas del toolbar (móvil) */
+    #editorToolbar #copyBtn,
+    #editorToolbar #btnMedicalCheck {
+        display: inline-flex;
         min-width: 28px;
         height: 28px;
         padding: 0;
@@ -374,6 +411,11 @@
     #editorToolbar #copyBtn svg {
         width: 15px !important;
         height: 15px !important;
+    }
+
+    #editorToolbar #btnMedicalCheck {
+        font-size: 0.9rem;
+        line-height: 1;
     }
 
     /* ── Botones de acción del editor ────────────────────────────── */
