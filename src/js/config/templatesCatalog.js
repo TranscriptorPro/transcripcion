@@ -403,7 +403,7 @@ Hallazgos o s/p — incluir solo si fue evaluada
 Mencionar SOLO los hallazgos positivos o patológicos detectados, como párrafo fluido. No repetir datos normales.
 
 REGLA DE CONCLUSIÓN: Incluye TODOS los hallazgos patológicos o positivos — ninguno puede omitirse, aunque sea leve. No incluyas estructuras con resultado normal. Redactar una síntesis diagnóstica breve con terminología médica estándar derivada directamente de los hallazgos dictados. PROHIBIDO: inventar valores o datos que no estén en la transcripción. PROHIBIDO: indicar tratamientos o procedimientos concretos si el médico no los mencionó.
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si una estructura no fue evaluada ni mencionada, omitir su sección o marcar con [No especificado].`
+IMPORTANTE: No inventes datos ni omisiones. Solo estructura lo que el médico dictó. Si una estructura no fue mencionada, omitir la sección o escribir únicamente [No especificado]. PROHIBIDO escribir «no evaluado», «no fue evaluado», «no se exploró» o equivalentes — esas frases NUNCA deben aparecer en el informe.`
     },
 
     gastroscopia: {
@@ -445,7 +445,7 @@ Biopsias tomadas (localización, número), polipectomías, otras intervenciones.
 Mencionar SOLO los hallazgos positivos o patológicos detectados, como párrafo fluido. No repetir datos normales.
 
 REGLA DE CONCLUSIÓN: Incluye TODOS los hallazgos patológicos o positivos — ninguno puede omitirse, aunque sea leve. No incluyas segmentos con resultado normal. Redactar una síntesis diagnóstica breve con terminología médica estándar derivada directamente de los hallazgos dictados. PROHIBIDO: inventar valores o datos que no estén en la transcripción. PROHIBIDO: indicar tratamientos o procedimientos concretos si el médico no los mencionó.
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si un segmento no fue evaluado ni mencionado, omitir su sección o marcar con [No especificado].`
+IMPORTANTE: No inventes datos ni omisiones. Solo estructura lo dictado. Si un segmento no fue mencionado, omitir la sección o escribir únicamente [No especificado]. PROHIBIDO escribir «no evaluado», «no fue evaluado», «no se exploró» o equivalentes.`
     },
     colonoscopia: {
         name: "Colonoscopía",
@@ -486,7 +486,7 @@ Biopsias, polipectomías (localización, tamaño, morfología, técnica), otras 
 Mencionar SOLO los hallazgos positivos o patológicos detectados, como párrafo fluido. No repetir datos normales.
 
 REGLA DE CONCLUSIÓN: Incluye TODOS los hallazgos patológicos o positivos — ninguno puede omitirse, aunque sea leve. No incluyas segmentos con resultado normal. Redactar una síntesis diagnóstica breve con terminología médica estándar derivada directamente de los hallazgos dictados. PROHIBIDO: inventar valores o datos que no estén en la transcripción. PROHIBIDO: indicar tratamientos o procedimientos concretos si el médico no los mencionó.
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si un segmento no fue evaluado ni mencionado, omitir su sección o marcar con [No especificado].`
+IMPORTANTE: No inventes datos ni omisiones. Solo estructura lo dictado. Si un segmento no fue mencionado, omitir la sección o escribir únicamente [No especificado]. PROHIBIDO escribir «no evaluado», «no fue evaluado», «no se exploró» o equivalentes.`
     },
     broncoscopia: {
         name: "Broncoscopía",

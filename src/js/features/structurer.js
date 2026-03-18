@@ -182,7 +182,13 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepción (ordenadas por prioridad):
 7. NÚMEROS Y UNIDADES: siempre con dígitos, nunca con letras ("75%" no "setenta y cinco por ciento"; "12 mm" no "doce milímetros"). NUNCA conviertas entre unidades: si dice "10 mm", escribe "10 mm", NO "1 cm".
 
 >>> MARCADOR DE CAMPOS VACÍOS >>>
-8. CAMPO NO EVALUADO: cuando una estructura NO fue evaluada ni mencionada, usa ÚNICAMENTE el marcador [No especificado]. NUNCA uses variantes como "No se evaluó", "No fue evaluado/a", "Sin datos disponibles". EXCEPCIÓN: "s/p" (sin particularidades) es VÁLIDO cuando la estructura SÍ fue evaluada y el resultado es normal. No confundir: s/p = evaluado + normal; [No especificado] = no evaluado (genera campo editable interactivo).
+8. CAMPO NO MENCIONADO POR EL MÉDICO:
+(a) Si el médico NO habló de una estructura, usa ÚNICA Y EXCLUSIVAMENTE el marcador [No especificado] como todo el contenido de la sección. Nada más.
+(b) PROHIBICIÓN ABSOLUTA — estas expresiones JAMÁS pueden aparecer en el informe en ningún contexto, ni dentro de un párrafo, ni combinadas con hallazgos reales:
+    «no evaluado/a», «no fue evaluado/a», «no se evaluó», «no se exploró», «no fue explorado/a», «no examinado/a», «no fue examinado/a», «no se examinó», «no valorado/a», «no fue valorado/a», «no se valoró», «no mencionado/a», «no se mencionó», «no se realizó evaluación», «no se realizó exploración», «no se pudo evaluar», «no fue posible evaluar», «no se incluyó en el estudio», «sin datos registrados», o cualquier variante semánticamente equivalente.
+(c) NUNCA mezcles hallazgos reales con frases de «no evaluado»: si el médico habló solo de parte de una estructura, describe únicamente lo que dictó. No menciones lo que NO dictó.
+(d) EXCEPCIÓN ÚNICA VÁLIDA: «s/p» o «sin particularidades» son aceptables SOLO cuando la estructura SÍ fue evaluada y el resultado es normal.
+REGLA DE ORO: si el texto original no contiene datos de una estructura → el informe no la menciona en absoluto, o usa [No especificado] como única línea de su sección.
 
 >>> PRESERVAR TODAS LAS SECCIONES DE LA PLANTILLA >>>
 9. NUNCA elimines, omitas ni fusiones secciones de la plantilla. Mantén TODAS las secciones ##, incluso si no tienen contenido (en ese caso usa [No especificado]). El usuario decide qué hacer con cada sección vacía.
@@ -209,7 +215,7 @@ REGLA DE ORO: preguntate "¿el médico dijo esto explícitamente?" → SI → in
 15. PROHIBIDO usar puntos suspensivos (...) o frases incompletas. Si un campo no se realizó/no se especificó y no es vital para la estructura, NO lo menciones. Si la estructura exige el campo, colócalo como campo independiente con [No especificado], nunca incrustado en un párrafo con texto clínico.
 
 >>> RECORDATORIO FINAL >>>
-Antes de responder, verifica: ¿preservé TODOS los datos? ¿Usé [No especificado] (no variantes)? ¿La conclusión incluye SOLO hallazgos que el médico dictó explícitamente? ¿La conclusión NO tiene frases como "aunque se carece de", "aunque no se detalló", "si bien falta información", "sin embargo falta", "aunque no se evaluó"? ¿No inventé absolutamente nada?`;
+Antes de responder, verifica: ¿preservé TODOS los datos? ¿Usé [No especificado] (no variantes)? ¿La conclusión incluye SOLO hallazgos que el médico dictó explícitamente? ¿La conclusión NO tiene frases como "aunque se carece de", "aunque no se detalló", "si bien falta información", "sin embargo falta", "aunque no se evaluó"? ¿No inventé absolutamente nada? ¿Busqué en todo el informe las frases prohibidas de la regla 8(b): «no evaluado», «no fue evaluado», «no se exploró», «no examinado», «no valorado» y similares? Si encuentro alguna → la elimino y dejo la sección con [No especificado] o vacía.`;
 
     try {
         const res = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
@@ -522,6 +528,11 @@ function _sanitizeGrammarArtifacts(text) {
         .replace(/\bDescripci[oó]n\s+de\s+la\s+configuraci[oó]n[^.]*\.?/gi, '')
         // Eliminar texto condicional en headings
         .replace(/(##\s*[^\n]*)\s*\(\s*(?:si\s+est[aá]\s+reportado|si\s+aplica|si\s+corresponde|si\s+se\s+report[oó])\s*\)/gi, '$1')
+        // ── PROHIBICIÓN ABSOLUTA: frases de «no evaluado» deben desaparecer ──
+        // Patrón: «X no fue evaluado/a» al inicio de oración o párrafo → eliminar
+        .replace(/(?:^|(?<=\n))([^\n]*?)\bno\s+(?:fue|fue\s+ron|fueron)\s+(?:evaluad[ao]s?|explorad[ao]s?|examinad[ao]s?|valorad[ao]s?)(?:\s*,?\s*(?:pero|sin\s+embargo|aunque|no\s+obstante))?\s*/gim, '')
+        .replace(/(?:^|(?<=\n))([^\n]*?)\bno\s+se\s+(?:evalu[oó]|explor[oó]|examin[oó]|valor[oó]|realiz[oó]\s+(?:evaluaci[oó]n|exploraci[oó]n))(?:\s*,?\s*(?:pero|sin\s+embargo|aunque|no\s+obstante))?\s*/gim, '')
+        .replace(/\b(?:no\s+evaluad[ao]s?|no\s+fue\s+evaluad[ao]|no\s+fue\s+explorad[ao]|no\s+examinad[ao]s?|no\s+valorad[ao]s?|no\s+se\s+evalu[oó]|no\s+se\s+explor[oó]|no\s+se\s+examin[oó]|sin\s+datos\s+registrados)\.?/gi, '')
         .replace(/,\s*,/g, ',')
         .replace(/,\s*\./g, '.')
         .replace(/\.\.{2,}/g, '. ')

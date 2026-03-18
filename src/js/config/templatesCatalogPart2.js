@@ -153,7 +153,7 @@ Arteria umbilical, arteria cerebral media, ductus venoso, arterias uterinas si f
 ## CONCLUSIÓN
 Resumen de hallazgos relevantes. Incluir edad gestacional, peso estimado y hallazgos patológicos si los hay.
 
-IMPORTANTE: No inventes datos. Solo estructura lo dictado. Las secciones no evaluadas deben omitirse o marcarse con [No especificado].`
+IMPORTANTE: No inventes datos ni omisiones. Solo estructura lo dictado. Si una sección no fue mencionada, omitirla o escribir únicamente [No especificado]. PROHIBIDO escribir «no evaluado», «no fue evaluado», «no se exploró» o equivalentes — esas frases NUNCA deben aparecer.`
     },
 
     // ── ECO DOPPLER VASCULAR ─────────────────────────────────────

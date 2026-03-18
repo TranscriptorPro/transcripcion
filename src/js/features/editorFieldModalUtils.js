@@ -650,7 +650,8 @@
                 '3) Prohibido usar puntos suspensivos, frases truncadas o muletillas.',
                 '4) Si falta dato indispensable del párrafo, devolver [No especificado].',
                 '5) Solo español médico formal.',
-                '6) Responder SOLO el párrafo final, sin encabezados.',
+                '6) Responder SOLO el párrafo final, sin encabezados ni prefijos.',
+                '7) PROHIBICIÓN ABSOLUTA: jamás escribas «no evaluado», «no fue evaluado», «no se evaluó», «no explorado», «no fue explorado», «no examinado», «no valorado», «sin datos registrados» ni ninguna variante. Si algo no fue dictado, devuelve [No especificado] o conserva solo lo que sí fue dictado.',
                 templateRules
             ].join('\n');
             const userContent = [
