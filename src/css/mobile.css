@@ -316,10 +316,11 @@
     /* Configurar + imprimir + descargar en primera línea */
     #btnConfigPdfMain,
     #printBtn,
-    #downloadBtn {
-        width: 40px !important;
-        height: 40px !important;
-        min-width: 40px !important;
+    #downloadBtn,
+    #btnRestoreOriginal {
+        width: 42px !important;
+        height: 42px !important;
+        min-width: 42px !important;
         padding: 0 !important;
         border-radius: 10px !important;
         display: inline-flex;
@@ -327,15 +328,19 @@
         justify-content: center;
     }
 
-    #btnConfigPdfMain { order: 3; }
-    #printBtn { order: 4; }
-    #downloadBtnContainer { order: 5; }
+    #btnRestoreOriginal {
+        order: 3;
+    }
+
+    #btnConfigPdfMain { order: 4; }
+    #printBtn { order: 5; }
+    #downloadBtnContainer { order: 6; }
 
     #btnConfigPdfMain svg,
     #printBtn svg,
     #downloadBtn svg {
-        width: 22px !important;
-        height: 22px !important;
+        width: 24px !important;
+        height: 24px !important;
     }
 
     #printBtn svg + svg {
@@ -354,32 +359,34 @@
         opacity: 0.95;
     }
 
-    /* Segunda línea: solo alternar Original/Estructurado */
+    /* Toggle Original/Estructurado: icono + letra grande */
     #btnRestoreOriginal {
-        order: 10;
-        min-height: 32px;
-        height: 32px;
-        min-width: 98px;
-        padding: 0 0.5rem !important;
-        font-size: 0.62rem !important;
-        font-weight: 700 !important;
-        letter-spacing: 0.01em;
-        line-height: 1;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        border-radius: 10px !important;
+        gap: 3px;
+    }
+
+    #btnRestoreOriginal .mobile-oe-icon {
+        width: 18px;
+        height: 18px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        border-radius: 8px !important;
+    }
+
+    #btnRestoreOriginal .mobile-oe-icon svg {
+        width: 18px !important;
+        height: 18px !important;
+    }
+
+    #btnRestoreOriginal .mobile-oe-letter {
+        font-size: 0.98rem;
+        font-weight: 800;
+        line-height: 1;
     }
 
     #btnCompareView { display: none !important; }
 
     /* El diccionario se mueve al toolbar en móvil */
-    #btnMedicalCheck {
-        display: none !important;
-    }
 
     /* Descarga: un solo botón pequeño con flecha hacia abajo */
     #downloadBtnMain,
@@ -395,12 +402,83 @@
         border-radius: 999px !important;
     }
 
+    /* Toolbar móvil agrupado: una sola fila con menús desplegables */
+    #editorToolbar.mobile-grouped {
+        flex-wrap: nowrap !important;
+        overflow-x: auto;
+        overflow-y: visible;
+        gap: 0.24rem !important;
+        padding: 0.26rem !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #editorToolbar.mobile-grouped .toolbar-divider {
+        display: none !important;
+    }
+
+    #editorToolbar.mobile-grouped .mobile-toolbar-group {
+        position: relative;
+        flex: 0 0 auto;
+    }
+
+    #editorToolbar.mobile-grouped .mobile-group-trigger {
+        min-width: 33px;
+        height: 30px;
+        padding: 0 6px;
+        gap: 4px;
+        border-radius: 7px;
+    }
+
+    #editorToolbar.mobile-grouped .mobile-group-trigger .mobile-group-caret {
+        font-size: 0.58rem;
+        opacity: 0.85;
+        line-height: 1;
+    }
+
+    #editorToolbar.mobile-grouped .mobile-toolbar-panel {
+        display: none;
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        z-index: 2500;
+        min-width: 164px;
+        max-width: 78vw;
+        padding: 0.34rem;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--bg-card);
+        box-shadow: 0 8px 26px rgba(0,0,0,0.24);
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.28rem;
+    }
+
+    #editorToolbar.mobile-grouped .mobile-toolbar-group.open .mobile-toolbar-panel {
+        display: grid;
+    }
+
+    #editorToolbar.mobile-grouped .mobile-toolbar-panel .toolbar-btn,
+    #editorToolbar.mobile-grouped .mobile-toolbar-panel .toolbar-select {
+        min-width: 0;
+        width: 100%;
+        height: 30px;
+    }
+
+    #editorToolbar.mobile-grouped .mobile-toolbar-panel .toolbar-select {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.32rem;
+    }
+
+    #editorToolbar.mobile-grouped .mobile-toolbar-standalone {
+        flex: 0 0 auto;
+    }
+
     /* Copiar y diccionario como herramientas del toolbar (móvil) */
     #editorToolbar #copyBtn,
     #editorToolbar #btnMedicalCheck {
         display: inline-flex;
-        min-width: 28px;
-        height: 28px;
+        min-width: 30px;
+        height: 30px;
         padding: 0;
         border-radius: 6px;
         background: var(--bg-card);

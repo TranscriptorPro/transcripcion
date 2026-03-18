@@ -142,6 +142,7 @@
         compactDownloadButton();
         enforceBigActionIcons();
         syncCompactViewButtons();
+        buildMobileToolbarGroups();
     }
 
     function compactInlineReviewLabel() {
@@ -182,7 +183,7 @@
         var medBtn = document.getElementById('btnMedicalCheck');
         var toolbar = document.getElementById('editorToolbar');
         var decreaseFontBtn = document.getElementById('decreaseFontBtn');
-        if (!medBtn || !toolbar || !decreaseFontBtn) return;
+        if (!medBtn || !toolbar) return;
 
         medBtn.classList.remove('btn', 'btn-outline', 'btn-sm-icon');
         medBtn.classList.add('toolbar-btn');
@@ -190,8 +191,10 @@
         medBtn.setAttribute('aria-label', 'Revisar terminología médica');
         medBtn.innerHTML = '🩺';
 
-        if (decreaseFontBtn.nextSibling !== medBtn) {
+        if (decreaseFontBtn && decreaseFontBtn.nextSibling !== medBtn) {
             decreaseFontBtn.insertAdjacentElement('afterend', medBtn);
+        } else if (!decreaseFontBtn && medBtn.parentElement !== toolbar) {
+            toolbar.appendChild(medBtn);
         }
     }
 
@@ -215,10 +218,10 @@
 
         if (inlineDock) inlineDock.style.order = '1';
         if (appendBtn) appendBtn.style.order = '2';
-        if (configBtn) configBtn.style.order = '3';
-        if (printBtn) printBtn.style.order = '4';
-        if (downloadWrap) downloadWrap.style.order = '5';
-        if (restoreBtn) restoreBtn.style.order = '10';
+        if (restoreBtn) restoreBtn.style.order = '3';
+        if (configBtn) configBtn.style.order = '4';
+        if (printBtn) printBtn.style.order = '5';
+        if (downloadWrap) downloadWrap.style.order = '6';
     }
 
     function compactDownloadButton() {
@@ -260,7 +263,12 @@
 
         if (btnRestoreOriginal) {
             var showingOriginal = !!btnRestoreOriginal._showingOriginal;
-            btnRestoreOriginal.textContent = showingOriginal ? 'Estruct.' : 'Original';
+            var letter = showingOriginal ? 'E' : 'O';
+            btnRestoreOriginal.innerHTML = ''
+                + '<span class="mobile-oe-icon" aria-hidden="true">'
+                + '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 5c-4.2 0-7.9 2.5-9.5 6 1.6 3.5 5.3 6 9.5 6s7.9-2.5 9.5-6c-1.6-3.5-5.3-6-9.5-6zm0 9.5c-1.9 0-3.5-1.6-3.5-3.5S10.1 7.5 12 7.5s3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5z"></path></svg>'
+                + '</span>'
+                + '<span class="mobile-oe-letter">' + letter + '</span>';
             btnRestoreOriginal.title = showingOriginal
                 ? 'Volver a vista estructurada'
                 : 'Ver vista original';
@@ -269,5 +277,178 @@
         if (btnCompareView) {
             btnCompareView.style.display = 'none';
         }
+    }
+
+    function buildMobileToolbarGroups() {
+        var toolbar = document.getElementById('editorToolbar');
+        if (!toolbar) return;
+
+        if (!toolbar.classList.contains('mobile-grouped')) {
+            toolbar.classList.add('mobile-grouped');
+        }
+
+        if (toolbar.dataset.mobileGroupsReady === '1') return;
+
+        function findEl(id) {
+            return document.getElementById(id);
+        }
+
+        function createTrigger(iconSvg, title) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'toolbar-btn mobile-group-trigger';
+            btn.title = title;
+            btn.setAttribute('aria-label', title);
+            btn.innerHTML = iconSvg + '<span class="mobile-group-caret">▾</span>';
+            return btn;
+        }
+
+        function closeAllGroups(exceptWrapper) {
+            toolbar.querySelectorAll('.mobile-toolbar-group.open').forEach(function (group) {
+                if (group !== exceptWrapper) group.classList.remove('open');
+            });
+        }
+
+        function makeGroup(title, iconSvg, elementIds, extraBuilder) {
+            var wrapper = document.createElement('div');
+            wrapper.className = 'mobile-toolbar-group';
+
+            var trigger = createTrigger(iconSvg, title);
+            var panel = document.createElement('div');
+            panel.className = 'mobile-toolbar-panel';
+
+            elementIds.forEach(function (id) {
+                var el = findEl(id);
+                if (!el) return;
+                el.classList.add('mobile-group-item');
+                panel.appendChild(el);
+            });
+
+            if (typeof extraBuilder === 'function') {
+                extraBuilder(panel);
+            }
+
+            trigger.addEventListener('click', function (ev) {
+                ev.preventDefault();
+                ev.stopPropagation();
+                var isOpen = wrapper.classList.contains('open');
+                closeAllGroups(wrapper);
+                wrapper.classList.toggle('open', !isOpen);
+            });
+
+            panel.addEventListener('click', function (ev) {
+                var target = ev.target;
+                if (target && (target.tagName === 'BUTTON' || target.tagName === 'SELECT')) {
+                    setTimeout(function () {
+                        wrapper.classList.remove('open');
+                    }, 120);
+                }
+            });
+
+            wrapper.appendChild(trigger);
+            wrapper.appendChild(panel);
+            toolbar.appendChild(wrapper);
+        }
+
+        makeGroup(
+            'Formato',
+            '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M15.6 10.79c.97-.67 1.65-1.77 1.65-2.79 0-2.26-1.75-4-4-4H7v14h7.04c2.09 0 3.71-1.7 3.71-3.79 0-1.52-.86-2.82-2.15-3.42z"></path></svg>',
+            ['boldBtn', 'italicBtn', 'underlineBtn', 'strikeBtn']
+        );
+
+        makeGroup(
+            'Alineación',
+            '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M3 21h18v-2H3v2zm0-4h18v-2H3v2zm0-4h18v-2H3v2zm0-4h18V7H3v2zm0-6v2h18V3H3z"></path></svg>',
+            ['alignLeftBtn', 'alignCenterBtn', 'alignRightBtn', 'justifyBtn']
+        );
+
+        makeGroup(
+            'Listas',
+            '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"></path></svg>',
+            ['bulletListBtn', 'numberedListBtn']
+        );
+
+        makeGroup(
+            'Tamaño',
+            '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M5 4v3h5.5v12h3V7H19V4z"></path></svg>',
+            ['fontSizeToolbar', 'increaseFontBtn', 'decreaseFontBtn', 'lineSpacingSelect']
+        );
+
+        makeGroup(
+            'Navegación',
+            '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M13 3a9 9 0 0 0-9 9H1l4 4 4-4H6a7 7 0 1 1 2.05 4.95l-1.42 1.42A9 9 0 1 0 13 3z"></path></svg>',
+            ['undoBtn', 'redoBtn', 'btnEditorSnapshots']
+        );
+
+        makeGroup(
+            'Insertar',
+            '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"></path></svg>',
+            ['insertTableBtn', 'insertLinkBtn'],
+            function (panel) {
+                var editor = document.getElementById('editor');
+
+                var imgBtn = document.createElement('button');
+                imgBtn.type = 'button';
+                imgBtn.className = 'toolbar-btn';
+                imgBtn.title = 'Insertar imagen';
+                imgBtn.textContent = '🖼';
+
+                var shapeBtn = document.createElement('button');
+                shapeBtn.type = 'button';
+                shapeBtn.className = 'toolbar-btn';
+                shapeBtn.title = 'Insertar forma';
+                shapeBtn.textContent = '⬚';
+
+                var fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.accept = 'image/*';
+                fileInput.style.display = 'none';
+
+                imgBtn.addEventListener('click', function () {
+                    fileInput.click();
+                });
+
+                fileInput.addEventListener('change', function () {
+                    var file = fileInput.files && fileInput.files[0];
+                    if (!file || !editor) return;
+                    var reader = new FileReader();
+                    reader.onload = function (ev) {
+                        if (document.activeElement !== editor) editor.focus();
+                        try {
+                            document.execCommand('insertImage', false, String(ev.target.result || ''));
+                        } catch (_) {
+                            document.execCommand('insertHTML', false, '<img src="' + String(ev.target.result || '') + '" style="max-width:100%;height:auto;" />');
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                    fileInput.value = '';
+                });
+
+                shapeBtn.addEventListener('click', function () {
+                    if (!editor) return;
+                    if (document.activeElement !== editor) editor.focus();
+                    document.execCommand('insertHTML', false, '<span style="display:inline-block;border:1px solid currentColor;border-radius:4px;padding:0 0.45rem;line-height:1.2;">◻</span>');
+                });
+
+                panel.appendChild(imgBtn);
+                panel.appendChild(shapeBtn);
+                panel.appendChild(fileInput);
+            }
+        );
+
+        ['clearFormatBtn', 'toggleFindReplace', 'copyBtn', 'btnMedicalCheck'].forEach(function (id) {
+            var el = findEl(id);
+            if (!el) return;
+            el.classList.add('mobile-toolbar-standalone');
+            toolbar.appendChild(el);
+        });
+
+        document.addEventListener('click', function (ev) {
+            if (!toolbar.contains(ev.target)) {
+                closeAllGroups(null);
+            }
+        });
+
+        toolbar.dataset.mobileGroupsReady = '1';
     }
 })();
