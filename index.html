@@ -9,7 +9,7 @@
     <!-- PURGE: auto-purge al detectar nueva versión + ?purge manual. Preserva tema y color -->
     <script>
     (function() {
-        var APP_VERSION = 'v95'; // ← bump esto en cada deploy para forzar auto-purge
+        var APP_VERSION = 'v96'; // ← bump esto en cada deploy para forzar auto-purge
         try { window.APP_VERSION = APP_VERSION; } catch(_) {}
         var params = new URLSearchParams(window.location.search);
         var forcePurge = params.has('purge');
@@ -145,6 +145,11 @@
                     <p class="header-subtitle" id="doctorWelcomeName">Audio → Texto con IA</p>
                 </div>
             </div>
+            <!-- Botón hamburguesa: solo visible en móvil (CSS lo oculta en desktop) -->
+            <button class="theme-toggle btn-mobile-sidebar" id="btnMobileSidebarToggle"
+                    title="Mostrar panel lateral" aria-label="Mostrar u ocultar panel lateral">
+                <svg viewBox="0 0 24 24" fill="white"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+            </button>
             <div class="header-actions">
                 <!-- Pro Mode Toggle Slider -->
                 <div class="pro-toggle-container" id="proToggleContainer">
