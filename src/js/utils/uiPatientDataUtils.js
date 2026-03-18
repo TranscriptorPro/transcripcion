@@ -12,8 +12,16 @@ window.initPatientDataModalHandlers = function () {
 
     window.openPatientDataModal = function () {
         const cfg = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        // Clonar editor sin la caja de metadatos para no confundir la extracción
+        let editorText = '';
+        const editorEl = document.getElementById('editor');
+        if (editorEl) {
+            const clone = editorEl.cloneNode(true);
+            clone.querySelectorAll('.patient-data-header, .patient-placeholder-banner').forEach(el => el.remove());
+            editorText = clone.innerText || '';
+        }
         const extracted = (typeof extractPatientDataFromText === 'function')
-            ? extractPatientDataFromText((document.getElementById('editor')?.innerText || ''))
+            ? extractPatientDataFromText(editorText)
             : {};
         const prefill = {
             reqPatientName: cfg.patientName || extracted.name || '',
