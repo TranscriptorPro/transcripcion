@@ -567,7 +567,14 @@ function _keepSingleReportTitle(text) {
     return filtered.join('\n').trim();
 }
 
-function _postProcessStructuredMarkdown(md) {
+function _scrollEditorToTop() {
+    setTimeout(() => {
+        const area = document.querySelector('.editor-area');
+        if (area) area.scrollTop = 0;
+        const editor = document.getElementById('editor');
+        if (editor) editor.scrollTop = 0;
+    }, 0);
+}
     let out = String(md || '');
     if (!out) return out;
 
@@ -841,7 +848,7 @@ window.processPendingItem = async function(id) {
     const entry = queue.find(e => e.id === id);
     if (!entry) return;
     const editor = document.getElementById('editor');
-    if (editor) { editor.innerHTML = entry.text; setTimeout(() => { editor.scrollTop = 0; }, 0); }
+    if (editor) { editor.innerHTML = entry.text; _scrollEditorToTop(); }
     // Cerrar modal de pendientes
     document.getElementById('pendingQueueModal').style.display = 'none';
     // Ejecutar estructurado
@@ -856,7 +863,7 @@ window.processPendingItem = async function(id) {
             if (typeof showToast === 'function') showToast('✅ Texto pendiente estructurado', 'success');
             if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURED');
             if (typeof triggerPatientDataCheck === 'function') triggerPatientDataCheck(entry.text);
-            setTimeout(() => { editor.scrollTop = 0; }, 0);
+            _scrollEditorToTop();
         } catch (err) {
             _showStructurerFailureToast({ savedToPending: true, message: err?.message || '' });
         }
@@ -1082,7 +1089,7 @@ async function _doAutoStructure(options) {
         if (btnM) btnM.style.display = '';
         if (typeof updateWordCount === 'function') updateWordCount();
         if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURED');
-        setTimeout(() => { editor.scrollTop = 0; }, 0);
+        _scrollEditorToTop();
         if (typeof showToast === 'function') {
             if (isGeneralNonMedicalFallback) {
                 showToast(_getNonMedicalWarning(), 'warning', 5000);
@@ -1166,7 +1173,7 @@ window.initStructurer = function () {
                 const btnM2 = document.getElementById('btnMedicalCheck');
                 if (btnM2) btnM2.style.display = '';
                 if (typeof updateWordCount === 'function') updateWordCount();
-                setTimeout(() => { editor.scrollTop = 0; }, 0);
+                _scrollEditorToTop();
                 if (typeof showToast === 'function') {
                     if (isGeneralNonMedicalFallback) {
                         showToast(_getNonMedicalWarning(), 'warning', 5000);
