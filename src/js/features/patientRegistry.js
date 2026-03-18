@@ -196,6 +196,8 @@ window.initPatientRegistrySearch = function() {
     }
 
     function selectPatient(p) {
+        _justSelected = true;
+        clearTimeout(debounceTimer);
         const setVal = (id, v) => { const el2 = document.getElementById(id); if (el2 && v != null) el2.value = v; };
         setVal('reqPatientName',        p.name);
         setVal('reqPatientDni',         p.dni);
@@ -229,8 +231,10 @@ window.initPatientRegistrySearch = function() {
 
     // Buscar mientras escribe (debounce 120ms)
     let debounceTimer;
+    let _justSelected = false;
     nameInput.addEventListener('input', () => {
         clearTimeout(debounceTimer);
+        if (_justSelected) { _justSelected = false; return; }
         const query = nameInput.value.trim();
         if (query.length < 2) { hideDropdown(); return; }
         debounceTimer = setTimeout(() => {

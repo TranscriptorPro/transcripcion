@@ -136,6 +136,8 @@ window.initStudyReasonSearch = function() {
     }
 
     function selectReason(h) {
+        _justSelected = true;
+        clearTimeout(debounce);
         input.value = h.reason;
         hideDropdown();
     }
@@ -160,8 +162,10 @@ window.initStudyReasonSearch = function() {
     }
 
     let debounce;
+    let _justSelected = false;
     input.addEventListener('input', () => {
         clearTimeout(debounce);
+        if (_justSelected) { _justSelected = false; return; }
         const query = input.value.trim();
         if (query.length < 3) { hideDropdown(); return; }
         debounce = setTimeout(() => showResults(window.searchStudyReasons(query) || []), 120);
