@@ -286,81 +286,8 @@ window.initPatientDataModalHandlers = function () {
         _applyToggleVisibility('reqShowStudyTime', 'reqStudyTime');
     });
 
-    // ── Autocomplete en el campo Nombre y Apellido ──
-    (function _initNameFieldAutocomplete() {
-        const nameInput = document.getElementById('reqPatientName');
-        if (!nameInput) return;
-
-        nameInput.addEventListener('input', (e) => {
-            e.target.style.borderColor = '';
-        });
-
-        // Crear dropdown personalizado para el campo nombre
-        let nameDropdown = document.getElementById('patientNameAutocompleteDropdown');
-        if (!nameDropdown) {
-            nameDropdown = document.createElement('div');
-            nameDropdown.id = 'patientNameAutocompleteDropdown';
-            Object.assign(nameDropdown.style, {
-                position: 'absolute', zIndex: '9999',
-                background: 'var(--bg-card)', border: '1px solid var(--border)',
-                borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
-                maxHeight: '220px', overflowY: 'auto',
-                width: '100%', display: 'none', marginTop: '2px'
-            });
-            const wrap = nameInput.parentElement;
-            if (wrap) { wrap.style.position = 'relative'; wrap.appendChild(nameDropdown); }
-        }
-
-        function hideNameDropdown() { nameDropdown.style.display = 'none'; }
-
-        function showNameResults(results) {
-            if (!results.length) { hideNameDropdown(); return; }
-            const esc = typeof escapeHtml === 'function' ? escapeHtml : (s => (s||"").toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"));
-            nameDropdown.innerHTML = results.map((p, i) => {
-                const label = esc(p.name) + (p.dni ? ` — DNI ${esc(p.dni)}` : '') + (p.age ? `, ${esc(String(p.age))}a` : '');
-                return `<div data-idx="${i}" style="padding:0.5rem 0.85rem;cursor:pointer;font-size:0.82rem;border-bottom:1px solid var(--border);"
-                    onmouseenter="this.style.background='var(--bg-hover,#2a2a2a)'"
-                    onmouseleave="this.style.background=''">${label}</div>`;
-            }).join('');
-            nameDropdown.style.display = 'block';
-
-            nameDropdown.querySelectorAll('[data-idx]').forEach(el => {
-                el.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                    const p = results[parseInt(el.dataset.idx)];
-                    const setVal = (id, v) => { const el2 = document.getElementById(id); if (el2 && v != null) el2.value = v; };
-                    setVal('reqPatientName',        p.name);
-                    setVal('reqPatientDni',         p.dni);
-                    setVal('reqPatientAge',         p.age);
-                    setVal('reqPatientInsurance',   p.insurance);
-                    setVal('reqPatientAffiliateNum',p.affiliateNum);
-                    setVal('reqPatientSearch',      p.name + (p.dni ? ` — DNI ${p.dni}` : ''));
-                    const sexEl = document.getElementById('reqPatientSex');
-                    if (sexEl && p.sex) sexEl.value = p.sex;
-                    hideNameDropdown();
-                    if (typeof showToast === 'function') showToast(`✅ ${p.name}`, 'success');
-                });
-            });
-        }
-
-        let nameDebounce;
-        nameInput.addEventListener('input', () => {
-            clearTimeout(nameDebounce);
-            const query = nameInput.value.trim();
-            if (query.length < 2) { hideNameDropdown(); return; }
-            nameDebounce = setTimeout(() => {
-                const results = (typeof searchPatientRegistry === 'function')
-                    ? searchPatientRegistry(query) : [];
-                showNameResults(results);
-            }, 120);
-        });
-
-        nameInput.addEventListener('blur', () => {
-            setTimeout(hideNameDropdown, 200);
-        });
-
-        document.addEventListener('click', (e) => {
-            if (!nameInput.contains(e.target) && !nameDropdown.contains(e.target)) hideNameDropdown();
-        });
-    })();
+    // Limpiar borde de validación al escribir en nombre de paciente
+    document.getElementById('reqPatientName')?.addEventListener('input', (e) => {
+        e.target.style.borderColor = '';
+    });
 };
