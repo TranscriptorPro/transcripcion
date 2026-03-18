@@ -150,27 +150,18 @@ window.populatePatientDatalist = function() {
 
 // ---- Autocompletar campos al seleccionar — live search con dropdown personalizado ----
 window.initPatientRegistrySearch = function() {
-    const searchInput = document.getElementById('reqPatientSearch');
-    if (!searchInput) return;
-
-    // Mostrar/ocultar la caja de búsqueda según si hay pacientes guardados
-    const searchBox = searchInput.closest('.patient-search-box');
-    if (searchBox) {
-        searchBox.style.display = getRegistry().length > 0 ? 'block' : 'none';
-    }
+    const nameInput = document.getElementById('reqPatientName');
+    if (!nameInput) return;
 
     // Guard: no re-inicializar si ya está vinculado — evita listeners duplicados
-    if (searchInput._patientSearchBound) return;
-    searchInput._patientSearchBound = true;
+    if (nameInput._patientSearchBound) return;
+    nameInput._patientSearchBound = true;
 
-    // Desconectar el datalist nativo (no filtra en tiempo real)
-    searchInput.removeAttribute('list');
-
-    // Crear dropdown personalizado
-    let dropdown = document.getElementById('patientLiveSearchDropdown');
+    // Crear dropdown personalizado sobre el campo Nombre y Apellido
+    let dropdown = document.getElementById('patientNameDropdown');
     if (!dropdown) {
         dropdown = document.createElement('div');
-        dropdown.id = 'patientLiveSearchDropdown';
+        dropdown.id = 'patientNameDropdown';
         Object.assign(dropdown.style, {
             position: 'absolute', zIndex: '9999',
             background: 'var(--bg-card)', border: '1px solid var(--border)',
@@ -178,8 +169,7 @@ window.initPatientRegistrySearch = function() {
             maxHeight: '220px', overflowY: 'auto',
             width: '100%', display: 'none', marginTop: '2px'
         });
-        // El padre del input debe tener position:relative
-        const wrap = searchInput.parentElement;
+        const wrap = nameInput.parentElement;
         if (wrap) { wrap.style.position = 'relative'; wrap.appendChild(dropdown); }
     }
 
@@ -207,7 +197,6 @@ window.initPatientRegistrySearch = function() {
 
     function selectPatient(p) {
         const setVal = (id, v) => { const el2 = document.getElementById(id); if (el2 && v != null) el2.value = v; };
-        setVal('reqPatientSearch',      p.name + (p.dni ? ` — DNI ${p.dni}` : ''));
         setVal('reqPatientName',        p.name);
         setVal('reqPatientDni',         p.dni);
         setVal('reqPatientAge',         p.age);
@@ -240,9 +229,9 @@ window.initPatientRegistrySearch = function() {
 
     // Buscar mientras escribe (debounce 120ms)
     let debounceTimer;
-    searchInput.addEventListener('input', () => {
+    nameInput.addEventListener('input', () => {
         clearTimeout(debounceTimer);
-        const query = searchInput.value.trim();
+        const query = nameInput.value.trim();
         if (query.length < 2) { hideDropdown(); return; }
         debounceTimer = setTimeout(() => {
             const results = (typeof searchPatientRegistryBySurnamePrefix === 'function')
@@ -253,7 +242,7 @@ window.initPatientRegistrySearch = function() {
     });
 
     // Navegación por teclado
-    searchInput.addEventListener('keydown', (e) => {
+    nameInput.addEventListener('keydown', (e) => {
         if (dropdown.style.display === 'none') return;
         const items = dropdown.querySelectorAll('[data-idx]');
         if (!items.length) return;
@@ -272,13 +261,13 @@ window.initPatientRegistrySearch = function() {
     });
 
     // Cerrar dropdown al perder foco
-    searchInput.addEventListener('blur', () => {
-        setTimeout(hideDropdown, 200); // delay para permitir click en resultado
+    nameInput.addEventListener('blur', () => {
+        setTimeout(hideDropdown, 200);
     });
 
     // Cerrar al hacer click fuera
     document.addEventListener('click', (e) => {
-        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) hideDropdown();
+        if (!nameInput.contains(e.target) && !dropdown.contains(e.target)) hideDropdown();
     });
 };
 
