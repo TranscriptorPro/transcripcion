@@ -147,7 +147,9 @@ window.initComparisonViewHandlers = function (options) {
     document.getElementById('btnPrintStructured')?.addEventListener('click', () => {
         const compStructured = document.getElementById('comparisonStructured');
         if (!compStructured || !compStructured.innerHTML.trim()) return;
-        printPanelContent(compStructured.innerHTML, 'Informe Estructurado');
+        const clone = compStructured.cloneNode(true);
+        clone.querySelectorAll('.inline-review-btn, .no-print, .ai-note-panel').forEach(el => el.remove());
+        printPanelContent(clone.innerHTML, 'Informe Estructurado');
     });
 
     window.exitComparisonMode = exitComparisonMode;
