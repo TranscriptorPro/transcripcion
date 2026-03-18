@@ -187,7 +187,7 @@ window.initPatientDataModalHandlers = function () {
         header.setAttribute('contenteditable', 'false');
         const patientHtml = lines.length ? `<div class="patient-data-content">${lines.join(' &nbsp;·&nbsp; ')}</div>` : '';
         const studyHtml = studyLines.length ? `<div class="patient-data-content study-data-content">${studyLines.join(' &nbsp;·&nbsp; ')}</div>` : '';
-        header.innerHTML = `${patientHtml}${studyHtml}<button class="patient-data-edit-btn" title="Editar datos del paciente y estudio">✏️</button>`;
+        header.innerHTML = `<div class="patient-data-title">📋 Datos del Paciente y Estudio</div>${patientHtml}${studyHtml}<button class="patient-data-edit-btn" title="Editar datos del paciente y estudio">✏️</button>`;
         header.querySelector('.patient-data-edit-btn')?.addEventListener('click', () => {
             if (typeof window.openPatientDataModal === 'function') window.openPatientDataModal();
         });
@@ -203,7 +203,7 @@ window.initPatientDataModalHandlers = function () {
             if (oldP) oldP.remove();
             const patientHTML = lines.length ? `<div class="patient-data-content">${lines.join(' &nbsp;·&nbsp; ')}</div>` : '';
             const studyHTML = studyLines.length ? `<div class="patient-data-content study-data-content">${studyLines.join(' &nbsp;·&nbsp; ')}</div>` : '';
-            const headerHTML = `<div class="patient-data-header" contenteditable="false">${patientHTML}${studyHTML}<button class="patient-data-edit-btn" title="Editar datos del paciente y estudio">✏️</button></div>`;
+            const headerHTML = `<div class="patient-data-header" contenteditable="false"><div class="patient-data-title">📋 Datos del Paciente y Estudio</div>${patientHTML}${studyHTML}<button class="patient-data-edit-btn" title="Editar datos del paciente y estudio">✏️</button></div>`;
             temp.insertAdjacentHTML('afterbegin', headerHTML);
             window._lastStructuredHTML = temp.innerHTML;
         }

@@ -841,7 +841,7 @@ window.processPendingItem = async function(id) {
     const entry = queue.find(e => e.id === id);
     if (!entry) return;
     const editor = document.getElementById('editor');
-    if (editor) { editor.innerHTML = entry.text; }
+    if (editor) { editor.innerHTML = entry.text; editor.scrollTop = 0; }
     // Cerrar modal de pendientes
     document.getElementById('pendingQueueModal').style.display = 'none';
     // Ejecutar estructurado
@@ -851,6 +851,7 @@ window.processPendingItem = async function(id) {
             const rawMarkdown = await structureWithRetry(entry.text, entry.templateKey);
             const { body } = parseAIResponse(rawMarkdown);
             editor.innerHTML = body;
+            editor.scrollTop = 0;
             if (typeof saveEditorSnapshot === 'function') saveEditorSnapshot('Estructurado (pendiente)', 'structuring');
             removeFromStructurePendingQueue(id);
             if (typeof showToast === 'function') showToast('✅ Texto pendiente estructurado', 'success');
@@ -1069,6 +1070,7 @@ async function _doAutoStructure(options) {
         });
         const { body, note } = parseAIResponse(rawMarkdown);
         editor.innerHTML = body;
+        editor.scrollTop = 0;
         _setStructuringVisualState(false);
         window._lastStructuredHTML = body;
         if (typeof saveEditorSnapshot === 'function') saveEditorSnapshot('Estructurado con IA', 'structuring');
@@ -1152,6 +1154,7 @@ window.initStructurer = function () {
                 });
                 const { body, note } = parseAIResponse(rawMarkdown);
                 editor.innerHTML = body;
+                editor.scrollTop = 0;
                 _setStructuringVisualState(false);
                 window._lastStructuredHTML = body;
                 if (typeof saveEditorSnapshot === 'function') saveEditorSnapshot('Re-estructurado', 'structuring');

@@ -9,7 +9,7 @@
     <!-- PURGE: auto-purge al detectar nueva versión + ?purge manual. Preserva tema y color -->
     <script>
     (function() {
-        var APP_VERSION = 'v87'; // ← bump esto en cada deploy para forzar auto-purge
+        var APP_VERSION = 'v88'; // ← bump esto en cada deploy para forzar auto-purge
         try { window.APP_VERSION = APP_VERSION; } catch(_) {}
         var params = new URLSearchParams(window.location.search);
         var forcePurge = params.has('purge');
@@ -1548,6 +1548,9 @@
                     <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:1rem;">
                         Completá los datos del paciente para incluirlos en el informe.
                     </p>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.25rem;">
+                        <strong style="font-size:0.86rem;">👤 Datos del Paciente</strong>
+                    </div>
                     <!-- Buscador del registro de pacientes -->
                     <div class="patient-search-box" style="display:none;">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.35rem;">

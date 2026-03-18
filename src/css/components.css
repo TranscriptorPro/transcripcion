@@ -1731,6 +1731,13 @@
             color: var(--text-primary);
             user-select: none;
         }
+        .patient-data-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: 0.3rem;
+            letter-spacing: 0.02em;
+        }
         .patient-data-content {
             line-height: 1.6;
             margin-right: 0.5rem;
