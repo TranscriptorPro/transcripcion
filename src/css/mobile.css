@@ -7,57 +7,50 @@
 
     /* ── HEADER: más compacto ─────────────────────────────────────── */
     .header {
-        padding: 0.4rem 0.75rem;
+        padding: 0.35rem 0.6rem;
     }
 
     .header-logo {
-        height: 44px;
+        height: 38px;
     }
 
     .header-title {
-        font-size: 1.15rem;
+        font-size: 1rem;
         line-height: 1.1;
     }
 
     .header-subtitle {
-        font-size: 0.7rem;
+        font-size: 0.65rem;
     }
 
     .header-left {
-        gap: 0.5rem;
+        gap: 0.4rem;
     }
 
     .header-actions {
-        gap: 0.25rem;
+        gap: 0.15rem;
+        flex-wrap: nowrap;
     }
 
-    /* Botones del header más pequeños en mobile */
+    /* Todos los botones del header caben en una sola fila, más chicos */
     .header-actions .theme-toggle {
-        width: 30px;
-        height: 30px;
+        width: 26px;
+        height: 26px;
+        min-width: 26px;
     }
 
     .header-actions .theme-toggle svg {
-        width: 16px;
-        height: 16px;
+        width: 14px;
+        height: 14px;
     }
 
-    /* Slider Pro más compacto */
+    /* Pro toggle más compacto */
     .pro-toggle-container {
-        transform: scale(0.8);
+        transform: scale(0.72);
         transform-origin: center;
     }
 
-    /* Ocultar botones secundarios: Manual, Instalar PWA, Admin, Reset, Contacto */
-    .header-actions #btnManual,
-    .header-actions #btnInstallPwa,
-    .header-actions #btnAdminAccess,
-    .header-actions #btnResetApp,
-    .header-actions #btnContacto {
-        display: none !important;
-    }
-
-    /* ── Botón hamburguesa: creado por JS, oculto inicialmente ────── */
+    /* ── Botón hamburguesa en el header (creado por JS) ───────────── */
     .mobile-hamburger {
         display: none;
         width: 32px;
@@ -71,93 +64,53 @@
         color: #fff;
         font-size: 1.25rem;
         transition: background 0.2s;
-        z-index: 1;
+        flex-shrink: 0;
     }
 
     .mobile-hamburger:hover {
         background: rgba(255, 255, 255, 0.25);
     }
 
-    /* ── Botón menú overflow (⋮): visible solo en mobile ─────────── */
-    .mobile-overflow-btn {
-        display: flex;
-        width: 30px;
-        height: 30px;
-        border: none;
-        background: rgba(255, 255, 255, 0.15);
-        border-radius: 6px;
-        cursor: pointer;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-        font-size: 1.1rem;
-        font-weight: bold;
-        transition: background 0.2s;
-        z-index: 1;
-    }
-
-    .mobile-overflow-btn:hover {
-        background: rgba(255, 255, 255, 0.25);
-    }
-
-    /* ── Overflow dropdown ──────────────────────────────────────── */
+    /* Ocultar botón overflow ⋮ (ya no se usa: todos los botones visibles) */
+    .mobile-overflow-btn,
     .mobile-overflow-menu {
-        display: none;
-        position: absolute;
-        top: 100%;
-        right: 0;
-        margin-top: 4px;
-        background: var(--bg-card, #1e1e1e);
-        border: 1px solid var(--border, #333);
-        border-radius: 8px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-        min-width: 200px;
-        z-index: 10000;
-        overflow: hidden;
+        display: none !important;
     }
 
-    .mobile-overflow-menu.open {
-        display: block;
-    }
-
-    .mobile-overflow-item {
+    /* ── Botón colapsar sidebar (dentro del sidebar) ────────────────── */
+    .mobile-sidebar-collapser {
         display: flex;
         align-items: center;
-        gap: 0.6rem;
-        padding: 0.65rem 1rem;
+        justify-content: flex-end;
+        gap: 0.35rem;
+        width: 100%;
+        padding: 0.45rem 0.75rem;
         background: none;
         border: none;
-        width: 100%;
-        text-align: left;
-        color: var(--text-primary, #e0e0e0);
-        font-size: 0.85rem;
+        border-bottom: 1px solid var(--border, rgba(0,0,0,0.12));
         cursor: pointer;
+        font-size: 0.8rem;
+        color: var(--text-secondary, #888);
         transition: background 0.15s;
     }
 
-    .mobile-overflow-item:hover {
-        background: var(--bg-hover, rgba(255,255,255,0.08));
+    .mobile-sidebar-collapser:hover {
+        background: rgba(0, 0, 0, 0.04);
     }
 
-    .mobile-overflow-item svg {
-        width: 18px;
-        height: 18px;
-        fill: var(--text-secondary, #aaa);
-        flex-shrink: 0;
-    }
-
-    /* ── LAYOUT: una sola columna, un panel a la vez ─────────── */
+    /* ── LAYOUT: una sola columna, sin padding para que sidebar vaya filo a filo ── */
     .main-container {
         grid-template-columns: 1fr !important;
-        padding: 0.5rem;
+        padding: 0 !important;
         gap: 0;
     }
 
-    /* ── SIDEBAR: ocupa toda la pantalla por defecto ─────────────── */
+    /* ── SIDEBAR: full-width, sin border-radius lateral ──────────── */
     .sidebar {
         width: 100%;
         max-height: none;
         overflow-y: auto;
+        border-radius: 0 !important;
     }
 
     /* ── EDITOR: oculto por defecto en mobile ────────────────────── */
