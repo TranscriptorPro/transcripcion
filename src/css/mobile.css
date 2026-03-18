@@ -1,0 +1,218 @@
+/* ══════════════════════════════════════════════════════════════════════
+   mobile.css — Adaptaciones EXCLUSIVAS para pantallas ≤ 768px.
+   TODO el contenido está dentro de @media. NO afecta desktop en absoluto.
+   ══════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+
+    /* ── HEADER: más compacto ─────────────────────────────────────── */
+    .header {
+        padding: 0.4rem 0.75rem;
+    }
+
+    .header-logo {
+        height: 44px;
+    }
+
+    .header-title {
+        font-size: 1.15rem;
+        line-height: 1.1;
+    }
+
+    .header-subtitle {
+        font-size: 0.7rem;
+    }
+
+    .header-left {
+        gap: 0.5rem;
+    }
+
+    .header-actions {
+        gap: 0.25rem;
+    }
+
+    /* Botones del header más pequeños en mobile */
+    .header-actions .theme-toggle {
+        width: 30px;
+        height: 30px;
+    }
+
+    .header-actions .theme-toggle svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    /* Slider Pro más compacto */
+    .pro-toggle-container {
+        transform: scale(0.8);
+        transform-origin: center;
+    }
+
+    /* Ocultar botones secundarios: Manual, Instalar PWA, Admin, Reset, Contacto */
+    .header-actions #btnManual,
+    .header-actions #btnInstallPwa,
+    .header-actions #btnAdminAccess,
+    .header-actions #btnResetApp,
+    .header-actions #btnContacto {
+        display: none !important;
+    }
+
+    /* ── Botón hamburguesa: visible solo en mobile, oculto inicialmente ── */
+    .mobile-hamburger {
+        display: flex;
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 6px;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 1.25rem;
+        transition: background 0.2s;
+        z-index: 1;
+    }
+
+    .mobile-hamburger:hover {
+        background: rgba(255, 255, 255, 0.25);
+    }
+
+    /* ── Botón menú overflow (⋮): visible solo en mobile ─────────── */
+    .mobile-overflow-btn {
+        display: flex;
+        width: 30px;
+        height: 30px;
+        border: none;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 6px;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 1.1rem;
+        font-weight: bold;
+        transition: background 0.2s;
+        z-index: 1;
+    }
+
+    .mobile-overflow-btn:hover {
+        background: rgba(255, 255, 255, 0.25);
+    }
+
+    /* ── Overflow dropdown ──────────────────────────────────────── */
+    .mobile-overflow-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        margin-top: 4px;
+        background: var(--bg-card, #1e1e1e);
+        border: 1px solid var(--border, #333);
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        min-width: 200px;
+        z-index: 10000;
+        overflow: hidden;
+    }
+
+    .mobile-overflow-menu.open {
+        display: block;
+    }
+
+    .mobile-overflow-item {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.65rem 1rem;
+        background: none;
+        border: none;
+        width: 100%;
+        text-align: left;
+        color: var(--text-primary, #e0e0e0);
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+
+    .mobile-overflow-item:hover {
+        background: var(--bg-hover, rgba(255,255,255,0.08));
+    }
+
+    .mobile-overflow-item svg {
+        width: 18px;
+        height: 18px;
+        fill: var(--text-secondary, #aaa);
+        flex-shrink: 0;
+    }
+
+    /* ── LAYOUT: sidebar ocultable ──────────────────────────────── */
+    .main-container {
+        grid-template-columns: 1fr !important;
+        padding: 0.75rem;
+        gap: 0.75rem;
+    }
+
+    /* Estado por defecto en mobile: sidebar visible, ocupa full width */
+    .sidebar {
+        width: 100%;
+        max-height: none;
+        overflow-y: auto;
+    }
+
+    /* Cuando se colapsa tras estructurar */
+    .sidebar.mobile-hidden {
+        display: none !important;
+    }
+
+    /* hamburguesa oculta mientras sidebar es visible */
+    .mobile-hamburger {
+        display: none;
+    }
+
+    /* hamburguesa se muestra cuando sidebar está oculto */
+    .sidebar.mobile-hidden ~ .mobile-hamburger,
+    body.mobile-sidebar-collapsed .mobile-hamburger {
+        display: flex;
+    }
+
+    /* ── EDITOR AREA: ajustes mobile ────────────────────────────── */
+    .editor-area {
+        min-height: 60vh;
+    }
+
+    /* Toolbar del editor: wrap para que quepan los botones */
+    .editor-toolbar {
+        flex-wrap: wrap;
+        gap: 0.2rem;
+        padding: 0.3rem;
+    }
+
+    .editor-toolbar button,
+    .editor-toolbar select {
+        min-width: 28px;
+        height: 28px;
+        font-size: 0.75rem;
+    }
+
+    /* ── Botones de acción del editor ───────────────────────────── */
+    .fixed-buttons-container {
+        flex-wrap: wrap;
+        gap: 0.35rem;
+    }
+
+    .fixed-buttons-container .btn {
+        font-size: 0.75rem;
+        padding: 0.35rem 0.6rem;
+    }
+
+}
+
+/* Desktop: ocultar elementos mobile-only */
+@media (min-width: 769px) {
+    .mobile-hamburger,
+    .mobile-overflow-btn,
+    .mobile-overflow-menu {
+        display: none !important;
+    }
+}

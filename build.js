@@ -103,6 +103,7 @@ const JS_FILES = [
     'src/js/features/reportHistoryPolicyUtils.js',
     'src/js/features/reportHistory.js',
     'src/js/features/userGuide.js',
+    'src/js/utils/mobileUI.js',
 ];
 
 // ─── Archivos CSS ─────────────────────────────────────────────────
@@ -113,6 +114,7 @@ const CSS_FILES = [
     'src/css/components.css',
     'src/css/preview-print.css',
     'src/css/animations.css',
+    'src/css/mobile.css',
 ];
 
 const DIST = path.join(__dirname, 'dist');
