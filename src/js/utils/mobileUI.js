@@ -222,12 +222,18 @@
         }
     }
 
+    /* Ojo abierto = ver original (estado normal), Ojo con pestañas = viendo original (volver a estructurado) */
     var SVG_EYE_OPEN = '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>';
-    var SVG_EYE_OFF = '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></svg>';
+    var SVG_EYE_LASHES = '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">' +
+        '<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>' +
+        '<line x1="12" y1="2" x2="12" y2="5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' +
+        '<line x1="5.5" y1="4" x2="7" y2="6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' +
+        '<line x1="18.5" y1="4" x2="17" y2="6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' +
+        '</svg>';
 
     function _applyOEIcon(btn) {
         var s = !!btn._showingOriginal;
-        btn.innerHTML = s ? SVG_EYE_OFF : SVG_EYE_OPEN;
+        btn.innerHTML = s ? SVG_EYE_LASHES : SVG_EYE_OPEN;
         btn.title = s ? 'Volver a vista estructurada' : 'Ver texto original';
     }
 
@@ -235,14 +241,18 @@
         var btn = document.getElementById('btnRestoreOriginal');
         if (!btn) return;
         _applyOEIcon(btn);
-        if (!btn._mobileClickHooked) {
-            btn._mobileClickHooked = true;
-            btn.addEventListener('click', function () {
-                setTimeout(function () {
-                    if (!isMobile()) return;
+        if (!btn._mobileObserverSet) {
+            btn._mobileObserverSet = true;
+            /* MutationObserver: cada vez que ui.js o structurer.js cambie innerHTML, re-aplicar icono */
+            var observer = new MutationObserver(function () {
+                if (!isMobile()) return;
+                /* Verificar si el contenido actual NO es nuestro SVG */
+                var html = btn.innerHTML;
+                if (html.indexOf('viewBox') === -1) {
                     _applyOEIcon(btn);
-                }, 60);
+                }
             });
+            observer.observe(btn, { childList: true, subtree: true, characterData: true });
         }
         var cmp = document.getElementById('btnCompareView');
         if (cmp) cmp.style.display = 'none';
@@ -317,12 +327,20 @@
             });
 
             panel.addEventListener('click', function (ev) {
-                var target = ev.target;
-                if (target && (target.tagName === 'BUTTON' || target.tagName === 'SELECT')) {
+                var target = ev.target.closest('button');
+                /* Solo cerrar para BUTTON que ejecutan comandos, NUNCA para SELECT ni elementos del shape picker */
+                if (target && target.tagName === 'BUTTON' && !target.classList.contains('mobile-shape-btn') && !target.classList.contains('mobile-group-trigger')) {
                     setTimeout(function () {
                         wrapper.classList.remove('open');
-                    }, 120);
+                    }, 180);
                 }
+            });
+
+            /* Para SELECT: cerrar al cambiar valor (change), no al click */
+            panel.addEventListener('change', function () {
+                setTimeout(function () {
+                    wrapper.classList.remove('open');
+                }, 200);
             });
 
             wrapper.appendChild(trigger);
@@ -468,6 +486,15 @@
             if (!el) return;
             el.classList.add('mobile-toolbar-standalone');
             toolbar.appendChild(el);
+        });
+
+        /* Asegurar que los botones dentro de paneles ejecuten su acción sin interferir
+           con otros elementos (ej: inline review). Capturar click en botones de formato
+           y prevenir propagación extra después de ejecutar su comando. */
+        toolbar.querySelectorAll('.mobile-toolbar-panel .toolbar-btn').forEach(function (btn) {
+            btn.addEventListener('click', function (ev) {
+                ev.stopPropagation();
+            }, true);
         });
 
         document.addEventListener('click', function (ev) {
