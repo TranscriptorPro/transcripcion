@@ -448,13 +448,12 @@
         border: 1px solid var(--border);
         background: var(--bg-card);
         box-shadow: 0 8px 26px rgba(0,0,0,0.24);
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 0.28rem;
     }
 
     #editorToolbar.mobile-grouped .mobile-toolbar-group.open .mobile-toolbar-panel {
         display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.28rem;
     }
 
     #editorToolbar.mobile-grouped .mobile-toolbar-panel .toolbar-btn,
