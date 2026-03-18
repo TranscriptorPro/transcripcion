@@ -8,8 +8,15 @@
 window.generateQRCode = function (text) {
     try {
         if (typeof qrcode !== 'function') return '';
+        // Normalizar: eliminar diacríticos (tildes, acentos, etc.) para evitar
+        // corrupción de caracteres en la librería qrcode-generator (solo acepta ASCII).
+        // á→a, é→e, í→i, ó→o, ú→u, ñ→n, Á→A, etc.
+        const normalized = String(text || 'Transcriptor Medico Pro')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')   // elimina combinadores diacríticos
+            .replace(/[^\x00-\x7F]/g, '');     // elimina cualquier otro no-ASCII residual
         const qr = qrcode(0, 'M');
-        qr.addData(text || 'Transcriptor Médico Pro');
+        qr.addData(normalized);
         qr.make();
         return qr.createDataURL(4, 0);
     } catch (e) {
