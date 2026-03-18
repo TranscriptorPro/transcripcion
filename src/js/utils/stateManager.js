@@ -1,5 +1,16 @@
 // ============ MODE SELECTOR (PRO/NORMAL) & STATE MANAGER ============
 
+// ---- Mobile sidebar auto-collapse helper ----
+function _mobileSidebarAutoCollapse() {
+    if (window.innerWidth > 768) return; // solo mobile
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar && sidebar.classList.contains('mobile-open')) {
+        sidebar.classList.remove('mobile-open');
+        const btn = document.getElementById('btnMobileSidebarToggle');
+        if (btn) btn.title = 'Mostrar panel lateral';
+    }
+}
+
 /**
  * Detecta si el HTML del editor parece un informe ya estructurado.
  * Criterio: contiene encabezados (h1-h4) o al menos 2 secciones con <strong>.
@@ -29,6 +40,9 @@ window.updateButtonsVisibility = function (state) {
     const isStructuring  = state === 'STRUCTURING';
     const isTranscribed  = ['TRANSCRIBED', 'STRUCTURED', 'PREVIEWED'].includes(state);
     const isStructured   = ['STRUCTURED', 'PREVIEWED'].includes(state);
+
+    // Auto-colapsar sidebar en mobile cuando el editor tiene contenido
+    if (isTranscribed) _mobileSidebarAutoCollapse();
     const isProMode      = window.currentMode === 'pro'
         || (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'PRO');
     const hasAdvancedPlan = (typeof CLIENT_CONFIG !== 'undefined'
@@ -362,3 +376,14 @@ window.disableButtons = function () {
                  'structureBtn', 'downloadPdfBtn', 'btnConfigPdfMain'];
     ids.forEach(id => { const b = document.getElementById(id); if (b) b.disabled = true; });
 }
+
+// ---- Mobile sidebar toggle button ----
+(function _initMobileSidebarToggle() {
+    const btn = document.getElementById('btnMobileSidebarToggle');
+    const sidebar = document.querySelector('.sidebar');
+    if (!btn || !sidebar) return;
+    btn.addEventListener('click', () => {
+        const isOpen = sidebar.classList.toggle('mobile-open');
+        btn.title = isOpen ? 'Ocultar panel lateral' : 'Mostrar panel lateral';
+    });
+})();
