@@ -135,8 +135,6 @@
 
         compactInlineReviewLabel();
         hideQuickProfileSelector();
-        moveCopyButtonIntoToolbar();
-        moveMedicalCheckIntoToolbar();
         disableComparisonOnMobile();
         applyActionOrder();
         compactDownloadButton();
@@ -164,38 +162,6 @@
                 el.style.display = 'none';
             }
         });
-    }
-
-    function moveCopyButtonIntoToolbar() {
-        var copyBtn = document.getElementById('copyBtn');
-        var toolbar = document.getElementById('editorToolbar');
-        if (!copyBtn || !toolbar) return;
-        if (copyBtn.parentElement === toolbar) return;
-
-        copyBtn.classList.remove('btn-action-green');
-        copyBtn.classList.add('toolbar-btn');
-        copyBtn.title = 'Copiar todo';
-        copyBtn.setAttribute('aria-label', 'Copiar todo');
-        toolbar.appendChild(copyBtn);
-    }
-
-    function moveMedicalCheckIntoToolbar() {
-        var medBtn = document.getElementById('btnMedicalCheck');
-        var toolbar = document.getElementById('editorToolbar');
-        var decreaseFontBtn = document.getElementById('decreaseFontBtn');
-        if (!medBtn || !toolbar) return;
-
-        medBtn.classList.remove('btn', 'btn-outline', 'btn-sm-icon');
-        medBtn.classList.add('toolbar-btn');
-        medBtn.title = 'Revisar terminología médica';
-        medBtn.setAttribute('aria-label', 'Revisar terminología médica');
-        medBtn.innerHTML = '🩺';
-
-        if (decreaseFontBtn && decreaseFontBtn.nextSibling !== medBtn) {
-            decreaseFontBtn.insertAdjacentElement('afterend', medBtn);
-        } else if (!decreaseFontBtn && medBtn.parentElement !== toolbar) {
-            toolbar.appendChild(medBtn);
-        }
     }
 
     function disableComparisonOnMobile() {
@@ -257,26 +223,24 @@
     }
 
     function syncCompactViewButtons() {
-        var btnRestoreOriginal = document.getElementById('btnRestoreOriginal');
-        var btnCompareView = document.getElementById('btnCompareView');
-        if (!btnRestoreOriginal && !btnCompareView) return;
-
-        if (btnRestoreOriginal) {
-            var showingOriginal = !!btnRestoreOriginal._showingOriginal;
-            var letter = showingOriginal ? 'E' : 'O';
-            btnRestoreOriginal.innerHTML = ''
-                + '<span class="mobile-oe-icon" aria-hidden="true">'
-                + '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 5c-4.2 0-7.9 2.5-9.5 6 1.6 3.5 5.3 6 9.5 6s7.9-2.5 9.5-6c-1.6-3.5-5.3-6-9.5-6zm0 9.5c-1.9 0-3.5-1.6-3.5-3.5S10.1 7.5 12 7.5s3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5z"></path></svg>'
-                + '</span>'
-                + '<span class="mobile-oe-letter">' + letter + '</span>';
-            btnRestoreOriginal.title = showingOriginal
-                ? 'Volver a vista estructurada'
-                : 'Ver vista original';
+        var btn = document.getElementById('btnRestoreOriginal');
+        if (!btn) return;
+        var s = !!btn._showingOriginal;
+        btn.textContent = s ? '\u21BB' : '\u21A9';
+        btn.title = s ? 'Volver a vista estructurada' : 'Ver texto original';
+        if (!btn._mobileClickHooked) {
+            btn._mobileClickHooked = true;
+            btn.addEventListener('click', function () {
+                setTimeout(function () {
+                    if (!isMobile()) return;
+                    var showing = !!btn._showingOriginal;
+                    btn.textContent = showing ? '\u21BB' : '\u21A9';
+                    btn.title = showing ? 'Volver a vista estructurada' : 'Ver texto original';
+                }, 60);
+            });
         }
-
-        if (btnCompareView) {
-            btnCompareView.style.display = 'none';
-        }
+        var cmp = document.getElementById('btnCompareView');
+        if (cmp) cmp.style.display = 'none';
     }
 
     function buildMobileToolbarGroups() {
@@ -299,7 +263,7 @@
             btn.className = 'toolbar-btn mobile-group-trigger';
             btn.title = title;
             btn.setAttribute('aria-label', title);
-            btn.innerHTML = iconSvg + '<span class="mobile-group-caret">▾</span>';
+            btn.innerHTML = iconSvg;
             return btn;
         }
 
@@ -334,6 +298,17 @@
                 var isOpen = wrapper.classList.contains('open');
                 closeAllGroups(wrapper);
                 wrapper.classList.toggle('open', !isOpen);
+                if (!isOpen) {
+                    requestAnimationFrame(function () {
+                        var tRect = trigger.getBoundingClientRect();
+                        panel.style.top = (tRect.bottom + 4) + 'px';
+                        panel.style.left = tRect.left + 'px';
+                        var pRect = panel.getBoundingClientRect();
+                        if (pRect.right > window.innerWidth - 8) {
+                            panel.style.left = Math.max(4, window.innerWidth - pRect.width - 8) + 'px';
+                        }
+                    });
+                }
             });
 
             panel.addEventListener('click', function (ev) {
@@ -436,7 +411,26 @@
             }
         );
 
-        ['clearFormatBtn', 'toggleFindReplace', 'copyBtn', 'btnMedicalCheck'].forEach(function (id) {
+        var copyBtn = findEl('copyBtn');
+        if (copyBtn) {
+            copyBtn.classList.remove('btn-action-green');
+            copyBtn.classList.add('toolbar-btn', 'mobile-toolbar-standalone');
+            copyBtn.title = 'Copiar todo';
+            copyBtn.setAttribute('aria-label', 'Copiar todo');
+            toolbar.appendChild(copyBtn);
+        }
+
+        var medBtn = findEl('btnMedicalCheck');
+        if (medBtn) {
+            medBtn.classList.remove('btn', 'btn-outline', 'btn-sm-icon');
+            medBtn.classList.add('toolbar-btn', 'mobile-toolbar-standalone');
+            medBtn.title = 'Diccionario médico';
+            medBtn.setAttribute('aria-label', 'Diccionario médico');
+            medBtn.innerHTML = '\uD83E\uDE7A';
+            toolbar.appendChild(medBtn);
+        }
+
+        ['clearFormatBtn', 'toggleFindReplace'].forEach(function (id) {
             var el = findEl(id);
             if (!el) return;
             el.classList.add('mobile-toolbar-standalone');
@@ -448,6 +442,8 @@
                 closeAllGroups(null);
             }
         });
+
+        window.addEventListener('scroll', function () { closeAllGroups(null); }, true);
 
         toolbar.dataset.mobileGroupsReady = '1';
     }

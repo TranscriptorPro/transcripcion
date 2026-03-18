@@ -244,7 +244,7 @@
     .editor-actions {
         display: flex;
         flex-wrap: wrap !important;
-        gap: 0.32rem !important;
+        gap: 0.5rem !important;
         align-items: center;
         justify-content: flex-start;
     }
@@ -359,28 +359,9 @@
         opacity: 0.95;
     }
 
-    /* Toggle Original/Estructurado: icono + letra grande */
+    /* Toggle Original/Estructurado */
     #btnRestoreOriginal {
-        border-radius: 10px !important;
-        gap: 3px;
-    }
-
-    #btnRestoreOriginal .mobile-oe-icon {
-        width: 18px;
-        height: 18px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    #btnRestoreOriginal .mobile-oe-icon svg {
-        width: 18px !important;
-        height: 18px !important;
-    }
-
-    #btnRestoreOriginal .mobile-oe-letter {
-        font-size: 0.98rem;
-        font-weight: 800;
+        font-size: 1.4rem;
         line-height: 1;
     }
 
@@ -404,12 +385,11 @@
 
     /* Toolbar móvil agrupado: una sola fila con menús desplegables */
     #editorToolbar.mobile-grouped {
-        flex-wrap: nowrap !important;
-        overflow-x: auto;
-        overflow-y: visible;
-        gap: 0.24rem !important;
-        padding: 0.26rem !important;
-        -webkit-overflow-scrolling: touch;
+        flex-wrap: wrap !important;
+        overflow: visible !important;
+        gap: 3px !important;
+        padding: 0.25rem !important;
+        position: relative;
     }
 
     #editorToolbar.mobile-grouped .toolbar-divider {
@@ -422,27 +402,24 @@
     }
 
     #editorToolbar.mobile-grouped .mobile-group-trigger {
-        min-width: 33px;
-        height: 30px;
-        padding: 0 6px;
-        gap: 4px;
-        border-radius: 7px;
-    }
-
-    #editorToolbar.mobile-grouped .mobile-group-trigger .mobile-group-caret {
-        font-size: 0.58rem;
-        opacity: 0.85;
-        line-height: 1;
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        padding: 0;
+        border-radius: 6px;
+        border: 2px solid var(--border, rgba(0,0,0,0.15));
+        background: var(--bg-card, #f8f8f8);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
 
     #editorToolbar.mobile-grouped .mobile-toolbar-panel {
         display: none;
-        position: absolute;
-        top: calc(100% + 4px);
-        left: 0;
-        z-index: 2500;
+        position: fixed;
+        z-index: 9999;
         min-width: 164px;
-        max-width: 78vw;
+        max-width: 85vw;
         padding: 0.34rem;
         border-radius: 10px;
         border: 1px solid var(--border);
@@ -470,6 +447,14 @@
 
     #editorToolbar.mobile-grouped .mobile-toolbar-standalone {
         flex: 0 0 auto;
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        border-radius: 6px;
     }
 
     /* Copiar y diccionario como herramientas del toolbar (móvil) */
