@@ -30,10 +30,10 @@
 
     /* ─── 1. Menú overflow (⋮): eliminado — todos los botones visibles en header */
 
-    /* ─── 2. Botón hamburguesa (☰) en el header — aparece cuando sidebar está oculto */
+    /* ─── 2. Botón hamburguesa (☰) en header-left, a la izquierda del título */
     function buildHamburgerButton() {
-        var header = document.querySelector('.header-content');
-        if (!header) return;
+        var headerLeft = document.querySelector('.header-left');
+        if (!headerLeft) return;
 
         var btn = document.createElement('button');
         btn.className = 'mobile-hamburger';
@@ -42,15 +42,15 @@
         btn.setAttribute('aria-label', 'Mostrar panel lateral');
         btn.textContent = '☰';
 
-        // Insertar al inicio del header (antes de header-left)
-        header.insertBefore(btn, header.firstChild);
+        // Insertar al inicio de header-left (antes del logo)
+        headerLeft.insertBefore(btn, headerLeft.firstChild);
 
         btn.addEventListener('click', function () {
             showSidebar();
         });
     }
 
-    /* ─── 3. Botón colapsar dentro del sidebar ─────────────────────── */
+    /* ─── 3. Botón hamburguesa (☰) dentro del sidebar (esquina sup-izq) ─── */
     function buildSidebarCollapseButton() {
         var sidebar = document.querySelector('.sidebar');
         if (!sidebar) return;
@@ -58,8 +58,9 @@
         var btn = document.createElement('button');
         btn.className = 'mobile-sidebar-collapser';
         btn.id = 'mobileSidebarCollapser';
-        btn.title = 'Ir al editor';
-        btn.innerHTML = '&#8592; Ir al editor';   // ← Ir al editor
+        btn.title = 'Ocultar panel';
+        btn.setAttribute('aria-label', 'Ocultar panel lateral');
+        btn.textContent = '☰';
 
         btn.addEventListener('click', function () {
             hideSidebar();

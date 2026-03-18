@@ -5,26 +5,35 @@
 
 @media (max-width: 768px) {
 
-    /* ── HEADER: más compacto ─────────────────────────────────────── */
+    /* ── HEADER: compacto, SIEMPRE horizontal (override de components.css ≤500px) ── */
     .header {
-        padding: 0.35rem 0.6rem;
+        padding: 0.3rem 0.5rem !important;
+    }
+
+    .header-content {
+        flex-direction: row !important;
+        gap: 0.4rem !important;
+        align-items: center !important;
+    }
+
+    .header-left {
+        flex-direction: row !important;
+        text-align: left !important;
+        gap: 0.35rem;
+        align-items: center;
     }
 
     .header-logo {
-        height: 38px;
+        height: 34px !important;
     }
 
     .header-title {
-        font-size: 1rem;
+        font-size: 0.95rem !important;
         line-height: 1.1;
     }
 
     .header-subtitle {
-        font-size: 0.65rem;
-    }
-
-    .header-left {
-        gap: 0.4rem;
+        font-size: 0.6rem !important;
     }
 
     .header-actions {
@@ -32,7 +41,7 @@
         flex-wrap: nowrap;
     }
 
-    /* Todos los botones del header caben en una sola fila, más chicos */
+    /* Todos los botones del header en una sola fila, compactos */
     .header-actions .theme-toggle {
         width: 26px;
         height: 26px;
@@ -44,17 +53,18 @@
         height: 14px;
     }
 
-    /* Pro toggle más compacto */
+    /* Pro toggle compacto + menos margen */
     .pro-toggle-container {
-        transform: scale(0.72);
+        transform: scale(0.7);
         transform-origin: center;
+        margin: 0 -4px;
     }
 
-    /* ── Botón hamburguesa en el header (creado por JS) ───────────── */
+    /* ── Hamburguesa en el header (dentro de header-left, antes del logo) ── */
     .mobile-hamburger {
         display: none;
-        width: 32px;
-        height: 32px;
+        width: 28px;
+        height: 28px;
         border: none;
         background: rgba(255, 255, 255, 0.15);
         border-radius: 6px;
@@ -62,7 +72,7 @@
         align-items: center;
         justify-content: center;
         color: #fff;
-        font-size: 1.25rem;
+        font-size: 1.15rem;
         transition: background 0.2s;
         flex-shrink: 0;
     }
@@ -71,46 +81,54 @@
         background: rgba(255, 255, 255, 0.25);
     }
 
-    /* Ocultar botón overflow ⋮ (ya no se usa: todos los botones visibles) */
+    /* Ocultar botón overflow ⋮ (ya no se usa) */
     .mobile-overflow-btn,
     .mobile-overflow-menu {
         display: none !important;
     }
 
-    /* ── Botón colapsar sidebar (dentro del sidebar) ────────────────── */
+    /* ── Hamburguesa dentro del sidebar (esquina superior izquierda) ── */
     .mobile-sidebar-collapser {
         display: flex;
         align-items: center;
-        justify-content: flex-end;
-        gap: 0.35rem;
-        width: 100%;
-        padding: 0.45rem 0.75rem;
-        background: none;
-        border: none;
-        border-bottom: 1px solid var(--border, rgba(0,0,0,0.12));
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        position: absolute;
+        top: 0.4rem;
+        left: 0.5rem;
+        background: var(--bg-card, #f0f0f0);
+        border: 1px solid var(--border, rgba(0,0,0,0.15));
+        border-radius: 6px;
         cursor: pointer;
-        font-size: 0.8rem;
-        color: var(--text-secondary, #888);
+        font-size: 1.15rem;
+        color: var(--text-primary, #333);
         transition: background 0.15s;
+        z-index: 10;
+        padding: 0;
     }
 
     .mobile-sidebar-collapser:hover {
-        background: rgba(0, 0, 0, 0.04);
+        background: var(--bg-hover, rgba(0, 0, 0, 0.06));
     }
 
-    /* ── LAYOUT: una sola columna, sin padding para que sidebar vaya filo a filo ── */
+    /* ── LAYOUT: full-width (override components.css ≤900px y ≤500px) ── */
     .main-container {
         grid-template-columns: 1fr !important;
         padding: 0 !important;
-        gap: 0;
+        gap: 0 !important;
+        max-width: 100% !important;
     }
 
-    /* ── SIDEBAR: full-width, sin border-radius lateral ──────────── */
+    /* ── SIDEBAR: full-width, position relative para el ☰ absoluto ── */
     .sidebar {
-        width: 100%;
+        width: 100% !important;
+        max-width: 100% !important;
         max-height: none;
         overflow-y: auto;
         border-radius: 0 !important;
+        position: relative;
+        padding-top: 2.2rem;
     }
 
     /* ── EDITOR: oculto por defecto en mobile ────────────────────── */
@@ -129,17 +147,16 @@
         min-height: 80vh;
     }
 
-    /* ── Hamburguesa: oculta cuando sidebar visible ──────────────── */
+    /* ── Hamburguesa header: oculta cuando sidebar visible ──────── */
     .mobile-hamburger {
         display: none !important;
     }
 
-    /* Hamburguesa visible solo cuando sidebar está oculto */
     body.mobile-sidebar-collapsed .mobile-hamburger {
         display: flex !important;
     }
 
-    /* Toolbar del editor: wrap para que quepan los botones */
+    /* ── Editor toolbar wrapping ─────────────────────────────────── */
     .editor-toolbar {
         flex-wrap: wrap;
         gap: 0.2rem;
@@ -153,7 +170,7 @@
         font-size: 0.75rem;
     }
 
-    /* ── Botones de acción del editor ───────────────────────────── */
+    /* ── Botones de acción del editor ────────────────────────────── */
     .fixed-buttons-container {
         flex-wrap: wrap;
         gap: 0.35rem;
@@ -170,7 +187,8 @@
 @media (min-width: 769px) {
     .mobile-hamburger,
     .mobile-overflow-btn,
-    .mobile-overflow-menu {
+    .mobile-overflow-menu,
+    .mobile-sidebar-collapser {
         display: none !important;
     }
 }
