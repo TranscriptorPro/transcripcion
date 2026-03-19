@@ -329,7 +329,7 @@
             panel.addEventListener('click', function (ev) {
                 var target = ev.target.closest('button');
                 /* Solo cerrar para BUTTON que ejecutan comandos, NUNCA para SELECT ni elementos del shape picker */
-                if (target && target.tagName === 'BUTTON' && !target.classList.contains('mobile-shape-btn') && !target.classList.contains('mobile-group-trigger')) {
+                if (target && target.tagName === 'BUTTON' && !target.classList.contains('mobile-shape-btn') && !target.classList.contains('mobile-shape-toggle') && !target.classList.contains('mobile-group-trigger')) {
                     setTimeout(function () {
                         wrapper.classList.remove('open');
                     }, 180);
@@ -385,6 +385,69 @@
             function (panel) {
                 var editor = document.getElementById('editor');
 
+                function _saveEditorRange() {
+                    if (!editor) return;
+                    var sel = window.getSelection && window.getSelection();
+                    if (!sel || sel.rangeCount === 0) return;
+                    var r = sel.getRangeAt(0);
+                    var container = r.commonAncestorContainer;
+                    if (container && (editor.contains(container) || container === editor)) {
+                        editor._mobileSavedRange = r.cloneRange();
+                    }
+                }
+
+                function _insertHtmlAtCursor(html) {
+                    if (!editor) return;
+                    var range = editor._mobileSavedRange || null;
+                    editor.focus();
+                    if (range) {
+                        var sel = window.getSelection && window.getSelection();
+                        if (sel) {
+                            sel.removeAllRanges();
+                            sel.addRange(range);
+                        }
+                    }
+                    try {
+                        document.execCommand('insertHTML', false, html);
+                    } catch (_) {
+                        if (!range) {
+                            range = document.createRange();
+                            range.selectNodeContents(editor);
+                            range.collapse(false);
+                        }
+                        var temp = document.createElement('div');
+                        temp.innerHTML = html;
+                        var frag = document.createDocumentFragment();
+                        var node;
+                        var lastNode = null;
+                        while ((node = temp.firstChild)) {
+                            lastNode = frag.appendChild(node);
+                        }
+                        range.deleteContents();
+                        range.insertNode(frag);
+                        if (lastNode) {
+                            range = range.cloneRange();
+                            range.setStartAfter(lastNode);
+                            range.collapse(true);
+                            var s = window.getSelection && window.getSelection();
+                            if (s) {
+                                s.removeAllRanges();
+                                s.addRange(range);
+                            }
+                        }
+                    }
+                    _saveEditorRange();
+                    editor.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+
+                if (editor && !editor._mobileRangeHooked) {
+                    editor._mobileRangeHooked = true;
+                    ['mouseup', 'keyup', 'touchend'].forEach(function (evName) {
+                        editor.addEventListener(evName, _saveEditorRange);
+                    });
+                    editor.addEventListener('focus', _saveEditorRange);
+                }
+
                 var imgBtn = document.createElement('button');
                 imgBtn.type = 'button';
                 imgBtn.className = 'toolbar-btn';
@@ -393,7 +456,7 @@
 
                 var shapeBtn = document.createElement('button');
                 shapeBtn.type = 'button';
-                shapeBtn.className = 'toolbar-btn';
+                shapeBtn.className = 'toolbar-btn mobile-shape-toggle';
                 shapeBtn.title = 'Insertar forma';
                 shapeBtn.textContent = '⬚';
 
@@ -418,8 +481,7 @@
                     b.addEventListener('click', function (ev) {
                         ev.stopPropagation();
                         if (!editor) return;
-                        if (document.activeElement !== editor) editor.focus();
-                        document.execCommand('insertHTML', false, sh.html);
+                        _insertHtmlAtCursor(sh.html);
                         shapePicker.style.display = 'none';
                     });
                     shapePicker.appendChild(b);
@@ -431,6 +493,7 @@
                 fileInput.style.display = 'none';
 
                 imgBtn.addEventListener('click', function () {
+                    _saveEditorRange();
                     fileInput.click();
                 });
 
@@ -439,12 +502,7 @@
                     if (!file || !editor) return;
                     var reader = new FileReader();
                     reader.onload = function (ev) {
-                        if (document.activeElement !== editor) editor.focus();
-                        try {
-                            document.execCommand('insertImage', false, String(ev.target.result || ''));
-                        } catch (_) {
-                            document.execCommand('insertHTML', false, '<img src="' + String(ev.target.result || '') + '" style="max-width:100%;height:auto;" />');
-                        }
+                        _insertHtmlAtCursor('<img src="' + String(ev.target.result || '') + '" style="max-width:100%;height:auto;" />');
                     };
                     reader.readAsDataURL(file);
                     fileInput.value = '';
@@ -478,6 +536,25 @@
             medBtn.title = 'Diccionario médico';
             medBtn.setAttribute('aria-label', 'Diccionario médico');
             medBtn.innerHTML = '\uD83E\uDE7A';
+            if (!medBtn._mobileDictHooked) {
+                medBtn._mobileDictHooked = true;
+                medBtn.addEventListener('click', function (ev) {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    var editor = document.getElementById('editor');
+                    var hasContent = !!(editor && String(editor.innerText || '').trim());
+                    if (typeof window.openMedDictModal === 'function') {
+                        window.openMedDictModal({
+                            skipEditorCheck: !hasContent,
+                            defaultTab: hasContent ? 'review' : 'dictionary'
+                        });
+                        return;
+                    }
+                    if (typeof window.checkMedicalTerminology === 'function') {
+                        window.checkMedicalTerminology();
+                    }
+                }, true);
+            }
             toolbar.appendChild(medBtn);
         }
 

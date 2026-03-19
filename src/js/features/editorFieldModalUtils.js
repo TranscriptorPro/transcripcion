@@ -408,16 +408,13 @@
 
         editor.querySelectorAll('p.report-p, li').forEach((node) => {
             if (node.querySelector('.no-data-field')) return;
-            const ownButtons = Array.from(node.children || []).filter((ch) => ch.classList && ch.classList.contains('inline-review-btn'));
-            if (ownButtons.length > 1) {
-                ownButtons.slice(0, -1).forEach((b) => b.remove());
-            }
+            /* Deduplicación robusta: remover cualquier botón inline preexistente
+               (incluyendo anidados), luego volver a insertar solo uno si corresponde. */
+            node.querySelectorAll('.inline-review-btn').forEach((b) => b.remove());
             const clone = node.cloneNode(true);
             clone.querySelectorAll('.inline-review-btn, .inline-undo-btn, .no-data-edit-btn, .no-data-field').forEach(el => el.remove());
             const txt = String(clone.textContent || '').replace(/[\u00A0\s]+/g, ' ').trim();
             if (!txt || !/[\p{L}\p{N}]/u.test(txt)) return;
-            const already = Array.from(node.children || []).some(ch => ch.classList && ch.classList.contains('inline-review-btn'));
-            if (already) return;
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'inline-review-btn';
