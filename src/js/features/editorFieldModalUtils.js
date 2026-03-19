@@ -796,9 +796,13 @@
                 if (span) openEditFieldModal(span);
             }
         });
+        var _inputDecorateTimer = null;
         editor.addEventListener('input', () => {
-            _decorateInlineReviewButtons();
-            _normalizeEditorVerticalRhythm();
+            clearTimeout(_inputDecorateTimer);
+            _inputDecorateTimer = setTimeout(() => {
+                _decorateInlineReviewButtons();
+                _normalizeEditorVerticalRhythm();
+            }, 150);
         });
     }
 

@@ -9,7 +9,7 @@
     <!-- PURGE: auto-purge al detectar nueva versión + ?purge manual. Preserva tema y color -->
     <script>
     (function() {
-        var APP_VERSION = 'v111'; // ← bump esto en cada deploy para forzar auto-purge
+        var APP_VERSION = 'v112'; // ← bump esto en cada deploy para forzar auto-purge
         try { window.APP_VERSION = APP_VERSION; } catch(_) {}
         var params = new URLSearchParams(window.location.search);
         var forcePurge = params.has('purge');
@@ -2495,6 +2495,12 @@
                     </button>
                     <button class="toolbar-btn" id="insertTableBtn" title="Insertar tabla">
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M20 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 2v3H5V5h15zm-9 5h4v4h-4v-4zM5 10h4v4H5v-4zm0 9v-3h4v3H5zm6 0v-3h4v3h-4zm6 0h-4v-3h4v3zm0-5h-4v-4h4v4z"/></svg>
+                    </button>
+                    <button class="toolbar-btn" id="insertImageBtn" title="Insertar imagen">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                    </button>
+                    <button class="toolbar-btn" id="insertShapeBtn" title="Insertar forma">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M17 15h2V7c0-1.1-.9-2-2-2H9v2h8v8zM7 17V1H5v4H1v2h4v10c0 1.1.9 2 2 2h10v4h2v-4h4v-2H7z"/></svg>
                     </button>
                     <div class="toolbar-divider"></div>
                     <button class="toolbar-btn" id="toggleFindReplace" data-testid="btnFindReplace" title="Buscar y Reemplazar (Ctrl+F)">

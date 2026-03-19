@@ -212,6 +212,82 @@
         });
     }
 
+    // ── Insertar Imagen ──
+    const insertImageBtn = $('insertImageBtn');
+    if (insertImageBtn && editor) {
+        const imgFileInput = document.createElement('input');
+        imgFileInput.type = 'file';
+        imgFileInput.accept = 'image/*';
+        imgFileInput.style.display = 'none';
+        document.body.appendChild(imgFileInput);
+
+        insertImageBtn.addEventListener('click', () => imgFileInput.click());
+
+        imgFileInput.addEventListener('change', () => {
+            const file = imgFileInput.files && imgFileInput.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                if (document.activeElement !== editor) editor.focus();
+                try {
+                    document.execCommand('insertImage', false, String(ev.target.result || ''));
+                } catch (_) {
+                    document.execCommand('insertHTML', false,
+                        '<img src="' + String(ev.target.result || '') + '" style="max-width:100%;height:auto;" />');
+                }
+                if (typeof saveUndoState === 'function') saveUndoState();
+            };
+            reader.readAsDataURL(file);
+            imgFileInput.value = '';
+        });
+    }
+
+    // ── Insertar Forma ──
+    const insertShapeBtn = $('insertShapeBtn');
+    if (insertShapeBtn && editor) {
+        const shapePicker = document.createElement('div');
+        shapePicker.className = 'desktop-shape-picker';
+        shapePicker.style.display = 'none';
+        const shapes = [
+            { label: '▬', html: '<div style="display:block;width:80%;height:40px;border:2px solid currentColor;margin:8px auto;border-radius:4px;"></div>' },
+            { label: '■', html: '<div style="display:block;width:60px;height:60px;border:2px solid currentColor;margin:8px auto;border-radius:4px;"></div>' },
+            { label: '●', html: '<div style="display:block;width:60px;height:60px;border:2px solid currentColor;margin:8px auto;border-radius:50%;"></div>' },
+            { label: '▲', html: '<div style="display:block;width:0;height:0;border-left:35px solid transparent;border-right:35px solid transparent;border-bottom:60px solid currentColor;margin:8px auto;opacity:0.7;"></div>' },
+            { label: '◆', html: '<div style="display:block;width:50px;height:50px;border:2px solid currentColor;margin:8px auto;transform:rotate(45deg);"></div>' },
+            { label: '⬭', html: '<div style="display:block;width:80px;height:50px;border:2px solid currentColor;margin:8px auto;border-radius:50%;"></div>' },
+            { label: '─', html: '<hr style="border:none;border-top:2px solid currentColor;margin:12px 0;">' }
+        ];
+        shapes.forEach((sh) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'toolbar-btn desktop-shape-btn';
+            b.textContent = sh.label;
+            b.title = 'Insertar ' + sh.label;
+            b.addEventListener('click', (ev) => {
+                ev.stopPropagation();
+                if (document.activeElement !== editor) editor.focus();
+                document.execCommand('insertHTML', false, sh.html);
+                shapePicker.style.display = 'none';
+                if (typeof saveUndoState === 'function') saveUndoState();
+            });
+            shapePicker.appendChild(b);
+        });
+
+        insertShapeBtn.parentElement.style.position = 'relative';
+        insertShapeBtn.parentElement.appendChild(shapePicker);
+
+        insertShapeBtn.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            shapePicker.style.display = shapePicker.style.display === 'none' ? 'grid' : 'none';
+        });
+
+        document.addEventListener('click', (ev) => {
+            if (!shapePicker.contains(ev.target) && ev.target !== insertShapeBtn) {
+                shapePicker.style.display = 'none';
+            }
+        });
+    }
+
     const toggleFindReplace = $('toggleFindReplace');
     const findReplacePanel = $('findReplacePanel');
     const closeFindReplace = $('closeFindReplace');

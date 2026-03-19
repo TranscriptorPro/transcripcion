@@ -488,13 +488,13 @@
             toolbar.appendChild(el);
         });
 
-        /* Asegurar que los botones dentro de paneles ejecuten su acción sin interferir
-           con otros elementos (ej: inline review). Capturar click en botones de formato
-           y prevenir propagación extra después de ejecutar su comando. */
+        /* Evitar que clicks en botones de paneles burbujeen hacia listeners de document
+           (ej: cierre de grupos). Usar bubbling (no capture) para no bloquear handlers
+           de formato que están registrados en el propio botón. */
         toolbar.querySelectorAll('.mobile-toolbar-panel .toolbar-btn').forEach(function (btn) {
             btn.addEventListener('click', function (ev) {
                 ev.stopPropagation();
-            }, true);
+            }, false);
         });
 
         document.addEventListener('click', function (ev) {

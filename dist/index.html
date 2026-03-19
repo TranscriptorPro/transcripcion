@@ -9,7 +9,7 @@
     <!-- PURGE: auto-purge al detectar nueva versión + ?purge manual. Preserva tema y color -->
     <script>
     (function() {
-        var APP_VERSION = 'v111'; // ← bump esto en cada deploy para forzar auto-purge
+        var APP_VERSION = 'v112'; // ← bump esto en cada deploy para forzar auto-purge
         try { window.APP_VERSION = APP_VERSION; } catch(_) {}
         var params = new URLSearchParams(window.location.search);
         var forcePurge = params.has('purge');
@@ -127,7 +127,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
-        <link rel="stylesheet" href="app.mmwjoz0g.min.css">
+        <link rel="stylesheet" href="app.mmxh4ze5.min.css">
 </head>
 
 <body>
@@ -2490,6 +2490,12 @@
                     <button class="toolbar-btn" id="insertTableBtn" title="Insertar tabla">
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M20 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 2v3H5V5h15zm-9 5h4v4h-4v-4zM5 10h4v4H5v-4zm0 9v-3h4v3H5zm6 0v-3h4v3h-4zm6 0h-4v-3h4v3zm0-5h-4v-4h4v4z"/></svg>
                     </button>
+                    <button class="toolbar-btn" id="insertImageBtn" title="Insertar imagen">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                    </button>
+                    <button class="toolbar-btn" id="insertShapeBtn" title="Insertar forma">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M17 15h2V7c0-1.1-.9-2-2-2H9v2h8v8zM7 17V1H5v4H1v2h4v10c0 1.1.9 2 2 2h10v4h2v-4h4v-2H7z"/></svg>
+                    </button>
                     <div class="toolbar-divider"></div>
                     <button class="toolbar-btn" id="toggleFindReplace" data-testid="btnFindReplace" title="Buscar y Reemplazar (Ctrl+F)">
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
@@ -2550,7 +2556,7 @@
             </svg>
             <span id="toastMessage"></span>
         </div>
-        <script src="app.mmwjoyzy.min.js"></script>
+        <script src="app.mmxh4zd3.min.js"></script>
 
         <!-- G1: Modal Panel Registro de Pacientes -->
         <div class="modal-overlay" id="registryPanelOverlay">
