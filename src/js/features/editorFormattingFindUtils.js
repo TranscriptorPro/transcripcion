@@ -498,6 +498,7 @@
         var activeShape = null; // currently selected shape
         var handleEls = [];     // 8 handle DOM elements
         var interaction = null; // { mode:'drag'|'resize', ... }
+        var copiedShapeTemplate = null; // cloned node template for Ctrl+C / Ctrl+V
 
         var HANDLE_SIZE = 7;    // px diameter
         // handle positions: [name, xFactor, yFactor]
@@ -518,48 +519,44 @@
             handleEls.push({ el: h, name: def[0], xf: def[1], yf: def[2] });
         });
 
-        // Mobile floating action bar (delete + copy) for selected shapes
-        var isTouchDevice = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
-        var mobileActionBar = null;
-        if (isTouchDevice) {
-            mobileActionBar = document.createElement('div');
-            mobileActionBar.className = 'shape-mobile-actionbar';
-            mobileActionBar.style.display = 'none';
+        // Floating action bar (delete + copy) for selected elements
+        var mobileActionBar = document.createElement('div');
+        mobileActionBar.className = 'shape-mobile-actionbar';
+        mobileActionBar.style.display = 'none';
 
-            var delBtn = document.createElement('button');
-            delBtn.type = 'button';
-            delBtn.className = 'shape-action-btn shape-action-delete';
-            delBtn.innerHTML = '🗑️';
-            delBtn.title = 'Eliminar';
-            delBtn.addEventListener('click', function(ev) {
-                ev.preventDefault(); ev.stopPropagation();
-                if (!activeShape) return;
-                var toRemove = activeShape;
-                deselectShape();
-                toRemove.parentNode.removeChild(toRemove);
-                if (typeof saveUndoState === 'function') saveUndoState();
-            });
+        var delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'shape-action-btn shape-action-delete';
+        delBtn.innerHTML = '🗑️';
+        delBtn.title = 'Eliminar';
+        delBtn.addEventListener('click', function(ev) {
+            ev.preventDefault(); ev.stopPropagation();
+            if (!activeShape) return;
+            var toRemove = activeShape;
+            deselectShape();
+            toRemove.parentNode.removeChild(toRemove);
+            if (typeof saveUndoState === 'function') saveUndoState();
+        });
 
-            var copyBtn = document.createElement('button');
-            copyBtn.type = 'button';
-            copyBtn.className = 'shape-action-btn shape-action-copy';
-            copyBtn.innerHTML = '📋';
-            copyBtn.title = 'Copiar';
-            copyBtn.addEventListener('click', function(ev) {
-                ev.preventDefault(); ev.stopPropagation();
-                if (!activeShape) return;
-                var clone = activeShape.cloneNode(true);
-                clone.style.outline = '';
-                activeShape.parentNode.insertBefore(clone, activeShape.nextSibling);
-                deselectShape();
-                selectShape(clone);
-                if (typeof saveUndoState === 'function') saveUndoState();
-            });
+        var copyBtn = document.createElement('button');
+        copyBtn.type = 'button';
+        copyBtn.className = 'shape-action-btn shape-action-copy';
+        copyBtn.innerHTML = '📋';
+        copyBtn.title = 'Copiar';
+        copyBtn.addEventListener('click', function(ev) {
+            ev.preventDefault(); ev.stopPropagation();
+            if (!activeShape) return;
+            var clone = activeShape.cloneNode(true);
+            clone.style.outline = '';
+            activeShape.parentNode.insertBefore(clone, activeShape.nextSibling);
+            deselectShape();
+            selectShape(clone);
+            if (typeof saveUndoState === 'function') saveUndoState();
+        });
 
-            mobileActionBar.appendChild(copyBtn);
-            mobileActionBar.appendChild(delBtn);
-            document.body.appendChild(mobileActionBar);
-        }
+        mobileActionBar.appendChild(copyBtn);
+        mobileActionBar.appendChild(delBtn);
+        document.body.appendChild(mobileActionBar);
 
         function positionMobileActionBar() {
             if (!mobileActionBar || !activeShape) { if (mobileActionBar) mobileActionBar.style.display = 'none'; return; }
@@ -628,6 +625,8 @@
             return (s && editor.contains(s) && s.tagName !== 'HR') ? s : null;
         }
 
+        var IS_TOUCH_DEVICE = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+
         // Detect click on the outer border of a table (for selection)
         var TABLE_BORDER_ZONE = 8; // px from outer edge
         function isTableBorderClick(el, x, y) {
@@ -637,6 +636,8 @@
             var r = table.getBoundingClientRect();
             // Must be within the table bounds
             if (x < r.left || x > r.right || y < r.top || y > r.bottom) return null;
+            // On touch devices, allow selecting table by tapping anywhere in table area.
+            if (IS_TOUCH_DEVICE) return table;
             // Near outer edges?
             if (x - r.left < TABLE_BORDER_ZONE || r.right - x < TABLE_BORDER_ZONE ||
                 y - r.top < TABLE_BORDER_ZONE || r.bottom - y < TABLE_BORDER_ZONE) {
@@ -644,6 +645,22 @@
             }
             return null;
         }
+
+        // Fallback: clicking inside wrapped image should always keep it selected.
+        editor.addEventListener('click', function(ev) {
+            var imgWrap = ev.target && ev.target.closest ? ev.target.closest('.editor-img-wrap.editor-shape') : null;
+            if (imgWrap && editor.contains(imgWrap)) {
+                selectShape(imgWrap);
+                return;
+            }
+            // Small-screen fallback: selecting table on tap/click should always work.
+            if (window.innerWidth <= 900) {
+                var tbl = ev.target && ev.target.closest ? ev.target.closest('table') : null;
+                if (tbl && editor.contains(tbl)) {
+                    selectShape(tbl);
+                }
+            }
+        }, true);
 
         function ppos(ev) {
             if (ev.touches && ev.touches.length) return { x: ev.touches[0].clientX, y: ev.touches[0].clientY };
@@ -694,6 +711,27 @@
                 shape.style.cursor = 'grabbing';
                 editor.style.userSelect = 'none';
                 return;
+            }
+
+            // Small-screen fallback: clicking/tapping any table area selects table.
+            if (window.innerWidth <= 900) {
+                var mobileTableSel = ev.target && ev.target.closest ? ev.target.closest('table') : null;
+                if (mobileTableSel && editor.contains(mobileTableSel)) {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    selectShape(mobileTableSel);
+                    interaction = {
+                        mode: 'drag',
+                        el: mobileTableSel,
+                        startX: p.x, startY: p.y,
+                        origLeft: parseFloat(mobileTableSel.style.marginLeft) || 0,
+                        origTop: parseFloat(mobileTableSel.style.marginTop) || 0,
+                        moved: false
+                    };
+                    mobileTableSel.style.cursor = 'grabbing';
+                    editor.style.userSelect = 'none';
+                    return;
+                }
             }
 
             // Check for table border click → select table
@@ -766,9 +804,25 @@
             positionMobileActionBar();
         });
 
-        // Delete key removes selected shape/image
+        // Keyboard shortcuts for selected inserted elements
         document.addEventListener('keydown', function(ev) {
             if (!activeShape) return;
+            if ((ev.ctrlKey || ev.metaKey) && (ev.key === 'c' || ev.key === 'C')) {
+                ev.preventDefault();
+                copiedShapeTemplate = activeShape.cloneNode(true);
+                copiedShapeTemplate.style.outline = '';
+                return;
+            }
+            if ((ev.ctrlKey || ev.metaKey) && (ev.key === 'v' || ev.key === 'V')) {
+                if (!copiedShapeTemplate) return;
+                ev.preventDefault();
+                var clone = copiedShapeTemplate.cloneNode(true);
+                activeShape.parentNode.insertBefore(clone, activeShape.nextSibling);
+                deselectShape();
+                selectShape(clone);
+                if (typeof saveUndoState === 'function') saveUndoState();
+                return;
+            }
             if (ev.key === 'Delete' || ev.key === 'Backspace') {
                 ev.preventDefault();
                 var toRemove = activeShape;
@@ -801,6 +855,14 @@
         editor.addEventListener('touchstart', function(ev) {
             var p = ppos(ev);
             var shape = isShapeEl(ev.target);
+            if (!shape) {
+                if (window.innerWidth <= 900) {
+                    var mobileTableSel = ev.target && ev.target.closest ? ev.target.closest('table') : null;
+                    if (mobileTableSel && editor.contains(mobileTableSel)) {
+                        shape = mobileTableSel;
+                    }
+                }
+            }
             if (!shape) {
                 // Check table border
                 shape = isTableBorderClick(ev.target, p.x, p.y);
