@@ -554,6 +554,9 @@
                     } else {
                         document.execCommand('hiliteColor', false, c.color);
                     }
+                    /* Colapsar selección del navegador para que se vea el resaltado */
+                    var sel = window.getSelection();
+                    if (sel && !sel.isCollapsed) sel.collapseToEnd();
                     var ed = document.getElementById('editor');
                     if (ed) ed.focus();
                     hlWrapper.classList.remove('open');
@@ -634,12 +637,14 @@
             toolbar.appendChild(findReplBtn);
         }
 
-        /* Evitar que clicks en botones de paneles burbujeen hacia listeners de document
-           (ej: cierre de grupos). Usar bubbling (no capture) para no bloquear handlers
-           de formato que están registrados en el propio botón. */
+        /* Clicks en botones de paneles: cerrar el grupo padre tras la acción */
         toolbar.querySelectorAll('.mobile-toolbar-panel .toolbar-btn').forEach(function (btn) {
             btn.addEventListener('click', function (ev) {
                 ev.stopPropagation();
+                var groupWrapper = btn.closest('.mobile-toolbar-group');
+                if (groupWrapper && !btn.classList.contains('mobile-shape-btn') && !btn.classList.contains('mobile-shape-toggle') && !btn.classList.contains('mobile-group-trigger')) {
+                    groupWrapper.classList.remove('open');
+                }
             }, false);
         });
 
