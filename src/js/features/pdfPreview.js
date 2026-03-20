@@ -1161,12 +1161,6 @@ window.openPrintPreview = async function () {
         contentEl.querySelectorAll('.patient-data-header, .patient-placeholder-banner, .btn-append-inline, .original-text-banner, .no-print, .ai-note-panel, .inline-review-btn, #aiNotePanel').forEach(el => {
             el.remove();
         });
-        // Remove resize/drag from shapes and images in preview
-        contentEl.querySelectorAll('.editor-shape, .editor-img-wrap').forEach(el => {
-            el.style.resize = 'none';
-            el.style.overflow = 'visible';
-            el.style.cursor = 'default';
-        });
         // Evitar doble título: si el contenido arranca con "INFORME DE ...",
         // ese heading se reemplaza por el encabezado principal de la vista previa.
         const firstEl = contentEl.firstElementChild;

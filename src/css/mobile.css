@@ -514,40 +514,24 @@
         transform: scale(1.2);
     }
 
-    /* Editor shapes: resize handle discreto (50% más pequeño) */
+    /* Editor shapes: Word-style handles via JS — no native resize */
     .editor-shape {
-        resize: both;
-        overflow: auto;
         position: relative;
-    }
-
-    /* Reducir visualmente el handle de resize — casi imperceptible */
-    .editor-shape::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        right: 0;
-        width: 3px;
-        height: 3px;
-        background: linear-gradient(135deg, transparent 50%, var(--border, #ccc) 50%);
-        border-radius: 0 0 2px 0;
-        opacity: 0.12;
-        pointer-events: none;
+        user-select: none;
+        cursor: grab;
     }
 
     .editor-shape::-webkit-resizer {
-        background: transparent;
+        display: none;
     }
 
-    /* Vista previa: quitar resize de formas e imágenes */
+    /* Vista previa: no interacción */
     #printPreviewOverlay .editor-shape,
     #printPreviewOverlay .editor-img-wrap {
-        resize: none !important;
-        overflow: visible !important;
+        cursor: default !important;
     }
 
-    #printPreviewOverlay .editor-shape::after,
-    #printPreviewOverlay .editor-img-wrap::after {
+    #printPreviewOverlay .editor-shape-handle {
         display: none !important;
     }
 

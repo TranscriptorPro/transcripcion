@@ -262,7 +262,7 @@
             const reader = new FileReader();
             reader.onload = (ev) => {
                 if (document.activeElement !== editor) editor.focus();
-                var imgHtml = '<div class="editor-img-wrap editor-shape" contenteditable="false" style="display:block;width:256px;height:256px;margin:8px auto;resize:both;overflow:hidden;min-width:40px;min-height:40px;cursor:grab;"><img src="' + String(ev.target.result || '') + '" style="width:100%;height:100%;display:block;pointer-events:none;object-fit:contain;" /></div>';
+                var imgHtml = '<div class="editor-img-wrap editor-shape" contenteditable="false" style="display:block;width:256px;height:256px;margin:8px auto;overflow:hidden;min-width:40px;min-height:40px;"><img src="' + String(ev.target.result || '') + '" style="width:100%;height:100%;display:block;pointer-events:none;object-fit:contain;" /></div>';
                 document.execCommand('insertHTML', false, imgHtml);
                 if (typeof saveUndoState === 'function') saveUndoState();
             };
@@ -309,12 +309,12 @@
         shapePicker.appendChild(colorRow);
 
         const shapes = [
-            { label: '▬', build: function(c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:80%;height:40px;border:2px solid ' + c + ';background:transparent;margin:8px auto;border-radius:4px;resize:both;overflow:hidden;min-width:40px;min-height:20px;cursor:grab;user-select:none;"></div>'; } },
-            { label: '□', build: function(c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:60px;height:60px;border:2px solid ' + c + ';background:transparent;margin:8px auto;border-radius:4px;resize:both;overflow:hidden;min-width:20px;min-height:20px;cursor:grab;user-select:none;"></div>'; } },
-            { label: '○', build: function(c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:60px;height:60px;border:2px solid ' + c + ';background:transparent;margin:8px auto;border-radius:50%;resize:both;overflow:hidden;min-width:20px;min-height:20px;cursor:grab;user-select:none;"></div>'; } },
-            { label: '△', build: function(c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:70px;height:60px;margin:8px auto;resize:both;overflow:hidden;min-width:30px;min-height:30px;cursor:grab;user-select:none;"><svg viewBox="0 0 70 60" width="100%" height="100%"><polygon points="35,2 68,58 2,58" fill="none" stroke="' + c + '" stroke-width="2"/></svg></div>'; } },
-            { label: '◇', build: function(c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:50px;height:50px;border:2px solid ' + c + ';background:transparent;margin:8px auto;transform:rotate(45deg);resize:both;overflow:hidden;min-width:20px;min-height:20px;cursor:grab;user-select:none;"></div>'; } },
-            { label: '⬭', build: function(c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:80px;height:50px;border:2px solid ' + c + ';background:transparent;margin:8px auto;border-radius:50%;resize:both;overflow:hidden;min-width:20px;min-height:20px;cursor:grab;user-select:none;"></div>'; } },
+            { label: '▬', build: function(c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:80%;height:40px;border:2px solid ' + c + ';background:transparent;margin:8px auto;border-radius:4px;overflow:hidden;"></div>'; } },
+            { label: '□', build: function(c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:60px;height:60px;border:2px solid ' + c + ';background:transparent;margin:8px auto;border-radius:4px;overflow:hidden;"></div>'; } },
+            { label: '○', build: function(c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:60px;height:60px;border:2px solid ' + c + ';background:transparent;margin:8px auto;border-radius:50%;overflow:hidden;"></div>'; } },
+            { label: '△', build: function(c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:70px;height:60px;margin:8px auto;overflow:hidden;"><svg viewBox="0 0 70 60" width="100%" height="100%"><polygon points="35,2 68,58 2,58" fill="none" stroke="' + c + '" stroke-width="2"/></svg></div>'; } },
+            { label: '◇', build: function(c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:50px;height:50px;border:2px solid ' + c + ';background:transparent;margin:8px auto;transform:rotate(45deg);overflow:hidden;"></div>'; } },
+            { label: '⬭', build: function(c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:80px;height:50px;border:2px solid ' + c + ';background:transparent;margin:8px auto;border-radius:50%;overflow:hidden;"></div>'; } },
             { label: '─', build: function(c) { return '<hr class="editor-shape" style="border:none;border-top:2px solid ' + c + ';margin:12px 0;">'; } }
         ];
         shapes.forEach((sh) => {
@@ -415,16 +415,67 @@
         });
     }
 
-    // ── Drag & drop for shapes and images inside editor ──
-    (function initShapeDrag() {
+    // ── Word-style shape selection, resize handles & drag ──
+    (function initShapeInteraction() {
         if (!editor) return;
-        var dragState = null;
 
-        function isShape(el) {
+        var activeShape = null; // currently selected shape
+        var handleEls = [];     // 8 handle DOM elements
+        var interaction = null; // { mode:'drag'|'resize', ... }
+
+        var HANDLE_SIZE = 7;    // px diameter
+        // handle positions: [name, xFactor, yFactor]
+        var HANDLE_DEFS = [
+            ['nw', 0, 0], ['n', 0.5, 0], ['ne', 1, 0],
+            ['w', 0, 0.5],                ['e', 1, 0.5],
+            ['sw', 0, 1], ['s', 0.5, 1], ['se', 1, 1]
+        ];
+        var CURSORS = { nw:'nwse-resize', n:'ns-resize', ne:'nesw-resize', w:'ew-resize', e:'ew-resize', sw:'nesw-resize', s:'ns-resize', se:'nwse-resize' };
+
+        // Create handle elements (hidden by default)
+        HANDLE_DEFS.forEach(function(def) {
+            var h = document.createElement('div');
+            h.className = 'editor-shape-handle';
+            h.dataset.dir = def[0];
+            h.style.cssText = 'position:absolute;width:'+HANDLE_SIZE+'px;height:'+HANDLE_SIZE+'px;background:#fff;border:1.5px solid #3b82f6;border-radius:50%;z-index:999;pointer-events:auto;cursor:'+CURSORS[def[0]]+';display:none;box-shadow:0 0 2px rgba(0,0,0,.3);';
+            document.body.appendChild(h);
+            handleEls.push({ el: h, name: def[0], xf: def[1], yf: def[2] });
+        });
+
+        function positionHandles() {
+            if (!activeShape) return;
+            var r = activeShape.getBoundingClientRect();
+            var half = HANDLE_SIZE / 2;
+            handleEls.forEach(function(h) {
+                h.el.style.left = (r.left + r.width * h.xf - half + window.scrollX) + 'px';
+                h.el.style.top  = (r.top + r.height * h.yf - half + window.scrollY) + 'px';
+                h.el.style.display = 'block';
+            });
+        }
+
+        function hideHandles() {
+            handleEls.forEach(function(h) { h.el.style.display = 'none'; });
+        }
+
+        function selectShape(shape) {
+            if (activeShape === shape) return;
+            deselectShape();
+            activeShape = shape;
+            shape.style.outline = '1.5px solid #3b82f6';
+            positionHandles();
+        }
+
+        function deselectShape() {
+            if (!activeShape) return;
+            activeShape.style.outline = '';
+            activeShape = null;
+            hideHandles();
+        }
+
+        function isShapeEl(el) {
             if (!el) return null;
-            var shape = el.closest('.editor-shape');
-            if (shape && editor.contains(shape)) return shape;
-            return null;
+            var s = el.closest('.editor-shape');
+            return (s && editor.contains(s) && s.tagName !== 'HR') ? s : null;
         }
 
         function ppos(ev) {
@@ -432,57 +483,143 @@
             return { x: ev.clientX, y: ev.clientY };
         }
 
-        function isNearResizeCorner(el, x, y) {
-            var r = el.getBoundingClientRect();
-            return (r.right - x) < 18 && (r.bottom - y) < 18;
-        }
-
-        function onDown(ev) {
+        // Click on shape → select; click outside → deselect
+        document.addEventListener('pointerdown', function(ev) {
             var p = ppos(ev);
-            var shape = isShape(ev.target);
-            if (!shape) return;
-            // Don't drag if near the resize corner (bottom-right 18px)
-            if (isNearResizeCorner(shape, p.x, p.y)) return;
-            ev.preventDefault();
-            var rect = shape.getBoundingClientRect();
-            dragState = {
-                el: shape,
-                startX: p.x,
-                startY: p.y,
-                origMarginLeft: parseInt(shape.style.marginLeft) || 0,
-                origMarginTop: parseInt(shape.style.marginTop) || 0
-            };
-            shape.style.cursor = 'grabbing';
-            shape.style.opacity = '0.85';
-            editor.style.userSelect = 'none';
-        }
+            // Check if clicked a handle
+            var handleHit = null;
+            for (var i = 0; i < handleEls.length; i++) {
+                var hr = handleEls[i].el.getBoundingClientRect();
+                if (p.x >= hr.left && p.x <= hr.right && p.y >= hr.top && p.y <= hr.bottom) {
+                    handleHit = handleEls[i]; break;
+                }
+            }
+            if (handleHit && activeShape) {
+                // Start resize
+                ev.preventDefault();
+                var sr = activeShape.getBoundingClientRect();
+                interaction = {
+                    mode: 'resize',
+                    dir: handleHit.name,
+                    el: activeShape,
+                    startX: p.x, startY: p.y,
+                    origLeft: parseFloat(activeShape.style.marginLeft) || 0,
+                    origTop: parseFloat(activeShape.style.marginTop) || 0,
+                    origW: sr.width, origH: sr.height
+                };
+                editor.style.userSelect = 'none';
+                return;
+            }
 
-        function onMoveDoc(ev) {
-            if (!dragState) return;
+            var shape = isShapeEl(ev.target);
+            if (shape) {
+                ev.preventDefault();
+                selectShape(shape);
+                // Start drag
+                interaction = {
+                    mode: 'drag',
+                    el: shape,
+                    startX: p.x, startY: p.y,
+                    origLeft: parseFloat(shape.style.marginLeft) || 0,
+                    origTop: parseFloat(shape.style.marginTop) || 0,
+                    moved: false
+                };
+                shape.style.cursor = 'grabbing';
+                editor.style.userSelect = 'none';
+                return;
+            }
+
+            // Clicked outside any shape → deselect
+            if (activeShape && !ev.target.closest('.editor-shape-handle') && !ev.target.closest('.desktop-shape-picker') && !ev.target.closest('.desktop-highlight-picker')) {
+                deselectShape();
+            }
+        }, true);
+
+        document.addEventListener('pointermove', function(ev) {
+            if (!interaction) return;
             ev.preventDefault();
             var p = ppos(ev);
-            var dx = p.x - dragState.startX;
-            var dy = p.y - dragState.startY;
-            dragState.el.style.marginLeft = (dragState.origMarginLeft + dx) + 'px';
-            dragState.el.style.marginTop = (dragState.origMarginTop + dy) + 'px';
-            dragState.el.style.marginRight = 'auto';
-        }
+            var dx = p.x - interaction.startX;
+            var dy = p.y - interaction.startY;
 
-        function onUp() {
-            if (!dragState) return;
-            dragState.el.style.cursor = 'grab';
-            dragState.el.style.opacity = '';
+            if (interaction.mode === 'drag') {
+                if (!interaction.moved && Math.abs(dx) < 3 && Math.abs(dy) < 3) return;
+                interaction.moved = true;
+                interaction.el.style.marginLeft = (interaction.origLeft + dx) + 'px';
+                interaction.el.style.marginTop = (interaction.origTop + dy) + 'px';
+                interaction.el.style.marginRight = 'auto';
+                positionHandles();
+            } else if (interaction.mode === 'resize') {
+                var d = interaction.dir;
+                var nw = interaction.origW, nh = interaction.origH;
+                var ml = interaction.origLeft, mt = interaction.origTop;
+
+                if (d.includes('e')) nw = Math.max(20, interaction.origW + dx);
+                if (d.includes('w')) { nw = Math.max(20, interaction.origW - dx); ml = interaction.origLeft + dx; }
+                if (d.includes('s')) nh = Math.max(20, interaction.origH + dy);
+                if (d.includes('n')) { nh = Math.max(20, interaction.origH - dy); mt = interaction.origTop + dy; }
+
+                interaction.el.style.width = nw + 'px';
+                interaction.el.style.height = nh + 'px';
+                if (d.includes('w')) interaction.el.style.marginLeft = ml + 'px';
+                if (d.includes('n')) interaction.el.style.marginTop = mt + 'px';
+                positionHandles();
+            }
+        }, { passive: false });
+
+        document.addEventListener('pointerup', function() {
+            if (!interaction) return;
+            if (interaction.mode === 'drag') {
+                interaction.el.style.cursor = 'grab';
+            }
             editor.style.userSelect = '';
             if (typeof saveUndoState === 'function') saveUndoState();
-            dragState = null;
-        }
+            interaction = null;
+            positionHandles();
+        });
 
-        editor.addEventListener('pointerdown', onDown, { passive: false });
-        editor.addEventListener('touchstart', onDown, { passive: false });
-        document.addEventListener('pointermove', onMoveDoc, { passive: false });
-        document.addEventListener('touchmove', onMoveDoc, { passive: false });
-        document.addEventListener('pointerup', onUp);
-        document.addEventListener('touchend', onUp);
+        // Reposition handles on scroll/resize
+        window.addEventListener('scroll', function() { if (activeShape) positionHandles(); }, true);
+        window.addEventListener('resize', function() { if (activeShape) positionHandles(); });
+
+        // Touch support
+        editor.addEventListener('touchstart', function(ev) {
+            var shape = isShapeEl(ev.target);
+            if (!shape) return;
+            ev.preventDefault();
+            selectShape(shape);
+            var p = ppos(ev);
+            interaction = {
+                mode: 'drag', el: shape,
+                startX: p.x, startY: p.y,
+                origLeft: parseFloat(shape.style.marginLeft) || 0,
+                origTop: parseFloat(shape.style.marginTop) || 0,
+                moved: false
+            };
+            shape.style.cursor = 'grabbing';
+            editor.style.userSelect = 'none';
+        }, { passive: false });
+        document.addEventListener('touchmove', function(ev) {
+            if (!interaction) return;
+            ev.preventDefault();
+            var p = ppos(ev);
+            var dx = p.x - interaction.startX;
+            var dy = p.y - interaction.startY;
+            if (interaction.mode === 'drag') {
+                interaction.moved = true;
+                interaction.el.style.marginLeft = (interaction.origLeft + dx) + 'px';
+                interaction.el.style.marginTop = (interaction.origTop + dy) + 'px';
+                interaction.el.style.marginRight = 'auto';
+                positionHandles();
+            }
+        }, { passive: false });
+        document.addEventListener('touchend', function() {
+            if (!interaction) return;
+            interaction.el.style.cursor = 'grab';
+            editor.style.userSelect = '';
+            if (typeof saveUndoState === 'function') saveUndoState();
+            interaction = null;
+        });
     })();
 
     const toggleFindReplace = $('toggleFindReplace');
