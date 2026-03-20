@@ -242,12 +242,8 @@
             const reader = new FileReader();
             reader.onload = (ev) => {
                 if (document.activeElement !== editor) editor.focus();
-                try {
-                    document.execCommand('insertImage', false, String(ev.target.result || ''));
-                } catch (_) {
-                    document.execCommand('insertHTML', false,
-                        '<img src="' + String(ev.target.result || '') + '" style="max-width:100%;height:auto;" />');
-                }
+                var imgHtml = '<div class="editor-img-wrap editor-shape" contenteditable="false" style="display:block;max-width:100%;width:auto;margin:8px auto;resize:both;overflow:auto;min-width:40px;min-height:40px;"><img src="' + String(ev.target.result || '') + '" style="width:100%;height:auto;display:block;pointer-events:none;" /></div>';
+                document.execCommand('insertHTML', false, imgHtml);
                 if (typeof saveUndoState === 'function') saveUndoState();
             };
             reader.readAsDataURL(file);
@@ -255,20 +251,51 @@
         });
     }
 
-    // ── Insertar Forma ──
+    // ── Insertar Forma (con selector de color) ──
     const insertShapeBtn = $('insertShapeBtn');
     if (insertShapeBtn && editor) {
         const shapePicker = document.createElement('div');
         shapePicker.className = 'desktop-shape-picker';
         shapePicker.style.display = 'none';
+
+        // Color picker row
+        var _desktopShapeColor = '#000000';
+        var shapeColors = [
+            { label: 'Negro', color: '#000000' },
+            { label: 'Rojo', color: '#e53e3e' },
+            { label: 'Azul', color: '#3182ce' },
+            { label: 'Verde', color: '#38a169' },
+            { label: 'Naranja', color: '#dd6b20' },
+            { label: 'Morado', color: '#805ad5' },
+            { label: 'Rosa', color: '#d53f8c' },
+            { label: 'Gris', color: '#718096' }
+        ];
+        var colorRow = document.createElement('div');
+        colorRow.className = 'desktop-shape-color-row';
+        shapeColors.forEach(function (sc) {
+            var dot = document.createElement('button');
+            dot.type = 'button';
+            dot.className = 'desktop-shape-color-dot' + (sc.color === _desktopShapeColor ? ' active' : '');
+            dot.style.background = sc.color;
+            dot.title = sc.label;
+            dot.addEventListener('click', function (ev) {
+                ev.stopPropagation();
+                _desktopShapeColor = sc.color;
+                colorRow.querySelectorAll('.desktop-shape-color-dot').forEach(function (d) { d.classList.remove('active'); });
+                dot.classList.add('active');
+            });
+            colorRow.appendChild(dot);
+        });
+        shapePicker.appendChild(colorRow);
+
         const shapes = [
-            { label: '▬', html: '<div contenteditable="false" style="display:block;width:80%;height:40px;border:2px solid currentColor;margin:8px auto;border-radius:4px;resize:both;overflow:auto;min-width:40px;min-height:20px;cursor:nwse-resize;"></div>' },
-            { label: '■', html: '<div contenteditable="false" style="display:block;width:60px;height:60px;border:2px solid currentColor;margin:8px auto;border-radius:4px;resize:both;overflow:auto;min-width:20px;min-height:20px;cursor:nwse-resize;"></div>' },
-            { label: '●', html: '<div contenteditable="false" style="display:block;width:60px;height:60px;border:2px solid currentColor;margin:8px auto;border-radius:50%;resize:both;overflow:auto;min-width:20px;min-height:20px;cursor:nwse-resize;"></div>' },
-            { label: '▲', html: '<div contenteditable="false" style="display:block;width:0;height:0;border-left:35px solid transparent;border-right:35px solid transparent;border-bottom:60px solid currentColor;margin:8px auto;opacity:0.7;"></div>' },
-            { label: '◆', html: '<div contenteditable="false" style="display:block;width:50px;height:50px;border:2px solid currentColor;margin:8px auto;transform:rotate(45deg);resize:both;overflow:auto;min-width:20px;min-height:20px;cursor:nwse-resize;"></div>' },
-            { label: '⬭', html: '<div contenteditable="false" style="display:block;width:80px;height:50px;border:2px solid currentColor;margin:8px auto;border-radius:50%;resize:both;overflow:auto;min-width:20px;min-height:20px;cursor:nwse-resize;"></div>' },
-            { label: '─', html: '<hr style="border:none;border-top:2px solid currentColor;margin:12px 0;">' }
+            { label: '▬', build: function(c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:80%;height:40px;border:2px solid ' + c + ';background:transparent;margin:8px auto;border-radius:4px;resize:both;overflow:auto;min-width:40px;min-height:20px;"></div>'; } },
+            { label: '□', build: function(c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:60px;height:60px;border:2px solid ' + c + ';background:transparent;margin:8px auto;border-radius:4px;resize:both;overflow:auto;min-width:20px;min-height:20px;"></div>'; } },
+            { label: '○', build: function(c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:60px;height:60px;border:2px solid ' + c + ';background:transparent;margin:8px auto;border-radius:50%;resize:both;overflow:auto;min-width:20px;min-height:20px;"></div>'; } },
+            { label: '△', build: function(c) { return '<svg class="editor-shape" contenteditable="false" viewBox="0 0 70 60" width="70" height="60" style="display:block;margin:8px auto;resize:both;overflow:auto;min-width:30px;min-height:30px;"><polygon points="35,2 68,58 2,58" fill="none" stroke="' + c + '" stroke-width="2"/></svg>'; } },
+            { label: '◇', build: function(c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:50px;height:50px;border:2px solid ' + c + ';background:transparent;margin:8px auto;transform:rotate(45deg);resize:both;overflow:auto;min-width:20px;min-height:20px;"></div>'; } },
+            { label: '⬭', build: function(c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:80px;height:50px;border:2px solid ' + c + ';background:transparent;margin:8px auto;border-radius:50%;resize:both;overflow:auto;min-width:20px;min-height:20px;"></div>'; } },
+            { label: '─', build: function(c) { return '<hr class="editor-shape" style="border:none;border-top:2px solid ' + c + ';margin:12px 0;">'; } }
         ];
         shapes.forEach((sh) => {
             const b = document.createElement('button');
@@ -279,7 +306,7 @@
             b.addEventListener('click', (ev) => {
                 ev.stopPropagation();
                 if (document.activeElement !== editor) editor.focus();
-                document.execCommand('insertHTML', false, sh.html);
+                document.execCommand('insertHTML', false, sh.build(_desktopShapeColor));
                 shapePicker.style.display = 'none';
                 if (typeof saveUndoState === 'function') saveUndoState();
             });
@@ -297,6 +324,59 @@
         document.addEventListener('click', (ev) => {
             if (!shapePicker.contains(ev.target) && ev.target !== insertShapeBtn) {
                 shapePicker.style.display = 'none';
+            }
+        });
+    }
+
+    // ── Highlight / Resaltador de texto ──
+    const highlightBtn = $('highlightBtn');
+    if (highlightBtn && editor) {
+        var _highlightColors = ['#fef08a','#bbf7d0','#bfdbfe','#fbcfe8','#fde68a','#c4b5fd','#fed7aa','#fecaca'];
+        var _hlPickerEl = document.createElement('div');
+        _hlPickerEl.className = 'desktop-highlight-picker';
+        _hlPickerEl.style.display = 'none';
+        _highlightColors.forEach(function(c) {
+            var sw = document.createElement('button');
+            sw.type = 'button';
+            sw.className = 'desktop-highlight-swatch';
+            sw.style.background = c;
+            sw.title = 'Resaltar con ' + c;
+            sw.addEventListener('click', function(ev) {
+                ev.stopPropagation();
+                if (document.activeElement !== editor) editor.focus();
+                document.execCommand('hiliteColor', false, c);
+                _hlPickerEl.style.display = 'none';
+                _collapseSelection();
+                if (typeof saveUndoState === 'function') saveUndoState();
+            });
+            _hlPickerEl.appendChild(sw);
+        });
+        // Botón quitar resaltado
+        var swNone = document.createElement('button');
+        swNone.type = 'button';
+        swNone.className = 'desktop-highlight-swatch desktop-highlight-none';
+        swNone.title = 'Quitar resaltado';
+        swNone.textContent = '✕';
+        swNone.addEventListener('click', function(ev) {
+            ev.stopPropagation();
+            if (document.activeElement !== editor) editor.focus();
+            document.execCommand('hiliteColor', false, 'transparent');
+            _hlPickerEl.style.display = 'none';
+            _collapseSelection();
+            if (typeof saveUndoState === 'function') saveUndoState();
+        });
+        _hlPickerEl.appendChild(swNone);
+
+        highlightBtn.parentElement.style.position = 'relative';
+        highlightBtn.parentElement.appendChild(_hlPickerEl);
+
+        highlightBtn.addEventListener('click', function(ev) {
+            ev.stopPropagation();
+            _hlPickerEl.style.display = _hlPickerEl.style.display === 'none' ? 'flex' : 'none';
+        });
+        document.addEventListener('click', function(ev) {
+            if (!_hlPickerEl.contains(ev.target) && ev.target !== highlightBtn) {
+                _hlPickerEl.style.display = 'none';
             }
         });
     }

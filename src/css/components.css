@@ -1168,6 +1168,29 @@
             box-shadow: 0 4px 12px rgba(0,0,0,.15);
             margin-top: 4px;
         }
+        .desktop-shape-color-row {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            padding: 2px 0 6px;
+        }
+        .desktop-shape-color-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            padding: 0;
+            transition: transform 0.15s, border-color 0.15s;
+        }
+        .desktop-shape-color-dot:hover {
+            transform: scale(1.2);
+        }
+        .desktop-shape-color-dot.active {
+            border-color: var(--primary, #3b82f6);
+            transform: scale(1.15);
+        }
         .desktop-shape-btn {
             width: 42px;
             height: 36px;
@@ -1183,6 +1206,78 @@
         .desktop-shape-btn:hover {
             background: var(--primary);
             color: #fff;
+        }
+
+        /* Editor shapes: resize handle discreto */
+        .editor-shape {
+            resize: both;
+            overflow: auto;
+            position: relative;
+        }
+        .editor-shape::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 6px;
+            height: 6px;
+            background: linear-gradient(135deg, transparent 50%, var(--border, #ccc) 50%);
+            border-radius: 0 0 2px 0;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        .editor-shape::-webkit-resizer {
+            background: transparent;
+        }
+
+        /* Desktop highlight picker (dropdown under highlight button) */
+        .desktop-highlight-picker {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            flex-wrap: wrap;
+            gap: 5px;
+            padding: 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,.15);
+            margin-top: 4px;
+            max-width: 200px;
+            justify-content: center;
+        }
+        .desktop-highlight-swatch {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            cursor: pointer;
+            padding: 0;
+            transition: transform 0.15s;
+        }
+        .desktop-highlight-swatch:hover {
+            transform: scale(1.2);
+        }
+        .desktop-highlight-none {
+            background: var(--bg-main) !important;
+            font-size: 0.65rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+        }
+
+        /* Tablas: columnas uniformes con table-layout fixed */
+        #editor table[border] {
+            table-layout: fixed;
+        }
+        #editor table[border] td,
+        #editor table[border] th {
+            overflow-wrap: break-word;
+            word-wrap: break-word;
         }
 
         .toolbar-select {
@@ -1545,6 +1640,8 @@
             .btn-append-inline,
             .inline-review-btn { display: none !important; }
             .editor-shape { resize: none !important; overflow: visible !important; }
+            .editor-shape::after { display: none !important; }
+            .editor-img-wrap { resize: none !important; overflow: visible !important; }
         }
         /* Dark mode: editor text and background */
         [data-theme="dark"] .editor-content,

@@ -874,11 +874,10 @@
         document.addEventListener('touchend', onEnd);
     }
 
-    if (window.innerWidth <= 900 || 'ontouchstart' in window) {
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initTableResize);
-        } else {
-            initTableResize();
-        }
+    // Table resize activo en desktop y mobile
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initTableResize);
+    } else {
+        initTableResize();
     }
 })();
