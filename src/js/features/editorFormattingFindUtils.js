@@ -597,6 +597,11 @@
             deselectShape();
             activeShape = shape;
             shape.style.outline = '1.5px solid #3b82f6';
+            // For tables: block cell editing while selected
+            if (shape.tagName === 'TABLE') {
+                shape.setAttribute('contenteditable', 'false');
+                shape.style.cursor = 'grab';
+            }
             // Clear text caret so no blinking cursor appears near shape
             var sel = window.getSelection();
             if (sel) sel.removeAllRanges();
@@ -607,6 +612,11 @@
         function deselectShape() {
             if (!activeShape) return;
             activeShape.style.outline = '';
+            // For tables: restore cell editing
+            if (activeShape.tagName === 'TABLE') {
+                activeShape.removeAttribute('contenteditable');
+                activeShape.style.cursor = '';
+            }
             activeShape = null;
             hideHandles();
             hideMobileActionBar();
@@ -616,6 +626,23 @@
             if (!el) return null;
             var s = el.closest('.editor-shape');
             return (s && editor.contains(s) && s.tagName !== 'HR') ? s : null;
+        }
+
+        // Detect click on the outer border of a table (for selection)
+        var TABLE_BORDER_ZONE = 8; // px from outer edge
+        function isTableBorderClick(el, x, y) {
+            if (!el) return null;
+            var table = el.closest('table');
+            if (!table || !editor.contains(table)) return null;
+            var r = table.getBoundingClientRect();
+            // Must be within the table bounds
+            if (x < r.left || x > r.right || y < r.top || y > r.bottom) return null;
+            // Near outer edges?
+            if (x - r.left < TABLE_BORDER_ZONE || r.right - x < TABLE_BORDER_ZONE ||
+                y - r.top < TABLE_BORDER_ZONE || r.bottom - y < TABLE_BORDER_ZONE) {
+                return table;
+            }
+            return null;
         }
 
         function ppos(ev) {
@@ -669,8 +696,28 @@
                 return;
             }
 
+            // Check for table border click → select table
+            var tableSel = isTableBorderClick(ev.target, p.x, p.y);
+            if (tableSel) {
+                ev.preventDefault();
+                ev.stopPropagation(); // prevent table cell resize from firing
+                selectShape(tableSel);
+                interaction = {
+                    mode: 'drag',
+                    el: tableSel,
+                    startX: p.x, startY: p.y,
+                    origLeft: parseFloat(tableSel.style.marginLeft) || 0,
+                    origTop: parseFloat(tableSel.style.marginTop) || 0,
+                    moved: false
+                };
+                tableSel.style.cursor = 'grabbing';
+                editor.style.userSelect = 'none';
+                return;
+            }
+
             // Clicked outside any shape → deselect (but preserve selection when interacting with shape/highlight pickers)
-            if (activeShape && !ev.target.closest('.editor-shape-handle') && !ev.target.closest('.desktop-shape-picker') && !ev.target.closest('.desktop-highlight-picker') && !ev.target.closest('#insertShapeBtn') && !ev.target.closest('.shape-mobile-actionbar')) {
+            if (activeShape && !ev.target.closest('.editor-shape-handle') && !ev.target.closest('.desktop-shape-picker') && !ev.target.closest('.desktop-highlight-picker') && !ev.target.closest('#insertShapeBtn') && !ev.target.closest('.shape-mobile-actionbar') && !ev.target.closest('.desktop-table-grid-picker')) {
+                // If clicking inside a table that IS the activeShape, deselect so user can type
                 deselectShape();
             }
         }, true);
@@ -710,7 +757,7 @@
         document.addEventListener('pointerup', function() {
             if (!interaction) return;
             if (interaction.mode === 'drag') {
-                interaction.el.style.cursor = 'grab';
+                interaction.el.style.cursor = (interaction.el.tagName === 'TABLE') ? '' : 'grab';
             }
             editor.style.userSelect = '';
             if (typeof saveUndoState === 'function') saveUndoState();
@@ -752,11 +799,15 @@
 
         // Touch support
         editor.addEventListener('touchstart', function(ev) {
+            var p = ppos(ev);
             var shape = isShapeEl(ev.target);
+            if (!shape) {
+                // Check table border
+                shape = isTableBorderClick(ev.target, p.x, p.y);
+            }
             if (!shape) return;
             ev.preventDefault();
             selectShape(shape);
-            var p = ppos(ev);
             interaction = {
                 mode: 'drag', el: shape,
                 startX: p.x, startY: p.y,
@@ -783,7 +834,7 @@
         }, { passive: false });
         document.addEventListener('touchend', function() {
             if (!interaction) return;
-            interaction.el.style.cursor = 'grab';
+            interaction.el.style.cursor = (interaction.el.tagName === 'TABLE') ? '' : 'grab';
             editor.style.userSelect = '';
             if (typeof saveUndoState === 'function') saveUndoState();
             interaction = null;
