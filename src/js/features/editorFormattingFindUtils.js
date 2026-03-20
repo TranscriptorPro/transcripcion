@@ -518,6 +518,65 @@
             handleEls.push({ el: h, name: def[0], xf: def[1], yf: def[2] });
         });
 
+        // Mobile floating action bar (delete + copy) for selected shapes
+        var isTouchDevice = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+        var mobileActionBar = null;
+        if (isTouchDevice) {
+            mobileActionBar = document.createElement('div');
+            mobileActionBar.className = 'shape-mobile-actionbar';
+            mobileActionBar.style.display = 'none';
+
+            var delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.className = 'shape-action-btn shape-action-delete';
+            delBtn.innerHTML = '🗑️';
+            delBtn.title = 'Eliminar';
+            delBtn.addEventListener('click', function(ev) {
+                ev.preventDefault(); ev.stopPropagation();
+                if (!activeShape) return;
+                var toRemove = activeShape;
+                deselectShape();
+                toRemove.parentNode.removeChild(toRemove);
+                if (typeof saveUndoState === 'function') saveUndoState();
+            });
+
+            var copyBtn = document.createElement('button');
+            copyBtn.type = 'button';
+            copyBtn.className = 'shape-action-btn shape-action-copy';
+            copyBtn.innerHTML = '📋';
+            copyBtn.title = 'Copiar';
+            copyBtn.addEventListener('click', function(ev) {
+                ev.preventDefault(); ev.stopPropagation();
+                if (!activeShape) return;
+                var clone = activeShape.cloneNode(true);
+                clone.style.outline = '';
+                activeShape.parentNode.insertBefore(clone, activeShape.nextSibling);
+                deselectShape();
+                selectShape(clone);
+                if (typeof saveUndoState === 'function') saveUndoState();
+            });
+
+            mobileActionBar.appendChild(copyBtn);
+            mobileActionBar.appendChild(delBtn);
+            document.body.appendChild(mobileActionBar);
+        }
+
+        function positionMobileActionBar() {
+            if (!mobileActionBar || !activeShape) { if (mobileActionBar) mobileActionBar.style.display = 'none'; return; }
+            var r = activeShape.getBoundingClientRect();
+            var barW = 76; // approx width of 2 buttons
+            var left = r.left + r.width / 2 - barW / 2 + window.scrollX;
+            var top = r.top - 40 + window.scrollY;
+            if (top < window.scrollY + 4) top = r.bottom + 4 + window.scrollY;
+            mobileActionBar.style.left = Math.max(4, left) + 'px';
+            mobileActionBar.style.top = top + 'px';
+            mobileActionBar.style.display = 'flex';
+        }
+
+        function hideMobileActionBar() {
+            if (mobileActionBar) mobileActionBar.style.display = 'none';
+        }
+
         function positionHandles() {
             if (!activeShape) return;
             var r = activeShape.getBoundingClientRect();
@@ -542,6 +601,7 @@
             var sel = window.getSelection();
             if (sel) sel.removeAllRanges();
             positionHandles();
+            positionMobileActionBar();
         }
 
         function deselectShape() {
@@ -549,6 +609,7 @@
             activeShape.style.outline = '';
             activeShape = null;
             hideHandles();
+            hideMobileActionBar();
         }
 
         function isShapeEl(el) {
@@ -609,7 +670,7 @@
             }
 
             // Clicked outside any shape → deselect (but preserve selection when interacting with shape/highlight pickers)
-            if (activeShape && !ev.target.closest('.editor-shape-handle') && !ev.target.closest('.desktop-shape-picker') && !ev.target.closest('.desktop-highlight-picker') && !ev.target.closest('#insertShapeBtn')) {
+            if (activeShape && !ev.target.closest('.editor-shape-handle') && !ev.target.closest('.desktop-shape-picker') && !ev.target.closest('.desktop-highlight-picker') && !ev.target.closest('#insertShapeBtn') && !ev.target.closest('.shape-mobile-actionbar')) {
                 deselectShape();
             }
         }, true);
@@ -655,6 +716,7 @@
             if (typeof saveUndoState === 'function') saveUndoState();
             interaction = null;
             positionHandles();
+            positionMobileActionBar();
         });
 
         // Delete key removes selected shape/image
@@ -670,8 +732,8 @@
         });
 
         // Reposition handles on scroll/resize
-        window.addEventListener('scroll', function() { if (activeShape) positionHandles(); }, true);
-        window.addEventListener('resize', function() { if (activeShape) positionHandles(); });
+        window.addEventListener('scroll', function() { if (activeShape) { positionHandles(); positionMobileActionBar(); } }, true);
+        window.addEventListener('resize', function() { if (activeShape) { positionHandles(); positionMobileActionBar(); } });
 
         // Expose API for external code (e.g. color picker) to interact with active shape
         window._getActiveShape = function() { return activeShape; };
