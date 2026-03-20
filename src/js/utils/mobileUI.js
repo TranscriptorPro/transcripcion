@@ -719,13 +719,18 @@
 
         function getEdge(td, x, y) {
             var r = td.getBoundingClientRect();
-            // Right edge = column resize
-            if (Math.abs(x - r.right) < EDGE && td.cellIndex < td.parentElement.cells.length - 1) {
-                return { type: 'col', index: td.cellIndex };
+            var table = td.closest('table');
+            var nCols = td.parentElement.cells.length;
+            var nRows = table ? table.rows.length : 1;
+            // Right edge = column resize (interior: resize this and next; last col: resize this col width)
+            if (Math.abs(x - r.right) < EDGE) {
+                if (td.cellIndex < nCols - 1) return { type: 'col', index: td.cellIndex };
+                return { type: 'col-single', index: td.cellIndex, side: 'right' };
             }
-            // Left edge (resize previous column)
-            if (Math.abs(x - r.left) < EDGE && td.cellIndex > 0) {
-                return { type: 'col', index: td.cellIndex - 1 };
+            // Left edge (interior: resize previous; first col: resize first col width)
+            if (Math.abs(x - r.left) < EDGE) {
+                if (td.cellIndex > 0) return { type: 'col', index: td.cellIndex - 1 };
+                return { type: 'col-single', index: 0, side: 'left' };
             }
             // Bottom edge = row resize
             if (Math.abs(y - r.bottom) < EDGE) {
@@ -790,10 +795,12 @@
                 type: edge.type,
                 table: hit.table,
                 index: edge.index,
+                side: edge.side || null,
                 startX: p.x,
                 startY: p.y,
                 colWidths: getColWidths(hit.table),
-                rowHeights: getRowHeights(hit.table)
+                rowHeights: getRowHeights(hit.table),
+                tableStartWidth: hit.table.getBoundingClientRect().width
             };
             editor.style.userSelect = 'none';
             editor.style.webkitUserSelect = 'none';
@@ -806,7 +813,7 @@
                 var hit = getCellAt(p.x, p.y);
                 if (hit) {
                     var edge = getEdge(hit.td, p.x, p.y);
-                    editor.style.cursor = edge ? (edge.type === 'col' ? 'col-resize' : 'row-resize') : '';
+                    editor.style.cursor = edge ? ((edge.type === 'col' || edge.type === 'col-single') ? 'col-resize' : 'row-resize') : '';
                 } else {
                     editor.style.cursor = '';
                 }
@@ -827,6 +834,21 @@
                     newWidths[d.index + 1] = w2;
                     applyColWidths(d.table, newWidths);
                 }
+            } else if (d.type === 'col-single') {
+                var dx = p.x - d.startX;
+                var newWidths = d.colWidths.slice();
+                if (d.side === 'right') {
+                    // Last column right edge: grow/shrink last column and table
+                    var nw = Math.max(30, d.colWidths[d.index] + dx);
+                    newWidths[d.index] = nw;
+                } else {
+                    // First column left edge: grow/shrink first column and table
+                    var nw = Math.max(30, d.colWidths[d.index] - dx);
+                    newWidths[d.index] = nw;
+                }
+                var newTotal = newWidths.reduce(function (s, w) { return s + w; }, 0);
+                d.table.style.width = newTotal + 'px';
+                applyColWidths(d.table, newWidths);
             } else {
                 var dy = p.y - d.startY;
                 applyRowHeight(d.table, d.index, d.rowHeights[d.index] + dy);
