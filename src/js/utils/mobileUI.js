@@ -27,6 +27,8 @@
         hookSidebarAutoCollapse();
         hookTranscriptionButtons();
         optimizeEditorActionsForMobile();
+        setupMobileEditorTextUX();
+        enforcePersistentToolbarOnMobile();
     }
 
     /* ─── 1. Menú overflow (⋮): eliminado — todos los botones visibles en header */
@@ -141,6 +143,73 @@
         enforceBigActionIcons();
         syncCompactViewButtons();
         buildMobileToolbarGroups();
+    }
+
+    function setupMobileEditorTextUX() {
+        if (!isMobile()) return;
+        var body = document.body;
+        if (body) body.classList.add('mobile-editor-ux');
+
+        var editor = document.getElementById('editor');
+        var toolbar = document.getElementById('editorToolbar');
+        if (!editor || !toolbar) return;
+
+        if (!editor._mobileContextmenuBlocked) {
+            editor._mobileContextmenuBlocked = true;
+            editor.addEventListener('contextmenu', function (ev) {
+                // Reduce el menú nativo; la app ofrece sus propias acciones.
+                ev.preventDefault();
+            });
+        }
+
+        if (!toolbar._mobileSelectionBridge) {
+            toolbar._mobileSelectionBridge = true;
+            toolbar.addEventListener('touchstart', function (ev) {
+                var target = ev.target;
+                if (!target) return;
+                var actionable = target.closest('button,select,.mobile-group-trigger,.mobile-toolbar-panel');
+                if (!actionable) return;
+                var sel = window.getSelection && window.getSelection();
+                if (sel && !sel.isCollapsed) {
+                    try { sel.collapseToEnd(); } catch (_) { try { sel.removeAllRanges(); } catch (_) {} }
+                }
+                if (document.activeElement === editor) {
+                    try { editor.blur(); } catch (_) {}
+                }
+            }, { passive: true, capture: true });
+        }
+    }
+
+    function enforcePersistentToolbarOnMobile() {
+        if (!isMobile()) return;
+        var toolbar = document.getElementById('editorToolbar');
+        if (!toolbar) return;
+
+        function forceVisible() {
+            if (!isMobile()) return;
+            toolbar.style.display = 'flex';
+            toolbar.style.visibility = 'visible';
+            toolbar.style.opacity = '1';
+
+            var clearBtn = document.getElementById('clearFormatBtn');
+            var copyBtn = document.getElementById('copyBtn');
+            var medBtn = document.getElementById('btnMedicalCheck');
+
+            [clearBtn, copyBtn, medBtn].forEach(function (btn) {
+                if (!btn) return;
+                btn.style.setProperty('display', 'inline-flex', 'important');
+                btn.style.visibility = 'visible';
+                btn.style.opacity = '1';
+                if (!toolbar.contains(btn)) toolbar.appendChild(btn);
+            });
+        }
+
+        forceVisible();
+        if (!toolbar._mobilePersistentObserver) {
+            toolbar._mobilePersistentObserver = new MutationObserver(forceVisible);
+            toolbar._mobilePersistentObserver.observe(toolbar, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+        }
+        window.addEventListener('resize', forceVisible);
     }
 
     function compactInlineReviewLabel() {
@@ -684,6 +753,27 @@
             findReplBtn.classList.add('mobile-toolbar-standalone');
             toolbar.appendChild(findReplBtn);
         }
+
+        var deselectBtn = document.createElement('button');
+        deselectBtn.type = 'button';
+        deselectBtn.className = 'toolbar-btn mobile-toolbar-standalone mobile-deselect-btn';
+        deselectBtn.title = 'Deseleccionar';
+        deselectBtn.setAttribute('aria-label', 'Deseleccionar texto');
+        deselectBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M6.4 19L5 17.6 10.6 12 5 6.4 6.4 5 12 10.6 17.6 5 19 6.4 13.4 12 19 17.6 17.6 19 12 13.4z"/></svg>';
+        deselectBtn.addEventListener('click', function (ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            var sel = window.getSelection && window.getSelection();
+            if (sel) {
+                try { sel.removeAllRanges(); } catch (_) {}
+            }
+            var editor = document.getElementById('editor');
+            if (editor && document.activeElement === editor) {
+                try { editor.blur(); } catch (_) {}
+            }
+            closeAllGroups(null);
+        });
+        toolbar.appendChild(deselectBtn);
 
         /* Clicks en botones de paneles: cerrar el grupo padre tras la acción */
         toolbar.querySelectorAll('.mobile-toolbar-panel .toolbar-btn').forEach(function (btn) {

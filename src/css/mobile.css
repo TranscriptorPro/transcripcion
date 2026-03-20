@@ -629,6 +629,22 @@
         line-height: 1;
     }
 
+    body.mobile-editor-ux #editor {
+        -webkit-touch-callout: none;
+        touch-action: pan-y;
+    }
+
+    body.mobile-editor-ux #editorToolbar,
+    body.mobile-editor-ux #editorToolbar * {
+        -webkit-user-select: none;
+        user-select: none;
+        touch-action: manipulation;
+    }
+
+    #editorToolbar .mobile-deselect-btn {
+        color: var(--danger, #dc2626) !important;
+    }
+
     /* ── Botones de acción del editor ────────────────────────────── */
     .fixed-buttons-container {
         flex-wrap: wrap;

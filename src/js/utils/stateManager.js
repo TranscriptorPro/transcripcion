@@ -13,6 +13,7 @@ window.detectEditorState = function (html) {
 
 window.updateButtonsVisibility = function (state) {
     window.appState = state;
+    const isMobileViewport = window.innerWidth <= 768;
 
     const structureBtn           = document.getElementById('structureBtn');
     const downloadPdfBtn         = document.getElementById('downloadPdfBtn');
@@ -94,8 +95,8 @@ window.updateButtonsVisibility = function (state) {
 
     // Copy & Download: visible after transcription
     if (copyBtn) {
-        copyBtn.style.display = (isTranscribed && !isStructuring) ? 'inline-flex' : 'none';
-        copyBtn.disabled = !isTranscribed || isStructuring;
+        copyBtn.style.display = ((isTranscribed && !isStructuring) || isMobileViewport) ? 'inline-flex' : 'none';
+        copyBtn.disabled = isStructuring;
     }
     if (printBtn) {
         printBtn.style.display = (isTranscribed && !isStructuring) ? 'inline-flex' : 'none';
@@ -146,7 +147,8 @@ window.updateButtonsVisibility = function (state) {
     // Botón diccionario médico: visible tras transcripción
     const btnMedicalCheck = document.getElementById('btnMedicalCheck');
     if (btnMedicalCheck) {
-        btnMedicalCheck.style.display = (isTranscribed && !isStructuring) ? '' : 'none';
+        btnMedicalCheck.style.display = ((isTranscribed && !isStructuring) || isMobileViewport) ? 'inline-flex' : 'none';
+        btnMedicalCheck.disabled = isStructuring;
     }
 
     if (typeof window.updateProSourceModeUI === 'function') {
