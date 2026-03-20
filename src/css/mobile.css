@@ -393,10 +393,10 @@
 
     /* Toolbar móvil agrupado: una sola fila con menús desplegables */
     #editorToolbar.mobile-grouped {
-        flex-wrap: wrap !important;
+        flex-wrap: nowrap !important;
         overflow: visible !important;
-        gap: 3px !important;
-        padding: 0.25rem !important;
+        gap: 2px !important;
+        padding: 0.2rem !important;
         position: relative;
     }
 
@@ -410,9 +410,9 @@
     }
 
     #editorToolbar.mobile-grouped .mobile-group-trigger {
-        width: 32px;
-        height: 32px;
-        min-width: 32px;
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
         padding: 0;
         border-radius: 6px;
         border: 2px solid var(--border, rgba(0,0,0,0.15));
@@ -490,9 +490,9 @@
 
     #editorToolbar.mobile-grouped .mobile-toolbar-standalone {
         flex: 0 0 auto;
-        width: 32px;
-        height: 32px;
-        min-width: 32px;
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -518,9 +518,9 @@
     #editorToolbar #copyBtn,
     #editorToolbar #btnMedicalCheck {
         display: inline-flex;
-        min-width: 32px;
-        width: 32px;
-        height: 32px;
+        min-width: 30px;
+        width: 30px;
+        height: 30px;
         padding: 0;
         border-radius: 6px;
         background: transparent;

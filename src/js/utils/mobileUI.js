@@ -373,12 +373,6 @@
         );
 
         makeGroup(
-            'Navegación',
-            '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M13 3a9 9 0 0 0-9 9H1l4 4 4-4H6a7 7 0 1 1 2.05 4.95l-1.42 1.42A9 9 0 1 0 13 3z"></path></svg>',
-            ['undoBtn', 'redoBtn', 'btnEditorSnapshots']
-        );
-
-        makeGroup(
             'Insertar',
             '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"></path></svg>',
             ['insertTableBtn', 'insertLinkBtn'],
@@ -520,6 +514,19 @@
             }
         );
 
+        makeGroup(
+            'Navegación',
+            '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M13 3a9 9 0 0 0-9 9H1l4 4 4-4H6a7 7 0 1 1 2.05 4.95l-1.42 1.42A9 9 0 1 0 13 3z"></path></svg>',
+            ['undoBtn', 'redoBtn', 'btnEditorSnapshots']
+        );
+
+        /* === Standalone buttons en orden: limpiar, copiar, diccionario, búsqueda === */
+        var clearBtn = findEl('clearFormatBtn');
+        if (clearBtn) {
+            clearBtn.classList.add('mobile-toolbar-standalone');
+            toolbar.appendChild(clearBtn);
+        }
+
         var copyBtn = findEl('copyBtn');
         if (copyBtn) {
             copyBtn.classList.remove('btn-action-green');
@@ -558,12 +565,11 @@
             toolbar.appendChild(medBtn);
         }
 
-        ['clearFormatBtn', 'toggleFindReplace'].forEach(function (id) {
-            var el = findEl(id);
-            if (!el) return;
-            el.classList.add('mobile-toolbar-standalone');
-            toolbar.appendChild(el);
-        });
+        var findReplBtn = findEl('toggleFindReplace');
+        if (findReplBtn) {
+            findReplBtn.classList.add('mobile-toolbar-standalone');
+            toolbar.appendChild(findReplBtn);
+        }
 
         /* Evitar que clicks en botones de paneles burbujeen hacia listeners de document
            (ej: cierre de grupos). Usar bubbling (no capture) para no bloquear handlers
@@ -590,14 +596,6 @@
         toolbar.querySelectorAll('.desktop-shape-picker').forEach(function (el) {
             el.style.display = 'none';
         });
-
-        /* Spacer flexible: empuja standalone buttons a la derecha */
-        var spacer = document.createElement('div');
-        spacer.className = 'mobile-toolbar-spacer';
-        var firstStandalone = toolbar.querySelector('.mobile-toolbar-standalone');
-        if (firstStandalone) {
-            toolbar.insertBefore(spacer, firstStandalone);
-        }
 
         toolbar.dataset.mobileGroupsReady = '1';
     }
