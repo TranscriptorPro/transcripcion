@@ -204,43 +204,115 @@
         });
     }
 
+    // ── Insertar Tabla (grid picker estilo Word) ──
     const insertTableBtn = $('insertTableBtn');
     if (insertTableBtn && editor) {
-        insertTableBtn.addEventListener('click', async () => {
-            const rows = await window.showCustomPrompt('Número de filas:', '', '3');
-            if (!rows) return;
-            const cols = await window.showCustomPrompt('Número de columnas:', '', '3');
-            if (rows && cols) {
-                const nRows = parseInt(rows, 10) || 3;
-                const nCols = parseInt(cols, 10) || 3;
-                const table = document.createElement('table');
-                table.setAttribute('border', '1');
-                table.style.cssText = 'border-collapse:collapse;width:100%;margin:1rem 0;table-layout:fixed;';
-                var colW = (100 / nCols).toFixed(2) + '%';
-                for (let i = 0; i < nRows; i++) {
-                    const tr = table.insertRow();
-                    for (let j = 0; j < nCols; j++) {
-                        const td = tr.insertCell();
-                        td.style.cssText = 'border:1px solid var(--border,#ddd);padding:8px;width:' + colW + ';';
-                        td.innerHTML = '&nbsp;';
-                    }
+        var _tableGridPicker = document.createElement('div');
+        _tableGridPicker.className = 'desktop-table-grid-picker';
+        _tableGridPicker.style.display = 'none';
+
+        var _gridLabel = document.createElement('div');
+        _gridLabel.className = 'table-grid-label';
+        _gridLabel.textContent = 'Insertar tabla';
+        _tableGridPicker.appendChild(_gridLabel);
+
+        var _gridContainer = document.createElement('div');
+        _gridContainer.className = 'table-grid-cells';
+        var MAX_ROWS = 8, MAX_COLS = 8;
+        var _gridCells = [];
+        for (var gr = 0; gr < MAX_ROWS; gr++) {
+            for (var gc = 0; gc < MAX_COLS; gc++) {
+                var cell = document.createElement('div');
+                cell.className = 'table-grid-cell';
+                cell.dataset.row = gr;
+                cell.dataset.col = gc;
+                _gridContainer.appendChild(cell);
+                _gridCells.push(cell);
+            }
+        }
+        _tableGridPicker.appendChild(_gridContainer);
+        document.body.appendChild(_tableGridPicker);
+
+        function _highlightGridCells(row, col) {
+            _gridCells.forEach(function(c) {
+                var r = parseInt(c.dataset.row), cc = parseInt(c.dataset.col);
+                c.classList.toggle('active', r <= row && cc <= col);
+            });
+            _gridLabel.textContent = (row + 1) + ' × ' + (col + 1) + ' Tabla';
+        }
+
+        _gridContainer.addEventListener('mousemove', function(ev) {
+            var cell = ev.target.closest('.table-grid-cell');
+            if (cell) _highlightGridCells(parseInt(cell.dataset.row), parseInt(cell.dataset.col));
+        });
+
+        _gridContainer.addEventListener('mouseleave', function() {
+            _gridCells.forEach(function(c) { c.classList.remove('active'); });
+            _gridLabel.textContent = 'Insertar tabla';
+        });
+
+        _gridContainer.addEventListener('click', function(ev) {
+            var cell = ev.target.closest('.table-grid-cell');
+            if (!cell) return;
+            var nRows = parseInt(cell.dataset.row) + 1;
+            var nCols = parseInt(cell.dataset.col) + 1;
+            _tableGridPicker.style.display = 'none';
+
+            var table = document.createElement('table');
+            table.setAttribute('border', '1');
+            table.style.cssText = 'border-collapse:collapse;width:100%;margin:1rem 0;table-layout:fixed;';
+            var colW = (100 / nCols).toFixed(2) + '%';
+            for (var i = 0; i < nRows; i++) {
+                var tr = table.insertRow();
+                for (var j = 0; j < nCols; j++) {
+                    var td = tr.insertCell();
+                    td.style.cssText = 'border:1px solid var(--border,#ddd);padding:8px;width:' + colW + ';min-height:24px;';
+                    td.innerHTML = '&nbsp;';
                 }
-                // Insert at cursor position or append to editor
-                const sel = window.getSelection();
-                if (sel.rangeCount && editor.contains(sel.anchorNode)) {
-                    const range = sel.getRangeAt(0);
-                    range.deleteContents();
-                    range.insertNode(table);
-                    // Move cursor after the table
-                    range.setStartAfter(table);
-                    range.collapse(true);
-                    sel.removeAllRanges();
-                    sel.addRange(range);
-                } else {
-                    editor.appendChild(table);
-                }
-                editor.focus();
-                if (typeof saveUndoState === 'function') saveUndoState();
+            }
+            if (document.activeElement !== editor) editor.focus();
+            var sel = window.getSelection();
+            if (sel.rangeCount && editor.contains(sel.anchorNode)) {
+                var range = sel.getRangeAt(0);
+                range.deleteContents();
+                range.insertNode(table);
+                range.setStartAfter(table);
+                range.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            } else {
+                editor.appendChild(table);
+            }
+            editor.focus();
+            // Place cursor in first cell
+            var firstCell = table.querySelector('td');
+            if (firstCell) {
+                var r = document.createRange();
+                r.setStart(firstCell, 0);
+                r.collapse(true);
+                var s = window.getSelection();
+                s.removeAllRanges();
+                s.addRange(r);
+            }
+            if (typeof saveUndoState === 'function') saveUndoState();
+        });
+
+        function _positionTableGrid() {
+            var r = insertTableBtn.getBoundingClientRect();
+            _tableGridPicker.style.top = (r.bottom + 4) + 'px';
+            _tableGridPicker.style.left = r.left + 'px';
+        }
+
+        insertTableBtn.addEventListener('click', function(ev) {
+            ev.stopPropagation();
+            var show = _tableGridPicker.style.display === 'none';
+            _tableGridPicker.style.display = show ? 'block' : 'none';
+            if (show) _positionTableGrid();
+        });
+
+        document.addEventListener('click', function(ev) {
+            if (!_tableGridPicker.contains(ev.target) && ev.target !== insertTableBtn) {
+                _tableGridPicker.style.display = 'none';
             }
         });
     }
@@ -303,6 +375,10 @@
                 _desktopShapeColor = sc.color;
                 colorRow.querySelectorAll('.desktop-shape-color-dot').forEach(function (d) { d.classList.remove('active'); });
                 dot.classList.add('active');
+                // If a shape is selected, change its color live
+                if (typeof window._changeActiveShapeColor === 'function') {
+                    window._changeActiveShapeColor(sc.color);
+                }
             });
             colorRow.appendChild(dot);
         });
@@ -462,6 +538,9 @@
             deselectShape();
             activeShape = shape;
             shape.style.outline = '1.5px solid #3b82f6';
+            // Clear text caret so no blinking cursor appears near shape
+            var sel = window.getSelection();
+            if (sel) sel.removeAllRanges();
             positionHandles();
         }
 
@@ -529,8 +608,8 @@
                 return;
             }
 
-            // Clicked outside any shape → deselect
-            if (activeShape && !ev.target.closest('.editor-shape-handle') && !ev.target.closest('.desktop-shape-picker') && !ev.target.closest('.desktop-highlight-picker')) {
+            // Clicked outside any shape → deselect (but preserve selection when interacting with shape/highlight pickers)
+            if (activeShape && !ev.target.closest('.editor-shape-handle') && !ev.target.closest('.desktop-shape-picker') && !ev.target.closest('.desktop-highlight-picker') && !ev.target.closest('#insertShapeBtn')) {
                 deselectShape();
             }
         }, true);
@@ -581,6 +660,21 @@
         // Reposition handles on scroll/resize
         window.addEventListener('scroll', function() { if (activeShape) positionHandles(); }, true);
         window.addEventListener('resize', function() { if (activeShape) positionHandles(); });
+
+        // Expose API for external code (e.g. color picker) to interact with active shape
+        window._getActiveShape = function() { return activeShape; };
+        window._changeActiveShapeColor = function(color) {
+            if (!activeShape) return false;
+            // Regular shapes: change border color
+            if (activeShape.style.borderColor !== undefined) {
+                activeShape.style.borderColor = color;
+            }
+            // SVG shapes (triangle): change stroke
+            var svgEl = activeShape.querySelector('polygon, line, circle, rect, path');
+            if (svgEl) svgEl.setAttribute('stroke', color);
+            if (typeof saveUndoState === 'function') saveUndoState();
+            return true;
+        };
 
         // Touch support
         editor.addEventListener('touchstart', function(ev) {

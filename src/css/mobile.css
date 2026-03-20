@@ -519,6 +519,7 @@
         position: relative;
         user-select: none;
         cursor: grab;
+        caret-color: transparent;
     }
 
     .editor-shape::-webkit-resizer {

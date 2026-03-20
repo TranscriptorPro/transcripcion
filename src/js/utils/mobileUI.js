@@ -481,6 +481,10 @@
                         selectedShapeColor = sc.color;
                         colorRow.querySelectorAll('.mobile-shape-color-dot').forEach(function (d) { d.classList.remove('active'); });
                         dot.classList.add('active');
+                        // If a shape is selected, change its color live
+                        if (typeof window._changeActiveShapeColor === 'function') {
+                            window._changeActiveShapeColor(sc.color);
+                        }
                     });
                     colorRow.appendChild(dot);
                 });
