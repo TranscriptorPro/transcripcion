@@ -1172,13 +1172,13 @@
         }
         .table-grid-cells {
             display: grid;
-            grid-template-columns: repeat(8, 22px);
-            grid-template-rows: repeat(8, 22px);
+            grid-template-columns: repeat(8, 18px);
+            grid-template-rows: repeat(8, 18px);
             gap: 2px;
         }
         .table-grid-cell {
-            width: 22px;
-            height: 22px;
+            width: 18px;
+            height: 18px;
             border: 1px solid var(--border, #ddd);
             border-radius: 2px;
             background: var(--bg-main);

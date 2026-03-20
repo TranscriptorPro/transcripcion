@@ -692,8 +692,8 @@
 
         window.addEventListener('scroll', function () { closeAllGroups(null); }, true);
 
-        /* Ocultar botones originales desktop de imagen/forma (reemplazados en grupo Insertar mobile) */
-        ['insertImageBtn', 'insertShapeBtn'].forEach(function (id) {
+        /* Ocultar botones originales desktop (reemplazados en grupo Insertar/Resaltado mobile) */
+        ['insertImageBtn', 'insertShapeBtn', 'highlightBtn'].forEach(function (id) {
             var el = findEl(id);
             if (el) el.style.display = 'none';
         });
@@ -727,22 +727,36 @@
             var table = td.closest('table');
             var nCols = td.parentElement.cells.length;
             var nRows = table ? table.rows.length : 1;
-            // Right edge = column resize (interior: resize this and next; last col: resize this col width)
-            if (Math.abs(x - r.right) < EDGE) {
+
+            // Calculate distances to all edges
+            var distRight  = Math.abs(x - r.right);
+            var distLeft   = Math.abs(x - r.left);
+            var distBottom = Math.abs(y - r.bottom);
+            var distTop    = Math.abs(y - r.top);
+
+            // Find closest edge within threshold
+            var candidates = [];
+            if (distRight < EDGE)  candidates.push({ dist: distRight,  axis: 'col', edge: 'right' });
+            if (distLeft < EDGE)   candidates.push({ dist: distLeft,   axis: 'col', edge: 'left' });
+            if (distBottom < EDGE) candidates.push({ dist: distBottom, axis: 'row', edge: 'bottom' });
+            if (distTop < EDGE)    candidates.push({ dist: distTop,    axis: 'row', edge: 'top' });
+
+            if (candidates.length === 0) return null;
+            candidates.sort(function(a, b) { return a.dist - b.dist; });
+            var best = candidates[0];
+
+            if (best.axis === 'col' && best.edge === 'right') {
                 if (td.cellIndex < nCols - 1) return { type: 'col', index: td.cellIndex };
                 return { type: 'col-single', index: td.cellIndex, side: 'right' };
             }
-            // Left edge (interior: resize previous; first col: resize first col width)
-            if (Math.abs(x - r.left) < EDGE) {
+            if (best.axis === 'col' && best.edge === 'left') {
                 if (td.cellIndex > 0) return { type: 'col', index: td.cellIndex - 1 };
                 return { type: 'col-single', index: 0, side: 'left' };
             }
-            // Bottom edge = row resize
-            if (Math.abs(y - r.bottom) < EDGE) {
+            if (best.axis === 'row' && best.edge === 'bottom') {
                 return { type: 'row', index: td.parentElement.rowIndex };
             }
-            // Top edge (resize previous row)
-            if (Math.abs(y - r.top) < EDGE && td.parentElement.rowIndex > 0) {
+            if (best.axis === 'row' && best.edge === 'top' && td.parentElement.rowIndex > 0) {
                 return { type: 'row', index: td.parentElement.rowIndex - 1 };
             }
             return null;
@@ -779,7 +793,7 @@
 
         function applyRowHeight(table, rowIndex, height) {
             if (table.rows[rowIndex]) {
-                table.rows[rowIndex].style.height = Math.max(20, height) + 'px';
+                table.rows[rowIndex].style.height = Math.max(8, height) + 'px';
             }
         }
 

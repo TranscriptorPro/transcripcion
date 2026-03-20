@@ -657,6 +657,18 @@
             positionHandles();
         });
 
+        // Delete key removes selected shape/image
+        document.addEventListener('keydown', function(ev) {
+            if (!activeShape) return;
+            if (ev.key === 'Delete' || ev.key === 'Backspace') {
+                ev.preventDefault();
+                var toRemove = activeShape;
+                deselectShape();
+                toRemove.parentNode.removeChild(toRemove);
+                if (typeof saveUndoState === 'function') saveUndoState();
+            }
+        });
+
         // Reposition handles on scroll/resize
         window.addEventListener('scroll', function() { if (activeShape) positionHandles(); }, true);
         window.addEventListener('resize', function() { if (activeShape) positionHandles(); });
