@@ -698,4 +698,163 @@
 
         toolbar.dataset.mobileGroupsReady = '1';
     }
+
+    /* ── Table column/row resize via touch/pointer drag ── */
+    function initTableResize() {
+        var editor = document.getElementById('editor');
+        if (!editor) return;
+
+        var EDGE = 10; // px threshold to detect border
+        var dragging = null; // { type: 'col'|'row', table, index, startPos, startSizes }
+
+        function getCellAt(x, y) {
+            var el = document.elementFromPoint(x, y);
+            if (!el) return null;
+            var td = el.closest('td, th');
+            if (!td) return null;
+            var table = td.closest('table');
+            if (!table || !editor.contains(table)) return null;
+            return { td: td, table: table };
+        }
+
+        function getEdge(td, x, y) {
+            var r = td.getBoundingClientRect();
+            // Right edge = column resize
+            if (Math.abs(x - r.right) < EDGE && td.cellIndex < td.parentElement.cells.length - 1) {
+                return { type: 'col', index: td.cellIndex };
+            }
+            // Left edge (resize previous column)
+            if (Math.abs(x - r.left) < EDGE && td.cellIndex > 0) {
+                return { type: 'col', index: td.cellIndex - 1 };
+            }
+            // Bottom edge = row resize
+            if (Math.abs(y - r.bottom) < EDGE) {
+                return { type: 'row', index: td.parentElement.rowIndex };
+            }
+            // Top edge (resize previous row)
+            if (Math.abs(y - r.top) < EDGE && td.parentElement.rowIndex > 0) {
+                return { type: 'row', index: td.parentElement.rowIndex - 1 };
+            }
+            return null;
+        }
+
+        function getColWidths(table) {
+            var firstRow = table.rows[0];
+            if (!firstRow) return [];
+            var widths = [];
+            for (var i = 0; i < firstRow.cells.length; i++) {
+                widths.push(firstRow.cells[i].getBoundingClientRect().width);
+            }
+            return widths;
+        }
+
+        function getRowHeights(table) {
+            var heights = [];
+            for (var i = 0; i < table.rows.length; i++) {
+                heights.push(table.rows[i].getBoundingClientRect().height);
+            }
+            return heights;
+        }
+
+        function applyColWidths(table, widths) {
+            table.style.tableLayout = 'fixed';
+            var total = widths.reduce(function (s, w) { return s + w; }, 0);
+            for (var ri = 0; ri < table.rows.length; ri++) {
+                var row = table.rows[ri];
+                for (var ci = 0; ci < row.cells.length && ci < widths.length; ci++) {
+                    row.cells[ci].style.width = ((widths[ci] / total) * 100).toFixed(2) + '%';
+                }
+            }
+        }
+
+        function applyRowHeight(table, rowIndex, height) {
+            if (table.rows[rowIndex]) {
+                table.rows[rowIndex].style.height = Math.max(20, height) + 'px';
+            }
+        }
+
+        function pointerPos(ev) {
+            if (ev.touches && ev.touches.length) return { x: ev.touches[0].clientX, y: ev.touches[0].clientY };
+            return { x: ev.clientX, y: ev.clientY };
+        }
+
+        function onStart(ev) {
+            var p = pointerPos(ev);
+            var hit = getCellAt(p.x, p.y);
+            if (!hit) return;
+            var edge = getEdge(hit.td, p.x, p.y);
+            if (!edge) return;
+
+            ev.preventDefault();
+            dragging = {
+                type: edge.type,
+                table: hit.table,
+                index: edge.index,
+                startX: p.x,
+                startY: p.y,
+                colWidths: getColWidths(hit.table),
+                rowHeights: getRowHeights(hit.table)
+            };
+            editor.style.userSelect = 'none';
+            editor.style.webkitUserSelect = 'none';
+        }
+
+        function onMove(ev) {
+            if (!dragging) {
+                // Show resize cursor hint
+                var p = pointerPos(ev);
+                var hit = getCellAt(p.x, p.y);
+                if (hit) {
+                    var edge = getEdge(hit.td, p.x, p.y);
+                    editor.style.cursor = edge ? (edge.type === 'col' ? 'col-resize' : 'row-resize') : '';
+                } else {
+                    editor.style.cursor = '';
+                }
+                return;
+            }
+
+            ev.preventDefault();
+            var p = pointerPos(ev);
+            var d = dragging;
+
+            if (d.type === 'col') {
+                var dx = p.x - d.startX;
+                var newWidths = d.colWidths.slice();
+                var w1 = d.colWidths[d.index] + dx;
+                var w2 = d.colWidths[d.index + 1] - dx;
+                if (w1 >= 30 && w2 >= 30) {
+                    newWidths[d.index] = w1;
+                    newWidths[d.index + 1] = w2;
+                    applyColWidths(d.table, newWidths);
+                }
+            } else {
+                var dy = p.y - d.startY;
+                applyRowHeight(d.table, d.index, d.rowHeights[d.index] + dy);
+            }
+        }
+
+        function onEnd() {
+            if (dragging) {
+                dragging = null;
+                editor.style.userSelect = '';
+                editor.style.webkitUserSelect = '';
+                editor.style.cursor = '';
+            }
+        }
+
+        editor.addEventListener('pointerdown', onStart, { passive: false });
+        editor.addEventListener('touchstart', onStart, { passive: false });
+        document.addEventListener('pointermove', onMove, { passive: false });
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('pointerup', onEnd);
+        document.addEventListener('touchend', onEnd);
+    }
+
+    if (window.innerWidth <= 900 || 'ontouchstart' in window) {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initTableResize);
+        } else {
+            initTableResize();
+        }
+    }
 })();

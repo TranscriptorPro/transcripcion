@@ -4,11 +4,14 @@
     const editor = document.getElementById('editor');
     const $ = id => document.getElementById(id);
 
-    function executeFormatAndFocus(cmd) {
-        document.execCommand(cmd, false, null);
-        /* Colapsar selección para que se vea el formato aplicado inmediatamente */
+    function _collapseSelection() {
         var sel = window.getSelection();
         if (sel && !sel.isCollapsed) sel.collapseToEnd();
+    }
+
+    function executeFormatAndFocus(cmd) {
+        document.execCommand(cmd, false, null);
+        _collapseSelection();
         if (editor) editor.focus();
         updateActiveStates();
     }
@@ -48,8 +51,7 @@
             span.style.fontSize = newSize + 'px';
             span.appendChild(selectedContent);
             range.insertNode(span);
-            /* Colapsar selección para ver el cambio inmediatamente */
-            if (selection && !selection.isCollapsed) selection.collapseToEnd();
+            _collapseSelection();
             editor.focus();
         }
     }
@@ -126,6 +128,7 @@
                 }
                 if (handled) {
                     e.preventDefault();
+                    _collapseSelection();
                     updateActiveStates();
                 }
             }
@@ -141,6 +144,7 @@
                 el.removeAttribute('size');
                 el.style.fontSize = fontSizeToolbar.value;
             });
+            _collapseSelection();
             editor.focus();
         });
     }
@@ -155,6 +159,7 @@
     if (lineSpacingSelect && editor) {
         lineSpacingSelect.addEventListener('change', () => {
             editor.style.lineHeight = lineSpacingSelect.value;
+            _collapseSelection();
         });
     }
 
@@ -162,6 +167,7 @@
     if (clearFormatBtn && editor) {
         clearFormatBtn.addEventListener('click', () => {
             document.execCommand('removeFormat', false, null);
+            _collapseSelection();
             editor.focus();
         });
     }
@@ -172,6 +178,7 @@
             const url = await window.showCustomPrompt('Ingrese la URL:', 'https://ejemplo.com');
             if (url) {
                 document.execCommand('createLink', false, url);
+                _collapseSelection();
                 editor.focus();
             }
         });
