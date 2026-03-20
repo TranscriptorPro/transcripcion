@@ -678,6 +678,17 @@
             return null;
         }
 
+        function getElementMargins(el) {
+            if (!el) return { left: 0, top: 0 };
+            var cs = window.getComputedStyle(el);
+            var ml = parseFloat(cs.marginLeft);
+            var mt = parseFloat(cs.marginTop);
+            return {
+                left: Number.isFinite(ml) ? ml : 0,
+                top: Number.isFinite(mt) ? mt : 0
+            };
+        }
+
         function shouldKeepShapeSelection(target) {
             if (!target || !target.closest) return false;
             return !!(
@@ -703,13 +714,14 @@
                 // Start resize
                 ev.preventDefault();
                 var sr = activeShape.getBoundingClientRect();
+                var m = getElementMargins(activeShape);
                 interaction = {
                     mode: 'resize',
                     dir: handleHit.name,
                     el: activeShape,
                     startX: p.x, startY: p.y,
-                    origLeft: parseFloat(activeShape.style.marginLeft) || 0,
-                    origTop: parseFloat(activeShape.style.marginTop) || 0,
+                    origLeft: m.left,
+                    origTop: m.top,
                     origW: sr.width, origH: sr.height
                 };
                 editor.style.userSelect = 'none';
@@ -720,13 +732,14 @@
             if (shape) {
                 ev.preventDefault();
                 selectShape(shape);
+                var dm = getElementMargins(shape);
                 // Start drag
                 interaction = {
                     mode: 'drag',
                     el: shape,
                     startX: p.x, startY: p.y,
-                    origLeft: parseFloat(shape.style.marginLeft) || 0,
-                    origTop: parseFloat(shape.style.marginTop) || 0,
+                    origLeft: dm.left,
+                    origTop: dm.top,
                     moved: false
                 };
                 shape.style.cursor = 'grabbing';
@@ -741,12 +754,13 @@
                     ev.preventDefault();
                     ev.stopPropagation();
                     selectShape(mobileTableSel);
+                    var tdm = getElementMargins(mobileTableSel);
                     interaction = {
                         mode: 'drag',
                         el: mobileTableSel,
                         startX: p.x, startY: p.y,
-                        origLeft: parseFloat(mobileTableSel.style.marginLeft) || 0,
-                        origTop: parseFloat(mobileTableSel.style.marginTop) || 0,
+                        origLeft: tdm.left,
+                        origTop: tdm.top,
                         moved: false
                     };
                     mobileTableSel.style.cursor = 'grabbing';
@@ -761,12 +775,13 @@
                 ev.preventDefault();
                 ev.stopPropagation(); // prevent table cell resize from firing
                 selectShape(tableSel);
+                var tm = getElementMargins(tableSel);
                 interaction = {
                     mode: 'drag',
                     el: tableSel,
                     startX: p.x, startY: p.y,
-                    origLeft: parseFloat(tableSel.style.marginLeft) || 0,
-                    origTop: parseFloat(tableSel.style.marginTop) || 0,
+                    origLeft: tm.left,
+                    origTop: tm.top,
                     moved: false
                 };
                 tableSel.style.cursor = 'grabbing';
@@ -880,13 +895,14 @@
             if (handleHit && activeShape) {
                 ev.preventDefault();
                 var sr = activeShape.getBoundingClientRect();
+                var rm = getElementMargins(activeShape);
                 interaction = {
                     mode: 'resize',
                     dir: handleHit.name,
                     el: activeShape,
                     startX: p.x, startY: p.y,
-                    origLeft: parseFloat(activeShape.style.marginLeft) || 0,
-                    origTop: parseFloat(activeShape.style.marginTop) || 0,
+                    origLeft: rm.left,
+                    origTop: rm.top,
                     origW: sr.width, origH: sr.height
                 };
                 editor.style.userSelect = 'none';
@@ -913,11 +929,12 @@
             if (!shape) return;
             ev.preventDefault();
             selectShape(shape);
+            var sm = getElementMargins(shape);
             interaction = {
                 mode: 'drag', el: shape,
                 startX: p.x, startY: p.y,
-                origLeft: parseFloat(shape.style.marginLeft) || 0,
-                origTop: parseFloat(shape.style.marginTop) || 0,
+                origLeft: sm.left,
+                origTop: sm.top,
                 moved: false
             };
             shape.style.cursor = (shape.tagName === 'TABLE') ? '' : 'grab';
