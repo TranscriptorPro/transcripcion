@@ -6,6 +6,9 @@
 
     function executeFormatAndFocus(cmd) {
         document.execCommand(cmd, false, null);
+        /* Colapsar selección para que se vea el formato aplicado inmediatamente */
+        var sel = window.getSelection();
+        if (sel && !sel.isCollapsed) sel.collapseToEnd();
         if (editor) editor.focus();
         updateActiveStates();
     }
@@ -45,6 +48,8 @@
             span.style.fontSize = newSize + 'px';
             span.appendChild(selectedContent);
             range.insertNode(span);
+            /* Colapsar selección para ver el cambio inmediatamente */
+            if (selection && !selection.isCollapsed) selection.collapseToEnd();
             editor.focus();
         }
     }
@@ -184,11 +189,12 @@
                 const table = document.createElement('table');
                 table.setAttribute('border', '1');
                 table.style.cssText = 'border-collapse:collapse;width:100%;margin:1rem 0;table-layout:fixed;';
+                var colW = (100 / nCols).toFixed(2) + '%';
                 for (let i = 0; i < nRows; i++) {
                     const tr = table.insertRow();
                     for (let j = 0; j < nCols; j++) {
                         const td = tr.insertCell();
-                        td.style.cssText = 'border:1px solid var(--border,#ddd);padding:8px;';
+                        td.style.cssText = 'border:1px solid var(--border,#ddd);padding:8px;width:' + colW + ';';
                         td.innerHTML = '&nbsp;';
                     }
                 }

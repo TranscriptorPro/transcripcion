@@ -451,6 +451,8 @@ ${sigBlock}
         _clone.querySelectorAll('.patient-data-header, .patient-placeholder-banner, .btn-append-inline, .original-text-banner, .no-print, .ai-note-panel, .no-data-edit-btn, .inline-review-btn, #aiNotePanel').forEach(el => el.remove());
         // En PDF/export: eliminar badges vacíos completamente (no deben aparecer en el informe final)
         _clone.querySelectorAll('.no-data-field').forEach(el => el.remove());
+        // Quitar resize de formas e imágenes en export
+        _clone.querySelectorAll('.editor-shape, .editor-img-wrap').forEach(el => { el.style.resize = 'none'; el.style.overflow = 'visible'; });
         const firstEl = _clone.firstElementChild;
         if (firstEl && /^H[1-3]$/i.test(firstEl.tagName) && /^\s*INFORME\s+DE\b/i.test(firstEl.textContent || '')) {
             firstEl.remove();

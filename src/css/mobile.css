@@ -514,16 +514,69 @@
         transform: scale(1.2);
     }
 
-    /* Editor shapes: resize handle discreto */
+    /* Editor shapes: resize handle discreto (50% más pequeño) */
     .editor-shape {
         resize: both;
         overflow: auto;
         position: relative;
     }
 
+    /* Reducir visualmente el handle de resize */
+    .editor-shape::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 8px;
+        height: 8px;
+        background: linear-gradient(135deg, transparent 50%, var(--border, #ccc) 50%);
+        border-radius: 0 0 2px 0;
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
     .editor-shape::-webkit-resizer {
-        background: var(--border);
-        border-radius: 2px;
+        background: transparent;
+    }
+
+    /* Vista previa: quitar resize de formas e imágenes */
+    #printPreviewOverlay .editor-shape,
+    #printPreviewOverlay .editor-img-wrap {
+        resize: none !important;
+        overflow: visible !important;
+    }
+
+    #printPreviewOverlay .editor-shape::after,
+    #printPreviewOverlay .editor-img-wrap::after {
+        display: none !important;
+    }
+
+    /* Shape color picker row */
+    .mobile-shape-color-row {
+        grid-column: 1 / -1;
+        display: flex;
+        gap: 5px;
+        justify-content: center;
+        padding: 4px 0 2px;
+    }
+
+    .mobile-shape-color-dot {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        border: 2px solid transparent;
+        cursor: pointer;
+        padding: 0;
+        transition: transform 0.15s;
+    }
+
+    .mobile-shape-color-dot.active {
+        border-color: var(--primary, #3b82f6);
+        transform: scale(1.15);
+    }
+
+    .mobile-shape-color-dot:active {
+        transform: scale(1.2);
     }
 
     /* Tablas uniforme: columnas iguales */

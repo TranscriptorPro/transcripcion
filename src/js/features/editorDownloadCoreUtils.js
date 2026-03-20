@@ -400,6 +400,8 @@
         _clone.querySelectorAll('.patient-data-header, .patient-placeholder-banner, .btn-append-inline, .original-text-banner, .no-print, .ai-note-panel, .no-data-edit-btn, .inline-review-btn, #aiNotePanel').forEach(el => el.remove());
         // Replace badge spans with text marker for content check (don't remove entirely)
         _clone.querySelectorAll('.no-data-field').forEach(el => el.replaceWith('[No especificado]'));
+        // Quitar resize de formas e imágenes en descargas
+        _clone.querySelectorAll('.editor-shape, .editor-img-wrap').forEach(el => { el.style.resize = 'none'; el.style.overflow = 'visible'; });
         const rawText = _clone.innerText || '';
         const text = rawText.trimEnd();
         if (!String(text).trim()) return showToast('No hay texto para descargar', 'error');
