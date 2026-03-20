@@ -501,6 +501,19 @@
         border: none !important;
     }
 
+    /* Spacer flexible: empuja standalone buttons a la derecha */
+    #editorToolbar.mobile-grouped .mobile-toolbar-spacer {
+        flex: 1 1 auto;
+        min-width: 4px;
+    }
+
+    /* Ocultar botones desktop de imagen/forma en mobile (reemplazados en grupo Insertar) */
+    #editorToolbar.mobile-grouped #insertImageBtn,
+    #editorToolbar.mobile-grouped #insertShapeBtn,
+    #editorToolbar.mobile-grouped .desktop-shape-picker {
+        display: none !important;
+    }
+
     /* Copiar y diccionario como herramientas del toolbar (móvil) */
     #editorToolbar #copyBtn,
     #editorToolbar #btnMedicalCheck {

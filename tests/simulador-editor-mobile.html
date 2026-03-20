@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Replica Admin Mobile - Editor Transcriptor Pro</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --card: #121a2e;
+      --line: #2c3a62;
+      --text: #e6ecff;
+      --muted: #9fb2e3;
+      --accent: #ff7a1a;
+      --accent2: #ffb347;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(1200px 700px at 20% -10%, #1b2b52, #0b1020 55%), var(--bg);
+      color: var(--text);
+      font-family: Segoe UI, Tahoma, sans-serif;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 16px;
+      padding: 16px;
+    }
+    .panel {
+      background: linear-gradient(180deg, #121a2e, #0f162a);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 12px 28px rgba(0,0,0,.35);
+      height: fit-content;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      letter-spacing: .3px;
+    }
+    .hint { color: var(--muted); font-size: .85rem; line-height: 1.45; }
+    .controls { display: grid; gap: 8px; margin-top: 12px; }
+    .btn {
+      background: #1a2544;
+      border: 1px solid #2f4277;
+      color: var(--text);
+      border-radius: 9px;
+      padding: 9px 10px;
+      cursor: pointer;
+      font-size: .86rem;
+      text-align: left;
+    }
+    .btn:hover { border-color: var(--accent2); }
+    .btn.primary {
+      background: linear-gradient(135deg, #ff7a1a, #ff9b32);
+      border-color: #ffbf7d;
+      color: #111;
+      font-weight: 700;
+    }
+    .row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+    .row label { font-size: .82rem; color: var(--muted); min-width: 72px; }
+    .row input[type="range"] { width: 100%; }
+    .status {
+      margin-top: 10px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: #0f162a;
+      border: 1px solid #25355f;
+      font-size: .8rem;
+      color: var(--muted);
+      min-height: 36px;
+    }
+    .viewer {
+      background: linear-gradient(180deg, #131b33, #0f1629);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      overflow: auto;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.02);
+    }
+    .phone-shell {
+      width: 410px;
+      border-radius: 28px;
+      padding: 10px;
+      background: #000;
+      box-shadow: 0 20px 40px rgba(0,0,0,.5);
+      transform-origin: top center;
+    }
+    .phone-notch {
+      width: 120px;
+      height: 18px;
+      border-radius: 10px;
+      margin: 0 auto 8px;
+      background: #111;
+      border: 1px solid #262626;
+    }
+    iframe {
+      width: 390px;
+      height: 844px;
+      border: 0;
+      border-radius: 18px;
+      background: #fff;
+      display: block;
+    }
+    .small {
+      color: var(--muted);
+      font-size: .78rem;
+      margin-top: 10px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <aside class="panel">
+    <h1>Replica Admin Mobile del Editor</h1>
+    <div class="hint">
+      Esta replica temporal carga la app real en modo ADMIN dentro de un frame de celular (390x844), para probar exactamente la UI/comportamiento mobile sin usar teléfono.
+    </div>
+
+    <div class="controls">
+      <button id="btnRecargar" class="btn">Recargar replica admin</button>
+      <button id="btnPreparar" class="btn primary">Preparar editor (modo móvil + texto de prueba)</button>
+      <button id="btnTexto" class="btn">Volver a cargar texto de prueba</button>
+      <button id="btnToggleInline" class="btn">Toggle revisión IA inline</button>
+      <button id="btnResetAdmin" class="btn">Reset config cliente y forzar ADMIN</button>
+      <button id="btnAbrirRoot" class="btn">Abrir app ADMIN (nueva pestaña)</button>
+    </div>
+
+    <div class="row">
+      <label>Zoom</label>
+      <input id="zoomRange" type="range" min="70" max="130" step="5" value="100" />
+    </div>
+
+    <div id="status" class="status">Listo.</div>
+
+    <div class="small">
+      Recomendado para test manual: 
+      1) Preparar editor,
+      2) probar Formato, Alineación, Listas, Tamaño, Navegación, Insertar,
+      3) validar standalone (Copiar, Diccionario, Limpiar, Buscar/Reemplazar).
+    </div>
+  </aside>
+
+  <main class="viewer">
+    <div id="phoneShell" class="phone-shell">
+      <div class="phone-notch"></div>
+      <iframe id="appFrame" src="./simulador-admin-bootstrap.html"></iframe>
+    </div>
+  </main>
+
+  <script>
+    const frame = document.getElementById('appFrame');
+    const shell = document.getElementById('phoneShell');
+    const statusEl = document.getElementById('status');
+
+    function setStatus(msg, isError = false) {
+      statusEl.textContent = msg;
+      statusEl.style.color = isError ? '#ffb4b4' : '#9fb2e3';
+      statusEl.style.borderColor = isError ? '#7a2e2e' : '#25355f';
+    }
+
+    const ADMIN_SRC = './simulador-admin-bootstrap.html';
+
+    function primeAdminStorage(win) {
+      try {
+        win.localStorage.removeItem('client_config_stored');
+        win.sessionStorage.removeItem('pending_setup_id');
+        win.localStorage.setItem('onboarding_accepted', 'true');
+        win.localStorage.setItem('onboarding_done', 'true');
+      } catch (_) {}
+    }
+
+    function forceHideOverlays(doc) {
+      ['onboardingOverlay', 'welcomeOverlay', 'splashOverlay'].forEach((id) => {
+        const el = doc.getElementById(id);
+        if (!el) return;
+        el.classList.remove('active');
+        el.style.setProperty('display', 'none', 'important');
+        el.style.setProperty('pointer-events', 'none', 'important');
+        el.style.setProperty('visibility', 'hidden', 'important');
+        el.setAttribute('aria-hidden', 'true');
+      });
+    }
+
+    function sampleHtml() {
+      return [
+        '<p class="report-p"><strong>Informe ecográfico:</strong> Texto de prueba para validar botones del editor.</p>',
+        '<p class="report-p">Hallazgos iniciales: estructura conservada, sin colecciones.</p>',
+        '<p class="report-p">Conclusión preliminar: control evolutivo.</p>'
+      ].join('');
+    }
+
+    function withAppWindow(fn) {
+      const w = frame.contentWindow;
+      const d = w && w.document;
+      if (!w || !d) {
+        setStatus('No se pudo acceder al contenido del frame.', true);
+        return;
+      }
+      try {
+        fn(w, d);
+      } catch (e) {
+        setStatus('Error al interactuar con la app del frame: ' + (e && e.message ? e.message : e), true);
+      }
+    }
+
+    function prepareEditor() {
+      withAppWindow((w, d) => {
+        primeAdminStorage(w);
+        forceHideOverlays(d);
+
+        const sidebar = d.querySelector('.sidebar');
+        if (sidebar) {
+          sidebar.classList.add('mobile-hidden');
+          sidebar.style.setProperty('display', 'none', 'important');
+        }
+        d.body.classList.add('mobile-sidebar-collapsed');
+
+        const editorArea = d.querySelector('.editor-area');
+        if (editorArea) {
+          editorArea.style.setProperty('display', 'block', 'important');
+          editorArea.style.setProperty('min-height', '80vh', 'important');
+        }
+
+        if (typeof w.updateButtonsVisibility === 'function') {
+          w.updateButtonsVisibility('TRANSCRIBED');
+        }
+
+        // Refuerzo de modo admin en runtime para la replica.
+        if (w.CLIENT_CONFIG) {
+          w.CLIENT_CONFIG.type = 'ADMIN';
+          w.CLIENT_CONFIG.planCode = 'admin';
+        }
+
+        const editor = d.getElementById('editor');
+        if (editor) {
+          editor.innerHTML = sampleHtml();
+          editor.focus();
+          editor.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
+        const inlineToggle = d.getElementById('inlineReviewQuickToggle');
+        if (inlineToggle) {
+          inlineToggle.checked = true;
+          inlineToggle.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        const cfg = (w.CLIENT_CONFIG && w.CLIENT_CONFIG.type) ? w.CLIENT_CONFIG.type : 'desconocido';
+        setStatus('Editor preparado en modo móvil con texto de prueba. CLIENT_CONFIG.type=' + cfg);
+      });
+    }
+
+    document.getElementById('btnPreparar').addEventListener('click', prepareEditor);
+
+    document.getElementById('btnTexto').addEventListener('click', () => {
+      withAppWindow((w, d) => {
+        const editor = d.getElementById('editor');
+        if (!editor) throw new Error('No existe #editor');
+        editor.innerHTML = sampleHtml();
+        editor.focus();
+        editor.dispatchEvent(new Event('input', { bubbles: true }));
+        setStatus('Texto de prueba recargado en el editor.');
+      });
+    });
+
+    document.getElementById('btnToggleInline').addEventListener('click', () => {
+      withAppWindow((w, d) => {
+        const t = d.getElementById('inlineReviewQuickToggle');
+        if (!t) throw new Error('No existe inlineReviewQuickToggle');
+        t.checked = !t.checked;
+        t.dispatchEvent(new Event('change', { bubbles: true }));
+        setStatus('Revisión IA inline: ' + (t.checked ? 'ON' : 'OFF'));
+      });
+    });
+
+    document.getElementById('btnRecargar').addEventListener('click', () => {
+      frame.src = ADMIN_SRC + '?t=' + Date.now();
+      setStatus('Recargando replica admin...');
+    });
+
+    document.getElementById('btnResetAdmin').addEventListener('click', () => {
+      withAppWindow((w) => {
+        try {
+          w.localStorage.removeItem('client_config_stored');
+          w.sessionStorage.removeItem('pending_setup_id');
+          w.localStorage.setItem('onboarding_accepted', 'true');
+          w.localStorage.setItem('onboarding_done', 'true');
+          if (w.appDB && typeof w.appDB.remove === 'function') {
+            w.appDB.remove('client_config_stored');
+          }
+        } catch (_) {}
+      });
+      frame.src = ADMIN_SRC + '?reset=' + Date.now();
+      setStatus('Reseteando config cliente y forzando ADMIN...');
+    });
+
+    document.getElementById('btnAbrirRoot').addEventListener('click', () => {
+      window.open('../index.html?admin&sim=open', '_blank');
+    });
+
+    document.getElementById('zoomRange').addEventListener('input', (e) => {
+      const z = Number(e.target.value) / 100;
+      shell.style.transform = `scale(${z})`;
+    });
+
+    frame.addEventListener('load', () => {
+      setStatus('Replica ADMIN cargada en el frame. Puedes presionar "Preparar editor".');
+      // Refuerzo por si la app intenta mostrar onboarding tras cargar módulos.
+      let ticks = 0;
+      const timer = setInterval(() => {
+        withAppWindow((w, d) => {
+          primeAdminStorage(w);
+          forceHideOverlays(d);
+        });
+        ticks += 1;
+        if (ticks >= 12) clearInterval(timer);
+      }, 150);
+      // Auto-preparar para ahorrar pasos.
+      setTimeout(prepareEditor, 250);
+    });
+  </script>
+</body>
+</html>

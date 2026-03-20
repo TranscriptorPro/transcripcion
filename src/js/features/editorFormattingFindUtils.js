@@ -249,12 +249,12 @@
         shapePicker.className = 'desktop-shape-picker';
         shapePicker.style.display = 'none';
         const shapes = [
-            { label: '▬', html: '<div style="display:block;width:80%;height:40px;border:2px solid currentColor;margin:8px auto;border-radius:4px;"></div>' },
-            { label: '■', html: '<div style="display:block;width:60px;height:60px;border:2px solid currentColor;margin:8px auto;border-radius:4px;"></div>' },
-            { label: '●', html: '<div style="display:block;width:60px;height:60px;border:2px solid currentColor;margin:8px auto;border-radius:50%;"></div>' },
-            { label: '▲', html: '<div style="display:block;width:0;height:0;border-left:35px solid transparent;border-right:35px solid transparent;border-bottom:60px solid currentColor;margin:8px auto;opacity:0.7;"></div>' },
-            { label: '◆', html: '<div style="display:block;width:50px;height:50px;border:2px solid currentColor;margin:8px auto;transform:rotate(45deg);"></div>' },
-            { label: '⬭', html: '<div style="display:block;width:80px;height:50px;border:2px solid currentColor;margin:8px auto;border-radius:50%;"></div>' },
+            { label: '▬', html: '<div contenteditable="false" style="display:block;width:80%;height:40px;border:2px solid currentColor;margin:8px auto;border-radius:4px;resize:both;overflow:auto;min-width:40px;min-height:20px;cursor:nwse-resize;"></div>' },
+            { label: '■', html: '<div contenteditable="false" style="display:block;width:60px;height:60px;border:2px solid currentColor;margin:8px auto;border-radius:4px;resize:both;overflow:auto;min-width:20px;min-height:20px;cursor:nwse-resize;"></div>' },
+            { label: '●', html: '<div contenteditable="false" style="display:block;width:60px;height:60px;border:2px solid currentColor;margin:8px auto;border-radius:50%;resize:both;overflow:auto;min-width:20px;min-height:20px;cursor:nwse-resize;"></div>' },
+            { label: '▲', html: '<div contenteditable="false" style="display:block;width:0;height:0;border-left:35px solid transparent;border-right:35px solid transparent;border-bottom:60px solid currentColor;margin:8px auto;opacity:0.7;"></div>' },
+            { label: '◆', html: '<div contenteditable="false" style="display:block;width:50px;height:50px;border:2px solid currentColor;margin:8px auto;transform:rotate(45deg);resize:both;overflow:auto;min-width:20px;min-height:20px;cursor:nwse-resize;"></div>' },
+            { label: '⬭', html: '<div contenteditable="false" style="display:block;width:80px;height:50px;border:2px solid currentColor;margin:8px auto;border-radius:50%;resize:both;overflow:auto;min-width:20px;min-height:20px;cursor:nwse-resize;"></div>' },
             { label: '─', html: '<hr style="border:none;border-top:2px solid currentColor;margin:12px 0;">' }
         ];
         shapes.forEach((sh) => {

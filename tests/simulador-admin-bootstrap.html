@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bootstrap Admin Sim</title>
+</head>
+<body>
+  <script>
+    (function () {
+      try {
+        // Limpiar estado de clon/cliente final y forzar contexto admin.
+        localStorage.removeItem('client_config_stored');
+        sessionStorage.removeItem('pending_setup_id');
+
+        // Marcar onboarding como completado para evitar bienvenida.
+        localStorage.setItem('onboarding_accepted', 'true');
+        localStorage.setItem('onboarding_done', 'true');
+        localStorage.setItem('onboarding_date', new Date().toISOString());
+      } catch (_) {}
+
+      // Cargar app en modo admin explícito.
+      location.replace('../index.html?admin&mobile-sim=1&t=' + Date.now());
+    })();
+  </script>
+</body>
+</html>

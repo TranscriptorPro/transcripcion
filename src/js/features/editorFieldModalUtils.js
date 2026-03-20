@@ -389,6 +389,8 @@
 
         // Limpiar botones heredados en títulos para evitar duplicación visual.
         editor.querySelectorAll('h2.report-h2 .inline-review-btn, h3.report-h3 .inline-review-btn').forEach((b) => b.remove());
+        // Siempre limpiar ▶ de <li> — las listas no deben tener botón de revisión inline.
+        editor.querySelectorAll('li .inline-review-btn').forEach((b) => b.remove());
 
         if (!enabled) {
             editor.querySelectorAll('.inline-review-btn').forEach(b => b.remove());
@@ -400,13 +402,13 @@
                 return;
             }
         // Nunca mostrar botón de revisión en líneas de campo vacío.
-        editor.querySelectorAll('p.report-p, li').forEach((node) => {
+        editor.querySelectorAll('p.report-p').forEach((node) => {
             if (node.querySelector('.no-data-field')) {
                 node.querySelectorAll('.inline-review-btn').forEach(b => b.remove());
             }
         });
 
-        editor.querySelectorAll('p.report-p, li').forEach((node) => {
+        editor.querySelectorAll('p.report-p').forEach((node) => {
             if (node.querySelector('.no-data-field')) return;
             /* Deduplicación robusta: remover cualquier botón inline preexistente
                (incluyendo anidados), luego volver a insertar solo uno si corresponde. */

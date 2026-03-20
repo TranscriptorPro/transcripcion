@@ -458,18 +458,18 @@
                 shapeBtn.type = 'button';
                 shapeBtn.className = 'toolbar-btn mobile-shape-toggle';
                 shapeBtn.title = 'Insertar forma';
-                shapeBtn.textContent = '⬚';
+                shapeBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M2 2h9v9H2V2zm11 0h9v9h-9V2zM2 13h9v9H2v-9zm12.5 0a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9z"/></svg>';
 
                 var shapePicker = document.createElement('div');
                 shapePicker.className = 'mobile-shape-picker';
                 shapePicker.style.display = 'none';
                 var shapes = [
-                    { label: '▬', html: '<div style="display:block;width:80%;height:40px;border:2px solid currentColor;margin:8px auto;border-radius:4px;"></div>' },
-                    { label: '■', html: '<div style="display:block;width:60px;height:60px;border:2px solid currentColor;margin:8px auto;border-radius:4px;"></div>' },
-                    { label: '●', html: '<div style="display:block;width:60px;height:60px;border:2px solid currentColor;margin:8px auto;border-radius:50%;"></div>' },
-                    { label: '▲', html: '<div style="display:block;width:0;height:0;border-left:35px solid transparent;border-right:35px solid transparent;border-bottom:60px solid currentColor;margin:8px auto;opacity:0.7;"></div>' },
-                    { label: '◆', html: '<div style="display:block;width:50px;height:50px;border:2px solid currentColor;margin:8px auto;transform:rotate(45deg);"></div>' },
-                    { label: '⬭', html: '<div style="display:block;width:80px;height:50px;border:2px solid currentColor;margin:8px auto;border-radius:50%;"></div>' },
+                    { label: '▬', html: '<div contenteditable="false" style="display:block;width:80%;height:40px;border:2px solid currentColor;margin:8px auto;border-radius:4px;resize:both;overflow:auto;min-width:40px;min-height:20px;cursor:nwse-resize;"></div>' },
+                    { label: '■', html: '<div contenteditable="false" style="display:block;width:60px;height:60px;border:2px solid currentColor;margin:8px auto;border-radius:4px;resize:both;overflow:auto;min-width:20px;min-height:20px;cursor:nwse-resize;"></div>' },
+                    { label: '●', html: '<div contenteditable="false" style="display:block;width:60px;height:60px;border:2px solid currentColor;margin:8px auto;border-radius:50%;resize:both;overflow:auto;min-width:20px;min-height:20px;cursor:nwse-resize;"></div>' },
+                    { label: '▲', html: '<div contenteditable="false" style="display:block;width:0;height:0;border-left:35px solid transparent;border-right:35px solid transparent;border-bottom:60px solid currentColor;margin:8px auto;opacity:0.7;"></div>' },
+                    { label: '◆', html: '<div contenteditable="false" style="display:block;width:50px;height:50px;border:2px solid currentColor;margin:8px auto;transform:rotate(45deg);resize:both;overflow:auto;min-width:20px;min-height:20px;cursor:nwse-resize;"></div>' },
+                    { label: '⬭', html: '<div contenteditable="false" style="display:block;width:80px;height:50px;border:2px solid currentColor;margin:8px auto;border-radius:50%;resize:both;overflow:auto;min-width:20px;min-height:20px;cursor:nwse-resize;"></div>' },
                     { label: '─', html: '<hr style="border:none;border-top:2px solid currentColor;margin:12px 0;">' }
                 ];
                 shapes.forEach(function (sh) {
@@ -581,6 +581,23 @@
         });
 
         window.addEventListener('scroll', function () { closeAllGroups(null); }, true);
+
+        /* Ocultar botones originales desktop de imagen/forma (reemplazados en grupo Insertar mobile) */
+        ['insertImageBtn', 'insertShapeBtn'].forEach(function (id) {
+            var el = findEl(id);
+            if (el) el.style.display = 'none';
+        });
+        toolbar.querySelectorAll('.desktop-shape-picker').forEach(function (el) {
+            el.style.display = 'none';
+        });
+
+        /* Spacer flexible: empuja standalone buttons a la derecha */
+        var spacer = document.createElement('div');
+        spacer.className = 'mobile-toolbar-spacer';
+        var firstStandalone = toolbar.querySelector('.mobile-toolbar-standalone');
+        if (firstStandalone) {
+            toolbar.insertBefore(spacer, firstStandalone);
+        }
 
         toolbar.dataset.mobileGroupsReady = '1';
     }
