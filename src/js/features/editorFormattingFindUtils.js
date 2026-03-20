@@ -501,8 +501,8 @@
         var copiedShapeTemplate = null; // cloned node template for Ctrl+C / Ctrl+V
         var IS_TOUCH_DEVICE = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
-        var HANDLE_SIZE = IS_TOUCH_DEVICE ? 24 : 7;    // px diameter (larger on touch)
-        var TOUCH_DRAG_THRESHOLD = 12; // px: avoid accidental move on tap
+        var HANDLE_SIZE = IS_TOUCH_DEVICE ? 18 : 7;    // px diameter (mobile reduced ~25%)
+        var TOUCH_DRAG_THRESHOLD = 18; // px: avoid accidental move on tap
         // handle positions: [name, xFactor, yFactor]
         var HANDLE_DEFS = [
             ['nw', 0, 0], ['n', 0.5, 0], ['ne', 1, 0],
@@ -678,6 +678,21 @@
             return null;
         }
 
+        function shouldKeepShapeSelection(target) {
+            if (!target || !target.closest) return false;
+            return !!(
+                target.closest('.editor-shape-handle') ||
+                target.closest('.desktop-shape-picker') ||
+                target.closest('.desktop-highlight-picker') ||
+                target.closest('#insertShapeBtn') ||
+                target.closest('#highlightBtn') ||
+                target.closest('.shape-mobile-actionbar') ||
+                target.closest('.desktop-table-grid-picker') ||
+                target.closest('#insertTableBtn') ||
+                target.closest('.mobile-toolbar-group')
+            );
+        }
+
         // Click on shape → select; click outside → deselect
         document.addEventListener('pointerdown', function(ev) {
             if (ev.pointerType === 'touch') return;
@@ -760,7 +775,7 @@
             }
 
             // Clicked outside any shape → deselect (but preserve selection when interacting with shape/highlight pickers)
-            if (activeShape && !ev.target.closest('.editor-shape-handle') && !ev.target.closest('.desktop-shape-picker') && !ev.target.closest('.desktop-highlight-picker') && !ev.target.closest('#insertShapeBtn') && !ev.target.closest('.shape-mobile-actionbar') && !ev.target.closest('.desktop-table-grid-picker')) {
+            if (activeShape && !shouldKeepShapeSelection(ev.target)) {
                 // If clicking inside a table that IS the activeShape, deselect so user can type
                 deselectShape();
             }
@@ -880,6 +895,9 @@
 
             var shape = isShapeEl(ev.target);
             if (!shape) {
+                if (activeShape && !shouldKeepShapeSelection(ev.target)) {
+                    deselectShape();
+                }
                 if (!editor.contains(ev.target)) return;
                 if (window.innerWidth <= 900) {
                     var mobileTableSel = ev.target && ev.target.closest ? ev.target.closest('table') : null;
@@ -938,7 +956,9 @@
         }, { passive: false });
         document.addEventListener('touchend', function() {
             if (!interaction) return;
-            interaction.el.style.cursor = (interaction.el.tagName === 'TABLE') ? '' : 'grab';
+            if (interaction.mode === 'drag') {
+                interaction.el.style.cursor = (interaction.el.tagName === 'TABLE') ? '' : 'grab';
+            }
             editor.style.userSelect = '';
             if (typeof saveUndoState === 'function') saveUndoState();
             interaction = null;

@@ -326,13 +326,25 @@
                 }
             });
 
+            function shouldAutoCloseGroupFromTarget(target) {
+                if (!target || !target.closest) return false;
+                var btn = target.closest('button');
+                if (btn) {
+                    if (btn.classList.contains('mobile-group-trigger')) return false;
+                    if (btn.classList.contains('mobile-shape-toggle')) return false;
+                    if (btn.classList.contains('mobile-shape-color-dot')) return false;
+                    return true;
+                }
+                var sel = target.closest('select');
+                if (sel) return true;
+                return false;
+            }
+
             panel.addEventListener('click', function (ev) {
-                var target = ev.target.closest('button');
-                /* Cerrar inmediatamente para BUTTON que ejecutan comandos, NUNCA para SELECT ni elementos del shape picker */
-                if (target && target.tagName === 'BUTTON' && !target.classList.contains('mobile-shape-btn') && !target.classList.contains('mobile-shape-toggle') && !target.classList.contains('mobile-group-trigger')) {
+                if (shouldAutoCloseGroupFromTarget(ev.target)) {
                     wrapper.classList.remove('open');
                 }
-            });
+            }, true);
 
             /* Para SELECT: cerrar al cambiar valor (change), no al click */
             panel.addEventListener('change', function () {
@@ -678,7 +690,7 @@
             btn.addEventListener('click', function (ev) {
                 ev.stopPropagation();
                 var groupWrapper = btn.closest('.mobile-toolbar-group');
-                if (groupWrapper && !btn.classList.contains('mobile-shape-btn') && !btn.classList.contains('mobile-shape-toggle') && !btn.classList.contains('mobile-group-trigger')) {
+                if (groupWrapper && !btn.classList.contains('mobile-shape-toggle') && !btn.classList.contains('mobile-group-trigger') && !btn.classList.contains('mobile-shape-color-dot')) {
                     groupWrapper.classList.remove('open');
                 }
             }, false);

@@ -490,6 +490,34 @@ async function testMobile(browser, baseUrl) {
     const imgSize2 = await page.locator(imgSel).last().boundingBox();
     ensure(resizedMobileImg && !!imgSize1 && !!imgSize2 && (imgSize2.width > imgSize1.width || imgSize2.height > imgSize1.height), 'MOBILE-IMAGE-RESIZE-TOUCH', imgSize1 && imgSize2 ? `${Math.round(imgSize1.width)}x${Math.round(imgSize1.height)} -> ${Math.round(imgSize2.width)}x${Math.round(imgSize2.height)}` : 'no-bbox');
 
+    // Deselect when tapping outside selected element.
+    await page.touchscreen.tap(8, 8);
+    await page.waitForTimeout(180);
+    const handlesAfterOutsideTap = await countVisibleHandles(page);
+    ensure(handlesAfterOutsideTap === 0, 'MOBILE-DESELECT-ON-OUTSIDE-TAP', `handles=${handlesAfterOutsideTap}`);
+
+    // Group menu should auto-collapse after command button usage.
+    const canTestGroupCollapse = await page.evaluate(() => {
+        const trigger = document.querySelector('.mobile-group-trigger[aria-label="Formato"]');
+        const bold = document.getElementById('boldBtn');
+        if (!trigger || !bold) return false;
+        trigger.click();
+        bold.click();
+        const group = trigger.closest('.mobile-toolbar-group');
+        return !!group;
+    });
+    if (!canTestGroupCollapse) {
+        fail('MOBILE-GROUP-AUTOCOLLAPSE-AFTER-ACTION', 'group-or-button-not-found');
+    } else {
+        await page.waitForTimeout(180);
+        const formatoOpenAfterAction = await page.evaluate(() => {
+            const trigger = document.querySelector('.mobile-group-trigger[aria-label="Formato"]');
+            const group = trigger ? trigger.closest('.mobile-toolbar-group') : null;
+            return !!(group && group.classList.contains('open'));
+        });
+        ensure(!formatoOpenAfterAction, 'MOBILE-GROUP-AUTOCOLLAPSE-AFTER-ACTION', `open=${formatoOpenAfterAction}`);
+    }
+
     await context.close();
 }
 
