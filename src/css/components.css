@@ -1152,13 +1152,11 @@
             margin: 0 0.25rem;
         }
 
-        /* Desktop shape picker (dropdown under insert shape button) */
+        /* Desktop shape picker (appended to body, fixed position) */
         .desktop-shape-picker {
             display: none;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            z-index: 100;
+            position: fixed;
+            z-index: 10000;
             grid-template-columns: repeat(4, 1fr);
             gap: 4px;
             padding: 8px;
@@ -1166,7 +1164,6 @@
             border: 1px solid var(--border);
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,.15);
-            margin-top: 4px;
         }
         .desktop-shape-color-row {
             grid-column: 1 / -1;
@@ -1230,14 +1227,11 @@
             background: transparent;
         }
 
-        /* Desktop highlight picker (dropdown under highlight button) */
+        /* Desktop highlight picker (appended to body, fixed position) */
         .desktop-highlight-picker {
             display: none;
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 100;
+            position: fixed;
+            z-index: 10000;
             flex-wrap: wrap;
             gap: 5px;
             padding: 8px;
@@ -1245,7 +1239,6 @@
             border: 1px solid var(--border);
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,.15);
-            margin-top: 4px;
             max-width: 200px;
             justify-content: center;
         }

@@ -313,12 +313,19 @@
             shapePicker.appendChild(b);
         });
 
-        insertShapeBtn.parentElement.style.position = 'relative';
-        insertShapeBtn.parentElement.appendChild(shapePicker);
+        document.body.appendChild(shapePicker);
+
+        function _positionShapePicker() {
+            var r = insertShapeBtn.getBoundingClientRect();
+            shapePicker.style.top  = (r.bottom + 4) + 'px';
+            shapePicker.style.left = r.left + 'px';
+        }
 
         insertShapeBtn.addEventListener('click', (ev) => {
             ev.stopPropagation();
-            shapePicker.style.display = shapePicker.style.display === 'none' ? 'grid' : 'none';
+            var show = shapePicker.style.display === 'none';
+            shapePicker.style.display = show ? 'grid' : 'none';
+            if (show) _positionShapePicker();
         });
 
         document.addEventListener('click', (ev) => {
@@ -367,12 +374,19 @@
         });
         _hlPickerEl.appendChild(swNone);
 
-        highlightBtn.parentElement.style.position = 'relative';
-        highlightBtn.parentElement.appendChild(_hlPickerEl);
+        document.body.appendChild(_hlPickerEl);
+
+        function _positionHlPicker() {
+            var r = highlightBtn.getBoundingClientRect();
+            _hlPickerEl.style.top  = (r.bottom + 4) + 'px';
+            _hlPickerEl.style.left = Math.max(0, r.left + r.width / 2 - 100) + 'px';
+        }
 
         highlightBtn.addEventListener('click', function(ev) {
             ev.stopPropagation();
-            _hlPickerEl.style.display = _hlPickerEl.style.display === 'none' ? 'flex' : 'none';
+            var show = _hlPickerEl.style.display === 'none';
+            _hlPickerEl.style.display = show ? 'flex' : 'none';
+            if (show) _positionHlPicker();
         });
         document.addEventListener('click', function(ev) {
             if (!_hlPickerEl.contains(ev.target) && ev.target !== highlightBtn) {

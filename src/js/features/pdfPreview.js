@@ -1,5 +1,17 @@
 
 /**
+ * Limpia el texto del editor para extracción de datos de paciente,
+ * eliminando banners de UI (.patient-data-header, etc.) que podrían
+ * confundir al parser de datos del paciente.
+ */
+function _getCleanEditorText(el) {
+    if (!el) return '';
+    var clone = el.cloneNode(true);
+    clone.querySelectorAll('.patient-data-header, .patient-placeholder-banner, .no-print, .ai-note-panel, .inline-review-btn, .original-text-banner, .btn-append-inline, #aiNotePanel').forEach(function(n) { n.remove(); });
+    return clone.textContent || '';
+}
+
+/**
  * Genera un código QR como data URL (imagen PNG base64).
  * Usa qrcode-generator (CDN). Retorna un dataURL o '' si falla.
  * @param {string} text - Texto a codificar
@@ -459,7 +471,7 @@ window.openPdfConfigModal = async function () {
 
     const editorForExtract = window.editor || document.getElementById('editor');
     const freshExtract = (editorForExtract && typeof extractPatientDataFromText === 'function')
-        ? extractPatientDataFromText(editorForExtract.innerText) : {};
+        ? extractPatientDataFromText(_getCleanEditorText(editorForExtract)) : {};
     ['pdfPatientName','pdfPatientDni','pdfPatientAge','pdfPatientSex',
      'pdfPatientInsurance','pdfPatientAffiliateNum','pdfPatientPhone','pdfPatientBirthdate']
         .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
@@ -483,7 +495,7 @@ window.openPdfConfigModal = async function () {
 
     if (isPro && window.editor && window.editor.innerText.trim().length > 0) {
         if (typeof extractPatientDataFromText === 'function') {
-            const extracted = extractPatientDataFromText(window.editor.innerText);
+            const extracted = extractPatientDataFromText(_getCleanEditorText(window.editor));
             const setIfEmpty = (id, v) => {
                 if (!v) return;
                 const element = document.getElementById(id);
@@ -940,7 +952,7 @@ window.openPrintPreview = async function () {
     // Extraer datos del paciente SIEMPRE frescos desde el editor
     const editorEl  = window.editor || document.getElementById('editor');
     const extracted = (editorEl && typeof extractPatientDataFromText === 'function')
-        ? extractPatientDataFromText(editorEl.innerText) : {};
+        ? extractPatientDataFromText(_getCleanEditorText(editorEl)) : {};
 
     // Fallback 3: datos ingresados en el formulario de paciente (reqPatientName, etc.)
     const reqVal = (id) => document.getElementById(id)?.value?.trim() || '';
