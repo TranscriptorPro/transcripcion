@@ -704,7 +704,7 @@
         var editor = document.getElementById('editor');
         if (!editor) return;
 
-        var EDGE = 10; // px threshold to detect border
+        var EDGE = 18; // px threshold to detect border (larger for touch)
         var dragging = null; // { type: 'col'|'row', table, index, startPos, startSizes }
 
         function getCellAt(x, y) {
@@ -802,6 +802,7 @@
                 rowHeights: getRowHeights(hit.table),
                 tableStartWidth: hit.table.getBoundingClientRect().width
             };
+            hit.table.style.outline = '2px solid var(--primary, #3b82f6)';
             editor.style.userSelect = 'none';
             editor.style.webkitUserSelect = 'none';
         }
@@ -857,6 +858,7 @@
 
         function onEnd() {
             if (dragging) {
+                dragging.table.style.outline = '';
                 dragging = null;
                 editor.style.userSelect = '';
                 editor.style.webkitUserSelect = '';

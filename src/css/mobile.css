@@ -527,11 +527,11 @@
         position: absolute;
         bottom: 0;
         right: 0;
-        width: 5px;
-        height: 5px;
+        width: 3px;
+        height: 3px;
         background: linear-gradient(135deg, transparent 50%, var(--border, #ccc) 50%);
         border-radius: 0 0 2px 0;
-        opacity: 0.25;
+        opacity: 0.12;
         pointer-events: none;
     }
 
@@ -561,12 +561,16 @@
     }
 
     .mobile-shape-color-dot {
-        width: 16px;
-        height: 16px;
+        width: 16px !important;
+        height: 16px !important;
+        min-width: 16px !important;
+        min-height: 16px !important;
+        max-width: 16px !important;
+        max-height: 16px !important;
         border-radius: 50%;
         border: 1.5px solid transparent;
         cursor: pointer;
-        padding: 0;
+        padding: 0 !important;
         transition: transform 0.15s;
     }
 
