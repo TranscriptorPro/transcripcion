@@ -488,6 +488,55 @@
         background: var(--bg-card) !important;
     }
 
+    /* Highlight panel (grupo Resaltar) */
+    .mobile-highlight-panel {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 6px;
+        background: var(--bg-secondary);
+        border-radius: 8px;
+        margin-top: 2px;
+        justify-content: center;
+    }
+
+    .mobile-highlight-swatch {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 2px solid var(--border);
+        cursor: pointer;
+        transition: transform 0.15s;
+    }
+
+    .mobile-highlight-swatch:active {
+        transform: scale(1.2);
+    }
+
+    /* Editor shapes: resize handle discreto */
+    .editor-shape {
+        resize: both;
+        overflow: auto;
+        position: relative;
+    }
+
+    .editor-shape::-webkit-resizer {
+        background: var(--border);
+        border-radius: 2px;
+    }
+
+    /* Tablas uniforme: columnas iguales */
+    table[border] {
+        table-layout: fixed;
+    }
+
+    table[border] td,
+    table[border] th {
+        overflow-wrap: break-word;
+        word-wrap: break-word;
+    }
+
     #editorToolbar.mobile-grouped .mobile-toolbar-standalone {
         flex: 0 0 auto;
         width: 30px;

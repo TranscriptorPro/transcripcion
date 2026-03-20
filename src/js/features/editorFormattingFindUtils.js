@@ -183,7 +183,7 @@
                 const nCols = parseInt(cols, 10) || 3;
                 const table = document.createElement('table');
                 table.setAttribute('border', '1');
-                table.style.cssText = 'border-collapse:collapse;width:100%;margin:1rem 0;';
+                table.style.cssText = 'border-collapse:collapse;width:100%;margin:1rem 0;table-layout:fixed;';
                 for (let i = 0; i < nRows; i++) {
                     const tr = table.insertRow();
                     for (let j = 0; j < nCols; j++) {

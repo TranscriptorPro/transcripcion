@@ -328,11 +328,9 @@
 
             panel.addEventListener('click', function (ev) {
                 var target = ev.target.closest('button');
-                /* Solo cerrar para BUTTON que ejecutan comandos, NUNCA para SELECT ni elementos del shape picker */
+                /* Cerrar inmediatamente para BUTTON que ejecutan comandos, NUNCA para SELECT ni elementos del shape picker */
                 if (target && target.tagName === 'BUTTON' && !target.classList.contains('mobile-shape-btn') && !target.classList.contains('mobile-shape-toggle') && !target.classList.contains('mobile-group-trigger')) {
-                    setTimeout(function () {
-                        wrapper.classList.remove('open');
-                    }, 180);
+                    wrapper.classList.remove('open');
                 }
             });
 
@@ -446,25 +444,25 @@
                 imgBtn.type = 'button';
                 imgBtn.className = 'toolbar-btn';
                 imgBtn.title = 'Insertar imagen';
-                imgBtn.textContent = '🖼';
+                imgBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>';
 
                 var shapeBtn = document.createElement('button');
                 shapeBtn.type = 'button';
                 shapeBtn.className = 'toolbar-btn mobile-shape-toggle';
                 shapeBtn.title = 'Insertar forma';
-                shapeBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M2 2h9v9H2V2zm11 0h9v9h-9V2zM2 13h9v9H2v-9zm12.5 0a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9z"/></svg>';
+                shapeBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><circle cx="17.5" cy="17.5" r="3.5"/><polygon points="17.5,3 21,10 14,10"/></svg>';
 
                 var shapePicker = document.createElement('div');
                 shapePicker.className = 'mobile-shape-picker';
                 shapePicker.style.display = 'none';
                 var shapes = [
-                    { label: '▬', html: '<div contenteditable="false" style="display:block;width:80%;height:40px;border:2px solid currentColor;margin:8px auto;border-radius:4px;resize:both;overflow:auto;min-width:40px;min-height:20px;cursor:nwse-resize;"></div>' },
-                    { label: '■', html: '<div contenteditable="false" style="display:block;width:60px;height:60px;border:2px solid currentColor;margin:8px auto;border-radius:4px;resize:both;overflow:auto;min-width:20px;min-height:20px;cursor:nwse-resize;"></div>' },
-                    { label: '●', html: '<div contenteditable="false" style="display:block;width:60px;height:60px;border:2px solid currentColor;margin:8px auto;border-radius:50%;resize:both;overflow:auto;min-width:20px;min-height:20px;cursor:nwse-resize;"></div>' },
-                    { label: '▲', html: '<div contenteditable="false" style="display:block;width:0;height:0;border-left:35px solid transparent;border-right:35px solid transparent;border-bottom:60px solid currentColor;margin:8px auto;opacity:0.7;"></div>' },
-                    { label: '◆', html: '<div contenteditable="false" style="display:block;width:50px;height:50px;border:2px solid currentColor;margin:8px auto;transform:rotate(45deg);resize:both;overflow:auto;min-width:20px;min-height:20px;cursor:nwse-resize;"></div>' },
-                    { label: '⬭', html: '<div contenteditable="false" style="display:block;width:80px;height:50px;border:2px solid currentColor;margin:8px auto;border-radius:50%;resize:both;overflow:auto;min-width:20px;min-height:20px;cursor:nwse-resize;"></div>' },
-                    { label: '─', html: '<hr style="border:none;border-top:2px solid currentColor;margin:12px 0;">' }
+                    { label: '▬', html: '<div class="editor-shape" contenteditable="false" style="display:block;width:80%;height:40px;border:2px solid currentColor;background:transparent;margin:8px auto;border-radius:4px;resize:both;overflow:auto;min-width:40px;min-height:20px;"></div>' },
+                    { label: '□', html: '<div class="editor-shape" contenteditable="false" style="display:block;width:60px;height:60px;border:2px solid currentColor;background:transparent;margin:8px auto;border-radius:4px;resize:both;overflow:auto;min-width:20px;min-height:20px;"></div>' },
+                    { label: '○', html: '<div class="editor-shape" contenteditable="false" style="display:block;width:60px;height:60px;border:2px solid currentColor;background:transparent;margin:8px auto;border-radius:50%;resize:both;overflow:auto;min-width:20px;min-height:20px;"></div>' },
+                    { label: '△', html: '<svg class="editor-shape" contenteditable="false" viewBox="0 0 70 60" width="70" height="60" style="display:block;margin:8px auto;resize:both;overflow:auto;min-width:30px;min-height:30px;"><polygon points="35,2 68,58 2,58" fill="none" stroke="currentColor" stroke-width="2"/></svg>' },
+                    { label: '◇', html: '<div class="editor-shape" contenteditable="false" style="display:block;width:50px;height:50px;border:2px solid currentColor;background:transparent;margin:8px auto;transform:rotate(45deg);resize:both;overflow:auto;min-width:20px;min-height:20px;"></div>' },
+                    { label: '⬭', html: '<div class="editor-shape" contenteditable="false" style="display:block;width:80px;height:50px;border:2px solid currentColor;background:transparent;margin:8px auto;border-radius:50%;resize:both;overflow:auto;min-width:20px;min-height:20px;"></div>' },
+                    { label: '─', html: '<hr class="editor-shape" style="border:none;border-top:2px solid currentColor;margin:12px 0;">' }
                 ];
                 shapes.forEach(function (sh) {
                     var b = document.createElement('button');
@@ -519,6 +517,71 @@
             '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M13 3a9 9 0 0 0-9 9H1l4 4 4-4H6a7 7 0 1 1 2.05 4.95l-1.42 1.42A9 9 0 1 0 13 3z"></path></svg>',
             ['undoBtn', 'redoBtn', 'btnEditorSnapshots']
         );
+
+        /* ═══ Grupo Resaltado de texto con colores ═══ */
+        (function buildHighlightGroup() {
+            var highlightColors = [
+                { label: 'Amarillo', color: '#fff176' },
+                { label: 'Verde', color: '#a5d6a7' },
+                { label: 'Celeste', color: '#81d4fa' },
+                { label: 'Rosa', color: '#f48fb1' },
+                { label: 'Naranja', color: '#ffcc80' },
+                { label: 'Lila', color: '#ce93d8' },
+                { label: 'Rojo suave', color: '#ef9a9a' },
+                { label: 'Sin color', color: 'transparent' }
+            ];
+            var hlWrapper = document.createElement('div');
+            hlWrapper.className = 'mobile-toolbar-group';
+            var hlTrigger = createTrigger(
+                '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M17.75 7L14 3.25l-10 10V17h3.75l10-10zm2.96-2.96a1.003 1.003 0 0 0 0-1.42L18.37.28a1.003 1.003 0 0 0-1.42 0L15 2.25 18.75 6l1.96-1.96z"/><path d="M2 20h20v4H2z" opacity="0.6" fill="#ffeb3b"/></svg>',
+                'Resaltar texto'
+            );
+            var hlPanel = document.createElement('div');
+            hlPanel.className = 'mobile-toolbar-panel mobile-highlight-panel';
+            highlightColors.forEach(function (c) {
+                var swatch = document.createElement('button');
+                swatch.type = 'button';
+                swatch.className = 'mobile-highlight-swatch';
+                swatch.title = c.label;
+                swatch.style.background = c.color === 'transparent' ? '#fff' : c.color;
+                if (c.color === 'transparent') {
+                    swatch.innerHTML = '<svg viewBox="0 0 16 16" width="14" height="14"><line x1="2" y1="14" x2="14" y2="2" stroke="#c00" stroke-width="2"/></svg>';
+                }
+                swatch.addEventListener('click', function (ev) {
+                    ev.stopPropagation();
+                    if (c.color === 'transparent') {
+                        document.execCommand('removeFormat', false, null);
+                    } else {
+                        document.execCommand('hiliteColor', false, c.color);
+                    }
+                    var ed = document.getElementById('editor');
+                    if (ed) ed.focus();
+                    hlWrapper.classList.remove('open');
+                });
+                hlPanel.appendChild(swatch);
+            });
+            hlTrigger.addEventListener('click', function (ev) {
+                ev.preventDefault();
+                ev.stopPropagation();
+                var isOpen = hlWrapper.classList.contains('open');
+                closeAllGroups(hlWrapper);
+                hlWrapper.classList.toggle('open', !isOpen);
+                if (!isOpen) {
+                    requestAnimationFrame(function () {
+                        var tRect = hlTrigger.getBoundingClientRect();
+                        hlPanel.style.top = (tRect.bottom + 4) + 'px';
+                        hlPanel.style.left = tRect.left + 'px';
+                        var pRect = hlPanel.getBoundingClientRect();
+                        if (pRect.right > window.innerWidth - 8) {
+                            hlPanel.style.left = Math.max(4, window.innerWidth - pRect.width - 8) + 'px';
+                        }
+                    });
+                }
+            });
+            hlWrapper.appendChild(hlTrigger);
+            hlWrapper.appendChild(hlPanel);
+            toolbar.appendChild(hlWrapper);
+        })();
 
         /* === Standalone buttons en orden: limpiar, copiar, diccionario, búsqueda === */
         var clearBtn = findEl('clearFormatBtn');
