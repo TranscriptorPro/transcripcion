@@ -151,9 +151,9 @@
         if (typeof window.inlineParagraphReviewEnabled === 'boolean') return window.inlineParagraphReviewEnabled;
         try {
             const prefs = JSON.parse(localStorage.getItem('settings_prefs') || '{}');
-            return prefs.inlineParagraphReview !== false;
+            return prefs.inlineParagraphReview === true;
         } catch (_) {
-            return true;
+            return false;
         }
     }
 

@@ -9,7 +9,7 @@
     <!-- PURGE: auto-purge al detectar nueva versión + ?purge manual. Preserva tema y color -->
     <script>
     (function() {
-        var APP_VERSION = 'v125'; // ← bump esto en cada deploy para forzar auto-purge
+        var APP_VERSION = 'v126'; // ← bump esto en cada deploy para forzar auto-purge
         try { window.APP_VERSION = APP_VERSION; } catch(_) {}
         var params = new URLSearchParams(window.location.search);
         var forcePurge = params.has('purge');
@@ -127,7 +127,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
-        <link rel="stylesheet" href="app.mmybhks5.min.css">
+        <link rel="stylesheet" href="app.mmybmv4e.min.css">
 </head>
 
 <body>
@@ -634,7 +634,7 @@
                             <div class="stg-opt-row">
                                 <span class="stg-opt-label">▶ Revisión IA en párrafos</span>
                                 <label class="stg-switch">
-                                    <input type="checkbox" id="settingsInlineReviewToggle" checked>
+                                    <input type="checkbox" id="settingsInlineReviewToggle">
                                     <span class="stg-switch-slider"></span>
                                 </label>
                             </div>
@@ -2305,7 +2305,7 @@
                             <div id="inlineReviewQuickControl" class="inline-review-in-editor">
                                 <span class="inline-review-quick-label" title="Revisión IA inline">▶ Rev IA</span>
                                 <label class="toggle-switch-sm" style="margin:0;" title="Activar o desactivar revisión IA inline">
-                                    <input type="checkbox" id="inlineReviewQuickToggle" checked title="Activar o desactivar revisión IA inline" aria-label="Activar o desactivar revisión IA inline">
+                                    <input type="checkbox" id="inlineReviewQuickToggle" title="Activar o desactivar revisión IA inline" aria-label="Activar o desactivar revisión IA inline">
                                     <span class="toggle-slider-sm"></span>
                                 </label>
                             </div>
@@ -2559,7 +2559,7 @@
             </svg>
             <span id="toastMessage"></span>
         </div>
-        <script src="app.mmybhkrh.min.js"></script>
+        <script src="app.mmybmv3g.min.js"></script>
 
         <!-- G1: Modal Panel Registro de Pacientes -->
         <div class="modal-overlay" id="registryPanelOverlay">
