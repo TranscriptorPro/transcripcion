@@ -499,8 +499,10 @@
         var handleEls = [];     // 8 handle DOM elements
         var interaction = null; // { mode:'drag'|'resize', ... }
         var copiedShapeTemplate = null; // cloned node template for Ctrl+C / Ctrl+V
+        var IS_TOUCH_DEVICE = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
-        var HANDLE_SIZE = 7;    // px diameter
+        var HANDLE_SIZE = IS_TOUCH_DEVICE ? 24 : 7;    // px diameter (larger on touch)
+        var TOUCH_DRAG_THRESHOLD = 12; // px: avoid accidental move on tap
         // handle positions: [name, xFactor, yFactor]
         var HANDLE_DEFS = [
             ['nw', 0, 0], ['n', 0.5, 0], ['ne', 1, 0],
@@ -514,7 +516,7 @@
             var h = document.createElement('div');
             h.className = 'editor-shape-handle';
             h.dataset.dir = def[0];
-            h.style.cssText = 'position:absolute;width:'+HANDLE_SIZE+'px;height:'+HANDLE_SIZE+'px;background:#fff;border:1.5px solid #3b82f6;border-radius:50%;z-index:999;pointer-events:auto;cursor:'+CURSORS[def[0]]+';display:none;box-shadow:0 0 2px rgba(0,0,0,.3);';
+            h.style.cssText = 'position:absolute;width:'+HANDLE_SIZE+'px;height:'+HANDLE_SIZE+'px;background:#fff;border:1.5px solid #3b82f6;border-radius:50%;z-index:999;pointer-events:auto;cursor:'+CURSORS[def[0]]+';display:none;box-shadow:0 0 2px rgba(0,0,0,.3);touch-action:none;';
             document.body.appendChild(h);
             handleEls.push({ el: h, name: def[0], xf: def[1], yf: def[2] });
         });
@@ -625,8 +627,6 @@
             return (s && editor.contains(s) && s.tagName !== 'HR') ? s : null;
         }
 
-        var IS_TOUCH_DEVICE = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
-
         // Detect click on the outer border of a table (for selection)
         var TABLE_BORDER_ZONE = 8; // px from outer edge
         function isTableBorderClick(el, x, y) {
@@ -667,17 +667,23 @@
             return { x: ev.clientX, y: ev.clientY };
         }
 
-        // Click on shape → select; click outside → deselect
-        document.addEventListener('pointerdown', function(ev) {
-            var p = ppos(ev);
-            // Check if clicked a handle
-            var handleHit = null;
+        function findHandleAtPoint(x, y, expandPx) {
+            var extra = Math.max(0, Number(expandPx) || 0);
             for (var i = 0; i < handleEls.length; i++) {
                 var hr = handleEls[i].el.getBoundingClientRect();
-                if (p.x >= hr.left && p.x <= hr.right && p.y >= hr.top && p.y <= hr.bottom) {
-                    handleHit = handleEls[i]; break;
+                if (x >= hr.left - extra && x <= hr.right + extra && y >= hr.top - extra && y <= hr.bottom + extra) {
+                    return handleEls[i];
                 }
             }
+            return null;
+        }
+
+        // Click on shape → select; click outside → deselect
+        document.addEventListener('pointerdown', function(ev) {
+            if (ev.pointerType === 'touch') return;
+            var p = ppos(ev);
+            // Check if clicked a handle
+            var handleHit = findHandleAtPoint(p.x, p.y, 0);
             if (handleHit && activeShape) {
                 // Start resize
                 ev.preventDefault();
@@ -761,6 +767,7 @@
         }, true);
 
         document.addEventListener('pointermove', function(ev) {
+            if (ev.pointerType === 'touch') return;
             if (!interaction) return;
             ev.preventDefault();
             var p = ppos(ev);
@@ -852,10 +859,28 @@
         };
 
         // Touch support
-        editor.addEventListener('touchstart', function(ev) {
+        document.addEventListener('touchstart', function(ev) {
             var p = ppos(ev);
+            var handleHit = findHandleAtPoint(p.x, p.y, 12);
+            if (handleHit && activeShape) {
+                ev.preventDefault();
+                var sr = activeShape.getBoundingClientRect();
+                interaction = {
+                    mode: 'resize',
+                    dir: handleHit.name,
+                    el: activeShape,
+                    startX: p.x, startY: p.y,
+                    origLeft: parseFloat(activeShape.style.marginLeft) || 0,
+                    origTop: parseFloat(activeShape.style.marginTop) || 0,
+                    origW: sr.width, origH: sr.height
+                };
+                editor.style.userSelect = 'none';
+                return;
+            }
+
             var shape = isShapeEl(ev.target);
             if (!shape) {
+                if (!editor.contains(ev.target)) return;
                 if (window.innerWidth <= 900) {
                     var mobileTableSel = ev.target && ev.target.closest ? ev.target.closest('table') : null;
                     if (mobileTableSel && editor.contains(mobileTableSel)) {
@@ -877,7 +902,7 @@
                 origTop: parseFloat(shape.style.marginTop) || 0,
                 moved: false
             };
-            shape.style.cursor = 'grabbing';
+            shape.style.cursor = (shape.tagName === 'TABLE') ? '' : 'grab';
             editor.style.userSelect = 'none';
         }, { passive: false });
         document.addEventListener('touchmove', function(ev) {
@@ -887,10 +912,27 @@
             var dx = p.x - interaction.startX;
             var dy = p.y - interaction.startY;
             if (interaction.mode === 'drag') {
+                if (!interaction.moved && Math.abs(dx) < TOUCH_DRAG_THRESHOLD && Math.abs(dy) < TOUCH_DRAG_THRESHOLD) return;
                 interaction.moved = true;
+                if (interaction.el.tagName !== 'TABLE') interaction.el.style.cursor = 'grabbing';
                 interaction.el.style.marginLeft = (interaction.origLeft + dx) + 'px';
                 interaction.el.style.marginTop = (interaction.origTop + dy) + 'px';
                 interaction.el.style.marginRight = 'auto';
+                positionHandles();
+            } else if (interaction.mode === 'resize') {
+                var d = interaction.dir;
+                var nw = interaction.origW, nh = interaction.origH;
+                var ml = interaction.origLeft, mt = interaction.origTop;
+
+                if (d.includes('e')) nw = Math.max(20, interaction.origW + dx);
+                if (d.includes('w')) { nw = Math.max(20, interaction.origW - dx); ml = interaction.origLeft + dx; }
+                if (d.includes('s')) nh = Math.max(20, interaction.origH + dy);
+                if (d.includes('n')) { nh = Math.max(20, interaction.origH - dy); mt = interaction.origTop + dy; }
+
+                interaction.el.style.width = nw + 'px';
+                interaction.el.style.height = nh + 'px';
+                if (d.includes('w')) interaction.el.style.marginLeft = ml + 'px';
+                if (d.includes('n')) interaction.el.style.marginTop = mt + 'px';
                 positionHandles();
             }
         }, { passive: false });
@@ -900,6 +942,8 @@
             editor.style.userSelect = '';
             if (typeof saveUndoState === 'function') saveUndoState();
             interaction = null;
+            positionHandles();
+            positionMobileActionBar();
         });
     })();
 

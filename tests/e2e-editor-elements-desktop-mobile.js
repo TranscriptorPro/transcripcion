@@ -129,6 +129,27 @@ async function resizeFromSEHandle(page, dx, dy) {
     return true;
 }
 
+async function dragByTouch(page, x, y, dx, dy, steps = 10) {
+    const session = await page.context().newCDPSession(page);
+    const sx = Math.round(x);
+    const sy = Math.round(y);
+    await session.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ x: sx, y: sy, radiusX: 6, radiusY: 6, force: 1, id: 1 }]
+    });
+    for (let i = 1; i <= steps; i++) {
+        const nx = Math.round(x + (dx * i / steps));
+        const ny = Math.round(y + (dy * i / steps));
+        await session.send('Input.dispatchTouchEvent', {
+            type: 'touchMove',
+            touchPoints: [{ x: nx, y: ny, radiusX: 6, radiusY: 6, force: 1, id: 1 }]
+        });
+        await page.waitForTimeout(16);
+    }
+    await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await session.detach();
+}
+
 async function testDesktop(page) {
     console.log('\n=== DESKTOP ===');
 
@@ -429,6 +450,45 @@ async function testMobile(browser, baseUrl) {
         fail('MOBILE-TABLE-COPY', 'actionbar not visible');
         fail('MOBILE-TABLE-DELETE', 'actionbar not visible');
     }
+
+    // Insert image and validate resize with touch drag on handle.
+    await page.evaluate(() => {
+        const btn = document.getElementById('insertImageBtn');
+        if (btn) btn.click();
+    });
+    const mobileFileInput = page.locator('input[type="file"]').last();
+    await mobileFileInput.setInputFiles({
+        name: 'qa-mobile-image.png',
+        mimeType: 'image/png',
+        buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=', 'base64')
+    });
+    await page.waitForTimeout(260);
+
+    const imgSel = '#editor .editor-img-wrap.editor-shape';
+    const mobileImgCount = await page.locator(imgSel).count();
+    ensure(mobileImgCount >= 1, 'MOBILE-IMAGE-INSERT', `images=${mobileImgCount}`);
+
+    const ib = await page.locator(imgSel).last().boundingBox();
+    if (ib) {
+        await page.touchscreen.tap(ib.x + ib.width / 2, ib.y + ib.height / 2);
+        await page.waitForTimeout(180);
+    }
+
+    const mobileImgHandles = await countVisibleHandles(page);
+    ensure(mobileImgHandles === 8, 'MOBILE-IMAGE-SELECT-HANDLES', `handles=${mobileImgHandles}`);
+
+    const seHandle = page.locator('.editor-shape-handle[data-dir="se"]').first();
+    await seHandle.waitFor({ state: 'visible', timeout: 5000 });
+    const hb = await seHandle.boundingBox();
+    const imgSize1 = await page.locator(imgSel).last().boundingBox();
+    let resizedMobileImg = false;
+    if (hb) {
+        await dragByTouch(page, hb.x + hb.width / 2, hb.y + hb.height / 2, 46, 32);
+        await page.waitForTimeout(220);
+        resizedMobileImg = true;
+    }
+    const imgSize2 = await page.locator(imgSel).last().boundingBox();
+    ensure(resizedMobileImg && !!imgSize1 && !!imgSize2 && (imgSize2.width > imgSize1.width || imgSize2.height > imgSize1.height), 'MOBILE-IMAGE-RESIZE-TOUCH', imgSize1 && imgSize2 ? `${Math.round(imgSize1.width)}x${Math.round(imgSize1.height)} -> ${Math.round(imgSize2.width)}x${Math.round(imgSize2.height)}` : 'no-bbox');
 
     await context.close();
 }
