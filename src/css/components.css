@@ -1205,26 +1205,40 @@
             color: #fff;
         }
 
-        /* Editor shapes: resize handle discreto */
+        /* Editor shapes: resize handle discreto (igual que mobile) */
         .editor-shape {
             resize: both;
-            overflow: auto;
+            overflow: hidden;
             position: relative;
+            user-select: none;
+            cursor: grab;
         }
         .editor-shape::after {
             content: '';
             position: absolute;
             bottom: 0;
             right: 0;
-            width: 6px;
-            height: 6px;
+            width: 3px;
+            height: 3px;
             background: linear-gradient(135deg, transparent 50%, var(--border, #ccc) 50%);
             border-radius: 0 0 2px 0;
-            opacity: 0.3;
+            opacity: 0.12;
             pointer-events: none;
         }
         .editor-shape::-webkit-resizer {
             background: transparent;
+        }
+
+        /* Vista previa desktop: quitar resize de formas e imágenes */
+        #printPreviewOverlay .editor-shape,
+        #printPreviewOverlay .editor-img-wrap {
+            resize: none !important;
+            overflow: visible !important;
+            cursor: default !important;
+        }
+        #printPreviewOverlay .editor-shape::after,
+        #printPreviewOverlay .editor-img-wrap::after {
+            display: none !important;
         }
 
         /* Desktop highlight picker (appended to body, fixed position) */
@@ -1632,9 +1646,10 @@
         @media print {
             .btn-append-inline,
             .inline-review-btn { display: none !important; }
-            .editor-shape { resize: none !important; overflow: visible !important; }
+            .editor-shape { resize: none !important; overflow: visible !important; cursor: default !important; }
             .editor-shape::after { display: none !important; }
-            .editor-img-wrap { resize: none !important; overflow: visible !important; }
+            .editor-img-wrap { resize: none !important; overflow: visible !important; cursor: default !important; }
+            .editor-img-wrap::after { display: none !important; }
         }
         /* Dark mode: editor text and background */
         [data-theme="dark"] .editor-content,
@@ -2178,7 +2193,15 @@
             .editor-shape {
                 resize: none !important;
                 overflow: visible !important;
+                cursor: default !important;
             }
+            .editor-shape::after { display: none !important; }
+            .editor-img-wrap {
+                resize: none !important;
+                overflow: visible !important;
+                cursor: default !important;
+            }
+            .editor-img-wrap::after { display: none !important; }
 
             /* ── Imprimir desde vista previa: ocultar toda la UI del modal ── */
             body > *:not(#printPreviewOverlay) { display: none !important; }

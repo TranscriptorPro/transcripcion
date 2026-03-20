@@ -487,12 +487,12 @@
                 shapePicker.appendChild(colorRow);
 
                 var shapes = [
-                    { label: '▬', build: function (c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:80%;height:40px;border:2px solid ' + c + ';background:transparent;margin:8px auto;border-radius:4px;resize:both;overflow:auto;min-width:40px;min-height:20px;"></div>'; } },
-                    { label: '□', build: function (c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:60px;height:60px;border:2px solid ' + c + ';background:transparent;margin:8px auto;border-radius:4px;resize:both;overflow:auto;min-width:20px;min-height:20px;"></div>'; } },
-                    { label: '○', build: function (c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:60px;height:60px;border:2px solid ' + c + ';background:transparent;margin:8px auto;border-radius:50%;resize:both;overflow:auto;min-width:20px;min-height:20px;"></div>'; } },
-                    { label: '△', build: function (c) { return '<svg class="editor-shape" contenteditable="false" viewBox="0 0 70 60" width="70" height="60" style="display:block;margin:8px auto;resize:both;overflow:auto;min-width:30px;min-height:30px;"><polygon points="35,2 68,58 2,58" fill="none" stroke="' + c + '" stroke-width="2"/></svg>'; } },
-                    { label: '◇', build: function (c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:50px;height:50px;border:2px solid ' + c + ';background:transparent;margin:8px auto;transform:rotate(45deg);resize:both;overflow:auto;min-width:20px;min-height:20px;"></div>'; } },
-                    { label: '⬭', build: function (c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:80px;height:50px;border:2px solid ' + c + ';background:transparent;margin:8px auto;border-radius:50%;resize:both;overflow:auto;min-width:20px;min-height:20px;"></div>'; } },
+                    { label: '▬', build: function (c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:80%;height:40px;border:2px solid ' + c + ';background:transparent;margin:8px auto;border-radius:4px;resize:both;overflow:hidden;min-width:40px;min-height:20px;cursor:grab;user-select:none;"></div>'; } },
+                    { label: '□', build: function (c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:60px;height:60px;border:2px solid ' + c + ';background:transparent;margin:8px auto;border-radius:4px;resize:both;overflow:hidden;min-width:20px;min-height:20px;cursor:grab;user-select:none;"></div>'; } },
+                    { label: '○', build: function (c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:60px;height:60px;border:2px solid ' + c + ';background:transparent;margin:8px auto;border-radius:50%;resize:both;overflow:hidden;min-width:20px;min-height:20px;cursor:grab;user-select:none;"></div>'; } },
+                    { label: '△', build: function (c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:70px;height:60px;margin:8px auto;resize:both;overflow:hidden;min-width:30px;min-height:30px;cursor:grab;user-select:none;"><svg viewBox="0 0 70 60" width="100%" height="100%"><polygon points="35,2 68,58 2,58" fill="none" stroke="' + c + '" stroke-width="2"/></svg></div>'; } },
+                    { label: '◇', build: function (c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:50px;height:50px;border:2px solid ' + c + ';background:transparent;margin:8px auto;transform:rotate(45deg);resize:both;overflow:hidden;min-width:20px;min-height:20px;cursor:grab;user-select:none;"></div>'; } },
+                    { label: '⬭', build: function (c) { return '<div class="editor-shape" contenteditable="false" style="display:block;width:80px;height:50px;border:2px solid ' + c + ';background:transparent;margin:8px auto;border-radius:50%;resize:both;overflow:hidden;min-width:20px;min-height:20px;cursor:grab;user-select:none;"></div>'; } },
                     { label: '─', build: function (c) { return '<hr class="editor-shape" style="border:none;border-top:2px solid ' + c + ';margin:12px 0;">'; } }
                 ];
                 shapes.forEach(function (sh) {
@@ -525,7 +525,7 @@
                     if (!file || !editor) return;
                     var reader = new FileReader();
                     reader.onload = function (ev) {
-                        _insertHtmlAtCursor('<div class="editor-img-wrap editor-shape" contenteditable="false" style="display:block;max-width:100%;width:auto;margin:8px auto;resize:both;overflow:auto;min-width:40px;min-height:40px;"><img src="' + String(ev.target.result || '') + '" style="width:100%;height:auto;display:block;pointer-events:none;" /></div>');
+                        _insertHtmlAtCursor('<div class="editor-img-wrap editor-shape" contenteditable="false" style="display:block;width:256px;height:256px;margin:8px auto;resize:both;overflow:hidden;min-width:40px;min-height:40px;cursor:grab;"><img src="' + String(ev.target.result || '') + '" style="width:100%;height:100%;display:block;pointer-events:none;object-fit:contain;" /></div>');
                     };
                     reader.readAsDataURL(file);
                     fileInput.value = '';
