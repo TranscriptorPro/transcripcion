@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Test C2 — Tab Profesionales (CLINIC)</title>
+<style>
+  body{font-family:system-ui,sans-serif;padding:18px;background:#f1f5f9;color:#0f172a;}
+  h1{font-size:1.1rem;margin-bottom:14px;}
+  .suite{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:12px;}
+  .suite h2{font-size:.9rem;font-weight:800;margin:0 0 10px;}
+  .t{display:flex;align-items:center;gap:8px;font-size:.83rem;padding:4px 0;border-bottom:1px solid #f1f5f9;}
+  .t:last-child{border-bottom:none;}
+  .badge{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:999px;}
+  .pass{background:#dcfce7;color:#166534;}
+  .fail{background:#fef2f2;color:#b91c1c;}
+  .skip{background:#fef9c3;color:#854d0e;}
+  #summary{font-size:.88rem;font-weight:700;margin-top:10px;padding:10px;border-radius:8px;background:#fff;}
+</style>
+</head>
+<body>
+<h1>🧪 Test Suite C2 — Tab "👥 Profesionales" en AdminUserConfigWizard</h1>
+
+<!-- Cargar wizard deps (simulados) -->
+<script>
+// ──────────────────────────────────────────────────────────────────────────────
+// STUBS mínimos para que el wizard funcione sin admin.html completo
+// ──────────────────────────────────────────────────────────────────────────────
+
+// TP_TEMPLATE_CATEGORY_REGISTRY stub
+window.TP_TEMPLATE_CATEGORY_REGISTRY = {
+  templateMapByCategory: {
+    'Cardiología': [{ key: 'eco_cardiaco', name: 'Ecocardiograma' }],
+    'Radiología': [{ key: 'rx_torax', name: 'Rx de tórax' }]
+  }
+};
+
+// AdminUserConfigRules cargado inline para tests
+window.AdminUserConfigRules = (function() {
+  var PLAN_DEFAULTS = {
+    trial:  { maxWorkplaces: 1, maxDevices: 1, studyLimit: 3, allowPdfLogo: false, allowSocial: false },
+    normal: { maxWorkplaces: 1, maxDevices: 1, studyLimit: 3, allowPdfLogo: false, allowSocial: false },
+    pro:    { maxWorkplaces: 2, maxDevices: 3, studyLimit: -1, allowPdfLogo: true,  allowSocial: true  },
+    gift:   { maxWorkplaces: 2, maxDevices: 10, studyLimit: -1, allowPdfLogo: true,  allowSocial: true  },
+    clinic: { maxWorkplaces: 1, maxDevices: 5,  studyLimit: -1, allowPdfLogo: true,  allowSocial: true, maxProfesionales: 3 },
+    enterprise: { maxWorkplaces: 5, maxDevices: 999, studyLimit: -1, allowPdfLogo: true, allowSocial: true }
+  };
+  function normalizePlan(plan) {
+    var key = String(plan || 'normal').toLowerCase();
+    if (key === 'gift') return 'gift';
+    if (key === 'clinic') return 'clinic';
+    if (key === 'pro') return 'pro';
+    if (key === 'enterprise') return 'enterprise';
+    if (key === 'trial') return 'trial';
+    return 'normal';
+  }
+  function getPlanRules(plan, cfg) {
+    var normalized = normalizePlan(plan);
+    var base = Object.assign({}, PLAN_DEFAULTS[normalized] || PLAN_DEFAULTS.normal);
+    cfg = cfg || {};
+    if (Number.isFinite(Number(cfg.maxDevices))) base.maxDevices = Number(cfg.maxDevices);
+    if (Number.isFinite(Number(cfg.workplaces))) base.maxWorkplaces = Number(cfg.workplaces);
+    base.allowSocial = base.allowPdfLogo;
+    base.plan = normalized;
+    return base;
+  }
+  function countAllowedWorkplaces(rules, len) {
+    return Math.max(Math.max(1, Number(rules.maxWorkplaces) || 1), Math.max(0, Number(len) || 0));
+  }
+  return { normalizePlan, getPlanRules, countAllowedWorkplaces };
+})();
+</script>
+
+<!-- Cargar el wizard real -->
+<script src="../recursos/admin-assets/js/admin-user-config-wizard.js"></script>
+
+<script>
+// ──────────────────────────────────────────────────────────────────────────────
+// Helpers de test
+// ──────────────────────────────────────────────────────────────────────────────
+var passed = 0, failed = 0, skipped = 0;
+var results = [];
+
+function assert(desc, fn) {
+  try {
+    var ok = fn();
+    if (ok === 'skip') { skipped++; results.push({ desc: desc, status: 'skip', msg: '' }); return; }
+    if (ok) { passed++; results.push({ desc: desc, status: 'pass', msg: '' }); }
+    else { failed++; results.push({ desc: desc, status: 'fail', msg: 'returned falsy' }); }
+  } catch(e) { failed++; results.push({ desc: desc, status: 'fail', msg: e.message }); }
+}
+
+function $ (sel) { return document.querySelector(sel); }
+function $$(sel) { return Array.from(document.querySelectorAll(sel)); }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Abrir wizard con usuario CLINIC y usuario PRO para comparar
+// ──────────────────────────────────────────────────────────────────────────────
+var CLINICUSER = {
+  ID_Medico: 'CLINIC-001', Nombre: 'Clínica San Lucas', Plan: 'CLINIC',
+  Matricula: '', Email: 'admin@clinica.com', Telefono: '11-1234-5678',
+  Especialidad: 'Cardiología, Radiología', Devices_Max: '5',
+  Estado: 'active', Estudios_JSON: '[]', Allowed_Templates: '',
+  Registro_Datos: JSON.stringify({
+    workplace: { name: 'Clínica San Lucas', address: 'Av. Siempreviva 742' },
+    headerColor: '#1a56a0',
+    profesionales: [
+      { id: 'pro-1', nombre: 'Dr. Juan Pérez', matricula: '12345',
+        especialidades: ['Cardiología'], usuario: 'jperez', pin: '1234',
+        firma: null, logo: null, email: 'jperez@clinica.com', telefono: '', redesSociales: {}, activo: true },
+      { id: 'pro-2', nombre: 'Dra. Ana García', matricula: '67890',
+        especialidades: ['Radiología'], usuario: 'agarcia', pin: '5678',
+        firma: null, logo: null, email: '', telefono: '', redesSociales: {}, activo: false }
+    ],
+    maxProfesionales: 5,
+    clinicNombre: 'Clínica San Lucas', clinicLogo: null
+  })
+};
+
+var PROUSER = {
+  ID_Medico: 'PRO-001', Nombre: 'Dr. Normal Pro', Plan: 'PRO',
+  Matricula: '99999', Email: 'pro@test.com', Telefono: '',
+  Especialidad: 'Cardiología', Devices_Max: '3',
+  Estado: 'active', Estudios_JSON: '[]', Allowed_Templates: '',
+  Registro_Datos: '{}'
+};
+
+var opened = false;
+var openErr = '';
+try {
+  window.AdminUserConfigWizard.open({
+    user: CLINICUSER,
+    especialidades: ['Cardiología', 'Radiología', 'Neurología'],
+    estudiosPorEspecialidad: { 'Cardiología': ['Ecocardiograma', 'Holter'], 'Radiología': ['Rx tórax'] },
+    saveUser: async function(updates) { return { ok: true }; },
+    toast: function() {}
+  });
+  opened = true;
+} catch(e) {
+  openErr = e.message;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 1 — Modal se abre correctamente
+// ──────────────────────────────────────────────────────────────────────────────
+assert('Wizard abre sin errores para plan CLINIC', function() {
+  return opened && !openErr;
+});
+
+assert('Overlay visible', function() {
+  var ov = document.getElementById('adminUserCfgOverlay');
+  return ov && ov.style.display === 'block';
+});
+
+assert('Badge de plan muestra CLINIC', function() {
+  var badge = document.getElementById('adminUserCfgPlan');
+  return badge && badge.textContent.includes('CLINIC');
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 2 — Tab Profesionales existe y es visible para CLINIC
+// ──────────────────────────────────────────────────────────────────────────────
+assert('Tab Profesionales existe en el DOM', function() {
+  return !!$('.auc-tab[data-tab="profesionales"]');
+});
+
+assert('Tab Profesionales visible para plan CLINIC', function() {
+  var tab = $('.auc-tab[data-tab="profesionales"]');
+  return tab && tab.style.display !== 'none';
+});
+
+assert('Panel Profesionales existe', function() {
+  return !!$('.auc-panel[data-panel="profesionales"]');
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 3 — Contenido del panel CLINIC
+// ──────────────────────────────────────────────────────────────────────────────
+var panel = $('.auc-panel[data-panel="profesionales"]');
+
+assert('Panel tiene input de nombre de clínica', function() {
+  return !!panel && !!panel.querySelector('#aucClinicNombre');
+});
+
+assert('Nombre clínica cargado desde Registro_Datos', function() {
+  var inp = panel && panel.querySelector('#aucClinicNombre');
+  return inp && inp.value === 'Clínica San Lucas';
+});
+
+assert('Input maxProfesionales existe', function() {
+  return !!panel && !!panel.querySelector('#aucMaxProfesionales');
+});
+
+assert('maxProfesionales cargado desde Registro_Datos (5)', function() {
+  var inp = panel && panel.querySelector('#aucMaxProfesionales');
+  return inp && Number(inp.value) === 5;
+});
+
+assert('Tarjetas de ambos profesionales renderizadas', function() {
+  var cards = panel ? panel.querySelectorAll('.auc-pro-card') : [];
+  return cards.length === 2;
+});
+
+assert('Profesional activo tiene badge "Activo"', function() {
+  var cards = panel ? panel.querySelectorAll('.auc-pro-card') : [];
+  var firstBadge = cards[0] && cards[0].querySelector('.auc-pro-badge');
+  return firstBadge && firstBadge.classList.contains('activo');
+});
+
+assert('Profesional inactivo tiene badge "Inactivo"', function() {
+  var cards = panel ? panel.querySelectorAll('.auc-pro-card') : [];
+  var badge = cards[1] && cards[1].querySelector('.auc-pro-badge');
+  return badge && badge.classList.contains('inactivo');
+});
+
+assert('Botón Agregar profesional existe', function() {
+  return !!panel && !!panel.querySelector('#aucAddPro');
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 4 — Formulario inline (edit toggle)
+// ──────────────────────────────────────────────────────────────────────────────
+assert('Formulario inline del primer profesional existe', function() {
+  return !!panel && !!panel.querySelector('#aucProForm-0');
+});
+
+assert('Formulario inline oculto por defecto', function() {
+  var form = panel && panel.querySelector('#aucProForm-0');
+  return form && form.style.display === 'none';
+});
+
+// Click en Editar → formulario visible
+var editBtn = panel && panel.querySelector('.aucProEdit[data-pro-idx="0"]');
+if (editBtn) editBtn.click();
+
+assert('Click en Editar abre formulario inline', function() {
+  var form = panel && panel.querySelector('#aucProForm-0');
+  return form && form.style.display !== 'none';
+});
+
+assert('Formulario tiene input de nombre del profesional', function() {
+  var form = panel && panel.querySelector('#aucProForm-0');
+  return form && !!form.querySelector('.aucProNombre');
+});
+
+assert('Nombre del profesional cargado en el formulario', function() {
+  var inp = panel && panel.querySelector('.aucProNombre[data-pidx="0"]');
+  return inp && inp.value === 'Dr. Juan Pérez';
+});
+
+assert('Matrícula cargada en el formulario', function() {
+  var inp = panel && panel.querySelector('.aucProMatricula[data-pidx="0"]');
+  return inp && inp.value === '12345';
+});
+
+assert('PIN cargado en el formulario', function() {
+  var inp = panel && panel.querySelector('.aucProPin[data-pidx="0"]');
+  return inp && inp.value === '1234';
+});
+
+assert('Checkboxes de especialidades presentes', function() {
+  var form = panel && panel.querySelector('#aucProForm-0');
+  return form && form.querySelectorAll('.aucProEsp').length > 0;
+});
+
+assert('Especialidad del profesional está marcada', function() {
+  var cb = panel && panel.querySelector('.aucProEsp[value="Cardiología"][data-pidx="0"]');
+  return cb && cb.checked;
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 5 — Toggle activo/inactivo
+// ──────────────────────────────────────────────────────────────────────────────
+assert('Botón Desactivar / Activar existe', function() {
+  return !!panel && !!panel.querySelector('.aucProToggle[data-pro-idx="0"]');
+});
+
+// Click toggle en pro-0 (activo → inactivo)
+var toggleBtn = panel && panel.querySelector('.aucProToggle[data-pro-idx="0"]');
+if (toggleBtn) toggleBtn.click();
+// El re-render ocurre, panel se actualiza
+var panelAfterToggle = $('.auc-panel[data-panel="profesionales"]');
+
+assert('Profesional 0 queda Inactivo tras toggle', function() {
+  var cards = panelAfterToggle ? panelAfterToggle.querySelectorAll('.auc-pro-card') : [];
+  var badge = cards[0] && cards[0].querySelector('.auc-pro-badge');
+  return badge && badge.classList.contains('inactivo');
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 6 — Agregar profesional
+// ──────────────────────────────────────────────────────────────────────────────
+var currentPanel = $('.auc-panel[data-panel="profesionales"]');
+var beforeAdd = currentPanel ? currentPanel.querySelectorAll('.auc-pro-card').length : 0;
+var addButton = currentPanel && currentPanel.querySelector('#aucAddPro');
+if (addButton && !addButton.disabled) addButton.click();
+var currentPanel2 = $('.auc-panel[data-panel="profesionales"]');
+
+assert('Agregar profesional incrementa la lista', function() {
+  var after = currentPanel2 ? currentPanel2.querySelectorAll('.auc-pro-card').length : 0;
+  return after === beforeAdd + 1;
+});
+
+assert('Nuevo profesional tiene formulario abierto automáticamente', function() {
+  var newIdx = (currentPanel2 ? currentPanel2.querySelectorAll('.auc-pro-card').length : 1) - 1;
+  var form = document.getElementById('aucProForm-' + newIdx);
+  return form && form.style.display !== 'none';
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 7 — Plan PRO no muestra tab Profesionales
+// ──────────────────────────────────────────────────────────────────────────────
+window.AdminUserConfigWizard.close();
+
+window.AdminUserConfigWizard.open({
+  user: PROUSER,
+  especialidades: ['Cardiología'],
+  estudiosPorEspecialidad: { 'Cardiología': ['Ecocardiograma'] },
+  saveUser: async function(updates) { return { ok: true }; },
+  toast: function() {}
+});
+
+assert('Panel abre para usuario PRO sin errores', function() {
+  return !!document.getElementById('adminUserCfgOverlay');
+});
+
+assert('Tab Profesionales OCULTO para plan PRO', function() {
+  var tab = $('.auc-tab[data-tab="profesionales"]');
+  return tab && tab.style.display === 'none';
+});
+
+assert('Panel Profesionales vacío para plan PRO', function() {
+  var p = $('.auc-panel[data-panel="profesionales"]');
+  return p && p.innerHTML.trim() === '';
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 8 — AdminUserConfigRules con maxProfesionales para CLINIC
+// ──────────────────────────────────────────────────────────────────────────────
+assert('getPlanRules CLINIC tiene maxProfesionales', function() {
+  var r = window.AdminUserConfigRules.getPlanRules('CLINIC', {});
+  return typeof r.maxProfesionales === 'number' && r.maxProfesionales >= 1;
+});
+
+assert('getPlanRules PRO NO tiene maxProfesionales', function() {
+  var r = window.AdminUserConfigRules.getPlanRules('PRO', {});
+  return r.maxProfesionales === undefined;
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Render de resultados
+// ──────────────────────────────────────────────────────────────────────────────
+window.AdminUserConfigWizard.close();
+
+var container = document.getElementById('testResults');
+var suites = {
+  'Apertura y estructura': results.slice(0, 3),
+  'Tab Profesionales': results.slice(3, 6),
+  'Contenido panel CLINIC': results.slice(6, 14),
+  'Formulario inline': results.slice(14, 23),
+  'Toggle activo/inactivo': results.slice(23, 26),
+  'Agregar profesional': results.slice(26, 28),
+  'Plan PRO — sin tab': results.slice(28, 31),
+  'Rules maxProfesionales': results.slice(31)
+};
+
+var html = '';
+Object.keys(suites).forEach(function(suiteName) {
+  var items = suites[suiteName];
+  html += '<div class="suite"><h2>' + suiteName + '</h2>';
+  items.forEach(function(r) {
+    html += '<div class="t"><span class="badge ' + r.status + '">' + r.status.toUpperCase() + '</span> ' + r.desc;
+    if (r.msg) html += ' <small style="color:#64748b;">(' + r.msg + ')</small>';
+    html += '</div>';
+  });
+  html += '</div>';
+});
+
+container.innerHTML = html;
+
+var total = passed + failed + skipped;
+var sumEl = document.getElementById('summary');
+sumEl.style.borderLeft = '4px solid ' + (failed ? '#ef4444' : '#22c55e');
+sumEl.textContent = '✅ ' + passed + ' pasados   ❌ ' + failed + ' fallidos   ⚠️ ' + skipped + ' omitidos   (total: ' + total + ')';
+
+console.log('TEST RESULT:', passed + '/' + total, failed ? 'FAILED' : 'OK');
+</script>
+
+<div id="testResults"></div>
+<div id="summary"></div>
+</body>
+</html>

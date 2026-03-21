@@ -48,6 +48,18 @@
             '.auc-check-item{display:flex;align-items:center;gap:6px;font-size:.84rem;}',
             '.auc-wp{border:1px solid #dbeafe;border-radius:10px;padding:10px;background:#f8fbff;margin-bottom:8px;}',
             '.auc-wp-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:.8rem;font-weight:800;color:#1d4ed8;}',
+            '.auc-pro-card{border:1px solid #dbeafe;border-radius:10px;padding:10px;background:#f8fbff;margin-bottom:8px;}',
+            '.auc-pro-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}',
+            '.auc-pro-info{font-size:.85rem;font-weight:700;color:#1d4ed8;}',
+            '.auc-pro-badge{font-size:.72rem;padding:2px 8px;border-radius:999px;font-weight:700;}',
+            '.auc-pro-badge.activo{background:#dcfce7;color:#166534;}',
+            '.auc-pro-badge.inactivo{background:#fef2f2;color:#b91c1c;}',
+            '.auc-pro-form{margin-top:8px;border-top:1px solid #dbeafe;padding-top:8px;}',
+            '.auc-pro-form .auc-row{margin-top:4px;}',
+            '.auc-pro-sect{font-size:.75rem;font-weight:800;color:#334155;text-transform:uppercase;letter-spacing:.04em;margin:8px 0 4px;}',
+            '.auc-pro-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}',
+            '.auc-tab[data-tab="profesionales"]{display:none;}',
+            '.auc-clinic-block{border:1px solid #e2e8f0;border-radius:10px;padding:10px;background:#f8fafc;margin-bottom:10px;}',
             '#adminUserCfgFoot{padding:12px 18px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;gap:10px;}',
             '.auc-btn{border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:700;background:#fff;}',
             '.auc-btn.primary{background:#0ea5e9;color:#fff;border-color:#0284c7;}',
@@ -90,6 +102,7 @@
             '    <button class="auc-tab" data-tab="trabajo">Trabajo</button>',
             '    <button class="auc-tab" data-tab="pdf">PDF</button>',
             '    <button class="auc-tab" data-tab="plantillas">📄 Plantillas</button>',
+            '    <button class="auc-tab" data-tab="profesionales">👥 Profesionales</button>',
             '  </div>',
             '  <div id="adminUserCfgBody">',
             '    <div id="aucWarn"></div>',
@@ -98,6 +111,7 @@
             '    <div class="auc-panel" data-panel="trabajo"></div>',
             '    <div class="auc-panel" data-panel="pdf"></div>',
             '    <div class="auc-panel" data-panel="plantillas"></div>',
+            '    <div class="auc-panel" data-panel="profesionales"></div>',
             '  </div>',
             '  <div id="adminUserCfgFoot">',
             '    <button class="auc-btn" id="aucCancelBottom">Cancelar</button>',
@@ -177,7 +191,13 @@
             showPhone: !!state.showPhone,
             showEmail: !!state.showEmail,
             showSocial: !!state.showSocial,
-            allowedTemplates: (state.allowedTemplates || []).slice()
+            allowedTemplates: (state.allowedTemplates || []).slice(),
+            clinicNombre: state.clinicNombre || '',
+            clinicLogo: !!state.clinicLogo,
+            maxProfesionales: Number(state.maxProfesionales) || 3,
+            profesionalesSnapshot: JSON.stringify((state.profesionales || []).map(function(pro) {
+                return { id: pro.id, nombre: pro.nombre, matricula: pro.matricula, activo: pro.activo };
+            }))
         };
     }
 
@@ -198,6 +218,13 @@
         nextReg.showEmail = !!s.showEmail;
         nextReg.showSocial = current.rules.allowSocial ? !!s.showSocial : false;
         nextReg.estudios = s.estudios;
+
+        if (current.rules.plan === 'clinic') {
+            nextReg.clinicNombre = s.clinicNombre || '';
+            nextReg.clinicLogo = s.clinicLogo || null;
+            nextReg.profesionales = s.profesionales || [];
+            nextReg.maxProfesionales = Number(s.maxProfesionales) || 3;
+        }
 
         return {
             updates: {
@@ -294,6 +321,15 @@
             changes.push({ section: 'Plantillas', label: 'Plantillas permitidas', before: tplBefore, after: tplAfter, added: tplDelta.added, removed: tplDelta.removed });
         }
 
+        if (initial.clinicNombre !== undefined) {
+            pushChange(changes, 'Profesionales', 'Nombre clínica', initial.clinicNombre, now.clinicNombre);
+            pushChange(changes, 'Profesionales', 'Logo clínica', initial.clinicLogo ? 'Cargado' : 'Vacío', now.clinicLogo ? 'Cargado' : 'Vacío');
+            pushChange(changes, 'Profesionales', 'Máximo profesionales', initial.maxProfesionales, now.maxProfesionales);
+            if (initial.profesionalesSnapshot !== now.profesionalesSnapshot) {
+                changes.push({ section: 'Profesionales', label: 'Lista de profesionales', before: initial.profesionalesSnapshot, after: now.profesionalesSnapshot });
+            }
+        }
+
         return changes;
     }
 
@@ -376,6 +412,11 @@
         renderTrabajo();
         renderPdf();
         renderPlantillas();
+
+        var proTabBtn = document.querySelector('.auc-tab[data-tab="profesionales"]');
+        var isClinic = current.rules.plan === 'clinic';
+        if (proTabBtn) proTabBtn.style.display = isClinic ? '' : 'none';
+        if (isClinic) renderProfesionales();
 
         overlay.style.display = 'block';
     }
@@ -647,6 +688,206 @@
         });
     }
 
+    function renderProfesionales() {
+        var p = document.querySelector('.auc-panel[data-panel="profesionales"]');
+        if (!p) return;
+        var s = current.state;
+        var max = Number(s.maxProfesionales) || 3;
+        var total = (s.profesionales || []).length;
+        var canAdd = total < max;
+        var allEsp = current.especialidades || [];
+
+        // ── Bloque institucional ──────────────────────────────────────────
+        var html = '<div class="auc-clinic-block">';
+        html += '<div style="font-weight:800;margin-bottom:6px;">Institución / Clínica</div>';
+        html += '<div class="auc-row">';
+        html += '<div class="auc-field"><label>Razón social / Nombre clínica</label>';
+        html += '<input id="aucClinicNombre" value="' + esc(s.clinicNombre || '') + '"></div>';
+        html += '<div class="auc-field"><label>Logo clínica</label>';
+        html += '<input id="aucClinicLogoFile" type="file" accept="image/*">';
+        html += '<div class="auc-hint" id="aucClinicLogoHint">' + (s.clinicLogo ? 'Cargado ✓' : 'Sin imagen') + '</div></div>';
+        html += '</div>';
+        html += '<div class="auc-field" style="max-width:260px;margin-top:4px;">';
+        html += '<label>Máximo de profesionales</label>';
+        html += '<input id="aucMaxProfesionales" type="number" min="1" max="100" value="' + esc(String(max)) + '">';
+        html += '<div class="auc-hint">Admin define el límite según contrato.</div></div>';
+        html += '</div>';
+
+        // ── Lista de profesionales ────────────────────────────────────────
+        html += '<div class="auc-box">';
+        html += '<div style="font-weight:800;margin-bottom:6px;">Profesionales (' + total + ' / ' + max + ')</div>';
+        html += '<div id="aucProList">';
+
+        (s.profesionales || []).forEach(function(pro, idx) {
+            var espList = Array.isArray(pro.especialidades) && pro.especialidades.length ? pro.especialidades.join(', ') : '—';
+            var badgeClass = pro.activo !== false ? 'activo' : 'inactivo';
+            var badgeLabel = pro.activo !== false ? 'Activo' : 'Inactivo';
+            html += '<div class="auc-pro-card" data-pro-idx="' + idx + '">';
+            // ── Cabecera de la tarjeta ─────────────────────────────────
+            html += '<div class="auc-pro-head">';
+            html += '<div class="auc-pro-info">' + esc(pro.nombre || '(sin nombre)');
+            if (pro.matricula) html += ' — mat.&nbsp;' + esc(pro.matricula);
+            html += '<br><small style="font-weight:400;color:#475569;">' + esc(espList) + '</small></div>';
+            html += '<div class="auc-pro-actions">';
+            html += '<span class="auc-pro-badge ' + badgeClass + '">' + badgeLabel + '</span>';
+            html += '<button class="auc-btn aucProEdit" data-pro-idx="' + idx + '">Editar</button>';
+            html += '<button class="auc-btn danger aucProToggle" data-pro-idx="' + idx + '">';
+            html += (pro.activo !== false ? 'Desactivar' : 'Activar') + '</button>';
+            html += '</div></div>';
+            // ── Formulario inline (oculto) ─────────────────────────────
+            html += '<div class="auc-pro-form" id="aucProForm-' + idx + '" style="display:none;">';
+            html += '<div class="auc-row">';
+            html += '<div class="auc-field"><label>Nombre completo</label><input class="aucProNombre" data-pidx="' + idx + '" value="' + esc(pro.nombre || '') + '"></div>';
+            html += '<div class="auc-field"><label>Matrícula</label><input class="aucProMatricula" data-pidx="' + idx + '" value="' + esc(pro.matricula || '') + '"></div>';
+            html += '</div>';
+            html += '<div class="auc-row">';
+            html += '<div class="auc-field"><label>Usuario (ID para selección)</label><input class="aucProUsuario" data-pidx="' + idx + '" value="' + esc(pro.usuario || '') + '"><div class="auc-hint">Nombre corto visible en dropdown de login.</div></div>';
+            html += '<div class="auc-field"><label>PIN (4 dígitos)</label><input class="aucProPin" data-pidx="' + idx + '" maxlength="4" placeholder="1234" value="' + esc(pro.pin || '1234') + '"><div class="auc-hint">Default: 1234. La clínica puede resetearlo a 1234.</div></div>';
+            html += '</div>';
+            html += '<div class="auc-row">';
+            html += '<div class="auc-field"><label>Email</label><input class="aucProEmail" data-pidx="' + idx + '" type="email" value="' + esc(pro.email || '') + '"></div>';
+            html += '<div class="auc-field"><label>Teléfono</label><input class="aucProTelefono" data-pidx="' + idx + '" value="' + esc(pro.telefono || '') + '"></div>';
+            html += '</div>';
+            // Especialidades checkboxes
+            html += '<div class="auc-pro-sect">Especialidades</div>';
+            html += '<div class="auc-check-grid" style="margin-bottom:6px;">';
+            if (allEsp.length) {
+                allEsp.forEach(function(esp) {
+                    var checked = Array.isArray(pro.especialidades) && pro.especialidades.includes(esp) ? 'checked' : '';
+                    html += '<label class="auc-check-item"><input type="checkbox" class="aucProEsp" data-pidx="' + idx + '" value="' + esc(esp) + '" ' + checked + '> ' + esc(esp) + '</label>';
+                });
+            } else {
+                html += '<div class="auc-hint">Sin especialidades configuradas en el sistema.</div>';
+            }
+            html += '</div>';
+            // Firma + Logo propio
+            html += '<div class="auc-row">';
+            html += '<div class="auc-field"><label>Firma</label><input type="file" class="aucProFirmaFile" data-pidx="' + idx + '" accept="image/*"><div class="auc-hint aucProFirmaHint-' + idx + '">' + (pro.firma ? 'Cargada ✓' : 'Sin imagen') + '</div></div>';
+            html += '<div class="auc-field"><label>Logo propio</label><input type="file" class="aucProLogoFile" data-pidx="' + idx + '" accept="image/*"><div class="auc-hint aucProLogoHint-' + idx + '">' + (pro.logo ? 'Cargado ✓' : 'Sin imagen') + '</div></div>';
+            html += '</div>';
+            html += '</div>'; // end auc-pro-form
+            html += '</div>'; // end auc-pro-card
+        });
+
+        html += '</div>'; // end #aucProList
+        var addTitle = canAdd ? '' : ' title="Límite alcanzado (' + max + ' profesionales)"';
+        html += '<button class="auc-btn" id="aucAddPro" style="margin-top:8px;"' + addTitle + (canAdd ? '' : ' disabled') + '>+ Agregar profesional</button>';
+        html += '</div>'; // end auc-box
+
+        p.innerHTML = html;
+
+        // ── Bindings institucionales ──────────────────────────────────────
+        document.getElementById('aucClinicNombre').addEventListener('input', function(e) {
+            s.clinicNombre = e.target.value;
+        });
+        var maxInput = document.getElementById('aucMaxProfesionales');
+        if (maxInput) {
+            maxInput.addEventListener('input', function(e) {
+                s.maxProfesionales = Math.max(1, Number(e.target.value) || 1);
+            });
+        }
+        var clinicLogoInput = document.getElementById('aucClinicLogoFile');
+        if (clinicLogoInput) {
+            clinicLogoInput.addEventListener('change', async function(e) {
+                var file = e.target.files && e.target.files[0];
+                if (!file) return;
+                s.clinicLogo = await fileToDataUrl(file);
+                var hint = document.getElementById('aucClinicLogoHint');
+                if (hint) hint.textContent = 'Cargado ✓';
+            });
+        }
+
+        // ── Toggle form ───────────────────────────────────────────────────
+        p.querySelectorAll('.aucProEdit').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var idx = Number(btn.getAttribute('data-pro-idx'));
+                var form = document.getElementById('aucProForm-' + idx);
+                if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
+            });
+        });
+
+        // ── Toggle activo/inactivo ────────────────────────────────────────
+        p.querySelectorAll('.aucProToggle').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var idx = Number(btn.getAttribute('data-pro-idx'));
+                if (!s.profesionales[idx]) return;
+                s.profesionales[idx].activo = !s.profesionales[idx].activo;
+                renderProfesionales();
+            });
+        });
+
+        // ── Agregar nuevo profesional ─────────────────────────────────────
+        var addBtn = document.getElementById('aucAddPro');
+        if (addBtn) {
+            addBtn.addEventListener('click', function() {
+                var currentMax = Number(s.maxProfesionales) || 3;
+                if ((s.profesionales || []).length >= currentMax) return;
+                s.profesionales.push({
+                    id: String(Date.now()) + String(Math.floor(Math.random() * 10000)),
+                    nombre: '', matricula: '', especialidades: [],
+                    usuario: '', pin: '1234',
+                    firma: null, logo: null,
+                    email: '', telefono: '', redesSociales: {}, activo: true
+                });
+                renderProfesionales();
+                // Abrir el formulario del nuevo profesional automáticamente
+                var newIdx = s.profesionales.length - 1;
+                var newForm = document.getElementById('aucProForm-' + newIdx);
+                if (newForm) newForm.style.display = 'block';
+            });
+        }
+
+        // ── Campos texto de cada profesional ─────────────────────────────
+        function bindProField(selector, key) {
+            p.querySelectorAll(selector).forEach(function(inp) {
+                inp.addEventListener('input', function() {
+                    var idx = Number(inp.getAttribute('data-pidx'));
+                    if (!s.profesionales[idx]) return;
+                    s.profesionales[idx][key] = inp.value;
+                });
+            });
+        }
+        bindProField('.aucProNombre', 'nombre');
+        bindProField('.aucProMatricula', 'matricula');
+        bindProField('.aucProUsuario', 'usuario');
+        bindProField('.aucProPin', 'pin');
+        bindProField('.aucProEmail', 'email');
+        bindProField('.aucProTelefono', 'telefono');
+
+        // ── Especialidades por profesional ────────────────────────────────
+        p.querySelectorAll('.aucProEsp').forEach(function(cb) {
+            cb.addEventListener('change', function() {
+                var idx = Number(cb.getAttribute('data-pidx'));
+                if (!s.profesionales[idx]) return;
+                var card = p.querySelector('.auc-pro-card[data-pro-idx="' + idx + '"]');
+                if (!card) return;
+                s.profesionales[idx].especialidades = Array.from(card.querySelectorAll('.aucProEsp:checked')).map(function(x) { return x.value; });
+            });
+        });
+
+        // ── Firma / Logo por profesional ──────────────────────────────────
+        p.querySelectorAll('.aucProFirmaFile').forEach(function(input) {
+            input.addEventListener('change', async function(e) {
+                var idx = Number(input.getAttribute('data-pidx'));
+                var file = e.target.files && e.target.files[0];
+                if (!file || !s.profesionales[idx]) return;
+                s.profesionales[idx].firma = await fileToDataUrl(file);
+                var hint = p.querySelector('.aucProFirmaHint-' + idx);
+                if (hint) hint.textContent = 'Cargada ✓';
+            });
+        });
+        p.querySelectorAll('.aucProLogoFile').forEach(function(input) {
+            input.addEventListener('change', async function(e) {
+                var idx = Number(input.getAttribute('data-pidx'));
+                var file = e.target.files && e.target.files[0];
+                if (!file || !s.profesionales[idx]) return;
+                s.profesionales[idx].logo = await fileToDataUrl(file);
+                var hint = p.querySelector('.aucProLogoHint-' + idx);
+                if (hint) hint.textContent = 'Cargado ✓';
+            });
+        });
+    }
+
     function collectDatosPanel() {
         const s = current.state;
         s.nombre = document.getElementById('aucNombre').value.trim();
@@ -775,7 +1016,26 @@
                 showPhone: rd.showPhone !== false,
                 showEmail: rd.showEmail !== false,
                 showSocial: !!rd.showSocial,
-                allowedTemplates: String(user.Allowed_Templates || '').split(',').map(function(x) { return x.trim(); }).filter(Boolean)
+                allowedTemplates: String(user.Allowed_Templates || '').split(',').map(function(x) { return x.trim(); }).filter(Boolean),
+                clinicNombre: rd.clinicNombre || '',
+                clinicLogo: rd.clinicLogo || null,
+                maxProfesionales: Number(rd.maxProfesionales) || Number(rules.maxProfesionales) || 3,
+                profesionales: Array.isArray(rd.profesionales) ? rd.profesionales.map(function(pro) {
+                    return {
+                        id: pro.id || (String(Date.now()) + String(Math.floor(Math.random() * 10000))),
+                        nombre: pro.nombre || '',
+                        matricula: pro.matricula || '',
+                        especialidades: Array.isArray(pro.especialidades) ? pro.especialidades.slice() : [],
+                        usuario: pro.usuario || '',
+                        pin: pro.pin || '1234',
+                        firma: pro.firma || null,
+                        logo: pro.logo || null,
+                        email: pro.email || '',
+                        telefono: pro.telefono || '',
+                        redesSociales: pro.redesSociales || {},
+                        activo: pro.activo !== false
+                    };
+                }) : []
             }
         };
 

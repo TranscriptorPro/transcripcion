@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Configuración CLINIC — Respuestas</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, sans-serif; background: #f1f5f9; margin: 0; padding: 20px; }
+  h1 { font-size: 1.3rem; color: #0f172a; margin-bottom: 4px; }
+  .subtitle { color: #64748b; font-size: .88rem; margin-bottom: 24px; }
+  .block { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 20px; margin-bottom: 16px; }
+  .block-title { font-size: 1rem; font-weight: 800; color: #1e40af; margin-bottom: 14px; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; }
+  .question { margin-bottom: 16px; }
+  .q-label { font-size: .9rem; font-weight: 700; color: #0f172a; margin-bottom: 8px; display: block; }
+  .option { display: flex; align-items: flex-start; gap: 9px; margin-bottom: 7px; cursor: pointer; padding: 7px 10px; border-radius: 8px; border: 1px solid transparent; transition: background .15s; }
+  .option:hover { background: #f0f9ff; border-color: #bae6fd; }
+  .option input[type=checkbox] { width: 17px; height: 17px; margin-top: 1px; accent-color: #0ea5e9; flex-shrink: 0; cursor: pointer; }
+  .option input[type=radio] { width: 17px; height: 17px; margin-top: 1px; accent-color: #0ea5e9; flex-shrink: 0; cursor: pointer; }
+  .option span { font-size: .88rem; color: #334155; line-height: 1.4; }
+  .multi-hint { font-size: .75rem; color: #94a3b8; margin-bottom: 6px; }
+  #exportBtn { background: #0ea5e9; color: #fff; border: none; border-radius: 10px; padding: 12px 28px; font-size: 1rem; font-weight: 700; cursor: pointer; margin-top: 8px; }
+  #exportBtn:hover { background: #0284c7; }
+  #result { display: none; margin-top: 20px; background: #0f172a; color: #e2e8f0; border-radius: 10px; padding: 16px; font-family: monospace; font-size: .82rem; white-space: pre-wrap; word-break: break-word; }
+  .selected-option { background: #f0f9ff !important; border-color: #0ea5e9 !important; }
+</style>
+</head>
+<body>
+
+<h1>⚙️ Configuración del Plan CLINIC</h1>
+<p class="subtitle">Tildá las opciones que corresponden. Al terminar presioná "Ver resumen".</p>
+
+<!-- BLOQUE A -->
+<div class="block">
+  <div class="block-title">Bloque A — Autenticación del profesional en la app</div>
+
+  <div class="question">
+    <span class="q-label">A1. ¿Cómo ingresa el profesional? (elegí UNA)</span>
+    <label class="option"><input type="radio" name="A1" value="dropdown_pin4"> <span>Dropdown con lista de profesionales + PIN numérico (4 dígitos)</span></label>
+    <label class="option"><input type="radio" name="A1" value="dropdown_pass"> <span>Dropdown con lista de profesionales + contraseña alfanumérica</span></label>
+    <label class="option"><input type="radio" name="A1" value="textfield_pin4"> <span>Campo de texto libre (escribe usuario) + PIN numérico</span></label>
+    <label class="option"><input type="radio" name="A1" value="textfield_pass"> <span>Campo de texto libre (escribe usuario) + contraseña alfanumérica</span></label>
+  </div>
+
+  <div class="question">
+    <span class="q-label">A2. ¿Qué pasa si escribe mal el PIN/contraseña? (elegí UNA)</span>
+    <label class="option"><input type="radio" name="A2" value="nolimit"> <span>Mensaje de error, puede reintentar sin límite</span></label>
+    <label class="option"><input type="radio" name="A2" value="limit3"> <span>Máximo 3 intentos, luego bloqueo temporal (30 segundos)</span></label>
+    <label class="option"><input type="radio" name="A2" value="error_only"> <span>Solo mensaje de error, sin bloqueo</span></label>
+  </div>
+
+  <div class="question">
+    <span class="q-label">A3. ¿La sesión del profesional persiste? (elegí UNA)</span>
+    <label class="option"><input type="radio" name="A3" value="tab_only"> <span>Solo mientras el navegador está abierto (se pierde al cerrar la pestaña)</span></label>
+    <label class="option"><input type="radio" name="A3" value="8hs"> <span>Se recuerda por 8 horas (jornada laboral)</span></label>
+    <label class="option"><input type="radio" name="A3" value="until_logout"> <span>Se recuerda hasta que el profesional haga logout manual</span></label>
+    <label class="option"><input type="radio" name="A3" value="always_ask"> <span>Siempre pide login al abrir la app (sin persistencia)</span></label>
+  </div>
+</div>
+
+<!-- BLOQUE B -->
+<div class="block">
+  <div class="block-title">Bloque B — Datos de la clínica como entidad</div>
+
+  <div class="question">
+    <span class="q-label">B1. ¿La clínica tiene nombre/razón social propio? (elegí UNA)</span>
+    <label class="option"><input type="radio" name="B1" value="yes"> <span>Sí — la clínica tiene su propio nombre (ej: "Centro Médico del Norte")</span></label>
+    <label class="option"><input type="radio" name="B1" value="no"> <span>No — el nombre del profesional principal es suficiente</span></label>
+  </div>
+
+  <div class="question">
+    <span class="q-label">B2. ¿La clínica tiene logo institucional propio? (elegí UNA)</span>
+    <label class="option"><input type="radio" name="B2" value="clinic_plus_prof"> <span>Sí — logo de la clínica + opcionalmente logo del profesional</span></label>
+    <label class="option"><input type="radio" name="B2" value="prof_only"> <span>No — solo el logo del profesional individual</span></label>
+  </div>
+</div>
+
+<!-- BLOQUE C -->
+<div class="block">
+  <div class="block-title">Bloque C — Encabezado del PDF en modo CLINIC</div>
+
+  <div class="question">
+    <span class="q-label">C1. ¿Qué aparece en el encabezado del informe? (elegí UNA)</span>
+    <label class="option"><input type="radio" name="C1" value="prof_only"> <span>Solo datos del profesional que firma (igual que hoy)</span></label>
+    <label class="option"><input type="radio" name="C1" value="clinic_logo_prof"> <span>Logo de la clínica + nombre del profesional + matrícula</span></label>
+    <label class="option"><input type="radio" name="C1" value="clinic_logo_name_prof"> <span>Logo de la clínica + nombre de la clínica + nombre del profesional + matrícula</span></label>
+    <label class="option"><input type="radio" name="C1" value="free"> <span>Lo configura el admin libremente por clínica</span></label>
+  </div>
+
+  <div class="question">
+    <span class="q-label">C2. La firma al pie del informe es de... (elegí UNA)</span>
+    <label class="option"><input type="radio" name="C2" value="prof_only"> <span>Solo el profesional activo de la sesión</span></label>
+    <label class="option"><input type="radio" name="C2" value="prof_plus_clinic"> <span>El profesional activo + logo de la clínica al lado</span></label>
+    <label class="option"><input type="radio" name="C2" value="configurable"> <span>Configurable por profesional</span></label>
+  </div>
+</div>
+
+<!-- BLOQUE D -->
+<div class="block">
+  <div class="block-title">Bloque D — Datos de cada profesional del equipo</div>
+
+  <div class="question">
+    <span class="q-label">D1. ¿Qué datos tiene cada profesional? (podés marcar varios)</span>
+    <div class="multi-hint">✔ Selección múltiple</div>
+    <label class="option"><input type="checkbox" name="D1" value="nombre"> <span>Nombre y apellido</span></label>
+    <label class="option"><input type="checkbox" name="D1" value="matricula"> <span>Matrícula</span></label>
+    <label class="option"><input type="checkbox" name="D1" value="especialidad"> <span>Especialidad/es</span></label>
+    <label class="option"><input type="checkbox" name="D1" value="usuario"> <span>Usuario (para login en la app)</span></label>
+    <label class="option"><input type="checkbox" name="D1" value="pin"> <span>PIN / contraseña</span></label>
+    <label class="option"><input type="checkbox" name="D1" value="firma"> <span>Firma (imagen PNG)</span></label>
+    <label class="option"><input type="checkbox" name="D1" value="logo"> <span>Logo personal (imagen)</span></label>
+    <label class="option"><input type="checkbox" name="D1" value="email"> <span>Email personal (notificaciones)</span></label>
+    <label class="option"><input type="checkbox" name="D1" value="telefono"> <span>Teléfono personal</span></label>
+  </div>
+
+  <div class="question">
+    <span class="q-label">D2. ¿Un profesional puede tener más de una especialidad? (elegí UNA)</span>
+    <label class="option"><input type="radio" name="D2" value="yes"> <span>Sí — igual que en los otros planes</span></label>
+    <label class="option"><input type="radio" name="D2" value="no"> <span>No — solo una especialidad por profesional en CLINIC</span></label>
+  </div>
+</div>
+
+<!-- BLOQUE E -->
+<div class="block">
+  <div class="block-title">Bloque E — Gestión del equipo</div>
+
+  <div class="question">
+    <span class="q-label">E1. ¿Quién puede agregar/editar/quitar profesionales? (elegí UNA)</span>
+    <label class="option"><input type="radio" name="E1" value="admin_only"> <span>Solo el administrador (desde admin.html)</span></label>
+    <label class="option"><input type="radio" name="E1" value="admin_and_user"> <span>El administrador + el responsable de la clínica (desde la app)</span></label>
+    <label class="option"><input type="radio" name="E1" value="admin_panel_in_app"> <span>Solo el admin, pero hay un panel básico dentro de la app para el responsable</span></label>
+  </div>
+
+  <div class="question">
+    <span class="q-label">E2. ¿Hay límite de profesionales por cuenta CLINIC? (elegí UNA)</span>
+    <label class="option"><input type="radio" name="E2" value="limit_addon"> <span>Sí — límite base (ej: 3) y se compran más como add-on</span></label>
+    <label class="option"><input type="radio" name="E2" value="unlimited"> <span>No — ilimitados dentro del plan CLINIC</span></label>
+    <label class="option"><input type="radio" name="E2" value="admin_sets"> <span>El admin lo configura libremente por cada clínica</span></label>
+  </div>
+</div>
+
+<!-- BLOQUE F -->
+<div class="block">
+  <div class="block-title">Bloque F — Plantillas en modo CLINIC</div>
+
+  <div class="question">
+    <span class="q-label">F1. Las plantillas permitidas son de... (elegí UNA)</span>
+    <label class="option"><input type="radio" name="F1" value="clinic_global"> <span>La clínica entera — todos los profesionales usan las mismas plantillas</span></label>
+    <label class="option"><input type="radio" name="F1" value="per_prof"> <span>Cada profesional tiene sus propias plantillas permitidas</span></label>
+    <label class="option"><input type="radio" name="F1" value="combined"> <span>Combinación: plantillas de la clínica + cada profesional puede tener un subconjunto</span></label>
+  </div>
+</div>
+
+<!-- BLOQUE G -->
+<div class="block">
+  <div class="block-title">Bloque G — Registro público (registro.html)</div>
+
+  <div class="question">
+    <span class="q-label">G1. Cuando un usuario elige plan CLINIC en el registro público: (elegí UNA)</span>
+    <label class="option"><input type="radio" name="G1" value="inline"> <span>Pide completar al menos 1 profesional del equipo dentro del mismo formulario</span></label>
+    <label class="option"><input type="radio" name="G1" value="after_approval"> <span>Primero se aprueba la clínica, luego el admin carga los profesionales</span></label>
+    <label class="option"><input type="radio" name="G1" value="separate_form"> <span>Se le envía un formulario adicional por separado para cargar el equipo</span></label>
+  </div>
+</div>
+
+<button id="exportBtn" onclick="showResult()">📋 Ver resumen de respuestas</button>
+<div id="result"></div>
+
+<script>
+// Highlight selected options
+document.querySelectorAll('.option input').forEach(function(inp) {
+  inp.addEventListener('change', function() {
+    if (inp.type === 'radio') {
+      document.querySelectorAll('input[name="' + inp.name + '"]').forEach(function(r) {
+        r.closest('.option').classList.remove('selected-option');
+      });
+    }
+    if (inp.checked) inp.closest('.option').classList.add('selected-option');
+    else inp.closest('.option').classList.remove('selected-option');
+  });
+});
+
+function showResult() {
+  const out = {};
+  // Radios
+  ['A1','A2','A3','B1','B2','C1','C2','D2','E1','E2','F1','G1'].forEach(function(q) {
+    const el = document.querySelector('input[name="' + q + '"]:checked');
+    out[q] = el ? el.value : '— sin respuesta —';
+  });
+  // Checkboxes D1
+  const d1 = Array.from(document.querySelectorAll('input[name="D1"]:checked')).map(function(x){ return x.value; });
+  out['D1'] = d1.length ? d1.join(', ') : '— sin respuesta —';
+
+  const labels = {
+    A1: 'Cómo ingresa el profesional',
+    A2: 'Error de PIN/contraseña',
+    A3: 'Persistencia de sesión',
+    B1: 'Nombre/razón social propio',
+    B2: 'Logo institucional propio',
+    C1: 'Encabezado del PDF',
+    C2: 'Firma al pie del informe',
+    D1: 'Datos de cada profesional',
+    D2: 'Múltiples especialidades',
+    E1: 'Quién gestiona el equipo',
+    E2: 'Límite de profesionales',
+    F1: 'Plantillas en CLINIC',
+    G1: 'Registro público CLINIC'
+  };
+
+  let txt = '=== RESPUESTAS CLINIC CONFIG ===\n\n';
+  Object.keys(out).forEach(function(k) {
+    txt += '[' + k + '] ' + labels[k] + ':\n  → ' + out[k] + '\n\n';
+  });
+
+  const res = document.getElementById('result');
+  res.textContent = txt;
+  res.style.display = 'block';
+  res.scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

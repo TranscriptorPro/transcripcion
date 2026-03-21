@@ -6,7 +6,7 @@
         normal: { maxWorkplaces: 1, maxDevices: 1, studyLimit: 3, allowPdfLogo: false, allowSocial: false },
         pro:    { maxWorkplaces: 2, maxDevices: 3, studyLimit: -1, allowPdfLogo: true,  allowSocial: true  },
         gift:   { maxWorkplaces: 2, maxDevices: 10, studyLimit: -1, allowPdfLogo: true,  allowSocial: true  },
-        clinic: { maxWorkplaces: 1, maxDevices: 5, studyLimit: -1, allowPdfLogo: true,  allowSocial: true  },
+        clinic: { maxWorkplaces: 1, maxDevices: 5, studyLimit: -1, allowPdfLogo: true,  allowSocial: true, maxProfesionales: 3  },
         enterprise: { maxWorkplaces: 5, maxDevices: 999, studyLimit: -1, allowPdfLogo: true, allowSocial: true }
     };
 
