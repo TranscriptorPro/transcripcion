@@ -2456,6 +2456,18 @@
                             <input type="tel" id="regProfTelefono${index}" placeholder="+54 9 11 1234-5678">
                         </div>
                     </div>
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label>Usuario (nombre de login) *</label>
+                            <input type="text" id="regProfUsuario${index}" placeholder="jperez" maxlength="30">
+                            <small style="color:#94a3b8;font-size:.75rem;">Nombre corto para seleccionar en el acceso a la app.</small>
+                        </div>
+                        <div class="field-group">
+                            <label>PIN de acceso (4 dígitos)</label>
+                            <input type="text" id="regProfPin${index}" placeholder="1234" maxlength="4" value="1234">
+                            <small style="color:#94a3b8;font-size:.75rem;">Default: 1234. El profesional puede cambiarlo desde la app.</small>
+                        </div>
+                    </div>
                     <div class="field-group" style="margin-top:.4rem;">
                         <label>Email</label>
                         <input type="email" id="regProfEmail${index}" placeholder="doctor@clinica.com">
@@ -2569,7 +2581,9 @@
                 const especialidad= (document.getElementById('regProfEspecialidad'+ idx) || {}).value || '';
                 const telefono    = (document.getElementById('regProfTelefono'    + idx) || {}).value || '';
                 const email       = (document.getElementById('regProfEmail'       + idx) || {}).value || '';
-                const socialMedia = {
+                const usuario     = (document.getElementById('regProfUsuario'     + idx) || {}).value || '';
+                const pin         = (document.getElementById('regProfPin'         + idx) || {}).value || '1234';
+                const redesSociales = {
                     facebook:  (document.getElementById('regProfSocialFb' + idx) || {}).value?.trim() || '',
                     instagram: (document.getElementById('regProfSocialIg' + idx) || {}).value?.trim() || '',
                     youtube:   (document.getElementById('regProfSocialYt' + idx) || {}).value?.trim() || '',
@@ -2580,7 +2594,23 @@
                 const showEmail  = document.getElementById('regProfShowEmail'  + idx)?.checked ?? true;
                 const showSocial = document.getElementById('regProfShowSocial' + idx)?.checked ?? true;
                 if (name.trim()) {
-                    profs.push({ nombre: name.trim(), matricula: matricula.trim(), especialidad: especialidad.trim(), telefono: telefono.trim(), email: email.trim(), firma: profFirmaData[idx] || null, socialMedia, showPhone, showEmail, showSocial });
+                    profs.push({
+                        id:            String(Date.now()) + String(Math.floor(Math.random() * 100000)),
+                        nombre:        name.trim(),
+                        matricula:     matricula.trim(),
+                        especialidades: especialidad.trim() ? [especialidad.trim()] : [],
+                        usuario:       usuario.trim(),
+                        pin:           String(pin).trim() || '1234',
+                        firma:         profFirmaData[idx] || null,
+                        logo:          null,
+                        email:         email.trim(),
+                        telefono:      telefono.trim(),
+                        redesSociales,
+                        showPhone,
+                        showEmail,
+                        showSocial,
+                        activo:        true
+                    });
                 }
             });
             return profs;

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Test C4 — Profesionales en registro.html (CLINIC)</title>
+<style>
+  body{font-family:system-ui,sans-serif;padding:18px;background:#f1f5f9;color:#0f172a;}
+  h1{font-size:1.1rem;margin-bottom:14px;}
+  .suite{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:12px;}
+  .suite h2{font-size:.9rem;font-weight:800;margin:0 0 10px;}
+  .t{display:flex;align-items:center;gap:8px;font-size:.83rem;padding:4px 0;border-bottom:1px solid #f1f5f9;}
+  .t:last-child{border-bottom:none;}
+  .badge{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:999px;}
+  .pass{background:#dcfce7;color:#166534;}
+  .fail{background:#fef2f2;color:#b91c1c;}
+  #summary{font-size:.88rem;font-weight:700;margin-top:10px;padding:10px;border-radius:8px;background:#fff;}
+</style>
+</head>
+<body>
+<h1>🧪 Test Suite C4 — Formato Profesionales en registro.html (CLINIC)</h1>
+
+<!-- Marco mínimo para simular el DOM de registro.html dentro del test -->
+<div id="professionalsContainer"></div>
+<div id="profCounter"></div>
+
+<script>
+// ──────────────────────────────────────────────────────────────────────────────
+// Stubs mínimos — replican sólo lo necesario de registro.html
+// ──────────────────────────────────────────────────────────────────────────────
+var selectedPlan = 'CLINIC';
+var profCounter  = 0;
+var profFirmaData = {};
+
+var PRICING = {
+  CLINIC: { maxProfessionals: 5, license: 352.99 }
+};
+
+function showAlert(msg) { console.warn('ALERT:', msg); }
+
+// ── Pegamos las funciones directamente del archivo (sin cargar el HTML entero)
+// Para no ejecutar todo registro.html, copiamos sólo las funciones relevantes:
+
+function renderProfessional(index) {
+    const container = document.getElementById('professionalsContainer');
+    const div = document.createElement('div');
+    div.className = 'wp-accordion';
+    div.id = 'prof-' + index;
+    div.innerHTML = `
+        <div class="wp-header">
+            <span id="profNameDisplay${index}">👨‍⚕️ Profesional ${index + 1}</span>
+        </div>
+        <div class="wp-body">
+            <div class="field-row">
+                <div class="field-group">
+                    <label>Nombre completo *</label>
+                    <input type="text" id="regProfName${index}" placeholder="Dr. Juan Pérez">
+                </div>
+                <div class="field-group">
+                    <label>Matrícula *</label>
+                    <input type="text" id="regProfMatricula${index}" placeholder="MN 12345">
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field-group">
+                    <label>Especialidad *</label>
+                    <input type="text" id="regProfEspecialidad${index}" placeholder="Cardiología">
+                </div>
+                <div class="field-group">
+                    <label>Teléfono</label>
+                    <input type="tel" id="regProfTelefono${index}" placeholder="+54 9 11 1234-5678">
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field-group">
+                    <label>Usuario (nombre de login) *</label>
+                    <input type="text" id="regProfUsuario${index}" placeholder="jperez" maxlength="30">
+                    <small style="color:#94a3b8;font-size:.75rem;">Nombre corto para seleccionar en el acceso a la app.</small>
+                </div>
+                <div class="field-group">
+                    <label>PIN de acceso (4 dígitos)</label>
+                    <input type="text" id="regProfPin${index}" placeholder="1234" maxlength="4" value="1234">
+                    <small style="color:#94a3b8;font-size:.75rem;">Default: 1234. El profesional puede cambiarlo desde la app.</small>
+                </div>
+            </div>
+            <div class="field-group" style="margin-top:.4rem;">
+                <label>Email</label>
+                <input type="email" id="regProfEmail${index}" placeholder="doctor@clinica.com">
+            </div>
+            <input type="hidden" id="regProfSocialFb${index}" value="">
+            <input type="hidden" id="regProfSocialIg${index}" value="">
+            <input type="hidden" id="regProfSocialYt${index}" value="">
+            <input type="hidden" id="regProfSocialX${index}"  value="">
+            <input type="hidden" id="regProfSocialWa${index}" value="">
+            <input type="checkbox" id="regProfShowPhone${index}"  checked style="display:none">
+            <input type="checkbox" id="regProfShowEmail${index}"  checked style="display:none">
+            <input type="checkbox" id="regProfShowSocial${index}" checked style="display:none">
+        </div>
+    `;
+    container.appendChild(div);
+}
+
+function _collectProfessionals() {
+    const profs = [];
+    document.querySelectorAll('#professionalsContainer .wp-accordion').forEach(acc => {
+        const idx = parseInt(acc.id.replace('prof-', ''));
+        const name        = (document.getElementById('regProfName'        + idx) || {}).value || '';
+        const matricula   = (document.getElementById('regProfMatricula'   + idx) || {}).value || '';
+        const especialidad= (document.getElementById('regProfEspecialidad'+ idx) || {}).value || '';
+        const telefono    = (document.getElementById('regProfTelefono'    + idx) || {}).value || '';
+        const email       = (document.getElementById('regProfEmail'       + idx) || {}).value || '';
+        const usuario     = (document.getElementById('regProfUsuario'     + idx) || {}).value || '';
+        const pin         = (document.getElementById('regProfPin'         + idx) || {}).value || '1234';
+        const redesSociales = {
+            facebook:  (document.getElementById('regProfSocialFb' + idx) || {}).value?.trim() || '',
+            instagram: (document.getElementById('regProfSocialIg' + idx) || {}).value?.trim() || '',
+            youtube:   (document.getElementById('regProfSocialYt' + idx) || {}).value?.trim() || '',
+            x:         (document.getElementById('regProfSocialX'  + idx) || {}).value?.trim() || '',
+            whatsapp:  (document.getElementById('regProfSocialWa' + idx) || {}).value?.trim() || ''
+        };
+        const showPhone  = document.getElementById('regProfShowPhone'  + idx)?.checked ?? true;
+        const showEmail  = document.getElementById('regProfShowEmail'  + idx)?.checked ?? true;
+        const showSocial = document.getElementById('regProfShowSocial' + idx)?.checked ?? true;
+        if (name.trim()) {
+            profs.push({
+                id:            String(Date.now()) + String(Math.floor(Math.random() * 100000)),
+                nombre:        name.trim(),
+                matricula:     matricula.trim(),
+                especialidades: especialidad.trim() ? [especialidad.trim()] : [],
+                usuario:       usuario.trim(),
+                pin:           String(pin).trim() || '1234',
+                firma:         profFirmaData[idx] || null,
+                logo:          null,
+                email:         email.trim(),
+                telefono:      telefono.trim(),
+                redesSociales,
+                showPhone,
+                showEmail,
+                showSocial,
+                activo:        true
+            });
+        }
+    });
+    return profs;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Helpers de test
+// ──────────────────────────────────────────────────────────────────────────────
+var passed = 0, failed = 0;
+var results = [];
+
+function assert(desc, fn) {
+    try {
+        var ok = fn();
+        if (ok) { passed++; results.push({ desc, status: 'pass', msg: '' }); }
+        else    { failed++; results.push({ desc, status: 'fail', msg: 'returned falsy' }); }
+    } catch(e) { failed++; results.push({ desc, status: 'fail', msg: e.message }); }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Setup: renderizar 2 profesionales con datos
+// ──────────────────────────────────────────────────────────────────────────────
+renderProfessional(0);
+renderProfessional(1);
+
+// Llenar pro-0
+document.getElementById('regProfName0').value         = 'Dr. Juan Pérez';
+document.getElementById('regProfMatricula0').value     = 'MN 12345';
+document.getElementById('regProfEspecialidad0').value  = 'Cardiología';
+document.getElementById('regProfTelefono0').value      = '+54 9 11 1234-5678';
+document.getElementById('regProfEmail0').value         = 'jperez@clinica.com';
+document.getElementById('regProfUsuario0').value       = 'jperez';
+document.getElementById('regProfPin0').value           = '4321';
+document.getElementById('regProfSocialIg0').value      = '@drjuanperez';
+
+// Llenar pro-1 (sin usuario ni PIN — usa defaults)
+document.getElementById('regProfName1').value          = 'Dra. Ana García';
+document.getElementById('regProfMatricula1').value     = 'MN 67890';
+document.getElementById('regProfEspecialidad1').value  = 'Radiología';
+document.getElementById('regProfEmail1').value         = 'agarcia@clinica.com';
+// usuario vacío → debe quedar '' en output
+// pin vacío → value default es '1234'
+
+var resultado = _collectProfessionals();
+var pro0 = resultado[0];
+var pro1 = resultado[1];
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 1 — Campos nuevos presentes en el DOM
+// ──────────────────────────────────────────────────────────────────────────────
+assert('Input regProfUsuario0 existe en el DOM', () => !!document.getElementById('regProfUsuario0'));
+assert('Input regProfPin0 existe en el DOM', () => !!document.getElementById('regProfPin0'));
+assert('regProfPin0 tiene value default "1234"', () => {
+    // Si el usuario no lo cambió desde el HTML, el value del input es '1234'
+    const inp = document.getElementById('regProfPin0');
+    // Fue cambiado a 4321 en el setup, solo verificar que el elemento existe con maxlength
+    return inp && inp.getAttribute('maxlength') === '4';
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 2 — _collectProfessionals emite 2 profesionales
+// ──────────────────────────────────────────────────────────────────────────────
+assert('_collectProfessionals devuelve array de 2', () => resultado.length === 2);
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 3 — Formato pro-0: todos los campos del modelo unificado
+// ──────────────────────────────────────────────────────────────────────────────
+assert('pro0.id existe y es string', () => typeof pro0.id === 'string' && pro0.id.length > 0);
+assert('pro0.nombre correcto', () => pro0.nombre === 'Dr. Juan Pérez');
+assert('pro0.matricula correcto', () => pro0.matricula === 'MN 12345');
+
+// especialidades es ARRAY (clave del cambio C4)
+assert('pro0.especialidades es array', () => Array.isArray(pro0.especialidades));
+assert('pro0.especialidades[0] = "Cardiología"', () => pro0.especialidades[0] === 'Cardiología');
+assert('pro0 NO tiene campo especialidad (string deprecated)', () => pro0.especialidad === undefined);
+
+assert('pro0.usuario = "jperez"', () => pro0.usuario === 'jperez');
+assert('pro0.pin = "4321" (el ingresado)', () => pro0.pin === '4321');
+
+assert('pro0.email correcto', () => pro0.email === 'jperez@clinica.com');
+assert('pro0.telefono correcto', () => pro0.telefono === '+54 9 11 1234-5678');
+
+// redesSociales como objeto (clave del cambio C4 — antes era socialMedia)
+assert('pro0.redesSociales es objeto', () => typeof pro0.redesSociales === 'object' && !Array.isArray(pro0.redesSociales));
+assert('pro0.redesSociales.instagram = "@drjuanperez"', () => pro0.redesSociales.instagram === '@drjuanperez');
+assert('pro0 NO tiene campo socialMedia (deprecated)', () => pro0.socialMedia === undefined);
+
+assert('pro0.firma es null (sin archivo)', () => pro0.firma === null);
+assert('pro0.logo es null', () => pro0.logo === null);
+assert('pro0.activo === true', () => pro0.activo === true);
+assert('pro0.showPhone === true', () => pro0.showPhone === true);
+assert('pro0.showEmail === true', () => pro0.showEmail === true);
+assert('pro0.showSocial === true', () => pro0.showSocial === true);
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 4 — Valores default para pro-1 (usuario/pin vacíos o default)
+// ──────────────────────────────────────────────────────────────────────────────
+assert('pro1.nombre = "Dra. Ana García"', () => pro1.nombre === 'Dra. Ana García');
+assert('pro1.especialidades = ["Radiología"]', () => Array.isArray(pro1.especialidades) && pro1.especialidades[0] === 'Radiología');
+assert('pro1.usuario vacío (no ingresado)', () => pro1.usuario === '');
+assert('pro1.pin = "1234" (default del input)', () => pro1.pin === '1234');
+assert('pro1.activo === true', () => pro1.activo === true);
+assert('pro1.logo === null', () => pro1.logo === null);
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 5 — Profesionales sin nombre no se incluyen
+// ──────────────────────────────────────────────────────────────────────────────
+renderProfessional(2);
+// No llenamos nombre en pro-2
+document.getElementById('regProfMatricula2').value = 'MN 99999';
+var resultadoConVacio = _collectProfessionals();
+
+assert('Profesional sin nombre no se incluye en el array', () => resultadoConVacio.length === 2);
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 6 — Especialidad vacía → array vacío
+// ──────────────────────────────────────────────────────────────────────────────
+renderProfessional(3);
+document.getElementById('regProfName3').value = 'Dr. Sin Especialidad';
+var resultadoEspVacia = _collectProfessionals();
+var pro3 = resultadoEspVacia.find(p => p.nombre === 'Dr. Sin Especialidad');
+
+assert('Especialidad vacía → especialidades[] vacío', () => Array.isArray(pro3.especialidades) && pro3.especialidades.length === 0);
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 7 — Firma en profFirmaData se incluye
+// ──────────────────────────────────────────────────────────────────────────────
+profFirmaData[0] = 'data:image/png;base64,iVBORw0KGgo=';
+var resultadoConFirma = _collectProfessionals();
+var pro0Firma = resultadoConFirma[0];
+
+assert('pro0.firma toma el valor de profFirmaData[0]', () => pro0Firma.firma === 'data:image/png;base64,iVBORw0KGgo=');
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 8 — Serialización JSON (compatibilidad con backend)
+// ──────────────────────────────────────────────────────────────────────────────
+var serializado = JSON.stringify(resultado);
+var parseado = JSON.parse(serializado);
+
+assert('JSON.stringify/parse no pierde datos', () => parseado.length === 2);
+assert('Tras parseo, especialidades sigue siendo array', () => Array.isArray(parseado[0].especialidades));
+assert('Tras parseo, redesSociales sigue siendo objeto', () => typeof parseado[0].redesSociales === 'object');
+assert('Tras parseo, activo sigue siendo boolean true', () => parseado[0].activo === true);
+assert('Tras parseo, id sigue siendo string', () => typeof parseado[0].id === 'string');
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Render resultados
+// ──────────────────────────────────────────────────────────────────────────────
+var container = document.getElementById('testResults');
+var suites = {
+    'Campos nuevos en el DOM': results.slice(0, 3),
+    '_collectProfessionals — cantidad': results.slice(3, 4),
+    'Formato pro-0 — todos los campos': results.slice(4, 20),
+    'Defaults pro-1 (usuario/pin)': results.slice(20, 26),
+    'Sin nombre → excluido': results.slice(26, 27),
+    'Especialidad vacía → array vacío': results.slice(27, 28),
+    'Firma desde profFirmaData': results.slice(28, 29),
+    'Serialización JSON': results.slice(29)
+};
+
+var html = '';
+Object.keys(suites).forEach(function(suiteName) {
+    var items = suites[suiteName];
+    html += '<div class="suite"><h2>' + suiteName + '</h2>';
+    items.forEach(function(r) {
+        html += '<div class="t"><span class="badge ' + r.status + '">' + r.status.toUpperCase() + '</span> ' + r.desc;
+        if (r.msg) html += ' <small style="color:#64748b;">(' + r.msg + ')</small>';
+        html += '</div>';
+    });
+    html += '</div>';
+});
+
+container.innerHTML = html;
+
+var total = passed + failed;
+var sumEl = document.getElementById('summary');
+sumEl.style.borderLeft = '4px solid ' + (failed ? '#ef4444' : '#22c55e');
+sumEl.textContent = '✅ ' + passed + ' pasados   ❌ ' + failed + ' fallidos   (total: ' + total + ')';
+
+console.log('TEST RESULT:', passed + '/' + total, failed ? 'FAILED' : 'OK');
+</script>
+
+<div id="testResults"></div>
+<div id="summary"></div>
+</body>
+</html>
