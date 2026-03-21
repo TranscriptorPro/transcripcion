@@ -9,7 +9,7 @@
     <!-- PURGE: auto-purge al detectar nueva versión + ?purge manual. Preserva tema y color -->
     <script>
     (function() {
-        var APP_VERSION = 'v146'; // ← bump esto en cada deploy para forzar auto-purge
+        var APP_VERSION = 'v147'; // ← bump esto en cada deploy para forzar auto-purge
         try { window.APP_VERSION = APP_VERSION; } catch(_) {}
         var params = new URLSearchParams(window.location.search);
         var forcePurge = params.has('purge');
@@ -2315,7 +2315,8 @@
                                 </svg>
                             </button>
                             <div id="changeTemplateDropdown" class="change-tpl-dropdown" style="display:none;">
-                                <div class="change-tpl-hint">💡 Si la IA eligió mal la plantilla, seleccioná la correcta para re-estructurar el informe:</div>
+                                <div class="change-tpl-hint">💡 Si la IA eligió mal la plantilla, seleccioná la correcta para re-estructurar:</div>
+                                <input type="text" id="changeTemplateSearch" class="change-tpl-search" placeholder="🔍 Buscar plantilla..." autocomplete="off">
                                 <ul id="changeTemplateList" style="list-style:none; margin:0; padding:0;"></ul>
                             </div>
                         </div>

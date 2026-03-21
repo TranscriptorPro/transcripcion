@@ -10,6 +10,14 @@
         return String(name || '').replace(/^\s*(?:dr\.?|dra\.?)\s+/i, '').trim();
     }
 
+    // Remove UI banners/headers from editor text before patient data extraction
+    function _cleanEditorTextForExtract(editorEl) {
+        if (!editorEl) return '';
+        var clone = editorEl.cloneNode(true);
+        clone.querySelectorAll('.patient-data-header, .patient-placeholder-banner, .no-print, .ai-note-panel, .inline-review-btn, .original-text-banner, .btn-append-inline, #aiNotePanel').forEach(function(n) { n.remove(); });
+        return clone.innerText || '';
+    }
+
     function _sanitizeInsuranceName(rawInsurance, affiliateNum) {
         let val = String(rawInsurance || '').trim();
         const aff = String(affiliateNum || '').trim();
@@ -124,7 +132,7 @@
         const extracted = (opts.includeEditorExtract !== false
             && editorEl
             && typeof window.extractPatientDataFromText === 'function')
-            ? window.extractPatientDataFromText(editorEl.innerText || '')
+            ? window.extractPatientDataFromText(_cleanEditorTextForExtract(editorEl))
             : {};
 
         const patientName = extracted.name || config.patientName || _reqValue('reqPatientName') || _reqValue('pdfPatientName');

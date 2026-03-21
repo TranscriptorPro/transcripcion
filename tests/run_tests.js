@@ -910,6 +910,41 @@ test('E1 — CSS incluye estilos de change-tpl-dropdown', () => {
     assert(css.includes('.change-tpl-dropdown'), 'components.css debe tener .change-tpl-dropdown');
     assert(css.includes('.btn-change-template'), 'components.css debe tener .btn-change-template');
     assert(css.includes('.pulse-hint'), 'components.css debe tener pulse-hint');
+    assert(css.includes('.change-tpl-search'), 'components.css debe tener .change-tpl-search');
+});
+
+test('E1 — HTML tiene campo de búsqueda en dropdown', () => {
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
+    assert(html.includes('id="changeTemplateSearch"'), 'Debe existir input de búsqueda');
+});
+
+test('E1 — changeTemplateUtils tiene filtrado por búsqueda', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/changeTemplateUtils.js'), 'utf-8');
+    assert(code.includes('_renderList'), 'Debe tener _renderList para filtrado');
+    assert(code.includes('changeTemplateSearch'), 'Debe referenciar el input de búsqueda');
+    assert(code.includes('normalize'), 'Debe normalizar acentos para búsqueda');
+});
+
+test('E1-fix — _NAME_BLOCKLIST incluye "estudio" y "fecha"', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/formHandler.js'), 'utf-8');
+    assert(code.includes("'estudio'"), 'Blocklist debe incluir estudio');
+    assert(code.includes("'fecha'"), 'Blocklist debe incluir fecha');
+    assert(code.includes("'datos'"), 'Blocklist debe incluir datos');
+    assert(code.includes("'informe'"), 'Blocklist debe incluir informe');
+});
+
+test('E1-fix — extractPatientDataFromText no extrae "Y Estudio Fecha"', () => {
+    const text = 'Datos del Paciente y Estudio Fecha: 21/03/2026 INFORME DE LARINGOSCOPÍA Fosa nasal derecha...';
+    const result = window.extractPatientDataFromText(text);
+    const name = (result.name || '').toLowerCase();
+    assert(!name.includes('estudio'), `No debe extraer "estudio" como nombre, obtuvo: "${result.name || ''}"`);
+    assert(!name.includes('fecha'), `No debe extraer "fecha" como nombre, obtuvo: "${result.name || ''}"`);
+});
+
+test('E1-fix — reportContextResolver limpia banner antes de extraer', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/reportContextResolver.js'), 'utf-8');
+    assert(code.includes('_cleanEditorTextForExtract'), 'Debe usar _cleanEditorTextForExtract');
+    assert(code.includes('patient-data-header'), '_cleanEditorTextForExtract debe remover patient-data-header');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════

@@ -129,7 +129,8 @@ const STUDY_TYPE_HEADING_REGEX = /\bINFORME\s+DE\s+([^\n]+)/i;
 
 const _NAME_BLOCKLIST = new Set([
     'masculino', 'femenino', 'sexo', 'genero', 'paciente', 'dni', 'documento',
-    'edad', 'anos', 'obra', 'social', 'afiliado', 'afiliada'
+    'edad', 'anos', 'obra', 'social', 'afiliado', 'afiliada',
+    'estudio', 'fecha', 'datos', 'informe', 'completar', 'click'
 ]);
 
 const _NAME_STOPWORDS = new Set([

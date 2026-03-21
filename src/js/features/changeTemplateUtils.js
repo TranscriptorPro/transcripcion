@@ -7,11 +7,8 @@
 
     const HINT_KEY = 'tp_changeTemplate_hintSeen';
 
-    // ── Populate dropdown list ──────────────────────────────────────
-    function _populateChangeTemplateList() {
-        const list = document.getElementById('changeTemplateList');
-        if (!list) return;
-
+    // ── Build flat list of all templates ─────────────────────────────
+    function _getAllTemplates() {
         const _allowed = (typeof CLIENT_CONFIG !== 'undefined' &&
             Array.isArray(CLIENT_CONFIG.allowedTemplates) &&
             CLIENT_CONFIG.allowedTemplates.length)
@@ -23,39 +20,63 @@
             "Neurología": "🧠", "ORL": "👂", "Quirúrgico": "🔪", "General": "📄"
         };
 
-        list.innerHTML = '';
-        const currentKey = window._lastUsedTemplateKey || 'generico';
+        const items = [{ key: 'generico', name: '📋 Plantilla General', cat: '', catIcon: '' }];
         const cats = window.TEMPLATE_CATEGORIES || {};
 
         for (const [cat, keys] of Object.entries(cats)) {
-            const hasItems = keys.some(k => k !== 'generico' &&
-                window.MEDICAL_TEMPLATES[k] && (!_allowed || _allowed.has(k)));
-            if (!hasItems) continue;
-
-            const header = document.createElement('li');
-            header.textContent = `${catIcons[cat] || ''} ${cat}`;
-            header.className = 'tmpl-list-header';
-            list.appendChild(header);
-
             keys.forEach(key => {
                 if (key === 'generico') return;
                 if (_allowed && !_allowed.has(key)) return;
                 const t = window.MEDICAL_TEMPLATES[key];
                 if (!t) return;
-                const item = document.createElement('li');
-                item.dataset.value = key;
-                item.textContent = t.name;
-                item.className = 'tmpl-list-item' + (key === currentKey ? ' tpl-current' : '');
-                list.appendChild(item);
+                items.push({ key, name: t.name, cat, catIcon: catIcons[cat] || '' });
             });
         }
+        return items;
+    }
 
-        // Add genérico at top
-        const genItem = document.createElement('li');
-        genItem.dataset.value = 'generico';
-        genItem.textContent = '📋 Plantilla General';
-        genItem.className = 'tmpl-list-item' + ('generico' === currentKey ? ' tpl-current' : '');
-        list.insertBefore(genItem, list.firstChild);
+    // ── Render filtered list ────────────────────────────────────────
+    function _renderList(filter) {
+        const list = document.getElementById('changeTemplateList');
+        if (!list) return;
+        list.innerHTML = '';
+        const currentKey = window._lastUsedTemplateKey || 'generico';
+        const all = _getAllTemplates();
+        const q = (filter || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+        let lastCat = '';
+        let count = 0;
+
+        all.forEach(item => {
+            const nameLow = item.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            const catLow = item.cat.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            if (q && !nameLow.includes(q) && !catLow.includes(q) && !item.key.includes(q)) return;
+
+            // Category header
+            if (item.cat && item.cat !== lastCat) {
+                lastCat = item.cat;
+                const header = document.createElement('li');
+                header.textContent = `${item.catIcon} ${item.cat}`;
+                header.className = 'tmpl-list-header';
+                list.appendChild(header);
+            }
+
+            const li = document.createElement('li');
+            li.dataset.value = item.key;
+            li.textContent = item.name;
+            li.className = 'tmpl-list-item' + (item.key === currentKey ? ' tpl-current' : '');
+            list.appendChild(li);
+            count++;
+        });
+
+        if (count === 0) {
+            const empty = document.createElement('li');
+            empty.textContent = 'Sin resultados';
+            empty.className = 'tmpl-list-header';
+            empty.style.textAlign = 'center';
+            empty.style.padding = '12px';
+            list.appendChild(empty);
+        }
     }
 
     // ── Toggle dropdown ─────────────────────────────────────────────
@@ -66,8 +87,11 @@
         if (forceClose || isOpen) {
             dd.style.display = 'none';
         } else {
-            _populateChangeTemplateList();
+            const search = document.getElementById('changeTemplateSearch');
+            if (search) search.value = '';
+            _renderList('');
             dd.style.display = 'block';
+            if (search) setTimeout(() => search.focus(), 50);
         }
     }
 
@@ -144,6 +168,7 @@
     function initChangeTemplate() {
         const btn = document.getElementById('btnChangeTemplate');
         const list = document.getElementById('changeTemplateList');
+        const searchInput = document.getElementById('changeTemplateSearch');
         if (!btn || !list) return;
 
         btn.addEventListener('click', (e) => {
@@ -156,6 +181,17 @@
             if (!item || !item.dataset.value) return;
             _reStructureWith(item.dataset.value);
         });
+
+        // Live search/filter
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                _renderList(searchInput.value);
+            });
+            searchInput.addEventListener('click', (e) => e.stopPropagation());
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') _toggleDropdown(true);
+            });
+        }
 
         // Close dropdown on outside click
         document.addEventListener('click', (e) => {

@@ -4150,6 +4150,21 @@
             border-bottom: 1px solid var(--border);
             line-height: 1.4;
         }
+        .change-tpl-search {
+            width: calc(100% - 24px);
+            margin: 8px 12px 4px;
+            padding: 7px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            outline: none;
+        }
+        .change-tpl-search:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(26,86,160,0.15);
+        }
         .change-tpl-dropdown .tmpl-list-header {
             font-size: 0.72rem;
             font-weight: 700;

@@ -9,7 +9,7 @@
     <!-- PURGE: auto-purge al detectar nueva versión + ?purge manual. Preserva tema y color -->
     <script>
     (function() {
-        var APP_VERSION = 'v146'; // ← bump esto en cada deploy para forzar auto-purge
+        var APP_VERSION = 'v147'; // ← bump esto en cada deploy para forzar auto-purge
         try { window.APP_VERSION = APP_VERSION; } catch(_) {}
         var params = new URLSearchParams(window.location.search);
         var forcePurge = params.has('purge');
@@ -127,7 +127,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
-        <link rel="stylesheet" href="app.mn0cz0oc.min.css">
+        <link rel="stylesheet" href="app.mn0ds3b3.min.css">
 </head>
 
 <body>
@@ -2309,7 +2309,8 @@
                                 </svg>
                             </button>
                             <div id="changeTemplateDropdown" class="change-tpl-dropdown" style="display:none;">
-                                <div class="change-tpl-hint">💡 Si la IA eligió mal la plantilla, seleccioná la correcta para re-estructurar el informe:</div>
+                                <div class="change-tpl-hint">💡 Si la IA eligió mal la plantilla, seleccioná la correcta para re-estructurar:</div>
+                                <input type="text" id="changeTemplateSearch" class="change-tpl-search" placeholder="🔍 Buscar plantilla..." autocomplete="off">
                                 <ul id="changeTemplateList" style="list-style:none; margin:0; padding:0;"></ul>
                             </div>
                         </div>
@@ -2571,7 +2572,7 @@
             </svg>
             <span id="toastMessage"></span>
         </div>
-        <script src="app.mn0cz0nv.min.js"></script>
+        <script src="app.mn0ds3ab.min.js"></script>
 
         <!-- G1: Modal Panel Registro de Pacientes -->
         <div class="modal-overlay" id="registryPanelOverlay">
