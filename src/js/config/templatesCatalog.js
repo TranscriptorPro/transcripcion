@@ -105,26 +105,37 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
         name: "Campimetría Humphrey",
         category: "Oftalmología",
         keywords: ["campimetría", "Humphrey", "campo visual", "MD", "PSD", "defecto", "perimetría"],
-        prompt: `Actúa como oftalmólogo especializado. Estructura este informe de campimetría computarizada:
+        prompt: `Actúa como oftalmólogo especializado. Estructura este informe de campimetría computarizada con separación por ojo:
 
 # INFORME DE CAMPIMETRÍA COMPUTARIZADA (HUMPHREY)
 
-## IDENTIFICACIÓN
-Ojo examinado, programa utilizado, fecha.
+## OJO DERECHO (OD)
 
-## CONFIABILIDAD
-Pérdidas de fijación, falsos positivos, falsos negativos.
+### CONFIABILIDAD
+Pérdidas de fijación, falsos positivos, falsos negativos, o s/p.
 
-## RESULTADOS
-MD (dB), PSD (dB), VFI (%), AGFI.
+### RESULTADOS
+MD (dB), PSD (dB), VFI (%), GHT/AGIS si fueron dictados.
 
-## MAPAS DE DESVIACIÓN
-Descripción del mapa de desviación total y patrón.
+### MAPA DE DESVIACIÓN
+Descripción del mapa de desviación total y patrón de defecto (difuso, escotoma, hernia de cuadrante, etc.), o s/p.
+
+## OJO IZQUIERDO (OI)
+
+### CONFIABILIDAD
+Pérdidas de fijación, falsos positivos, falsos negativos, o s/p.
+
+### RESULTADOS
+MD (dB), PSD (dB), VFI (%), GHT/AGIS si fueron dictados.
+
+### MAPA DE DESVIACIÓN
+Descripción del mapa de desviación total y patrón de defecto, o s/p.
 
 ## CONCLUSIÓN
-Tipo y grado del defecto campimétrico, correlación clínica.
+Mencionar SOLO los defectos positivos o patológicos detectados por ojo. Si ambos campos son normales, escribir exactamente: "Campimetría bilateral dentro de límites normales."
 
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
+REGLA DE CONCLUSIÓN: Incluir TODOS los defectos campimétricos dictados. PROHIBIDO: inventar MD, PSD u otros valores numéricos no dictados.
+IMPORTANTE: Si solo se evaluó un ojo, omitir la sección del otro o marcar con [No especificado]. No inventes datos.`
     },
     oct_retinal: {
         name: "OCT Retinal",
@@ -257,7 +268,7 @@ REGLAS (NO incluir en la salida):
         name: "TAC / Tomografía",
         category: "Imágenes",
         keywords: ["TAC", "tomografía", "TC", "cortes axiales", "contraste", "Hounsfield", "tomografía axial", "tomografía computarizada", "tomografía computada", "colecciones hemáticas"],
-        prompt: `Actúa como radiólogo especializado. Estructura este informe de TAC:
+        prompt: `Actúa como radiólogo especializado. Estructura este informe de TAC aplicando el formato por estructura con s/p:
 
 # INFORME DE TOMOGRAFÍA AXIAL COMPUTARIZADA
 
@@ -265,37 +276,36 @@ REGLAS (NO incluir en la salida):
 Región estudiada, protocolo, uso de contraste, grosor de cortes.
 
 ## DESCRIPCIÓN POR ESTRUCTURA
-Descripción sistemática de cada estructura anatómica relevante.
+Descripción sistemática de CADA estructura anatómica evaluada en la región. Para cada estructura: si fue evaluada y es normal → escribir únicamente 's/p'. Si tiene hallazgos → describirlos. Crear una subsección por estructura relevante (ej: ## PARÉNQUIMA PULMONAR, ## MEDIASTINO, ## HUESOS, etc.).
 
-## LESIONES / HALLAZGOS RELEVANTES
-Descripción detallada de hallazgos patológicos: localización, tamaño, densidad, características.
+## HALLAZGOS RELEVANTES
+Resumen de los hallazgos patológicos o significativos detectados. Si no hay hallazgos → s/p.
 
 ## CONCLUSIÓN
-Diagnóstico radiológico principal y hallazgos incidentales.
+Mencionar SOLO los hallazgos positivos o patológicos. Si el estudio es completamente normal, escribir exactamente: "Estudio dentro de parámetros normales."
 
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
+REGLA DE CONCLUSIÓN: Incluir TODOS los hallazgos patológicos dictados — ninguno puede omitirse. PROHIBIDO: inventar hallazgos, valores o datos no dictados. PROHIBIDO: frases adversativas ("aunque no se especificó", "si bien falta...").
+IMPORTANTE: No inventes datos. Solo estructura lo dictado. Si una estructura no fue mencionada, omitirla o marcar con [No especificado].`
     },
     resonancia: {
         name: "Resonancia Magnética (RMN)",
         category: "Imágenes",
         keywords: ["resonancia", "RMN", "MRI", "T1", "T2", "FLAIR", "gadolinio", "secuencias"],
-        prompt: `Actúa como radiólogo especializado. Estructura este informe de resonancia magnética:
+        prompt: `Actúa como radiólogo especializado. Estructura este informe de resonancia magnética aplicando el formato por estructura con s/p:
 
 # INFORME DE RESONANCIA MAGNÉTICA (RMN)
 
 ## PROTOCOLO
-Región estudiada, secuencias utilizadas, uso de contraste (gadolinio).
+Región estudiada, secuencias utilizadas (T1, T2, FLAIR, DWI, etc.), uso de contraste gadolinio.
 
-## DESCRIPCIÓN
-Descripción sistemática por estructura anatómica.
-
-## HALLAZGOS
-Descripción detallada de hallazgos patológicos: señal, localización, tamaño, extensión.
+## DESCRIPCIÓN POR ESTRUCTURA
+Descripción sistemática de CADA estructura anatómica evaluada en la región. Para cada estructura: si fue evaluada y es normal → escribir únicamente 's/p'. Si tiene hallazgos → describirlos con características de señal (hipointenso/hiperintenso en T1/T2), localización, tamaño, extensión y realce post-contraste si aplica. Crear subsección por estructura (ej: ## PARÉNQUIMA CEREBRAL, ## SUSTANCIA BLANCA, ## ESTRUCTURAS DE LÍNEA MEDIA, etc.).
 
 ## CONCLUSIÓN
-Diagnóstico por imágenes, correlación clínica y recomendaciones.
+Mencionar SOLO los hallazgos positivos o patológicos. Si el estudio es completamente normal, escribir exactamente: "Estudio dentro de parámetros normales."
 
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
+REGLA DE CONCLUSIÓN: Incluir TODOS los hallazgos patológicos dictados — ninguno puede omitirse. PROHIBIDO: inventar hallazgos, patrones de señal o datos no dictados. PROHIBIDO: frases adversativas o de carencia.
+IMPORTANTE: No inventes datos. Solo estructura lo dictado. Si una estructura no fue mencionada → omitirla o marcar con [No especificado].`
     },
     mamografia: {
         name: "Mamografía Digital",
