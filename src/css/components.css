@@ -790,6 +790,8 @@
             justify-content: space-between;
             flex-wrap: wrap;
             gap: 0.75rem;
+            position: relative;
+            z-index: 200;
         }
 
         .editor-title {
@@ -801,6 +803,8 @@
             display: flex;
             gap: 0.5rem;
             flex-wrap: wrap;
+            position: relative;
+            z-index: 200;
         }
 
         /* Download Dropdown */
@@ -1108,6 +1112,8 @@
             flex-wrap: nowrap;
             overflow-x: auto;
             scrollbar-width: none;   /* Firefox */
+            position: relative;
+            z-index: 200;
         }
 
         .editor-toolbar::-webkit-scrollbar { display: none; } /* Chrome/Safari */
