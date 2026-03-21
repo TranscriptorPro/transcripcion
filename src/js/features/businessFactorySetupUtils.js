@@ -206,6 +206,21 @@ window.handleFactorySetupCore = async function (medicoId) {
                     window._profDataCache = profData;
                     if (typeof appDB !== 'undefined') appDB.set('prof_data', profData);
                     localStorage.setItem('prof_data', JSON.stringify(profData));
+
+                    // ── Selección inicial en pdf_config ──────────────────────────────
+                    // Sin esto, pdfPreview.js no sabe qué workplace/profesional mostrar
+                    // en el primer uso y el preview aparece vacío.
+                    try {
+                        const firstProf = workplaceProfiles[0].professionals[0] || null;
+                        const cfgSel = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+                        cfgSel.pdfWorkplace          = '0';
+                        cfgSel.pdfProfessional       = '0';
+                        cfgSel.activeProfessionalIndex = '0';
+                        if (firstProf) cfgSel.activeProfessional = firstProf;
+                        if (typeof appDB !== 'undefined') appDB.set('pdf_config', cfgSel);
+                        localStorage.setItem('pdf_config', JSON.stringify(cfgSel));
+                        window._pdfConfigCache = cfgSel;
+                    } catch(_) {}
                 }
             } catch(_) {}
         }
