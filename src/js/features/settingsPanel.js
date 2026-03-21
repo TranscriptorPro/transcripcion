@@ -20,7 +20,7 @@
         editorFontSize: 'medium',   // small | medium | large
         autosave: true,
         undoHistory: true,
-        inlineParagraphReview: true,
+        inlineParagraphReview: false,
     };
 
     function _getPrefs() {

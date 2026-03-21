@@ -7,26 +7,48 @@
 
     const HINT_KEY = 'tp_changeTemplate_hintSeen';
 
-    // ── Build flat list of all templates ─────────────────────────────
-    function _getAllTemplates() {
-        const _allowed = (typeof CLIENT_CONFIG !== 'undefined' &&
-            Array.isArray(CLIENT_CONFIG.allowedTemplates) &&
-            CLIENT_CONFIG.allowedTemplates.length)
-            ? new Set(CLIENT_CONFIG.allowedTemplates) : null;
+    const catIcons = {
+        "Neumología": "🫁", "Oftalmología": "👁️", "Imágenes": "🖼️",
+        "Endoscopía": "🔭", "Cardiología": "🫀", "Ginecología": "🌸",
+        "Neurología": "🧠", "ORL": "👂", "Quirúrgico": "🔪", "General": "📄"
+    };
 
-        const catIcons = {
-            "Neumología": "🫁", "Oftalmología": "👁️", "Imágenes": "🖼️",
-            "Endoscopía": "🔭", "Cardiología": "🫀", "Ginecología": "🌸",
-            "Neurología": "🧠", "ORL": "👂", "Quirúrgico": "🔪", "General": "📄"
-        };
+    // ── Resolve allowed categories from user specialties ─────────
+    function _getAllowedCategoriesFromSpecialties() {
+        const cfg = typeof CLIENT_CONFIG !== 'undefined' ? CLIENT_CONFIG : {};
+        const specs = Array.isArray(cfg.specialties) ? cfg.specialties : ['ALL'];
+        if (specs.length === 1 && specs[0] === 'ALL') return null; // null = no restriction
+        const reg = window.TP_TEMPLATE_CATEGORY_REGISTRY || {};
+        const map = reg.formSpecialtyToTemplateCategories || {};
+        const cats = new Set();
+        cats.add('General'); // General always available
+        specs.forEach(sp => {
+            const mapped = map[sp];
+            if (Array.isArray(mapped)) mapped.forEach(c => cats.add(c));
+        });
+        return cats;
+    }
+
+    // ── Build flat list of allowed templates (dynamic) ───────────
+    function _getAllTemplates() {
+        const cfg = typeof CLIENT_CONFIG !== 'undefined' ? CLIENT_CONFIG : {};
+
+        // Layer 1: explicit allowedTemplates from admin/backend
+        const hasExplicit = Array.isArray(cfg.allowedTemplates) && cfg.allowedTemplates.length;
+        const explicitSet = hasExplicit ? new Set(cfg.allowedTemplates) : null;
+
+        // Layer 2: specialty-based category restriction (only if no explicit list)
+        const specCats = !hasExplicit ? _getAllowedCategoriesFromSpecialties() : null;
 
         const items = [{ key: 'generico', name: '📋 Plantilla General', cat: '', catIcon: '' }];
         const cats = window.TEMPLATE_CATEGORIES || {};
 
         for (const [cat, keys] of Object.entries(cats)) {
+            // Specialty filter: skip entire category if not in user's specialties
+            if (specCats && !specCats.has(cat)) continue;
             keys.forEach(key => {
                 if (key === 'generico') return;
-                if (_allowed && !_allowed.has(key)) return;
+                if (explicitSet && !explicitSet.has(key)) return;
                 const t = window.MEDICAL_TEMPLATES[key];
                 if (!t) return;
                 items.push({ key, name: t.name, cat, catIcon: catIcons[cat] || '' });
@@ -44,15 +66,20 @@
         const all = _getAllTemplates();
         const q = (filter || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
+        // Show/hide search based on count
+        const searchEl = document.getElementById('changeTemplateSearch');
+        if (searchEl) searchEl.style.display = all.length > 10 ? '' : 'none';
+
         let lastCat = '';
         let count = 0;
 
         all.forEach(item => {
-            const nameLow = item.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-            const catLow = item.cat.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-            if (q && !nameLow.includes(q) && !catLow.includes(q) && !item.key.includes(q)) return;
+            if (q) {
+                const nameLow = item.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                const catLow = item.cat.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                if (!nameLow.includes(q) && !catLow.includes(q) && !item.key.includes(q)) return;
+            }
 
-            // Category header
             if (item.cat && item.cat !== lastCat) {
                 lastCat = item.cat;
                 const header = document.createElement('li');
@@ -79,6 +106,19 @@
         }
     }
 
+    // ── Position dropdown using fixed positioning ────────────────
+    function _positionDropdown(dd) {
+        const btn = document.getElementById('btnChangeTemplate');
+        if (!btn || !dd) return;
+        const r = btn.getBoundingClientRect();
+        const ddW = 280;
+        let left = r.left + r.width / 2 - ddW / 2;
+        if (left < 8) left = 8;
+        if (left + ddW > window.innerWidth - 8) left = window.innerWidth - ddW - 8;
+        dd.style.top = (r.bottom + 6) + 'px';
+        dd.style.left = left + 'px';
+    }
+
     // ── Toggle dropdown ─────────────────────────────────────────────
     function _toggleDropdown(forceClose) {
         const dd = document.getElementById('changeTemplateDropdown');
@@ -91,7 +131,8 @@
             if (search) search.value = '';
             _renderList('');
             dd.style.display = 'block';
-            if (search) setTimeout(() => search.focus(), 50);
+            _positionDropdown(dd);
+            if (search && search.style.display !== 'none') setTimeout(() => search.focus(), 50);
         }
     }
 
@@ -200,6 +241,11 @@
                 _toggleDropdown(true);
             }
         });
+
+        // Close on scroll/resize so dropdown doesn't float detached
+        const _closeDropdown = () => _toggleDropdown(true);
+        window.addEventListener('scroll', _closeDropdown, true);
+        window.addEventListener('resize', _closeDropdown);
     }
 
     // ── Expose ──────────────────────────────────────────────────────

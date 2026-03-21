@@ -947,6 +947,40 @@ test('E1-fix — reportContextResolver limpia banner antes de extraer', () => {
     assert(code.includes('patient-data-header'), '_cleanEditorTextForExtract debe remover patient-data-header');
 });
 
+test('E1-v2 — dropdown usa position fixed (no absolute)', () => {
+    const css = fs.readFileSync(path.join(root, 'src/css/components.css'), 'utf-8');
+    const match = css.match(/\.change-tpl-dropdown\s*\{[^}]*position:\s*(fixed|absolute)/);
+    assert(match && match[1] === 'fixed', 'change-tpl-dropdown debe usar position: fixed');
+});
+
+test('E1-v2 — _positionDropdown calcula posición dinámica', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/changeTemplateUtils.js'), 'utf-8');
+    assert(code.includes('_positionDropdown'), 'Debe tener _positionDropdown');
+    assert(code.includes('getBoundingClientRect'), 'Debe usar getBoundingClientRect para posicionar');
+});
+
+test('E1-v2 — specialty filtering: _getAllowedCategoriesFromSpecialties', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/changeTemplateUtils.js'), 'utf-8');
+    assert(code.includes('_getAllowedCategoriesFromSpecialties'), 'Debe tener filtrado por especialidad');
+    assert(code.includes('formSpecialtyToTemplateCategories'), 'Debe usar mapa especialidad→categoría');
+});
+
+test('E1-v2 — buscador se oculta si ≤10 plantillas', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/changeTemplateUtils.js'), 'utf-8');
+    assert(code.includes("all.length > 10"), 'Debe ocultar search si ≤10 plantillas');
+});
+
+test('E1-v2 — cierra dropdown en scroll y resize', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/changeTemplateUtils.js'), 'utf-8');
+    assert(code.includes("'scroll'"), 'Debe escuchar scroll para cerrar');
+    assert(code.includes("'resize'"), 'Debe escuchar resize para cerrar');
+});
+
+test('SETTINGS — inlineParagraphReview default es false', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/settingsPanel.js'), 'utf-8');
+    assert(code.includes('inlineParagraphReview: false'), 'Default debe ser false (desactivado)');
+});
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // BLOQUE 12: K1/K2/K3 — API Key flow + Contact
 // ═══════════════════════════════════════════════════════════════════════════════
