@@ -1112,6 +1112,28 @@ test('A1 — cinecoro tiene formato por vaso con s/p', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 14B: P8 — Calidad oct_retinal y holter
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 14B: P8 — Calidad oct_retinal y holter ───────────────');
+
+test('P8 — oct_retinal tiene secciones OD y OI (bilateral)', () => {
+    const t = window.MEDICAL_TEMPLATES['oct_retinal'];
+    assert(t, 'oct_retinal debe existir');
+    assert(t.prompt.includes('OD') && t.prompt.includes('OI'),
+        'oct_retinal debe tener secciones para OD y OI');
+    assert(t.prompt.includes('CONCLUSIÓN'), 'oct_retinal debe tener CONCLUSIÓN');
+});
+
+test('P8 — holter tiene REGLA DE CONCLUSIÓN estricta', () => {
+    const t = window.MEDICAL_TEMPLATES['holter'];
+    assert(t, 'holter debe existir');
+    assert(t.prompt.includes('SOLO') || t.prompt.includes('hallazgos positivos'),
+        'Holter debe tener regla de conclusión solo positivos');
+    assert(t.prompt.includes('PAUSAS') || t.prompt.includes('Pausas'),
+        'Holter debe incluir sección de pausas');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // BLOQUE 15: B1/C1/C2 — Modal edición de campo + nombre + dejar en blanco
 // ═══════════════════════════════════════════════════════════════════════════════
 console.log('\n── Bloque 15: B1/C1/C2 — Modal edición de campo ────────────────');

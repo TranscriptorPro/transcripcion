@@ -130,23 +130,27 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
         name: "OCT Retinal",
         category: "Oftalmología",
         keywords: ["OCT", "tomografía de coherencia óptica", "RNFL", "mácula", "retina", "grosor macular"],
-        prompt: `Actúa como oftalmólogo especializado. Estructura este informe de OCT retinal:
+        prompt: `Actúa como oftalmólogo especializado. Estructura este informe de OCT retinal con separación por ojo:
 
 # INFORME DE TOMOGRAFÍA DE COHERENCIA ÓPTICA (OCT)
 
-## MÁCULA
-Grosor macular central, mapa de grosor, volumen macular, hallazgos morfológicos.
+## OJO DERECHO (OD) — MÁCULA
+Grosor macular central (µm), mapa de grosor ETDRS, volumen macular (mm³), hallazgos morfológicos (drusen, líquido sub/intrarretinal, MER, atrofia, desgarros, etc.), o s/p.
 
-## RNFL (Capa de Fibras Nerviosas)
-Grosor promedio RNFL, valores por sectores (superior, inferior, nasal, temporal), comparación con normativa.
+## OJO DERECHO (OD) — RNFL
+Grosor promedio RNFL (µm), valores por sectores (superior, inferior, nasal, temporal), comparación con normativa de la base de datos del equipo (normal/limítrofe/fuera de límites), o s/p.
 
-## HALLAZGOS PATOLÓGICOS
-Descripción de alteraciones encontradas (drusen, líquido, atrofia, membranas, etc.).
+## OJO IZQUIERDO (OI) — MÁCULA
+Grosor macular central (µm), mapa de grosor ETDRS, volumen macular (mm³), hallazgos morfológicos, o s/p.
+
+## OJO IZQUIERDO (OI) — RNFL
+Grosor promedio RNFL (µm), valores por sectores, comparación con normativa, o s/p.
 
 ## CONCLUSIÓN
-Diagnóstico basado en hallazgos, correlación con glaucoma o patología macular.
+Mencionar SOLO los hallazgos positivos o patológicos detectados por ojo. Incluir diagnóstico diferencial si aplica (glaucoma, DMAE, membrana epirretinal, etc.). Si ambos ojos son normales, escribir exactamente: "OCT bilateral dentro de parámetros normales."
 
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
+REGLA DE CONCLUSIÓN: Párrafo estructurado por ojo si hay hallazgos asimétricos. Incluir TODOS los hallazgos patológicos dictados — ninguno puede omitirse. PROHIBIDO: inventar valores, porcentajes o hallazgos no dictados. Escribir en español médico formal.
+IMPORTANTE: No inventes datos. Solo estructura lo dictado. Si solo se evaluó un ojo, omitir la sección del otro o marcar con [No especificado].`
     },
     topografia_corneal: {
         name: "Topografía Corneal",

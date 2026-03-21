@@ -10,21 +10,25 @@ Object.assign(window.MEDICAL_TEMPLATES, {
 # INFORME DE HOLTER ECG
 
 ## FRECUENCIA CARDÍACA
-FC media, FC máxima, FC mínima, variabilidad de la FC.
+FC media, FC máxima (hora), FC mínima (hora), variabilidad de la FC (SDNN si fue dictado).
 
 ## ECTOPÍA VENTRICULAR
-Número de extrasístoles ventriculares (EV), morfología, formas complejas (pares, tripletes, TV).
+Número de extrasístoles ventriculares (EV), morfología predominante, formas complejas (pares, tripletes, TV no sostenida/sostenida), o s/p.
 
 ## ECTOPÍA SUPRAVENTRICULAR
-Número de extrasístoles supraventriculares (ESV), episodios de TSV, FA/Flutter.
+Número de extrasístoles supraventriculares (ESV), episodios de TSV (número, duración máxima, FC máxima), FA/Flutter si detectados, o s/p.
 
 ## SEGMENTO ST
-Cambios del ST (depresión/elevación), duración, correlación con síntomas.
+Episodios de cambios del ST (depresión/elevación ≥ 1 mm, duración, correlación con síntomas/FC), o s/p.
+
+## PAUSAS
+Pausas ≥ 2 s (número, duración máxima), o s/p.
 
 ## CONCLUSIÓN
-Diagnóstico arrítmico y correlación clínica.
+Mencionar SOLO los hallazgos positivos (patológicos o significativos). Si el estudio es completamente normal, escribir exactamente: "Estudio Holter dentro de límites normales."
 
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
+REGLA DE CONCLUSIÓN: Párrafo conciso que incluya TODOS los hallazgos arrítmicos dictados. No incluir frecuencias cardíacas si son normales. PROHIBIDO: inventar cifras, episodios o datos no dictados. PROHIBIDO: frases de carencia ("aunque no se especificó...", "si bien falta...").
+IMPORTANTE: No inventes datos. Solo estructura lo dictado. Si una sección no fue mencionada, omitirla o marcar con [No especificado].`
     },
     mapa: {
         name: "MAPA (Presión Arterial)",
