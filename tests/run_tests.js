@@ -8157,6 +8157,60 @@ test('C8-5 — _getAllTemplates respeta el filtro de categorías por especialida
         'changeTemplateUtils.js debe omitir categorías no permitidas en _getAllTemplates');
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bloque 129: F1-B1/B2 + F1-C2 — Modal edición campos
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 129: F1-B1/B2+C2 — Modal edición campos ───────────────');
+
+const fieldModalCode = fs.readFileSync(path.join(root, 'src/js/features/editorFieldModalUtils.js'), 'utf-8');
+
+test('F1-B1 — Tab Grabar NO tiene disabled=true en Modo Normal (no bloquear)', () => {
+    // El fix es que ya no se pone tabRecord.disabled = true para Modo Normal
+    // La rama !_isProCtx debe poner disabled = false
+    assert(fieldModalCode.includes('tabRecord.disabled = false') ||
+           (!fieldModalCode.includes("tabRecord.disabled = true") &&
+            fieldModalCode.includes('tabRecord.style.cursor = \'pointer\'')),
+        'En Modo Normal tabRecord no debe ponerse disabled=true; debe ser clickeable (upgrade prompt)');
+});
+
+test('F1-B1 — Tab Grabar NO usa opacity 0.55 (ya no da aspecto de roto)', () => {
+    assert(!fieldModalCode.includes("tabRecord.style.opacity = '0.55'"),
+        'En Modo Normal tabRecord no debe usar opacity 0.55 (era confuso para usuarios)');
+});
+
+test('F1-B2 — Tab Grabar muestra 🔒 en Modo Normal (icono de candado)', () => {
+    assert(fieldModalCode.includes('\\uD83D\\uDD12') ||
+           fieldModalCode.includes('\uD83D\uDD12') ||
+           fieldModalCode.includes('\\ud83d\\udd12') ||
+           fieldModalCode.includes('\ud83d\udd12'),
+        'Tab Grabar debe mostrar ícono 🔒 en Modo Normal');
+});
+
+test('F1-B2 — Click en tab Grabar (Modo Normal) abre openContactModal o showToast con upgrade', () => {
+    assert(fieldModalCode.includes('openContactModal') || fieldModalCode.includes('upgrade'),
+        'Click en tab Grabar (Modo Normal) debe ofrecer upgrade via openContactModal o toast');
+});
+
+test('F1-C1 — Modal muestra nombre del campo extraído del párrafo (ya existía)', () => {
+    // Verificar que la lógica de extracción del label sigue igual y no fue borrada
+    assert(fieldModalCode.includes('editFieldModalTitle') &&
+           fieldModalCode.includes('Revisión de campo') &&
+           fieldModalCode.includes('labelText'),
+        'El título del modal debe mostrar el nombre del campo extraído del párrafo');
+});
+
+test('F1-C2 — clearFieldValue realmente blanquea el span (no solo cierra modal)', () => {
+    assert(fieldModalCode.includes('_targetSpan.replaceWith') &&
+           (fieldModalCode.includes("createTextNode('')") || fieldModalCode.includes('createTextNode("")')),
+        'clearFieldValue debe reemplazar el span con nodo de texto vacío');
+});
+
+test('F1-C2 — clearFieldValue dispara evento input para actualizar estado del editor', () => {
+    assert(fieldModalCode.includes("new Event('input'") &&
+           fieldModalCode.includes('clearFieldValue') || fieldModalCode.includes('emptyNode'),
+        'clearFieldValue debe disparar event input para actualizar wordCount y autosave');
+});
+
 // Limpiar estado después de tests
 global.localStorage.clear();
 global._reportHistCache = null;

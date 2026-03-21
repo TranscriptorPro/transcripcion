@@ -269,12 +269,22 @@
         const _isProCtx = window.currentMode === 'pro'
             || (typeof CLIENT_CONFIG !== 'undefined' && (CLIENT_CONFIG.type === 'PRO' || CLIENT_CONFIG.type === 'ADMIN'));
         if (!_isProCtx) {
+            // F1-B1/B2: en Modo Normal mostrar tab como upgrade prompt (visible, no disabled)
             tabRecord.classList.remove('btn-pro-animated');
             tabRecord.style.background = 'var(--bg-card)';
             tabRecord.style.color = 'var(--text-secondary)';
-            tabRecord.style.opacity = '0.55';
-            tabRecord.style.cursor = 'not-allowed';
-            tabRecord.disabled = true;
+            tabRecord.style.opacity = '1';
+            tabRecord.style.cursor = 'pointer';
+            tabRecord.disabled = false;
+            // Reemplazar texto del tab con ícono de candado
+            const recordLbl = tabRecord.querySelector('#efTabRecordLabel') || tabRecord;
+            if (recordLbl === tabRecord) {
+                // Parchear el HTML del tab solo la primera vez
+                if (!tabRecord.dataset.lockedSetup) {
+                    tabRecord.innerHTML = '🔒 Grabar <span class="pro-badge">Pro</span>';
+                    tabRecord.dataset.lockedSetup = '1';
+                }
+            }
         } else if (isWrite) {
             tabRecord.disabled = false;
             tabRecord.style.opacity = '1';
@@ -295,7 +305,12 @@
         const _isProClick = window.currentMode === 'pro'
             || (typeof CLIENT_CONFIG !== 'undefined' && (CLIENT_CONFIG.type === 'PRO' || CLIENT_CONFIG.type === 'ADMIN'));
         if (!_isProClick) {
-            showToast('🔒 Funcion disponible solo en Modo Pro', 'info');
+            // F1-B1/B2: ofrecer upgrade en vez de simplemente bloquear
+            if (typeof window.openContactModal === 'function') {
+                window.openContactModal('upgrade');
+            } else {
+                showToast('🔒 Grabar y transcribir es una función Pro. Contactá soporte para activarla.', 'info', 5000);
+            }
             return;
         }
         if (!isPro()) { showToast('🔑 API Key requerida para grabar y transcribir', 'info'); return; }
@@ -542,7 +557,12 @@
     });
 
     function clearFieldValue() {
-        // "Dejar en blanco" — cierra el modal sin tocar el badge; el campo sigue editable.
+        // F1-C2: "Dejar en blanco" — elimina el badge y deja el campo vacío en el informe
+        if (!_targetSpan) { closeEditFieldModal(); return; }
+        // Reemplazar el span badge con nodo de texto vacío
+        const emptyNode = document.createTextNode('');
+        _targetSpan.replaceWith(emptyNode);
+        if (editor) editor.dispatchEvent(new Event('input', { bubbles: true }));
         closeEditFieldModal();
     }
     document.getElementById('btnBlankEditField')?.addEventListener('click', clearFieldValue);
