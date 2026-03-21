@@ -455,21 +455,50 @@ async function runTests() {
         // ═══════════════════════════════════════════════════════════════════
         console.log('\n═══ D — VISTA PREVIA PDF ═══════════════════════════════════════');
 
-        // D1: Activar preview si existe
-        const previewActivated = await page.evaluate(() => {
-            // Toggle preview panel
-            const btn = document.getElementById('togglePreviewBtn') || document.getElementById('btnPreview');
+        // D0: Diagnóstico: verificar que pdf_config tiene activeProfessional antes de abrir preview
+        const pdfCfgDiag = await page.evaluate(() => {
+            const cfg = window._pdfConfigCache || JSON.parse(localStorage.getItem('pdf_config') || '{}');
+            return {
+                hasActivePro: !!(cfg.activeProfessional),
+                profName:     cfg.activeProfessional?.nombre || 'N/A',
+                profMat:      cfg.activeProfessional?.matricula || 'N/A',
+                footerOk:     (cfg.footerText || '').includes('Fernández')
+            };
+        });
+        log('info', 'D', 'pdf_config diagnóstico (antes de preview)',
+            `activePro=${pdfCfgDiag.hasActivePro} nombre="${pdfCfgDiag.profName}" mat="${pdfCfgDiag.profMat}"`);
+
+        // D1: Abrir preview llamando a openPrintPreview() directamente con await
+        //     (btn.click() es síncrono → el Promise de la función async no se esperaba)
+        const previewActivated = await page.evaluate(async () => {
+            if (typeof window.openPrintPreview === 'function') {
+                try { await window.openPrintPreview(); return true; } catch(_) { return false; }
+            }
+            // Fallback: click en el botón si la función no está disponible globalmente
+            const btn = document.getElementById('printBtn') ||
+                        document.querySelector('[data-testid="togglePreviewBtn"]') ||
+                        document.getElementById('btnPreview');
             if (btn) { btn.click(); return true; }
             return false;
         });
-        await page.waitForTimeout(1500);
+        // Esperar que la paginación termine (setTimeout 200ms dentro de openPrintPreview)
+        await page.waitForTimeout(800);
 
         if (previewActivated) {
             await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'D01_preview_open.png'), fullPage: false });
 
             // D2: Verificar contenido del preview
+            // Tras paginación, el contenido real puede estar en .pv-real-page o en previewPage
             const previewContent = await page.evaluate(() => {
-                const pvs = document.getElementById('printPreviewContainer') || document.getElementById('previewPage') || document.getElementById('previewSection') || document.querySelector('.preview-container');
+                // Intentar .pv-real-page primero (post-paginación)
+                const pvPages = document.querySelectorAll('.pv-real-page');
+                if (pvPages.length > 0) {
+                    return Array.from(pvPages).map(p => p.innerText).join('\n');
+                }
+                const pvs = document.getElementById('printPreviewContainer') ||
+                            document.getElementById('previewPage') ||
+                            document.getElementById('previewSection') ||
+                            document.querySelector('.preview-container');
                 return pvs ? pvs.innerText : '';
             });
 
@@ -497,13 +526,18 @@ async function runTests() {
                 log(drCount === 0 ? 'pass' : 'fail', 'D', 'Preview NO tiene duplicado "Dr. Dra." o "Dra. Dr."', `encontrados: ${drCount}`);
             }
         } else {
-            log('skip', 'D', 'Botón de preview no encontrado', 'El test puede requerir otro selector');
+            log('skip', 'D', 'openPrintPreview no disponible y botón no encontrado', '');
         }
 
         // Cerrar preview
         await page.evaluate(() => {
-            const btn = document.getElementById('togglePreviewBtn') || document.getElementById('btnPreview');
-            if (btn) btn.click();
+            const closeBtn = document.getElementById('closePrintPreview') ||
+                             document.getElementById('btnClosePrintPreviewFooter');
+            if (closeBtn) closeBtn.click();
+            else {
+                const overlay = document.getElementById('printPreviewOverlay');
+                if (overlay) overlay.classList.remove('active');
+            }
         });
         await page.waitForTimeout(500);
 
