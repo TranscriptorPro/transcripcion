@@ -154,27 +154,21 @@
         var toolbar = document.getElementById('editorToolbar');
         if (!editor || !toolbar) return;
 
-        if (!editor._mobileContextmenuBlocked) {
-            editor._mobileContextmenuBlocked = true;
-            editor.addEventListener('contextmenu', function (ev) {
-                // Reduce el menú nativo; la app ofrece sus propias acciones.
-                ev.preventDefault();
-            });
-        }
+        // Allow native selection behavior on editor; contextmenu remains native.
 
         if (!toolbar._mobileSelectionBridge) {
             toolbar._mobileSelectionBridge = true;
+            // Save the current selection range before toolbar interaction so format
+            // commands can restore it. Do NOT collapse or remove the selection.
             toolbar.addEventListener('touchstart', function (ev) {
                 var target = ev.target;
                 if (!target) return;
                 var actionable = target.closest('button,select,.mobile-group-trigger,.mobile-toolbar-panel');
                 if (!actionable) return;
+                // Persist the current selection range so formatting can apply to it
                 var sel = window.getSelection && window.getSelection();
-                if (sel && !sel.isCollapsed) {
-                    try { sel.collapseToEnd(); } catch (_) { try { sel.removeAllRanges(); } catch (_) {} }
-                }
-                if (document.activeElement === editor) {
-                    try { editor.blur(); } catch (_) {}
+                if (sel && sel.rangeCount > 0) {
+                    editor._mobileSavedRange = sel.getRangeAt(0).cloneRange();
                 }
             }, { passive: true, capture: true });
         }
@@ -665,15 +659,22 @@
                 }
                 swatch.addEventListener('click', function (ev) {
                     ev.stopPropagation();
+                    // Restore saved selection on mobile before applying format
+                    var ed = document.getElementById('editor');
+                    if (ed && ed._mobileSavedRange) {
+                        var sel = window.getSelection();
+                        if (sel && (sel.isCollapsed || sel.rangeCount === 0)) {
+                            try { sel.removeAllRanges(); sel.addRange(ed._mobileSavedRange); } catch (_) {}
+                        }
+                    }
                     if (c.color === 'transparent') {
                         document.execCommand('removeFormat', false, null);
                     } else {
                         document.execCommand('hiliteColor', false, c.color);
                     }
                     /* Colapsar selección del navegador para que se vea el resaltado */
-                    var sel = window.getSelection();
-                    if (sel && !sel.isCollapsed) sel.collapseToEnd();
-                    var ed = document.getElementById('editor');
+                    var sel2 = window.getSelection();
+                    if (sel2 && !sel2.isCollapsed) sel2.collapseToEnd();
                     if (ed) ed.focus();
                     hlWrapper.classList.remove('open');
                 });
@@ -754,26 +755,35 @@
             toolbar.appendChild(findReplBtn);
         }
 
-        var deselectBtn = document.createElement('button');
-        deselectBtn.type = 'button';
-        deselectBtn.className = 'toolbar-btn mobile-toolbar-standalone mobile-deselect-btn';
-        deselectBtn.title = 'Deseleccionar';
-        deselectBtn.setAttribute('aria-label', 'Deseleccionar texto');
-        deselectBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M6.4 19L5 17.6 10.6 12 5 6.4 6.4 5 12 10.6 17.6 5 19 6.4 13.4 12 19 17.6 17.6 19 12 13.4z"/></svg>';
-        deselectBtn.addEventListener('click', function (ev) {
+        var clearEditorBtn = document.createElement('button');
+        clearEditorBtn.type = 'button';
+        clearEditorBtn.className = 'toolbar-btn mobile-toolbar-standalone mobile-clear-editor-btn';
+        clearEditorBtn.title = 'Limpiar editor';
+        clearEditorBtn.setAttribute('aria-label', 'Limpiar todo el editor');
+        clearEditorBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>';
+        clearEditorBtn.addEventListener('click', function (ev) {
             ev.preventDefault();
             ev.stopPropagation();
-            var sel = window.getSelection && window.getSelection();
-            if (sel) {
-                try { sel.removeAllRanges(); } catch (_) {}
-            }
             var editor = document.getElementById('editor');
-            if (editor && document.activeElement === editor) {
-                try { editor.blur(); } catch (_) {}
+            if (!editor) return;
+            var hasContent = !!(String(editor.innerText || '').trim());
+            if (!hasContent) return;
+            if (typeof window.showCustomConfirm === 'function') {
+                window.showCustomConfirm('¿Limpiar todo el contenido del editor?').then(function (ok) {
+                    if (!ok) return;
+                    editor.innerHTML = '';
+                    editor.dispatchEvent(new Event('input', { bubbles: true }));
+                    if (typeof saveUndoState === 'function') saveUndoState();
+                    if (typeof showToast === 'function') showToast('Editor limpiado', 'success');
+                });
+            } else if (confirm('¿Limpiar todo el contenido del editor?')) {
+                editor.innerHTML = '';
+                editor.dispatchEvent(new Event('input', { bubbles: true }));
+                if (typeof saveUndoState === 'function') saveUndoState();
             }
             closeAllGroups(null);
         });
-        toolbar.appendChild(deselectBtn);
+        toolbar.appendChild(clearEditorBtn);
 
         /* Clicks en botones de paneles: cerrar el grupo padre tras la acción */
         toolbar.querySelectorAll('.mobile-toolbar-panel .toolbar-btn').forEach(function (btn) {

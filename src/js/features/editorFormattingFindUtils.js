@@ -9,7 +9,23 @@
         if (sel && !sel.isCollapsed) sel.collapseToEnd();
     }
 
+    function _restoreMobileSelection() {
+        if (!editor || !editor._mobileSavedRange) return false;
+        var sel = window.getSelection();
+        if (!sel) return false;
+        // Only restore if current selection is collapsed or empty
+        if (sel.isCollapsed || sel.rangeCount === 0) {
+            try {
+                sel.removeAllRanges();
+                sel.addRange(editor._mobileSavedRange);
+                return true;
+            } catch (_) {}
+        }
+        return false;
+    }
+
     function executeFormatAndFocus(cmd) {
+        _restoreMobileSelection();
         document.execCommand(cmd, false, null);
         _collapseSelection();
         if (editor) editor.focus();
@@ -40,6 +56,7 @@
 
     function handleFontSizeChange(increase = true) {
         if (!editor) return;
+        _restoreMobileSelection();
         var sel = window.getSelection();
         if (!sel || !sel.rangeCount) return;
         var range = sel.getRangeAt(0);
@@ -128,13 +145,26 @@
     window.buildSearchRegex = buildSearchRegex;
     window.highlightText = highlightText;
     window.replaceInTextNodes = replaceInTextNodes;
+    window._restoreMobileSelection = _restoreMobileSelection;
 
     for (const [id, command] of Object.entries(formatButtons)) {
         const btn = $(id);
         if (btn) btn.addEventListener('click', () => executeFormatAndFocus(command));
     }
 
-    document.addEventListener('selectionchange', updateActiveStates);
+    // Continuously save the current editor selection so mobile toolbar can restore it
+    document.addEventListener('selectionchange', function() {
+        updateActiveStates();
+        if (!editor) return;
+        var sel = window.getSelection();
+        if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+            var r = sel.getRangeAt(0);
+            var container = r.commonAncestorContainer;
+            if (container && (editor.contains(container) || container === editor)) {
+                editor._mobileSavedRange = r.cloneRange();
+            }
+        }
+    });
 
     if (editor) {
         editor.addEventListener('keydown', (e) => {
@@ -158,6 +188,7 @@
     const fontSizeToolbar = $('fontSizeToolbar');
     if (fontSizeToolbar && editor) {
         fontSizeToolbar.addEventListener('change', () => {
+            _restoreMobileSelection();
             document.execCommand('fontSize', false, '7');
             const fontElements = editor.querySelectorAll('font[size="7"]');
             fontElements.forEach(el => {
@@ -186,6 +217,7 @@
     const clearFormatBtn = $('clearFormatBtn');
     if (clearFormatBtn && editor) {
         clearFormatBtn.addEventListener('click', () => {
+            _restoreMobileSelection();
             document.execCommand('removeFormat', false, null);
             _collapseSelection();
             editor.focus();
@@ -246,18 +278,44 @@
             if (cell) _highlightGridCells(parseInt(cell.dataset.row), parseInt(cell.dataset.col));
         });
 
+        // Touch support for mobile grid picker
+        _gridContainer.addEventListener('touchmove', function(ev) {
+            ev.preventDefault();
+            var touch = ev.touches[0];
+            var el = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (el) {
+                var cell = el.closest ? el.closest('.table-grid-cell') : null;
+                if (cell) _highlightGridCells(parseInt(cell.dataset.row), parseInt(cell.dataset.col));
+            }
+        }, { passive: false });
+
+        _gridContainer.addEventListener('touchend', function(ev) {
+            // Find the last highlighted cell and use it
+            var activeCells = _gridContainer.querySelectorAll('.table-grid-cell.active');
+            if (activeCells.length === 0) return;
+            var lastActive = activeCells[activeCells.length - 1];
+            var nRows = parseInt(lastActive.dataset.row) + 1;
+            var nCols = parseInt(lastActive.dataset.col) + 1;
+            _tableGridPicker.style.display = 'none';
+            _insertTableFromGrid(nRows, nCols);
+        });
+
+        // Touch start on a cell highlights it immediately
+        _gridContainer.addEventListener('touchstart', function(ev) {
+            var touch = ev.touches[0];
+            var el = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (el) {
+                var cell = el.closest ? el.closest('.table-grid-cell') : null;
+                if (cell) _highlightGridCells(parseInt(cell.dataset.row), parseInt(cell.dataset.col));
+            }
+        }, { passive: true });
+
         _gridContainer.addEventListener('mouseleave', function() {
             _gridCells.forEach(function(c) { c.classList.remove('active'); });
             _gridLabel.textContent = 'Insertar tabla';
         });
 
-        _gridContainer.addEventListener('click', function(ev) {
-            var cell = ev.target.closest('.table-grid-cell');
-            if (!cell) return;
-            var nRows = parseInt(cell.dataset.row) + 1;
-            var nCols = parseInt(cell.dataset.col) + 1;
-            _tableGridPicker.style.display = 'none';
-
+        function _insertTableFromGrid(nRows, nCols) {
             var table = document.createElement('table');
             table.setAttribute('border', '1');
             table.style.cssText = 'border-collapse:collapse;width:100%;margin:1rem 0;table-layout:fixed;';
@@ -284,7 +342,6 @@
                 editor.appendChild(table);
             }
             editor.focus();
-            // Place cursor in first cell
             var firstCell = table.querySelector('td');
             if (firstCell) {
                 var r = document.createRange();
@@ -295,6 +352,15 @@
                 s.addRange(r);
             }
             if (typeof saveUndoState === 'function') saveUndoState();
+        }
+
+        _gridContainer.addEventListener('click', function(ev) {
+            var cell = ev.target.closest('.table-grid-cell');
+            if (!cell) return;
+            var nRows = parseInt(cell.dataset.row) + 1;
+            var nCols = parseInt(cell.dataset.col) + 1;
+            _tableGridPicker.style.display = 'none';
+            _insertTableFromGrid(nRows, nCols);
         });
 
         function _positionTableGrid() {
@@ -601,6 +667,11 @@
                 shape.setAttribute('contenteditable', 'false');
                 shape.style.cursor = 'grab';
             }
+            // For HR lines: highlight by adding a top+bottom margin highlight bar
+            if (shape.tagName === 'HR') {
+                shape.style.outline = 'none';
+                shape.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.35)';
+            }
             // Clear text caret so no blinking cursor appears near shape
             var sel = window.getSelection();
             if (sel) sel.removeAllRanges();
@@ -611,6 +682,9 @@
         function deselectShape() {
             if (!activeShape) return;
             activeShape.style.outline = '';
+            if (activeShape.tagName === 'HR') {
+                activeShape.style.boxShadow = '';
+            }
             // For tables: restore cell editing
             if (activeShape.tagName === 'TABLE') {
                 activeShape.removeAttribute('contenteditable');
@@ -624,7 +698,20 @@
         function isShapeEl(el) {
             if (!el) return null;
             var s = el.closest('.editor-shape');
-            return (s && editor.contains(s) && s.tagName !== 'HR') ? s : null;
+            return (s && editor.contains(s)) ? s : null;
+        }
+
+        // Find HR.editor-shape near a touch/click Y coordinate (HR is very thin)
+        function findHRNearPoint(x, y) {
+            var hrs = editor.querySelectorAll('hr.editor-shape');
+            for (var i = 0; i < hrs.length; i++) {
+                var r = hrs[i].getBoundingClientRect();
+                // Expand the hit zone vertically by 12px each side
+                if (x >= r.left && x <= r.right && y >= r.top - 12 && y <= r.bottom + 12) {
+                    return hrs[i];
+                }
+            }
+            return null;
         }
 
         // Detect click on the outer border of a table (for selection)
@@ -713,7 +800,7 @@
             if (handleHit && activeShape) {
                 // Start resize
                 ev.preventDefault();
-                var sr = activeShape.getBoundingClientRect();
+                var cs = window.getComputedStyle(activeShape);
                 var m = getElementMargins(activeShape);
                 interaction = {
                     mode: 'resize',
@@ -722,7 +809,8 @@
                     startX: p.x, startY: p.y,
                     origLeft: m.left,
                     origTop: m.top,
-                    origW: sr.width, origH: sr.height
+                    origW: parseFloat(cs.width) || activeShape.getBoundingClientRect().width,
+                    origH: parseFloat(cs.height) || activeShape.getBoundingClientRect().height
                 };
                 editor.style.userSelect = 'none';
                 return;
@@ -785,6 +873,24 @@
                     moved: false
                 };
                 tableSel.style.cursor = 'grabbing';
+                editor.style.userSelect = 'none';
+                return;
+            }
+
+            // Check for HR line near click point
+            var hrSel = findHRNearPoint(p.x, p.y);
+            if (hrSel) {
+                ev.preventDefault();
+                selectShape(hrSel);
+                var hm = getElementMargins(hrSel);
+                interaction = {
+                    mode: 'drag',
+                    el: hrSel,
+                    startX: p.x, startY: p.y,
+                    origLeft: hm.left,
+                    origTop: hm.top,
+                    moved: false
+                };
                 editor.style.userSelect = 'none';
                 return;
             }
@@ -888,13 +994,16 @@
             return true;
         };
 
+        var TOUCH_RESIZE_THRESHOLD = 6; // px: avoid accidental resize on tap
         // Touch support
         document.addEventListener('touchstart', function(ev) {
             var p = ppos(ev);
             var handleHit = findHandleAtPoint(p.x, p.y, 12);
             if (handleHit && activeShape) {
                 ev.preventDefault();
-                var sr = activeShape.getBoundingClientRect();
+                var cs = window.getComputedStyle(activeShape);
+                var compW = parseFloat(cs.width) || activeShape.getBoundingClientRect().width;
+                var compH = parseFloat(cs.height) || activeShape.getBoundingClientRect().height;
                 var rm = getElementMargins(activeShape);
                 interaction = {
                     mode: 'resize',
@@ -903,7 +1012,8 @@
                     startX: p.x, startY: p.y,
                     origLeft: rm.left,
                     origTop: rm.top,
-                    origW: sr.width, origH: sr.height
+                    origW: compW, origH: compH,
+                    resizeMoved: false
                 };
                 editor.style.userSelect = 'none';
                 return;
@@ -925,6 +1035,10 @@
             if (!shape) {
                 // Check table border
                 shape = isTableBorderClick(ev.target, p.x, p.y);
+            }
+            if (!shape) {
+                // Check HR line near touch point
+                shape = findHRNearPoint(p.x, p.y);
             }
             if (!shape) return;
             ev.preventDefault();
@@ -955,6 +1069,9 @@
                 interaction.el.style.marginRight = 'auto';
                 positionHandles();
             } else if (interaction.mode === 'resize') {
+                // Apply threshold before first resize to prevent accidental size change
+                if (!interaction.resizeMoved && Math.abs(dx) < TOUCH_RESIZE_THRESHOLD && Math.abs(dy) < TOUCH_RESIZE_THRESHOLD) return;
+                interaction.resizeMoved = true;
                 var d = interaction.dir;
                 var nw = interaction.origW, nh = interaction.origH;
                 var ml = interaction.origLeft, mt = interaction.origTop;

@@ -1175,6 +1175,7 @@
             grid-template-columns: repeat(8, 18px);
             grid-template-rows: repeat(8, 18px);
             gap: 2px;
+            touch-action: none;
         }
         .table-grid-cell {
             width: 18px;

@@ -630,8 +630,8 @@
     }
 
     body.mobile-editor-ux #editor {
-        -webkit-touch-callout: none;
-        touch-action: pan-y;
+        -webkit-touch-callout: default;
+        touch-action: auto;
     }
 
     body.mobile-editor-ux #editorToolbar,
@@ -641,8 +641,19 @@
         touch-action: manipulation;
     }
 
-    #editorToolbar .mobile-deselect-btn {
+    #editorToolbar .mobile-clear-editor-btn {
         color: var(--danger, #dc2626) !important;
+    }
+
+    /* Agrandar celdas del grid picker de tablas para touch */
+    .table-grid-cells {
+        grid-template-columns: repeat(8, 28px) !important;
+        grid-template-rows: repeat(8, 28px) !important;
+        gap: 3px !important;
+    }
+    .table-grid-cell {
+        width: 28px !important;
+        height: 28px !important;
     }
 
     /* ── Botones de acción del editor ────────────────────────────── */

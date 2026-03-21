@@ -518,6 +518,47 @@ async function testMobile(browser, baseUrl) {
         ensure(!formatoOpenAfterAction, 'MOBILE-GROUP-AUTOCOLLAPSE-AFTER-ACTION', `open=${formatoOpenAfterAction}`);
     }
 
+    // ── HR line selection on mobile ──
+    await page.evaluate(() => {
+        const editor = document.getElementById('editor');
+        if (!editor) return;
+        editor.innerHTML = '<p>Test line</p><hr class="editor-shape" style="border:none;border-top:2px solid #000;margin:12px 0;"><p>After line</p>';
+        // Re-ensure editor-area is visible (state manager may have hidden it)
+        document.body.classList.add('mobile-sidebar-collapsed');
+        var sidebar = document.querySelector('.sidebar');
+        if (sidebar) sidebar.classList.add('mobile-hidden');
+        var ea = document.querySelector('.editor-area');
+        if (ea) ea.style.setProperty('display', 'block', 'important');
+    });
+    await page.waitForTimeout(300);
+    const hrInserted = await page.evaluate(() => document.querySelectorAll('#editor hr.editor-shape').length);
+    const hrBox = await page.evaluate(() => {
+        const hr = document.querySelector('#editor hr.editor-shape');
+        if (!hr) return null;
+        const r = hr.getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height };
+    });
+    if (hrBox && hrBox.w > 0) {
+        // Use CDP touch event to properly trigger touchstart handler
+        const hrSession = await page.context().newCDPSession(page);
+        await hrSession.send('Input.dispatchTouchEvent', {
+            type: 'touchStart',
+            touchPoints: [{ x: Math.round(hrBox.x), y: Math.round(hrBox.y), radiusX: 6, radiusY: 6, force: 1, id: 1 }]
+        });
+        await page.waitForTimeout(80);
+        await hrSession.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        await hrSession.detach();
+        await page.waitForTimeout(300);
+    }
+    const hrHandles = await countVisibleHandles(page);
+    ensure(hrInserted > 0 && hrHandles === 8, 'MOBILE-HR-LINE-SELECT-HANDLES', `hrs=${hrInserted},handles=${hrHandles}`);
+
+    // Deselect HR
+    if (hrHandles > 0) {
+        await page.touchscreen.tap(8, 8);
+        await page.waitForTimeout(180);
+    }
+
     await context.close();
 }
 
