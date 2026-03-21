@@ -243,9 +243,14 @@
         });
 
         // Close on scroll/resize so dropdown doesn't float detached
-        const _closeDropdown = () => _toggleDropdown(true);
-        window.addEventListener('scroll', _closeDropdown, true);
-        window.addEventListener('resize', _closeDropdown);
+        const _closeOnScroll = (e) => {
+            const dd = document.getElementById('changeTemplateDropdown');
+            if (dd && dd.style.display !== 'none' && !dd.contains(e.target)) {
+                _toggleDropdown(true);
+            }
+        };
+        window.addEventListener('scroll', _closeOnScroll, true);
+        window.addEventListener('resize', () => _toggleDropdown(true));
     }
 
     // ── Expose ──────────────────────────────────────────────────────
