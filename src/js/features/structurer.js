@@ -1106,6 +1106,8 @@ async function _doAutoStructure(options) {
         const btnM = document.getElementById('btnMedicalCheck');
         if (btnM) btnM.style.display = '';
         if (typeof updateWordCount === 'function') updateWordCount();
+        // Sincronizar botones inline review con el estado real del toggle
+        if (typeof window._refreshInlineReviewButtons === 'function') window._refreshInlineReviewButtons();
         if (typeof updateButtonsVisibility === 'function') updateButtonsVisibility('STRUCTURED');
         _scrollEditorToTop();
         if (typeof showToast === 'function') {

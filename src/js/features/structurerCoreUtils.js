@@ -248,21 +248,29 @@ function markdownToHtml(md) {
         .replace(rxBareField, `$1${EMPTY_FIELD_HTML}`);
 
     // Añadir botón de revisión directa solo en párrafos/listas con contenido real.
-    // Nunca agregarlo en campos vacíos.
-    const wrapReview = document.createElement('div');
-    wrapReview.innerHTML = result;
-    wrapReview.querySelectorAll('p.report-p, li').forEach((node) => {
-        if (node.querySelector('.no-data-field')) return;
-        const clone = node.cloneNode(true);
-        clone.querySelectorAll('.inline-review-btn, .no-data-edit-btn, .no-data-field').forEach(el => el.remove());
-        const rawText = String(clone.textContent || '')
-            .replace(/[\u00A0\s]+/g, ' ')
-            .trim();
-        if (!rawText || !/[\p{L}\p{N}]/u.test(rawText)) return;
-        if (node.querySelector('.inline-review-btn')) return;
-        node.insertAdjacentHTML('beforeend', INLINE_REVIEW_BTN_HTML);
-    });
-    result = wrapReview.innerHTML;
+    // Nunca agregarlo en campos vacíos. Solo si inline review está activado.
+    const _inlineEnabled = (function() {
+        const tog = typeof document !== 'undefined' && document.getElementById('inlineReviewQuickToggle');
+        if (tog) return tog.checked;
+        if (typeof window !== 'undefined' && typeof window.inlineParagraphReviewEnabled === 'boolean') return window.inlineParagraphReviewEnabled;
+        try { return (JSON.parse(localStorage.getItem('settings_prefs') || '{}')).inlineParagraphReview === true; } catch(_) { return false; }
+    })();
+    if (_inlineEnabled) {
+        const wrapReview = document.createElement('div');
+        wrapReview.innerHTML = result;
+        wrapReview.querySelectorAll('p.report-p, li').forEach((node) => {
+            if (node.querySelector('.no-data-field')) return;
+            const clone = node.cloneNode(true);
+            clone.querySelectorAll('.inline-review-btn, .no-data-edit-btn, .no-data-field').forEach(el => el.remove());
+            const rawText = String(clone.textContent || '')
+                .replace(/[\u00A0\s]+/g, ' ')
+                .trim();
+            if (!rawText || !/[\p{L}\p{N}]/u.test(rawText)) return;
+            if (node.querySelector('.inline-review-btn')) return;
+            node.insertAdjacentHTML('beforeend', INLINE_REVIEW_BTN_HTML);
+        });
+        result = wrapReview.innerHTML;
+    }
 
     // Limpiar fragmentos huérfanos adyacentes al badge (ej: "s.", ".s", puntuación suelta)
     // que quedan cuando la IA genera variantes como "[No especificado]s." o "Sin datos."
