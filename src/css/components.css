@@ -1283,6 +1283,37 @@
         .shape-action-btn:active {
             background: rgba(0,0,0,.1);
         }
+        /* Anchor popup after floating drag */
+        .shape-anchor-popup {
+            position: absolute;
+            z-index: 1001;
+            display: none;
+        }
+        .shape-anchor-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 12px;
+            border: 1px solid var(--border, #ddd);
+            border-radius: 8px;
+            background: var(--bg-card, #fff);
+            color: var(--text-primary, #333);
+            font-size: 0.85rem;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,.18);
+            white-space: nowrap;
+            transition: background 0.15s;
+        }
+        .shape-anchor-btn:hover {
+            background: var(--primary, #0f766e);
+            color: #fff;
+        }
+        .shape-anchor-btn:active {
+            transform: scale(0.96);
+        }
+        #printPreviewOverlay .shape-anchor-popup {
+            display: none !important;
+        }
         .editor-shape::-webkit-resizer {
             display: none;
         }
@@ -1413,6 +1444,7 @@
             overflow-y: auto;
             white-space: pre-wrap;
             transition: all 0.2s;
+            position: relative;
         }
 
         .editor-content:focus {

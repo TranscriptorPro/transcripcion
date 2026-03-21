@@ -643,6 +643,76 @@
             if (mobileActionBar) mobileActionBar.style.display = 'none';
         }
 
+        // ── Anchor popup: shown after drag-drop to let user reflow content ──
+        var _anchorPopup = document.createElement('div');
+        _anchorPopup.className = 'shape-anchor-popup';
+        _anchorPopup.style.display = 'none';
+        _anchorPopup.innerHTML = '<button type="button" class="shape-anchor-btn" title="Insertar en el flujo del documento aquí">📌 Anclar aquí</button>';
+        document.body.appendChild(_anchorPopup);
+
+        function _showAnchorPopup(el) {
+            if (!el || !editor.contains(el)) return;
+            var r = el.getBoundingClientRect();
+            _anchorPopup.style.left = (r.left + r.width / 2 - 60 + window.scrollX) + 'px';
+            _anchorPopup.style.top = (r.bottom + 6 + window.scrollY) + 'px';
+            _anchorPopup.style.display = 'block';
+            _anchorPopup._targetEl = el;
+        }
+        function _hideAnchorPopup() { _anchorPopup.style.display = 'none'; _anchorPopup._targetEl = null; }
+
+        _anchorPopup.querySelector('.shape-anchor-btn').addEventListener('click', function(ev) {
+            ev.preventDefault(); ev.stopPropagation();
+            var el = _anchorPopup._targetEl;
+            if (!el || !editor.contains(el)) { _hideAnchorPopup(); return; }
+            // Find nearest block element at the element's center-bottom position
+            var rect = el.getBoundingClientRect();
+            var cx = rect.left + rect.width / 2;
+            var cy = rect.top + rect.height / 2;
+            // Remove absolute positioning — return to document flow
+            el.style.position = '';
+            el.style.left = '';
+            el.style.top = '';
+            el.style.zIndex = '';
+            el.style.marginLeft = '';
+            el.style.marginTop = '';
+            el.style.marginRight = '';
+            // Find insert target: nearest block child of editor at that Y
+            var blocks = editor.querySelectorAll('h2, h3, p, div, table, hr, ul, ol');
+            var best = null, bestDist = Infinity;
+            blocks.forEach(function(b) {
+                if (b === el || b.contains(el) || el.contains(b)) return;
+                var br = b.getBoundingClientRect();
+                var dist = Math.abs(br.top + br.height / 2 - cy);
+                if (dist < bestDist) { bestDist = dist; best = b; }
+            });
+            if (best) {
+                // Insert after the nearest block
+                var bestRect = best.getBoundingClientRect();
+                if (cy > bestRect.top + bestRect.height / 2) {
+                    best.parentNode.insertBefore(el, best.nextSibling);
+                } else {
+                    best.parentNode.insertBefore(el, best);
+                }
+            }
+            _hideAnchorPopup();
+            positionHandles();
+            positionMobileActionBar();
+            if (typeof saveUndoState === 'function') saveUndoState();
+        });
+
+        // Helper: switch element to absolute floating mode
+        function _startFloatingDrag(el) {
+            var rect = el.getBoundingClientRect();
+            var editorRect = editor.getBoundingClientRect();
+            el.style.position = 'absolute';
+            el.style.left = (rect.left - editorRect.left + editor.scrollLeft) + 'px';
+            el.style.top = (rect.top - editorRect.top + editor.scrollTop) + 'px';
+            el.style.zIndex = '100';
+            el.style.marginLeft = '0px';
+            el.style.marginTop = '0px';
+            el.style.marginRight = '0px';
+        }
+
         function positionHandles() {
             if (!activeShape) return;
             var r = activeShape.getBoundingClientRect();
@@ -881,10 +951,15 @@
 
             if (interaction.mode === 'drag') {
                 if (!interaction.moved && Math.abs(dx) < 3 && Math.abs(dy) < 3) return;
+                if (!interaction.moved) {
+                    _hideAnchorPopup();
+                    _startFloatingDrag(interaction.el);
+                    interaction._floatOrigLeft = parseFloat(interaction.el.style.left) || 0;
+                    interaction._floatOrigTop = parseFloat(interaction.el.style.top) || 0;
+                }
                 interaction.moved = true;
-                interaction.el.style.marginLeft = (interaction.origLeft + dx) + 'px';
-                interaction.el.style.marginTop = (interaction.origTop + dy) + 'px';
-                interaction.el.style.marginRight = 'auto';
+                interaction.el.style.left = (interaction._floatOrigLeft + dx) + 'px';
+                interaction.el.style.top = (interaction._floatOrigTop + dy) + 'px';
                 positionHandles();
             } else if (interaction.mode === 'resize') {
                 var d = interaction.dir;
@@ -908,6 +983,7 @@
             if (!interaction) return;
             if (interaction.mode === 'drag') {
                 interaction.el.style.cursor = (interaction.el.tagName === 'TABLE') ? '' : 'grab';
+                if (interaction.moved) _showAnchorPopup(interaction.el);
             }
             editor.style.userSelect = '';
             if (typeof saveUndoState === 'function') saveUndoState();
@@ -947,6 +1023,13 @@
         // Reposition handles on scroll/resize
         window.addEventListener('scroll', function() { if (activeShape) { positionHandles(); positionMobileActionBar(); } }, true);
         window.addEventListener('resize', function() { if (activeShape) { positionHandles(); positionMobileActionBar(); } });
+
+        // Hide anchor popup when deselecting or clicking elsewhere
+        var _origDeselect = deselectShape;
+        deselectShape = function() {
+            _hideAnchorPopup();
+            _origDeselect();
+        };
 
         // Expose API for external code (e.g. color picker) to interact with active shape
         window._getActiveShape = function() { return activeShape; };
@@ -1081,11 +1164,16 @@
             var dy = p.y - interaction.startY;
             if (interaction.mode === 'drag') {
                 if (!interaction.moved && Math.abs(dx) < TOUCH_DRAG_THRESHOLD && Math.abs(dy) < TOUCH_DRAG_THRESHOLD) return;
+                if (!interaction.moved) {
+                    _hideAnchorPopup();
+                    _startFloatingDrag(interaction.el);
+                    interaction._floatOrigLeft = parseFloat(interaction.el.style.left) || 0;
+                    interaction._floatOrigTop = parseFloat(interaction.el.style.top) || 0;
+                }
                 interaction.moved = true;
                 if (interaction.el.tagName !== 'TABLE') interaction.el.style.cursor = 'grabbing';
-                interaction.el.style.marginLeft = (interaction.origLeft + dx) + 'px';
-                interaction.el.style.marginTop = (interaction.origTop + dy) + 'px';
-                interaction.el.style.marginRight = 'auto';
+                interaction.el.style.left = (interaction._floatOrigLeft + dx) + 'px';
+                interaction.el.style.top = (interaction._floatOrigTop + dy) + 'px';
                 positionHandles();
             } else if (interaction.mode === 'resize') {
                 // Apply threshold before first resize to prevent accidental size change
@@ -1112,6 +1200,7 @@
             if (!interaction) return;
             if (interaction.mode === 'drag') {
                 interaction.el.style.cursor = (interaction.el.tagName === 'TABLE') ? '' : 'grab';
+                if (interaction.moved) _showAnchorPopup(interaction.el);
             }
             editor.style.userSelect = '';
             if (typeof saveUndoState === 'function') saveUndoState();
