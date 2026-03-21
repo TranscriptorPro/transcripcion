@@ -111,11 +111,19 @@
         const btn = document.getElementById('btnChangeTemplate');
         if (!btn || !dd) return;
         const r = btn.getBoundingClientRect();
-        const ddW = 280;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const ddW = Math.min(280, vw - 16);
+        dd.style.width = ddW + 'px';
         let left = r.left + r.width / 2 - ddW / 2;
         if (left < 8) left = 8;
-        if (left + ddW > window.innerWidth - 8) left = window.innerWidth - ddW - 8;
-        dd.style.top = (r.bottom + 6) + 'px';
+        if (left + ddW > vw - 8) left = vw - ddW - 8;
+        // Prefer below button; if no room, show above
+        const maxH = Math.min(360, vh * 0.6);
+        dd.style.maxHeight = maxH + 'px';
+        let top = r.bottom + 6;
+        if (top + maxH > vh - 8) top = Math.max(8, r.top - maxH - 6);
+        dd.style.top = top + 'px';
         dd.style.left = left + 'px';
     }
 
@@ -212,16 +220,23 @@
         const searchInput = document.getElementById('changeTemplateSearch');
         if (!btn || !list) return;
 
-        btn.addEventListener('click', (e) => {
+        const _onBtnActivate = (e) => {
             e.stopPropagation();
+            if (e.cancelable) e.preventDefault();
             _toggleDropdown();
-        });
+        };
+        btn.addEventListener('click', _onBtnActivate);
+        btn.addEventListener('touchend', _onBtnActivate);
 
-        list.addEventListener('click', (e) => {
+        const _onListSelect = (e) => {
             const item = e.target.closest('.tmpl-list-item');
             if (!item || !item.dataset.value) return;
+            e.stopPropagation();
+            if (e.cancelable) e.preventDefault();
             _reStructureWith(item.dataset.value);
-        });
+        };
+        list.addEventListener('click', _onListSelect);
+        list.addEventListener('touchend', _onListSelect);
 
         // Live search/filter
         if (searchInput) {

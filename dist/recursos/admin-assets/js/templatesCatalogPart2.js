@@ -254,6 +254,7 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
         keywords: [],
         prompt: `Actúa como médico especialista. Estructura profesionalmente esta transcripción médica usando Markdown con títulos y secciones lógicas según el tipo de documento.
 
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
+IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".
+NO crees secciones de "Datos del Paciente", "Datos Generales", "Datos Demográficos" ni similares. Los datos demográficos los gestiona la aplicación por separado. El informe debe contener SOLO secciones clínicas.`
     }
 });

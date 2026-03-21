@@ -124,7 +124,8 @@ function _stripPatientIdentitySections(md) {
     let out = String(md || '');
     if (!out) return out;
     // Elimina secciones demograficas completas para evitar duplicar el cuadro de paciente.
-    out = out.replace(/(?:^|\n)##+\s*(?:datos\s+demogr[aá]ficos|datos\s+(?:del\s+)?paciente|datos\s+generales|identificaci[oó]n(?:\s+del\s+paciente)?|informaci[oó]n\s+(?:del\s+)?paciente)\s*\n[\s\S]*?(?=\n##+\s|\s*$)/gi, '\n');
+    // Patrón ampliado: cubre "Datos del Paciente", "Datos Generales", "Identificación", "Información del Paciente", "Paciente", etc.
+    out = out.replace(/(?:^|\n)##+\s*(?:datos\s+demogr[aá]ficos|datos\s+(?:del\s+)?paciente|datos\s+generales|datos\s+personales|identificaci[oó]n(?:\s+del\s+paciente)?|informaci[oó]n\s+(?:del\s+)?paciente|paciente)\s*\n[\s\S]*?(?=\n##+\s|\s*$)/gi, '\n');
     // Elimina lineas sueltas de identificacion en cuerpo.
     out = out.replace(/(^|\n)\s*(?:paciente|nombre|dni|edad|sexo|g[eé]nero|obra\s+social|afiliad[oa]|n[uú]mero\s+de\s+(?:afiliado|documento))\s*:\s*[^\n]+(?=\n|$)/gi, '$1');
     return out.trim();
@@ -173,7 +174,11 @@ REGLAS ABSOLUTAS — cumplirlas todas sin excepción (ordenadas por prioridad):
 >>> REGLAS CRÍTICAS (NUNCA violar) >>>
 1. PRESERVA TODO EL CONTENIDO: cada hallazgo, medición, valor y dato de la transcripción DEBE aparecer en el informe. Nunca descartes información clínica, aunque no encaje perfectamente en la plantilla.
 2. NO añadas información que no esté en la transcripción. NO inventes valores, porcentajes, diagnósticos ni datos que el médico no haya dictado.
-3. DATOS DEL PACIENTE: NO incluyas datos identificatorios personales (nombre, apellido, DNI, obra social, número de afiliado). Edad, sexo, peso y talla SÍ pueden incluirse cuando la plantilla los requiera, ya que son datos clínicos relevantes para la interpretación.
+3. DATOS DEL PACIENTE — PROHIBICIÓN DE SECCIÓN:
+(a) NUNCA crees secciones como "Datos del Paciente", "Datos Generales", "Datos Demográficos", "Información del Paciente", "Identificación", ni variantes. La aplicación gestiona los datos demográficos en un formulario separado; el informe estructurado NO debe contenerlos.
+(b) NO incluyas en el informe: nombre, apellido, DNI, obra social, número de afiliado, ni ningún dato identificatorio personal.
+(c) Edad, sexo, peso y talla SÍ pueden mencionarse DENTRO de las secciones clínicas de la plantilla cuando sean relevantes para la interpretación (ej: "Paciente de 84 años..." al inicio del primer hallazgo), pero NUNCA como sección independiente.
+(d) Si la transcripción dice "paciente de 84 años con dolor en hipocondrio derecho, se realiza ecografía...", el contenido clínico (dolor, hallazgos, etc.) va en las secciones clínicas de la plantilla. Lo ÚNICO extraíble como dato demográfico es la edad (84 años), y eso lo maneja la app, NO el informe.
 4. Devuelve ÚNICAMENTE el contenido del informe en markdown, sin texto introductorio ("Aquí está...", "A continuación...") ni final ("Espero que...", "Nota:"). NO añadas notas, comentarios ni advertencias propias.
 
 >>> FORMATO >>>
@@ -247,10 +252,8 @@ Antes de responder, verifica: ¿preservé TODOS los datos? ¿Usé [No especifica
         let cleaned = forceGeneralNoConclusion ? _stripGeneralConclusionSections(content) : content;
         // Red de seguridad: eliminar oraciones adversativas/de carencia en conclusión aunque el modelo desobedezca.
         cleaned = _stripConclusionCaveats(cleaned);
-        const extractedPatient = (typeof extractPatientDataFromText === 'function') ? extractPatientDataFromText(text) : {};
-        if (extractedPatient && (extractedPatient.name || extractedPatient.dni || extractedPatient.age || extractedPatient.sex || extractedPatient.insurance || extractedPatient.affiliateNum)) {
-            cleaned = _stripPatientIdentitySections(cleaned);
-        }
+        // SIEMPRE eliminar secciones de datos del paciente del informe — la app gestiona esos datos por separado.
+        cleaned = _stripPatientIdentitySections(cleaned);
         cleaned = _normalizeTemplateSpecificOutput(cleaned, templateKey, text);
         return _postProcessStructuredMarkdown(cleaned);
     } catch (error) {
