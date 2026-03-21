@@ -1080,11 +1080,13 @@ async function _doAutoStructure(options) {
             if (detected !== 'generico') {
                 // Siempre usar la plantilla detectada en el flujo IA (sin toast/prompt).
                 currentTemplate = detected;
+                window._lastUsedTemplateKey = detected;
             } else {
                 currentTemplate = 'generico';
                 isGeneralNonMedicalFallback = !_isLikelyMedicalText(structInput);
             }
         }
+        window._lastUsedTemplateKey = currentTemplate;
         const rawMarkdown = await structureWithRetry(structInput, currentTemplate, {
             forceGeneralNoConclusion: isGeneralNonMedicalFallback
         });
@@ -1231,4 +1233,10 @@ window.initStructurer = function () {
         });
     }
 }
+
+// Expose internals for changeTemplateUtils
+window.structureWithRetry = structureWithRetry;
+window.parseAIResponse = parseAIResponse;
+window._prepareStructuringInput = _prepareStructuringInput;
+window._setStructuringVisualState = _setStructuringVisualState;
 

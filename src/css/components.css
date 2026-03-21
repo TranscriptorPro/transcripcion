@@ -4122,6 +4122,74 @@
             }
         }
 
+        /* ===== Change Template Button & Dropdown ===== */
+        .btn-change-template {
+            height: 36px;
+            min-width: 36px;
+            padding: 0 10px;
+        }
+        .change-tpl-dropdown {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            box-shadow: 0 8px 28px rgba(0,0,0,0.22);
+            min-width: 260px;
+            max-height: 360px;
+            overflow-y: auto;
+            padding: 0;
+        }
+        .change-tpl-hint {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            padding: 10px 14px 6px;
+            border-bottom: 1px solid var(--border);
+            line-height: 1.4;
+        }
+        .change-tpl-dropdown .tmpl-list-header {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            padding: 8px 14px 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .change-tpl-dropdown .tmpl-list-item {
+            padding: 7px 14px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            transition: background .15s;
+        }
+        .change-tpl-dropdown .tmpl-list-item:hover {
+            background: var(--primary-light, rgba(26,86,160,0.1));
+        }
+        .change-tpl-dropdown .tmpl-list-item.tpl-current {
+            font-weight: 700;
+            color: var(--primary);
+        }
+        @media (max-width: 768px) {
+            .change-tpl-dropdown {
+                left: auto;
+                right: 0;
+                transform: none;
+                min-width: 220px;
+            }
+        }
+
+        /* Pulse hint for first-time discovery */
+        @keyframes pulseHint {
+            0%, 100% { box-shadow: 0 0 14px rgba(249, 115, 22, 0.5); }
+            50% { box-shadow: 0 0 24px rgba(249, 115, 22, 0.9), 0 0 40px rgba(249, 115, 22, 0.4); }
+        }
+        .btn-change-template.pulse-hint {
+            animation: pulseHint 1s ease-in-out 4, orangeWave 3s ease infinite;
+        }
+
         /* ===== Action Themed Buttons (Config PDF, Preview PDF, Copiar, Imprimir) ===== */
         .btn-action-green {
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));

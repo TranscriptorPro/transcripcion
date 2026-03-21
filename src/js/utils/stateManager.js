@@ -151,6 +151,16 @@ window.updateButtonsVisibility = function (state) {
         btnMedicalCheck.disabled = isStructuring;
     }
 
+    // Botón Cambiar Plantilla: visible solo tras estructurar (modo Pro)
+    const changeTemplateWrapper = document.getElementById('changeTemplateWrapper');
+    if (changeTemplateWrapper) {
+        const showChangeTpl = isStructured && isProMode;
+        changeTemplateWrapper.style.display = showChangeTpl ? 'inline-block' : 'none';
+        if (showChangeTpl && typeof window._showChangeTemplateHint === 'function') {
+            window._showChangeTemplateHint();
+        }
+    }
+
     if (typeof window.updateProSourceModeUI === 'function') {
         window.updateProSourceModeUI();
     }

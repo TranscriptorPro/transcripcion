@@ -9,7 +9,7 @@
     <!-- PURGE: auto-purge al detectar nueva versión + ?purge manual. Preserva tema y color -->
     <script>
     (function() {
-        var APP_VERSION = 'v145'; // ← bump esto en cada deploy para forzar auto-purge
+        var APP_VERSION = 'v146'; // ← bump esto en cada deploy para forzar auto-purge
         try { window.APP_VERSION = APP_VERSION; } catch(_) {}
         var params = new URLSearchParams(window.location.search);
         var forcePurge = params.has('purge');
@@ -2307,6 +2307,18 @@
                             </svg>
                             <span>IA</span>
                         </button>
+                        <!-- Botón Cambiar Plantilla (post-estructurado, Pro) -->
+                        <div id="changeTemplateWrapper" style="position:relative; display:none;">
+                            <button class="btn-ai-magic btn-change-template" id="btnChangeTemplate" style="display:inline-flex;" title="La IA eligió una plantilla automáticamente. Si el informe no corresponde, hacé clic para elegir la correcta y re-estructurar.">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="white" aria-hidden="true">
+                                    <path d="M12 6v3l4-4-4-4v3c-4.42 0-8 3.58-8 8 0 1.57.46 3.03 1.24 4.26L6.7 14.8A5.87 5.87 0 0 1 6 12c0-3.31 2.69-6 6-6zm6.76 1.74L17.3 9.2c.44.84.7 1.79.7 2.8 0 3.31-2.69 6-6 6v-3l-4 4 4 4v-3c4.42 0 8-3.58 8-8 0-1.57-.46-3.03-1.24-4.26z"/>
+                                </svg>
+                            </button>
+                            <div id="changeTemplateDropdown" class="change-tpl-dropdown" style="display:none;">
+                                <div class="change-tpl-hint">💡 Si la IA eligió mal la plantilla, seleccioná la correcta para re-estructurar el informe:</div>
+                                <ul id="changeTemplateList" style="list-style:none; margin:0; padding:0;"></ul>
+                            </div>
+                        </div>
                         <div id="inlineReviewQuickDock" style="display:contents;">
                             <div id="inlineReviewQuickControl" class="inline-review-in-editor">
                                 <span class="inline-review-quick-label" title="Revisión IA inline">▶ Rev IA</span>
@@ -2611,6 +2623,7 @@
         <script src="src/js/features/transcriptor.js"></script>
         <script src="src/js/features/structurerCoreUtils.js"></script>
         <script src="src/js/features/structurer.js"></script>
+        <script src="src/js/features/changeTemplateUtils.js"></script>
         <script src="src/js/features/proSidebarSourceMode.js"></script>
         <script src="src/js/features/fixedTooltips.js"></script>
         <script src="src/js/features/medDictionary.js"></script>

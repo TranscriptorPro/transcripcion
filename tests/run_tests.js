@@ -851,13 +851,12 @@ test('D1-D4 — Todas las plantillas están en TEMPLATE_CATEGORIES', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// BLOQUE 11: E1 — Toast de plantilla detectada
+// BLOQUE 11: E1 — Cambio de plantilla post-estructurado
 // ═══════════════════════════════════════════════════════════════════════════════
-console.log('\n── Bloque 11: E1 — Toast plantilla detectada ────────────────────');
+console.log('\n── Bloque 11: E1 — Cambio de plantilla post-estructurado ────────');
 
 test('E1 — promptTemplateSelection es función interna cargada', () => {
-    // promptTemplateSelection es la función que muestra el toast E1.
-    // Es local al módulo de structurer (no window), pero la verificamos vía código.
+    // promptTemplateSelection es la función legacy del toast E1.
     const code = fs.readFileSync(path.join(root, 'src/js/features/structurer.js'), 'utf-8');
     assert(code.includes('function promptTemplateSelection'),
         'structurer.js debe contener promptTemplateSelection');
@@ -870,6 +869,47 @@ test('E1 — autoDetectTemplateKey retorna string válido', () => {
     const result = autoDetectTemplateKey('texto cualquiera sin keywords');
     assert(typeof result === 'string', 'Debe retornar string');
     assert(keys.includes(result), `${result} debe ser una key válida de MEDICAL_TEMPLATES`);
+});
+
+test('E1 — changeTemplateUtils.js existe y tiene funciones clave', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/changeTemplateUtils.js'), 'utf-8');
+    assert(code.includes('initChangeTemplate'), 'Debe contener initChangeTemplate');
+    assert(code.includes('_reStructureWith'), 'Debe contener _reStructureWith');
+    assert(code.includes('changeTemplateWrapper'), 'Debe referenciar changeTemplateWrapper');
+    assert(code.includes('btnChangeTemplate'), 'Debe referenciar btnChangeTemplate');
+});
+
+test('E1 — index.html contiene botón btnChangeTemplate', () => {
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
+    assert(html.includes('id="btnChangeTemplate"'), 'index.html debe tener btnChangeTemplate');
+    assert(html.includes('id="changeTemplateWrapper"'), 'index.html debe tener changeTemplateWrapper');
+    assert(html.includes('id="changeTemplateDropdown"'), 'index.html debe tener changeTemplateDropdown');
+    assert(html.includes('id="changeTemplateList"'), 'index.html debe tener changeTemplateList');
+});
+
+test('E1 — structurer.js expone funciones para changeTemplate', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/structurer.js'), 'utf-8');
+    assert(code.includes('window.structureWithRetry'), 'Debe exponer structureWithRetry');
+    assert(code.includes('window.parseAIResponse'), 'Debe exponer parseAIResponse');
+    assert(code.includes('window._prepareStructuringInput'), 'Debe exponer _prepareStructuringInput');
+    assert(code.includes('window._lastUsedTemplateKey'), 'Debe guardar _lastUsedTemplateKey');
+});
+
+test('E1 — stateManager controla visibilidad de changeTemplateWrapper', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/utils/stateManager.js'), 'utf-8');
+    assert(code.includes('changeTemplateWrapper'), 'stateManager debe controlar changeTemplateWrapper');
+});
+
+test('E1 — changeTemplateUtils.js cargado en index.html', () => {
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
+    assert(html.includes('changeTemplateUtils.js'), 'index.html debe cargar changeTemplateUtils.js');
+});
+
+test('E1 — CSS incluye estilos de change-tpl-dropdown', () => {
+    const css = fs.readFileSync(path.join(root, 'src/css/components.css'), 'utf-8');
+    assert(css.includes('.change-tpl-dropdown'), 'components.css debe tener .change-tpl-dropdown');
+    assert(css.includes('.btn-change-template'), 'components.css debe tener .btn-change-template');
+    assert(css.includes('.pulse-hint'), 'components.css debe tener pulse-hint');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
