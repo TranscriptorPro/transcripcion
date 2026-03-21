@@ -7354,11 +7354,16 @@ test('Editor-Table — index.html tiene botón insertTableBtn', () => {
 
 test('Editor-Table — handler usa DOM (no execCommand insertHTML)', () => {
     const fmtCode = fs.readFileSync(path.join(root, 'src/js/features/editorFormattingFindUtils.js'), 'utf-8');
-    assertIncludes(fmtCode, 'insertTableBtn', 'Handler de tabla debe existir');
-    assertIncludes(fmtCode, 'insertRow', 'Debe usar DOM table API (insertRow)');
-    assertIncludes(fmtCode, 'insertCell', 'Debe usar DOM table API (insertCell)');
-    assert(!fmtCode.includes("execCommand('insertHTML'") && !fmtCode.includes('execCommand("insertHTML"'),
-        'No debe usar execCommand insertHTML para tablas');
+    const tableStart = fmtCode.indexOf('const insertTableBtn');
+    assert(tableStart !== -1, 'Handler de tabla debe existir');
+
+    const imageStart = fmtCode.indexOf('// ── Insertar Imagen ──', tableStart);
+    const tableSection = imageStart === -1 ? fmtCode.slice(tableStart) : fmtCode.slice(tableStart, imageStart);
+
+    assertIncludes(tableSection, 'insertRow', 'Debe usar DOM table API (insertRow)');
+    assertIncludes(tableSection, 'insertCell', 'Debe usar DOM table API (insertCell)');
+    assert(!tableSection.includes("execCommand('insertHTML'") && !tableSection.includes('execCommand("insertHTML"'),
+        'No debe usar execCommand insertHTML dentro del handler de tablas');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
