@@ -152,42 +152,74 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
         name: "Electromiografía (EMG)",
         category: "Neurología",
         keywords: ["electromiografía", "EMG", "conducción nerviosa", "potenciales evocados", "latencia", "amplitud", "velocidad de conducción"],
-        prompt: `Actúa como neurofisiólogo clínico. Estructura este informe de electromiografía:
+        prompt: `Actúa como neurofisiólogo clínico. Estructura este informe de electromiografía y conducción nerviosa.
 
-# INFORME DE ELECTROMIOGRAFÍA (EMG) Y ESTUDIOS NEUROFISIOLÓGICOS
+REGLAS OBLIGATORIAS:
+- Solo usa los datos dictados. No inventes latencias, amplitudes ni velocidades de conducción.
+- CONDUCCIÓN NERVIOSA: incluir SOLO los nervios mencionados en la transcripción. Omitir los no evaluados.
+- EMG DE AGUJA: incluir SOLO los músculos mencionados. Omitir los no evaluados.
+- CONCLUSIÓN: indicar patrón (Normal / Axonal / Desmielinizante / Miopático), topografía y correlación clínica.
+- Si todos los estudios son normales → escribir: 'Dentro de límites normales. Sin signos neurofisiológicos de denervación activa ni neuropatía.'
+- NUNCA usar [No especificado] en la CONCLUSIÓN.
+
+# INFORME DE ELECTROMIOGRAFÍA (EMG) Y CONDUCCIÓN NERVIOSA
 
 ## ESTUDIOS DE CONDUCCIÓN NERVIOSA
-Tabla por nervio: nervio evaluado, latencia distal (ms), amplitud (mV/μV), velocidad de conducción (m/s), latencia onda F/H.
+Por cada nervio evaluado: lateralidad, latencia distal (ms), amplitud (mV/μV), velocidad de conducción (m/s), latencia onda F (ms).
+Solo incluir los nervios mencionados en la transcripción.
 
 ## ELECTROMIOGRAFÍA DE AGUJA
-Músculos estudiados con: actividad espontánea, unidades motoras (morfología, reclutamiento).
+Por músculo evaluado: nombre y lateralidad, actividad espontánea (fibrilaciones / ondas positivas / ninguna), unidades motoras (morfología, amplitud, duración, polifasia), patrón de reclutamiento.
+Solo incluir los músculos mencionados en la transcripción.
 
-## POTENCIALES EVOCADOS (si aplica)
-Tipo de potenciales, latencias, amplitudes y lateralidad.
+## POTENCIALES EVOCADOS
+(Solo si fue dictado) Tipo, latencias periférica y central, amplitudes, comparación inter-lado.
+
+## REGLA DE CONCLUSIÓN
+• Si hay hallazgos patológicos → indicar TODOS: patrón (axonal/desmielinizante/miopático), topografía (nervio/músculo/nivel medular), correlación clínica.
+• Si todos los estudios son normales → escribir exactamente: 'Dentro de límites normales. Sin signos neurofisiológicos de denervación activa ni neuropatía.'
+• NUNCA usar [No especificado] en la CONCLUSIÓN.
 
 ## CONCLUSIÓN
-Patrón neurofisiológico (normal, axonal, desmielinizante, miopático), topografía y correlación clínica.
+Patrón neurofisiológico, topografía y correlación clínica (según REGLA DE CONCLUSIÓN).
 
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
+IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción.`
     },
     polisomnografia: {
         name: "Polisomnografía (PSG)",
         category: "Neurología",
         keywords: ["polisomnografía", "PSG", "IAH", "apnea del sueño", "SAHOS", "REM", "desaturación nocturna", "índice de apnea"],
-        prompt: `Actúa como especialista en medicina del sueño. Estructura este informe de polisomnografía:
+        prompt: `Actúa como especialista en medicina del sueño. Estructura este informe de polisomnografía diagnóstica.
+
+REGLAS OBLIGATORIAS:
+- Solo usa los datos dictados. No inventes índices ni porcentajes.
+- CONCLUSIÓN: solo hallazgos positivos (patológicos). Si el estudio es completamente normal → escribir: 'Sin trastornos respiratorios del sueño significativos. Arquitectura del sueño conservada.'
+- NUNCA usar [No especificado] en la CONCLUSIÓN.
 
 # INFORME DE POLISOMNOGRAFÍA (PSG)
 
 ## ARQUITECTURA DEL SUEÑO
-Eficiencia del sueño (%), tiempo total de sueño (min), latencia de sueño, latencia REM, % de cada estadio (N1, N2, N3, REM).
+Tiempo total en cama (min), tiempo total de sueño (min), eficiencia del sueño (%), latencia de sueño (min), latencia REM (min).
+Distribución de estadios: N1 (%), N2 (%), N3 (%), REM (%).
+Índice de despertares (por hora), movimientos periódicos de extremidades (PLM index, si mencionado).
 
 ## EVENTOS RESPIRATORIOS
-IAH total, IAH en sueño REM y NREM, índice de apneas obstructivas/centrales/mixtas, índice de hipopneas, SpO2 mínima, T90.
+IAH total, IAH en sueño REM y NREM.
+Índice desglosado: apneas obstructivas, centrales, mixtas, hipopneas.
+SpO2 promedio, SpO2 mínima, % tiempo con SpO2 <90% (T90), registro de ronquidos (si mencionado).
+
+## REGLA DE CONCLUSIÓN
+• SAHOS leve: IAH 5-14 → indicar grado + segmento predominante (REM/supino).
+• SAHOS moderado: IAH 15-29 → igual.
+• SAHOS grave: IAH ≥30 → igual.
+• Otros trastornos → mencionarlos (insomnio, PLM, SRVAS, apnea central, etc.).
+• Si el estudio es normal → escribir exactamente: 'Sin trastornos respiratorios del sueño significativos. Arquitectura del sueño conservada.'
+• NUNCA inventar valores de IAH ni SpO2 no dictados.
 
 ## CONCLUSIÓN
-Diagnóstico (SAHOS leve/moderado/grave), otros trastornos del sueño identificados y recomendaciones terapéuticas.
+Diagnóstico principal, grado de severidad y recomendaciones terapéuticas (según REGLA DE CONCLUSIÓN).
 
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
+IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción.`
     },
 
     // ── ORL ─────────────────────────────────────────────────────
@@ -241,20 +273,42 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
         name: "Endoscopía Otológica",
         category: "ORL",
         keywords: ["endoscopía otológica", "oído", "tímpano", "conducto auditivo", "membrana timpánica", "oído medio"],
-        prompt: `Actúa como especialista ORL. Estructura este informe de endoscopía otológica:
+        prompt: `Actúa como especialista ORL. Estructura este informe de endoscopía otológica.
+
+REGLAS OBLIGATORIAS:
+- Crea secciones independientes y completas para OÍDO DERECHO y OÍDO IZQUIERDO con subsecciones.
+- Si solo fue examinado un oído, omitir completamente la sección del lado no explorado.
+- CONCLUSIÓN: solo hallazgos positivos (patológicos). Si todo es normal → 'Membranas timpánicas íntegras bilateralmente. Conductos auditivos sin hallazgos patológicos.'
+- NUNCA usar [No especificado] en la CONCLUSIÓN.
 
 # INFORME DE ENDOSCOPÍA OTOLÓGICA
 
 ## OÍDO DERECHO (OD)
-Descripción del conducto auditivo externo y membrana timpánica.
+
+### CONDUCTO AUDITIVO EXTERNO
+Permeabilidad, calibre, estado de la piel, presencia de cerumen, secreción o cuerpo extraño.
+
+### MEMBRANA TIMPÁNICA
+Integridad (íntegra/perforada), brillo y reflejo luminoso, posición (neutra/retraída/abombada), transparencia (traslúcida/opaca/mate).
+
+### OÍDO MEDIO (si visible)
+Nivel líquido, burbujas, hallazgos patológicos.
 
 ## OÍDO IZQUIERDO (OI)
-Descripción del conducto auditivo externo y membrana timpánica.
 
-## CONCLUSIÓN
-Diagnósticos y recomendaciones.
+### CONDUCTO AUDITIVO EXTERNO
+Permeabilidad, calibre, estado de la piel, presencia de cerumen, secreción o cuerpo extraño.
 
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
+### MEMBRANA TIMPÁNICA
+Integridad (íntegra/perforada), brillo y reflejo luminoso, posición (neutra/retraída/abombada), transparencia (traslúcida/opaca/mate).
+
+### OÍDO MEDIO (si visible)
+Nivel líquido, burbujas, hallazgos patológicos.
+
+## CONCLUSIÓN DIAGNÓSTICA
+Solo hallazgos positivos o patológicos (según REGLAS). Si todo es normal → 'Membranas timpánicas íntegras bilateralmente. Sin hallazgos patológicos.'
+
+IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción.`
     },
 
     // ── QUIRÚRGICO ──────────────────────────────────────────────

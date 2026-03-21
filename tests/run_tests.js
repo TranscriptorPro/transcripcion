@@ -1141,6 +1141,45 @@ test('P8 — fondo_ojo tiene secciones OD y OI (bilateral)', () => {
     assert(t.prompt.includes('CONCLUSIÓN'), 'fondo_ojo debe tener CONCLUSIÓN');
 });
 
+test('P8 — emg tiene REGLA DE CONCLUSIÓN y no inventa estudios (solo los mencionados)', () => {
+    const t = window.MEDICAL_TEMPLATES['electromiografia'];
+    assert(t, 'electromiografia debe existir');
+    assert(t.prompt.includes('REGLA DE CONCLUSIÓN'), 'EMG debe tener REGLA DE CONCLUSIÓN');
+    assert(t.prompt.includes('menciona'), 'EMG debe indicar incluir solo los mencionados');
+    assert(t.prompt.includes('Dentro de límites normales'), 'EMG debe tener frase de normalidad');
+});
+
+test('P8 — polisomnografia tiene REGLA DE CONCLUSIÓN con fallback normal', () => {
+    const t = window.MEDICAL_TEMPLATES['polisomnografia'];
+    assert(t, 'polisomnografia debe existir');
+    assert(t.prompt.includes('REGLA DE CONCLUSIÓN'), 'PSG debe tener REGLA DE CONCLUSIÓN');
+    assert(t.prompt.includes('Sin trastornos respiratorios'), 'PSG debe tener frase de estudio normal');
+});
+
+test('P8 — endoscopia_otologica tiene subsecciones por oído (CAE + membrana)', () => {
+    const t = window.MEDICAL_TEMPLATES['endoscopia_otologica'];
+    assert(t, 'endoscopia_otologica debe existir');
+    assert(t.prompt.includes('CONDUCTO AUDITIVO EXTERNO'), 'Debe tener subsección CAE');
+    assert(t.prompt.includes('MEMBRANA TIMPÁNICA'), 'Debe tener subsección MEMBRANA TIMPÁNICA');
+    assert(t.prompt.includes('CONCLUSIÓN DIAGNÓSTICA'), 'Debe tener CONCLUSIÓN DIAGNÓSTICA');
+});
+
+test('P8 — gammagrafia_cardiaca tiene s/p por territorio y REGLA DE CONCLUSIÓN', () => {
+    const t = window.MEDICAL_TEMPLATES['gammagrafia_cardiaca'];
+    assert(t, 'gammagrafia_cardiaca debe existir');
+    assert(t.prompt.includes("'s/p'"), "Gammagrafía debe usar 's/p' por territorio");
+    assert(t.prompt.includes('REGLA DE CONCLUSIÓN'), 'Gammagrafía debe tener REGLA DE CONCLUSIÓN');
+    assert(t.prompt.includes('sin evidencia de isquemia'), 'Gammagrafía debe tener frase de normalidad');
+});
+
+test('P8 — eco_stress tiene s/p para motilidad segmentaria y REGLA DE CONCLUSIÓN', () => {
+    const t = window.MEDICAL_TEMPLATES['eco_stress'];
+    assert(t, 'eco_stress debe existir');
+    assert(t.prompt.includes("'s/p'"), "Eco-stress debe usar 's/p' para motilidad normal");
+    assert(t.prompt.includes('REGLA DE CONCLUSIÓN'), 'Eco-stress debe tener REGLA DE CONCLUSIÓN');
+    assert(t.prompt.includes('negativo para isquemia'), 'Eco-stress debe tener frase de resultado negativo');
+});
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // BLOQUE 15: B1/C1/C2 — Modal edición de campo + nombre + dejar en blanco
 // ═══════════════════════════════════════════════════════════════════════════════

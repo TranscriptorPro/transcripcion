@@ -592,45 +592,79 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
         name: "Gammagrafía Cardíaca (SPECT)",
         category: "Cardiología",
         keywords: ["gammagrafía", "SPECT", "perfusión miocárdica", "talio", "tecnecio", "FEVI", "isquemia"],
-        prompt: `Actúa como médico nuclear cardiólogo. Estructura este informe de gammagrafía de perfusión cardíaca:
+        prompt: `Actúa como médico nuclear cardiólogo. Estructura este informe de gammagrafía de perfusión miocárdica SPECT.
+
+REGLAS OBLIGATORIAS:
+- PERFUSIÓN: si un territorio fue evaluado y es normal → escribir 's/p'. PROHIBIDO describir normalidad en prosa.
+- FUNCIÓN VENTRICULAR: no inventar valores de FEVI ni volúmenes no dictados.
+- CONCLUSIÓN: solo hallazgos patológicos positivos. Si todo es normal → 'Estudio de perfusión miocárdica sin evidencia de isquemia ni cicatriz. Función ventricular conservada.'
+- NUNCA usar [No especificado] en la CONCLUSIÓN.
 
 # INFORME DE GAMMAGRAFÍA DE PERFUSIÓN CARDÍACA (SPECT)
 
 ## PROTOCOLO
-Radiofármaco, protocolo (estrés/reposo), tipo de estrés (físico/farmacológico).
+Radiofármaco (Tc-99m MIBI / Talio / otro), protocolo (estrés-reposo / reposo solo / reposo-estrés), tipo de estrés (físico en cinta / ergómetro / farmacológico con adenosina / dobutamina).
 
 ## PERFUSIÓN MIOCÁRDICA
-Descripción por territorios: anterior (DA), inferior (CD), lateral (CX). Defectos fijos o reversibles.
+
+### Territorio DA (Arteria Descendente Anterior)
+Cara anterior, apex, segmentos anteroseptales. Defecto (fijo/reversible) o s/p.
+
+### Territorio CD (Arteria Coronaria Derecha)
+Cara inferior, inferobasal, segmentos inferiores. Defecto (fijo/reversible) o s/p.
+
+### Territorio CX (Arteria Circunfleja)
+Cara lateral y posterobasal. Defecto (fijo/reversible) o s/p.
 
 ## FUNCIÓN VENTRICULAR
-FEVI en estrés y reposo, volúmenes ventriculares, motilidad regional.
+FEVI en estrés (%), FEVI en reposo (%), volumen telediastólico (ml), volumen telesistólico (ml), motilidad regional global.
+
+## REGLA DE CONCLUSIÓN
+• Defecto reversible → 'Isquemia miocárdica reversible en territorio [DA/CD/CX]' + FEVI post-estrés.
+• Defecto fijo → 'Cicatriz/infarto en territorio [X]' + extensión y FEVI reposo.
+• FEVI deprimida (< 50%) → mencionarla explícitamente con valor numérico.
+• Estudio completamente normal → escribir exactamente: 'Estudio de perfusión miocárdica sin evidencia de isquemia ni cicatriz. Función ventricular conservada.'
+• NUNCA inventar defectos ni valores de FEVI no dictados.
 
 ## CONCLUSIÓN
-Interpretación del patrón de perfusión, territorio comprometido y correlación con enfermedad coronaria.
+Interpretación del patrón de perfusión, territorio comprometido y función ventricular (según REGLA DE CONCLUSIÓN).
 
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
+IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción.`
     },
     eco_stress: {
         name: "Eco-Stress",
         category: "Cardiología",
         keywords: ["eco-stress", "ecocardiograma de estrés", "dobutamina", "ejercicio", "isquemia", "motilidad"],
-        prompt: `Actúa como cardiólogo ecocardiografista. Estructura este informe de eco-stress:
+        prompt: `Actúa como cardiólogo ecocardiografista. Estructura este informe de ecocardiograma de estrés.
+
+REGLAS OBLIGATORIAS:
+- MOTILIDAD SEGMENTARIA: si una pared fue evaluada y es normal → escribir 's/p'. PROHIBIDO describir normalidad en prosa por segmento.
+- CONCLUSIÓN: mencionar TODOS los hallazgos positivos. Si el estudio es negativo → 'Ecocardiograma de estrés negativo para isquemia miocárdica inducible.'
+- NUNCA inventar segmentos, alterar valores de FEVI ni FC no dictados.
+- NUNCA usar [No especificado] en la CONCLUSIÓN.
 
 # INFORME DE ECOCARDIOGRAMA DE ESTRÉS
 
 ## PROTOCOLO
-Tipo de estrés (ejercicio/dobutamina), protocolo utilizado, dosis máxima alcanzada.
+Tipo de estrés (ejercicio en treadmill / ergómetro / dobutamina / dipiridamol), protocolo utilizado, dosis máxima o carga alcanzada, duración, motivo de detención (cansancio / arritmia / FC meta / otro).
 
 ## HALLAZGOS EN REPOSO
-Función sistólica (FEVI), motilidad segmentaria, otras alteraciones basales.
+FEVI basal (%), motilidad segmentaria basal por pared (s/p si normal, describir solo lo alterado), derrame pericárdico, valvulopatía, otros hallazgos basales.
 
 ## HALLAZGOS EN ESFUERZO
-FC máxima alcanzada, % FCmax, motilidad segmentaria en estrés, aparición de nuevas alteraciones.
+FC máxima (lpm), % FC máxima predicha logrado, PA pico (mmHg).
+Motilidad segmentaria en esfuerzo: solo describir nuevas alteraciones o empeoramientos. Si toda la motilidad es conservada → escribir 's/p en todos los segmentos evaluados'.
+
+## REGLA DE CONCLUSIÓN
+• Isquemia inducible → 'Positivo para isquemia miocárdica en territorio [DA/CD/CX], segmento [X]' + FEVI pico.
+• No concluyente → especificar motivo (esfuerzo submáximo <85% FCmax, ventana acústica, arritmia, etc.).
+• Negativo para isquemia → escribir exactamente: 'Ecocardiograma de estrés negativo para isquemia miocárdica inducible. FEVI en esfuerzo [X]%.'
+• NUNCA usar [No especificado] en CONCLUSIÓN.
 
 ## CONCLUSIÓN
-Resultado (positivo/negativo/no concluyente) para isquemia miocárdica inducible.
+Resultado para isquemia miocárdica inducible, FEVI en esfuerzo y hallazgos adicionales relevantes (según REGLA DE CONCLUSIÓN).
 
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
+IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción.`
     },
 };
 
