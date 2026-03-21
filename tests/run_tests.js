@@ -7919,6 +7919,103 @@ test('Settings-Fix5 — botón Contactar soporte oculto para admin en populateIn
         'populateInfo debe ocultar settingsContactSupport para usuarios admin');
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bloque 125: C5 — ClinicAuth (login por PIN para plan CLINIC)
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 125: C5 — ClinicAuth (login por PIN) ───────────────────');
+
+const clinicAuthCode = fs.readFileSync(path.join(root, 'src/js/features/clinicAuth.js'), 'utf-8');
+const clinicAdminUtilsCode = fs.readFileSync(path.join(root, 'src/js/features/businessClientAdminUtils.js'), 'utf-8');
+const clinicFactoryCode = fs.readFileSync(path.join(root, 'src/js/features/businessFactorySetupUtils.js'), 'utf-8');
+const indexCodeC5 = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
+
+test('ClinicAuth-1 — window.ClinicAuth exporta init, getActiveProfessional, switchProfessional', () => {
+    assert(clinicAuthCode.includes('window.ClinicAuth') &&
+           clinicAuthCode.includes('init:') &&
+           clinicAuthCode.includes('getActiveProfessional:') &&
+           clinicAuthCode.includes('switchProfessional:'),
+        'clinicAuth.js debe exportar API pública completa a window.ClinicAuth');
+});
+
+test('ClinicAuth-2 — _normalizeList expuesto para tests', () => {
+    assert(clinicAuthCode.includes('_normalizeList:') || clinicAuthCode.includes('_normalizeList :'),
+        'clinicAuth.js debe exponer _normalizeList para tests');
+});
+
+test('ClinicAuth-3 — normalizeList filtra profesionales inactivos (activo !== false)', () => {
+    assertIncludes(clinicAuthCode, 'activo !== false', 'normalizeList debe filtrar profesionales inactivos');
+});
+
+test('ClinicAuth-4 — normalizeList convierte especialidad (string) a especialidades (array)', () => {
+    assert(clinicAuthCode.includes('especialidades') && clinicAuthCode.includes('typeof esp === \'string\''),
+        'normalizeList debe normalizar especialidades al tipo array');
+});
+
+test('ClinicAuth-5 — PIN default es "1234"', () => {
+    assertIncludes(clinicAuthCode, "'1234'", 'clinicAuth.js debe usar PIN default 1234');
+});
+
+test('ClinicAuth-6 — MAX_ATTEMPTS = 3', () => {
+    assertIncludes(clinicAuthCode, 'MAX_ATTEMPTS', 'clinicAuth.js debe definir MAX_ATTEMPTS');
+    assert(clinicAuthCode.includes('MAX_ATTEMPTS      = 3') || clinicAuthCode.includes('MAX_ATTEMPTS = 3'),
+        'MAX_ATTEMPTS debe ser 3');
+});
+
+test('ClinicAuth-7 — estado _activeProfessional inicia en null', () => {
+    assert(clinicAuthCode.includes('_activeProfessional = null') || clinicAuthCode.includes('_activeProfessional=null'),
+        '_activeProfessional debe iniciar como null (sesión limpia)');
+});
+
+test('ClinicAuth-8 — init() llama callback inmediatamente cuando la lista está vacía', () => {
+    assert(clinicAuthCode.includes('_professionals.length') && clinicAuthCode.includes('_onLoginSuccess(null)'),
+        'init() debe disparar onLoginSuccess(null) cuando no hay profesionales activos');
+});
+
+test('ClinicAuth-9 — switchProfessional() lee workplace_profiles desde localStorage', () => {
+    assertIncludes(clinicAuthCode, 'workplace_profiles',
+        'switchProfessional debe leer la lista actualizada de localStorage');
+});
+
+test('ClinicAuth-10 — _syncPdfConfig actualiza activeProfessional en pdf_config', () => {
+    assert(clinicAuthCode.includes('activeProfessional') && clinicAuthCode.includes('pdf_config'),
+        '_syncPdfConfig debe actualizar pdf_config con el profesional activo al login');
+});
+
+test('ClinicAuth-11 — toast de bienvenida al login exitoso', () => {
+    assert(clinicAuthCode.includes('showToast') && (clinicAuthCode.includes('Bienvenido') || clinicAuthCode.includes('bienvenido')),
+        'clinicAuth.js debe mostrar toast de bienvenida tras login exitoso');
+});
+
+test('ClinicAuth-12 — businessClientAdminUtils.js tiene hook para plan CLINIC', () => {
+    assert(clinicAdminUtilsCode.includes("planCode === 'clinic'") && clinicAdminUtilsCode.includes('ClinicAuth.init'),
+        'businessClientAdminUtils.js debe inicializar ClinicAuth para plan CLINIC');
+});
+
+test('ClinicAuth-13 — hook CLINIC lee professionals desde workplace_profiles', () => {
+    assert(clinicAdminUtilsCode.includes('workplace_profiles') && clinicAdminUtilsCode.includes('clinicProfessionals'),
+        'El hook CLINIC en businessClientAdminUtils.js debe leer professionals de workplace_profiles');
+});
+
+test('ClinicAuth-14 — hook CLINIC usa return para diferir session assistant', () => {
+    assertIncludes(clinicAdminUtilsCode, 'return; // session assistant',
+        'El hook CLINIC debe usar return para no llamar sessionAssistant antes del login');
+});
+
+test('ClinicAuth-15 — businessFactorySetupUtils.js preserva redesSociales en mapeo de profesionales', () => {
+    assertIncludes(clinicFactoryCode, 'redesSociales',
+        'businessFactorySetupUtils.js debe preservar redesSociales al mapear profesionales C4');
+});
+
+test('ClinicAuth-16 — index.html tiene botón #btnCambiarProfesional oculto por default', () => {
+    assert(indexCodeC5.includes('btnCambiarProfesional') && indexCodeC5.includes('display:none'),
+        'index.html debe tener btnCambiarProfesional con display:none por default');
+});
+
+test('ClinicAuth-17 — index.html carga clinicAuth.js', () => {
+    assertIncludes(indexCodeC5, 'clinicAuth.js',
+        'index.html debe cargar el script clinicAuth.js');
+});
+
 // Limpiar estado después de tests
 global.localStorage.clear();
 global._reportHistCache = null;

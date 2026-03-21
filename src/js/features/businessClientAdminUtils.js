@@ -101,6 +101,29 @@ function _initClient() {
     const onboardingOverlay = document.getElementById('onboardingOverlay');
     if (onboardingOverlay) onboardingOverlay.classList.remove('active');
 
+    // ── CLINIC: mostrar modal de login por profesional antes del session assistant ──
+    const planCode = (window.CLIENT_CONFIG && window.CLIENT_CONFIG.planCode) || '';
+    if (planCode === 'clinic' && typeof window.ClinicAuth !== 'undefined') {
+        let clinicProfessionals = [];
+        try {
+            const wp = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+            clinicProfessionals = (wp[0] && wp[0].professionals) || [];
+        } catch (_) {}
+
+        window.ClinicAuth.init(clinicProfessionals, function(activePro) {
+            // Post-login: session assistant + PWA prompt
+            _launchSessionAssistant();
+            if (!window.matchMedia('(display-mode: standalone)').matches) {
+                _tryPwaInstall(3);
+            }
+        });
+
+        if (typeof window.ClinicAuth.setupChangeProfButton === 'function') {
+            window.ClinicAuth.setupChangeProfButton();
+        }
+        return; // session assistant se lanza desde el callback de ClinicAuth.init
+    }
+
     // Session Assistant — se abre cada vez que carga la app
     _launchSessionAssistant();
 

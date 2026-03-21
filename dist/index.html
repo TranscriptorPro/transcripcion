@@ -9,7 +9,7 @@
     <!-- PURGE: auto-purge al detectar nueva versión + ?purge manual. Preserva tema y color -->
     <script>
     (function() {
-        var APP_VERSION = 'v160'; // ← bump esto en cada deploy para forzar auto-purge
+        var APP_VERSION = 'v161'; // ← bump esto en cada deploy para forzar auto-purge
         try { window.APP_VERSION = APP_VERSION; } catch(_) {}
         var params = new URLSearchParams(window.location.search);
         var forcePurge = params.has('purge');
@@ -127,7 +127,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
-        <link rel="stylesheet" href="app.mn0q2kp4.min.css">
+        <link rel="stylesheet" href="app.mn0qifcq.min.css">
 </head>
 
 <body>
@@ -185,6 +185,12 @@
                 <button class="theme-toggle" id="btnResetApp" title="Resetear app (borrar todos los datos)" style="display:none; color:#ef4444;">
                     <svg viewBox="0 0 24 24">
                         <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                    </svg>
+                </button>
+                <!-- CLINIC: Cambiar profesional activo (solo visible tras login CLINIC) -->
+                <button class="theme-toggle" id="btnCambiarProfesional" title="Cambiar profesional" style="display:none;">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
                     </svg>
                 </button>
                 <button class="theme-toggle" id="themeToggle" title="Cambiar tema">
@@ -2572,7 +2578,7 @@
             </svg>
             <span id="toastMessage"></span>
         </div>
-        <script src="app.mn0q2koj.min.js"></script>
+        <script src="app.mn0qifc9.min.js"></script>
 
         <!-- G1: Modal Panel Registro de Pacientes -->
         <div class="modal-overlay" id="registryPanelOverlay">

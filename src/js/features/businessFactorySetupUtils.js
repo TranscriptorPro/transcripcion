@@ -169,25 +169,35 @@ window.handleFactorySetupCore = async function (medicoId) {
                         clinicProfs = regDatos.profesionales || JSON.parse(doctor.Profesionales || '[]');
                     } catch(_) {}
                     if (Array.isArray(clinicProfs) && clinicProfs.length >= 1) {
-                        workplaceProfiles[0].professionals = clinicProfs.map(function(p) {
-                            const smp = (typeof p.socialMedia === 'object' && p.socialMedia) ? p.socialMedia : {};
+                        workplaceProfiles[0].professionals = clinicProfs.map(function(p, idx) {
+                            // Normalizar redesSociales / socialMedia (ambos formatos aceptados)
+                            const smp = (typeof p.socialMedia  === 'object' && p.socialMedia)  ? p.socialMedia  : {};
+                            const rs  = (typeof p.redesSociales === 'object' && p.redesSociales) ? p.redesSociales : smp;
+                            // Normalizar especialidades a array (C4: array; antiguo: string)
+                            let esp = p.especialidades;
+                            if (typeof esp === 'string') esp = esp ? [esp] : [];
+                            if (!Array.isArray(esp)) esp = [];
                             return {
+                                id:             p.id        || ('legacy-' + idx + '-' + Date.now()),
                                 nombre:         p.nombre        || '',
                                 matricula:      p.matricula     || '',
-                                especialidades: p.especialidad  || p.especialidades || '',
+                                especialidades: esp,
+                                usuario:        p.usuario       || '',
+                                pin:            String(p.pin || '1234'),
                                 telefono:       p.telefono      || '',
                                 email:          p.email         || '',
-                                whatsapp:       p.whatsapp      || smp.whatsapp || smp.WhatsApp || '',
-                                instagram:      p.instagram     || smp.instagram || smp.Instagram || '',
-                                facebook:       p.facebook      || smp.facebook || smp.Facebook || '',
-                                x:              p.x             || smp.x || smp.X || smp.twitter || smp.Twitter || '',
-                                youtube:        p.youtube       || smp.youtube || smp.YouTube || '',
+                                whatsapp:       p.whatsapp      || rs.whatsapp  || rs.WhatsApp  || '',
+                                instagram:      p.instagram     || rs.instagram || rs.Instagram || '',
+                                facebook:       p.facebook      || rs.facebook  || rs.Facebook  || '',
+                                x:              p.x             || rs.x         || rs.X         || rs.twitter || rs.Twitter || '',
+                                youtube:        p.youtube       || rs.youtube   || rs.YouTube   || '',
                                 firma:          p.firma         || '',
                                 logo:           p.logo          || '',
-                                socialMedia:    p.socialMedia   || null,
-                                showPhone:      p.showPhone     !== false,
-                                showEmail:      p.showEmail     !== false,
-                                showSocial:     p.showSocial    === true
+                                redesSociales:  rs,
+                                showPhone:      p.showPhone  !== false,
+                                showEmail:      p.showEmail  !== false,
+                                showSocial:     p.showSocial === true,
+                                activo:         p.activo     !== false
                             };
                         });
                         // Re-guardar con la lista completa de profesionales

@@ -1,0 +1,341 @@
+// ============ CLINIC AUTH — Login por profesional con PIN ============
+// Solo activo cuando plan === CLINIC y el workplace tiene profesionales configurados.
+// El profesional activo se guarda en memoria de sesión (window._clinicActiveProfessional)
+// NO en localStorage — se borra automáticamente al cerrar la pestaña.
+
+(function() {
+    'use strict';
+
+    // ── Estado de sesión (no persistente) ─────────────────────────────────────
+    let _activeProfessional = null;
+    let _onLoginSuccess     = null;
+    let _professionals      = [];
+    let _failedAttempts     = {}; // { [proId]: count }
+    const MAX_ATTEMPTS      = 3;
+
+    // ── API pública ───────────────────────────────────────────────────────────
+
+    function init(professionals, onLoginSuccess) {
+        _professionals  = normalizeList(professionals);
+        _onLoginSuccess = onLoginSuccess || function() {};
+
+        if (!_professionals.length) {
+            // Sin profesionales configurados → saltar autenticación
+            _onLoginSuccess(null);
+            return;
+        }
+
+        _buildModal();
+        _showModal();
+    }
+
+    function getActiveProfessional() {
+        return _activeProfessional;
+    }
+
+    // Vuelve a mostrar el modal (botón "cambiar profesional")
+    function switchProfessional() {
+        _activeProfessional = null;
+        // Recargar lista en caso de que el admin haya actualizado los datos
+        try {
+            const wp = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+            _professionals = normalizeList((wp[0] && wp[0].professionals) || []);
+        } catch (_) {
+            _professionals = [];
+        }
+        if (_professionals.length) {
+            _showModal();
+        }
+    }
+
+    // Llama a addEventListener en el botón #btnCambiarProfesional del header
+    function setupChangeProfButton() {
+        const btn = document.getElementById('btnCambiarProfesional');
+        if (!btn) return;
+        btn.addEventListener('click', function() {
+            switchProfessional();
+        });
+    }
+
+    // ── Normalización de lista ─────────────────────────────────────────────────
+    // Acepta tanto el formato antiguo (de registro antes de C4) como el nuevo (C4+)
+
+    function normalizeList(list) {
+        if (!Array.isArray(list)) return [];
+        return list
+            .filter(function(p) { return p && p.nombre; })
+            .filter(function(p) { return p.activo !== false; })
+            .map(function(p, i) {
+                // especialidades: array siempre
+                var esp = p.especialidades;
+                if (typeof esp === 'string') esp = esp ? [esp] : [];
+                if (!Array.isArray(esp))     esp = [];
+                // redesSociales: nuevo nombre; socialMedia: fallback antiguo
+                var rs = p.redesSociales || p.socialMedia || {};
+                return {
+                    id:             p.id || ('auto-' + i + '-' + Date.now()),
+                    nombre:         p.nombre        || '',
+                    matricula:      p.matricula     || '',
+                    especialidades: esp,
+                    usuario:        p.usuario       || '',
+                    pin:            String(p.pin    || '1234'),
+                    email:          p.email         || '',
+                    telefono:       p.telefono      || '',
+                    firma:          p.firma         || null,
+                    logo:           p.logo          || null,
+                    redesSociales:  rs,
+                    showPhone:      p.showPhone     !== false,
+                    showEmail:      p.showEmail     !== false,
+                    showSocial:     !!p.showSocial,
+                    activo:         true
+                };
+            });
+    }
+
+    // ── Construcción del modal (una sola vez) ─────────────────────────────────
+
+    function _buildModal() {
+        if (document.getElementById('clinicAuthOverlay')) return;
+
+        var style = document.createElement('style');
+        style.id  = 'clinicAuthStyle';
+        style.textContent = [
+            '#clinicAuthOverlay{position:fixed;inset:0;background:rgba(2,6,23,.78);z-index:9000;',
+            'display:none;align-items:center;justify-content:center;padding:20px;}',
+            '#clinicAuthBox{background:var(--bg-card,#fff);border-radius:18px;',
+            'box-shadow:0 20px 60px rgba(0,0,0,.45);padding:28px 28px 22px;',
+            'width:100%;max-width:400px;text-align:center;}',
+            '#clinicAuthClinicLogo{width:64px;height:64px;object-fit:contain;border-radius:10px;margin-bottom:10px;display:none;}',
+            '#clinicAuthTitle{font-size:1.1rem;font-weight:900;color:var(--text-primary,#0f172a);margin-bottom:4px;}',
+            '#clinicAuthSub{font-size:.83rem;color:var(--text-secondary,#64748b);margin-bottom:20px;}',
+            '.ca-label{display:block;font-size:.77rem;font-weight:700;color:var(--text-secondary,#475569);',
+            'text-align:left;margin-bottom:4px;}',
+            '#clinicAuthSelect{width:100%;padding:10px 12px;border:1.5px solid #cbd5e1;border-radius:10px;',
+            'font-size:.9rem;background:var(--bg-card,#fff);color:var(--text-primary,#0f172a);',
+            'margin-bottom:14px;cursor:pointer;}',
+            '#clinicAuthPin{width:100%;padding:12px;border:1.5px solid #cbd5e1;border-radius:10px;',
+            'font-size:1.4rem;text-align:center;letter-spacing:.4em;background:var(--bg-card,#fff);',
+            'color:var(--text-primary,#0f172a);margin-bottom:6px;box-sizing:border-box;}',
+            '#clinicAuthPin:focus{border-color:#0ea5e9;outline:none;}',
+            '#clinicAuthError{font-size:.78rem;color:#b91c1c;min-height:18px;margin-bottom:10px;font-weight:700;}',
+            '#clinicAuthEnterBtn{width:100%;padding:12px;background:#0ea5e9;color:#fff;border:none;',
+            'border-radius:10px;font-size:.95rem;font-weight:800;cursor:pointer;transition:background .15s;}',
+            '#clinicAuthEnterBtn:hover{background:#0284c7;}',
+            '#clinicAuthEnterBtn:disabled{background:#94a3b8;cursor:not-allowed;}',
+            '#clinicAuthAttempts{font-size:.72rem;color:#94a3b8;margin-top:6px;min-height:16px;}',
+            '.ca-blocked-note{font-size:.74rem;color:#b91c1c;margin-top:6px;}'
+        ].join('');
+        document.head.appendChild(style);
+
+        var overlay = document.createElement('div');
+        overlay.id  = 'clinicAuthOverlay';
+        overlay.innerHTML = [
+            '<div id="clinicAuthBox">',
+            '  <img id="clinicAuthClinicLogo" src="" alt="Logo clínica">',
+            '  <div id="clinicAuthTitle">👨‍⚕️ Seleccioná tu perfil</div>',
+            '  <div id="clinicAuthSub">Identificate para continuar</div>',
+            '  <label class="ca-label" for="clinicAuthSelect">Profesional</label>',
+            '  <select id="clinicAuthSelect"></select>',
+            '  <label class="ca-label" for="clinicAuthPin">PIN de acceso</label>',
+            '  <input id="clinicAuthPin" type="password" maxlength="4" placeholder="• • • •" autocomplete="off" inputmode="numeric">',
+            '  <div id="clinicAuthError"></div>',
+            '  <button id="clinicAuthEnterBtn">Ingresar →</button>',
+            '  <div id="clinicAuthAttempts"></div>',
+            '</div>'
+        ].join('');
+        document.body.appendChild(overlay);
+
+        // Enter key en input PIN
+        document.getElementById('clinicAuthPin').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') _attemptLogin();
+        });
+
+        // Click en botón
+        document.getElementById('clinicAuthEnterBtn').addEventListener('click', _attemptLogin);
+
+        // Al cambiar profesional: actualizar estado del botón según intentos
+        document.getElementById('clinicAuthSelect').addEventListener('change', function() {
+            _refreshBlockState();
+        });
+    }
+
+    function _showModal() {
+        var overlay = document.getElementById('clinicAuthOverlay');
+        if (!overlay) return;
+
+        // Poblar dropdown
+        var select = document.getElementById('clinicAuthSelect');
+        select.innerHTML = _professionals.map(function(p, i) {
+            var label = p.usuario
+                ? (_esc(p.usuario) + (p.nombre ? ' — ' + _esc(p.nombre) : ''))
+                : _esc(p.nombre || ('Profesional ' + (i + 1)));
+            return '<option value="' + i + '">' + label + '</option>';
+        }).join('');
+
+        // Nombre de la clínica como subtítulo
+        try {
+            var pd = JSON.parse(localStorage.getItem('prof_data') || '{}');
+            var clinicName = pd.workplace || pd.nombre || '';
+            var subEl = document.getElementById('clinicAuthSub');
+            if (subEl && clinicName) subEl.textContent = clinicName;
+        } catch (_) {}
+
+        // Logo de la clínica (si está guardado en prof_data o pdf_logo sería del profesional, no de la clínica)
+        try {
+            var wpString = localStorage.getItem('workplace_profiles') || '[]';
+            var wpArr = JSON.parse(wpString);
+            var clinicLogo = wpArr[0] && wpArr[0].logo;
+            var clinicLogoEl = document.getElementById('clinicAuthClinicLogo');
+            if (clinicLogo && clinicLogoEl) {
+                clinicLogoEl.src = clinicLogo;
+                clinicLogoEl.style.display = '';
+            }
+        } catch (_) {}
+
+        // Limpiar estado
+        document.getElementById('clinicAuthPin').value   = '';
+        document.getElementById('clinicAuthError').textContent   = '';
+        document.getElementById('clinicAuthAttempts').textContent = '';
+        _refreshBlockState();
+
+        overlay.style.display = 'flex';
+        setTimeout(function() {
+            var pin = document.getElementById('clinicAuthPin');
+            if (pin) pin.focus();
+        }, 150);
+    }
+
+    function _refreshBlockState() {
+        var select   = document.getElementById('clinicAuthSelect');
+        var enterBtn = document.getElementById('clinicAuthEnterBtn');
+        var attEl    = document.getElementById('clinicAuthAttempts');
+        var errEl    = document.getElementById('clinicAuthError');
+        if (!select || !enterBtn) return;
+
+        var idx    = Number(select.value);
+        var pro    = _professionals[idx];
+        if (!pro) return;
+        var proId   = pro.id;
+        var blocked = (_failedAttempts[proId] || 0) >= MAX_ATTEMPTS;
+
+        enterBtn.disabled = blocked;
+        if (blocked) {
+            if (errEl) errEl.textContent = 'Este profesional está bloqueado por esta sesión.';
+            if (attEl) attEl.textContent = 'Contactá al administrador de la clínica para resetear el PIN.';
+        } else {
+            if (errEl) errEl.textContent = '';
+            var rem = MAX_ATTEMPTS - (_failedAttempts[proId] || 0);
+            if (attEl) attEl.textContent = rem < MAX_ATTEMPTS
+                ? (rem + ' intento' + (rem === 1 ? '' : 's') + ' restante' + (rem === 1 ? '' : 's') + '.')
+                : '';
+        }
+    }
+
+    function _attemptLogin() {
+        var select   = document.getElementById('clinicAuthSelect');
+        var pinInput = document.getElementById('clinicAuthPin');
+        var errorEl  = document.getElementById('clinicAuthError');
+        var attEl    = document.getElementById('clinicAuthAttempts');
+        var enterBtn = document.getElementById('clinicAuthEnterBtn');
+        if (!select || !pinInput) return;
+
+        var idx     = Number(select.value);
+        var pro     = _professionals[idx];
+        if (!pro) return;
+
+        var proId   = pro.id;
+        var entered = String(pinInput.value || '').trim();
+
+        if (!entered) {
+            errorEl.textContent = 'Ingresá tu PIN de acceso.';
+            pinInput.focus();
+            return;
+        }
+
+        // Verificar bloqueo
+        if ((_failedAttempts[proId] || 0) >= MAX_ATTEMPTS) {
+            errorEl.textContent = 'Profesional bloqueado. Cambiá de selección o contactá al administrador.';
+            enterBtn.disabled = true;
+            return;
+        }
+
+        var correctPin = String(pro.pin || '1234');
+
+        if (entered === correctPin) {
+            // ── LOGIN EXITOSO ──────────────────────────────────────────────
+            _failedAttempts[proId] = 0;
+            _activeProfessional    = Object.assign({}, pro);
+            errorEl.textContent    = '';
+            attEl.textContent      = '';
+
+            // Actualizar pdf_config con el profesional activo
+            _syncPdfConfig(pro, idx);
+
+            // Ocultar modal
+            var overlay = document.getElementById('clinicAuthOverlay');
+            if (overlay) overlay.style.display = 'none';
+
+            // Mostrar botón "cambiar profesional" en el header
+            var btnCambiar = document.getElementById('btnCambiarProfesional');
+            if (btnCambiar) btnCambiar.style.display = '';
+
+            // Toast de bienvenida
+            if (typeof showToast === 'function') {
+                showToast('👋 Bienvenido/a, ' + (pro.nombre || pro.usuario || 'Profesional'), 'success');
+            }
+
+            if (typeof _onLoginSuccess === 'function') {
+                _onLoginSuccess(_activeProfessional);
+            }
+        } else {
+            // ── FALLO ─────────────────────────────────────────────────────
+            _failedAttempts[proId] = (_failedAttempts[proId] || 0) + 1;
+            pinInput.value = '';
+            pinInput.focus();
+
+            var remaining = MAX_ATTEMPTS - _failedAttempts[proId];
+            if (remaining <= 0) {
+                errorEl.textContent = 'PIN incorrecto. Profesional bloqueado por esta sesión.';
+                enterBtn.disabled   = true;
+                attEl.textContent   = 'Contactá al administrador de la clínica para resetear el PIN.';
+            } else {
+                errorEl.textContent = 'PIN incorrecto.';
+                attEl.textContent   = remaining + ' intento' + (remaining === 1 ? '' : 's') + ' restante' + (remaining === 1 ? '' : 's') + '.';
+            }
+        }
+    }
+
+    // Sincroniza el profesional seleccionado con pdf_config
+    function _syncPdfConfig(pro, dropdownIdx) {
+        try {
+            var wp      = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+            var allPros = (wp[0] && wp[0].professionals) || [];
+            var realIdx = allPros.findIndex(function(p) {
+                return p && p.id && p.id === pro.id;
+            });
+            if (realIdx < 0) realIdx = dropdownIdx;
+
+            var cfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+            cfg.activeProfessional      = pro;
+            cfg.activeProfessionalIndex = String(realIdx);
+            cfg.pdfProfessional         = String(realIdx);
+            localStorage.setItem('pdf_config', JSON.stringify(cfg));
+            window._pdfConfigCache = cfg;
+        } catch (_) {}
+    }
+
+    function _esc(str) {
+        return String(str || '').replace(/[&<>"']/g, function(ch) {
+            return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+        });
+    }
+
+    // ── Exportar API ──────────────────────────────────────────────────────────
+    window.ClinicAuth = {
+        init:                  init,
+        getActiveProfessional: getActiveProfessional,
+        switchProfessional:    switchProfessional,
+        setupChangeProfButton: setupChangeProfButton,
+        _normalizeList:        normalizeList  // expuesto para tests
+    };
+})();

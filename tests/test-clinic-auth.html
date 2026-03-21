@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Test C5 — ClinicAuth (login profesional por PIN)</title>
+<style>
+  body{font-family:system-ui,sans-serif;padding:18px;background:#f1f5f9;color:#0f172a;}
+  h1{font-size:1.1rem;margin-bottom:14px;}
+  .suite{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:12px;}
+  .suite h2{font-size:.9rem;font-weight:800;margin:0 0 10px;}
+  .t{display:flex;align-items:center;gap:8px;font-size:.83rem;padding:4px 0;border-bottom:1px solid #f1f5f9;}
+  .t:last-child{border-bottom:none;}
+  .badge{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:999px;}
+  .pass{background:#dcfce7;color:#166534;}
+  .fail{background:#fef2f2;color:#b91c1c;}
+  #summary{font-size:.88rem;font-weight:700;margin-top:10px;padding:10px;border-radius:8px;background:#fff;}
+</style>
+</head>
+<body>
+<h1>🧪 Test Suite C5 — ClinicAuth (login profesional CLINIC)</h1>
+
+<!-- Botón de cambiar profesional stub en el header -->
+<button id="btnCambiarProfesional" style="display:none;">Cambiar profesional</button>
+
+<!-- Cargar el módulo real -->
+<script src="../src/js/features/clinicAuth.js"></script>
+
+<script>
+// ──────────────────────────────────────────────────────────────────────────────
+// Stubs de entorno
+// ──────────────────────────────────────────────────────────────────────────────
+var toastLog = [];
+window.showToast = function(msg, type) { toastLog.push({ msg, type }); };
+
+// Simular localStorage con wp profiles para switchProfessional
+var WP_PROFILES = [{
+    name: 'Clínica San Lucas',
+    professionals: [
+        { id: 'p1', nombre: 'Dr. Juan Pérez', usuario: 'jperez', pin: '4321',
+          especialidades: ['Cardiología'], activo: true,
+          email: 'jperez@clinica.com', matricula: 'MN-1', telefono: '', firma: null, logo: null,
+          redesSociales: {}, showPhone: true, showEmail: true, showSocial: false },
+        { id: 'p2', nombre: 'Dra. Ana García', usuario: 'agarcia', pin: '1234',
+          especialidades: ['Radiología'], activo: true,
+          email: '', matricula: 'MN-2', telefono: '', firma: null, logo: null,
+          redesSociales: {}, showPhone: true, showEmail: true, showSocial: false },
+        { id: 'p3', nombre: 'Dr. Pedro López', usuario: 'plopez', pin: '5678',
+          especialidades: ['Neurología'], activo: false,  // INACTIVO
+          email: '', matricula: 'MN-3', telefono: '', firma: null, logo: null,
+          redesSociales: {}, showPhone: true, showEmail: true, showSocial: false }
+    ]
+}];
+localStorage.setItem('workplace_profiles', JSON.stringify(WP_PROFILES));
+localStorage.setItem('prof_data', JSON.stringify({ workplace: 'Clínica San Lucas' }));
+localStorage.setItem('pdf_config', JSON.stringify({ pdfWorkplace: '0', pdfProfessional: '0' }));
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Helpers de test
+// ──────────────────────────────────────────────────────────────────────────────
+var passed = 0, failed = 0;
+var results = [];
+
+function assert(desc, fn) {
+    try {
+        var ok = fn();
+        if (ok) { passed++; results.push({ desc, status: 'pass', msg: '' }); }
+        else    { failed++; results.push({ desc, status: 'fail', msg: 'returned falsy' }); }
+    } catch(e) { failed++; results.push({ desc, status: 'fail', msg: e.message }); }
+}
+
+function $ (sel) { return document.querySelector(sel); }
+function $$(sel) { return Array.from(document.querySelectorAll(sel)); }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 1 — _normalizeList (compatibilidad de formatos)
+// ──────────────────────────────────────────────────────────────────────────────
+var normalized = window.ClinicAuth._normalizeList(WP_PROFILES[0].professionals);
+
+assert('_normalizeList filtra profesionales inactivos', function() {
+    return normalized.length === 2; // p3 está inactivo
+});
+assert('_normalizeList normaliza especialidades a array (si ya es array)', function() {
+    return Array.isArray(normalized[0].especialidades) && normalized[0].especialidades[0] === 'Cardiología';
+});
+assert('_normalizeList normaliza especialidad string → array', function() {
+    var old = [{ id:'x', nombre:'Dr. Test', especialidad: 'Cardiología', activo: true, pin: '1234' }];
+    var n = window.ClinicAuth._normalizeList(old);
+    return Array.isArray(n[0].especialidades) && n[0].especialidades[0] === 'Cardiología';
+});
+assert('_normalizeList genera id si falta', function() {
+    var noId = [{ nombre:'Dr. NoID', pin:'1234', activo: true }];
+    var n = window.ClinicAuth._normalizeList(noId);
+    return typeof n[0].id === 'string' && n[0].id.length > 0;
+});
+assert('_normalizeList pin default "1234" si falta', function() {
+    var noPin = [{ id: 'q1', nombre: 'Sin PIN', activo: true }];
+    var n = window.ClinicAuth._normalizeList(noPin);
+    return n[0].pin === '1234';
+});
+assert('_normalizeList excluye entradas sin nombre', function() {
+    var list = [{ id:'z1', activo:true }, { id:'z2', nombre:'Dr. OK', activo:true }];
+    var n = window.ClinicAuth._normalizeList(list);
+    return n.length === 1;
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 2 — init() sin profesionales → callback inmediato
+// ──────────────────────────────────────────────────────────────────────────────
+var callbackFired = false;
+window.ClinicAuth.init([], function() { callbackFired = true; });
+
+assert('init([]) dispara onLoginSuccess inmediatamente', function() {
+    return callbackFired === true;
+});
+assert('init([]) NO crea el overlay', function() {
+    return !document.getElementById('clinicAuthOverlay');
+});
+assert('getActiveProfessional() = null tras init vacío', function() {
+    return window.ClinicAuth.getActiveProfessional() === null;
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 3 — init() con profesionales → crea modal y lo muestra
+// ──────────────────────────────────────────────────────────────────────────────
+var loginCallbackFired = false;
+var loginCallbackArg   = undefined;
+window.ClinicAuth.init(WP_PROFILES[0].professionals, function(pro) {
+    loginCallbackFired = true;
+    loginCallbackArg   = pro;
+});
+
+assert('init() con profesionales crea overlay', function() {
+    return !!document.getElementById('clinicAuthOverlay');
+});
+assert('Overlay visible (display:flex) tras init', function() {
+    var ov = document.getElementById('clinicAuthOverlay');
+    return ov && ov.style.display === 'flex';
+});
+assert('Dropdown tiene 2 opciones (solo activos)', function() {
+    var sel = document.getElementById('clinicAuthSelect');
+    return sel && sel.options.length === 2;
+});
+assert('Input PIN existe', function() {
+    return !!document.getElementById('clinicAuthPin');
+});
+assert('Botón Ingresar existe', function() {
+    return !!document.getElementById('clinicAuthEnterBtn');
+});
+assert('Subtítulo muestra nombre de la clínica', function() {
+    var sub = document.getElementById('clinicAuthSub');
+    return sub && sub.textContent.includes('Clínica San Lucas');
+});
+assert('Error label vacío al inicio', function() {
+    var err = document.getElementById('clinicAuthError');
+    return err && err.textContent === '';
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 4 — Validación de PIN vacío
+// ──────────────────────────────────────────────────────────────────────────────
+document.getElementById('clinicAuthPin').value = '';
+document.getElementById('clinicAuthEnterBtn').click();
+
+assert('PIN vacío → muestra error (no cierra modal)', function() {
+    var err = document.getElementById('clinicAuthError');
+    var ov  = document.getElementById('clinicAuthOverlay');
+    return err && err.textContent !== '' && ov.style.display === 'flex';
+});
+assert('Callback NO disparado tras PIN vacío', function() {
+    return loginCallbackFired === false;
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 5 — PIN incorrecto y conteo de intentos
+// ──────────────────────────────────────────────────────────────────────────────
+// Pro 0 es jperez con PIN 4321
+document.getElementById('clinicAuthSelect').value = '0';
+document.getElementById('clinicAuthPin').value   = '9999'; // incorrecto
+document.getElementById('clinicAuthEnterBtn').click();
+
+assert('PIN incorrecto → error visible', function() {
+    var err = document.getElementById('clinicAuthError');
+    return err && err.textContent.includes('incorrecto');
+});
+assert('Primer intento fallido → 2 restantes', function() {
+    var att = document.getElementById('clinicAuthAttempts');
+    return att && att.textContent.includes('2');
+});
+assert('Modal sigue abierto tras PIN incorrecto', function() {
+    return document.getElementById('clinicAuthOverlay').style.display === 'flex';
+});
+
+// Segundo intento incorrecto
+document.getElementById('clinicAuthPin').value = '8888';
+document.getElementById('clinicAuthEnterBtn').click();
+assert('Segundo intento fallido → 1 restante', function() {
+    var att = document.getElementById('clinicAuthAttempts');
+    return att && att.textContent.includes('1');
+});
+
+// Tercer intento incorrecto → bloqueo
+document.getElementById('clinicAuthPin').value = '7777';
+document.getElementById('clinicAuthEnterBtn').click();
+assert('3 intentos fallidos → botón deshabilitado', function() {
+    return document.getElementById('clinicAuthEnterBtn').disabled === true;
+});
+assert('3 intentos fallidos → mensaje de bloqueo visible', function() {
+    var err = document.getElementById('clinicAuthError');
+    return err && (err.textContent.includes('bloqueado') || err.textContent.includes('Bloqueado'));
+});
+assert('Callback NOT disparado tras bloqueo', function() {
+    return loginCallbackFired === false;
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 6 — Cambiar a otro profesional desbloquea el botón
+// ──────────────────────────────────────────────────────────────────────────────
+// Cambiar al segundo profesional (agarcia, no bloqueado)
+document.getElementById('clinicAuthSelect').value = '1';
+document.getElementById('clinicAuthSelect').dispatchEvent(new Event('change'));
+
+assert('Cambiar a profesional no bloqueado habilita el botón', function() {
+    return document.getElementById('clinicAuthEnterBtn').disabled === false;
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 7 — PIN correcto → login exitoso
+// ──────────────────────────────────────────────────────────────────────────────
+toastLog = [];
+// Pro 1 es agarcia con PIN 1234
+document.getElementById('clinicAuthPin').value = '1234';
+document.getElementById('clinicAuthEnterBtn').click();
+
+assert('PIN correcto → callback disparado', function() {
+    return loginCallbackFired === true;
+});
+assert('PIN correcto → argumento callback es el profesional', function() {
+    return loginCallbackArg && loginCallbackArg.nombre === 'Dra. Ana García';
+});
+assert('PIN correcto → getActiveProfessional() retorna el profesional', function() {
+    var ap = window.ClinicAuth.getActiveProfessional();
+    return ap && ap.nombre === 'Dra. Ana García';
+});
+assert('PIN correcto → modal se oculta', function() {
+    var ov = document.getElementById('clinicAuthOverlay');
+    return ov && ov.style.display !== 'flex';
+});
+assert('PIN correcto → botón cambiarProfesional visible', function() {
+    var btn = document.getElementById('btnCambiarProfesional');
+    return btn && btn.style.display !== 'none';
+});
+assert('PIN correcto → toast de bienvenida emitido', function() {
+    return toastLog.length > 0 && toastLog[toastLog.length - 1].msg.includes('Ana');
+});
+assert('PIN correcto → pdf_config actualizado con activeProfessional', function() {
+    var cfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+    return cfg.activeProfessional && cfg.activeProfessional.nombre === 'Dra. Ana García';
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 8 — switchProfessional() vuelve a mostrar el modal
+// ──────────────────────────────────────────────────────────────────────────────
+window.ClinicAuth.switchProfessional();
+
+assert('switchProfessional() limpia activeProfessional', function() {
+    return window.ClinicAuth.getActiveProfessional() === null;
+});
+assert('switchProfessional() vuelve a mostrar el overlay', function() {
+    var ov = document.getElementById('clinicAuthOverlay');
+    return ov && ov.style.display === 'flex';
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 9 — setupChangeProfButton crea listener
+// ──────────────────────────────────────────────────────────────────────────────
+// Primero hacer login para ocultar modal
+document.getElementById('clinicAuthSelect').value = '1';
+document.getElementById('clinicAuthPin').value = '1234';
+document.getElementById('clinicAuthEnterBtn').click();
+assert('Setup: login limpia modal', function() {
+    return document.getElementById('clinicAuthOverlay').style.display !== 'flex';
+});
+
+window.ClinicAuth.setupChangeProfButton();
+document.getElementById('btnCambiarProfesional').click();
+
+assert('Click en btnCambiarProfesional re-abre el modal', function() {
+    var ov = document.getElementById('clinicAuthOverlay');
+    return ov && ov.style.display === 'flex';
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Render resultados
+// ──────────────────────────────────────────────────────────────────────────────
+var container = document.getElementById('testResults');
+var suiteGroups = {
+    '_normalizeList — compatibilidad': results.slice(0, 6),
+    'init([]) sin profesionales': results.slice(6, 9),
+    'init() con profesionales → modal': results.slice(9, 16),
+    'Validación PIN vacío': results.slice(16, 18),
+    'PIN incorrecto + conteo intentos': results.slice(18, 25),
+    'Cambiar profesional desbloquea': results.slice(25, 26),
+    'Login exitoso (PIN correcto)': results.slice(26, 33),
+    'switchProfessional()': results.slice(33, 35),
+    'setupChangeProfButton()': results.slice(35)
+};
+
+var html = '';
+Object.keys(suiteGroups).forEach(function(suiteName) {
+    var items = suiteGroups[suiteName];
+    html += '<div class="suite"><h2>' + suiteName + '</h2>';
+    items.forEach(function(r) {
+        html += '<div class="t"><span class="badge ' + r.status + '">' + r.status.toUpperCase() + '</span> ' + r.desc;
+        if (r.msg) html += ' <small style="color:#64748b;">(' + r.msg + ')</small>';
+        html += '</div>';
+    });
+    html += '</div>';
+});
+
+container.innerHTML = html;
+
+var total = passed + failed;
+var sumEl = document.getElementById('summary');
+sumEl.style.borderLeft = '4px solid ' + (failed ? '#ef4444' : '#22c55e');
+sumEl.textContent = '✅ ' + passed + ' pasados   ❌ ' + failed + ' fallidos   (total: ' + total + ')';
+
+console.log('TEST RESULT:', passed + '/' + total, failed ? 'FAILED' : 'OK');
+</script>
+
+<div id="testResults"></div>
+<div id="summary"></div>
+</body>
+</html>
