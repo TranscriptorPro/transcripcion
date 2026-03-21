@@ -199,7 +199,7 @@ REGLA DE ORO: si el texto original no contiene datos de una estructura → el in
 9. NUNCA elimines, omitas ni fusiones secciones de la plantilla. Mantén TODAS las secciones ##, incluso si no tienen contenido (en ese caso usa [No especificado]). El usuario decide qué hacer con cada sección vacía.
 
 >>> ESTUDIOS MULTI-ESTRUCTURA >>>
-10. En estudios multi-órgano/multi-segmento (ecografía, colonoscopía, Doppler, laringoscopía, etc.): una sección ## por CADA estructura evaluada. Si una estructura fue evaluada y es normal → describir brevemente o indicar s/p. Si NO fue evaluada → marcar con [No especificado]. Si la transcripción contiene datos que no encajan en las secciones propuestas → crear subsección adicional.
+10. En estudios multi-órgano/multi-segmento (ecografía, colonoscopía, Doppler, laringoscopía, etc.): una sección ## por CADA estructura evaluada. Si una estructura fue evaluada y es normal → escribir ÚNICAMENTE 's/p'. PROHIBIDO describir la normalidad en prosa para estos estudios; la única expresión válida para hallazgo normal es 's/p'. Si NO fue evaluada → marcar con [No especificado]. Si la transcripción contiene datos que no encajan en las secciones propuestas → crear subsección adicional.
 
 >>> CONCLUSIÓN >>>
 11. CONCLUSIÓN — REGLA INAMOVIBLE DE MÁS ALTA PRIORIDAD:

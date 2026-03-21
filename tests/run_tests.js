@@ -1088,6 +1088,21 @@ test('A2 — colonoscopia tiene formato por segmento', () => {
         'Prompt de colonoscopia debe mencionar formato por segmento/porción');
 });
 
+test('A1 — structurer.js regla10 prohíbe describir brevemente, exige solo s/p', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/structurer.js'), 'utf-8');
+    assert(code.includes('escribir ÚNICAMENTE') && code.includes('s/p'),
+        'Regla 10 debe exigir exclusivamente s/p para estructuras normales');
+    assert(!code.includes('describir brevemente o indicar s/p'),
+        'Regla 10 no debe tener la opción "describir brevemente o indicar s/p"');
+});
+
+test('A1 — cinecoro tiene formato por vaso con s/p', () => {
+    const t = window.MEDICAL_TEMPLATES['cinecoro'];
+    assert(t, 'cinecoro debe existir');
+    assert(t.prompt.includes('s/p'), 'Prompt cinecoro debe tener s/p');
+    assert(t.prompt.includes('CONCLUSIÓN'), 'Prompt cinecoro debe tener sección CONCLUSIÓN');
+});
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // BLOQUE 15: B1/C1/C2 — Modal edición de campo + nombre + dejar en blanco
 // ═══════════════════════════════════════════════════════════════════════════════
