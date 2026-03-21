@@ -49,6 +49,16 @@
         (typeof CLIENT_CONFIG !== 'undefined'
             && (CLIENT_CONFIG.type === 'PRO' || CLIENT_CONFIG.type === 'ADMIN'));
 
+    // Early-init: ensure the flag is set before any decoration runs
+    if (typeof window.inlineParagraphReviewEnabled !== 'boolean') {
+        try {
+            const _p = JSON.parse(localStorage.getItem('settings_prefs') || '{}');
+            window.inlineParagraphReviewEnabled = _p.inlineParagraphReview === true;
+        } catch (_) {
+            window.inlineParagraphReviewEnabled = false;
+        }
+    }
+
     function _getFieldHistory() {
         if (_fldHistCache !== null) return _fldHistCache;
         try { return JSON.parse(localStorage.getItem(_FIELD_HISTORY_KEY)) || {}; } catch (_) { return {}; }
@@ -148,6 +158,9 @@
 
     function _isInlineReviewEnabled() {
         if (!_hasInlineReviewPlan()) return false;
+        // Check the visible toggle as ultimate source of truth
+        const toggle = document.getElementById('inlineReviewQuickToggle');
+        if (toggle) return toggle.checked;
         if (typeof window.inlineParagraphReviewEnabled === 'boolean') return window.inlineParagraphReviewEnabled;
         try {
             const prefs = JSON.parse(localStorage.getItem('settings_prefs') || '{}');
