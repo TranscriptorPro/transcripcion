@@ -1133,6 +1133,14 @@ test('P8 — holter tiene REGLA DE CONCLUSIÓN estricta', () => {
         'Holter debe incluir sección de pausas');
 });
 
+test('P8 — fondo_ojo tiene secciones OD y OI (bilateral)', () => {
+    const t = window.MEDICAL_TEMPLATES['fondo_ojo'];
+    assert(t, 'fondo_ojo debe existir');
+    assert(t.prompt.includes('OD') && t.prompt.includes('OI'),
+        'fondo_ojo debe tener secciones para OD y OI');
+    assert(t.prompt.includes('CONCLUSIÓN'), 'fondo_ojo debe tener CONCLUSIÓN');
+});
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // BLOQUE 15: B1/C1/C2 — Modal edición de campo + nombre + dejar en blanco
 // ═══════════════════════════════════════════════════════════════════════════════

@@ -178,26 +178,43 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
         name: "Fondo de Ojo",
         category: "Oftalmología",
         keywords: ["fondo de ojo", "retinografía", "papila", "mácula", "vasos retinianos", "vítreo"],
-        prompt: `Actúa como oftalmólogo especializado. Estructura este informe de fondo de ojo:
+        prompt: `Actúa como oftalmólogo especializado. Estructura este informe de fondo de ojo con separación por ojo:
 
 # INFORME DE FONDO DE OJO (RETINOGRAFÍA)
 
-## PAPILA ÓPTICA
-Forma, bordes, relación E/P (excavación/papila), coloración.
+## OJO DERECHO (OD)
 
-## MÁCULA
-Brillo foveal, presencia de alteraciones maculares.
+### PAPILA ÓPTICA
+Forma, bordes, relación excavación/papila (E/P), coloración, o s/p.
 
-## VASOS RETINIANOS
-Calibre arterial/venoso, relación AV, cruces arteriovenosos, alteraciones.
+### MÁCULA
+Brillo foveal, alteraciones maculares (drusen, exudados, hemorragias, atrofia, etc.), o s/p.
 
-## PERIFERIA RETINAL
-Descripción de hallazgos periféricos.
+### VASOS RETINIANOS
+Calibre arterial/venoso, relación AV, cruces arteriovenosos, alteraciones vasculares, o s/p.
+
+### PERIFERIA RETINAL
+Hallazgos periféricos (desgarros, lesiones, retinosquisis, etc.), o s/p.
+
+## OJO IZQUIERDO (OI)
+
+### PAPILA ÓPTICA
+Forma, bordes, relación E/P, coloración, o s/p.
+
+### MÁCULA
+Brillo foveal, alteraciones maculares, o s/p.
+
+### VASOS RETINIANOS
+Calibre, relación AV, cruces, alteraciones, o s/p.
+
+### PERIFERIA RETINAL
+Hallazgos periféricos, o s/p.
 
 ## CONCLUSIÓN
-Diagnóstico y recomendaciones.
+Mencionar SOLO los hallazgos positivos o patológicos, discriminados por ojo cuando sean asimétricos. Si ambos ojos son normales, escribir exactamente: "Fondo de ojo bilateral dentro de parámetros normales."
 
-IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
+REGLA DE CONCLUSIÓN: Incluir TODOS los hallazgos patológicos dictados. PROHIBIDO: inventar hallazgos no dictados. PROHIBIDO: indicar tratamientos si el médico no los mencionó.
+IMPORTANTE: Si solo se evaluó un ojo, omitir la sección del otro o marcar con [No especificado]. No inventes datos.`
     },
     gonioscopia: {
         name: "Gonioscopía",
