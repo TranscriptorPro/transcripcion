@@ -1334,11 +1334,11 @@
         }
 
         /* Tablas: columnas uniformes con table-layout fixed */
-        #editor table[border] {
+        #editor table {
             table-layout: fixed;
         }
-        #editor table[border] td,
-        #editor table[border] th {
+        #editor table td,
+        #editor table th {
             overflow-wrap: break-word;
             word-wrap: break-word;
         }
@@ -1856,11 +1856,9 @@
             line-height: 1.4;
         }
 
-        /* RM-2: Contención de tablas para evitar desborde horizontal */
+        /* RM-2: Tablas limpias sin contenedor visual */
         #editor table {
             max-width: 100%;
-            display: block;
-            overflow-x: auto;
             border-collapse: collapse;
             margin: 0.5rem 0;
         }

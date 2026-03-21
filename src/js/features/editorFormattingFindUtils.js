@@ -317,8 +317,9 @@
 
         function _insertTableFromGrid(nRows, nCols) {
             var table = document.createElement('table');
-            table.setAttribute('border', '1');
-            table.style.cssText = 'border-collapse:collapse;width:100%;margin:1rem 0;table-layout:fixed;';
+            var edW = editor ? editor.clientWidth - 16 : 780;
+            var tableW = Math.min(nCols * 120, edW);
+            table.style.cssText = 'border-collapse:collapse;width:' + tableW + 'px;margin:0.5rem 0;table-layout:fixed;';
             var colW = (100 / nCols).toFixed(2) + '%';
             for (var i = 0; i < nRows; i++) {
                 var tr = table.insertRow();
@@ -723,8 +724,6 @@
             var r = table.getBoundingClientRect();
             // Must be within the table bounds
             if (x < r.left || x > r.right || y < r.top || y > r.bottom) return null;
-            // On touch devices, allow selecting table by tapping anywhere in table area.
-            if (IS_TOUCH_DEVICE) return table;
             // Near outer edges?
             if (x - r.left < TABLE_BORDER_ZONE || r.right - x < TABLE_BORDER_ZONE ||
                 y - r.top < TABLE_BORDER_ZONE || r.bottom - y < TABLE_BORDER_ZONE) {
@@ -738,14 +737,6 @@
             var imgWrap = ev.target && ev.target.closest ? ev.target.closest('.editor-img-wrap.editor-shape') : null;
             if (imgWrap && editor.contains(imgWrap)) {
                 selectShape(imgWrap);
-                return;
-            }
-            // Small-screen fallback: selecting table on tap/click should always work.
-            if (window.innerWidth <= 900) {
-                var tbl = ev.target && ev.target.closest ? ev.target.closest('table') : null;
-                if (tbl && editor.contains(tbl)) {
-                    selectShape(tbl);
-                }
             }
         }, true);
 
@@ -833,28 +824,6 @@
                 shape.style.cursor = 'grabbing';
                 editor.style.userSelect = 'none';
                 return;
-            }
-
-            // Small-screen fallback: clicking/tapping any table area selects table.
-            if (window.innerWidth <= 900) {
-                var mobileTableSel = ev.target && ev.target.closest ? ev.target.closest('table') : null;
-                if (mobileTableSel && editor.contains(mobileTableSel)) {
-                    ev.preventDefault();
-                    ev.stopPropagation();
-                    selectShape(mobileTableSel);
-                    var tdm = getElementMargins(mobileTableSel);
-                    interaction = {
-                        mode: 'drag',
-                        el: mobileTableSel,
-                        startX: p.x, startY: p.y,
-                        origLeft: tdm.left,
-                        origTop: tdm.top,
-                        moved: false
-                    };
-                    mobileTableSel.style.cursor = 'grabbing';
-                    editor.style.userSelect = 'none';
-                    return;
-                }
             }
 
             // Check for table border click → select table
@@ -994,9 +963,25 @@
             return true;
         };
 
+        // Expose selectShape for E2E testing + external integrations
+        window._selectShape = function(el) { selectShape(el); return activeShape ? activeShape.tagName : null; };
+
         var TOUCH_RESIZE_THRESHOLD = 6; // px: avoid accidental resize on tap
+        // Long-press state for tables (touch only)
+        var _tableLongPressTimer = null;
+        var _tableLongPressEl = null;
+        var _tableLongPressStart = null;
+        window._cancelTableLongPress = function() {
+            if (_tableLongPressTimer) {
+                clearTimeout(_tableLongPressTimer);
+                _tableLongPressTimer = null;
+                _tableLongPressEl = null;
+                _tableLongPressStart = null;
+            }
+        };
         // Touch support
         document.addEventListener('touchstart', function(ev) {
+            window._cancelTableLongPress();
             var p = ppos(ev);
             var handleHit = findHandleAtPoint(p.x, p.y, 12);
             if (handleHit && activeShape) {
@@ -1021,40 +1006,74 @@
 
             var shape = isShapeEl(ev.target);
             if (!shape) {
+                // If the already-selected table was touched → drag it
+                if (activeShape && activeShape.tagName === 'TABLE' && activeShape.contains(ev.target)) {
+                    ev.preventDefault();
+                    var stm = getElementMargins(activeShape);
+                    interaction = {
+                        mode: 'drag', el: activeShape,
+                        startX: p.x, startY: p.y,
+                        origLeft: stm.left, origTop: stm.top,
+                        moved: false
+                    };
+                    editor.style.userSelect = 'none';
+                    return;
+                }
                 if (activeShape && !shouldKeepShapeSelection(ev.target)) {
                     deselectShape();
                 }
                 if (!editor.contains(ev.target)) return;
-                if (window.innerWidth <= 900) {
-                    var mobileTableSel = ev.target && ev.target.closest ? ev.target.closest('table') : null;
-                    if (mobileTableSel && editor.contains(mobileTableSel)) {
-                        shape = mobileTableSel;
-                    }
-                }
             }
-            if (!shape) {
-                // Check table border
-                shape = isTableBorderClick(ev.target, p.x, p.y);
+            // Check HR near touch point
+            if (!shape) shape = findHRNearPoint(p.x, p.y);
+            // For images and HR: select immediately
+            if (shape) {
+                ev.preventDefault();
+                selectShape(shape);
+                var sm = getElementMargins(shape);
+                interaction = {
+                    mode: 'drag', el: shape,
+                    startX: p.x, startY: p.y,
+                    origLeft: sm.left, origTop: sm.top,
+                    moved: false
+                };
+                shape.style.cursor = 'grab';
+                editor.style.userSelect = 'none';
+                return;
             }
-            if (!shape) {
-                // Check HR line near touch point
-                shape = findHRNearPoint(p.x, p.y);
+            // Table: long-press to select (don't block cell editing / cell resize)
+            var touchedTable = ev.target.closest ? ev.target.closest('table') : null;
+            if (touchedTable && editor.contains(touchedTable)) {
+                _tableLongPressEl = touchedTable;
+                _tableLongPressStart = { x: p.x, y: p.y };
+                _tableLongPressTimer = setTimeout(function() {
+                    if (!_tableLongPressEl) return;
+                    selectShape(_tableLongPressEl);
+                    var lm = getElementMargins(_tableLongPressEl);
+                    interaction = {
+                        mode: 'drag', el: _tableLongPressEl,
+                        startX: _tableLongPressStart.x,
+                        startY: _tableLongPressStart.y,
+                        origLeft: lm.left, origTop: lm.top,
+                        moved: false
+                    };
+                    editor.style.userSelect = 'none';
+                    if (navigator.vibrate) navigator.vibrate(25);
+                    _tableLongPressTimer = null;
+                    _tableLongPressEl = null;
+                    _tableLongPressStart = null;
+                }, 500);
+                return; // Don't preventDefault — allow cell editing & cell resize
             }
-            if (!shape) return;
-            ev.preventDefault();
-            selectShape(shape);
-            var sm = getElementMargins(shape);
-            interaction = {
-                mode: 'drag', el: shape,
-                startX: p.x, startY: p.y,
-                origLeft: sm.left,
-                origTop: sm.top,
-                moved: false
-            };
-            shape.style.cursor = (shape.tagName === 'TABLE') ? '' : 'grab';
-            editor.style.userSelect = 'none';
         }, { passive: false });
         document.addEventListener('touchmove', function(ev) {
+            // Cancel table long-press if finger moved
+            if (_tableLongPressTimer && _tableLongPressStart) {
+                var _lp = ppos(ev);
+                if (Math.abs(_lp.x - _tableLongPressStart.x) > 8 || Math.abs(_lp.y - _tableLongPressStart.y) > 8) {
+                    window._cancelTableLongPress();
+                }
+            }
             if (!interaction) return;
             ev.preventDefault();
             var p = ppos(ev);
@@ -1089,6 +1108,7 @@
             }
         }, { passive: false });
         document.addEventListener('touchend', function() {
+            window._cancelTableLongPress();
             if (!interaction) return;
             if (interaction.mode === 'drag') {
                 interaction.el.style.cursor = (interaction.el.tagName === 'TABLE') ? '' : 'grab';

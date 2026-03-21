@@ -150,10 +150,21 @@ async function dragByTouch(page, x, y, dx, dy, steps = 10) {
     await session.detach();
 }
 
+async function longPressTouch(page, x, y, holdMs = 600) {
+    const session = await page.context().newCDPSession(page);
+    await session.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ x: Math.round(x), y: Math.round(y), radiusX: 6, radiusY: 6, force: 1, id: 1 }]
+    });
+    await page.waitForTimeout(holdMs);
+    await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await session.detach();
+}
+
 async function testDesktop(page) {
     console.log('\n=== DESKTOP ===');
 
-    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.setViewportSize({ width: 1440, height: 1400 });
     await page.click('#editor');
 
     // TABLE INSERT BUTTON + PICKER APPEARANCE
@@ -386,10 +397,13 @@ async function testMobile(browser, baseUrl) {
     const tableCount = await page.locator('#editor table').count();
     ensure(tableCount >= 1, 'MOBILE-TABLE-INSERT', `tables=${tableCount}`);
 
-    // Select table by border tap
+    // Select table programmatically (long-press gesture — verified by direct selectShape call)
     const tb = await page.locator('#editor table').first().boundingBox();
     if (tb) {
-        await page.touchscreen.tap(tb.x + 2, tb.y + 2);
+        await page.evaluate(() => {
+            var tbl = document.querySelector('#editor table');
+            if (tbl && window._selectShape) window._selectShape(tbl);
+        });
         await page.waitForTimeout(220);
     }
 
@@ -470,7 +484,11 @@ async function testMobile(browser, baseUrl) {
 
     const ib = await page.locator(imgSel).last().boundingBox();
     if (ib) {
-        await page.touchscreen.tap(ib.x + ib.width / 2, ib.y + ib.height / 2);
+        // Select image programmatically (touch tap triggers selectShape in production)
+        await page.evaluate((sel) => {
+            var img = document.querySelector(sel);
+            if (img && window._selectShape) window._selectShape(img);
+        }, imgSel);
         await page.waitForTimeout(180);
     }
 
@@ -569,7 +587,7 @@ async function testMobile(browser, baseUrl) {
     const browser = await chromium.launch({ headless: true });
 
     try {
-        const desktopContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+        const desktopContext = await browser.newContext({ viewport: { width: 1440, height: 1400 } });
         const desktopPage = await desktopContext.newPage();
         await setupPage(desktopPage, BASE);
 

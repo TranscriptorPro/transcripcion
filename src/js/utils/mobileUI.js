@@ -918,10 +918,15 @@
             var p = pointerPos(ev);
             var hit = getCellAt(p.x, p.y);
             if (!hit) return;
+            // On touch: skip cell resize when table is in shape-selected move mode
+            var isTouch = ev.type === 'touchstart' || (ev.pointerType === 'touch');
+            if (isTouch && hit.table.getAttribute('contenteditable') === 'false') return;
             var edge = getEdge(hit.td, p.x, p.y);
             if (!edge) return;
 
             ev.preventDefault();
+            ev.stopPropagation();
+            if (window._cancelTableLongPress) window._cancelTableLongPress();
             dragging = {
                 type: edge.type,
                 table: hit.table,
