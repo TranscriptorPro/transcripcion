@@ -1081,9 +1081,9 @@ async function _doAutoStructure(options) {
         if (!currentTemplate || currentTemplate === 'generico') {
             const detected = autoDetectTemplateKey(structInput);
             if (detected !== 'generico') {
-                // Siempre usar la plantilla detectada en el flujo IA (sin toast/prompt).
-                currentTemplate = detected;
-                window._lastUsedTemplateKey = detected;
+                // Mostrar toast de plantilla detectada; el usuario puede cambiarla o confirmar en 5 s.
+                currentTemplate = await promptTemplateSelection(detected);
+                window._lastUsedTemplateKey = currentTemplate;
             } else {
                 currentTemplate = 'generico';
                 isGeneralNonMedicalFallback = !_isLikelyMedicalText(structInput);

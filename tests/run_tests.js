@@ -864,6 +864,14 @@ test('E1 — promptTemplateSelection es función interna cargada', () => {
         'promptTemplateSelection debe crear botón Cambiar');
 });
 
+test('E1 — flujo de estructurado llama promptTemplateSelection (no bypasseado)', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/features/structurer.js'), 'utf-8');
+    assert(code.includes('await promptTemplateSelection(detected)'),
+        'El flujo de estructurado debe llamar await promptTemplateSelection');
+    assert(!code.includes('sin toast/prompt'),
+        'No debe haber comentario que bypasee el toast de plantilla');
+});
+
 test('E1 — autoDetectTemplateKey retorna string válido', () => {
     const keys = Object.keys(window.MEDICAL_TEMPLATES);
     const result = autoDetectTemplateKey('texto cualquiera sin keywords');
