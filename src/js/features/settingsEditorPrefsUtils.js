@@ -12,7 +12,7 @@
             editor.style.fontSize = sizes[prefs.editorFontSize] || sizes.medium;
         }
 
-        const inlineReviewEnabled = prefs.inlineParagraphReview !== false;
+        const inlineReviewEnabled = prefs.inlineParagraphReview === true;
         window.inlineParagraphReviewEnabled = inlineReviewEnabled;
         if (typeof window._refreshInlineReviewButtons === 'function') {
             window._refreshInlineReviewButtons(inlineReviewEnabled);
