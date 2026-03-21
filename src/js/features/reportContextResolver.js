@@ -169,7 +169,12 @@
         const hideReportHeader = (String(window.CLIENT_CONFIG?.type || '').toUpperCase() !== 'CLINIC')
             && (config.hideReportHeader === true);
 
-        const activePro = config.activeProfessional || null;
+        // CLINIC: profesional activo en sesión tiene prioridad sobre pdf_config
+        const _clinicSessionPro = (typeof window.ClinicAuth !== 'undefined' &&
+            typeof window.ClinicAuth.getActiveProfessional === 'function')
+            ? window.ClinicAuth.getActiveProfessional()
+            : null;
+        const activePro = _clinicSessionPro || config.activeProfessional || null;
         const wpIdx = (config.activeWorkplaceIndex !== undefined && config.activeWorkplaceIndex !== null)
             ? Number(config.activeWorkplaceIndex)
             : (config.selectedWorkplace !== undefined && config.selectedWorkplace !== null && config.selectedWorkplace !== ''

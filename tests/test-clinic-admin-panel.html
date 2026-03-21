@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Test C6 — ClinicAdminPanel (gestión de profesionales)</title>
+<style>
+  body{font-family:system-ui,sans-serif;padding:18px;background:#f1f5f9;color:#0f172a;}
+  h1{font-size:1.1rem;margin-bottom:14px;}
+  .suite{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:12px;}
+  .suite h2{font-size:.9rem;font-weight:800;margin:0 0 10px;}
+  .t{display:flex;align-items:center;gap:8px;font-size:.83rem;padding:4px 0;border-bottom:1px solid #f1f5f9;}
+  .t:last-child{border-bottom:none;}
+  .badge{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:999px;}
+  .pass{background:#dcfce7;color:#166534;} .fail{background:#fef2f2;color:#b91c1c;}
+  #summary{font-size:.88rem;font-weight:700;margin-top:10px;padding:10px;border-radius:8px;background:#fff;}
+</style>
+</head>
+<body>
+<h1>🧪 Test Suite C6 — ClinicAdminPanel</h1>
+
+<!-- Botones stub en el header -->
+<button id="btnCambiarProfesional" style="display:none;">Cambiar profesional</button>
+<button id="btnClinicAdmin" style="display:none;">Admin</button>
+
+<script>
+// ──────────────────────────────────────────────────────────────────────────────
+// Stubs del entorno
+// ──────────────────────────────────────────────────────────────────────────────
+var toastLog = [];
+window.showToast = function(msg, type) { toastLog.push({ msg, type }); };
+
+// workplace_profiles con: 2 profesionales activos, 1 inactivo, maxProfesionales=3
+var WP = [{
+    name: 'Clínica San Lucas',
+    maxProfesionales: 3,
+    adminUser: 'admin',
+    adminPass: 'clinica',
+    professionals: [
+        { id: 'p1', nombre: 'Dr. Juan Pérez', usuario: 'jperez', pin: '4321',
+          especialidades: ['Cardiología'], matricula: 'MN-1001', activo: true,
+          email: '', telefono: '', firma: null, logo: null, redesSociales: {},
+          showPhone: true, showEmail: true, showSocial: false },
+        { id: 'p2', nombre: 'Dra. Ana García', usuario: 'agarcia', pin: '1234',
+          especialidades: ['Radiología'], matricula: 'MN-1002', activo: true,
+          email: '', telefono: '', firma: null, logo: null, redesSociales: {},
+          showPhone: true, showEmail: true, showSocial: false },
+        { id: 'p3', nombre: 'Dr. Pedro López', usuario: 'plopez', pin: '5678',
+          especialidades: ['Neurología'], matricula: 'MN-1003', activo: false,
+          email: '', telefono: '', firma: null, logo: null, redesSociales: {},
+          showPhone: true, showEmail: true, showSocial: false }
+    ]
+}];
+localStorage.setItem('workplace_profiles', JSON.stringify(WP));
+</script>
+
+<script src="../src/js/features/clinicAdminPanel.js"></script>
+
+<script>
+// ──────────────────────────────────────────────────────────────────────────────
+// Framework de tests
+// ──────────────────────────────────────────────────────────────────────────────
+var passed = 0, failed = 0, results = [];
+function assert(desc, fn) {
+    try {
+        var ok = fn();
+        if (ok) { passed++; results.push({ desc, status: 'pass', msg: '' }); }
+        else    { failed++; results.push({ desc, status: 'fail', msg: 'returned falsy' }); }
+    } catch(e) { failed++; results.push({ desc, status: 'fail', msg: e.message }); }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 1 — API pública
+// ──────────────────────────────────────────────────────────────────────────────
+assert('window.ClinicAdminPanel existe', function() {
+    return typeof window.ClinicAdminPanel === 'object' && window.ClinicAdminPanel !== null;
+});
+assert('ClinicAdminPanel.open es función', function() { return typeof window.ClinicAdminPanel.open === 'function'; });
+assert('ClinicAdminPanel.setup es función', function() { return typeof window.ClinicAdminPanel.setup === 'function'; });
+assert('ClinicAdminPanel.close es función', function() { return typeof window.ClinicAdminPanel.close === 'function'; });
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 2 — setup() muestra el botón btnClinicAdmin
+// ──────────────────────────────────────────────────────────────────────────────
+window.ClinicAdminPanel.setup();
+assert('setup() hace visible btnClinicAdmin', function() {
+    var btn = document.getElementById('btnClinicAdmin');
+    return btn && btn.style.display !== 'none';
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 3 — open() crea el overlay y muestra pantalla de login
+// ──────────────────────────────────────────────────────────────────────────────
+window.ClinicAdminPanel.open();
+
+assert('open() crea #clinicAdminOverlay', function() {
+    return !!document.getElementById('clinicAdminOverlay');
+});
+assert('Overlay visible (flex) tras open()', function() {
+    var ov = document.getElementById('clinicAdminOverlay');
+    return ov && ov.style.display === 'flex';
+});
+assert('Pantalla de login tiene campo usuario', function() {
+    return !!document.getElementById('caaUser');
+});
+assert('Pantalla de login tiene campo contraseña', function() {
+    return !!document.getElementById('caaPass');
+});
+assert('Pantalla de login tiene botón Ingresar', function() {
+    return !!document.getElementById('caaLoginBtn');
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 4 — Login con credenciales incorrectas
+// ──────────────────────────────────────────────────────────────────────────────
+document.getElementById('caaUser').value = 'admin';
+document.getElementById('caaPass').value = 'wrongpassword';
+document.getElementById('caaLoginBtn').click();
+
+assert('Login incorrecto muestra error', function() {
+    var err = document.getElementById('caaLoginErr');
+    return err && err.textContent !== '';
+});
+assert('Login incorrecto NO cierra overlay', function() {
+    return document.getElementById('clinicAdminOverlay').style.display === 'flex';
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 5 — Login exitoso → muestra panel de gestión
+// ──────────────────────────────────────────────────────────────────────────────
+document.getElementById('caaUser').value = 'admin';
+document.getElementById('caaPass').value = 'clinica';
+document.getElementById('caaLoginBtn').click();
+
+assert('Login correcto → muestra título del panel', function() {
+    var inner = document.getElementById('clinicAdminInner');
+    return inner && inner.textContent.includes('Gestión de Profesionales');
+});
+assert('Login correcto → muestra nombre de la clínica', function() {
+    var inner = document.getElementById('clinicAdminInner');
+    return inner && inner.textContent.includes('Clínica San Lucas');
+});
+assert('Panel muestra badge con conteo de profesionales', function() {
+    var badge = document.getElementById('caaProfCount');
+    return badge && badge.textContent.includes('3 / 3');
+});
+assert('Panel renderiza lista de profesionales', function() {
+    return !!document.getElementById('caaProList');
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 6 — Lista de profesionales
+// ──────────────────────────────────────────────────────────────────────────────
+var list = document.getElementById('caaProList');
+assert('Lista contiene los 3 profesionales (activos e inactivos)', function() {
+    return list && list.querySelectorAll('.caa-pro-card').length === 3;
+});
+assert('Profesional inactivo tiene clase .inactive', function() {
+    return list && list.querySelectorAll('.caa-pro-card.inactive').length === 1;
+});
+assert('Cada profesional tiene botón Editar', function() {
+    return list && list.querySelectorAll('[data-action="edit"]').length === 3;
+});
+assert('Cada profesional tiene botón Reset PIN', function() {
+    return list && list.querySelectorAll('[data-action="reset-pin"]').length === 3;
+});
+assert('Cada profesional tiene botón Eliminar', function() {
+    return list && list.querySelectorAll('[data-action="delete"]').length === 3;
+});
+assert('Botón Agregar existe', function() {
+    return !!list.querySelector('[data-action="add"]');
+});
+assert('Botón Agregar deshabilitado (límite 3/3 alcanzado)', function() {
+    var addBtn = list.querySelector('[data-action="add"]');
+    return addBtn && addBtn.disabled === true;
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 7 — Editar profesional
+// ──────────────────────────────────────────────────────────────────────────────
+// Clic en Editar del primer profesional
+list.querySelector('[data-action="edit"][data-idx="0"]').click();
+
+assert('Editar abre el formulario inline', function() {
+    var zone = document.getElementById('caaEdit_0');
+    return zone && zone.innerHTML.trim() !== '';
+});
+assert('Formulario tiene input de nombre', function() {
+    return !!document.getElementById('ce_nombre_0');
+});
+assert('Formulario tiene input de PIN', function() {
+    return !!document.getElementById('ce_pin_0');
+});
+assert('Input nombre tiene el nombre actual del profesional', function() {
+    var inp = document.getElementById('ce_nombre_0');
+    return inp && inp.value === 'Dr. Juan Pérez';
+});
+assert('Input PIN tiene el PIN actual', function() {
+    var inp = document.getElementById('ce_pin_0');
+    return inp && inp.value === '4321';
+});
+
+// Guardar cambios
+toastLog = [];
+document.getElementById('ce_nombre_0').value = 'Dr. Juan A. Pérez';
+list.querySelector('[data-action="save"][data-idx="0"]').click();
+
+assert('Guardar cambios escribe en localStorage', function() {
+    var wp = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+    return wp[0].professionals[0].nombre === 'Dr. Juan A. Pérez';
+});
+assert('Guardar cambios muestra toast de éxito', function() {
+    return toastLog.some(function(t) { return t.msg.includes('actualizado'); });
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 8 — Reset PIN
+// ──────────────────────────────────────────────────────────────────────────────
+// Override confirm para aceptar
+var origConfirm = window.confirm;
+window.confirm = function() { return true; };
+toastLog = [];
+
+list = document.getElementById('caaProList'); // refrescar referencia
+list.querySelector('[data-action="reset-pin"][data-idx="1"]').click();
+
+assert('Reset PIN pone pin = "1234" en localStorage', function() {
+    var wp = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+    return wp[0].professionals[1].pin === '1234';
+});
+assert('Reset PIN muestra toast', function() {
+    return toastLog.some(function(t) { return t.msg.includes('reseteado'); });
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 9 — Toggle activo / inactivo
+// ──────────────────────────────────────────────────────────────────────────────
+// p1 está activo → desactivar
+toastLog = [];
+list = document.getElementById('caaProList');
+list.querySelector('[data-action="toggle"][data-idx="0"]').click();
+
+assert('Toggle desactiva al profesional activo', function() {
+    var wp = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+    return wp[0].professionals[0].activo === false;
+});
+assert('Toggle muestra toast de desactivación', function() {
+    return toastLog.some(function(t) { return t.msg.toLowerCase().includes('desactivado'); });
+});
+
+// p3 está inactivo → activar
+toastLog = [];
+list = document.getElementById('caaProList');
+list.querySelector('[data-action="toggle"][data-idx="2"]').click();
+
+assert('Toggle activa al profesional inactivo', function() {
+    var wp = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+    return wp[0].professionals[2].activo === true;
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 10 — Agregar profesional
+// ──────────────────────────────────────────────────────────────────────────────
+// Primero dejar hueco: eliminar el primer profesional
+list = document.getElementById('caaProList');
+list.querySelector('[data-action="delete"][data-idx="0"]').click();
+
+assert('Eliminar reduce el conteo', function() {
+    var wp = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+    return wp[0].professionals.length === 2;
+});
+
+// Ahora agregar
+list = document.getElementById('caaProList');
+var addBtn = list.querySelector('[data-action="add"]');
+assert('Botón Agregar habilitado cuando hay hueco', function() {
+    return addBtn && addBtn.disabled === false;
+});
+addBtn.click();
+assert('Agregar añade el profesional al localStorage', function() {
+    var wp = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+    return wp[0].professionals.length === 3;
+});
+assert('Nuevo profesional tiene PIN 1234 por defecto', function() {
+    var wp = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+    return wp[0].professionals[2].pin === '1234';
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 11 — Cambio de credenciales de admin
+// ──────────────────────────────────────────────────────────────────────────────
+window.confirm = origConfirm;
+document.getElementById('caaPanelCreds').click();
+
+assert('Pantalla cambio de creds tiene campo nuevo usuario', function() {
+    return !!document.getElementById('caaNewUser');
+});
+
+document.getElementById('caaNewUser').value = 'superadmin';
+document.getElementById('caaNewPass').value = 'nueva123';
+document.getElementById('caaNewPass2').value = 'nueva123';
+document.getElementById('caaCredsSave').click();
+
+assert('Cambio de creds guarda en localStorage', function() {
+    var wp = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+    return wp[0].adminUser === 'superadmin' && wp[0].adminPass === 'nueva123';
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUITE 12 — close() oculta el overlay
+// ──────────────────────────────────────────────────────────────────────────────
+window.ClinicAdminPanel.close();
+assert('close() oculta el overlay', function() {
+    var ov = document.getElementById('clinicAdminOverlay');
+    return ov && ov.style.display !== 'flex';
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Render resultados
+// ──────────────────────────────────────────────────────────────────────────────
+var container = document.getElementById('testResults');
+var suiteGroups = {
+    'API pública': results.slice(0, 4),
+    'setup() — botón visible': results.slice(4, 5),
+    'open() — overlay + login': results.slice(5, 10),
+    'Login incorrecto': results.slice(10, 12),
+    'Login exitoso → panel': results.slice(12, 17),
+    'Lista de profesionales': results.slice(17, 24),
+    'Editar profesional': results.slice(24, 31),
+    'Reset PIN': results.slice(31, 33),
+    'Toggle activo/inactivo': results.slice(33, 36),
+    'Agregar profesional': results.slice(36, 40),
+    'Cambio de credenciales': results.slice(40, 42),
+    'close() — ocultar': results.slice(42)
+};
+
+var html = '';
+Object.keys(suiteGroups).forEach(function(suiteName) {
+    var items = suiteGroups[suiteName];
+    html += '<div class="suite"><h2>' + suiteName + '</h2>';
+    items.forEach(function(r) {
+        html += '<div class="t"><span class="badge ' + r.status + '">' + r.status.toUpperCase() + '</span> ' + r.desc;
+        if (r.msg) html += ' <small style="color:#64748b;">(' + r.msg + ')</small>';
+        html += '</div>';
+    });
+    html += '</div>';
+});
+
+container.innerHTML = html;
+
+var total = passed + failed;
+var sumEl = document.getElementById('summary');
+sumEl.style.borderLeft = '4px solid ' + (failed ? '#ef4444' : '#22c55e');
+sumEl.textContent = '✅ ' + passed + ' pasados   ❌ ' + failed + ' fallidos   (total: ' + total + ')';
+console.log('TEST RESULT:', passed + '/' + total, failed ? 'FAILED' : 'OK');
+</script>
+
+<div id="testResults"></div>
+<div id="summary"></div>
+</body>
+</html>

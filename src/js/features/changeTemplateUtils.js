@@ -15,13 +15,25 @@
 
     // ── Resolve allowed categories from user specialties ─────────
     function _getAllowedCategoriesFromSpecialties() {
-        const cfg = typeof CLIENT_CONFIG !== 'undefined' ? CLIENT_CONFIG : {};
-        const specs = Array.isArray(cfg.specialties) ? cfg.specialties : ['ALL'];
+        // C8 — CLINIC: usar especialidades del profesional activo (tienen prioridad)
+        const clinicAuth = typeof window.ClinicAuth !== 'undefined' ? window.ClinicAuth : null;
+        const activePro  = (clinicAuth && typeof clinicAuth.getActiveProfessional === 'function')
+            ? clinicAuth.getActiveProfessional()
+            : null;
+
+        let specs;
+        if (activePro && Array.isArray(activePro.especialidades) && activePro.especialidades.length) {
+            specs = activePro.especialidades;
+        } else {
+            const cfg = typeof CLIENT_CONFIG !== 'undefined' ? CLIENT_CONFIG : {};
+            specs = Array.isArray(cfg.specialties) ? cfg.specialties : ['ALL'];
+        }
+
         if (specs.length === 1 && specs[0] === 'ALL') return null; // null = no restriction
         const reg = window.TP_TEMPLATE_CATEGORY_REGISTRY || {};
         const map = reg.formSpecialtyToTemplateCategories || {};
         const cats = new Set();
-        cats.add('General'); // General always available
+        cats.add('General'); // General siempre disponible
         specs.forEach(sp => {
             const mapped = map[sp];
             if (Array.isArray(mapped)) mapped.forEach(c => cats.add(c));

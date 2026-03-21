@@ -8016,6 +8016,147 @@ test('ClinicAuth-17 — index.html carga clinicAuth.js', () => {
         'index.html debe cargar el script clinicAuth.js');
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bloque 126: C6 — ClinicAdminPanel (gestión interna de profesionales CLINIC)
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 126: C6 — ClinicAdminPanel ────────────────────────────');
+
+const clinicAdminPanelCode = fs.readFileSync(path.join(root, 'src/js/features/clinicAdminPanel.js'), 'utf-8');
+const indexCodeC6 = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
+const bizAdminCodeC6 = fs.readFileSync(path.join(root, 'src/js/features/businessClientAdminUtils.js'), 'utf-8');
+
+test('ClinicAdmin-1 — window.ClinicAdminPanel exporta open, setup, close', () => {
+    assert(clinicAdminPanelCode.includes('window.ClinicAdminPanel') &&
+           clinicAdminPanelCode.includes('open:') &&
+           clinicAdminPanelCode.includes('setup:') &&
+           clinicAdminPanelCode.includes('close'),
+        'clinicAdminPanel.js debe exportar API pública a window.ClinicAdminPanel');
+});
+
+test('ClinicAdmin-2 — Login con credenciales por defecto admin/clinica', () => {
+    assert(clinicAdminPanelCode.includes("DEFAULT_USER   = 'admin'") ||
+           clinicAdminPanelCode.includes("DEFAULT_USER = 'admin'"),
+        'clinicAdminPanel.js debe tener DEFAULT_USER = admin');
+    assertIncludes(clinicAdminPanelCode, "DEFAULT_PASS",
+        'clinicAdminPanel.js debe definir DEFAULT_PASS');
+});
+
+test('ClinicAdmin-3 — Credenciales persistidas en workplace_profiles', () => {
+    assert(clinicAdminPanelCode.includes('adminUser') && clinicAdminPanelCode.includes('adminPass'),
+        'clinicAdminPanel.js debe leer/guardar adminUser y adminPass en workplace_profiles');
+});
+
+test('ClinicAdmin-4 — CRUD: _savePro guarda en localStorage', () => {
+    assertIncludes(clinicAdminPanelCode, '_saveWP',
+        'clinicAdminPanel.js debe usar _saveWP para persistir cambios');
+});
+
+test('ClinicAdmin-5 — Reset PIN pone pin = "1234"', () => {
+    assert(clinicAdminPanelCode.includes("pin   = '1234'") ||
+           clinicAdminPanelCode.includes("pin = '1234'") ||
+           clinicAdminPanelCode.includes('.pin   = \'1234\'') ||
+           clinicAdminPanelCode.includes(".pin = '1234'"),
+        'clinicAdminPanel.js debe resetear PIN a 1234');
+});
+
+test('ClinicAdmin-6 — Respeta maxProfesionales al agregar', () => {
+    assert(clinicAdminPanelCode.includes('maxProfesionales') && clinicAdminPanelCode.includes('profs.length >= maxProfs'),
+        'clinicAdminPanel.js debe chequear maxProfesionales antes de agregar');
+});
+
+test('ClinicAdmin-7 — Toggle activo/inactivo implementado', () => {
+    assertIncludes(clinicAdminPanelCode, '_toggleActive',
+        'clinicAdminPanel.js debe implementar _toggleActive');
+});
+
+test('ClinicAdmin-8 — Cambio de credenciales de admin implementado', () => {
+    assertIncludes(clinicAdminPanelCode, '_showChangeCredsSection',
+        'clinicAdminPanel.js debe implementar _showChangeCredsSection para cambiar creds de admin');
+});
+
+test('ClinicAdmin-9 — index.html tiene botón #btnClinicAdmin', () => {
+    assertIncludes(indexCodeC6, 'btnClinicAdmin',
+        'index.html debe tener botón #btnClinicAdmin (hidden por default)');
+});
+
+test('ClinicAdmin-10 — index.html carga clinicAdminPanel.js', () => {
+    assertIncludes(indexCodeC6, 'clinicAdminPanel.js',
+        'index.html debe cargar el script clinicAdminPanel.js');
+});
+
+test('ClinicAdmin-11 — businessClientAdminUtils.js llama ClinicAdminPanel.setup()', () => {
+    assert(bizAdminCodeC6.includes('ClinicAdminPanel') && bizAdminCodeC6.includes('setup'),
+        'businessClientAdminUtils.js debe llamar ClinicAdminPanel.setup() en el hook CLINIC');
+});
+
+test('ClinicAdmin-12 — _esc sanitiza caracteres HTML', () => {
+    assertIncludes(clinicAdminPanelCode, "'&amp;'",
+        'clinicAdminPanel.js debe escapar HTML correctamente (XSS prevention)');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bloque 127: C7 — Profesional activo CLINIC en PDF (reportContextResolver)
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 127: C7 — Profesional activo CLINIC en PDF ────────────');
+
+const reportCtxCode = fs.readFileSync(path.join(root, 'src/js/features/reportContextResolver.js'), 'utf-8');
+const clinicAuthCodeC7 = fs.readFileSync(path.join(root, 'src/js/features/clinicAuth.js'), 'utf-8');
+
+test('C7-1 — reportContextResolver prioriza ClinicAuth.getActiveProfessional()', () => {
+    assert(reportCtxCode.includes('ClinicAuth') && reportCtxCode.includes('getActiveProfessional'),
+        'reportContextResolver.js debe consultar ClinicAuth.getActiveProfessional() para activeProfessional');
+});
+
+test('C7-2 — ClinicAuth tiene prioridad sobre config.activeProfessional en resolver', () => {
+    // La línea debe tener: _clinicSessionPro || config.activeProfessional
+    assert(reportCtxCode.includes('_clinicSessionPro') &&
+           reportCtxCode.includes('_clinicSessionPro || config.activeProfessional'),
+        'reportContextResolver.js debe usar _clinicSessionPro con fallback a config');
+});
+
+test('C7-3 — clinicAuth._syncPdfConfig también escribe en appDB', () => {
+    assert(clinicAuthCodeC7.includes('appDB') && clinicAuthCodeC7.includes('appDB.set'),
+        'clinicAuth.js _syncPdfConfig debe escribir en appDB.set para IndexedDB');
+});
+
+test('C7-4 — _syncPdfConfig guarda activeProfessional en pdf_config', () => {
+    assertIncludes(clinicAuthCodeC7, 'activeProfessional',
+        'clinicAuth.js debe guardar activeProfessional en pdf_config');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bloque 128: C8 — Filtro de plantillas por especialidad del profesional activo
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 128: C8 — Filtro plantillas por especialidad CLINIC ───');
+
+const changeTemplCode = fs.readFileSync(path.join(root, 'src/js/features/changeTemplateUtils.js'), 'utf-8');
+
+test('C8-1 — changeTemplateUtils consulta ClinicAuth.getActiveProfessional()', () => {
+    assert(changeTemplCode.includes('ClinicAuth') && changeTemplCode.includes('getActiveProfessional'),
+        'changeTemplateUtils.js debe consultar ClinicAuth.getActiveProfessional() en _getAllowedCategoriesFromSpecialties');
+});
+
+test('C8-2 — Usa especialidades del profesional activo cuando están disponibles', () => {
+    assert(changeTemplCode.includes('activePro.especialidades') &&
+           changeTemplCode.includes('activePro && Array.isArray'),
+        'changeTemplateUtils.js debe usar activePro.especialidades[] cuando el pro tiene especialidades');
+});
+
+test('C8-3 — Fallback a CLIENT_CONFIG.specialties cuando no hay pro activo', () => {
+    assert(changeTemplCode.includes('CLIENT_CONFIG') && changeTemplCode.includes('cfg.specialties'),
+        'changeTemplateUtils.js debe hacer fallback a CLIENT_CONFIG.specialties sin pro activo');
+});
+
+test('C8-4 — General siempre disponible en el filtro', () => {
+    assertIncludes(changeTemplCode, "cats.add('General')",
+        'changeTemplateUtils.js debe incluir siempre la categoría General');
+});
+
+test('C8-5 — _getAllTemplates respeta el filtro de categorías por especialidad', () => {
+    assertIncludes(changeTemplCode, 'if (specCats && !specCats.has(cat)) continue',
+        'changeTemplateUtils.js debe omitir categorías no permitidas en _getAllTemplates');
+});
+
 // Limpiar estado después de tests
 global.localStorage.clear();
 global._reportHistCache = null;

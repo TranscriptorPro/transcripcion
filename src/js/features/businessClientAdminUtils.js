@@ -121,6 +121,10 @@ function _initClient() {
         if (typeof window.ClinicAuth.setupChangeProfButton === 'function') {
             window.ClinicAuth.setupChangeProfButton();
         }
+        if (typeof window.ClinicAdminPanel !== 'undefined' &&
+            typeof window.ClinicAdminPanel.setup === 'function') {
+            window.ClinicAdminPanel.setup();
+        }
         return; // session assistant se lanza desde el callback de ClinicAuth.init
     }
 

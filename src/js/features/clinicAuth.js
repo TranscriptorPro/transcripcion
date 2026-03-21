@@ -321,6 +321,10 @@
             cfg.pdfProfessional         = String(realIdx);
             localStorage.setItem('pdf_config', JSON.stringify(cfg));
             window._pdfConfigCache = cfg;
+            // También escribir en IndexedDB (para que pdfMaker lo lea correctamente)
+            if (typeof window.appDB !== 'undefined' && typeof window.appDB.set === 'function') {
+                window.appDB.set('pdf_config', cfg).catch(function() {});
+            }
         } catch (_) {}
     }
 
