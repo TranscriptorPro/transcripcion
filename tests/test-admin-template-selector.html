@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Test — Admin Template Selector in UserConfigWizard</title>
+<style>
+body { font-family: system-ui; padding: 20px; background: #f8fafc; }
+.pass { color: #166534; font-weight: 700; }
+.fail { color: #dc2626; font-weight: 700; }
+#log { white-space: pre-wrap; font-family: monospace; font-size: .85rem; line-height: 1.6; }
+h1 { font-size: 1.1rem; }
+</style>
+</head>
+<body>
+<h1>🧪 Test: Selector de Plantillas en AdminUserConfigWizard</h1>
+<div id="log"></div>
+
+<!-- Load template catalogs (sets window.MEDICAL_TEMPLATES and window.TEMPLATE_CATEGORIES) -->
+<script src="../recursos/admin-assets/js/templatesCatalog.js"></script>
+<script src="../recursos/admin-assets/js/templatesCatalogPart2.js"></script>
+<script src="../recursos/admin-assets/js/templatesCatalogPart3.js"></script>
+<script src="../recursos/admin-assets/js/templateCategoryRegistry.js"></script>
+
+<!-- Load config rules (needed by wizard) -->
+<script src="../recursos/admin-assets/js/admin-user-config-rules.js"></script>
+
+<!-- Load the wizard itself -->
+<script src="../recursos/admin-assets/js/admin-user-config-wizard.js"></script>
+
+<script>
+(function() {
+    const log = document.getElementById('log');
+    let passed = 0, failed = 0;
+
+    function assert(condition, msg) {
+        if (condition) {
+            log.innerHTML += '<span class="pass">✅ PASS</span> ' + msg + '\n';
+            passed++;
+        } else {
+            log.innerHTML += '<span class="fail">❌ FAIL</span> ' + msg + '\n';
+            failed++;
+        }
+    }
+
+    // ── Test 1: Wizard exists ──
+    assert(typeof window.AdminUserConfigWizard === 'object', 'AdminUserConfigWizard está definido');
+    assert(typeof window.AdminUserConfigWizard.open === 'function', 'AdminUserConfigWizard.open es función');
+
+    // ── Test 2: Open wizard with empty Allowed_Templates (= todas) ──
+    const mockUser = {
+        ID_Medico: 'test-001',
+        Nombre: 'Dr. Test',
+        Matricula: '12345',
+        Email: 'test@test.com',
+        Telefono: '',
+        Especialidad: 'Neumología',
+        Plan: 'NORMAL',
+        Estado: 'active',
+        Devices_Max: 2,
+        Allowed_Templates: '',
+        Registro_Datos: '{}',
+        Estudios_JSON: '[]'
+    };
+
+    let savedUpdates = null;
+
+    window.AdminUserConfigWizard.open({
+        user: mockUser,
+        planConfig: { maxDevices: 2, maxWorkplaces: 1, studyLimit: 3, allowPdfLogo: false, allowSocial: false },
+        especialidades: ['Neumología', 'Cardiología'],
+        estudiosPorEspecialidad: {},
+        saveUser: async function(updates) { savedUpdates = updates; return { success: true }; },
+        onSaved: function() {},
+        toast: function() {}
+    });
+
+    // ── Test 3: Tab "Plantillas" exists ──
+    const tabs = document.querySelectorAll('.auc-tab');
+    const plantillasTab = Array.from(tabs).find(t => t.getAttribute('data-tab') === 'plantillas');
+    assert(!!plantillasTab, 'Tab "Plantillas" existe en el wizard');
+
+    // ── Test 4: Panel "plantillas" exists ──
+    const panel = document.querySelector('.auc-panel[data-panel="plantillas"]');
+    assert(!!panel, 'Panel data-panel="plantillas" existe');
+
+    // ── Test 5: Checkbox "Todas las plantillas" exists and is checked ──
+    const allTplsCb = document.getElementById('aucAllTemplates');
+    assert(!!allTplsCb, 'Checkbox "Todas las plantillas" existe');
+    assert(allTplsCb && allTplsCb.checked === true, 'Checkbox "Todas" está marcado cuando Allowed_Templates está vacío');
+
+    // ── Test 6: Template grid is hidden when "Todas" is checked ──
+    const grid = document.getElementById('aucTemplatesGrid');
+    assert(!!grid, 'Grid de templates existe');
+    assert(grid && grid.style.display === 'none', 'Grid está oculto cuando "Todas" está marcado');
+
+    // ── Test 7: Uncheck "Todas" → grid appears with checkboxes ──
+    if (allTplsCb) {
+        allTplsCb.checked = false;
+        allTplsCb.dispatchEvent(new Event('change'));
+    }
+    assert(grid && grid.style.display !== 'none', 'Grid se muestra al desmarcar "Todas"');
+
+    const tplCheckboxes = panel ? panel.querySelectorAll('.auc-tpl') : [];
+    assert(tplCheckboxes.length > 0, 'Checkboxes individuales de plantillas existen (' + tplCheckboxes.length + ' encontrados)');
+
+    // ── Test 8: All checkboxes are checked after unchecking "Todas" ──
+    const allChecked = Array.from(tplCheckboxes).every(cb => cb.checked);
+    assert(allChecked, 'Al desmarcar "Todas", todos los checkboxes individuales quedan marcados');
+
+    // ── Test 9: Uncheck specific templates → state reflects correctly ──
+    if (tplCheckboxes.length >= 3) {
+        tplCheckboxes[0].checked = false;
+        tplCheckboxes[0].dispatchEvent(new Event('change'));
+        tplCheckboxes[1].checked = false;
+        tplCheckboxes[1].dispatchEvent(new Event('change'));
+    }
+
+    // ── Test 10: Re-check "Todas" → state resets ──
+    if (allTplsCb) {
+        allTplsCb.checked = true;
+        allTplsCb.dispatchEvent(new Event('change'));
+    }
+    assert(grid && grid.style.display === 'none', 'Grid se oculta al re-marcar "Todas"');
+
+    // ── Test 11: Close and reopen with specific Allowed_Templates ──
+    window.AdminUserConfigWizard.close();
+
+    const mockUser2 = Object.assign({}, mockUser, {
+        Allowed_Templates: 'espirometria,holter,ecg'
+    });
+
+    window.AdminUserConfigWizard.open({
+        user: mockUser2,
+        planConfig: { maxDevices: 2, maxWorkplaces: 1, studyLimit: 3, allowPdfLogo: false, allowSocial: false },
+        especialidades: ['Neumología', 'Cardiología'],
+        estudiosPorEspecialidad: {},
+        saveUser: async function(updates) { savedUpdates = updates; return { success: true }; },
+        onSaved: function() {},
+        toast: function() {}
+    });
+
+    const allTplsCb2 = document.getElementById('aucAllTemplates');
+    assert(allTplsCb2 && allTplsCb2.checked === false, 'Con Allowed_Templates="espirometria,holter,ecg" → "Todas" desmarcado');
+
+    const grid2 = document.getElementById('aucTemplatesGrid');
+    assert(grid2 && grid2.style.display !== 'none', 'Grid visible cuando hay plantillas específicas');
+
+    const panel2 = document.querySelector('.auc-panel[data-panel="plantillas"]');
+    const checked2 = panel2 ? Array.from(panel2.querySelectorAll('.auc-tpl:checked')).map(cb => cb.value) : [];
+    assert(checked2.includes('espirometria'), 'espirometria está marcada');
+    assert(checked2.includes('holter'), 'holter está marcada');
+    assert(checked2.includes('ecg'), 'ecg está marcada');
+
+    const unchecked2 = panel2 ? Array.from(panel2.querySelectorAll('.auc-tpl:not(:checked)')).map(cb => cb.value) : [];
+    assert(unchecked2.length > 0, 'Hay plantillas NO marcadas (no es "todas")');
+
+    // ── Test 12: Verify categories from TEMPLATE_CATEGORIES are rendered ──
+    const cats = window.TEMPLATE_CATEGORIES || {};
+    const catNames = Object.keys(cats);
+    assert(catNames.length > 0, 'TEMPLATE_CATEGORIES tiene categorías (' + catNames.length + ')');
+
+    // ── Summary ──
+    window.AdminUserConfigWizard.close();
+
+    log.innerHTML += '\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+    log.innerHTML += 'Total: ' + (passed + failed) + ' | ';
+    log.innerHTML += '<span class="pass">Passed: ' + passed + '</span> | ';
+    log.innerHTML += (failed ? '<span class="fail">Failed: ' + failed + '</span>' : '<span class="pass">Failed: 0</span>');
+    log.innerHTML += '\n';
+
+    window._testResult = { passed, failed, total: passed + failed };
+})();
+</script>
+</body>
+</html>

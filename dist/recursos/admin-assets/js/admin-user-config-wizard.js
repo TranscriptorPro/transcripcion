@@ -89,6 +89,7 @@
             '    <button class="auc-tab" data-tab="esp">Especialidades</button>',
             '    <button class="auc-tab" data-tab="trabajo">Trabajo</button>',
             '    <button class="auc-tab" data-tab="pdf">PDF</button>',
+            '    <button class="auc-tab" data-tab="plantillas">📄 Plantillas</button>',
             '  </div>',
             '  <div id="adminUserCfgBody">',
             '    <div id="aucWarn"></div>',
@@ -96,6 +97,7 @@
             '    <div class="auc-panel" data-panel="esp"></div>',
             '    <div class="auc-panel" data-panel="trabajo"></div>',
             '    <div class="auc-panel" data-panel="pdf"></div>',
+            '    <div class="auc-panel" data-panel="plantillas"></div>',
             '  </div>',
             '  <div id="adminUserCfgFoot">',
             '    <button class="auc-btn" id="aucCancelBottom">Cancelar</button>',
@@ -174,7 +176,8 @@
             proLogo: !!state.proLogo,
             showPhone: !!state.showPhone,
             showEmail: !!state.showEmail,
-            showSocial: !!state.showSocial
+            showSocial: !!state.showSocial,
+            allowedTemplates: (state.allowedTemplates || []).slice()
         };
     }
 
@@ -207,7 +210,8 @@
                 Devices_Max: s.devicesMax,
                 Lugares_Trabajo: s.workplaces.map(function(wp) { return wp.name; }).filter(Boolean).join(' | '),
                 Estudios_JSON: JSON.stringify(s.estudios),
-                Registro_Datos: JSON.stringify(nextReg)
+                Registro_Datos: JSON.stringify(nextReg),
+                Allowed_Templates: s.allowedTemplates.length ? s.allowedTemplates.join(',') : ''
             },
             nextReg: nextReg
         };
@@ -280,6 +284,15 @@
         pushChange(changes, 'PDF', 'Mostrar teléfono', initial.showPhone ? 'Sí' : 'No', now.showPhone ? 'Sí' : 'No');
         pushChange(changes, 'PDF', 'Mostrar email', initial.showEmail ? 'Sí' : 'No', now.showEmail ? 'Sí' : 'No');
         pushChange(changes, 'PDF', 'Mostrar redes', initial.showSocial ? 'Sí' : 'No', now.showSocial ? 'Sí' : 'No');
+
+        var tplBeforeArr = initial.allowedTemplates.length ? initial.allowedTemplates : [];
+        var tplAfterArr = now.allowedTemplates.length ? now.allowedTemplates : [];
+        var tplBefore = tplBeforeArr.length ? strList(tplBeforeArr) : '(todas)';
+        var tplAfter = tplAfterArr.length ? strList(tplAfterArr) : '(todas)';
+        if (String(tplBefore) !== String(tplAfter)) {
+            var tplDelta = deltaOf(tplBeforeArr, tplAfterArr);
+            changes.push({ section: 'Plantillas', label: 'Plantillas permitidas', before: tplBefore, after: tplAfter, added: tplDelta.added, removed: tplDelta.removed });
+        }
 
         return changes;
     }
@@ -362,6 +375,7 @@
         renderEspecialidades();
         renderTrabajo();
         renderPdf();
+        renderPlantillas();
 
         overlay.style.display = 'block';
     }
@@ -575,6 +589,61 @@
         }
     }
 
+    function renderPlantillas() {
+        var p = document.querySelector('.auc-panel[data-panel="plantillas"]');
+        if (!p) return;
+        var s = current.state;
+        var allTpls = s.allowedTemplates.length === 0;
+        var selected = new Set(s.allowedTemplates);
+        var cats = window.TEMPLATE_CATEGORIES || {};
+        var tpls = window.MEDICAL_TEMPLATES || {};
+
+        var html = '<div class="auc-box"><label class="auc-check-item" style="font-size:.92rem;margin-bottom:8px;">' +
+            '<input type="checkbox" id="aucAllTemplates" ' + (allTpls ? 'checked' : '') + '> <strong>\u2705 Todas las plantillas</strong></label>' +
+            '<div class="auc-hint" style="margin-bottom:10px;">Si est\u00e1 marcado, el usuario tiene acceso a todas las plantillas disponibles.</div></div>';
+
+        html += '<div id="aucTemplatesGrid" style="' + (allTpls ? 'display:none;' : '') + '">';
+
+        Object.keys(cats).forEach(function(cat) {
+            var keys = cats[cat] || [];
+            html += '<div class="auc-box" style="margin-bottom:8px;"><div style="font-weight:800;font-size:.82rem;margin-bottom:6px;">' + esc(cat) + '</div>';
+            html += '<div class="auc-check-grid">';
+            keys.forEach(function(key) {
+                var t = tpls[key];
+                var name = t ? t.name : key;
+                var checked = allTpls || selected.has(key) ? 'checked' : '';
+                html += '<label class="auc-check-item"><input type="checkbox" class="auc-tpl" value="' + esc(key) + '" ' + checked + '> ' + esc(name) + '</label>';
+            });
+            html += '</div></div>';
+        });
+
+        html += '</div>';
+        p.innerHTML = html;
+
+        document.getElementById('aucAllTemplates').addEventListener('change', function(e) {
+            var grid = document.getElementById('aucTemplatesGrid');
+            if (e.target.checked) {
+                grid.style.display = 'none';
+                s.allowedTemplates = [];
+            } else {
+                grid.style.display = 'block';
+                var allKeys = [];
+                p.querySelectorAll('.auc-tpl').forEach(function(cb) {
+                    cb.checked = true;
+                    allKeys.push(cb.value);
+                });
+                s.allowedTemplates = allKeys;
+            }
+        });
+
+        p.querySelectorAll('.auc-tpl').forEach(function(cb) {
+            cb.addEventListener('change', function() {
+                var list = Array.from(p.querySelectorAll('.auc-tpl:checked')).map(function(x) { return x.value; });
+                s.allowedTemplates = list;
+            });
+        });
+    }
+
     function collectDatosPanel() {
         const s = current.state;
         s.nombre = document.getElementById('aucNombre').value.trim();
@@ -702,7 +771,8 @@
                 proLogo: rd.proLogo || null,
                 showPhone: rd.showPhone !== false,
                 showEmail: rd.showEmail !== false,
-                showSocial: !!rd.showSocial
+                showSocial: !!rd.showSocial,
+                allowedTemplates: String(user.Allowed_Templates || '').split(',').map(function(x) { return x.trim(); }).filter(Boolean)
             }
         };
 
