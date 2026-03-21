@@ -595,8 +595,10 @@
         var s = current.state;
         var allTpls = s.allowedTemplates.length === 0;
         var selected = new Set(s.allowedTemplates);
-        var cats = window.TEMPLATE_CATEGORIES || {};
-        var tpls = window.MEDICAL_TEMPLATES || {};
+
+        // En admin.html la fuente correcta es TP_TEMPLATE_CATEGORY_REGISTRY
+        var reg = window.TP_TEMPLATE_CATEGORY_REGISTRY;
+        var catMap = (reg && reg.templateMapByCategory) || {};
 
         var html = '<div class="auc-box"><label class="auc-check-item" style="font-size:.92rem;margin-bottom:8px;">' +
             '<input type="checkbox" id="aucAllTemplates" ' + (allTpls ? 'checked' : '') + '> <strong>\u2705 Todas las plantillas</strong></label>' +
@@ -604,13 +606,14 @@
 
         html += '<div id="aucTemplatesGrid" style="' + (allTpls ? 'display:none;' : '') + '">';
 
-        Object.keys(cats).forEach(function(cat) {
-            var keys = cats[cat] || [];
+        Object.keys(catMap).forEach(function(cat) {
+            var items = catMap[cat] || [];
             html += '<div class="auc-box" style="margin-bottom:8px;"><div style="font-weight:800;font-size:.82rem;margin-bottom:6px;">' + esc(cat) + '</div>';
             html += '<div class="auc-check-grid">';
-            keys.forEach(function(key) {
-                var t = tpls[key];
-                var name = t ? t.name : key;
+            items.forEach(function(item) {
+                // templateMapByCategory usa objetos {key, name}
+                var key = (typeof item === 'object' && item.key) ? item.key : String(item);
+                var name = (typeof item === 'object' && item.name) ? item.name : key;
                 var checked = allTpls || selected.has(key) ? 'checked' : '';
                 html += '<label class="auc-check-item"><input type="checkbox" class="auc-tpl" value="' + esc(key) + '" ' + checked + '> ' + esc(name) + '</label>';
             });
