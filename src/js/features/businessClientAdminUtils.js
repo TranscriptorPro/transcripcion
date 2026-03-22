@@ -102,8 +102,22 @@ function _initClient() {
     if (onboardingOverlay) onboardingOverlay.classList.remove('active');
 
     // ── CLINIC: mostrar modal de login por profesional antes del session assistant ──
-    const planCode = (window.CLIENT_CONFIG && window.CLIENT_CONFIG.planCode) || '';
-    if (planCode === 'clinic' && typeof window.ClinicAuth !== 'undefined') {
+    let planCode = String((window.CLIENT_CONFIG && (window.CLIENT_CONFIG.planCode || window.CLIENT_CONFIG.plan)) || '').toLowerCase();
+    if (!planCode && window.CLIENT_CONFIG && window.CLIENT_CONFIG.canGenerateApps === true) {
+        planCode = 'clinic';
+    }
+
+    let looksClinicByProfessionals = false;
+    try {
+        const wpProbe = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+        looksClinicByProfessionals = Array.isArray(wpProbe) && wpProbe.some(function(wp) {
+            return Array.isArray(wp && wp.professionals) && wp.professionals.length > 1;
+        });
+    } catch (_) {}
+
+    const isClinicMode = planCode === 'clinic' || looksClinicByProfessionals;
+
+    if (isClinicMode && typeof window.ClinicAuth !== 'undefined') {
         let clinicProfessionals = [];
         try {
             const wp = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');

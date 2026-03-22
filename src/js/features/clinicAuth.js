@@ -104,7 +104,7 @@
         var style = document.createElement('style');
         style.id  = 'clinicAuthStyle';
         style.textContent = [
-            '#clinicAuthOverlay{position:fixed;inset:0;background:rgba(2,6,23,.78);z-index:9000;',
+            '#clinicAuthOverlay{position:fixed;inset:0;background:rgba(2,6,23,.78);z-index:12000;',
             'display:none;align-items:center;justify-content:center;padding:20px;}',
             '#clinicAuthBox{background:var(--bg-card,#fff);border-radius:18px;',
             'box-shadow:0 20px 60px rgba(0,0,0,.45);padding:28px 28px 22px;',
@@ -166,6 +166,10 @@
     function _showModal() {
         var overlay = document.getElementById('clinicAuthOverlay');
         if (!overlay) return;
+
+        // Si el asistente de sesión quedó abierto, ocultarlo para forzar PIN.
+        var saOverlay = document.getElementById('sessionAssistantOverlay');
+        if (saOverlay) saOverlay.classList.remove('active');
 
         // Poblar dropdown
         var select = document.getElementById('clinicAuthSelect');

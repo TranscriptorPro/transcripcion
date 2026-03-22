@@ -39,7 +39,25 @@ function _isValidBackendUrl(url) {
 
 function _readStoredClientConfig() {
     try {
-        return JSON.parse(localStorage.getItem('client_config_stored') || '{}') || {};
+        const parsed = JSON.parse(localStorage.getItem('client_config_stored') || '{}') || {};
+        if (parsed && parsed.type && parsed.type !== 'ADMIN') {
+            const hasPlanCode = !!String(parsed.planCode || '').trim();
+            if (!hasPlanCode) {
+                const fallbackPlan = String(parsed.plan || '').toLowerCase();
+                if (fallbackPlan) {
+                    parsed.planCode = fallbackPlan;
+                } else if (parsed.canGenerateApps === true) {
+                    parsed.planCode = 'clinic';
+                } else if (parsed.type === 'TRIAL') {
+                    parsed.planCode = 'trial';
+                } else if (parsed.type === 'NORMAL') {
+                    parsed.planCode = 'normal';
+                } else if (parsed.type === 'PRO') {
+                    parsed.planCode = 'pro';
+                }
+            }
+        }
+        return parsed;
     } catch (_) {
         return {};
     }

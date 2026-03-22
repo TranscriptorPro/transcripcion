@@ -16,6 +16,10 @@ window.normalizeMatriculaDisplay = function (value) {
 window.applyProfessionalData = function (data) {
     if (!data) return;
     const { nombre, matricula, specialties, sexo } = data;
+    const planCode = String((window.CLIENT_CONFIG && (window.CLIENT_CONFIG.planCode || window.CLIENT_CONFIG.plan)) || '').toLowerCase();
+    const isClinicMode = planCode === 'clinic' || (window.CLIENT_CONFIG && window.CLIENT_CONFIG.canGenerateApps === true);
+    const clinicName = String((data.razonSocial || data.workplace || data.nombre || '')).trim();
+    const shouldUseInstitutionName = !!(isClinicMode && clinicName && String(nombre || '').trim() === clinicName);
     const normalizedMatricula = (typeof window.normalizeMatriculaDisplay === 'function')
         ? window.normalizeMatriculaDisplay(matricula)
         : matricula;
@@ -24,7 +28,9 @@ window.applyProfessionalData = function (data) {
     const isAdmin = (typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type === 'ADMIN');
     const welcomeName = document.getElementById('doctorWelcomeName');
     if (welcomeName && !isAdmin) {
-        if (typeof window.getProfessionalDisplay === 'function') {
+        if (shouldUseInstitutionName) {
+            welcomeName.textContent = clinicName;
+        } else if (typeof window.getProfessionalDisplay === 'function') {
             const prof = window.getProfessionalDisplay(nombre, sexo);
             welcomeName.textContent = prof.fullName;
         } else {
@@ -45,7 +51,9 @@ window.applyProfessionalData = function (data) {
     const lockName = document.getElementById('lockNameDisplay');
     const lockMatricula = document.getElementById('lockMatriculaDisplay');
     if (lockName) {
-        if (typeof window.getProfessionalDisplay === 'function') {
+        if (shouldUseInstitutionName) {
+            lockName.textContent = clinicName;
+        } else if (typeof window.getProfessionalDisplay === 'function') {
             lockName.textContent = window.getProfessionalDisplay(nombre, sexo).fullName;
         } else {
             lockName.textContent = nombre;
