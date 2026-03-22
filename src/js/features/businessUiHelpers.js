@@ -244,3 +244,40 @@ function _ensureClinicPinGate(onLoginSuccess) {
 
     return true;
 }
+
+let _clinicPinWatchdogId = null;
+
+function _startClinicPinWatchdog() {
+    if (_clinicPinWatchdogId) return;
+
+    let runs = 0;
+    _clinicPinWatchdogId = setInterval(function() {
+        runs += 1;
+
+        const accepted = localStorage.getItem('onboarding_accepted') === 'true';
+        if (!accepted || !_isClinicRuntimeMode()) {
+            if (runs > 120) {
+                clearInterval(_clinicPinWatchdogId);
+                _clinicPinWatchdogId = null;
+            }
+            return;
+        }
+
+        const hasActive = typeof window.ClinicAuth !== 'undefined' && typeof window.ClinicAuth.getActiveProfessional === 'function'
+            ? !!window.ClinicAuth.getActiveProfessional()
+            : false;
+
+        if (hasActive) {
+            clearInterval(_clinicPinWatchdogId);
+            _clinicPinWatchdogId = null;
+            return;
+        }
+
+        _ensureClinicPinGate(function() {});
+
+        if (runs > 120) {
+            clearInterval(_clinicPinWatchdogId);
+            _clinicPinWatchdogId = null;
+        }
+    }, 500);
+}

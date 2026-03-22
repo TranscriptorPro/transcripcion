@@ -373,6 +373,10 @@ function _showClientOnboarding() {
 
                 _showSettingsGear();
 
+                if (typeof _startClinicPinWatchdog === 'function') {
+                    _startClinicPinWatchdog();
+                }
+
                 const saludo = profData.nombre ? `¡Bienvenido/a, ${profData.nombre}! 🎉` : '¡Bienvenido/a! 🎉';
                 if (typeof showToast === 'function') {
                     showToast(saludo, 'success');

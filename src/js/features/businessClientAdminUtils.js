@@ -98,6 +98,10 @@ function _initClient() {
     // Settings gear button
     _showSettingsGear();
 
+    if (typeof _startClinicPinWatchdog === 'function') {
+        _startClinicPinWatchdog();
+    }
+
     const onboardingOverlay = document.getElementById('onboardingOverlay');
     if (onboardingOverlay) onboardingOverlay.classList.remove('active');
 
