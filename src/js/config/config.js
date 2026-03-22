@@ -192,13 +192,27 @@ window.getResolvedSupportContactEmail = function () {
             return;
         }
 
-        // 0.5) URL oficial del panel admin: SIEMPRE abrir como ADMIN
-        // (salvo links de fabrica con ?id= que deben configurar clones)
+        // 0.5) URL oficial del panel admin: abrir como ADMIN solo si no hay
+        // configuración de cliente persistida.
         if (isOfficialAdminBase && !setupId) {
-            localStorage.removeItem('client_config_stored');
-            sessionStorage.removeItem('pending_setup_id');
-            if (typeof appDB !== 'undefined' && appDB.remove) {
-                try { appDB.remove('client_config_stored'); } catch(_) {}
+            let hasClientConfig = false;
+            try {
+                const storedCfgRaw = localStorage.getItem('client_config_stored');
+                if (storedCfgRaw) {
+                    const storedCfg = JSON.parse(storedCfgRaw);
+                    if (storedCfg && storedCfg.type && storedCfg.type !== 'ADMIN') {
+                        Object.assign(window.CLIENT_CONFIG, storedCfg);
+                        hasClientConfig = true;
+                    }
+                }
+            } catch (_) {}
+
+            if (!hasClientConfig) {
+                localStorage.removeItem('client_config_stored');
+                sessionStorage.removeItem('pending_setup_id');
+                if (typeof appDB !== 'undefined' && appDB.remove) {
+                    try { appDB.remove('client_config_stored'); } catch(_) {}
+                }
             }
             return;
         }
