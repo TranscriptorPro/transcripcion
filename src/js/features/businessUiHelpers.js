@@ -152,3 +152,25 @@ function _launchSessionAssistant() {
         if (typeof openSessionAssistant === 'function') openSessionAssistant();
     }, 350);
 }
+
+// Helper: esperar a que los módulos de clínica estén realmente cargados.
+function _whenClinicModulesReady(callback) {
+    let attempts = 0;
+    const maxAttempts = 80;
+
+    function check() {
+        const sessionReady = typeof window.initSessionAssistant === 'function' && typeof window.openSessionAssistant === 'function';
+        const clinicReady = typeof window.ClinicAuth !== 'undefined';
+        const adminReady = typeof window.ClinicAdminPanel !== 'undefined';
+
+        if ((sessionReady && clinicReady) || attempts >= maxAttempts) {
+            callback({ sessionReady, clinicReady, adminReady });
+            return;
+        }
+
+        attempts += 1;
+        setTimeout(check, 50);
+    }
+
+    check();
+}

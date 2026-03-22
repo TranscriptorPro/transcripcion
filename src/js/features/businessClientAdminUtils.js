@@ -117,28 +117,34 @@ function _initClient() {
 
     const isClinicMode = planCode === 'clinic' || looksClinicByProfessionals;
 
-    if (isClinicMode && typeof window.ClinicAuth !== 'undefined') {
-        let clinicProfessionals = [];
-        try {
-            const wp = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
-            clinicProfessionals = (wp[0] && wp[0].professionals) || [];
-        } catch (_) {}
+    if (isClinicMode) {
+        _whenClinicModulesReady(function(ready) {
+            if (!ready.clinicReady) {
+                console.error('ClinicAuth no cargó a tiempo para el flujo clínica');
+                return;
+            }
 
-        window.ClinicAuth.init(clinicProfessionals, function(activePro) {
-            // Post-login: session assistant + PWA prompt
-            _launchSessionAssistant();
-            if (!window.matchMedia('(display-mode: standalone)').matches) {
-                _tryPwaInstall(3);
+            let clinicProfessionals = [];
+            try {
+                const wp = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+                clinicProfessionals = (wp[0] && wp[0].professionals) || [];
+            } catch (_) {}
+
+            window.ClinicAuth.init(clinicProfessionals, function() {
+                // Post-login: session assistant + PWA prompt
+                _launchSessionAssistant();
+                if (!window.matchMedia('(display-mode: standalone)').matches) {
+                    _tryPwaInstall(3);
+                }
+            });
+
+            if (typeof window.ClinicAuth.setupChangeProfButton === 'function') {
+                window.ClinicAuth.setupChangeProfButton();
+            }
+            if (ready.adminReady && typeof window.ClinicAdminPanel.setup === 'function') {
+                window.ClinicAdminPanel.setup();
             }
         });
-
-        if (typeof window.ClinicAuth.setupChangeProfButton === 'function') {
-            window.ClinicAuth.setupChangeProfButton();
-        }
-        if (typeof window.ClinicAdminPanel !== 'undefined' &&
-            typeof window.ClinicAdminPanel.setup === 'function') {
-            window.ClinicAdminPanel.setup();
-        }
         return; // session assistant se lanza desde el callback de ClinicAuth.init
     }
 

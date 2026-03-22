@@ -395,24 +395,30 @@ function _showClientOnboarding() {
                     });
                 } catch (_) {}
 
-                if ((planCode === 'clinic' || looksClinicByProfessionals) && typeof window.ClinicAuth !== 'undefined') {
-                    let clinicProfessionals = [];
-                    try {
-                        const wp = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
-                        clinicProfessionals = (wp[0] && wp[0].professionals) || [];
-                    } catch (_) {}
+                if (planCode === 'clinic' || looksClinicByProfessionals) {
+                    _whenClinicModulesReady(function(ready) {
+                        if (!ready.clinicReady) {
+                            console.error('ClinicAuth no cargó a tiempo tras onboarding clínica');
+                            return;
+                        }
 
-                    window.ClinicAuth.init(clinicProfessionals, function() {
-                        _launchSessionAssistant();
+                        let clinicProfessionals = [];
+                        try {
+                            const wp = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+                            clinicProfessionals = (wp[0] && wp[0].professionals) || [];
+                        } catch (_) {}
+
+                        window.ClinicAuth.init(clinicProfessionals, function() {
+                            _launchSessionAssistant();
+                        });
+
+                        if (typeof window.ClinicAuth.setupChangeProfButton === 'function') {
+                            window.ClinicAuth.setupChangeProfButton();
+                        }
+                        if (ready.adminReady && typeof window.ClinicAdminPanel.setup === 'function') {
+                            window.ClinicAdminPanel.setup();
+                        }
                     });
-
-                    if (typeof window.ClinicAuth.setupChangeProfButton === 'function') {
-                        window.ClinicAuth.setupChangeProfButton();
-                    }
-                    if (typeof window.ClinicAdminPanel !== 'undefined' &&
-                        typeof window.ClinicAdminPanel.setup === 'function') {
-                        window.ClinicAdminPanel.setup();
-                    }
                     return;
                 }
 

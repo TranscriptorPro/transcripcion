@@ -9,7 +9,7 @@
     <!-- PURGE: auto-purge al detectar nueva versión + ?purge manual. Preserva tema y color -->
     <script>
     (function() {
-        var APP_VERSION = 'v178'; // ← bump esto en cada deploy para forzar auto-purge
+        var APP_VERSION = 'v179'; // ← bump esto en cada deploy para forzar auto-purge
         try { window.APP_VERSION = APP_VERSION; } catch(_) {}
         var params = new URLSearchParams(window.location.search);
         var forcePurge = params.has('purge');
@@ -2663,13 +2663,15 @@
         <script src="src/js/features/settingsModalActionsUtils.js"></script>
         <script src="src/js/features/settingsPanel.js"></script>
         <script src="src/js/features/pricingCart.js"></script>
+        <script src="src/js/features/sessionAssistant.js"></script>
+        <script src="src/js/features/clinicAuth.js"></script>
+        <script src="src/js/features/clinicAdminPanel.js"></script>
         <script src="src/js/features/businessUiHelpers.js"></script>
         <script src="src/js/features/businessFactoryUiUtils.js"></script>
         <script src="src/js/features/businessClientAdminUtils.js"></script>
         <script src="src/js/features/businessOnboardingUtils.js"></script>
         <script src="src/js/features/businessFactorySetupUtils.js"></script>
         <script src="src/js/features/business.js"></script>
-        <script src="src/js/features/sessionAssistant.js"></script>
         <script src="src/js/features/outputProfiles.js"></script>
         <script src="src/js/features/pdfDataAccessUtils.js"></script>
         <script src="src/js/features/reportContextResolver.js"></script>
@@ -2681,8 +2683,6 @@
         <script src="src/js/features/reportHistory.js"></script>
         <script src="src/js/features/userGuide.js"></script>
         <script src="src/js/utils/mobileUI.js"></script>
-        <script src="src/js/features/clinicAuth.js"></script>
-        <script src="src/js/features/clinicAdminPanel.js"></script>
 
         <!-- G1: Modal Panel Registro de Pacientes -->
         <div class="modal-overlay" id="registryPanelOverlay">
