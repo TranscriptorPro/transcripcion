@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Setup CLINICA001 — Local QA</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 680px; margin: 2rem auto; padding: 1rem; }
+  h1 { color: #1a3d5c; }
+  .card { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 10px; padding: 1.2rem; margin: 1rem 0; }
+  .pros { display: grid; gap: .5rem; margin-top: .5rem; }
+  .pro { background: white; border: 1px solid #ddd; border-radius: 8px; padding: .5rem .8rem; display: flex; justify-content: space-between; align-items: center; font-size: .9rem; }
+  .pro.inactivo { opacity: .55; }
+  .pin { font-family: monospace; background: #f0fdf4; border: 1px solid #86efac; border-radius: 4px; padding: 2px 8px; font-weight: 700; }
+  .pin.inactive { background: #fef2f2; border-color: #fca5a5; }
+  button { padding: .6rem 1.2rem; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; }
+  .btn-primary { background: #1a3d5c; color: white; margin-right: .5rem; }
+  .btn-danger { background: #dc2626; color: white; }
+  .btn-open { background: #059669; color: white; }
+  .status { margin: 1rem 0; padding: .8rem; border-radius: 8px; display: none; }
+  .status.ok { background: #dcfce7; color: #166534; display: block; }
+  .status.err { background: #fef2f2; color: #991b1b; display: block; }
+  code { background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: .85rem; }
+</style>
+</head>
+<body>
+<h1>🏥 Setup CLINICA001 — QA Local</h1>
+<p>Esta página inyecta la configuración completa de <strong>Clínica San Rafael</strong> en localStorage para probar el clon localmente <em>sin necesitar URL de setup del backend</em>.</p>
+
+<div class="card">
+  <strong>Clínica San Rafael</strong><br>
+  Av. Corrientes 3450, Piso 2, CABA<br>
+  Plan: <code>clinic</code> | Estado: <code>active</code> | Vence: <code>2027-03-22</code><br>
+  Dispositivos max: 5 | Plantillas asignadas: 19<br><br>
+  <strong>Profesionales:</strong>
+  <div class="pros" id="proList">
+    <div class="pro"><span>👨‍⚕️ Dr. Andrés Villanueva <small>(Cardiología)</small></span><span>@avillanueva <span class="pin">1234</span></span></div>
+    <div class="pro"><span>👩‍⚕️ Dra. Valeria Moretti <small>(Neurología)</small></span><span>@vmoretti <span class="pin">2468</span></span></div>
+    <div class="pro"><span>👨‍⚕️ Dr. Santiago Ruiz <small>(Traumatología)</small></span><span>@sruiz <span class="pin">3579</span></span></div>
+    <div class="pro"><span>👩‍⚕️ Dra. Camila Fernández <small>(Pediatría)</small></span><span>@cfernandez <span class="pin">5678</span></span></div>
+    <div class="pro inactivo"><span>🚫 Dr. Roberto Espinoza <small>(Gastroenterología)</small></span><span>@respinoza <span class="pin inactive">0000</span> <em>inactivo</em></span></div>
+  </div>
+</div>
+
+<div id="statusMsg" class="status"></div>
+
+<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem;">
+  <button class="btn-primary" onclick="setupClinica()">⚡ Inyectar configuración en localStorage</button>
+  <button class="btn-danger" onclick="clearConfig()">🗑 Limpiar localStorage</button>
+  <button class="btn-open" onclick="openClone()">🚀 Abrir clon</button>
+</div>
+
+<script>
+const TEST_GROQ_API_KEY = (function() {
+  try {
+    const q = new URLSearchParams(window.location.search);
+    const k = (q.get('apiKey') || '').trim();
+    if (/^gsk_/i.test(k)) return k;
+  } catch (_) {}
+  return '';
+})();
+
+const CLINICA_CONFIG = {
+  clientConfig: {
+    medicoId: 'CLINICA001',
+    type: 'PRO',
+    planCode: 'clinic',
+    status: 'active',
+    specialties: ['Cardiología','Neurología','Traumatología','Pediatría','Gastroenterología'],
+    maxDevices: 5,
+    trialDays: 0,
+    hasProMode: true,
+    hasDashboard: true,
+    canGenerateApps: true,
+    allowedTemplates: ["holter","cinecoro","eco_stress","ecg","gammagrafia_cardiaca","mapa","ett","electromiografia","polisomnografia","resonancia","radiografia","tac","protocolo_quirurgico","gastroscopia","colonoscopia","ecografia_abdominal","nota_evolucion","epicrisis","generico"],
+    paymentPortalUrl: '',
+    backendUrl: 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec'
+  },
+  profData: {
+    nombre: 'Clínica San Rafael',
+    sexo: '',
+    matricula: 'HC-45892',
+    workplace: '',
+    specialties: ['Cardiología','Neurología','Traumatología','Pediatría','Gastroenterología'],
+    estudios: [
+      { nombre: 'Ecocardiograma transtorácico', especialidad: 'Cardiología' },
+      { nombre: 'Holter 24 hs', especialidad: 'Cardiología' },
+      { nombre: 'Electroencefalograma', especialidad: 'Neurología' },
+      { nombre: 'RMN cerebral', especialidad: 'Neurología' },
+      { nombre: 'Artroscopía rodilla', especialidad: 'Traumatología' },
+      { nombre: 'Consulta pediátrica', especialidad: 'Pediatría' },
+      { nombre: 'Colonoscopía', especialidad: 'Gastroenterología' }
+    ],
+    especialidad: 'Cardiología,Neurología,Traumatología,Pediatría,Gastroenterología'
+  },
+  workplaceProfiles: [{
+    name: 'Clínica San Rafael',
+    address: 'Av. Corrientes 3450, Piso 2, Buenos Aires, Argentina',
+    phone: '+54 11 4523-8800',
+    email: 'contacto@clinicasanrafael.com.ar',
+    footer: 'Clínica San Rafael • CABA • Tel: 4523-8800 • www.clinicasanrafael.com.ar',
+    logo: null,
+    professionals: [
+      {
+        id: 'PRO001',
+        nombre: 'Dr. Andrés Villanueva',
+        matricula: 'MN 54321',
+        especialidades: ['Cardiología'],
+        usuario: 'avillanueva',
+        pin: '1234',
+        email: 'avillanueva@clinicasanrafael.com.ar',
+        telefono: '+54 11 4523-8801',
+        whatsapp: '+5491145238801',
+        instagram: '@dr.villanueva.cardio',
+        facebook: '',
+        x: '',
+        youtube: '',
+        firma: null,
+        logo: null,
+        redesSociales: { whatsapp: '+5491145238801', instagram: '@dr.villanueva.cardio' },
+        showPhone: true,
+        showEmail: true,
+        showSocial: true,
+        activo: true
+      },
+      {
+        id: 'PRO002',
+        nombre: 'Dra. Valeria Moretti',
+        matricula: 'MP 78234',
+        especialidades: ['Neurología'],
+        usuario: 'vmoretti',
+        pin: '2468',
+        email: 'vmoretti@clinicasanrafael.com.ar',
+        telefono: '+54 11 4523-8802',
+        whatsapp: '+5491145238802',
+        instagram: '@dra.moretti.neurologia',
+        facebook: 'dravaleria.moretti',
+        x: '',
+        youtube: '',
+        firma: null,
+        logo: null,
+        redesSociales: { whatsapp: '+5491145238802', instagram: '@dra.moretti.neurologia', facebook: 'dravaleria.moretti' },
+        showPhone: true,
+        showEmail: true,
+        showSocial: true,
+        activo: true
+      },
+      {
+        id: 'PRO003',
+        nombre: 'Dr. Santiago Ruiz',
+        matricula: 'MN 63847',
+        especialidades: ['Traumatología'],
+        usuario: 'sruiz',
+        pin: '3579',
+        email: 'sruiz@clinicasanrafael.com.ar',
+        telefono: '+54 11 4523-8803',
+        whatsapp: '+5491145238803',
+        instagram: '',
+        facebook: '',
+        x: '@dr_ruiz_trauma',
+        youtube: '',
+        firma: null,
+        logo: null,
+        redesSociales: { whatsapp: '+5491145238803', x: '@dr_ruiz_trauma' },
+        showPhone: true,
+        showEmail: false,
+        showSocial: true,
+        activo: true
+      },
+      {
+        id: 'PRO004',
+        nombre: 'Dra. Camila Fernández',
+        matricula: 'MP 91045',
+        especialidades: ['Pediatría'],
+        usuario: 'cfernandez',
+        pin: '5678',
+        email: 'cfernandez@clinicasanrafael.com.ar',
+        telefono: '+54 11 4523-8804',
+        whatsapp: '+5491145238804',
+        instagram: '@dra.camila.pediatria',
+        facebook: 'dra.camilafernandez',
+        x: '',
+        youtube: 'DraCamilaFernandez',
+        firma: null,
+        logo: null,
+        redesSociales: { whatsapp: '+5491145238804', instagram: '@dra.camila.pediatria', facebook: 'dra.camilafernandez', youtube: 'DraCamilaFernandez' },
+        showPhone: true,
+        showEmail: true,
+        showSocial: true,
+        activo: true
+      },
+      {
+        id: 'PRO005',
+        nombre: 'Dr. Roberto Espinoza',
+        matricula: 'MN 40122',
+        especialidades: ['Gastroenterología'],
+        usuario: 'respinoza',
+        pin: '0000',
+        email: 'respinoza@clinicasanrafael.com.ar',
+        telefono: '+54 11 4523-8805',
+        whatsapp: '',
+        instagram: '',
+        facebook: '',
+        x: '',
+        youtube: '',
+        firma: null,
+        logo: null,
+        redesSociales: {},
+        showPhone: true,
+        showEmail: true,
+        showSocial: false,
+        activo: false
+      }
+    ]
+  }]
+};
+
+function setStatus(msg, ok) {
+  const el = document.getElementById('statusMsg');
+  el.className = 'status ' + (ok ? 'ok' : 'err');
+  el.innerHTML = msg;
+}
+
+function setupClinica() {
+  try {
+    localStorage.setItem('client_config_stored', JSON.stringify(CLINICA_CONFIG.clientConfig));
+    localStorage.setItem('prof_data', JSON.stringify(CLINICA_CONFIG.profData));
+    localStorage.setItem('workplace_profiles', JSON.stringify(CLINICA_CONFIG.workplaceProfiles));
+    // Limpiar datos de sesión anteriores para forzar login fresco
+    localStorage.removeItem('clinic_active_professional');
+    localStorage.removeItem('clinic_login_attempts');
+      // Marcar T&C como ya aceptados para que salte el onboarding y vaya directo al ClinicAuth
+      localStorage.setItem('onboarding_accepted', 'true');
+      localStorage.setItem('onboarding_done', 'true');
+      if (TEST_GROQ_API_KEY) {
+        localStorage.setItem('groq_api_key', TEST_GROQ_API_KEY);
+      }
+      setStatus('✅ Configuración de CLINICA001 inyectada correctamente en localStorage.<br>Ahora hacé clic en <strong>🚀 Abrir clon</strong> para ver el login de profesionales.', true);
+  } catch(e) {
+    setStatus('❌ Error: ' + e.message, false);
+  }
+}
+
+function clearConfig() {
+  ['client_config_stored','prof_data','workplace_profiles','clinic_active_professional','clinic_login_attempts','groq_api_key'].forEach(k => localStorage.removeItem(k));
+  setStatus('🗑 localStorage limpiado. El clon volverá al estado inicial.', true);
+}
+
+function openClone() {
+  window.open('http://localhost:4173/index.html', '_blank');
+}
+</script>
+</body>
+</html>

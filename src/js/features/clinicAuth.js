@@ -67,7 +67,11 @@
             .filter(function(p) { return p.activo !== false; })
             .map(function(p, i) {
                 // especialidades: array siempre
+                // Compatibilidad con formato antiguo: "especialidad" string.
                 var esp = p.especialidades;
+                if ((esp == null || esp === '') && typeof p.especialidad === 'string') {
+                    esp = p.especialidad;
+                }
                 if (typeof esp === 'string') esp = esp ? [esp] : [];
                 if (!Array.isArray(esp))     esp = [];
                 // redesSociales: nuevo nombre; socialMedia: fallback antiguo

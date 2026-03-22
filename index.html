@@ -9,7 +9,7 @@
     <!-- PURGE: auto-purge al detectar nueva versión + ?purge manual. Preserva tema y color -->
     <script>
     (function() {
-        var APP_VERSION = 'v169'; // ← bump esto en cada deploy para forzar auto-purge
+        var APP_VERSION = 'v170'; // ← bump esto en cada deploy para forzar auto-purge
         try { window.APP_VERSION = APP_VERSION; } catch(_) {}
         var params = new URLSearchParams(window.location.search);
         var forcePurge = params.has('purge');
@@ -320,11 +320,11 @@
                         </div>
                         <div style="background: var(--bg-hover); border: 2px solid var(--primary); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem;">
                             <div style="display:flex; gap: 0.5rem; align-items: baseline; margin-bottom: 0.6rem;">
-                                <span style="font-size: 0.85rem; color: var(--text-secondary); min-width: 90px;">👨‍⚕️ Profesional:</span>
+                                <span id="onboardingLabelNombre" style="font-size: 0.85rem; color: var(--text-secondary); min-width: 90px;">👨‍⚕️ Profesional:</span>
                                 <strong id="onboardingDisplayNombre" style="color: var(--text-primary); font-size: 1.05rem;">—</strong>
                             </div>
                             <div style="display:flex; gap: 0.5rem; align-items: baseline;">
-                                <span style="font-size: 0.85rem; color: var(--text-secondary); min-width: 90px;">🏷️ Matrícula:</span>
+                                <span id="onboardingLabelMatricula" style="font-size: 0.85rem; color: var(--text-secondary); min-width: 90px;">🏷️ Matrícula:</span>
                                 <strong id="onboardingDisplayMatricula" style="color: var(--text-primary); font-size: 1.05rem;">—</strong>
                             </div>
                         </div>

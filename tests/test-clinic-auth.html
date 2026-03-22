@@ -18,6 +18,8 @@
 </head>
 <body>
 <h1>🧪 Test Suite C5 — ClinicAuth (login profesional CLINIC)</h1>
+<div id="testResults"></div>
+<div id="summary"></div>
 
 <!-- Botón de cambiar profesional stub en el header -->
 <button id="btnCambiarProfesional" style="display:none;">Cambiar profesional</button>
@@ -275,6 +277,7 @@ assert('switchProfessional() vuelve a mostrar el overlay', function() {
 // ──────────────────────────────────────────────────────────────────────────────
 // Primero hacer login para ocultar modal
 document.getElementById('clinicAuthSelect').value = '1';
+document.getElementById('clinicAuthSelect').dispatchEvent(new Event('change'));
 document.getElementById('clinicAuthPin').value = '1234';
 document.getElementById('clinicAuthEnterBtn').click();
 assert('Setup: login limpia modal', function() {
@@ -326,8 +329,5 @@ sumEl.textContent = '✅ ' + passed + ' pasados   ❌ ' + failed + ' fallidos   
 
 console.log('TEST RESULT:', passed + '/' + total, failed ? 'FAILED' : 'OK');
 </script>
-
-<div id="testResults"></div>
-<div id="summary"></div>
 </body>
 </html>

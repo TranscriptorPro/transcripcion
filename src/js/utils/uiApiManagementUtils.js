@@ -5,6 +5,14 @@ window.initApiManagement = function () {
     const apiKeyInput = document.getElementById('apiKeyInput');
     const apiTestResult = document.getElementById('apiTestResult');
 
+    function normalizeKey(key) {
+        if (typeof window.normalizeGroqApiKey === 'function') {
+            return window.normalizeGroqApiKey(key);
+        }
+        const raw = String(key || '').trim();
+        return /^gsk_/i.test(raw) ? ('gsk_' + raw.slice(4)) : raw;
+    }
+
     // Restaurar API key guardada al cargar la pagina
     const savedKey = (typeof window.getResolvedGroqApiKey === 'function')
         ? window.getResolvedGroqApiKey()
@@ -40,12 +48,13 @@ window.initApiManagement = function () {
     // Guardar API Key (con validacion real contra Groq)
     if (saveApiKeyBtn && apiKeyInput) {
         saveApiKeyBtn.addEventListener('click', async () => {
-            const key = apiKeyInput.value.trim();
+            const key = normalizeKey(apiKeyInput.value);
+            apiKeyInput.value = key;
             if (!key || key === '••••••••••••••••') {
                 if (typeof showToast === 'function') showToast('⚠️ Ingresá una API Key válida', 'error');
                 return;
             }
-            if (!key.startsWith('gsk_')) {
+            if (!/^gsk_/i.test(key)) {
                 if (typeof showToast === 'function') showToast('❌ La API Key debe empezar con gsk_', 'error');
                 return;
             }
@@ -148,6 +157,17 @@ window.initApiManagement = function () {
     }
 
     if (apiKeyInput) {
+        apiKeyInput.setAttribute('autocapitalize', 'none');
+        apiKeyInput.setAttribute('autocorrect', 'off');
+        apiKeyInput.setAttribute('spellcheck', 'false');
+
+        apiKeyInput.addEventListener('input', () => {
+            const v = apiKeyInput.value;
+            if (/^gsk_/i.test(v) && !v.startsWith('gsk_')) {
+                apiKeyInput.value = normalizeKey(v);
+            }
+        });
+
         apiKeyInput.addEventListener('focus', () => {
             if (apiKeyInput.dataset.hasKey) {
                 apiKeyInput.value = '';

@@ -17,6 +17,8 @@
 </head>
 <body>
 <h1>🧪 Test Suite C6 — ClinicAdminPanel</h1>
+<div id="testResults"></div>
+<div id="summary"></div>
 
 <!-- Botones stub en el header -->
 <button id="btnCambiarProfesional" style="display:none;">Cambiar profesional</button>
@@ -353,8 +355,5 @@ sumEl.style.borderLeft = '4px solid ' + (failed ? '#ef4444' : '#22c55e');
 sumEl.textContent = '✅ ' + passed + ' pasados   ❌ ' + failed + ' fallidos   (total: ' + total + ')';
 console.log('TEST RESULT:', passed + '/' + total, failed ? 'FAILED' : 'OK');
 </script>
-
-<div id="testResults"></div>
-<div id="summary"></div>
 </body>
 </html>

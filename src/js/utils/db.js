@@ -236,17 +236,9 @@
                 // Marcar migración completa
                 return idbImpl.set(MIGRATED_FLAG, true);
             }).then(function () {
-                // Limpiar localStorage excepto theme + skin
-                const themeVal = localStorage.getItem(THEME_KEY);
-                const skinVal = localStorage.getItem(SKIN_KEY);
-                try { localStorage.clear(); } catch (e) {/* silencioso */}
-                if (themeVal !== null) {
-                    try { localStorage.setItem(THEME_KEY, themeVal); } catch (e) {/* silencioso */}
-                }
-                if (skinVal !== null) {
-                    try { localStorage.setItem(SKIN_KEY, skinVal); } catch (e) {/* silencioso */}
-                }
-                console.log('[db.js] Migración localStorage → IndexedDB completada. ' + keysToMigrate.length + ' claves migradas.');
+                // No limpiar localStorage: múltiples módulos leen estado al arranque
+                // y borrar aquí provoca carreras (ej. pérdida de client_config/onboarding en clones).
+                console.log('[db.js] Migración localStorage → IndexedDB completada sin purge local. ' + keysToMigrate.length + ' claves migradas.');
             });
         });
     }

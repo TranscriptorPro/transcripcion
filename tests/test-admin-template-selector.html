@@ -154,10 +154,11 @@ h1 { font-size: 1.1rem; }
     const unchecked2 = panel2 ? Array.from(panel2.querySelectorAll('.auc-tpl:not(:checked)')).map(cb => cb.value) : [];
     assert(unchecked2.length > 0, 'Hay plantillas NO marcadas (no es "todas")');
 
-    // ── Test 12: Verify categories from TEMPLATE_CATEGORIES are rendered ──
-    const cats = window.TEMPLATE_CATEGORIES || {};
-    const catNames = Object.keys(cats);
-    assert(catNames.length > 0, 'TEMPLATE_CATEGORIES tiene categorías (' + catNames.length + ')');
+    // ── Test 12: Verify categories from active registry are rendered ──
+    const registry = window.TP_TEMPLATE_CATEGORY_REGISTRY || {};
+    const catMap = registry.templateMapByCategory || {};
+    const catNames = Object.keys(catMap);
+    assert(catNames.length > 0, 'TP_TEMPLATE_CATEGORY_REGISTRY tiene categorías (' + catNames.length + ')');
 
     // ── Summary ──
     window.AdminUserConfigWizard.close();

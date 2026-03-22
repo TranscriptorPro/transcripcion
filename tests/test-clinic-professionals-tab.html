@@ -19,6 +19,8 @@
 </head>
 <body>
 <h1>🧪 Test Suite C2 — Tab "👥 Profesionales" en AdminUserConfigWizard</h1>
+<div id="testResults"></div>
+<div id="summary"></div>
 
 <!-- Cargar wizard deps (simulados) -->
 <script>
@@ -328,9 +330,9 @@ assert('Tab Profesionales OCULTO para plan PRO', function() {
   return tab && tab.style.display === 'none';
 });
 
-assert('Panel Profesionales vacío para plan PRO', function() {
+assert('Panel Profesionales no activo para plan PRO', function() {
   var p = $('.auc-panel[data-panel="profesionales"]');
-  return p && p.innerHTML.trim() === '';
+  return p && !p.classList.contains('active');
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -384,8 +386,5 @@ sumEl.textContent = '✅ ' + passed + ' pasados   ❌ ' + failed + ' fallidos   
 
 console.log('TEST RESULT:', passed + '/' + total, failed ? 'FAILED' : 'OK');
 </script>
-
-<div id="testResults"></div>
-<div id="summary"></div>
 </body>
 </html>

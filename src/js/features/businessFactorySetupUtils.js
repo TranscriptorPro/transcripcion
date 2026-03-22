@@ -211,6 +211,7 @@ window.handleFactorySetupCore = async function (medicoId) {
                     // En CLINIC, la identidad principal de la app es la institución.
                     if (plan === 'clinic' && wp.name) {
                         profData.nombre = wp.name;
+                        profData.razonSocial = regDatos.clinicNombre || wp.name || doctor.Nombre || '';
                         if (!profData.matricula) profData.matricula = '';
                     }
                     window._profDataCache = profData;

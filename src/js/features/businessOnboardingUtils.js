@@ -8,21 +8,39 @@ function _showClientOnboarding() {
     const profData = window._profDataCache || JSON.parse(localStorage.getItem('prof_data') || '{}');
     let currentStep = 1;
     const currentType = String((typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type) || 'NORMAL').toUpperCase();
+    const currentPlan = String((typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.planCode) || '').toLowerCase();
+    const isClinicPlan = currentPlan === 'clinic';
     const shouldSkipAdvancedStep = !['PRO', 'ADMIN'].includes(currentType);
 
+    function normalizeKey(key) {
+        if (typeof window.normalizeGroqApiKey === 'function') {
+            return window.normalizeGroqApiKey(key);
+        }
+        const raw = String(key || '').trim();
+        return /^gsk_/i.test(raw) ? ('gsk_' + raw.slice(4)) : raw;
+    }
+
     // Rellenar datos precargados
+    const labelNombre = document.getElementById('onboardingLabelNombre');
+    const labelMatricula = document.getElementById('onboardingLabelMatricula');
     const displayNombre = document.getElementById('onboardingDisplayNombre');
     const displayMatricula = document.getElementById('onboardingDisplayMatricula');
-    if (displayNombre) displayNombre.textContent = profData.nombre || '(no configurado)';
-    if (displayMatricula) displayMatricula.textContent = profData.matricula || '(no configurado)';
+    if (isClinicPlan) {
+        if (labelNombre) labelNombre.textContent = '🏥 Institución:';
+        if (labelMatricula) labelMatricula.textContent = '🧾 Razón social:';
+        if (displayNombre) displayNombre.textContent = profData.workplace || profData.nombre || '(no configurado)';
+        if (displayMatricula) displayMatricula.textContent = profData.razonSocial || profData.nombre || '(no configurado)';
+    } else {
+        if (labelNombre) labelNombre.textContent = '👨‍⚕️ Profesional:';
+        if (labelMatricula) labelMatricula.textContent = '🏷️ Matrícula:';
+        if (displayNombre) displayNombre.textContent = profData.nombre || '(no configurado)';
+        if (displayMatricula) displayMatricula.textContent = profData.matricula || '(no configurado)';
+    }
 
-    // K1: Si la API key ya fue precargada por el admin, ocultar el paso.
+    // En clones, la API key se provisiona desde admin/factory; nunca pedirla al usuario final.
     const apiStep = document.getElementById('onboardingApiKeyStep');
     if (apiStep) {
-        const hasKey = !!((typeof window.getResolvedGroqApiKey === 'function')
-            ? window.getResolvedGroqApiKey()
-            : localStorage.getItem('groq_api_key'));
-        apiStep.style.display = hasKey ? 'none' : '';
+        apiStep.style.display = 'none';
     }
 
     // Crear particulas decorativas
@@ -294,16 +312,17 @@ function _showClientOnboarding() {
         submitBtn.addEventListener('click', () => {
             if (!acceptTerms?.checked) return;
 
-            // K1: Si no hay API key precargada, exigir ingreso valido en primer uso.
-            const apiStepVisible = apiStep && apiStep.style.display !== 'none';
+            // En clones no se solicita API key en onboarding.
+            const apiStepVisible = false;
             const currentStoredKey = String(
                 (typeof window.getResolvedGroqApiKey === 'function' ? window.getResolvedGroqApiKey() : localStorage.getItem('groq_api_key')) || ''
             ).trim();
             const onbKeyEl = document.getElementById('onboardingApiKey');
-            const inputKey = String(onbKeyEl?.value || '').trim();
+            const inputKey = normalizeKey(onbKeyEl?.value || '');
+            if (onbKeyEl && inputKey) onbKeyEl.value = inputKey;
             const resolvedKey = currentStoredKey || inputKey;
 
-            if (apiStepVisible && (!resolvedKey || !resolvedKey.startsWith('gsk_'))) {
+            if (apiStepVisible && (!resolvedKey || !/^gsk_/i.test(resolvedKey))) {
                 if (typeof showToast === 'function') {
                     showToast('🔑 Para continuar, ingresá una API Key válida (gsk_)', 'warning');
                 }
@@ -326,8 +345,8 @@ function _showClientOnboarding() {
                 overlay.classList.remove('active');
 
                 const onbKey = document.getElementById('onboardingApiKey');
-                if (onbKey && onbKey.value.trim() && onbKey.value.trim().startsWith('gsk_')) {
-                    const finalKey = onbKey.value.trim();
+                if (onbKey && onbKey.value.trim() && /^gsk_/i.test(onbKey.value.trim())) {
+                    const finalKey = normalizeKey(onbKey.value.trim());
                     if (typeof window.setGroqApiKey === 'function') {
                         window.setGroqApiKey(finalKey, { source: 'onboarding-submit' });
                     } else {

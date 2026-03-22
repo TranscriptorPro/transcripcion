@@ -22,6 +22,7 @@
 </head>
 <body>
     <h1>🧪 Test: Pricing Cards + Carrito + Resumen Inversión</h1>
+    <div id="hint" style="display:none; margin-bottom:1rem; padding:1rem; border-radius:12px; background:#3f6212; color:#ecfccb; font-size:.9rem; line-height:1.5;"></div>
     <div id="results"></div>
     <div id="summary"></div>
     <div id="log"></div>
@@ -29,7 +30,14 @@
     <script>
         const results = [];
         const logEl = document.getElementById('log');
+        const hintEl = document.getElementById('hint');
         function log(msg) { logEl.textContent += msg + '\n'; }
+
+        function showHint(msg) {
+            if (!hintEl) return;
+            hintEl.style.display = 'block';
+            hintEl.textContent = msg;
+        }
 
         function assert(name, condition, detail = '') {
             results.push({ name, pass: !!condition, detail });
@@ -37,8 +45,18 @@
         }
 
         async function loadRegistroHTML() {
+            if (location.protocol === 'file:') {
+                const msg = 'Este test no debe abrirse con file://. Usa un servidor local HTTP y abrí /tests/test-pricing-cart.html desde allí. Ejemplo: npx serve . o Live Server en VS Code.';
+                showHint(msg);
+                log(msg);
+                return null;
+            }
             try {
                 const res = await fetch('../recursos/registro.html');
+                if (!res.ok) {
+                    log('Error loading registro.html: HTTP ' + res.status);
+                    return null;
+                }
                 const html = await res.text();
                 return html;
             } catch (e) {

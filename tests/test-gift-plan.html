@@ -213,8 +213,9 @@
         group('📄 _getAllTemplateKeys()');
 
         const allKeys = _getAllTemplateKeys();
+        const expectedTotal = Object.values(TEMPLATE_MAP).reduce((acc, cat) => acc + cat.length, 0);
         assert('Retorna array', Array.isArray(allKeys));
-        assert('Tiene 38 plantillas', allKeys.length === 38, `${allKeys.length} plantillas`);
+        assert(`Tiene ${expectedTotal} plantillas`, allKeys.length === expectedTotal, `${allKeys.length} plantillas`);
         
         // Verificar que contiene plantillas de cada categoría
         assertIncludes('Incluye espirometria', allKeys, 'espirometria');
@@ -291,8 +292,9 @@
 
         // Validar templates como JSON
         const parsed = JSON.parse(userData.Allowed_Templates);
+        const expectedTotal = _getAllTemplateKeys().length;
         assert('Allowed_Templates es JSON válido', Array.isArray(parsed));
-        assertEqual('Tiene 37 templates', parsed.length, 37);
+        assertEqual(`Tiene ${expectedTotal} templates`, parsed.length, expectedTotal);
     }
 
     // ── Test 4: ID Generation ──
@@ -320,11 +322,12 @@
             devices: DEVICES_POR_PLAN.GIFT,
             estado: 'active'
         };
+        const expectedTotal = _getAllTemplateKeys().length;
 
         assertEqual('Plan auto = GIFT', config.plan, 'GIFT');
         assertEqual('Devices auto = 10', config.devices, 10);
         assertEqual('Estado auto = active', config.estado, 'active');
-        assertEqual('Templates auto = 37', config.templates.length, 37);
+        assertEqual(`Templates auto = ${expectedTotal}`, config.templates.length, expectedTotal);
 
         // Verificar que TODAS las categorías están representadas
         const allCats = Object.keys(TEMPLATE_MAP);
@@ -397,12 +400,13 @@
                 cat.forEach(t => selectedTemplates.push(t.key));
             });
         }
+        const expectedTotal = _getAllTemplateKeys().length;
 
-        assertEqual('GIFT recopila 37 templates', selectedTemplates.length, 37);
+        assertEqual(`GIFT recopila ${expectedTotal} templates`, selectedTemplates.length, expectedTotal);
 
         // Deduplicate
         selectedTemplates = [...new Set(selectedTemplates)];
-        assertEqual('Sin duplicados tras dedup', selectedTemplates.length, 37);
+        assertEqual('Sin duplicados tras dedup', selectedTemplates.length, expectedTotal);
 
         const json = JSON.stringify(selectedTemplates);
         assert('JSON válido', json.startsWith('['));
