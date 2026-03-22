@@ -79,6 +79,12 @@
             return;
         }
 
+        if (isClinic) {
+            const clinicAllowed = ['cuenta', 'workplace', 'profiles', 'pdf', 'editor', 'tools', 'theme', 'skins', 'stats', 'info', 'about'];
+            allSections.forEach((key) => toggleAccordion(key, clinicAllowed.includes(key)));
+            return;
+        }
+
         // K2: Cliente final ve solo datos profesionales, lugar de trabajo y soporte.
         const clientAllowed = ['cuenta', 'workplace', 'info'];
         allSections.forEach((key) => toggleAccordion(key, clientAllowed.includes(key)));

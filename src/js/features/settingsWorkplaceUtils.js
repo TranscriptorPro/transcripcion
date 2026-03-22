@@ -39,9 +39,27 @@
         });
     }
 
+    function initClinicAdminLink() {
+        const btn = document.getElementById('settingsClinicAdmin');
+        if (!btn) return;
+
+        const isClinic = typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG && CLIENT_CONFIG.canGenerateApps === true;
+        btn.style.display = isClinic ? '' : 'none';
+        if (!isClinic) return;
+
+        btn.addEventListener('click', () => {
+            const overlay = document.getElementById('settingsModalOverlay');
+            if (overlay) overlay.classList.remove('active');
+            if (typeof window.ClinicAdminPanel !== 'undefined' && typeof window.ClinicAdminPanel.open === 'function') {
+                window.ClinicAdminPanel.open();
+            }
+        });
+    }
+
     window.SettingsWorkplaceUtils = {
         initWorkplaceSection,
         populateWorkplace,
-        initPdfConfigLink
+        initPdfConfigLink,
+        initClinicAdminLink
     };
 })();

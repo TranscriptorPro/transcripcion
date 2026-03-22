@@ -42,6 +42,7 @@
         _initWorkplaceSection();
         _initQuickProfiles();
         _initPdfConfigLink();
+        _initClinicAdminLink();
         _initEditorPrefs();
         _initToolsLinks();
         _initThemeSection();
@@ -161,6 +162,13 @@
         const utils = window.SettingsWorkplaceUtils || {};
         if (typeof utils.initPdfConfigLink === 'function') {
             utils.initPdfConfigLink();
+        }
+    }
+
+    function _initClinicAdminLink() {
+        const utils = window.SettingsWorkplaceUtils || {};
+        if (typeof utils.initClinicAdminLink === 'function') {
+            utils.initClinicAdminLink();
         }
     }
 

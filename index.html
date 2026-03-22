@@ -9,7 +9,7 @@
     <!-- PURGE: auto-purge al detectar nueva versión + ?purge manual. Preserva tema y color -->
     <script>
     (function() {
-        var APP_VERSION = 'v180'; // ← bump esto en cada deploy para forzar auto-purge
+        var APP_VERSION = 'v181'; // ← bump esto en cada deploy para forzar auto-purge
         try { window.APP_VERSION = APP_VERSION; } catch(_) {}
         var params = new URLSearchParams(window.location.search);
         var forcePurge = params.has('purge');
@@ -600,6 +600,9 @@
                             <div id="settingsQuickProfiles" class="stg-profiles-list"></div>
                             <button class="btn btn-accent btn-full stg-action-btn" id="settingsSaveProfile" style="margin-top: 0.5rem;">
                                 ➕ Guardar perfil actual
+                            </button>
+                            <button class="btn btn-outline btn-full stg-action-btn" id="settingsClinicAdmin" style="margin-top: 0.5rem; display:none;">
+                                👥 Administrar profesionales de la clínica
                             </button>
                         </div>
                     </div>
