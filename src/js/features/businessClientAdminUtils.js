@@ -101,50 +101,13 @@ function _initClient() {
     const onboardingOverlay = document.getElementById('onboardingOverlay');
     if (onboardingOverlay) onboardingOverlay.classList.remove('active');
 
-    // ── CLINIC: mostrar modal de login por profesional antes del session assistant ──
-    let planCode = String((window.CLIENT_CONFIG && (window.CLIENT_CONFIG.planCode || window.CLIENT_CONFIG.plan)) || '').toLowerCase();
-    if (!planCode && window.CLIENT_CONFIG && window.CLIENT_CONFIG.canGenerateApps === true) {
-        planCode = 'clinic';
-    }
-
-    let looksClinicByProfessionals = false;
-    try {
-        const wpProbe = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
-        looksClinicByProfessionals = Array.isArray(wpProbe) && wpProbe.some(function(wp) {
-            return Array.isArray(wp && wp.professionals) && wp.professionals.length > 1;
-        });
-    } catch (_) {}
-
-    const isClinicMode = planCode === 'clinic' || looksClinicByProfessionals;
-
-    if (isClinicMode) {
-        _whenClinicModulesReady(function(ready) {
-            if (!ready.clinicReady) {
-                console.error('ClinicAuth no cargó a tiempo para el flujo clínica');
-                return;
-            }
-
-            let clinicProfessionals = [];
-            try {
-                const wp = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
-                clinicProfessionals = (wp[0] && wp[0].professionals) || [];
-            } catch (_) {}
-
-            window.ClinicAuth.init(clinicProfessionals, function() {
-                // Post-login: session assistant + PWA prompt
-                _launchSessionAssistant();
-                if (!window.matchMedia('(display-mode: standalone)').matches) {
-                    _tryPwaInstall(3);
-                }
-            });
-
-            if (typeof window.ClinicAuth.setupChangeProfButton === 'function') {
-                window.ClinicAuth.setupChangeProfButton();
-            }
-            if (ready.adminReady && typeof window.ClinicAdminPanel.setup === 'function') {
-                window.ClinicAdminPanel.setup();
-            }
-        });
+    // ── CLINIC: compuerta obligatoria de PIN antes del session assistant ──
+    if (_ensureClinicPinGate(function() {
+        _launchSessionAssistant();
+        if (!window.matchMedia('(display-mode: standalone)').matches) {
+            _tryPwaInstall(3);
+        }
+    })) {
         return; // session assistant se lanza desde el callback de ClinicAuth.init
     }
 

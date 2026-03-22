@@ -5903,19 +5903,20 @@ const businessClientAdminCode = fs.readFileSync(path.join(root, 'src/js/features
 const businessOnboardingCode = fs.readFileSync(path.join(root, 'src/js/features/businessOnboardingUtils.js'), 'utf-8');
 const clinicAuthCodeClinicGuard = fs.readFileSync(path.join(root, 'src/js/features/clinicAuth.js'), 'utf-8');
 const uiProfessionalCode = fs.readFileSync(path.join(root, 'src/js/utils/uiProfessionalUtils.js'), 'utf-8');
+const businessUiHelpersCode = fs.readFileSync(path.join(root, 'src/js/features/businessUiHelpers.js'), 'utf-8');
 
 test('factory setup — persiste planCode en CLIENT_CONFIG', () => {
     assertIncludes(factorySetupCode, 'planCode');
 });
 
 test('clinic init — detecta modo clínica aunque falte planCode', () => {
-    assertIncludes(businessClientAdminCode, 'looksClinicByProfessionals');
-    assertIncludes(businessClientAdminCode, "isClinicMode = planCode === 'clinic' || looksClinicByProfessionals");
+    assertIncludes(businessUiHelpersCode, '_isClinicRuntimeMode');
+    assertIncludes(businessUiHelpersCode, 'looksClinicByProfessionals');
 });
 
 test('onboarding clinic — aplica fallback robusto antes de lanzar PIN', () => {
-    assertIncludes(businessOnboardingCode, 'looksClinicByProfessionals');
-    assertIncludes(businessOnboardingCode, "planCode = 'clinic'");
+    assertIncludes(businessOnboardingCode, '_ensureClinicPinGate');
+    assertIncludes(businessUiHelpersCode, '_getClinicProfessionalsForAuth');
 });
 
 test('clinic auth — overlay PIN tiene prioridad visual sobre session assistant', () => {
@@ -8108,13 +8109,13 @@ test('ClinicAuth-11 — toast de bienvenida al login exitoso', () => {
 });
 
 test('ClinicAuth-12 — businessClientAdminUtils.js tiene hook para plan CLINIC', () => {
-    assert(clinicAdminUtilsCode.includes("planCode === 'clinic'") && clinicAdminUtilsCode.includes('ClinicAuth.init'),
-        'businessClientAdminUtils.js debe inicializar ClinicAuth para plan CLINIC');
+    assert(clinicAdminUtilsCode.includes('_ensureClinicPinGate'),
+        'businessClientAdminUtils.js debe delegar la inicialización clínica en _ensureClinicPinGate');
 });
 
 test('ClinicAuth-13 — hook CLINIC lee professionals desde workplace_profiles', () => {
-    assert(clinicAdminUtilsCode.includes('workplace_profiles') && clinicAdminUtilsCode.includes('clinicProfessionals'),
-        'El hook CLINIC en businessClientAdminUtils.js debe leer professionals de workplace_profiles');
+    assert(businessUiHelpersCode.includes('workplace_profiles') && businessUiHelpersCode.includes('_getClinicProfessionalsForAuth'),
+        'La compuerta clínica debe leer professionals de workplace_profiles');
 });
 
 test('ClinicAuth-14 — hook CLINIC usa return para diferir session assistant', () => {
@@ -8206,8 +8207,8 @@ test('ClinicAdmin-10 — index.html carga clinicAdminPanel.js', () => {
 });
 
 test('ClinicAdmin-11 — businessClientAdminUtils.js llama ClinicAdminPanel.setup()', () => {
-    assert(bizAdminCodeC6.includes('ClinicAdminPanel') && bizAdminCodeC6.includes('setup'),
-        'businessClientAdminUtils.js debe llamar ClinicAdminPanel.setup() en el hook CLINIC');
+    assert(businessUiHelpersCode.includes('ClinicAdminPanel.setup'),
+        'La compuerta clínica central debe llamar ClinicAdminPanel.setup()');
 });
 
 test('ClinicAdmin-12 — _esc sanitiza caracteres HTML', () => {

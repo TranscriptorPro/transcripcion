@@ -174,3 +174,73 @@ function _whenClinicModulesReady(callback) {
 
     check();
 }
+
+function _isClinicRuntimeMode() {
+    let planCode = String((window.CLIENT_CONFIG && (window.CLIENT_CONFIG.planCode || window.CLIENT_CONFIG.plan)) || '').toLowerCase();
+    if (!planCode && window.CLIENT_CONFIG && window.CLIENT_CONFIG.canGenerateApps === true) {
+        planCode = 'clinic';
+    }
+
+    let looksClinicByProfessionals = false;
+    try {
+        const wpProbe = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+        looksClinicByProfessionals = Array.isArray(wpProbe) && wpProbe.some(function(wp) {
+            return Array.isArray(wp && wp.professionals) && wp.professionals.length > 1;
+        });
+    } catch (_) {}
+
+    return planCode === 'clinic' || looksClinicByProfessionals;
+}
+
+function _getClinicProfessionalsForAuth() {
+    try {
+        const wp = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+        return (wp[0] && wp[0].professionals) || [];
+    } catch (_) {
+        return [];
+    }
+}
+
+function _ensureClinicPinGate(onLoginSuccess) {
+    if (!_isClinicRuntimeMode()) return false;
+
+    _whenClinicModulesReady(function(ready) {
+        if (!ready.clinicReady) {
+            console.error('ClinicAuth no cargó a tiempo para forzar PIN clínica');
+            return;
+        }
+
+        const active = typeof window.ClinicAuth.getActiveProfessional === 'function'
+            ? window.ClinicAuth.getActiveProfessional()
+            : null;
+
+        if (active) {
+            if (typeof onLoginSuccess === 'function') onLoginSuccess(active);
+            return;
+        }
+
+        const clinicProfessionals = _getClinicProfessionalsForAuth();
+        window.ClinicAuth.init(clinicProfessionals, function(activeProfessional) {
+            if (typeof onLoginSuccess === 'function') onLoginSuccess(activeProfessional);
+        });
+
+        if (typeof window.ClinicAuth.setupChangeProfButton === 'function') {
+            window.ClinicAuth.setupChangeProfButton();
+        }
+        if (ready.adminReady && typeof window.ClinicAdminPanel.setup === 'function') {
+            window.ClinicAdminPanel.setup();
+        }
+
+        // Reintento defensivo: si otro overlay tapó el PIN, volver a abrirlo.
+        setTimeout(function() {
+            const stillActive = typeof window.ClinicAuth.getActiveProfessional === 'function'
+                ? window.ClinicAuth.getActiveProfessional()
+                : null;
+            if (!stillActive && typeof window.ClinicAuth.switchProfessional === 'function') {
+                window.ClinicAuth.switchProfessional();
+            }
+        }, 200);
+    });
+
+    return true;
+}

@@ -383,42 +383,9 @@ function _showClientOnboarding() {
 
                 _tryPwaInstall(3);
 
-                let planCode = String((window.CLIENT_CONFIG && (window.CLIENT_CONFIG.planCode || window.CLIENT_CONFIG.plan)) || '').toLowerCase();
-                if (!planCode && window.CLIENT_CONFIG && window.CLIENT_CONFIG.canGenerateApps === true) {
-                    planCode = 'clinic';
-                }
-                let looksClinicByProfessionals = false;
-                try {
-                    const wpProbe = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
-                    looksClinicByProfessionals = Array.isArray(wpProbe) && wpProbe.some(function(wp) {
-                        return Array.isArray(wp && wp.professionals) && wp.professionals.length > 1;
-                    });
-                } catch (_) {}
-
-                if (planCode === 'clinic' || looksClinicByProfessionals) {
-                    _whenClinicModulesReady(function(ready) {
-                        if (!ready.clinicReady) {
-                            console.error('ClinicAuth no cargó a tiempo tras onboarding clínica');
-                            return;
-                        }
-
-                        let clinicProfessionals = [];
-                        try {
-                            const wp = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
-                            clinicProfessionals = (wp[0] && wp[0].professionals) || [];
-                        } catch (_) {}
-
-                        window.ClinicAuth.init(clinicProfessionals, function() {
-                            _launchSessionAssistant();
-                        });
-
-                        if (typeof window.ClinicAuth.setupChangeProfButton === 'function') {
-                            window.ClinicAuth.setupChangeProfButton();
-                        }
-                        if (ready.adminReady && typeof window.ClinicAdminPanel.setup === 'function') {
-                            window.ClinicAdminPanel.setup();
-                        }
-                    });
+                if (_ensureClinicPinGate(function() {
+                    _launchSessionAssistant();
+                })) {
                     return;
                 }
 
