@@ -5929,6 +5929,10 @@ test('clinic auth — tiene fallback de profesionales para no saltear PIN', () =
     assertIncludes(clinicAuthCodeClinicGuard, '_buildFallbackProfessional');
 });
 
+test('clinic auth — expone isVisible para evitar reabrir el modal mientras se escribe el PIN', () => {
+    assertIncludes(clinicAuthCodeClinicGuard, 'isVisible', 'clinicAuth.js debe exponer un estado visible del modal');
+});
+
 test('personalización clínica — nombre institucional no usa prefijo Dr./Dra.', () => {
     assertIncludes(uiProfessionalCode, 'shouldUseInstitutionName');
     assertIncludes(uiProfessionalCode, 'welcomeName.textContent = clinicName');
@@ -8165,6 +8169,18 @@ test('ClinicAuth-18 — compuerta clínica limpia activeProfessional persistido 
            businessUiHelpersCode.includes('delete cfg.activeProfessionalIndex') &&
            businessUiHelpersCode.includes('delete cfg.pdfProfessional'),
         'La compuerta clínica debe limpiar la selección persistida antes de pedir PIN');
+});
+
+test('ClinicAuth-19 — compuerta clínica no reabre el modal si ya está visible', () => {
+    assert(businessUiHelpersCode.includes('window.ClinicAuth.isVisible') &&
+           businessUiHelpersCode.includes('if (modalVisible)'),
+        'La compuerta clínica no debe reabrir el modal de PIN si el usuario ya lo está usando');
+});
+
+test('ClinicAuth-20 — watchdog respeta el modal visible y no resetea el input', () => {
+    assert(businessUiHelpersCode.includes('const authVisible') &&
+           businessUiHelpersCode.includes('if (authVisible)'),
+        'El watchdog clínico debe pausar reintentos mientras el modal de PIN está abierto');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════

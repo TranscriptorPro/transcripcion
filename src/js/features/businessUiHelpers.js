@@ -246,9 +246,22 @@ function _ensureClinicPinGate(onLoginSuccess) {
         const active = typeof window.ClinicAuth.getActiveProfessional === 'function'
             ? window.ClinicAuth.getActiveProfessional()
             : null;
+        const modalVisible = typeof window.ClinicAuth.isVisible === 'function'
+            ? window.ClinicAuth.isVisible()
+            : false;
 
         if (active) {
             if (typeof onLoginSuccess === 'function') onLoginSuccess(active);
+            return;
+        }
+
+        if (modalVisible) {
+            if (typeof window.ClinicAuth.setupChangeProfButton === 'function') {
+                window.ClinicAuth.setupChangeProfButton();
+            }
+            if (ready.adminReady && typeof window.ClinicAdminPanel.setup === 'function') {
+                window.ClinicAdminPanel.setup();
+            }
             return;
         }
 
@@ -301,10 +314,21 @@ function _startClinicPinWatchdog() {
         const hasActive = typeof window.ClinicAuth !== 'undefined' && typeof window.ClinicAuth.getActiveProfessional === 'function'
             ? !!window.ClinicAuth.getActiveProfessional()
             : false;
+        const authVisible = typeof window.ClinicAuth !== 'undefined' && typeof window.ClinicAuth.isVisible === 'function'
+            ? window.ClinicAuth.isVisible()
+            : false;
 
         if (hasActive) {
             clearInterval(_clinicPinWatchdogId);
             _clinicPinWatchdogId = null;
+            return;
+        }
+
+        if (authVisible) {
+            if (runs > 120) {
+                clearInterval(_clinicPinWatchdogId);
+                _clinicPinWatchdogId = null;
+            }
             return;
         }
 

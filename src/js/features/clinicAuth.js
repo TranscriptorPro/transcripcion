@@ -26,11 +26,20 @@
         }
 
         _buildModal();
+        if (isVisible()) {
+            _refreshBlockState();
+            return;
+        }
         _showModal();
     }
 
     function getActiveProfessional() {
         return _activeProfessional;
+    }
+
+    function isVisible() {
+        var overlay = document.getElementById('clinicAuthOverlay');
+        return !!(overlay && getComputedStyle(overlay).display !== 'none');
     }
 
     // Vuelve a mostrar el modal (botón "cambiar profesional")
@@ -384,6 +393,7 @@
     window.ClinicAuth = {
         init:                  init,
         getActiveProfessional: getActiveProfessional,
+        isVisible:             isVisible,
         switchProfessional:    switchProfessional,
         setupChangeProfButton: setupChangeProfButton,
         resolveProfessionals:  resolveProfessionals,
