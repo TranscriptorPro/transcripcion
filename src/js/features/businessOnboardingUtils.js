@@ -383,6 +383,28 @@ function _showClientOnboarding() {
 
                 _tryPwaInstall(3);
 
+                const planCode = (window.CLIENT_CONFIG && window.CLIENT_CONFIG.planCode) || '';
+                if (planCode === 'clinic' && typeof window.ClinicAuth !== 'undefined') {
+                    let clinicProfessionals = [];
+                    try {
+                        const wp = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+                        clinicProfessionals = (wp[0] && wp[0].professionals) || [];
+                    } catch (_) {}
+
+                    window.ClinicAuth.init(clinicProfessionals, function() {
+                        _launchSessionAssistant();
+                    });
+
+                    if (typeof window.ClinicAuth.setupChangeProfButton === 'function') {
+                        window.ClinicAuth.setupChangeProfButton();
+                    }
+                    if (typeof window.ClinicAdminPanel !== 'undefined' &&
+                        typeof window.ClinicAdminPanel.setup === 'function') {
+                        window.ClinicAdminPanel.setup();
+                    }
+                    return;
+                }
+
                 _launchSessionAssistant();
             }, 800);
         });
