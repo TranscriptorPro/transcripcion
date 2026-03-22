@@ -5987,6 +5987,19 @@ test('build.js — script de build existe', () => {
     assert(fs.existsSync(path.join(root, 'build.js')));
 });
 
+test('build.js — toma el orden real de scripts JS desde index.html', () => {
+    const buildCode = fs.readFileSync(path.join(root, 'build.js'), 'utf-8');
+    assertIncludes(buildCode, '_extractOrderedAssetList', 'build.js debe derivar la lista de assets desde index.html');
+    assertIncludes(buildCode, "const JS_FILES = _extractOrderedAssetList(sourceIndexHtml, 'js');",
+        'build.js debe tomar scripts JS desde index.html para evitar desincronización del bundle');
+});
+
+test('build.js — toma el orden real de CSS desde index.html', () => {
+    const buildCode = fs.readFileSync(path.join(root, 'build.js'), 'utf-8');
+    assertIncludes(buildCode, "const CSS_FILES = _extractOrderedAssetList(sourceIndexHtml, 'css');",
+        'build.js debe tomar CSS desde index.html para evitar desincronización del bundle');
+});
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // Bloque 89: formHandler.js — handleImageUpload y savePdfConfiguration
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -8128,6 +8141,14 @@ test('ClinicAuth-15 — businessFactorySetupUtils.js preserva redesSociales en m
         'businessFactorySetupUtils.js debe preservar redesSociales al mapear profesionales C4');
 });
 
+test('ClinicAuth-15b — setup de clínica no deja activeProfessional persistido de fábrica', () => {
+    assert(clinicFactoryCode.includes("if (plan === 'clinic')") &&
+           clinicFactoryCode.includes('delete cfgSel.activeProfessional') &&
+           clinicFactoryCode.includes('delete cfgSel.activeProfessionalIndex') &&
+           clinicFactoryCode.includes('delete cfgSel.pdfProfessional'),
+        'El setup de clínica no debe dejar un profesional activo persistido antes del login por PIN');
+});
+
 test('ClinicAuth-16 — index.html tiene botón #btnCambiarProfesional oculto por default', () => {
     assert(indexCodeC5.includes('btnCambiarProfesional') && indexCodeC5.includes('display:none'),
         'index.html debe tener btnCambiarProfesional con display:none por default');
@@ -8136,6 +8157,14 @@ test('ClinicAuth-16 — index.html tiene botón #btnCambiarProfesional oculto po
 test('ClinicAuth-17 — index.html carga clinicAuth.js', () => {
     assertIncludes(indexCodeC5, 'clinicAuth.js',
         'index.html debe cargar el script clinicAuth.js');
+});
+
+test('ClinicAuth-18 — compuerta clínica limpia activeProfessional persistido antes del PIN', () => {
+    assert(businessUiHelpersCode.includes('_clearClinicPersistedProfessionalSelection') &&
+           businessUiHelpersCode.includes('delete cfg.activeProfessional') &&
+           businessUiHelpersCode.includes('delete cfg.activeProfessionalIndex') &&
+           businessUiHelpersCode.includes('delete cfg.pdfProfessional'),
+        'La compuerta clínica debe limpiar la selección persistida antes de pedir PIN');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════

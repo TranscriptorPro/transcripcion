@@ -13,115 +13,34 @@ const fs   = require('fs');
 const path = require('path');
 const { minify } = require('terser');
 
-// ─── Archivos JS en el orden exacto de carga de index.html ────────
-const JS_FILES = [
-    'src/js/utils/db.js',
-    'src/js/config/config.js',
-    'src/js/config/templatesCatalog.js',
-    'src/js/config/templatesCatalogPart2.js',
-    'src/js/config/templatesCatalogPart3.js',
-    'src/js/config/templateCategoryRegistry.js',
-    'src/js/config/templates.js',
-    'src/js/config/studyTerminology.js',
-    'src/js/utils/dom.js',
-    'src/js/utils/toast.js',
-    'src/js/utils/uiModalFocusUtils.js',
-    'src/js/utils/ui.js',
-    'src/js/utils/uiComparisonUtils.js',
-    'src/js/utils/uiPreviewDownloadUtils.js',
-    'src/js/utils/uiPatientDataUtils.js',
-    'src/js/utils/uiThemeUtils.js',
-    'src/js/utils/uiKeyboardShortcuts.js',
-    'src/js/utils/uiAutosaveUtils.js',
-    'src/js/utils/uiMultiTabUtils.js',
-    'src/js/utils/uiApiManagementUtils.js',
-    'src/js/utils/uiProfessionalUtils.js',
-    'src/js/utils/tabsIndexUtils.js',
-    'src/js/utils/tabs.js',
-    'src/js/utils/stateManager.js',
-    'src/js/core/state.js',
-    'src/js/core/audio.js',
-    'src/js/features/editor.js',
-    'src/js/features/editorDialogUtils.js',
-    'src/js/features/editorFieldModalUtils.js',
-    'src/js/features/editorCopyPrintUtils.js',
-    'src/js/features/editorDownloadCoreUtils.js',
-    'src/js/features/editorExportRenderUtils.js',
-    'src/js/features/editorDownloadFavoritesUtils.js',
-    'src/js/features/editorNormalTemplateUtils.js',
-    'src/js/features/editorFormattingFindUtils.js',
-    'src/js/features/editorSnapshotsUtils.js',
-    'src/js/features/transcriptorWhisperPromptUtils.js',
-    'src/js/features/transcriptor.js',
-    'src/js/features/structurerCoreUtils.js',
-    'src/js/features/structurer.js',
-    'src/js/features/changeTemplateUtils.js',
-    'src/js/features/proSidebarSourceMode.js',
-    'src/js/features/fixedTooltips.js',
-    'src/js/features/medDictionary.js',
-    'src/js/features/contact.js',
-    'src/js/features/diagnostic.js',
-    'src/js/features/licenseCacheUtils.js',
-    'src/js/features/licenseManager.js',
-    'src/js/features/patientRegistry.js',
-    'src/js/features/referringDoctorRegistry.js',
-    'src/js/features/referringDoctorRegistryPanel.js',
-    'src/js/features/studyReasonHistory.js',
-    'src/js/features/studyReasonHistoryPanel.js',
-    'src/js/features/datosPanel.js',
-    'src/js/features/formHandler.js',
-    'src/js/features/themeManager.js',
-    'src/js/features/settingsThemeUtils.js',
-    'src/js/features/settingsThemeSectionUtils.js',
-    'src/js/features/settingsModalWatchUtils.js',
-    'src/js/features/settingsModalShellUtils.js',
-    'src/js/features/settingsAccountUtils.js',
-    'src/js/features/settingsApiUtils.js',
-    'src/js/features/settingsWorkplaceUtils.js',
-    'src/js/features/settingsQuickProfilesUtils.js',
-    'src/js/features/settingsEditorPrefsUtils.js',
-    'src/js/features/settingsToolsLinksUtils.js',
-    'src/js/features/settingsBackupUtils.js',
-    'src/js/features/settingsBackupActionsUtils.js',
-    'src/js/features/settingsModalPopulateUtils.js',
-    'src/js/features/settingsModalActionsUtils.js',
-    'src/js/features/settingsPanel.js',
-    'src/js/features/pricingCart.js',
-    'src/js/features/businessUiHelpers.js',
-    'src/js/features/businessFactoryUiUtils.js',
-    'src/js/features/businessClientAdminUtils.js',
-    'src/js/features/businessOnboardingUtils.js',
-    'src/js/features/businessFactorySetupUtils.js',
-    'src/js/features/business.js',
-    'src/js/features/sessionAssistant.js',
-    'src/js/features/outputProfiles.js',
-    'src/js/features/pdfDataAccessUtils.js',
-    'src/js/features/reportContextResolver.js',
-    'src/js/features/pdfPreview.js',
-    'src/js/features/pdfPreviewActions.js',
-    'src/js/features/pdfMakerSectionUtils.js',
-    'src/js/features/pdfMaker.js',
-    'src/js/features/reportHistoryPolicyUtils.js',
-    'src/js/features/reportHistory.js',
-    'src/js/features/userGuide.js',
-    'src/js/utils/mobileUI.js',
-];
-
-// ─── Archivos CSS ─────────────────────────────────────────────────
-const CSS_FILES = [
-    'src/css/variables.css',
-    'src/css/base.css',
-    'src/css/layout.css',
-    'src/css/components.css',
-    'src/css/preview-print.css',
-    'src/css/animations.css',
-    'src/css/mobile.css',
-];
+function _extractOrderedAssetList(html, type) {
+    const pattern = type === 'js'
+        ? /<script\s+src="(src\/js\/[^"]+)"><\/script>/g
+        : /<link\s+rel="stylesheet"\s+href="(src\/css\/[^"]+)"\/?\s*>/g;
+    const assets = [];
+    let match;
+    while ((match = pattern.exec(html))) {
+        assets.push(match[1]);
+    }
+    return assets;
+}
 
 const DIST = path.join(__dirname, 'dist');
 
 async function build() {
     console.log('🔨 Transcriptor Pro — Build de producción\n');
+
+    const sourceIndexPath = path.join(__dirname, 'index.html');
+    const sourceIndexHtml = fs.readFileSync(sourceIndexPath, 'utf8');
+    const JS_FILES = _extractOrderedAssetList(sourceIndexHtml, 'js');
+    const CSS_FILES = _extractOrderedAssetList(sourceIndexHtml, 'css');
+
+    if (!JS_FILES.length) {
+        throw new Error('No se encontraron scripts src/js en index.html para generar el bundle.');
+    }
+    if (!CSS_FILES.length) {
+        throw new Error('No se encontraron hojas src/css en index.html para generar el bundle.');
+    }
 
     // 1. Crear dist/
     if (fs.existsSync(DIST)) fs.rmSync(DIST, { recursive: true });
@@ -187,7 +106,7 @@ async function build() {
 
     // 5. Procesar index.html
     console.log('📄 Generando index.html...');
-    let html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+    let html = sourceIndexHtml;
 
     // Auto-incrementar APP_VERSION en el fuente y en el HTML generado
     const verMatch = html.match(/var APP_VERSION = 'v(\d+)'/);
@@ -198,10 +117,9 @@ async function build() {
         `var APP_VERSION = '${newVersionTag}';`
     );
     // Persistir versión incremental en el fuente para el próximo build
-    const srcHtml = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
     fs.writeFileSync(
-        path.join(__dirname, 'index.html'),
-        srcHtml.replace(/var APP_VERSION = 'v\d+';/, `var APP_VERSION = '${newVersionTag}';`),
+        sourceIndexPath,
+        sourceIndexHtml.replace(/var APP_VERSION = 'v\d+';/, `var APP_VERSION = '${newVersionTag}';`),
         'utf8'
     );
     console.log(`   🔖 APP_VERSION → ${newVersionTag}`);

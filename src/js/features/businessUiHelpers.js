@@ -201,6 +201,39 @@ function _getClinicProfessionalsForAuth() {
     }
 }
 
+function _clearClinicPersistedProfessionalSelection() {
+    try {
+        const cfg = JSON.parse(localStorage.getItem('pdf_config') || '{}');
+        let changed = false;
+
+        if (cfg && typeof cfg === 'object') {
+            if (Object.prototype.hasOwnProperty.call(cfg, 'activeProfessional')) {
+                delete cfg.activeProfessional;
+                changed = true;
+            }
+            if (Object.prototype.hasOwnProperty.call(cfg, 'activeProfessionalIndex')) {
+                delete cfg.activeProfessionalIndex;
+                changed = true;
+            }
+            if (Object.prototype.hasOwnProperty.call(cfg, 'pdfProfessional')) {
+                delete cfg.pdfProfessional;
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            window._pdfConfigCache = cfg;
+            localStorage.setItem('pdf_config', JSON.stringify(cfg));
+            if (typeof window.appDB !== 'undefined' && typeof window.appDB.set === 'function') {
+                window.appDB.set('pdf_config', cfg).catch(function() {});
+            }
+        }
+    } catch (_) {}
+
+    const btnCambiar = document.getElementById('btnCambiarProfesional');
+    if (btnCambiar) btnCambiar.style.display = 'none';
+}
+
 function _ensureClinicPinGate(onLoginSuccess) {
     if (!_isClinicRuntimeMode()) return false;
 
@@ -218,6 +251,8 @@ function _ensureClinicPinGate(onLoginSuccess) {
             if (typeof onLoginSuccess === 'function') onLoginSuccess(active);
             return;
         }
+
+        _clearClinicPersistedProfessionalSelection();
 
         const clinicProfessionals = _getClinicProfessionalsForAuth();
         window.ClinicAuth.init(clinicProfessionals, function(activeProfessional) {
