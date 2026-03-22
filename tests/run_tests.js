@@ -5899,9 +5899,33 @@ test('proSidebarSourceMode — limita extracción para documentos extensos', () 
 });
 
 const factorySetupCode = fs.readFileSync(path.join(root, 'src/js/features/businessFactorySetupUtils.js'), 'utf-8');
+const businessClientAdminCode = fs.readFileSync(path.join(root, 'src/js/features/businessClientAdminUtils.js'), 'utf-8');
+const businessOnboardingCode = fs.readFileSync(path.join(root, 'src/js/features/businessOnboardingUtils.js'), 'utf-8');
+const clinicAuthCodeClinicGuard = fs.readFileSync(path.join(root, 'src/js/features/clinicAuth.js'), 'utf-8');
+const uiProfessionalCode = fs.readFileSync(path.join(root, 'src/js/utils/uiProfessionalUtils.js'), 'utf-8');
 
 test('factory setup — persiste planCode en CLIENT_CONFIG', () => {
     assertIncludes(factorySetupCode, 'planCode');
+});
+
+test('clinic init — detecta modo clínica aunque falte planCode', () => {
+    assertIncludes(businessClientAdminCode, 'looksClinicByProfessionals');
+    assertIncludes(businessClientAdminCode, "isClinicMode = planCode === 'clinic' || looksClinicByProfessionals");
+});
+
+test('onboarding clinic — aplica fallback robusto antes de lanzar PIN', () => {
+    assertIncludes(businessOnboardingCode, 'looksClinicByProfessionals');
+    assertIncludes(businessOnboardingCode, "planCode = 'clinic'");
+});
+
+test('clinic auth — overlay PIN tiene prioridad visual sobre session assistant', () => {
+    assertIncludes(clinicAuthCodeClinicGuard, 'z-index:12000');
+    assertIncludes(clinicAuthCodeClinicGuard, "saOverlay.classList.remove('active')");
+});
+
+test('personalización clínica — nombre institucional no usa prefijo Dr./Dra.', () => {
+    assertIncludes(uiProfessionalCode, 'shouldUseInstitutionName');
+    assertIncludes(uiProfessionalCode, 'welcomeName.textContent = clinicName');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
