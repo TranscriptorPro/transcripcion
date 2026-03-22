@@ -543,12 +543,25 @@ window.initBusinessSuite = async function () {
         const host = String(window.location.hostname || '').toLowerCase();
         const path = String(window.location.pathname || '').replace(/\/+$/, '') || '/';
         const params = new URLSearchParams(window.location.search);
+        const setupIdFromUrl = params.get('id');
+        let setupIdFromSession = '';
+        try { setupIdFromSession = sessionStorage.getItem('pending_setup_id') || ''; } catch (_) {}
+        const effectiveSetupId = String(window._PENDING_SETUP_ID || setupIdFromUrl || setupIdFromSession || '').trim();
+
+        if (effectiveSetupId) {
+            window._PENDING_SETUP_ID = effectiveSetupId;
+            try { sessionStorage.setItem('pending_setup_id', effectiveSetupId); } catch (_) {}
+            if (setupIdFromUrl) {
+                try { history.replaceState({}, document.title, window.location.pathname); } catch (_) {}
+            }
+        }
+
         const isOfficialAdminBase = (
             host === 'transcriptorpro.github.io'
             && (path === '/transcripcion' || path === '/transcripcion/index.html')
         );
 
-        if (isOfficialAdminBase && !params.get('id') && !window._PENDING_SETUP_ID) {
+        if (isOfficialAdminBase && !effectiveSetupId && !window._PENDING_SETUP_ID) {
             try { localStorage.removeItem('client_config_stored'); } catch (_) {}
             try { sessionStorage.removeItem('pending_setup_id'); } catch (_) {}
             if (typeof window.CLIENT_CONFIG === 'object' && window.CLIENT_CONFIG) {
