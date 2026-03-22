@@ -19,7 +19,15 @@ window.applyProfessionalData = function (data) {
     const planCode = String((window.CLIENT_CONFIG && (window.CLIENT_CONFIG.planCode || window.CLIENT_CONFIG.plan)) || '').toLowerCase();
     const isClinicMode = planCode === 'clinic' || (window.CLIENT_CONFIG && window.CLIENT_CONFIG.canGenerateApps === true);
     const clinicName = String((data.razonSocial || data.workplace || data.nombre || '')).trim();
-    const shouldUseInstitutionName = !!(isClinicMode && clinicName && String(nombre || '').trim() === clinicName);
+    const rawName = String(nombre || '').trim();
+    const institutionPattern = /\b(clinica|clínica|centro|instituto|hospital|sanatorio|fundacion|fundación)\b/i;
+    const shouldUseInstitutionName = !!(
+        isClinicMode && clinicName && (
+            rawName === clinicName ||
+            institutionPattern.test(rawName) ||
+            institutionPattern.test(clinicName)
+        )
+    );
     const normalizedMatricula = (typeof window.normalizeMatriculaDisplay === 'function')
         ? window.normalizeMatriculaDisplay(matricula)
         : matricula;

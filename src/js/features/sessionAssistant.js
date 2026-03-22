@@ -169,6 +169,20 @@ window.initSessionAssistant = function () {
         const clinic   = isClinicMode();
         const pro      = isProUser();
 
+        // Guardia clínica: nunca abrir Session Assistant sin autenticación PIN.
+        // Si aún no hay profesional activo, forzar el modal de ClinicAuth.
+        if (clinic && typeof window.ClinicAuth !== 'undefined') {
+            const active = (typeof window.ClinicAuth.getActiveProfessional === 'function')
+                ? window.ClinicAuth.getActiveProfessional()
+                : null;
+            if (!active) {
+                if (typeof window.ClinicAuth.switchProfessional === 'function') {
+                    window.ClinicAuth.switchProfessional();
+                }
+                return;
+            }
+        }
+
         // Saludo
         if (greetingEl) greetingEl.textContent = getGreeting(profData.nombre, clinic);
 
