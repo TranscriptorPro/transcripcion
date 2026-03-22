@@ -16,7 +16,7 @@
     // ── API pública ───────────────────────────────────────────────────────────
 
     function init(professionals, onLoginSuccess) {
-        _professionals  = normalizeList(professionals);
+        _professionals  = resolveProfessionals(professionals);
         _onLoginSuccess = onLoginSuccess || function() {};
 
         if (!_professionals.length) {
@@ -39,9 +39,9 @@
         // Recargar lista en caso de que el admin haya actualizado los datos
         try {
             const wp = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
-            _professionals = normalizeList((wp[0] && wp[0].professionals) || []);
+            _professionals = resolveProfessionals((wp[0] && wp[0].professionals) || []);
         } catch (_) {
-            _professionals = [];
+            _professionals = resolveProfessionals([]);
         }
         if (_professionals.length) {
             _showModal();
@@ -94,6 +94,44 @@
                     activo:         true
                 };
             });
+    }
+
+    // Devuelve una lista utilizable para auth incluso cuando workplace_profiles
+    // aun no esta inicializado por completo.
+    function resolveProfessionals(list) {
+        const normalized = normalizeList(list);
+        if (normalized.length) return normalized;
+
+        const fallback = _buildFallbackProfessional();
+        if (!fallback) return [];
+        return [fallback];
+    }
+
+    function _buildFallbackProfessional() {
+        try {
+            const profData = JSON.parse(localStorage.getItem('prof_data') || '{}');
+            const name = String(profData.nombre || '').trim();
+            if (!name) return null;
+            return {
+                id:             'fallback-' + Date.now(),
+                nombre:         name,
+                matricula:      String(profData.matricula || ''),
+                especialidades: Array.isArray(profData.specialties) ? profData.specialties : [],
+                usuario:        '',
+                pin:            String(profData.pin || '1234'),
+                email:          '',
+                telefono:       '',
+                firma:          null,
+                logo:           null,
+                redesSociales:  {},
+                showPhone:      true,
+                showEmail:      true,
+                showSocial:     false,
+                activo:         true
+            };
+        } catch (_) {
+            return null;
+        }
     }
 
     // ── Construcción del modal (una sola vez) ─────────────────────────────────
@@ -348,6 +386,7 @@
         getActiveProfessional: getActiveProfessional,
         switchProfessional:    switchProfessional,
         setupChangeProfButton: setupChangeProfButton,
+        resolveProfessionals:  resolveProfessionals,
         _normalizeList:        normalizeList  // expuesto para tests
     };
 })();

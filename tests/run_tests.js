@@ -5923,6 +5923,11 @@ test('clinic auth — overlay PIN tiene prioridad visual sobre session assistant
     assertIncludes(clinicAuthCodeClinicGuard, "saOverlay.classList.remove('active')");
 });
 
+test('clinic auth — tiene fallback de profesionales para no saltear PIN', () => {
+    assertIncludes(clinicAuthCodeClinicGuard, 'resolveProfessionals');
+    assertIncludes(clinicAuthCodeClinicGuard, '_buildFallbackProfessional');
+});
+
 test('personalización clínica — nombre institucional no usa prefijo Dr./Dra.', () => {
     assertIncludes(uiProfessionalCode, 'shouldUseInstitutionName');
     assertIncludes(uiProfessionalCode, 'welcomeName.textContent = clinicName');
