@@ -209,14 +209,15 @@ window.getResolvedSupportContactEmail = function () {
             // Solo marcar como "admin activo" si EXISTE una config almacenada de tipo ADMIN.
             // Si stored es null (usuario nuevo), NO es admin — es un gift user legítimo.
             const storedForAdminFlag = localStorage.getItem('client_config_stored');
-            const wasAdmin = storedForAdminFlag && (function() {
+            let wasAdmin = false;
+            if (storedForAdminFlag) {
                 try {
                     const parsed = JSON.parse(storedForAdminFlag);
-                    return parsed.type === 'ADMIN' || !parsed.type;
+                    wasAdmin = !!parsed && parsed.type === 'ADMIN';
                 } catch(_) {
-                    return true;
+                    wasAdmin = false;
                 }
-            })();
+            }
             window._PENDING_SETUP_ID = setupId;
             if (wasAdmin) {
                 window._ADMIN_WAS_ACTIVE = true; // flag para que business.js pregunte

@@ -563,12 +563,10 @@ window.initBusinessSuite = async function () {
     if (window._PENDING_SETUP_ID) {
         // ── Protección: si ya era ADMIN, confirmar antes de sobreescribir ──
         if (window._ADMIN_WAS_ACTIVE) {
+            const confirmMessage = 'Estás abriendo un link de usuario en tu sesión de ADMINISTRADOR.\n\nSi continúas, tu sesión admin se convertirá en la del usuario "' + window._PENDING_SETUP_ID + '".\n\n¿Querés continuar?';
             const confirmar = typeof window.showCustomConfirm === 'function'
-                ? await window.showCustomConfirm(
-                    '⚠️ Atención',
-                    'Estás abriendo un link de usuario en tu sesión de ADMINISTRADOR.\n\nSi continúas, tu sesión admin se convertirá en la del usuario "' + window._PENDING_SETUP_ID + '".\n\n¿Querés continuar?'
-                )
-                : false;
+                ? await window.showCustomConfirm('⚠️ Atención', confirmMessage)
+                : (typeof window.confirm === 'function' ? window.confirm(confirmMessage) : true);
             if (!confirmar) {
                 // Limpiar y seguir como admin
                 delete window._PENDING_SETUP_ID;
