@@ -8305,6 +8305,49 @@ test('ClinicAdminPanel-F4b — _resetPin activa primerUso tras el reset', () => 
         '_resetPin debe poner primerUso=true para forzar cambio en el próximo acceso');
 });
 
+test('ClinicSetup-F1a — businessFactorySetupUtils persiste adminDni/adminPass/adminUser en workplaceProfiles', () => {
+    const bf = fs.readFileSync(path.join(root, 'src/js/features/businessFactorySetupUtils.js'), 'utf-8');
+    assert(bf.includes('adminUser') && bf.includes('adminPass') && bf.includes('adminDni'),
+        'businessFactorySetupUtils debe mapear adminUser/adminPass/adminDni en workplaceProfiles para CLINIC');
+});
+
+test('ClinicAuth-F5a — modal clinicAuth tiene botón de recuperación', () => {
+    assert(clinicAuthCode.includes('clinicAuthRecoverBtn') && clinicAuthCode.includes('¿Olvidaste tu clave?'),
+        'clinicAuth.js debe renderizar botón de recuperación de credenciales');
+});
+
+test('ClinicAuth-F5b — clinicAuth implementa recuperación DNI+mattrícula para profesional', () => {
+    assert(clinicAuthCode.includes('_recoverSelectedIdentity') && clinicAuthCode.includes('matricula') && clinicAuthCode.includes('primerUso = true'),
+        'clinicAuth.js debe recuperar PIN por DNI+mattrícula y forzar primer uso');
+});
+
+test('ClinicAdminPanel-F5a — panel admin implementa recuperación por DNI', () => {
+    const cap = fs.readFileSync(path.join(root, 'src/js/features/clinicAdminPanel.js'), 'utf-8');
+    assert(cap.includes('_recoverAdminByDni') && cap.includes('adminDni'),
+        'clinicAdminPanel.js debe implementar recuperación de contraseña admin por DNI');
+});
+
+test('Backend-Clinic-0a — define SHEET_CLINIC_STAFF y headers', () => {
+    const gas = fs.readFileSync(path.join(root, 'backend/google_apps_script.js'), 'utf-8');
+    assert(gas.includes('SHEET_CLINIC_STAFF') && gas.includes('CLINIC_STAFF_HEADERS'),
+        'google_apps_script.js debe definir SHEET_CLINIC_STAFF y CLINIC_STAFF_HEADERS');
+});
+
+test('Backend-Clinic-0b — expone acciones clinic_validate_admin y clinic_get_staff', () => {
+    const gas = fs.readFileSync(path.join(root, 'backend/google_apps_script.js'), 'utf-8');
+    assert(gas.includes("action === 'clinic_validate_admin'") && gas.includes("action === 'clinic_get_staff'"),
+        'google_apps_script.js debe exponer clinic_validate_admin y clinic_get_staff');
+});
+
+test('Backend-Clinic-0c — expone acciones de reset/update admin/pro PIN', () => {
+    const gas = fs.readFileSync(path.join(root, 'backend/google_apps_script.js'), 'utf-8');
+    assert(gas.includes("action === 'clinic_update_admin_pass'") &&
+           gas.includes("action === 'clinic_reset_admin_pass_by_dni'") &&
+           gas.includes("action === 'clinic_update_pro_pin'") &&
+           gas.includes("action === 'clinic_reset_pro_pin_by_dni_matricula'"),
+        'google_apps_script.js debe exponer acciones de update/reset para admin y profesionales');
+});
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // Bloque 126: C6 — ClinicAdminPanel (gestión interna de profesionales CLINIC)
 // ═══════════════════════════════════════════════════════════════════════════════

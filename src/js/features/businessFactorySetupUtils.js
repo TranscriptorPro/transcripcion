@@ -134,6 +134,9 @@ window.handleFactorySetupCore = async function (medicoId) {
                         email:   wp.email   || '',
                         footer:  wp.footer  || regDatos.footerText || '',
                         logo:    wp.logo    || '',
+                        adminUser: String(regDatos.adminUser || 'admin'),
+                        adminPass: String(regDatos.adminPass || 'clinica'),
+                        adminDni:  String(regDatos.adminDni || regDatos.clinicAdminDni || ''),
                         professionals: [buildProfessional()]
                     }];
 
@@ -180,6 +183,7 @@ window.handleFactorySetupCore = async function (medicoId) {
                             return {
                                 id:             p.id        || ('legacy-' + idx + '-' + Date.now()),
                                 nombre:         p.nombre        || '',
+                                dni:            p.dni           || '',
                                 matricula:      p.matricula     || '',
                                 especialidades: esp,
                                 usuario:        p.usuario       || '',
@@ -197,6 +201,7 @@ window.handleFactorySetupCore = async function (medicoId) {
                                 showPhone:      p.showPhone  !== false,
                                 showEmail:      p.showEmail  !== false,
                                 showSocial:     p.showSocial === true,
+                                primerUso:      p.primerUso  === true,
                                 activo:         p.activo     !== false
                             };
                         });

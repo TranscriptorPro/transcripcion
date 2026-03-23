@@ -31,6 +31,10 @@
         });
     }
 
+    function _normalizeDocId(value) {
+        return String(value || '').replace(/\D+/g, '');
+    }
+
     function _getAdminCreds() {
         var wp = _getWP();
         var w  = wp[0] || {};
@@ -82,6 +86,8 @@
             '<input id="caaForcePas1" class="caa-input" type="password" autocomplete="off" placeholder="Mínimo 4 caracteres">',
             '<label class="caa-label">Confirmar contraseña</label>',
             '<input id="caaForcePas2" class="caa-input" type="password" autocomplete="off" placeholder="Repetir la contraseña">',
+            '<label class="caa-label">DNI de recuperación (obligatorio)</label>',
+            '<input id="caaForceDni" class="caa-input" type="text" autocomplete="off" inputmode="numeric" placeholder="Solo números">',
             '<div id="caaForceErr" class="caa-err"></div>',
             '<div class="caa-row" style="justify-content:flex-end;">',
             '  <button class="caa-btn caa-primary" id="caaForceConfirm">✅ Confirmar y continuar →</button>',
@@ -91,12 +97,15 @@
         document.getElementById('caaForceConfirm').addEventListener('click', function() {
             var p1    = ((document.getElementById('caaForcePas1') || {}).value || '');
             var p2    = ((document.getElementById('caaForcePas2') || {}).value || '');
+            var dni   = _normalizeDocId(((document.getElementById('caaForceDni') || {}).value || ''));
             var errEl = document.getElementById('caaForceErr');
             if (p1.length < 4) { if (errEl) errEl.textContent = 'Mínimo 4 caracteres.'; return; }
             if (p1 !== p2)     { if (errEl) errEl.textContent = 'Las contraseñas no coinciden.'; return; }
+            if (!dni)          { if (errEl) errEl.textContent = 'Ingresá un DNI válido.'; return; }
             var wp = _getWP();
             if (!wp[0]) wp[0] = {};
             wp[0].adminPass = p1;
+            wp[0].adminDni  = dni;
             _saveWP(wp);
             if (typeof showToast === 'function') showToast('✅ Contraseña de administrador guardada.', 'success');
             _showPanel();
@@ -186,11 +195,13 @@
             '<div id="caaLoginErr" class="caa-err"></div>',
             '<div class="caa-row">',
             '  <button class="caa-btn caa-ghost" id="caaCancel">Cancelar</button>',
+            '  <button class="caa-btn caa-ghost" id="caaRecoverAdmin">¿Olvidaste tu clave?</button>',
             '  <button class="caa-btn caa-primary" id="caaLoginBtn">Ingresar →</button>',
             '</div>',
         ].join('');
 
         document.getElementById('caaCancel').addEventListener('click', close_);
+        document.getElementById('caaRecoverAdmin').addEventListener('click', _recoverAdminByDni);
         document.getElementById('caaLoginBtn').addEventListener('click', _tryLogin);
         document.getElementById('caaPass').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') _tryLogin();
@@ -213,6 +224,31 @@
             if (errEl) errEl.textContent = 'Usuario o contraseña incorrectos.';
             var pEl = document.getElementById('caaPass');
             if (pEl) { pEl.value = ''; pEl.focus(); }
+        }
+    }
+
+    function _recoverAdminByDni() {
+        var wp = _getWP();
+        var clinic = wp[0] || {};
+        var expected = _normalizeDocId(clinic.adminDni);
+        if (!expected) {
+            if (typeof showToast === 'function') {
+                showToast('No hay DNI de admin configurado. Definilo en "Cambiar clave admin".', 'warning');
+            }
+            return;
+        }
+        var entered = _normalizeDocId(prompt('Ingresá el DNI del administrador para recuperar la clave:') || '');
+        if (!entered) return;
+        if (entered !== expected) {
+            var errEl = document.getElementById('caaLoginErr');
+            if (errEl) errEl.textContent = 'DNI incorrecto.';
+            return;
+        }
+        clinic.adminPass = DEFAULT_PASS;
+        wp[0] = clinic;
+        _saveWP(wp);
+        if (typeof showToast === 'function') {
+            showToast('🔑 Clave admin restablecida a "clinica".', 'success');
         }
     }
 
@@ -277,7 +313,7 @@
             html += '</div>';
             html += '  <div class="caa-pro-meta">';
             html += '    👤 ' + _esc(p.usuario || '—') + ' &nbsp;·&nbsp; ';
-            html += '    🏥 ' + _esc(p.matricula || '—') + '<br>';
+            html += '    🏥 ' + _esc(p.matricula || '—') + ' &nbsp;·&nbsp; 🪪 ' + _esc(p.dni || '—') + '<br>';
             html += '    🔬 ' + _esc(esp || '—');
             html += '  </div>';
             html += '  <div class="caa-pro-actions">';
@@ -352,6 +388,10 @@
             '      <label class="caa-label">Matrícula</label>',
             '      <input class="caa-input" id="ce_mat_' + idx + '" value="' + _esc(p.matricula || '') + '">',
             '    </div>',
+            '    <div>',
+            '      <label class="caa-label">DNI (para recuperación)</label>',
+            '      <input class="caa-input" id="ce_dni_' + idx + '" value="' + _esc(p.dni || '') + '" inputmode="numeric">',
+            '    </div>',
             '  </div>',
             '  <div class="caa-form-2col">',
             '    <div>',
@@ -387,6 +427,7 @@
 
         var nombre    = ((document.getElementById('ce_nombre_' + idx) || {}).value || '').trim();
         var matricula = ((document.getElementById('ce_mat_' + idx)    || {}).value || '').trim();
+        var dni       = _normalizeDocId((document.getElementById('ce_dni_' + idx) || {}).value || '');
         var usuario   = ((document.getElementById('ce_usr_' + idx)    || {}).value || '').trim();
         var pin       = ((document.getElementById('ce_pin_' + idx)    || {}).value || '').trim() || '1234';
         var espRaw    = ((document.getElementById('ce_esp_' + idx)    || {}).value || '');
@@ -400,6 +441,7 @@
         profs[idx] = Object.assign({}, profs[idx], {
             nombre:         nombre,
             matricula:      matricula,
+            dni:            dni,
             usuario:        usuario,
             pin:            pin,
             especialidades: espRaw.split(',').map(function(s) { return s.trim(); }).filter(Boolean),
@@ -462,6 +504,7 @@
             id:            'new-' + Date.now(),
             nombre:        '',
             matricula:     '',
+            dni:           '',
             especialidades:[],
             usuario:       '',
             pin:           '1234',
@@ -492,6 +535,8 @@
     function _showChangeCredsSection() {
         var inner = document.getElementById('clinicAdminInner');
         if (!inner) return;
+        var wpCurrent = _getWP();
+        var currentAdminDni = (wpCurrent[0] && wpCurrent[0].adminDni) || '';
         inner.innerHTML = [
             '<div class="caa-title">🔑 Cambiar credenciales de administrador</div>',
             '<div class="caa-sub">Solo el administrador de la clínica puede hacer esto.</div>',
@@ -502,6 +547,8 @@
             '<input id="caaNewPass" class="caa-input" type="password" autocomplete="off" placeholder="Nueva contraseña">',
             '<label class="caa-label">Confirmar contraseña</label>',
             '<input id="caaNewPass2" class="caa-input" type="password" autocomplete="off" placeholder="Repetir contraseña">',
+            '<label class="caa-label">DNI de recuperación</label>',
+            '<input id="caaNewAdminDni" class="caa-input" type="text" autocomplete="off" inputmode="numeric" value="' + _esc(currentAdminDni) + '" placeholder="Solo números">',
             '<div id="caaCredsErr" class="caa-err"></div>',
             '<div class="caa-row">',
             '  <button class="caa-btn caa-ghost" id="caaCredsBack">← Volver</button>',
@@ -514,16 +561,19 @@
             var newUser  = ((document.getElementById('caaNewUser')  || {}).value || '').trim();
             var newPass  = ((document.getElementById('caaNewPass')  || {}).value || '');
             var newPass2 = ((document.getElementById('caaNewPass2') || {}).value || '');
+            var adminDni = _normalizeDocId(((document.getElementById('caaNewAdminDni') || {}).value || ''));
             var errEl    = document.getElementById('caaCredsErr');
 
             if (!newUser) { if (errEl) errEl.textContent = 'El usuario no puede estar vacío.'; return; }
             if (!newPass) { if (errEl) errEl.textContent = 'La contraseña no puede estar vacía.'; return; }
             if (newPass !== newPass2) { if (errEl) errEl.textContent = 'Las contraseñas no coinciden.'; return; }
+            if (!adminDni) { if (errEl) errEl.textContent = 'Ingresá un DNI válido para recuperación.'; return; }
 
             var wp = _getWP();
             if (!wp[0]) wp[0] = {};
             wp[0].adminUser = newUser;
             wp[0].adminPass = newPass;
+            wp[0].adminDni  = adminDni;
             _saveWP(wp);
             if (typeof showToast === 'function') showToast('✅ Credenciales de administrador actualizadas.', 'success');
             _showPanel();

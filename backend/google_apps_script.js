@@ -17,6 +17,7 @@ const SHEET_DIAGNOSTICOS = 'Diagnosticos';
 const SHEET_ADMIN_USERS  = 'Admin_Users';
 const SHEET_REGISTROS       = 'Registros_Pendientes';
 const SHEET_PROFESIONALES   = 'Profesionales_Clinica';
+const SHEET_CLINIC_STAFF    = 'Clinic_Staff';
 const SHEET_SOPORTE         = 'Solicitudes_Soporte';
 const SHEET_COMPRAS         = 'Compras_Pendientes';
 const PROP_PLANS_CONFIG     = 'PLANS_CONFIG_JSON';
@@ -285,6 +286,11 @@ const REGISTROS_HEADERS = [
   'Payment_Link', 'Payment_History', 'Last_Receipt_Ref', 'Last_Receipt_At'
 ];
 
+const CLINIC_STAFF_HEADERS = [
+  'Clinic_ID', 'Staff_ID', 'Role', 'Nombre', 'DNI', 'Matricula',
+  'Especialidades', 'Sucursal_ID', 'Pass_Hash', 'Pin_Hash', 'Primer_Uso', 'Activo', 'Updated_At'
+];
+
 function _ensureSheetHeaders(sheet, requiredHeaders) {
   const values = sheet.getDataRange().getValues();
   const existing = values[0] || [];
@@ -318,6 +324,18 @@ function _getOrCreateSheetWithHeaders(sheetName, headers) {
     _ensureSheetHeaders(sheet, headers);
   }
   return sheet;
+}
+
+function _getClinicStaffSheet() {
+  return _getOrCreateSheetWithHeaders(SHEET_CLINIC_STAFF, CLINIC_STAFF_HEADERS);
+}
+
+function _clinicStaffRowToObj(headers, row) {
+  var obj = {};
+  headers.forEach(function(h, idx) {
+    obj[h] = row[idx];
+  });
+  return obj;
 }
 
 function _safeNumber(n, fallback) {
@@ -1698,6 +1716,160 @@ function doGet(e) {
       return createResponse({ success: true, profesionales: result });
     } catch(err) {
       return createResponse({ error: 'Error consultando profesionales: ' + err.message });
+    }
+  }
+
+  // ── clinic_get_staff — lista staff de clínica (admin + profesionales) ──
+  if (action === 'clinic_get_staff') {
+    const clinicId = String(e.parameter.clinicId || '').trim();
+    if (!clinicId) return createResponse({ error: 'Falta clinicId' });
+    try {
+      const staffSheet = _getClinicStaffSheet();
+      const data = staffSheet.getDataRange().getValues();
+      const headers = data[0] || [];
+      const result = [];
+      for (var i = 1; i < data.length; i++) {
+        var rowObj = _clinicStaffRowToObj(headers, data[i]);
+        if (String(rowObj.Clinic_ID || '') !== clinicId) continue;
+        if (String(rowObj.Activo || 'true').toLowerCase() === 'false') continue;
+        result.push(rowObj);
+      }
+      return createResponse({ success: true, staff: result });
+    } catch (err) {
+      return createResponse({ error: 'Error clinic_get_staff: ' + err.message });
+    }
+  }
+
+  // ── clinic_validate_admin — valida clave admin contra Clinic_Staff ──
+  if (action === 'clinic_validate_admin') {
+    const clinicId = String(e.parameter.clinicId || '').trim();
+    const password = String(e.parameter.password || '');
+    if (!clinicId || !password) return createResponse({ error: 'Faltan parámetros' });
+    try {
+      const staffSheet = _getClinicStaffSheet();
+      const data = staffSheet.getDataRange().getValues();
+      const headers = data[0] || [];
+      const inputHash = _simpleHash(password);
+      for (var i = 1; i < data.length; i++) {
+        var rowObj = _clinicStaffRowToObj(headers, data[i]);
+        if (String(rowObj.Clinic_ID || '') !== clinicId) continue;
+        if (String(rowObj.Role || '').toLowerCase() !== 'admin') continue;
+        if (String(rowObj.Pass_Hash || '') === inputHash) {
+          return createResponse({ success: true, valid: true, staffId: rowObj.Staff_ID || '' });
+        }
+      }
+      return createResponse({ success: true, valid: false });
+    } catch (err) {
+      return createResponse({ error: 'Error clinic_validate_admin: ' + err.message });
+    }
+  }
+
+  // ── clinic_update_admin_pass — actualiza clave admin con verificación DNI ──
+  if (action === 'clinic_update_admin_pass') {
+    const clinicId = String(e.parameter.clinicId || '').trim();
+    const dni = String(e.parameter.dni || '').replace(/\D+/g, '');
+    const newPass = String(e.parameter.newPass || '');
+    if (!clinicId || !dni || !newPass) return createResponse({ error: 'Faltan parámetros' });
+    try {
+      const staffSheet = _getClinicStaffSheet();
+      const data = staffSheet.getDataRange().getValues();
+      const headers = data[0] || [];
+      const clinicCol = headers.indexOf('Clinic_ID');
+      const roleCol = headers.indexOf('Role');
+      const dniCol = headers.indexOf('DNI');
+      const passCol = headers.indexOf('Pass_Hash');
+      const updCol = headers.indexOf('Updated_At');
+      for (var i = 1; i < data.length; i++) {
+        var rowClinic = String(data[i][clinicCol] || '');
+        var rowRole = String(data[i][roleCol] || '').toLowerCase();
+        var rowDni = String(data[i][dniCol] || '').replace(/\D+/g, '');
+        if (rowClinic !== clinicId || rowRole !== 'admin') continue;
+        if (rowDni !== dni) continue;
+        if (passCol !== -1) staffSheet.getRange(i + 1, passCol + 1).setValue(_simpleHash(newPass));
+        if (updCol !== -1) staffSheet.getRange(i + 1, updCol + 1).setValue(new Date().toISOString());
+        return createResponse({ success: true });
+      }
+      return createResponse({ error: 'Admin no encontrado para ese DNI' });
+    } catch (err) {
+      return createResponse({ error: 'Error clinic_update_admin_pass: ' + err.message });
+    }
+  }
+
+  // ── clinic_reset_admin_pass_by_dni — reset admin pass a "clinica" por DNI ──
+  if (action === 'clinic_reset_admin_pass_by_dni') {
+    const clinicId = String(e.parameter.clinicId || '').trim();
+    const dni = String(e.parameter.dni || '').replace(/\D+/g, '');
+    if (!clinicId || !dni) return createResponse({ error: 'Faltan parámetros' });
+    e.parameter.newPass = 'clinica';
+    return doGet({ parameter: {
+      action: 'clinic_update_admin_pass',
+      clinicId: clinicId,
+      dni: dni,
+      newPass: 'clinica'
+    }});
+  }
+
+  // ── clinic_update_pro_pin — actualiza PIN de staff profesional ──
+  if (action === 'clinic_update_pro_pin') {
+    const clinicId = String(e.parameter.clinicId || '').trim();
+    const staffId = String(e.parameter.staffId || '').trim();
+    const newPin = String(e.parameter.newPin || '').trim();
+    if (!clinicId || !staffId || !newPin) return createResponse({ error: 'Faltan parámetros' });
+    try {
+      const staffSheet = _getClinicStaffSheet();
+      const data = staffSheet.getDataRange().getValues();
+      const headers = data[0] || [];
+      const clinicCol = headers.indexOf('Clinic_ID');
+      const idCol = headers.indexOf('Staff_ID');
+      const pinCol = headers.indexOf('Pin_Hash');
+      const fuCol = headers.indexOf('Primer_Uso');
+      const updCol = headers.indexOf('Updated_At');
+      for (var i = 1; i < data.length; i++) {
+        if (String(data[i][clinicCol] || '') !== clinicId) continue;
+        if (String(data[i][idCol] || '') !== staffId) continue;
+        if (pinCol !== -1) staffSheet.getRange(i + 1, pinCol + 1).setValue(_simpleHash(newPin));
+        if (fuCol !== -1) staffSheet.getRange(i + 1, fuCol + 1).setValue('false');
+        if (updCol !== -1) staffSheet.getRange(i + 1, updCol + 1).setValue(new Date().toISOString());
+        return createResponse({ success: true });
+      }
+      return createResponse({ error: 'Profesional no encontrado' });
+    } catch (err) {
+      return createResponse({ error: 'Error clinic_update_pro_pin: ' + err.message });
+    }
+  }
+
+  // ── clinic_reset_pro_pin_by_dni_matricula — reset PIN a 1234 con DNI+matrícula ──
+  if (action === 'clinic_reset_pro_pin_by_dni_matricula') {
+    const clinicId = String(e.parameter.clinicId || '').trim();
+    const dni = String(e.parameter.dni || '').replace(/\D+/g, '');
+    const matricula = String(e.parameter.matricula || '').trim().toLowerCase();
+    if (!clinicId || !dni || !matricula) return createResponse({ error: 'Faltan parámetros' });
+    try {
+      const staffSheet = _getClinicStaffSheet();
+      const data = staffSheet.getDataRange().getValues();
+      const headers = data[0] || [];
+      const clinicCol = headers.indexOf('Clinic_ID');
+      const roleCol = headers.indexOf('Role');
+      const dniCol = headers.indexOf('DNI');
+      const matCol = headers.indexOf('Matricula');
+      const pinCol = headers.indexOf('Pin_Hash');
+      const fuCol = headers.indexOf('Primer_Uso');
+      const updCol = headers.indexOf('Updated_At');
+      for (var i = 1; i < data.length; i++) {
+        var rowClinic = String(data[i][clinicCol] || '');
+        var rowRole = String(data[i][roleCol] || '').toLowerCase();
+        var rowDni = String(data[i][dniCol] || '').replace(/\D+/g, '');
+        var rowMat = String(data[i][matCol] || '').trim().toLowerCase();
+        if (rowClinic !== clinicId || rowRole !== 'professional') continue;
+        if (rowDni !== dni || rowMat !== matricula) continue;
+        if (pinCol !== -1) staffSheet.getRange(i + 1, pinCol + 1).setValue(_simpleHash('1234'));
+        if (fuCol !== -1) staffSheet.getRange(i + 1, fuCol + 1).setValue('true');
+        if (updCol !== -1) staffSheet.getRange(i + 1, updCol + 1).setValue(new Date().toISOString());
+        return createResponse({ success: true, resetPin: '1234' });
+      }
+      return createResponse({ error: 'Profesional no encontrado para DNI y matrícula' });
+    } catch (err) {
+      return createResponse({ error: 'Error clinic_reset_pro_pin_by_dni_matricula: ' + err.message });
     }
   }
 
@@ -3121,6 +3293,18 @@ function _setupAllSheets() {
   } else {
     _ensureSheetHeaders(buySheet, COMPRAS_HEADERS);
     result.push('Compras_Pendientes: OK');
+  }
+
+  // Clinic_Staff
+  const staffSheet = ss.getSheetByName(SHEET_CLINIC_STAFF);
+  if (!staffSheet) {
+    const s = ss.insertSheet(SHEET_CLINIC_STAFF);
+    s.appendRow(CLINIC_STAFF_HEADERS);
+    s.setFrozenRows(1);
+    result.push('Clinic_Staff: creada');
+  } else {
+    _ensureSheetHeaders(staffSheet, CLINIC_STAFF_HEADERS);
+    result.push('Clinic_Staff: OK');
   }
 
   return result;

@@ -98,6 +98,7 @@
                 return {
                     id:             p.id || ('auto-' + i + '-' + Date.now()),
                     nombre:         p.nombre        || '',
+                    dni:            p.dni           || '',
                     matricula:      p.matricula     || '',
                     especialidades: esp,
                     usuario:        p.usuario       || '',
@@ -137,6 +138,7 @@
             return {
                 id:             'fallback-' + Date.now(),
                 nombre:         name,
+                dni:            '',
                 matricula:      String(profData.matricula || ''),
                 especialidades: Array.isArray(profData.specialties) ? profData.specialties : [],
                 usuario:        '',
@@ -187,6 +189,8 @@
             '#clinicAuthEnterBtn:hover{background:#0284c7;}',
             '#clinicAuthEnterBtn:disabled{background:#94a3b8;cursor:not-allowed;}',
             '#clinicAuthAttempts{font-size:.72rem;color:#94a3b8;margin-top:6px;min-height:16px;}',
+            '#clinicAuthRecoverBtn{margin-top:10px;background:none;border:none;color:#0369a1;font-size:.78rem;font-weight:700;cursor:pointer;}',
+            '#clinicAuthRecoverBtn:hover{text-decoration:underline;}',
             '.ca-blocked-note{font-size:.74rem;color:#b91c1c;margin-top:6px;}',
             '.ca-pin-fu-input{width:100%;padding:12px;border:1.5px solid #cbd5e1;border-radius:10px;',
             'font-size:1.4rem;text-align:center;letter-spacing:.4em;background:var(--bg-card,#fff);',
@@ -209,6 +213,7 @@
             '  <div id="clinicAuthError"></div>',
             '  <button id="clinicAuthEnterBtn">Ingresar →</button>',
             '  <div id="clinicAuthAttempts"></div>',
+            '  <button id="clinicAuthRecoverBtn" type="button">¿Olvidaste tu clave?</button>',
             '</div>'
         ].join('');
         document.body.appendChild(overlay);
@@ -220,6 +225,7 @@
 
         // Click en botón
         document.getElementById('clinicAuthEnterBtn').addEventListener('click', _attemptLogin);
+        document.getElementById('clinicAuthRecoverBtn').addEventListener('click', _recoverSelectedIdentity);
 
         // Al cambiar profesional: actualizar UI y estado del botón según intentos
         document.getElementById('clinicAuthSelect').addEventListener('change', function() {
@@ -408,6 +414,78 @@
             var f = document.getElementById('caFuPin1');
             if (f) f.focus();
         }, 60);
+    }
+
+    function _normalizeDocId(value) {
+        return String(value || '').replace(/\D+/g, '');
+    }
+
+    // Fase 5: recuperación local de credenciales
+    function _recoverSelectedIdentity() {
+        var select = document.getElementById('clinicAuthSelect');
+        var errorEl = document.getElementById('clinicAuthError');
+        if (!select) return;
+        var idx = Number(select.value);
+        var selected = _professionals[idx];
+        if (!selected) return;
+
+        var wp;
+        try { wp = JSON.parse(localStorage.getItem('workplace_profiles') || '[]'); }
+        catch (_) { wp = []; }
+        var clinic = wp[0] || {};
+
+        if (selected.id === '__admin__') {
+            var enteredAdminDni = _normalizeDocId(prompt('Recuperar admin: ingresá DNI del administrador') || '');
+            var expectedAdminDni = _normalizeDocId(clinic.adminDni || '');
+            if (!enteredAdminDni) return;
+            if (!expectedAdminDni || enteredAdminDni !== expectedAdminDni) {
+                if (errorEl) errorEl.textContent = 'DNI de administrador incorrecto.';
+                return;
+            }
+            clinic.adminPass = 'clinica';
+            wp[0] = clinic;
+            try {
+                localStorage.setItem('workplace_profiles', JSON.stringify(wp));
+                window._wpProfilesCache = null;
+            } catch (_) {}
+            if (typeof showToast === 'function') {
+                showToast('🔑 Contraseña admin restablecida a "clinica".', 'success');
+            }
+            if (errorEl) errorEl.textContent = '';
+            return;
+        }
+
+        var enteredDni = _normalizeDocId(prompt('Recuperar PIN: ingresá DNI del profesional') || '');
+        if (!enteredDni) return;
+        var enteredMat = String(prompt('Ingresá matrícula del profesional') || '').trim().toLowerCase();
+        if (!enteredMat) return;
+
+        var profs = Array.isArray(clinic.professionals) ? clinic.professionals : [];
+        var proIdx = profs.findIndex(function(p) {
+            return p && p.id === selected.id &&
+                _normalizeDocId(p.dni) === enteredDni &&
+                String(p.matricula || '').trim().toLowerCase() === enteredMat;
+        });
+        if (proIdx < 0) {
+            if (errorEl) errorEl.textContent = 'DNI y/o matrícula no coinciden para este profesional.';
+            return;
+        }
+
+        profs[proIdx].pin = '1234';
+        profs[proIdx].primerUso = true;
+        clinic.professionals = profs;
+        wp[0] = clinic;
+        try {
+            localStorage.setItem('workplace_profiles', JSON.stringify(wp));
+            window._wpProfilesCache = null;
+        } catch (_) {}
+        _professionals = resolveProfessionals(profs);
+        _failedAttempts[selected.id] = 0;
+        if (typeof showToast === 'function') {
+            showToast('🔄 PIN restablecido a 1234. Se pedirá cambio en el próximo acceso.', 'success');
+        }
+        if (errorEl) errorEl.textContent = '';
+        _showModal();
     }
 
     function _attemptLogin() {
