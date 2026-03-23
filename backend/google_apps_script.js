@@ -1873,6 +1873,126 @@ function doGet(e) {
     }
   }
 
+  // ── clinic_upsert_staff — crea/actualiza staff (admin o profesional) ──
+  if (action === 'clinic_upsert_staff') {
+    const clinicId = String(e.parameter.clinicId || '').trim();
+    const staffId = String(e.parameter.staffId || '').trim();
+    const role = String(e.parameter.role || 'professional').trim().toLowerCase();
+    if (!clinicId || !staffId) return createResponse({ error: 'Faltan clinicId/staffId' });
+    try {
+      const staffSheet = _getClinicStaffSheet();
+      const data = staffSheet.getDataRange().getValues();
+      const headers = data[0] || [];
+      const clinicCol = headers.indexOf('Clinic_ID');
+      const idCol = headers.indexOf('Staff_ID');
+      const roleCol = headers.indexOf('Role');
+      const nombreCol = headers.indexOf('Nombre');
+      const dniCol = headers.indexOf('DNI');
+      const matCol = headers.indexOf('Matricula');
+      const espCol = headers.indexOf('Especialidades');
+      const sucCol = headers.indexOf('Sucursal_ID');
+      const passCol = headers.indexOf('Pass_Hash');
+      const pinCol = headers.indexOf('Pin_Hash');
+      const fuCol = headers.indexOf('Primer_Uso');
+      const actCol = headers.indexOf('Activo');
+      const updCol = headers.indexOf('Updated_At');
+
+      const nombre = String(e.parameter.nombre || '');
+      const dni = String(e.parameter.dni || '').replace(/\D+/g, '');
+      const matricula = String(e.parameter.matricula || '');
+      const especialidades = String(e.parameter.especialidades || '');
+      const sucursalId = String(e.parameter.sucursalId || 'main');
+      const passRaw = String(e.parameter.pass || '');
+      const pinRaw = String(e.parameter.pin || '');
+      const primerUso = String(e.parameter.primerUso || '').toLowerCase();
+      const activo = String(e.parameter.activo || '').toLowerCase();
+      const nowIso = new Date().toISOString();
+
+      var targetRow = -1;
+      for (var i = 1; i < data.length; i++) {
+        if (String(data[i][clinicCol] || '') !== clinicId) continue;
+        if (String(data[i][idCol] || '') !== staffId) continue;
+        targetRow = i + 1;
+        break;
+      }
+
+      if (targetRow < 0) {
+        var newRow = CLINIC_STAFF_HEADERS.map(function() { return ''; });
+        newRow[clinicCol] = clinicId;
+        newRow[idCol] = staffId;
+        newRow[roleCol] = role;
+        newRow[nombreCol] = nombre;
+        newRow[dniCol] = dni;
+        newRow[matCol] = matricula;
+        newRow[espCol] = especialidades;
+        newRow[sucCol] = sucursalId;
+        newRow[passCol] = passRaw ? _simpleHash(passRaw) : '';
+        newRow[pinCol] = pinRaw ? _simpleHash(pinRaw) : '';
+        newRow[fuCol] = primerUso || 'false';
+        newRow[actCol] = (activo || 'true');
+        newRow[updCol] = nowIso;
+        staffSheet.appendRow(newRow);
+        return createResponse({ success: true, created: true, staffId: staffId });
+      }
+
+      if (roleCol !== -1) staffSheet.getRange(targetRow, roleCol + 1).setValue(role);
+      if (nombreCol !== -1 && nombre) staffSheet.getRange(targetRow, nombreCol + 1).setValue(nombre);
+      if (dniCol !== -1 && dni) staffSheet.getRange(targetRow, dniCol + 1).setValue(dni);
+      if (matCol !== -1) staffSheet.getRange(targetRow, matCol + 1).setValue(matricula);
+      if (espCol !== -1) staffSheet.getRange(targetRow, espCol + 1).setValue(especialidades);
+      if (sucCol !== -1) staffSheet.getRange(targetRow, sucCol + 1).setValue(sucursalId);
+      if (passCol !== -1 && passRaw) staffSheet.getRange(targetRow, passCol + 1).setValue(_simpleHash(passRaw));
+      if (pinCol !== -1 && pinRaw) staffSheet.getRange(targetRow, pinCol + 1).setValue(_simpleHash(pinRaw));
+      if (fuCol !== -1 && primerUso) staffSheet.getRange(targetRow, fuCol + 1).setValue(primerUso);
+      if (actCol !== -1 && activo) staffSheet.getRange(targetRow, actCol + 1).setValue(activo);
+      if (updCol !== -1) staffSheet.getRange(targetRow, updCol + 1).setValue(nowIso);
+      return createResponse({ success: true, updated: true, staffId: staffId });
+    } catch (err) {
+      return createResponse({ error: 'Error clinic_upsert_staff: ' + err.message });
+    }
+  }
+
+  // ── clinic_set_staff_active — activa/desactiva staff por id ──
+  if (action === 'clinic_set_staff_active') {
+    const clinicId = String(e.parameter.clinicId || '').trim();
+    const staffId = String(e.parameter.staffId || '').trim();
+    const active = String(e.parameter.active || 'true').toLowerCase() === 'true';
+    if (!clinicId || !staffId) return createResponse({ error: 'Faltan clinicId/staffId' });
+    try {
+      const staffSheet = _getClinicStaffSheet();
+      const data = staffSheet.getDataRange().getValues();
+      const headers = data[0] || [];
+      const clinicCol = headers.indexOf('Clinic_ID');
+      const idCol = headers.indexOf('Staff_ID');
+      const actCol = headers.indexOf('Activo');
+      const updCol = headers.indexOf('Updated_At');
+      for (var i = 1; i < data.length; i++) {
+        if (String(data[i][clinicCol] || '') !== clinicId) continue;
+        if (String(data[i][idCol] || '') !== staffId) continue;
+        if (actCol !== -1) staffSheet.getRange(i + 1, actCol + 1).setValue(active ? 'true' : 'false');
+        if (updCol !== -1) staffSheet.getRange(i + 1, updCol + 1).setValue(new Date().toISOString());
+        return createResponse({ success: true, staffId: staffId, active: active });
+      }
+      return createResponse({ error: 'Staff no encontrado' });
+    } catch (err) {
+      return createResponse({ error: 'Error clinic_set_staff_active: ' + err.message });
+    }
+  }
+
+  // ── clinic_delete_staff — baja lógica de staff (activo=false) ──
+  if (action === 'clinic_delete_staff') {
+    const clinicId = String(e.parameter.clinicId || '').trim();
+    const staffId = String(e.parameter.staffId || '').trim();
+    if (!clinicId || !staffId) return createResponse({ error: 'Faltan clinicId/staffId' });
+    e.parameter.active = 'false';
+    return doGet({ parameter: {
+      action: 'clinic_set_staff_active',
+      clinicId: clinicId,
+      staffId: staffId,
+      active: 'false'
+    }});
+  }
+
   if (action === 'admin_get_plans_config') {
     const auth = _verifyAdminAuth(e.parameter);
     if (!auth.authorized) return createResponse({ error: auth.error });

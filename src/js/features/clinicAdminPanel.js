@@ -35,6 +35,120 @@
         return String(value || '').replace(/\D+/g, '');
     }
 
+    function _getClinicId() {
+        try {
+            if (window.CLIENT_CONFIG && window.CLIENT_CONFIG.medicoId) {
+                return String(window.CLIENT_CONFIG.medicoId);
+            }
+        } catch (_) {}
+        return String(localStorage.getItem('medico_id') || '').trim();
+    }
+
+    function _getBackendUrl() {
+        try {
+            if (typeof window.getResolvedBackendUrl === 'function') {
+                var u = String(window.getResolvedBackendUrl() || '').trim();
+                if (u) return u;
+            }
+        } catch (_) {}
+        try {
+            if (window.CLIENT_CONFIG && window.CLIENT_CONFIG.backendUrl) {
+                return String(window.CLIENT_CONFIG.backendUrl || '').trim();
+            }
+        } catch (_) {}
+        try {
+            var stored = JSON.parse(localStorage.getItem('client_config_stored') || '{}');
+            return String(stored.backendUrl || '').trim();
+        } catch (_) { return ''; }
+    }
+
+    async function _backendGet(action, params) {
+        var backendUrl = _getBackendUrl();
+        if (!backendUrl) return null;
+        var q = new URLSearchParams(Object.assign({ action: action }, params || {}));
+        var res = await fetch(backendUrl + '?' + q.toString(), { method: 'GET' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return await res.json();
+    }
+
+    function _backendSyncEnabled() {
+        return !!(_getBackendUrl() && _getClinicId());
+    }
+
+    async function _syncFromBackend() {
+        if (!_backendSyncEnabled()) return;
+        var clinicId = _getClinicId();
+        var json = await _backendGet('clinic_get_staff', { clinicId: clinicId });
+        if (!json || !json.success || !Array.isArray(json.staff)) return;
+
+        var wp = _getWP();
+        if (!wp[0]) wp[0] = {};
+        var clinic = wp[0];
+        var localProfs = Array.isArray(clinic.professionals) ? clinic.professionals : [];
+
+        var admin = json.staff.find(function(s) {
+            return String(s.Role || '').toLowerCase() === 'admin';
+        });
+        if (admin) {
+            clinic.adminUser = clinic.adminUser || 'admin';
+            clinic.adminDni = _normalizeDocId(admin.DNI || clinic.adminDni || '');
+        }
+
+        var merged = [];
+        json.staff.forEach(function(s, idx) {
+            var role = String(s.Role || '').toLowerCase();
+            if (role !== 'professional') return;
+            var staffId = String(s.Staff_ID || ('staff-' + idx));
+            var existing = localProfs.find(function(p) { return p && String(p.id) === staffId; }) || {};
+            var esp = String(s.Especialidades || '').split(',').map(function(x) { return x.trim(); }).filter(Boolean);
+            merged.push(Object.assign({}, existing, {
+                id: staffId,
+                nombre: String(s.Nombre || existing.nombre || ''),
+                dni: _normalizeDocId(s.DNI || existing.dni || ''),
+                matricula: String(s.Matricula || existing.matricula || ''),
+                especialidades: esp,
+                activo: String(s.Activo || 'true').toLowerCase() !== 'false',
+                primerUso: String(s.Primer_Uso || 'false').toLowerCase() === 'true'
+            }));
+        });
+
+        if (merged.length) {
+            clinic.professionals = merged;
+            wp[0] = clinic;
+            _saveWP(wp);
+        }
+    }
+
+    function _syncAdminToBackend() {
+        if (!_backendSyncEnabled()) return;
+        var wp = _getWP();
+        var clinic = wp[0] || {};
+        _backendGet('clinic_upsert_staff', {
+            clinicId: _getClinicId(),
+            staffId: '__admin__',
+            role: 'admin',
+            nombre: 'Administrador',
+            dni: clinic.adminDni || '',
+            pass: clinic.adminPass || ''
+        }).catch(function() {});
+    }
+
+    function _syncProfessionalToBackend(pro) {
+        if (!_backendSyncEnabled() || !pro || !pro.id) return;
+        _backendGet('clinic_upsert_staff', {
+            clinicId: _getClinicId(),
+            staffId: String(pro.id),
+            role: 'professional',
+            nombre: pro.nombre || '',
+            dni: pro.dni || '',
+            matricula: pro.matricula || '',
+            especialidades: Array.isArray(pro.especialidades) ? pro.especialidades.join(', ') : '',
+            pin: pro.pin || '',
+            primerUso: pro.primerUso ? 'true' : 'false',
+            activo: pro.activo === false ? 'false' : 'true'
+        }).catch(function() {});
+    }
+
     function _getAdminCreds() {
         var wp = _getWP();
         var w  = wp[0] || {};
@@ -52,8 +166,10 @@
 
     function open() {
         _buildOverlay();
-        _showLoginScreen();
         document.getElementById(OVERLAY_ID).style.display = 'flex';
+        _syncFromBackend().catch(function() {}).finally(function() {
+            _showLoginScreen();
+        });
     }
 
     function close_() {
@@ -63,14 +179,16 @@
     // ── Fase 3: apertura autenticada (desde modal PIN) — omite pantalla de login ─
     function openAuthenticated() {
         _buildOverlay();
-        var wp        = _getWP();
-        var isDefault = !((wp[0] || {}).adminPass);
-        if (isDefault) {
-            _showForceChangePassModal();
-        } else {
-            _showPanel();
-        }
         document.getElementById(OVERLAY_ID).style.display = 'flex';
+        _syncFromBackend().catch(function() {}).finally(function() {
+            var wp        = _getWP();
+            var isDefault = !((wp[0] || {}).adminPass);
+            if (isDefault) {
+                _showForceChangePassModal();
+            } else {
+                _showPanel();
+            }
+        });
     }
 
     // Pantalla de cambio obligatorio de contraseña (primer uso del admin)
@@ -107,6 +225,7 @@
             wp[0].adminPass = p1;
             wp[0].adminDni  = dni;
             _saveWP(wp);
+            _syncAdminToBackend();
             if (typeof showToast === 'function') showToast('✅ Contraseña de administrador guardada.', 'success');
             _showPanel();
         });
@@ -247,6 +366,7 @@
         clinic.adminPass = DEFAULT_PASS;
         wp[0] = clinic;
         _saveWP(wp);
+        _syncAdminToBackend();
         if (typeof showToast === 'function') {
             showToast('🔑 Clave admin restablecida a "clinica".', 'success');
         }
@@ -263,10 +383,11 @@
         var profs     = Array.isArray(clinic.professionals) ? clinic.professionals : [];
         var maxProfs  = clinic.maxProfesionales || 3;
         var clinicName = clinic.name || 'Clínica';
+        var syncMode = _backendSyncEnabled() ? 'Backend activo' : 'Solo local';
 
         inner.innerHTML = [
             '<div class="caa-title">⚕️ Gestión de Profesionales</div>',
-            '<div class="caa-sub">' + _esc(clinicName) + '</div>',
+            '<div class="caa-sub">' + _esc(clinicName) + ' · ' + _esc(syncMode) + '</div>',
             '<div id="clinicAdminContent"><div id="caaProList"></div></div>',
             '<div class="caa-close-row">',
             '  <span class="caa-limit-badge" id="caaProfCount">' + profs.length + ' / ' + maxProfs + ' profesionales</span>',
@@ -450,6 +571,7 @@
 
         wp[0].professionals = profs;
         _saveWP(wp);
+        _syncProfessionalToBackend(profs[idx]);
         if (typeof showToast === 'function') showToast('✅ Profesional actualizado.', 'success');
         _refreshPanel();
     }
@@ -463,6 +585,7 @@
         profs[idx].primerUso = true; // forzar cambio en el próximo acceso
         wp[0].professionals = profs;
         _saveWP(wp);
+        _syncProfessionalToBackend(profs[idx]);
         if (typeof showToast === 'function') showToast('🔄 PIN reseteado. El profesional deberá cambiarlo en su próximo acceso.', 'success');
         _refreshPanel();
     }
@@ -474,6 +597,13 @@
         profs[idx].activo   = profs[idx].activo === false;
         wp[0].professionals = profs;
         _saveWP(wp);
+        if (_backendSyncEnabled()) {
+            _backendGet('clinic_set_staff_active', {
+                clinicId: _getClinicId(),
+                staffId: String(profs[idx].id || ''),
+                active: profs[idx].activo ? 'true' : 'false'
+            }).catch(function() {});
+        }
         if (typeof showToast === 'function') {
             var msg = profs[idx].activo ? '✅ Profesional activado.' : '⛔ Profesional desactivado.';
             showToast(msg, 'info');
@@ -486,10 +616,17 @@
         var profs = (wp[0] && wp[0].professionals) || [];
         if (!profs[idx]) return;
         var nombre = profs[idx].nombre || 'sin nombre';
+        var staffId = String(profs[idx].id || '');
         if (!confirm('¿Eliminar a "' + nombre + '"? Esta acción no se puede deshacer.')) return;
         profs.splice(idx, 1);
         wp[0].professionals = profs;
         _saveWP(wp);
+        if (_backendSyncEnabled() && staffId) {
+            _backendGet('clinic_delete_staff', {
+                clinicId: _getClinicId(),
+                staffId: staffId
+            }).catch(function() {});
+        }
         if (typeof showToast === 'function') showToast('🗑️ Profesional eliminado.', 'warning');
         _refreshPanel();
     }
@@ -523,6 +660,7 @@
         profs.push(newPro);
         wp[0].professionals = profs;
         _saveWP(wp);
+        _syncProfessionalToBackend(newPro);
         _refreshPanel();
 
         // Abrir el formulario del nuevo profesional automáticamente
@@ -575,6 +713,7 @@
             wp[0].adminPass = newPass;
             wp[0].adminDni  = adminDni;
             _saveWP(wp);
+            _syncAdminToBackend();
             if (typeof showToast === 'function') showToast('✅ Credenciales de administrador actualizadas.', 'success');
             _showPanel();
         });

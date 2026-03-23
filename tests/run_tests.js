@@ -8348,6 +8348,32 @@ test('Backend-Clinic-0c — expone acciones de reset/update admin/pro PIN', () =
         'google_apps_script.js debe exponer acciones de update/reset para admin y profesionales');
 });
 
+test('ClinicAdminPanel-F6a — panel implementa helpers backend (_backendGet + _syncFromBackend)', () => {
+    const cap = fs.readFileSync(path.join(root, 'src/js/features/clinicAdminPanel.js'), 'utf-8');
+    assert(cap.includes('_backendGet') && cap.includes('_syncFromBackend'),
+        'clinicAdminPanel.js debe tener helpers de sync backend');
+});
+
+test('ClinicAdminPanel-F6b — open/openAuthenticated sincronizan desde backend antes de mostrar', () => {
+    const cap = fs.readFileSync(path.join(root, 'src/js/features/clinicAdminPanel.js'), 'utf-8');
+    assert(cap.includes('_syncFromBackend().catch(function() {}).finally(function()') || cap.includes('_syncFromBackend().catch'),
+        'open y openAuthenticated deben intentar sync remoto al abrir el panel');
+});
+
+test('ClinicAdminPanel-F6c — operaciones CRUD disparan sync a backend', () => {
+    const cap = fs.readFileSync(path.join(root, 'src/js/features/clinicAdminPanel.js'), 'utf-8');
+    assert(cap.includes('_syncProfessionalToBackend') && cap.includes("clinic_set_staff_active") && cap.includes("clinic_delete_staff"),
+        'Las operaciones del panel deben disparar sync backend (upsert/toggle/delete)');
+});
+
+test('Backend-Clinic-0d — expone clinic_upsert_staff, clinic_set_staff_active y clinic_delete_staff', () => {
+    const gas = fs.readFileSync(path.join(root, 'backend/google_apps_script.js'), 'utf-8');
+    assert(gas.includes("action === 'clinic_upsert_staff'") &&
+           gas.includes("action === 'clinic_set_staff_active'") &&
+           gas.includes("action === 'clinic_delete_staff'"),
+        'google_apps_script.js debe exponer endpoints CRUD del staff de clínica');
+});
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // Bloque 126: C6 — ClinicAdminPanel (gestión interna de profesionales CLINIC)
 // ═══════════════════════════════════════════════════════════════════════════════
