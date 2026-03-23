@@ -2334,7 +2334,7 @@
                 </div>
                 <div class="wp-body">
                     <div class="field-row">
-                        <div class="field-group">
+                        <div class="field-group" id="wpNameGroup${index}">
                             <label>Nombre del lugar ${isMain ? '<span class="req">*</span>' : ''}</label>
                             <input type="text" id="regWpName${index}" placeholder="Clínica San Martín" oninput="updateWpName(${index})" onblur="normOnBlur(this,'title')">
                         </div>
@@ -2343,7 +2343,7 @@
                             <input type="text" id="regWpAddress${index}" placeholder="Av. Corrientes 1234, CABA" onblur="normOnBlur(this,'sentence')">
                         </div>
                     </div>
-                    <div class="field-row">
+                    <div class="field-row" id="wpContactRow${index}">
                         <div class="field-group">
                             <label>Teléfono del lugar</label>
                             <input type="tel" id="regWpPhone${index}" placeholder="(011) 4567-8901">
@@ -2352,6 +2352,9 @@
                             <label>Email institucional</label>
                             <input type="email" id="regWpEmail${index}" placeholder="info@clinica.com">
                         </div>
+                    </div>
+                    <div id="wpClinicSyncNote${index}" style="display:none;padding:.45rem .7rem;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;font-size:.79rem;color:#0f766e;margin-bottom:.4rem;">
+                        ℹ️ Nombre, teléfono y email se toman automáticamente de los datos ingresados en el Paso 2.
                     </div>
                     <div class="field-group" style="margin-top:.8rem;">
                         <label>Logo del Lugar / Institución</label>
@@ -3000,6 +3003,32 @@
                 profSection.style.display = selectedPlan === 'CLINIC' ? '' : 'none';
                 if (selectedPlan === 'CLINIC') _updateProfCounter();
             }
+
+            // Sincronizar datos del lugar principal (index 0) con datos del paso 1
+            const isClinic = selectedPlan === 'CLINIC';
+            const nameGroup0  = document.getElementById('wpNameGroup0');
+            const contactRow0 = document.getElementById('wpContactRow0');
+            const syncNote0   = document.getElementById('wpClinicSyncNote0');
+            const nameDisplay0 = document.getElementById('wpNameDisplay0');
+
+            if (isClinic) {
+                // Ocultar nombre y contacto — ya fueron ingresados en paso 1
+                if (nameGroup0)   nameGroup0.style.display   = 'none';
+                if (contactRow0)  contactRow0.style.display  = 'none';
+                if (syncNote0)    syncNote0.style.display    = '';
+                // Actualizar encabezado del accordion con el nombre de la clínica
+                const clinicName = document.getElementById('regNombre')?.value?.trim();
+                if (nameDisplay0 && clinicName) nameDisplay0.textContent = '🏥 ' + clinicName;
+            } else {
+                if (nameGroup0)   nameGroup0.style.display   = '';
+                if (contactRow0)  contactRow0.style.display  = '';
+                if (syncNote0)    syncNote0.style.display    = 'none';
+                // Pre-poblar email y tel del lugar principal desde datos personales (solo si están vacíos)
+                const wpEmail0 = document.getElementById('regWpEmail0');
+                const wpPhone0 = document.getElementById('regWpPhone0');
+                if (wpEmail0 && !wpEmail0.value) wpEmail0.value = document.getElementById('regEmail')?.value?.trim() || '';
+                if (wpPhone0 && !wpPhone0.value) wpPhone0.value = document.getElementById('regTelefono')?.value?.trim() || '';
+            }
         }
 
         function _applyStep4PlanRestrictions() {
@@ -3052,14 +3081,23 @@
 
             // Collect all workplaces from accordion (only from workplacesContainer)
             const allWorkplaces = [];
+            const isClinicPlan = selectedPlan === 'CLINIC';
+            const step1Name  = document.getElementById('regNombre')?.value?.trim()  || '';
+            const step1Email = document.getElementById('regEmail')?.value?.trim()   || '';
+            const step1Phone = document.getElementById('regTelefono')?.value?.trim() || '';
             document.querySelectorAll('#workplacesContainer .wp-accordion').forEach(acc => {
                 const idx = acc.dataset.wpIndex;
+                const isMainWp = idx === '0';
+                // Para CLINIC, el lugar principal hereda nombre/email/teléfono del paso 1
+                const fallbackName  = isClinicPlan && isMainWp ? step1Name  : '';
+                const fallbackEmail = isClinicPlan && isMainWp ? step1Email : '';
+                const fallbackPhone = isClinicPlan && isMainWp ? step1Phone : '';
                 allWorkplaces.push({
-                    name:    (document.getElementById('regWpName' + idx) || {}).value || '',
+                    name:    (document.getElementById('regWpName'    + idx) || {}).value || fallbackName,
                     address: (document.getElementById('regWpAddress' + idx) || {}).value || '',
-                    phone:   (document.getElementById('regWpPhone' + idx) || {}).value || '',
-                    email:   (document.getElementById('regWpEmail' + idx) || {}).value || '',
-                    footer:  (document.getElementById('regWpFooter' + idx) || {}).value || '',
+                    phone:   (document.getElementById('regWpPhone'   + idx) || {}).value || fallbackPhone,
+                    email:   (document.getElementById('regWpEmail'   + idx) || {}).value || fallbackEmail,
+                    footer:  (document.getElementById('regWpFooter'  + idx) || {}).value || '',
                     logo:    wpLogoData[idx] || null
                 });
             });
