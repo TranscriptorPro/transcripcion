@@ -1235,7 +1235,7 @@
         const PRICING = {
             NORMAL: { license: 102.99, monthly: 10, annual: 100, devices: 1, templates: 3, historial: 10, workplaces: 1, outputProfiles: 1, pdfLogo: false, pdfColor: false, label: 'Normal' },
             PRO:    { license: 152.99, monthly: 15, annual: 150, devices: 3, templates: 'all_specialty', historial: 30, workplaces: 2, outputProfiles: 3, pdfLogo: true, pdfColor: false, label: 'Pro' },
-            CLINIC: { license: 352.99, monthly: 30, annual: 300, devices: 5, templates: '3_packs', historial: Infinity, workplaces: 1, outputProfiles: Infinity, pdfLogo: true, pdfColor: true, maxProfessionals: 5, label: 'Clínica' }
+            CLINIC: { license: 352.99, monthly: 30, annual: 300, devices: 5, templates: '3_packs', historial: Infinity, workplaces: 2, outputProfiles: Infinity, pdfLogo: true, pdfColor: true, maxProfessionals: 5, label: 'Clínica' }
         };
 
         function _syncAdminPlanConfigFromObject(adminPlans) {
@@ -3019,6 +3019,9 @@
                 // Actualizar encabezado del accordion con el nombre de la clínica
                 const clinicName = document.getElementById('regNombre')?.value?.trim();
                 if (nameDisplay0 && clinicName) nameDisplay0.textContent = '🏥 ' + clinicName;
+                   // Pre-fill regWpName0 con el nombre de la clínica para que pase validación
+                   const wpName0 = document.getElementById('regWpName0');
+                   if (wpName0 && clinicName) wpName0.value = clinicName;
             } else {
                 if (nameGroup0)   nameGroup0.style.display   = '';
                 if (contactRow0)  contactRow0.style.display  = '';
@@ -3043,12 +3046,13 @@
         function validateStep3() {
             const isClinic = selectedPlan === 'CLINIC';
             const wpName = (document.getElementById('regWpName0') || {}).value || '';
-            if (!wpName.trim()) {
-                showAlert(isClinic ? 'Ingresá el nombre de la sede principal' : 'Ingresá el nombre de tu lugar de trabajo principal', '🏥');
-                const el = document.getElementById('regWpName0');
-                if (el) el.focus();
-                return false;
-            }
+               // Para CLINIC el nombre de la sede principal viene de regNombre (paso 1)
+               const effectiveName = wpName.trim() || (isClinic ? (document.getElementById('regNombre')?.value?.trim() || '') : '');
+               if (!effectiveName) {
+                   showAlert(isClinic ? 'Ingresá el nombre de la clínica en el Paso 2' : 'Ingresá el nombre de tu lugar de trabajo principal', '🏥');
+                   if (!isClinic) { const el = document.getElementById('regWpName0'); if (el) el.focus(); }
+                   return false;
+               }
             return true;
         }
 
