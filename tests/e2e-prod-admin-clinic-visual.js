@@ -21,6 +21,8 @@ const HEADLESS = process.env.HEADLESS === '1';
 const SLOWMO = Number(process.env.SLOWMO || 300);
 const STEP_PAUSE = Number(process.env.STEP_PAUSE || 4000);
 const FINAL_PAUSE = Number(process.env.FINAL_PAUSE || 15000);
+const TARGET_REG_ID = String(process.env.TARGET_REG_ID || '').trim();
+const TARGET_CLINIC_NAME = String(process.env.TARGET_CLINIC_NAME || 'Clinica La Casa Del Arbol').trim();
 
 function ts() {
     const d = new Date();
@@ -119,10 +121,16 @@ function ts() {
         );
         console.log(`   → ${totalCards} tarjetas de registro cargadas`);
 
-        // ─── 3. Encontrar primera tarjeta CLINIC ────────────
+        // ─── 3. Encontrar la tarjeta CLINIC objetivo (por regId o nombre) ────────────
         console.log('── PASO 3: Buscando tarjeta CLINIC...');
-        const clinicInfo = await page.evaluate(() => {
+        const clinicInfo = await page.evaluate(({ targetRegId, targetClinicName }) => {
+            const normalize = (s) => String(s || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase();
+
             const cards = document.querySelectorAll('#registrosCards .reg-card');
+            const candidates = [];
             for (const card of cards) {
                 const txt = card.textContent || '';
                 if (txt.includes('CLINIC') || txt.includes('CUIT')) {
@@ -136,11 +144,23 @@ function ts() {
                     const apvId = apvBtn ? (/openApproveModal\('([^']+)'\)/.exec(apvBtn.getAttribute('onclick') || '') || [])[1] : null;
                     // ¿Tiene botón comprobante?
                     const rcpBtn = card.querySelector('button[onclick*="viewRegReceipt"]');
-                    return { regId: m[1], hasApprove: !!apvId, hasReceipt: !!rcpBtn };
+                    candidates.push({ regId: m[1], hasApprove: !!apvId, hasReceipt: !!rcpBtn, text: txt });
                 }
             }
-            return null;
-        });
+
+            if (targetRegId) {
+                const exactById = candidates.find(c => String(c.regId) === String(targetRegId));
+                if (exactById) return exactById;
+            }
+
+            const targetNorm = normalize(targetClinicName);
+            if (targetNorm) {
+                const exactByName = candidates.find(c => normalize(c.text).includes(targetNorm));
+                if (exactByName) return exactByName;
+            }
+
+            return candidates[0] || null;
+        }, { targetRegId: TARGET_REG_ID, targetClinicName: TARGET_CLINIC_NAME });
 
         if (!clinicInfo) throw new Error('No hay tarjeta CLINIC visible en registros');
         console.log(`   → CLINIC encontrada: ${clinicInfo.regId} | Aprobar: ${clinicInfo.hasApprove} | Comprobante: ${clinicInfo.hasReceipt}`);

@@ -192,6 +192,23 @@
 | `?action=admin_approve_registration` | GET | Aprobar registro y crear usuario |
 | `?action=admin_reject_registration` | GET | Rechazar un registro |
 | `?action=admin_get_clinic_professionals` | GET | Listar profesionales de una clínica |
+| `?action=admin_reset_all_data_keep_admin` | GET | Reset total de datos (conserva solo usuario admin en Admin_Users) |
+
+## Reset total seguro (entorno limpio para QA)
+
+Este reset **elimina todos los registros operativos** de las hojas (usuarios, registros, compras, staff, soporte, métricas, dispositivos, diagnósticos y logs), y **conserva solo `admin` en `Admin_Users`**.
+
+1. Ejecutar primero simulación (no borra nada):
+
+`?action=admin_reset_all_data_keep_admin&dryRun=1&sessionToken=...&sessionUser=...`
+
+2. Si el resultado es correcto, ejecutar reset real:
+
+`?action=admin_reset_all_data_keep_admin&confirm=RESET_ALL_KEEP_ADMIN&sessionToken=...&sessionUser=...`
+
+Notas:
+- Si no existe `admin` en `Admin_Users`, el reset real se aborta para evitar lockout.
+- Recomendado: crear una copia del Google Sheet antes del reset.
 
 ## Datos de Ejemplo
 

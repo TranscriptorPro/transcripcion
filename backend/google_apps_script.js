@@ -936,6 +936,37 @@ function doGet(e) {
     }
   }
 
+  // admin_reset_all_data_keep_admin — limpia datos operativos y conserva solo admin en Admin_Users
+  if (action === 'admin_reset_all_data_keep_admin') {
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
+    _invalidateAdminReadCaches();
+
+    try {
+      const dryRun = String(e.parameter.dryRun || '').toLowerCase();
+      const isDryRun = dryRun === '1' || dryRun === 'true' || dryRun === 'yes';
+      const confirmToken = String(e.parameter.confirm || '').trim();
+
+      if (!isDryRun && confirmToken !== 'RESET_ALL_KEEP_ADMIN') {
+        return createResponse({
+          error: 'Confirmación inválida. Para ejecutar el reset enviar confirm=RESET_ALL_KEEP_ADMIN o usar dryRun=1.'
+        });
+      }
+
+      const result = _resetAllDataKeepAdmin_(isDryRun);
+      appendAdminLog(
+        auth.username,
+        isDryRun ? 'reset_all_data_keep_admin_dry_run' : 'reset_all_data_keep_admin',
+        'system',
+        JSON.stringify(result)
+      );
+
+      return createResponse({ success: true, dryRun: isDryRun, result: result });
+    } catch (err) {
+      return createResponse({ error: 'Error en reset total: ' + err.message });
+    }
+  }
+
   // admin_log_action — escribe una acción de admin en Admin_Logs
   if (action === 'admin_log_action') {
     const auth = _verifyAdminAuth(e.parameter);
@@ -2026,7 +2057,8 @@ function doPost(e) {
     admin_release_devices: true,
     admin_mark_registration_paid: true,
     admin_reject_registration: true,
-    admin_clear_logs: true
+    admin_clear_logs: true,
+    admin_reset_all_data_keep_admin: true
   };
   if (invalidateCacheActions[action]) {
     _invalidateAdminReadCaches();
@@ -3108,6 +3140,93 @@ function _clearAdminLogsKeepHeader() {
   const toDelete = lastRow - 1;
   logSheet.deleteRows(2, toDelete);
   return toDelete;
+}
+
+function _clearSheetDataKeepHeader_(sheet, dryRun) {
+  if (!sheet) return 0;
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return 0;
+  const deleted = lastRow - 1;
+  if (!dryRun) {
+    sheet.deleteRows(2, deleted);
+  }
+  return deleted;
+}
+
+function _pruneAdminUsersToOnlyAdmin_(adminSheet, dryRun) {
+  if (!adminSheet) {
+    return { kept: 0, deleted: 0, foundAdmin: false };
+  }
+
+  const data = adminSheet.getDataRange().getValues();
+  if (!data || data.length <= 1) {
+    return { kept: 0, deleted: 0, foundAdmin: false };
+  }
+
+  const headers = data[0] || [];
+  const userCol = headers.indexOf('Username');
+  if (userCol === -1) {
+    throw new Error('Admin_Users sin columna Username');
+  }
+
+  const keepRows = [];
+  for (let i = 1; i < data.length; i++) {
+    const uname = String(data[i][userCol] || '').trim().toLowerCase();
+    if (uname === 'admin') keepRows.push(data[i]);
+  }
+
+  if (keepRows.length === 0) {
+    throw new Error('No existe usuario admin en Admin_Users. Abortado para evitar lockout.');
+  }
+
+  const deleted = (data.length - 1) - keepRows.length;
+  if (!dryRun) {
+    const lastRow = adminSheet.getLastRow();
+    if (lastRow > 1) {
+      adminSheet.deleteRows(2, lastRow - 1);
+    }
+    keepRows.forEach(function(row) {
+      adminSheet.appendRow(row);
+    });
+  }
+
+  return { kept: keepRows.length, deleted: deleted, foundAdmin: true };
+}
+
+function _resetAllDataKeepAdmin_(dryRun) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  const usersSheet = ss.getSheetByName(SHEET_NAME);
+  const metricsSheet = ss.getSheetByName(SHEET_METRICAS);
+  const devicesSheet = ss.getSheetByName(SHEET_DEVICES);
+  const logsSheet = ss.getSheetByName(SHEET_LOGS);
+  const diagnosticosSheet = ss.getSheetByName(SHEET_DIAGNOSTICOS);
+  const registrosSheet = ss.getSheetByName(SHEET_REGISTROS);
+  const profesionalesSheet = ss.getSheetByName(SHEET_PROFESIONALES);
+  const clinicStaffSheet = ss.getSheetByName(SHEET_CLINIC_STAFF);
+  const soporteSheet = ss.getSheetByName(SHEET_SOPORTE);
+  const comprasSheet = ss.getSheetByName(SHEET_COMPRAS);
+  const adminUsersSheet = ss.getSheetByName(SHEET_ADMIN_USERS);
+
+  const summary = {
+    usuariosDeleted: _clearSheetDataKeepHeader_(usersSheet, dryRun),
+    metricasDeleted: _clearSheetDataKeepHeader_(metricsSheet, dryRun),
+    dispositivosDeleted: _clearSheetDataKeepHeader_(devicesSheet, dryRun),
+    logsDeleted: _clearSheetDataKeepHeader_(logsSheet, dryRun),
+    diagnosticosDeleted: _clearSheetDataKeepHeader_(diagnosticosSheet, dryRun),
+    registrosDeleted: _clearSheetDataKeepHeader_(registrosSheet, dryRun),
+    profesionalesDeleted: _clearSheetDataKeepHeader_(profesionalesSheet, dryRun),
+    clinicStaffDeleted: _clearSheetDataKeepHeader_(clinicStaffSheet, dryRun),
+    soporteDeleted: _clearSheetDataKeepHeader_(soporteSheet, dryRun),
+    comprasDeleted: _clearSheetDataKeepHeader_(comprasSheet, dryRun)
+  };
+
+  const adminPrune = _pruneAdminUsersToOnlyAdmin_(adminUsersSheet, dryRun);
+  summary.adminUsersDeleted = adminPrune.deleted;
+  summary.adminUsersKept = adminPrune.kept;
+  summary.adminFound = adminPrune.foundAdmin;
+
+  return summary;
 }
 
 // ── Helpers de Google Drive ──────────────────────────────────────────────────

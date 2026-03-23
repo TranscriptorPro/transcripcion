@@ -3362,7 +3362,7 @@
 
             // Actualizar opciones del select
             select.innerHTML = '<option value="">— Seleccioná un registro —</option>';
-            const pendientes = (allRegistrations || []).filter(r => ['pendiente', 'pendiente_pago', 'pago_confirmado'].includes(String(r.Estado || '').toLowerCase()));
+            const pendientes = (allRegistrations || []).filter(r => ['pendiente', 'pendiente_pago', 'comprobante_recibido', 'pago_confirmado'].includes(String(r.Estado || '').toLowerCase()));
             pendientes.forEach(r => {
                 const fecha = r.Fecha_Registro ? new Date(r.Fecha_Registro).toLocaleDateString('es-AR', { day:'2-digit', month:'short' }) : '—';
                 const opt = document.createElement('option');
@@ -3770,11 +3770,16 @@
         function _ensureRegFilterOptions() {
             const sel = document.getElementById('regFilterEstado');
             if (!sel) return;
-            if (sel.querySelector('option[value="pendiente_pago"]') && sel.querySelector('option[value="pago_confirmado"]')) return;
+            if (
+                sel.querySelector('option[value="pendiente_pago"]') &&
+                sel.querySelector('option[value="comprobante_recibido"]') &&
+                sel.querySelector('option[value="pago_confirmado"]')
+            ) return;
             const cur = sel.value || 'pendiente';
             sel.innerHTML = [
                 '<option value="pendiente">⏳ Pendientes (todos)</option>',
                 '<option value="pendiente_pago">⏳ Pendiente de pago</option>',
+                '<option value="comprobante_recibido">📨 Comprobante recibido</option>',
                 '<option value="pago_confirmado">💳 Pago confirmado</option>',
                 '<option value="aprobado">✅ Aprobados</option>',
                 '<option value="rechazado">❌ Rechazados</option>',
@@ -3810,14 +3815,14 @@
                 if (filterEstado) {
                     const fe = filterEstado.toLowerCase();
                     if (fe === 'pendiente') {
-                        filtered = allRegistrations.filter(r => ['pendiente', 'pendiente_pago', 'pago_confirmado'].includes(String(r.Estado || '').toLowerCase()));
+                        filtered = allRegistrations.filter(r => ['pendiente', 'pendiente_pago', 'comprobante_recibido', 'pago_confirmado'].includes(String(r.Estado || '').toLowerCase()));
                     } else {
                         filtered = allRegistrations.filter(r => String(r.Estado || '').toLowerCase() === fe);
                     }
                 }
 
                 // Update badge
-                const pendientes = allRegistrations.filter(r => ['pendiente', 'pendiente_pago', 'pago_confirmado'].includes(String(r.Estado || '').toLowerCase()));
+                const pendientes = allRegistrations.filter(r => ['pendiente', 'pendiente_pago', 'comprobante_recibido', 'pago_confirmado'].includes(String(r.Estado || '').toLowerCase()));
                 const badge = document.getElementById('regBadge');
                 if (badge) {
                     if (pendientes.length > 0) {
@@ -3892,6 +3897,8 @@
                 ? '✅ Aprobado'
                 : estado === 'rechazado'
                     ? '❌ Rechazado'
+                    : estado === 'comprobante_recibido'
+                        ? '📨 Comprobante recibido'
                     : estado === 'pago_confirmado'
                         ? '💳 Pago confirmado'
                         : '⏳ Pendiente de pago';
@@ -3921,7 +3928,7 @@
             const idLabel = isClinic ? '🏢 CUIT / Habilitación' : '🪪 Matrícula';
             const idValue = isClinic ? (reg.Matricula || '—') : (reg.Matricula || '—');
 
-            const isPendientePago = estado === 'pendiente' || estado === 'pendiente_pago';
+            const isPendientePago = estado === 'pendiente' || estado === 'pendiente_pago' || estado === 'comprobante_recibido';
             const isPagoConfirmado = estado === 'pago_confirmado';
             const hasReceipt = !!((reg.Last_Receipt_Ref && String(reg.Last_Receipt_Ref).startsWith('drive:')) || _extractLastReceiptRef(reg));
             const confirmAndApproveLabel = hasReceipt
@@ -5441,7 +5448,7 @@
                     await loadRegistrations();
                     const regFresh = allRegistrations.find(r => String(r.ID_Registro) === String(regId));
                     const st = String(regFresh && regFresh.Estado || '').toLowerCase();
-                    if (st === 'pago_confirmado' || st === 'pendiente' || st === 'pendiente_pago') {
+                    if (st === 'pago_confirmado' || st === 'comprobante_recibido' || st === 'pendiente' || st === 'pendiente_pago') {
                         openApproveModal(regId);
                     }
                 }
@@ -5466,7 +5473,7 @@
                 const data = await res.json();
                 if (data.registrations) {
                     allRegistrations = data.registrations;
-                    const pendientes = data.registrations.filter(r => ['pendiente', 'pendiente_pago', 'pago_confirmado'].includes(String(r.Estado || '').toLowerCase()));
+                    const pendientes = data.registrations.filter(r => ['pendiente', 'pendiente_pago', 'comprobante_recibido', 'pago_confirmado'].includes(String(r.Estado || '').toLowerCase()));
                     const badge = document.getElementById('regBadge');
                     if (badge && pendientes.length > 0) {
                         badge.textContent = pendientes.length;
