@@ -534,6 +534,49 @@
             font-size: .84rem;
             line-height: 1.45;
         }
+        .submit-loader-progress {
+            margin-top: .8rem;
+        }
+        .submit-loader-track {
+            width: 100%;
+            height: 8px;
+            border-radius: 999px;
+            background: #e2e8f0;
+            overflow: hidden;
+        }
+        .submit-loader-fill {
+            width: 0%;
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #14b8a6 0%, #0d9488 100%);
+            transition: width .35s ease;
+        }
+        .submit-loader-steps {
+            margin-top: .5rem;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: .4rem;
+        }
+        .submit-step {
+            padding: .3rem .25rem;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #64748b;
+            font-size: .7rem;
+            font-weight: 600;
+            transition: all .2s ease;
+        }
+        .submit-step.active {
+            border-color: #14b8a6;
+            background: #ccfbf1;
+            color: #0f766e;
+        }
+        .submit-step.done {
+            border-color: #10b981;
+            background: #ecfdf5;
+            color: #047857;
+        }
         @keyframes submitSpin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
@@ -1276,6 +1319,14 @@
             <div class="submit-loader-spinner"></div>
             <div class="submit-loader-title">Estamos enviando tu registro</div>
             <div class="submit-loader-text" id="submitLoaderText">Un momento por favor, estamos preparando tu informacion de pago.</div>
+            <div class="submit-loader-progress">
+                <div class="submit-loader-track"><div class="submit-loader-fill" id="submitLoaderFill"></div></div>
+                <div class="submit-loader-steps">
+                    <div class="submit-step" id="submitStep1">1. Enviando</div>
+                    <div class="submit-step" id="submitStep2">2. Preparando pago</div>
+                    <div class="submit-step" id="submitStep3">3. Mostrando QR</div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1791,7 +1842,8 @@
                     }
                     input.value = '';
                     if (sendBtn) sendBtn.disabled = true;
-                    _loadPaymentPortal(_paymentPortalId);
+                    await _loadPaymentPortal(_paymentPortalId);
+                    await showReceiptUploadedModal();
                 } catch (err) {
                     if (statusEl) statusEl.textContent = '❌ ' + String(err.message || err);
                     if (sendBtn) sendBtn.disabled = false;
@@ -2361,6 +2413,44 @@
             });
         }
 
+        function _closePaymentPortalView() {
+            const panel = document.getElementById('paymentPortalPanel');
+            const statusEl = document.getElementById('paymentUploadStatus');
+            const sendBtn = document.getElementById('btnSendReceipt');
+            const uploadBtn = document.getElementById('btnUploadReceipt');
+            const uploadInput = document.getElementById('paymentReceiptInput');
+            const title = document.getElementById('step7Title');
+            const msg = document.getElementById('step7Message');
+
+            if (panel) panel.style.display = 'none';
+            if (statusEl) statusEl.textContent = '';
+            if (sendBtn) sendBtn.disabled = true;
+            if (uploadBtn) uploadBtn.disabled = true;
+            if (uploadInput) uploadInput.value = '';
+
+            if (title) title.textContent = 'Solicitud enviada';
+            if (msg) {
+                msg.innerHTML = '✅ Comprobante enviado correctamente.<br>Revisaremos tu solicitud y te responderemos por mail a la brevedad.';
+            }
+
+            try {
+                const hasPortalId = new URLSearchParams(window.location.search).get('id');
+                if (hasPortalId) history.replaceState({}, '', window.location.pathname);
+            } catch (_) {}
+        }
+
+        function showReceiptUploadedModal() {
+            return new Promise(resolve => {
+                _modalResolve = resolve;
+                document.getElementById('customModalIcon').textContent = '✅';
+                document.getElementById('customModalMsg').innerHTML =
+                    'Tu comprobante ya fue enviado.<br>Revisaremos tu solicitud y te responderemos por mail a la brevedad.';
+                const actions = document.getElementById('customModalActions');
+                actions.innerHTML = '<button class="btn btn-primary" onclick="closeModal(true); _closePaymentPortalView();">Cerrar</button>';
+                document.getElementById('customModalOverlay').classList.add('show');
+            });
+        }
+
         function closeModal(result) {
             document.getElementById('customModalOverlay').classList.remove('show');
             if (_modalResolve) { _modalResolve(result); _modalResolve = null; }
@@ -2372,6 +2462,24 @@
             if (!overlay) return;
             if (text && message) text.textContent = message;
             overlay.classList.toggle('show', !!visible);
+        }
+
+        function _setSubmitLoaderStage(stage) {
+            const fill = document.getElementById('submitLoaderFill');
+            const stages = [
+                document.getElementById('submitStep1'),
+                document.getElementById('submitStep2'),
+                document.getElementById('submitStep3')
+            ];
+            const progressMap = { 1: 33, 2: 70, 3: 100 };
+            const safeStage = Math.max(1, Math.min(3, Number(stage) || 1));
+            if (fill) fill.style.width = String(progressMap[safeStage]) + '%';
+            stages.forEach((el, idx) => {
+                if (!el) return;
+                const stepNum = idx + 1;
+                el.classList.toggle('active', stepNum === safeStage);
+                el.classList.toggle('done', stepNum < safeStage);
+            });
         }
 
         // ── Workplace Accordion ──────────────────────────────────────────────────
@@ -3145,6 +3253,7 @@
             btn.disabled = true;
             btn.textContent = '⏳ Enviando...';
             _setSubmitLoader(true, 'Estamos validando y enviando tus datos. Esto puede demorar unos segundos.');
+            _setSubmitLoaderStage(1);
 
             // Collect all workplaces from accordion (only from workplacesContainer)
             const allWorkplaces = [];
@@ -3233,6 +3342,7 @@
                 if (result.success) {
                     _lastRegistrationId = String(result.regId || '');
                     _setSubmitLoader(true, 'Registro enviado. Estamos cargando la pantalla final y los datos de pago...');
+                    _setSubmitLoaderStage(2);
                     _setStep7DefaultMessage();
                     const summary = document.getElementById('successPlanSummary');
                     if (summary) summary.style.display = 'block';
@@ -3248,6 +3358,9 @@
                             msg.innerHTML = 'Revisá tu email para los datos de transferencia.<br>Si pagás más tarde, podés retomar desde este link:<br><a href="' + portalLink + '">' + portalLink + '</a><br>Una vez confirmada, activaremos tu cuenta en un máximo de 48 horas.';
                         }
                         await _loadPaymentPortal(_lastRegistrationId);
+                        _setSubmitLoader(true, 'Todo listo. Ya podés ver el resumen y los QR de pago.');
+                        _setSubmitLoaderStage(3);
+                        await new Promise(resolve => setTimeout(resolve, 220));
                     }
                 } else {
                     throw new Error(result.error || 'Error al enviar');
