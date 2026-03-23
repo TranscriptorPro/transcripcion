@@ -493,6 +493,52 @@
             justify-content: center;
         }
 
+        /* ── Submit Loader Overlay ── */
+        .submit-loader-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, .65);
+            z-index: 10050;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .submit-loader-overlay.show { display: flex; }
+        .submit-loader-card {
+            width: min(92vw, 440px);
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: 0 22px 60px rgba(2, 6, 23, .35);
+            padding: 1.2rem 1.1rem;
+            text-align: center;
+        }
+        .submit-loader-spinner {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 4px solid #d1fae5;
+            border-top-color: var(--primary);
+            margin: 0 auto .7rem;
+            animation: submitSpin .85s linear infinite;
+        }
+        .submit-loader-title {
+            font-weight: 700;
+            font-size: .98rem;
+            color: #0f172a;
+            margin-bottom: .2rem;
+        }
+        .submit-loader-text {
+            color: #475569;
+            font-size: .84rem;
+            line-height: 1.45;
+        }
+        @keyframes submitSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
         /* ── Pricing Cards ── */
         .pricing-grid {
             display: grid;
@@ -1222,6 +1268,14 @@
             <div class="modal-actions" id="customModalActions">
                 <button class="btn btn-primary" onclick="closeModal(true)">Aceptar</button>
             </div>
+        </div>
+    </div>
+
+    <div class="submit-loader-overlay" id="submitLoaderOverlay" aria-live="polite" aria-busy="true">
+        <div class="submit-loader-card">
+            <div class="submit-loader-spinner"></div>
+            <div class="submit-loader-title">Estamos enviando tu registro</div>
+            <div class="submit-loader-text" id="submitLoaderText">Un momento por favor, estamos preparando tu informacion de pago.</div>
         </div>
     </div>
 
@@ -2312,6 +2366,14 @@
             if (_modalResolve) { _modalResolve(result); _modalResolve = null; }
         }
 
+        function _setSubmitLoader(visible, message) {
+            const overlay = document.getElementById('submitLoaderOverlay');
+            const text = document.getElementById('submitLoaderText');
+            if (!overlay) return;
+            if (text && message) text.textContent = message;
+            overlay.classList.toggle('show', !!visible);
+        }
+
         // ── Workplace Accordion ──────────────────────────────────────────────────
         function renderWorkplace(index, collapsed) {
             const container = document.getElementById('workplacesContainer');
@@ -3082,6 +3144,7 @@
             const btn = document.getElementById('btnSubmit');
             btn.disabled = true;
             btn.textContent = '⏳ Enviando...';
+            _setSubmitLoader(true, 'Estamos validando y enviando tus datos. Esto puede demorar unos segundos.');
 
             // Collect all workplaces from accordion (only from workplacesContainer)
             const allWorkplaces = [];
@@ -3169,6 +3232,7 @@
 
                 if (result.success) {
                     _lastRegistrationId = String(result.regId || '');
+                    _setSubmitLoader(true, 'Registro enviado. Estamos cargando la pantalla final y los datos de pago...');
                     _setStep7DefaultMessage();
                     const summary = document.getElementById('successPlanSummary');
                     if (summary) summary.style.display = 'block';
@@ -3183,16 +3247,19 @@
                         if (msg) {
                             msg.innerHTML = 'Revisá tu email para los datos de transferencia.<br>Si pagás más tarde, podés retomar desde este link:<br><a href="' + portalLink + '">' + portalLink + '</a><br>Una vez confirmada, activaremos tu cuenta en un máximo de 48 horas.';
                         }
-                        _loadPaymentPortal(_lastRegistrationId);
+                        await _loadPaymentPortal(_lastRegistrationId);
                     }
                 } else {
                     throw new Error(result.error || 'Error al enviar');
                 }
             } catch (err) {
+                _setSubmitLoader(false);
                 await showAlert('Error al enviar el registro:<br><br>' + err.message + '<br><br>Probá de nuevo en unos minutos.', '❌');
                 btn.disabled = false;
                 btn.textContent = '📨 Confirmar y Enviar Registro';
+                return;
             }
+            _setSubmitLoader(false);
         }
     </script>
 </body>
