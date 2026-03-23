@@ -744,7 +744,7 @@
             <div class="step" data-step="1"><span class="step-num">2</span> Datos</div>
             <div class="step" data-step="2"><span class="step-num">3</span> Especialidades</div>
             <div class="step" data-step="3"><span class="step-num">4</span> Trabajo</div>
-            <div class="step" data-step="4"><span class="step-num">5</span> PDF</div>
+            <div class="step" data-step="4" id="stepIndicator4"><span class="step-num">5</span> Firma</div>
             <div class="step" data-step="5"><span class="step-num">6</span> Carrito</div>
             <div class="step" data-step="6"><span class="step-num">7</span> Resumen</div>
         </div>
@@ -958,54 +958,15 @@
                 </div>
             </div>
 
-            <!-- ═══ PASO 4: PDF, FIRMA, COLOR ═══ -->
+            <!-- ═══ PASO 4: FIRMA E IMÁGENES (solo planes individuales) ═══ -->
             <div class="form-step" id="step4">
                 <div class="card">
-                    <div class="section-title">🎨 Apariencia del Informe</div>
-                    <p class="section-subtitle">Estos ajustes definen cómo se ven tus informes en PDF e impresión.</p>
-
-                    <!-- Color del encabezado -->
-                    <div class="field-group" style="margin-bottom: 1rem;">
-                        <label>Color del encabezado del informe</label>
-                        <div class="color-palette" id="colorPalette">
-                            <div class="color-option">
-                                <div class="color-swatch selected" data-color="#1a56a0" style="background:#1a56a0;" onclick="selectHeaderColor('#1a56a0', this)" title="Azul"></div>
-                                <span class="color-swatch-label">Azul</span>
-                            </div>
-                            <div class="color-option">
-                                <div class="color-swatch" data-color="#0f766e" style="background:#0f766e;" onclick="selectHeaderColor('#0f766e', this)" title="Verde"></div>
-                                <span class="color-swatch-label">Verde</span>
-                            </div>
-                            <div class="color-option">
-                                <div class="color-swatch" data-color="#db2777" style="background:#db2777;" onclick="selectHeaderColor('#db2777', this)" title="Rosa"></div>
-                                <span class="color-swatch-label">Rosa</span>
-                            </div>
-                            <div class="color-option">
-                                <div class="color-swatch" data-color="#1e293b" style="background:#1e293b;" onclick="selectHeaderColor('#1e293b', this)" title="Negro"></div>
-                                <span class="color-swatch-label">Negro</span>
-                            </div>
-                            <div class="color-option">
-                                <div class="color-swatch" data-color="#b8860b" style="background:#b8860b;" onclick="selectHeaderColor('#b8860b', this)" title="Dorado"></div>
-                                <span class="color-swatch-label">Dorado</span>
-                            </div>
-                            <div class="color-option">
-                                <div class="color-swatch" data-color="#708090" style="background:#708090;" onclick="selectHeaderColor('#708090', this)" title="Plateado"></div>
-                                <span class="color-swatch-label">Plateado</span>
-                            </div>
-                        </div>
-                        <div class="color-preview-bar" id="colorPreviewBar" style="background:#1a56a0;"></div>
-                        <small>Se aplica al banner superior de cada página del informe</small>
-                    </div>
-
-                </div>
-
-                <div class="card">
-                    <div class="section-title">✍️ Firma</div>
-                    <p class="section-subtitle">Subí una imagen de tu firma escaneada. Aparece al pie de cada informe.</p>
+                    <div class="section-title">🖼️ Firma e Imágenes</div>
+                    <p class="section-subtitle">Subí tu firma y logo personal. El administrador configurará los colores y detalles de apariencia al activar tu cuenta.</p>
 
                     <div class="field-row">
                         <div class="field-group">
-                            <label>Imagen de Firma</label>
+                            <label>✍️ Firma escaneada</label>
                             <div class="upload-zone" id="firmaDropZone">
                                 <div class="upload-icon">✍️</div>
                                 <div class="upload-text">Clic o arrastrá para subir<br><small>PNG con fondo transparente ideal</small></div>
@@ -1015,38 +976,30 @@
                         </div>
 
                         <div class="field-group" id="step4ProLogoGroup">
-                            <label>Logo Profesional</label>
+                            <label>🩺 Logo Profesional</label>
                             <div class="upload-zone" id="proLogoDropZone">
                                 <div class="upload-icon">🩺</div>
-                                <div class="upload-text">Logo personal (opcional)<br><small>Si diferente del lugar</small></div>
+                                <div class="upload-text">Logo personal (opcional)<br><small>Si diferente del lugar de trabajo</small></div>
                                 <input type="file" id="regProLogo" accept="image/png,image/jpeg,image/webp" onchange="previewImage(this, 'proLogoPreview')">
                             </div>
                             <div class="upload-preview" id="proLogoPreview"></div>
                         </div>
                         <div class="field-group" id="step4ProLogoHint" style="display:none;">
                             <div style="background:#f8f9fa;border:1px dashed #ccc;border-radius:8px;padding:.8rem 1rem;text-align:center;color:#888;font-size:.82rem;">
-                                🔒 <b>Logo Profesional</b> disponible en plan <b>Pro</b> y <b>Clínica</b>
+                                🔒 <b>Logo Profesional</b> disponible en plan <b>Pro</b>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="card" id="step4ContactCard">
-                    <div class="section-title">📋 Contacto en los Informes</div>
-                    <p class="section-subtitle">Elegí qué datos tuyos aparecen impresos en cada informe PDF.</p>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.3rem;">
-                        <label style="display:flex;align-items:center;gap:.4rem;font-size:.84rem;cursor:pointer;">
-                            <input type="checkbox" id="regShowPhone" checked style="accent-color:var(--primary);width:15px;height:15px;"> 📞 Mostrar teléfono
-                        </label>
-                        <label style="display:flex;align-items:center;gap:.4rem;font-size:.84rem;cursor:pointer;">
-                            <input type="checkbox" id="regShowEmail" checked style="accent-color:var(--primary);width:15px;height:15px;"> 📧 Mostrar email
-                        </label>
-                        <label style="display:flex;align-items:center;gap:.4rem;font-size:.84rem;cursor:pointer;" id="regShowSocialLabel">
-                            <input type="checkbox" id="regShowSocial" style="accent-color:var(--primary);width:15px;height:15px;"> 🌐 Mostrar redes sociales
-                        </label>
-                        <div id="regShowSocialHint" style="display:none;font-size:.75rem;color:#94a3b8;align-self:center;">🔒 Redes: solo plan PRO y Clínica</div>
+                    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:.7rem 1rem;margin-top:.8rem;font-size:.8rem;color:#0369a1;">
+                        ℹ️ El color del encabezado, márgenes y otras opciones de apariencia las configura el administrador al activar tu cuenta.
                     </div>
                 </div>
+
+                <!-- Campos ocultos para mantener compatibilidad con submitRegistro -->
+                <input type="hidden" id="regShowPhone" value="true">
+                <input type="hidden" id="regShowEmail" value="true">
+                <input type="hidden" id="regShowSocial" value="false">
 
                 <div class="btn-row">
                     <button type="button" class="btn btn-secondary" onclick="goStep(3)">← Anterior</button>
@@ -2421,6 +2374,7 @@
         // ── Professionals (F1-F2, solo CLINIC) ──────────────────────────────────
         let profCounter = 0;
         let profFirmaData = {}; // { index: base64 }
+        let profLogoData  = {}; // { index: base64 }
 
         function renderProfessional(index) {
             const container = document.getElementById('professionalsContainer');
@@ -2490,10 +2444,17 @@
                             <label style="display:flex;align-items:center;gap:.3rem;font-size:.82rem;cursor:pointer;"><input type="checkbox" id="regProfShowSocial${index}" checked style="accent-color:var(--primary);"> 🌐 Redes</label>
                         </div>
                     </div>
-                    <div class="field-group" style="margin-top:.5rem;">
-                        <label>Firma digital</label>
-                        <input type="file" accept="image/*" onchange="previewProfFirma(this, ${index})">
-                        <div class="upload-preview" id="profFirmaPreview${index}"></div>
+                    <div class="field-row" style="margin-top:.5rem;">
+                        <div class="field-group">
+                            <label>✍️ Firma digital</label>
+                            <input type="file" accept="image/*" onchange="previewProfFirma(this, ${index})">
+                            <div class="upload-preview" id="profFirmaPreview${index}"></div>
+                        </div>
+                        <div class="field-group">
+                            <label>🩺 Logo profesional</label>
+                            <input type="file" accept="image/*" onchange="previewProfLogo(this, ${index})">
+                            <div class="upload-preview" id="profLogoPreview${index}"></div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -2538,6 +2499,7 @@
                 setTimeout(() => el.remove(), 200);
             }
             delete profFirmaData[index];
+            delete profLogoData[index];
             _updateProfCounter();
         }
 
@@ -2561,6 +2523,22 @@
             reader.onload = (e) => {
                 document.getElementById('profFirmaPreview' + index).innerHTML = '<img src="' + e.target.result + '" alt="Firma">';
                 profFirmaData[index] = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function previewProfLogo(input, index) {
+            const file = input.files[0];
+            if (!file) return;
+            if (file.size > 2 * 1024 * 1024) {
+                showAlert('La imagen no puede superar 2 MB', '📷');
+                input.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('profLogoPreview' + index).innerHTML = '<img src="' + e.target.result + '" alt="Logo">';
+                profLogoData[index] = e.target.result;
             };
             reader.readAsDataURL(file);
         }
@@ -2602,7 +2580,7 @@
                         usuario:       usuario.trim(),
                         pin:           String(pin).trim() || '1234',
                         firma:         profFirmaData[idx] || null,
-                        logo:          null,
+                        logo:          profLogoData[idx]  || null,
                         email:         email.trim(),
                         telefono:      telefono.trim(),
                         redesSociales,
@@ -2829,10 +2807,19 @@
             }
 
             // Render dynamic steps when entering them
+            // CLINIC: skip step 4 (firma/imágenes por profesional ya está en step 3)
+            if (selectedPlan === 'CLINIC' && n === 4) {
+                n = (currentStep < 4) ? 5 : 3;
+            }
+
             if (n === 3) _applyStep3PlanRestrictions();
             if (n === 4) _applyStep4PlanRestrictions();
             if (n === 5) renderCartStep();
             if (n === 6) renderInvestmentSummary();
+
+            // Mostrar/ocultar indicador paso 4 según plan
+            const ind4 = document.getElementById('stepIndicator4');
+            if (ind4) ind4.style.display = selectedPlan === 'CLINIC' ? 'none' : '';
 
             // Ocultar paso actual, mostrar nuevo
             document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
@@ -2882,19 +2869,11 @@
 
         function _applyStep4PlanRestrictions() {
             const plan = PRICING[selectedPlan] || {};
-            // Color del encabezado: disponible para TODOS los planes
-            // Logo profesional: solo PRO y CLINIC
+            // Logo profesional: solo PRO (CLINIC no llega a este paso)
             const proLogoGroup = document.getElementById('step4ProLogoGroup');
             const proLogoHint  = document.getElementById('step4ProLogoHint');
             if (proLogoGroup) proLogoGroup.style.display = plan.pdfLogo ? '' : 'none';
             if (proLogoHint)  proLogoHint.style.display  = plan.pdfLogo ? 'none' : '';
-            // Redes sociales: solo PRO y CLINIC (pdfLogo === true en ambos)
-            const showSocialLabel = document.getElementById('regShowSocialLabel');
-            const showSocialHint  = document.getElementById('regShowSocialHint');
-            const showSocialChk   = document.getElementById('regShowSocial');
-            if (showSocialLabel) showSocialLabel.style.display = plan.pdfLogo ? '' : 'none';
-            if (showSocialHint)  showSocialHint.style.display  = plan.pdfLogo ? 'none' : '';
-            if (showSocialChk)  { showSocialChk.disabled = !plan.pdfLogo; if (!plan.pdfLogo) showSocialChk.checked = false; }
         }
 
         function validateStep3() {
