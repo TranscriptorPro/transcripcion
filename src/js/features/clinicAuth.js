@@ -110,6 +110,7 @@
                     showPhone:      p.showPhone     !== false,
                     showEmail:      p.showEmail     !== false,
                     showSocial:     !!p.showSocial,
+                    primerUso:      p.primerUso     === true,
                     activo:         true
                 };
             });
@@ -186,7 +187,11 @@
             '#clinicAuthEnterBtn:hover{background:#0284c7;}',
             '#clinicAuthEnterBtn:disabled{background:#94a3b8;cursor:not-allowed;}',
             '#clinicAuthAttempts{font-size:.72rem;color:#94a3b8;margin-top:6px;min-height:16px;}',
-            '.ca-blocked-note{font-size:.74rem;color:#b91c1c;margin-top:6px;}'
+            '.ca-blocked-note{font-size:.74rem;color:#b91c1c;margin-top:6px;}',
+            '.ca-pin-fu-input{width:100%;padding:12px;border:1.5px solid #cbd5e1;border-radius:10px;',
+            'font-size:1.4rem;text-align:center;letter-spacing:.4em;background:var(--bg-card,#fff);',
+            'color:var(--text-primary,#0f172a);margin-bottom:14px;box-sizing:border-box;}',
+            '.ca-pin-fu-input:focus{border-color:#0ea5e9;outline:none;}'
         ].join('');
         document.head.appendChild(style);
 
@@ -338,6 +343,73 @@
         }
     }
 
+    // ── Fase 4: primer acceso del profesional — forzar cambio de PIN ─────────────
+    function _showFirstUsePinChange(pro) {
+        var box = document.getElementById('clinicAuthBox');
+        if (!box) return;
+
+        box.innerHTML = [
+            '<div id="clinicAuthTitle">🔐 Primer acceso — cambiá tu PIN</div>',
+            '<div id="clinicAuthSub">Por seguridad, elegí un PIN nuevo antes de continuar.</div>',
+            '<label class="ca-label" for="caFuPin1">Nuevo PIN (4 dígitos)</label>',
+            '<input id="caFuPin1" class="ca-pin-fu-input" type="password" maxlength="4"',
+            ' placeholder="\u2022 \u2022 \u2022 \u2022" autocomplete="off" inputmode="numeric">',
+            '<label class="ca-label" for="caFuPin2">Confirmar PIN</label>',
+            '<input id="caFuPin2" class="ca-pin-fu-input" type="password" maxlength="4"',
+            ' placeholder="\u2022 \u2022 \u2022 \u2022" autocomplete="off" inputmode="numeric">',
+            '<div id="caFuErr" style="font-size:.78rem;color:#b91c1c;min-height:18px;',
+            'margin-bottom:10px;font-weight:700;"></div>',
+            '<button id="caFuConfirm" style="width:100%;padding:12px;background:#0ea5e9;color:#fff;',
+            'border:none;border-radius:10px;font-size:.95rem;font-weight:800;cursor:pointer;">',
+            'Confirmar y acceder \u2192</button>',
+        ].join('');
+
+        document.getElementById('caFuConfirm').addEventListener('click', function() {
+            var p1    = (document.getElementById('caFuPin1').value || '').trim();
+            var p2    = (document.getElementById('caFuPin2').value || '').trim();
+            var errEl = document.getElementById('caFuErr');
+            if (!p1 || p1.length < 4) { errEl.textContent = 'El PIN debe tener 4 dígitos.'; return; }
+            if (!/^\d{4}$/.test(p1))  { errEl.textContent = 'Solo números, 4 dígitos.';   return; }
+            if (p1 !== p2)            { errEl.textContent = 'Los PINs no coinciden.';        return; }
+
+            // Actualizar PIN y borrar primerUso en workplace_profiles
+            try {
+                var wp    = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+                var profs = (wp[0] && wp[0].professionals) || [];
+                var proIdx = profs.findIndex(function(p) { return p && p.id === pro.id; });
+                if (proIdx >= 0) {
+                    profs[proIdx].pin       = p1;
+                    profs[proIdx].primerUso = false;
+                    wp[0].professionals     = profs;
+                    localStorage.setItem('workplace_profiles', JSON.stringify(wp));
+                    window._wpProfilesCache = null;
+                }
+            } catch (_) {}
+
+            pro.pin       = p1;
+            pro.primerUso = false;
+
+            _activeProfessional = Object.assign({}, pro);
+            _syncPdfConfig(pro, 0);
+
+            var overlay = document.getElementById('clinicAuthOverlay');
+            if (overlay) overlay.style.display = 'none';
+            var btnCambiar = document.getElementById('btnCambiarProfesional');
+            if (btnCambiar) btnCambiar.style.display = '';
+            if (typeof showToast === 'function') {
+                showToast('\uD83D\uDD11 PIN actualizado. \u00a1Bienvenido/a, ' + (pro.nombre || pro.usuario || 'Profesional') + '!', 'success');
+            }
+            if (typeof _onLoginSuccess === 'function') {
+                _onLoginSuccess(_activeProfessional);
+            }
+        });
+
+        setTimeout(function() {
+            var f = document.getElementById('caFuPin1');
+            if (f) f.focus();
+        }, 60);
+    }
+
     function _attemptLogin() {
         var select   = document.getElementById('clinicAuthSelect');
         var pinInput = document.getElementById('clinicAuthPin');
@@ -366,8 +438,9 @@
                 if (typeof showToast === 'function') {
                     showToast('🛡️ Acceso de administrador', 'info');
                 }
-                if (window.ClinicAdminPanel && typeof window.ClinicAdminPanel.open === 'function') {
-                    window.ClinicAdminPanel.open();
+                if (window.ClinicAdminPanel) {
+                    var openFn = window.ClinicAdminPanel.openAuthenticated || window.ClinicAdminPanel.open;
+                    if (typeof openFn === 'function') openFn();
                 }
             } else {
                 errorEl.textContent = 'Contraseña de administrador incorrecta.';
@@ -397,9 +470,16 @@
         if (entered === correctPin) {
             // ── LOGIN EXITOSO ──────────────────────────────────────────────
             _failedAttempts[proId] = 0;
-            _activeProfessional    = Object.assign({}, pro);
             errorEl.textContent    = '';
             attEl.textContent      = '';
+
+            // Fase 4: primer acceso — forzar cambio de PIN antes de continuar
+            if (pro.primerUso) {
+                _showFirstUsePinChange(pro);
+                return;
+            }
+
+            _activeProfessional = Object.assign({}, pro);
 
             // Actualizar pdf_config con el profesional activo
             _syncPdfConfig(pro, idx);

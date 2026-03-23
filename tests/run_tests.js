@@ -8249,6 +8249,62 @@ test('ClinicAuth-F2h — dropdown muestra emoji escudo para admin', () => {
         'El dropdown debe mostrar el emoji escudo para la entrada Administrador');
 });
 
+// ── Fase 3: admin first-use / Fase 4: doctor first-use ───────────────────────
+test('ClinicAuth-F3a — _attemptLogin admin usa openAuthenticated cuando está disponible', () => {
+    assert(clinicAuthCode.includes('openAuthenticated') && clinicAuthCode.includes('openFn'),
+        '_attemptLogin admin debe preferir openAuthenticated sobre open');
+});
+
+test('ClinicAuth-F4a — normalizeList preserva primerUso en el objeto normalizado', () => {
+    assert(clinicAuthCode.includes('primerUso:') && clinicAuthCode.includes('p.primerUso'),
+        'normalizeList debe mapear el campo primerUso del profesional');
+});
+
+test('ClinicAuth-F4b — _showFirstUsePinChange existe y construye formulario de PIN', () => {
+    assert(clinicAuthCode.includes('_showFirstUsePinChange') && clinicAuthCode.includes('caFuPin1'),
+        '_showFirstUsePinChange debe existir y crear inputs caFuPin1/caFuPin2');
+});
+
+test('ClinicAuth-F4c — _attemptLogin verifica primerUso antes de concluir login', () => {
+    assert(clinicAuthCode.includes('pro.primerUso') && clinicAuthCode.includes('_showFirstUsePinChange(pro)'),
+        '_attemptLogin debe llamar a _showFirstUsePinChange cuando primerUso es true');
+});
+
+test('ClinicAuth-F4d — _showFirstUsePinChange actualiza pin y primerUso en workplace_profiles', () => {
+    assert(clinicAuthCode.includes("profs[proIdx].pin") && clinicAuthCode.includes("profs[proIdx].primerUso = false"),
+        '_showFirstUsePinChange debe persistir el nuevo PIN y limpiar el flag primerUso');
+});
+
+test('ClinicAdminPanel-F3a — openAuthenticated exportado en window.ClinicAdminPanel', () => {
+    const cap = fs.readFileSync(path.join(root, 'src/js/features/clinicAdminPanel.js'), 'utf-8');
+    assert(cap.includes('openAuthenticated:') || cap.includes('openAuthenticated :'),
+        'clinicAdminPanel.js debe exportar openAuthenticated');
+});
+
+test('ClinicAdminPanel-F3b — openAuthenticated muestra fuerza cambio cuando adminPass es default', () => {
+    const cap = fs.readFileSync(path.join(root, 'src/js/features/clinicAdminPanel.js'), 'utf-8');
+    assert(cap.includes('isDefault') && cap.includes('_showForceChangePassModal'),
+        'openAuthenticated debe detectar si la contraseña es la default y forzar cambio');
+});
+
+test('ClinicAdminPanel-F3c — _showForceChangePassModal construye formulario de cambio de contraseña', () => {
+    const cap = fs.readFileSync(path.join(root, 'src/js/features/clinicAdminPanel.js'), 'utf-8');
+    assert(cap.includes('caaForcePas1') && cap.includes('caaForceConfirm'),
+        '_showForceChangePassModal debe construir un formulario con campos caaForcePas1 y caaForceConfirm');
+});
+
+test('ClinicAdminPanel-F4a — _addPro pone primerUso:true en el nuevo profesional', () => {
+    const cap = fs.readFileSync(path.join(root, 'src/js/features/clinicAdminPanel.js'), 'utf-8');
+    assert(cap.includes('primerUso:     true'),
+        '_addPro debe incluir primerUso:true en el objeto del nuevo profesional');
+});
+
+test('ClinicAdminPanel-F4b — _resetPin activa primerUso tras el reset', () => {
+    const cap = fs.readFileSync(path.join(root, 'src/js/features/clinicAdminPanel.js'), 'utf-8');
+    assert(cap.includes('primerUso = true') || cap.includes("primerUso = true"),
+        '_resetPin debe poner primerUso=true para forzar cambio en el próximo acceso');
+});
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // Bloque 126: C6 — ClinicAdminPanel (gestión interna de profesionales CLINIC)
 // ═══════════════════════════════════════════════════════════════════════════════

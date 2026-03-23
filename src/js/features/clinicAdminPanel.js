@@ -56,7 +56,57 @@
         var ov = document.getElementById(OVERLAY_ID);
         if (ov) ov.style.display = 'none';
     }
+    // ── Fase 3: apertura autenticada (desde modal PIN) — omite pantalla de login ─
+    function openAuthenticated() {
+        _buildOverlay();
+        var wp        = _getWP();
+        var isDefault = !((wp[0] || {}).adminPass);
+        if (isDefault) {
+            _showForceChangePassModal();
+        } else {
+            _showPanel();
+        }
+        document.getElementById(OVERLAY_ID).style.display = 'flex';
+    }
 
+    // Pantalla de cambio obligatorio de contraseña (primer uso del admin)
+    function _showForceChangePassModal() {
+        var inner = document.getElementById('clinicAdminInner');
+        if (!inner) return;
+        inner.innerHTML = [
+            '<div class="caa-title">🔒 Establecé tu contraseña de administrador</div>',
+            '<div class="caa-sub" style="color:#b45309;font-weight:600;">',
+            'Tu clínica usa la contraseña predeterminada. Cambiála antes de continuar.',
+            '</div>',
+            '<label class="caa-label">Nueva contraseña</label>',
+            '<input id="caaForcePas1" class="caa-input" type="password" autocomplete="off" placeholder="Mínimo 4 caracteres">',
+            '<label class="caa-label">Confirmar contraseña</label>',
+            '<input id="caaForcePas2" class="caa-input" type="password" autocomplete="off" placeholder="Repetir la contraseña">',
+            '<div id="caaForceErr" class="caa-err"></div>',
+            '<div class="caa-row" style="justify-content:flex-end;">',
+            '  <button class="caa-btn caa-primary" id="caaForceConfirm">✅ Confirmar y continuar →</button>',
+            '</div>',
+        ].join('');
+
+        document.getElementById('caaForceConfirm').addEventListener('click', function() {
+            var p1    = ((document.getElementById('caaForcePas1') || {}).value || '');
+            var p2    = ((document.getElementById('caaForcePas2') || {}).value || '');
+            var errEl = document.getElementById('caaForceErr');
+            if (p1.length < 4) { if (errEl) errEl.textContent = 'Mínimo 4 caracteres.'; return; }
+            if (p1 !== p2)     { if (errEl) errEl.textContent = 'Las contraseñas no coinciden.'; return; }
+            var wp = _getWP();
+            if (!wp[0]) wp[0] = {};
+            wp[0].adminPass = p1;
+            _saveWP(wp);
+            if (typeof showToast === 'function') showToast('✅ Contraseña de administrador guardada.', 'success');
+            _showPanel();
+        });
+
+        setTimeout(function() {
+            var f = document.getElementById('caaForcePas1');
+            if (f) f.focus();
+        }, 60);
+    }
     // ── Overlay (se construye una sola vez) ───────────────────────────────────
 
     function _buildOverlay() {
@@ -367,10 +417,11 @@
         var wp    = _getWP();
         var profs = (wp[0] && wp[0].professionals) || [];
         if (!profs[idx]) return;
-        profs[idx].pin   = '1234';
+        profs[idx].pin = '1234';
+        profs[idx].primerUso = true; // forzar cambio en el próximo acceso
         wp[0].professionals = profs;
         _saveWP(wp);
-        if (typeof showToast === 'function') showToast('🔄 PIN reseteado a 1234.', 'success');
+        if (typeof showToast === 'function') showToast('🔄 PIN reseteado. El profesional deberá cambiarlo en su próximo acceso.', 'success');
         _refreshPanel();
     }
 
@@ -422,6 +473,7 @@
             showPhone:     true,
             showEmail:     true,
             showSocial:    false,
+            primerUso:     true,
             activo:        true
         };
 
@@ -480,9 +532,10 @@
 
     // ── Exportar ──────────────────────────────────────────────────────────────
     window.ClinicAdminPanel = {
-        open:  open,
-        setup: setup,
-        close: close_
+        open:              open,
+        openAuthenticated: openAuthenticated,
+        setup:             setup,
+        close:             close_
     };
 
 })();
