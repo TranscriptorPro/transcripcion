@@ -3840,6 +3840,47 @@
             }
         }
 
+        function _getRegPlanCode(reg) {
+            const planSol = (reg && (reg.Plan_Solicitado || _parsePlanFromNotas(reg.Notas || '')) || '').toUpperCase();
+            return planSol;
+        }
+
+        function _isClinicRegistration(reg) {
+            return _getRegPlanCode(reg) === 'CLINIC';
+        }
+
+        function _isInvalidPhoneValue(v) {
+            const s = String(v || '').trim();
+            if (!s) return true;
+            if (s === '—') return true;
+            if (/^#(ERROR|N\/A|VALUE!)/i.test(s)) return true;
+            if (/error/i.test(s) && /^#/.test(s)) return true;
+            return false;
+        }
+
+        function _resolveRegPhone(reg) {
+            const direct = String(reg && reg.Telefono || '').trim();
+            if (!_isInvalidPhoneValue(direct)) return direct;
+            try {
+                const wp = JSON.parse(String(reg && reg.Workplace_Data || '{}'));
+                const wpPhone = String(wp.phone || wp.telefono || '').trim();
+                if (!_isInvalidPhoneValue(wpPhone)) return wpPhone;
+            } catch (_) {}
+            return '—';
+        }
+
+        function _parseClinicProfessionals(reg) {
+            try {
+                const raw = String(reg && reg.Profesionales || '').trim();
+                if (!raw) return [];
+                const list = JSON.parse(raw);
+                if (!Array.isArray(list)) return [];
+                return list.filter(Boolean);
+            } catch (_) {
+                return [];
+            }
+        }
+
         function renderRegCard(reg) {
             const estado = String(reg.Estado || 'pendiente_pago').toLowerCase();
             const badgeClass = estado === 'aprobado'
@@ -3871,10 +3912,14 @@
 
             // Badge del plan solicitado
             const PLANES_VALIDOS = ['NORMAL','PRO','CLINIC','GIFT','TRIAL'];
-            const planSol = (reg.Plan_Solicitado || _parsePlanFromNotas(reg.Notas || '')).toUpperCase();
+            const planSol = _getRegPlanCode(reg);
+            const isClinic = planSol === 'CLINIC';
             const planBadgeHtml = (planSol && PLANES_VALIDOS.includes(planSol))
                 ? _renderPlanBadgeMini(planSol)
                 : '';
+            const phone = _resolveRegPhone(reg);
+            const idLabel = isClinic ? '🏢 CUIT / Habilitación' : '🪪 Matrícula';
+            const idValue = isClinic ? (reg.Matricula || '—') : (reg.Matricula || '—');
 
             const isPendientePago = estado === 'pendiente' || estado === 'pendiente_pago';
             const isPagoConfirmado = estado === 'pago_confirmado';
@@ -3906,8 +3951,8 @@
                     </div>
                     <dl class="reg-card-info">
                         <dt>📧 Email</dt><dd>${escapeHtml(reg.Email || '—')}</dd>
-                        <dt>🪪 Matrícula</dt><dd>${escapeHtml(reg.Matricula || '—')}</dd>
-                        <dt>📞 Teléfono</dt><dd>${escapeHtml(reg.Telefono || '—')}</dd>
+                        <dt>${idLabel}</dt><dd>${escapeHtml(idValue)}</dd>
+                        <dt>📞 Teléfono</dt><dd>${escapeHtml(phone)}</dd>
                         <dt>🏥 Lugar</dt><dd>${escapeHtml(workplace)}</dd>
                     </dl>
                     <div class="reg-card-specs">${especialidades || '<span style="color:#94a3b8;font-size:.82rem;">Sin especialidades</span>'}</div>
@@ -3974,6 +4019,9 @@
         function viewRegDetail(regId) {
             const reg = allRegistrations.find(r => r.ID_Registro === regId);
             if (!reg) return;
+            const planCode = _getRegPlanCode(reg);
+            const isClinic = planCode === 'CLINIC';
+            const phoneSafe = _resolveRegPhone(reg);
 
             // ── Lugar principal ──
             let wpHtml = '';
@@ -4055,17 +4103,59 @@
             const hasFirma = reg.Firma && reg.Firma !== 'no' && reg.Firma !== 'null' && reg.Firma !== '';
             const hasProLogo = reg.Pro_Logo && reg.Pro_Logo !== 'no' && reg.Pro_Logo !== 'null' && reg.Pro_Logo !== '';
 
-            const content = `
-                <dl class="reg-card-info" style="margin:1rem 0;">
+            // ── Profesionales de clínica ──
+            const clinicPros = _parseClinicProfessionals(reg);
+            const clinicProsHtml = clinicPros.length
+                ? `<h4 style="font-size:.9rem;margin-top:1rem;">👨‍⚕️ Profesionales de la clínica (${clinicPros.length})</h4>
+                   <div style="display:grid;gap:.45rem;margin-top:.45rem;">${clinicPros.map((p, idx) => {
+                       const esp = Array.isArray(p.especialidades) ? p.especialidades.join(', ') : (p.especialidad || '—');
+                       const pName = p.nombre || `Profesional ${idx + 1}`;
+                       const pMat = p.matricula || '—';
+                       const pUser = p.usuario || '—';
+                       const pTel = !_isInvalidPhoneValue(p.telefono) ? p.telefono : '—';
+                       const pEmail = p.email || '—';
+                       const pFirma = p.firma ? '✅ Sí' : '❌ No';
+                       const pLogo = p.logo ? '✅ Sí' : '❌ No';
+                       return `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:.55rem .7rem;">
+                                <div style="font-weight:700;font-size:.84rem;">${escapeHtml(pName)}</div>
+                                <div style="font-size:.78rem;color:#64748b;margin-top:.15rem;">${escapeHtml(esp)}</div>
+                                <div style="font-size:.77rem;margin-top:.25rem;display:flex;flex-wrap:wrap;gap:10px;">
+                                    <span>🪪 ${escapeHtml(pMat)}</span>
+                                    <span>👤 ${escapeHtml(pUser)}</span>
+                                    <span>📞 ${escapeHtml(pTel)}</span>
+                                    <span>📧 ${escapeHtml(pEmail)}</span>
+                                    <span>✍️ ${pFirma}</span>
+                                    <span>🩺 ${pLogo}</span>
+                                </div>
+                              </div>`;
+                   }).join('')}</div>`
+                : '';
+
+            const identityHtml = isClinic
+                ? `<dl class="reg-card-info" style="margin:1rem 0;">
+                    <dt>🏥 Razón social / Nombre comercial</dt><dd>${escapeHtml(reg.Nombre || '—')}</dd>
+                    <dt>📧 Email administrativo</dt><dd>${escapeHtml(reg.Email || '—')}</dd>
+                    <dt>🏢 CUIT / Habilitación</dt><dd>${escapeHtml(reg.Matricula || '—')}</dd>
+                    <dt>📞 Teléfono administrativo</dt><dd>${escapeHtml(phoneSafe)}</dd>
+                    <dt>🎨 Color header</dt><dd><span style="display:inline-block;width:20px;height:14px;border-radius:3px;background:${escapeHtml(hdrColor)};vertical-align:middle;border:1px solid rgba(0,0,0,.15);"></span> ${escapeHtml(colorName)}</dd>
+                    <dt>📝 Pie de página</dt><dd>${escapeHtml(reg.Footer_Text || '—')}</dd>
+                    <dt>🏢 Firma institucional</dt><dd>No aplica</dd>
+                  </dl>`
+                : `<dl class="reg-card-info" style="margin:1rem 0;">
                     <dt>👤 Nombre</dt><dd>${escapeHtml(reg.Nombre || '—')}</dd>
                     <dt>📧 Email</dt><dd>${escapeHtml(reg.Email || '—')}</dd>
                     <dt>🪪 Matrícula</dt><dd>${escapeHtml(reg.Matricula || '—')}</dd>
-                    <dt>📞 Teléfono</dt><dd>${escapeHtml(reg.Telefono || '—')}</dd>
+                    <dt>📞 Teléfono</dt><dd>${escapeHtml(phoneSafe)}</dd>
                     <dt>🎨 Color header</dt><dd><span style="display:inline-block;width:20px;height:14px;border-radius:3px;background:${escapeHtml(hdrColor)};vertical-align:middle;border:1px solid rgba(0,0,0,.15);"></span> ${escapeHtml(colorName)}</dd>
                     <dt>📝 Pie de página</dt><dd>${escapeHtml(reg.Footer_Text || '—')}</dd>
                     <dt>✍️ Firma</dt><dd>${hasFirma ? '✅ Sí' : '❌ No'}</dd>
                     <dt>🩺 Logo profesional</dt><dd>${hasProLogo ? '✅ Sí' : '❌ No'}</dd>
-                </dl>
+                  </dl>`;
+
+            const content = `
+                ${identityHtml}
+
+                ${clinicProsHtml}
 
                 <h4 style="font-size:.9rem;margin-top:1rem;">🏥 Lugar de trabajo principal</h4>
                 <dl class="reg-card-info" style="margin:.5rem 0;">${wpHtml}</dl>
@@ -4477,6 +4567,7 @@
 
             // Auto-detectar plan
             const planSolicitado = (reg.Plan_Solicitado || _parsePlanFromNotas(reg.Notas || '')).toUpperCase();
+            const isClinic = planSolicitado === 'CLINIC';
 
             document.getElementById('approveModalInfo').textContent =
                 `Reg. ${reg.ID_Registro} · ${reg.Fecha_Registro ? new Date(reg.Fecha_Registro).toLocaleDateString('es-ES') : '—'} · Plan: ${planSolicitado || '(sin especificar)'}`;
@@ -4485,7 +4576,7 @@
             document.getElementById('approveEditNombre').value         = reg.Nombre         || '';
             document.getElementById('approveEditMatricula').value      = reg.Matricula      || '';
             document.getElementById('approveEditEmail').value          = reg.Email          || '';
-            document.getElementById('approveEditTelefono').value       = reg.Telefono       || '';
+            document.getElementById('approveEditTelefono').value       = _resolveRegPhone(reg);
             document.getElementById('approveEditEspecialidades').value = reg.Especialidades || '';
             const _hc = reg.Header_Color || '#1a56a0';
             document.getElementById('approveEditHeaderColor').value    = _hc;
@@ -4646,6 +4737,26 @@
                 if (_wpPrevFb) _wpPrevFb.innerHTML = '<img src="' + instSrc + '" style="max-height:40px;max-width:100%;object-fit:contain;">';
                 const _edWrapFb = document.getElementById('apvWpLogo0-editor-wrap');
                 if (_edWrapFb) { _edWrapFb.style.display = 'block'; _initApproveWpLogoEditor(0, instSrc); }
+            }
+
+            // En CLINIC la firma/logo global del registro no representan bien a la institución.
+            const _firmaWrap = document.getElementById('apvFirma-editor-wrap');
+            const _profWrap = document.getElementById('apvProf-editor-wrap');
+            if (_firmaWrap) _firmaWrap.style.display = isClinic ? 'none' : 'block';
+            if (_profWrap) _profWrap.style.display = isClinic ? 'none' : 'block';
+            const _firmaStatus = document.getElementById('apvFirma-status');
+            const _profStatus = document.getElementById('apvProf-status');
+            if (isClinic) {
+                if (_firmaStatus) {
+                    _firmaStatus.textContent = 'No aplica para CLINIC';
+                    _firmaStatus.style.background = '#f1f5f9';
+                    _firmaStatus.style.color = '#64748b';
+                }
+                if (_profStatus) {
+                    _profStatus.textContent = 'Gestionado por profesional';
+                    _profStatus.style.background = '#f1f5f9';
+                    _profStatus.style.color = '#64748b';
+                }
             }
 
             // Expandir verificación por defecto
