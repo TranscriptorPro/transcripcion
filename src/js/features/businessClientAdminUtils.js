@@ -69,8 +69,29 @@ function _initResetApp() {
         keysToRemove.forEach(k => localStorage.removeItem(k));
 
         closeModal();
-        if (typeof showToast === 'function') showToast('✅ App reseteada. Recargando...', 'success');
-        setTimeout(() => location.reload(), 1200);
+        if (typeof showToast === 'function') showToast('🔄 Limpiando datos del servidor...', 'info');
+
+        // Limpiar también el Google Sheet (conserva solo el usuario admin)
+        const backendUrl = (typeof window.getResolvedBackendUrl === 'function')
+            ? window.getResolvedBackendUrl()
+            : 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec';
+        const params = 'action=admin_reset_all_data_keep_admin&adminKey=ADMIN_SECRET_2026&confirm=RESET_ALL_KEEP_ADMIN';
+        fetch(`${backendUrl}?${params}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data && data.success) {
+                    if (typeof showToast === 'function') showToast('✅ App reseteada. Recargando...', 'success');
+                } else {
+                    const msg = (data && data.error) ? data.error : 'Error desconocido';
+                    if (typeof showToast === 'function') showToast('⚠️ localStorage limpio. Backend: ' + msg, 'warning');
+                }
+            })
+            .catch(() => {
+                if (typeof showToast === 'function') showToast('⚠️ localStorage limpio. Sin conexión al servidor.', 'warning');
+            })
+            .finally(() => {
+                setTimeout(() => location.reload(), 1500);
+            });
     });
 }
 
