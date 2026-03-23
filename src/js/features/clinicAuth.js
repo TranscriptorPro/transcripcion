@@ -66,6 +66,16 @@
         });
     }
 
+    // ── Contraseña del administrador de clínica ────────────────────────────────
+
+    function _getAdminPass() {
+        try {
+            var wp = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+            var w  = wp[0] || {};
+            return String(w.adminPass || 'clinica');
+        } catch (_) { return 'clinica'; }
+    }
+
     // ── Normalización de lista ─────────────────────────────────────────────────
     // Acepta tanto el formato antiguo (de registro antes de C4) como el nuevo (C4+)
 
@@ -107,13 +117,15 @@
 
     // Devuelve una lista utilizable para auth incluso cuando workplace_profiles
     // aun no esta inicializado por completo.
+    // FASE 2: El Administrador siempre aparece primero en la lista.
     function resolveProfessionals(list) {
+        var adminEntry = { id: '__admin__', nombre: 'Administrador', tipo: 'admin', pin: null };
         const normalized = normalizeList(list);
-        if (normalized.length) return normalized;
+        if (normalized.length) return [adminEntry].concat(normalized);
 
         const fallback = _buildFallbackProfessional();
-        if (!fallback) return [];
-        return [fallback];
+        if (!fallback) return [adminEntry];
+        return [adminEntry, fallback];
     }
 
     function _buildFallbackProfessional() {
@@ -187,7 +199,7 @@
             '  <div id="clinicAuthSub">Identificate para continuar</div>',
             '  <label class="ca-label" for="clinicAuthSelect">Profesional</label>',
             '  <select id="clinicAuthSelect"></select>',
-            '  <label class="ca-label" for="clinicAuthPin">PIN de acceso</label>',
+            '  <label id="clinicAuthPinLabel" class="ca-label" for="clinicAuthPin">PIN de acceso</label>',
             '  <input id="clinicAuthPin" type="password" maxlength="4" placeholder="• • • •" autocomplete="off" inputmode="numeric">',
             '  <div id="clinicAuthError"></div>',
             '  <button id="clinicAuthEnterBtn">Ingresar →</button>',
@@ -204,10 +216,35 @@
         // Click en botón
         document.getElementById('clinicAuthEnterBtn').addEventListener('click', _attemptLogin);
 
-        // Al cambiar profesional: actualizar estado del botón según intentos
+        // Al cambiar profesional: actualizar UI y estado del botón según intentos
         document.getElementById('clinicAuthSelect').addEventListener('change', function() {
+            _updateForSelection(Number(this.value));
             _refreshBlockState();
         });
+    }
+
+    // Actualiza label e input de PIN/contraseña según el ítem del selector
+    function _updateForSelection(idx) {
+        var pro      = _professionals[idx];
+        var pinInput = document.getElementById('clinicAuthPin');
+        var pinLabel = document.getElementById('clinicAuthPinLabel');
+        if (!pinInput) return;
+        if (pro && pro.id === '__admin__') {
+            if (pinLabel) pinLabel.textContent = 'Contraseña de administrador';
+            pinInput.maxLength           = 50;
+            pinInput.inputMode           = 'text';
+            pinInput.style.letterSpacing = 'normal';
+            pinInput.style.fontSize      = '1rem';
+            pinInput.placeholder         = 'Contraseña';
+        } else {
+            if (pinLabel) pinLabel.textContent = 'PIN de acceso';
+            pinInput.maxLength           = 4;
+            pinInput.inputMode           = 'numeric';
+            pinInput.style.letterSpacing = '.4em';
+            pinInput.style.fontSize      = '1.4rem';
+            pinInput.placeholder         = '\u2022 \u2022 \u2022 \u2022';
+        }
+        pinInput.value = '';
     }
 
     function _showModal() {
@@ -221,11 +258,17 @@
         // Poblar dropdown
         var select = document.getElementById('clinicAuthSelect');
         select.innerHTML = _professionals.map(function(p, i) {
-            var label = p.usuario
-                ? (_esc(p.usuario) + (p.nombre ? ' — ' + _esc(p.nombre) : ''))
-                : _esc(p.nombre || ('Profesional ' + (i + 1)));
+            var label;
+            if (p.id === '__admin__') {
+                label = '\uD83D\uDEE1\uFE0F Administrador';
+            } else {
+                label = p.usuario
+                    ? (_esc(p.usuario) + (p.nombre ? ' \u2014 ' + _esc(p.nombre) : ''))
+                    : _esc(p.nombre || ('Profesional ' + (i + 1)));
+            }
             return '<option value="' + i + '">' + label + '</option>';
         }).join('');
+        _updateForSelection(0);
 
         // Nombre de la clínica como subtítulo
         try {
@@ -270,6 +313,15 @@
         var idx    = Number(select.value);
         var pro    = _professionals[idx];
         if (!pro) return;
+
+        // El administrador no puede bloquearse por intentos fallidos de PIN
+        if (pro.id === '__admin__') {
+            enterBtn.disabled = false;
+            if (errEl) errEl.textContent = '';
+            if (attEl) attEl.textContent = '';
+            return;
+        }
+
         var proId   = pro.id;
         var blocked = (_failedAttempts[proId] || 0) >= MAX_ATTEMPTS;
 
@@ -298,9 +350,35 @@
         var pro     = _professionals[idx];
         if (!pro) return;
 
-        var proId   = pro.id;
         var entered = String(pinInput.value || '').trim();
 
+        // ── LOGIN ADMINISTRADOR ──────────────────────────────────────────────────
+        if (pro.id === '__admin__') {
+            if (!entered) {
+                errorEl.textContent = 'Ingresá la contraseña de administrador.';
+                pinInput.focus();
+                return;
+            }
+            if (entered === _getAdminPass()) {
+                errorEl.textContent = '';
+                var adminOverlay = document.getElementById('clinicAuthOverlay');
+                if (adminOverlay) adminOverlay.style.display = 'none';
+                if (typeof showToast === 'function') {
+                    showToast('🛡️ Acceso de administrador', 'info');
+                }
+                if (window.ClinicAdminPanel && typeof window.ClinicAdminPanel.open === 'function') {
+                    window.ClinicAdminPanel.open();
+                }
+            } else {
+                errorEl.textContent = 'Contraseña de administrador incorrecta.';
+                pinInput.value = '';
+                pinInput.focus();
+            }
+            return;
+        }
+
+        // ── LOGIN PROFESIONAL ────────────────────────────────────────────────────
+        var proId   = pro.id;
         if (!entered) {
             errorEl.textContent = 'Ingresá tu PIN de acceso.';
             pinInput.focus();

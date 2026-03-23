@@ -8202,6 +8202,53 @@ test('ClinicAuth-20 — watchdog respeta el modal visible y no resetea el input'
         'El watchdog clínico debe pausar reintentos mientras el modal de PIN está abierto');
 });
 
+// ── Fase 2: Administrador siempre primero ─────────────────────────────────────
+test('ClinicAuth-F2a — resolveProfessionals antepone entrada __admin__', () => {
+    assert(clinicAuthCode.includes("id: '__admin__'") && clinicAuthCode.includes("tipo: 'admin'"),
+        'resolveProfessionals debe construir una entrada con id __admin__ y tipo admin');
+});
+
+test('ClinicAuth-F2b — resolveProfessionals usa concat para preservar orden', () => {
+    assert(clinicAuthCode.includes('[adminEntry].concat(normalized)') ||
+           clinicAuthCode.includes('[adminEntry].concat('),
+        'resolveProfessionals debe anteponer adminEntry con concat');
+});
+
+test('ClinicAuth-F2c — _updateForSelection diferencia admin vs profesional', () => {
+    assert(clinicAuthCode.includes('_updateForSelection') &&
+           clinicAuthCode.includes("id === '__admin__'"),
+        '_updateForSelection debe adaptar el input segun si se selecciono admin o profesional');
+});
+
+test('ClinicAuth-F2d — _getAdminPass lee adminPass de workplace_profiles', () => {
+    assert(clinicAuthCode.includes('_getAdminPass') &&
+           clinicAuthCode.includes('adminPass') &&
+           clinicAuthCode.includes("'clinica'"),
+        '_getAdminPass debe leer adminPass de workplace_profiles con fallback "clinica"');
+});
+
+test('ClinicAuth-F2e — _attemptLogin rama admin llama ClinicAdminPanel.open', () => {
+    assert(clinicAuthCode.includes('ClinicAdminPanel.open') &&
+           clinicAuthCode.includes('_getAdminPass()'),
+        '_attemptLogin debe validar contrasena admin y llamar a ClinicAdminPanel.open tras login exitoso');
+});
+
+test('ClinicAuth-F2f — admin no puede bloquearse en _refreshBlockState', () => {
+    assert(clinicAuthCode.includes('El administrador no puede bloquearse') ||
+           (clinicAuthCode.includes("pro.id === '__admin__'") && clinicAuthCode.includes('enterBtn.disabled = false')),
+        '_refreshBlockState debe saltear el bloqueo para el administrador');
+});
+
+test('ClinicAuth-F2g — label PIN cambia a "Contraseña de administrador" para admin', () => {
+    assert(clinicAuthCode.includes('Contrase\u00f1a de administrador') || clinicAuthCode.includes('Contraseña de administrador'),
+        '_updateForSelection debe cambiar el label PIN a "Contraseña de administrador" cuando se elige admin');
+});
+
+test('ClinicAuth-F2h — dropdown muestra emoji escudo para admin', () => {
+    assert(clinicAuthCode.includes('\uD83D\uDEE1') || clinicAuthCode.includes('🛡'),
+        'El dropdown debe mostrar el emoji escudo para la entrada Administrador');
+});
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // Bloque 126: C6 — ClinicAdminPanel (gestión interna de profesionales CLINIC)
 // ═══════════════════════════════════════════════════════════════════════════════
