@@ -3924,12 +3924,15 @@
             const isPendientePago = estado === 'pendiente' || estado === 'pendiente_pago';
             const isPagoConfirmado = estado === 'pago_confirmado';
             const hasReceipt = !!((reg.Last_Receipt_Ref && String(reg.Last_Receipt_Ref).startsWith('drive:')) || _extractLastReceiptRef(reg));
+            const confirmAndApproveLabel = hasReceipt
+                ? '💳✅ Confirmar pago y aprobar'
+                : '💳 Marcar pagado';
             const actionsHtml = (isPendientePago || isPagoConfirmado) ? `
                 <button class="btn-view-details" onclick="viewRegDetail('${reg.ID_Registro}')">📋 Detalle</button>
                 ${hasReceipt ? `<button class="btn-secondary" style="padding:8px 10px;" onclick="viewRegReceipt('${reg.ID_Registro}')">🧾 Ver comprobante</button>` : ''}
                 <button class="btn-reject" onclick="rejectRegistration('${reg.ID_Registro}')">❌ Rechazar</button>
                 ${isPendientePago
-                    ? `<button class="btn-secondary" style="padding:8px 10px;" onclick="markRegistrationPaid('${reg.ID_Registro}')">💳 Marcar pagado</button>`
+                    ? `<button class="btn-secondary" style="padding:8px 10px;" onclick="markRegistrationPaid('${reg.ID_Registro}', ${hasReceipt ? 'true' : 'false'})">${confirmAndApproveLabel}</button>`
                     : `<button class="btn-approve" onclick="openApproveModal('${reg.ID_Registro}')">✅ Aprobar</button>`}
             ` : `
                 <button class="btn-view-details" onclick="viewRegDetail('${reg.ID_Registro}')">📋 Detalle</button>
@@ -4788,7 +4791,8 @@
             document.getElementById('approveApiKeyB2').value = localStorage.getItem('admin_groq_key_b2') || '';
 
             const keysEdit = document.getElementById('approveKeysEditSection');
-            if (keysEdit) keysEdit.style.display = 'none';
+            const hasPrimaryKey = !!(document.getElementById('approveApiKey').value || '').trim();
+            if (keysEdit) keysEdit.style.display = hasPrimaryKey ? 'none' : 'block';
             _updateApproveKeysStatus();
 
             document.getElementById('approveModalOverlay').classList.add('show');
@@ -5358,8 +5362,7 @@
                         '🏭'
                     );
                     if (generateLink) {
-                        await loadDashboard(true);
-                        openCloneFactory(data.medicoId);
+                        await _openCloneFactoryWhenReady(data.medicoId);
                     }
                 }
 
@@ -5401,7 +5404,21 @@
             }
         }
 
-        async function markRegistrationPaid(regId) {
+        async function _openCloneFactoryWhenReady(userId, maxAttempts = 8) {
+            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+                await loadDashboard(true);
+                const exists = (allUsers || []).some(u => String(u.ID_Medico) === String(userId));
+                if (exists) {
+                    openCloneFactory(userId);
+                    return true;
+                }
+                await new Promise(resolve => setTimeout(resolve, 700));
+            }
+            await dashAlert(`Usuario creado (${escapeHtml(String(userId))}) pero todavía no aparece en la tabla. Actualizá Usuarios y abrí la Fábrica manualmente con el botón 📦.`, 'ℹ️');
+            return false;
+        }
+
+        async function markRegistrationPaid(regId, autoOpenApprove = false) {
             const reg = allRegistrations.find(r => r.ID_Registro === regId);
             const nombre = reg ? reg.Nombre : regId;
 
@@ -5416,7 +5433,18 @@
                 if (data.error) throw new Error(data.error);
                 showNotification('💳 Pago marcado como confirmado', 'success');
                 registrosLoaded = false;
-                loadRegistrations();
+                await loadRegistrations();
+
+                if (autoOpenApprove) {
+                    // Esperar una refrescada más para evitar carreras de estado en el backend.
+                    await new Promise(resolve => setTimeout(resolve, 700));
+                    await loadRegistrations();
+                    const regFresh = allRegistrations.find(r => String(r.ID_Registro) === String(regId));
+                    const st = String(regFresh && regFresh.Estado || '').toLowerCase();
+                    if (st === 'pago_confirmado' || st === 'pendiente' || st === 'pendiente_pago') {
+                        openApproveModal(regId);
+                    }
+                }
             } catch (err) {
                 await dashAlert('Error al marcar pago: ' + err.message, '❌');
             }
