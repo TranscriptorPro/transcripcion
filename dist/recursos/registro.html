@@ -713,6 +713,22 @@
             background: #f0fdfa;
             font-weight: 600;
         }
+        .titulo-btn {
+            padding: 4px 13px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: var(--card);
+            cursor: pointer;
+            font-size: .82rem;
+            font-family: inherit;
+            font-weight: 600;
+            transition: all .15s;
+        }
+        .titulo-btn.active {
+            border-color: var(--primary);
+            background: #f0fdfa;
+            color: var(--primary-dark);
+        }
 
         /* ── Mobile ── */
         @media (max-width: 600px) {
@@ -862,7 +878,11 @@
                     <div class="field-row">
                         <div class="field-group">
                             <label id="labelNombre">Nombre y Apellido <span class="req">*</span></label>
-                            <input type="text" id="regNombre" required placeholder="Dr. Juan Pérez">
+                            <div id="regTituloGroup" style="display:flex;gap:.4rem;margin-bottom:.45rem;">
+                                <button type="button" class="titulo-btn active" data-t="Dr." onclick="setRegTitulo('Dr.')">Dr.</button>
+                                <button type="button" class="titulo-btn" data-t="Dra." onclick="setRegTitulo('Dra.')">Dra.</button>
+                            </div>
+                            <input type="text" id="regNombre" required placeholder="Juan Pérez" onblur="_normRegNombreField(this)">
                         </div>
                         <div class="field-group">
                             <label id="labelMatricula">Matrícula <span class="req">*</span></label>
@@ -1527,6 +1547,7 @@
         let billingCycle = 'monthly'; // 'monthly' or 'annual'
         let selectedCurrency = 'USD';
         let arsRate = null; // tipo de cambio ARS/USD (blue venta)
+        let regTitulo = 'Dr.'; // título del profesional individual (Dr. o Dra.)
         let cartAddons = {
             templates: [],   // { key, name, category, price }
             packs: [],       // { category, templates: [...], price }
@@ -1622,18 +1643,46 @@
 
                 if (transferEl) {
                     const p = data.paymentData || {};
+                    const _qr = (txt, sz) => 'https://api.qrserver.com/v1/create-qr-code/?size=' + sz + 'x' + sz + '&data=' + encodeURIComponent(txt) + '&margin=8&ecc=M';
+                    const arsQrSrc = p.arsAlias ? _qr(p.arsAlias, 180) : '';
+                    const usdQrData = p.usdAlias || p.usdCbu || '';
+                    const usdQrSrc  = usdQrData ? _qr(usdQrData, 180) : '';
                     transferEl.innerHTML = `
-                        <div style="font-weight:700;margin-bottom:.35rem;">Datos de transferencia</div>
-                        <div><b>Para pagos en pesos argentinos:</b></div>
-                        <div>Alias: ${p.arsAlias || '—'}</div>
-                        <div>CVU: ${p.arsCvu || '—'}</div>
-                        <div>Nombre: ${p.arsNombre || '—'}</div>
-                        <div style="margin-top:.35rem;"><b>Para pagos en dolares:</b></div>
-                        <div>Alias: ${p.usdAlias || '—'}</div>
-                        <div>CBU: ${p.usdCbu || '—'}</div>
-                        <div>Nombre: ${p.usdNombre || '—'}</div>
-                        ${p.bank ? `<div>Banco: ${p.bank}</div>` : ''}
-                        ${p.destinationNote ? `<div style="margin-top:.3rem;color:#0f766e;">ℹ️ ${p.destinationNote}</div>` : ''}
+                        <div style="display:flex;gap:.4rem;margin-bottom:.8rem;">
+                            <button type="button" id="payTabBtnARS" style="padding:5px 14px;border:2px solid #0d9488;border-radius:8px;background:#f0fdfa;font-weight:600;font-size:.82rem;font-family:inherit;cursor:pointer;" onclick="_switchPayTab('ARS')">🇦🇷 Pesos</button>
+                            <button type="button" id="payTabBtnUSD" style="padding:5px 14px;border:2px solid #e2e8f0;border-radius:8px;background:#fff;font-size:.82rem;font-family:inherit;cursor:pointer;" onclick="_switchPayTab('USD')">🇺🇸 Dólares</button>
+                        </div>
+                        <div id="payTabARS">
+                            ${arsQrSrc ? `<div style="display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap;">
+                                <div style="text-align:center;flex-shrink:0;">
+                                    <img src="${arsQrSrc}" alt="QR Pesos" style="border:3px solid #fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.1);display:block;width:180px;height:180px;">
+                                    <div style="font-size:.69rem;color:#64748b;margin-top:.35rem;">Escaneá con Mercado Pago<br>o tu app bancaria</div>
+                                </div>
+                                <div style="flex:1;min-width:130px;">
+                                    <div style="font-weight:700;margin-bottom:.4rem;color:#0f766e;">💵 Transferencia en Pesos ARS</div>
+                                    <div>Alias: <b>${p.arsAlias}</b></div>
+                                    ${p.arsCvu ? '<div>CVU: ' + p.arsCvu + '</div>' : ''}
+                                    ${p.arsNombre ? '<div>Titular: ' + p.arsNombre + '</div>' : ''}
+                                    <div style="font-size:.72rem;margin-top:.45rem;color:#64748b;">Ingresá el alias en tu app bancaria<br>o escaneá el QR con Mercado Pago</div>
+                                </div>
+                            </div>` : '<div style="color:#64748b;font-size:.82rem;">Alias no configurado. Contactá al administrador.</div>'}
+                        </div>
+                        <div id="payTabUSD" style="display:none;">
+                            ${usdQrSrc ? `<div style="display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap;">
+                                <div style="text-align:center;flex-shrink:0;">
+                                    <img src="${usdQrSrc}" alt="QR USD" style="border:3px solid #fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.1);display:block;width:180px;height:180px;">
+                                    <div style="font-size:.69rem;color:#64748b;margin-top:.35rem;">Escaneá con tu app de pagos</div>
+                                </div>
+                                <div style="flex:1;min-width:130px;">
+                                    <div style="font-weight:700;margin-bottom:.4rem;color:#1e40af;">💵 Transferencia en Dólares USD</div>
+                                    ${p.usdAlias ? '<div>Alias: <b>' + p.usdAlias + '</b></div>' : ''}
+                                    ${p.usdCbu ? '<div>CBU/CVU: ' + p.usdCbu + '</div>' : ''}
+                                    ${p.usdNombre ? '<div>Titular: ' + p.usdNombre + '</div>' : ''}
+                                    ${p.bank ? '<div>Banco: ' + p.bank + '</div>' : ''}
+                                    ${p.destinationNote ? '<div style="margin-top:.35rem;color:#0f766e;font-size:.75rem;">ℹ️ ' + p.destinationNote + '</div>' : ''}
+                                </div>
+                            </div>` : '<div style="color:#64748b;font-size:.82rem;">Datos USD no configurados. Contactá al administrador.</div>'}
+                        </div>
                     `;
                 }
                 if (!isInitialRegistration) {
@@ -1695,6 +1744,19 @@
                 }
             };
             reader.readAsDataURL(file);
+        }
+
+        function _switchPayTab(tab) {
+            const arsDiv = document.getElementById('payTabARS');
+            const usdDiv = document.getElementById('payTabUSD');
+            const arsBtn = document.getElementById('payTabBtnARS');
+            const usdBtn = document.getElementById('payTabBtnUSD');
+            if (!arsDiv || !usdDiv) return;
+            const showARS = tab === 'ARS';
+            arsDiv.style.display = showARS ? '' : 'none';
+            usdDiv.style.display = showARS ? 'none' : '';
+            if (arsBtn) { arsBtn.style.borderColor = showARS ? '#0d9488' : '#e2e8f0'; arsBtn.style.background = showARS ? '#f0fdfa' : '#fff'; arsBtn.style.fontWeight = showARS ? '600' : '400'; }
+            if (usdBtn) { usdBtn.style.borderColor = showARS ? '#e2e8f0' : '#3b82f6'; usdBtn.style.background = showARS ? '#fff' : '#eff6ff'; usdBtn.style.fontWeight = showARS ? '400' : '600'; }
         }
 
         // ── Currency (E1-E3) ────────────────────────────────────────────────────
@@ -1828,6 +1890,8 @@
                 if (inMatricula)inMatricula.placeholder= 'Ej: 30-12345678-9';
                 if (inEmail)    inEmail.placeholder    = 'contacto@clinica.com';
                 if (inTelefono) inTelefono.placeholder = '+54 11 4321-5678';
+                const tg = document.getElementById('regTituloGroup');
+                if (tg) tg.style.display = 'none';
             } else {
                 if (s1Title)    s1Title.textContent    = '👤 Datos del Profesional';
                 if (s1Subtitle) s1Subtitle.innerHTML  = 'Estos datos aparecerán en todos los informes que generés. Los campos con <span style="color:var(--danger);">*</span> son obligatorios.';
@@ -1835,10 +1899,12 @@
                 if (lMatricula) lMatricula.innerHTML   = 'Matrícula <span class="req">*</span>';
                 if (lEmail)     lEmail.innerHTML       = 'Email <span class="req">*</span>';
                 if (lTelefono)  lTelefono.textContent  = 'Teléfono';
-                if (inNombre)   inNombre.placeholder   = 'Dr. Juan Pérez';
+                if (inNombre)   inNombre.placeholder   = 'Juan Pérez';
                 if (inMatricula)inMatricula.placeholder= 'MN 12345';
                 if (inEmail)    inEmail.placeholder    = 'doctor@ejemplo.com';
                 if (inTelefono) inTelefono.placeholder = '+54 9 11 1234-5678';
+                const tge = document.getElementById('regTituloGroup');
+                if (tge) tge.style.display = 'flex';
             }
 
             // ── Paso 2 ────────────────────────────────────────────────────────
@@ -2270,11 +2336,11 @@
                     <div class="field-row">
                         <div class="field-group">
                             <label>Nombre del lugar ${isMain ? '<span class="req">*</span>' : ''}</label>
-                            <input type="text" id="regWpName${index}" placeholder="Clínica San Martín" oninput="updateWpName(${index})">
+                            <input type="text" id="regWpName${index}" placeholder="Clínica San Martín" oninput="updateWpName(${index})" onblur="normOnBlur(this,'title')">
                         </div>
                         <div class="field-group">
                             <label>Dirección</label>
-                            <input type="text" id="regWpAddress${index}" placeholder="Av. Corrientes 1234, CABA">
+                            <input type="text" id="regWpAddress${index}" placeholder="Av. Corrientes 1234, CABA" onblur="normOnBlur(this,'sentence')">
                         </div>
                     </div>
                     <div class="field-row">
@@ -2298,7 +2364,7 @@
                     </div>
                     <div class="field-group" style="margin-top:.8rem;">
                         <label>Texto del pie de página</label>
-                        <input type="text" id="regWpFooter${index}" placeholder="Consultorio médico — Tel: (011) 4567-8901">
+                        <input type="text" id="regWpFooter${index}" placeholder="Consultorio médico — Tel: (011) 4567-8901" onblur="normOnBlur(this,'sentence')">
                         <small>Aparece al pie de cada informe generado en este lugar</small>
                     </div>
                 </div>
@@ -2371,10 +2437,71 @@
             reader.readAsDataURL(file);
         }
 
+        // ── Normalización de texto ────────────────────────────────────────────────
+        function normTitleCase(s) {
+            if (!s) return s;
+            return s.trim().replace(/\S+/g, w => w[0].toUpperCase() + w.slice(1).toLowerCase());
+        }
+        function normSentenceCase(s) {
+            if (!s) return s;
+            const t = s.trim();
+            return t ? t[0].toUpperCase() + t.slice(1) : t;
+        }
+        function normOnBlur(el, mode) {
+            const v = el.value.trim();
+            if (!v) return;
+            el.value = mode === 'title' ? normTitleCase(v) : normSentenceCase(v);
+        }
+        function _stripDrPrefix(str) {
+            return str.replace(/^Dr?a?\.?\s+/i, '').trim();
+        }
+        function setRegTitulo(titulo) {
+            regTitulo = titulo;
+            document.querySelectorAll('#regTituloGroup .titulo-btn').forEach(b => b.classList.toggle('active', b.dataset.t === titulo));
+        }
+        function setProfTitulo(index, titulo) {
+            profTituloData[index] = titulo;
+            const card = document.getElementById('prof-' + index);
+            if (card) card.querySelectorAll('.titulo-btn[data-t]').forEach(b => b.classList.toggle('active', b.dataset.t === titulo));
+            updateProfName(index);
+        }
+        function _normRegNombreField(el) {
+            const v = el.value.trim();
+            if (!v) return;
+            const m = v.match(/^(Dr?a?\.?)\s+/i);
+            if (m) {
+                const isDra = /^Dra\b/i.test(m[1]);
+                setRegTitulo(isDra ? 'Dra.' : 'Dr.');
+                el.value = normTitleCase(_stripDrPrefix(v));
+            } else {
+                el.value = normTitleCase(v);
+            }
+        }
+        function _normProfNameField(el, index) {
+            const v = el.value.trim();
+            if (!v) return;
+            const m = v.match(/^(Dr?a?\.?)\s+/i);
+            if (m) {
+                const isDra = /^Dra\b/i.test(m[1]);
+                setProfTitulo(index, isDra ? 'Dra.' : 'Dr.');
+                el.value = normTitleCase(_stripDrPrefix(v));
+            } else {
+                el.value = normTitleCase(v);
+            }
+            updateProfName(index);
+        }
+        function _buildNombreSubmit() {
+            const raw = document.getElementById('regNombre').value.trim();
+            if (selectedPlan === 'CLINIC') return normTitleCase(raw);
+            const clean = normTitleCase(_stripDrPrefix(raw));
+            return clean ? (regTitulo + ' ' + clean) : raw;
+        }
+
         // ── Professionals (F1-F2, solo CLINIC) ──────────────────────────────────
         let profCounter = 0;
         let profFirmaData = {}; // { index: base64 }
         let profLogoData  = {}; // { index: base64 }
+        let profTituloData = {}; // { index: 'Dr.' | 'Dra.' }
 
         function renderProfessional(index) {
             const container = document.getElementById('professionalsContainer');
@@ -2393,7 +2520,11 @@
                     <div class="field-row">
                         <div class="field-group">
                             <label>Nombre completo *</label>
-                            <input type="text" id="regProfName${index}" placeholder="Dr. Juan Pérez" oninput="updateProfName(${index})">
+                            <div style="display:flex;gap:.35rem;margin-bottom:.4rem;">
+                                <button type="button" class="titulo-btn active" data-t="Dr." onclick="setProfTitulo(${index},'Dr.')">Dr.</button>
+                                <button type="button" class="titulo-btn" data-t="Dra." onclick="setProfTitulo(${index},'Dra.')">Dra.</button>
+                            </div>
+                            <input type="text" id="regProfName${index}" placeholder="Juan Pérez" oninput="updateProfName(${index})" onblur="_normProfNameField(this,${index})">
                         </div>
                         <div class="field-group">
                             <label>Matrícula *</label>
@@ -2507,7 +2638,9 @@
             const input = document.getElementById('regProfName' + index);
             const display = document.getElementById('profNameDisplay' + index);
             if (input && display) {
-                display.textContent = input.value.trim() || ('👨‍⚕️ Profesional ' + (index + 1));
+                const t = profTituloData[index] || 'Dr.';
+                const n = input.value.trim();
+                display.textContent = n ? (t + ' ' + n) : ('👨‍⚕️ Profesional ' + (index + 1));
             }
         }
 
@@ -2572,9 +2705,11 @@
                 const showEmail  = document.getElementById('regProfShowEmail'  + idx)?.checked ?? true;
                 const showSocial = document.getElementById('regProfShowSocial' + idx)?.checked ?? true;
                 if (name.trim()) {
+                    const titulo   = profTituloData[idx] || 'Dr.';
+                    const cleanNm  = normTitleCase(_stripDrPrefix(name.trim()));
                     profs.push({
                         id:            String(Date.now()) + String(Math.floor(Math.random() * 100000)),
-                        nombre:        name.trim(),
+                        nombre:        cleanNm ? (titulo + ' ' + cleanNm) : name.trim(),
                         matricula:     matricula.trim(),
                         especialidades: especialidad.trim() ? [especialidad.trim()] : [],
                         usuario:       usuario.trim(),
@@ -2937,7 +3072,7 @@
 
             const data = {
                 action: 'register_doctor',
-                nombre: document.getElementById('regNombre').value.trim(),
+                nombre: _buildNombreSubmit(),
                 matricula: document.getElementById('regMatricula').value.trim(),
                 email: document.getElementById('regEmail').value.trim(),
                 telefono: document.getElementById('regTelefono').value.trim(),
