@@ -65,6 +65,23 @@
         const isAdmin = type === 'ADMIN';
         const isClinic = typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.canGenerateApps;
 
+        function isClinicAdminSession() {
+            try {
+                if (!isClinic || typeof window.ClinicAuth === 'undefined' || typeof window.ClinicAuth.getActiveProfessional !== 'function') {
+                    return false;
+                }
+                const active = window.ClinicAuth.getActiveProfessional();
+                if (!active) return false;
+                if (active.isAdmin === true) return true;
+                const role = String(active.role || active.tipo || active.userType || active.kind || '').toUpperCase();
+                if (role === 'ADMIN') return true;
+                const username = String(active.usuario || active.username || '').toLowerCase();
+                return username === 'admin';
+            } catch (_) {
+                return false;
+            }
+        }
+
         function toggleAccordion(stgKey, visible) {
             const el = document.querySelector('.stg-accordion[data-stg="' + stgKey + '"]');
             if (el) el.style.display = visible ? '' : 'none';
@@ -80,7 +97,8 @@
         }
 
         if (isClinic) {
-            const clinicAllowed = ['cuenta', 'workplace', 'profiles', 'pdf', 'editor', 'tools', 'theme', 'skins', 'stats', 'info', 'about'];
+            const clinicAllowed = ['cuenta', 'workplace', 'profiles', 'pdf', 'editor', 'tools', 'theme', 'skins', 'stats', 'info'];
+            if (isClinicAdminSession()) clinicAllowed.push('about');
             allSections.forEach((key) => toggleAccordion(key, clinicAllowed.includes(key)));
             return;
         }

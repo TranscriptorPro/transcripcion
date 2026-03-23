@@ -17,6 +17,28 @@
         const paymentsBtn = document.getElementById('settingsOpenPaymentsPortal');
         const overlay = document.getElementById('settingsModalOverlay');
 
+        const isClinicRuntime = !!(window.CLIENT_CONFIG && window.CLIENT_CONFIG.canGenerateApps);
+        const isClinicAdminSession = (function () {
+            try {
+                if (!isClinicRuntime || typeof window.ClinicAuth === 'undefined' || typeof window.ClinicAuth.getActiveProfessional !== 'function') {
+                    return false;
+                }
+                const active = window.ClinicAuth.getActiveProfessional();
+                if (!active) return false;
+                if (active.isAdmin === true) return true;
+                const role = String(active.role || active.tipo || active.userType || active.kind || '').toUpperCase();
+                if (role === 'ADMIN') return true;
+                const username = String(active.usuario || active.username || '').toLowerCase();
+                return username === 'admin';
+            } catch (_) {
+                return false;
+            }
+        })();
+
+        if (paymentsBtn && isClinicRuntime && !isClinicAdminSession) {
+            paymentsBtn.style.display = 'none';
+        }
+
         const reopenSettings = () => {
             if (typeof repopulateAndOpenSettings === 'function') {
                 repopulateAndOpenSettings();
@@ -100,7 +122,7 @@
             });
         }
 
-        if (paymentsBtn) {
+        if (paymentsBtn && !(isClinicRuntime && !isClinicAdminSession)) {
             paymentsBtn.addEventListener('click', () => {
                 if (overlay) overlay.classList.remove('active');
 

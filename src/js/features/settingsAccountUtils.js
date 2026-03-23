@@ -124,6 +124,25 @@
         let pdfCfg = {};
         try { pdfCfg = JSON.parse(localStorage.getItem('pdf_config') || '{}'); } catch (_) {}
 
+        // En sesión clínica estándar no se permite alternar de profesional desde Configuración.
+        let isClinicAdminSession = false;
+        try {
+            if (typeof window.ClinicAuth !== 'undefined' && typeof window.ClinicAuth.getActiveProfessional === 'function') {
+                const active = window.ClinicAuth.getActiveProfessional();
+                if (active) {
+                    if (active.isAdmin === true) {
+                        isClinicAdminSession = true;
+                    } else {
+                        const role = String(active.role || active.tipo || active.userType || active.kind || '').toUpperCase();
+                        const username = String(active.usuario || active.username || '').toLowerCase();
+                        isClinicAdminSession = role === 'ADMIN' || username === 'admin';
+                    }
+                }
+            }
+        } catch (_) {
+            isClinicAdminSession = false;
+        }
+
         const wpIdx = pdfCfg.activeWorkplaceIndex || 0;
         const wp = wpProfiles[Number(wpIdx)];
         const profs = (wp && wp.professionals) ? wp.professionals : [];
@@ -137,6 +156,11 @@
             el('settingsProfEspecialidad').textContent = Array.isArray(espRaw)
                 ? espRaw.filter(function (e) { return e && e !== 'Todas'; }).join(' / ')
                 : (espRaw || '—');
+        }
+
+        if (!isClinicAdminSession) {
+            removeClinicSelector();
+            return;
         }
 
         if (profs.length > 1) {

@@ -8032,6 +8032,8 @@ const shellUtilsCode = fs.readFileSync(path.join(root, 'src/js/features/settings
 const themeSectionCode = fs.readFileSync(path.join(root, 'src/js/features/settingsThemeSectionUtils.js'), 'utf-8');
 const populateCodeB124 = fs.readFileSync(path.join(root, 'src/js/features/settingsModalPopulateUtils.js'), 'utf-8');
 const actionsCodeB124 = fs.readFileSync(path.join(root, 'src/js/features/settingsModalActionsUtils.js'), 'utf-8');
+const toolsLinksCodeB124 = fs.readFileSync(path.join(root, 'src/js/features/settingsToolsLinksUtils.js'), 'utf-8');
+const accountCodeB124 = fs.readFileSync(path.join(root, 'src/js/features/settingsAccountUtils.js'), 'utf-8');
 
 test('Settings-Fix1 — sección update incluida en allSections (K2)', () => {
     assert(shellUtilsCode.includes("'update'"),
@@ -8056,6 +8058,23 @@ test('Settings-Fix4 — botón Contactar soporte usa openContactModal() directo'
 test('Settings-Fix5 — botón Contactar soporte oculto para admin en populateInfo', () => {
     assert(populateCodeB124.includes('settingsContactSupport') && populateCodeB124.includes('isAdmin'),
         'populateInfo debe ocultar settingsContactSupport para usuarios admin');
+});
+
+test('Settings-Fix6 — sesión clínica estándar oculta sección Acerca en settings', () => {
+    assert(shellUtilsCode.includes("const clinicAllowed = ['cuenta', 'workplace', 'profiles', 'pdf', 'editor', 'tools', 'theme', 'skins', 'stats', 'info']"),
+        'En clínica estándar, el menú settings no debe incluir la sección about');
+});
+
+test('Settings-Fix7 — sesión clínica estándar oculta botón Gestión de pagos', () => {
+    assert(toolsLinksCodeB124.includes('settingsOpenPaymentsPortal') &&
+           toolsLinksCodeB124.includes('paymentsBtn.style.display = \'none\''),
+        'El botón de pagos debe ocultarse para sesiones médicas de clínica');
+});
+
+test('Settings-Fix8 — sesión clínica estándar no permite cambiar profesional desde Cuenta', () => {
+    assert(accountCodeB124.includes('removeClinicSelector();') &&
+           accountCodeB124.includes('if (!isClinicAdminSession)'),
+        'Cuenta en clínica debe bloquear el selector de profesional para sesiones no-admin');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
