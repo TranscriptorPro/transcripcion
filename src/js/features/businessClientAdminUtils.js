@@ -16,7 +16,13 @@ function _initResetApp() {
     const btnConfirm = document.getElementById('btnConfirmResetApp');
     if (!modal) return;
 
-    const openModal = () => modal.classList.add('active');
+    const openModal = () => {
+        modal.classList.add('active');
+        const pwInput = document.getElementById('resetConfirmPassword');
+        const pwError = document.getElementById('resetPasswordError');
+        if (pwInput) pwInput.value = '';
+        if (pwError) pwError.style.display = 'none';
+    };
     const closeModal = () => modal.classList.remove('active');
 
     btnOpen?.addEventListener('click', openModal);
@@ -25,6 +31,13 @@ function _initResetApp() {
     modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 
     btnConfirm?.addEventListener('click', () => {
+        const pwInput = document.getElementById('resetConfirmPassword');
+        const pwError = document.getElementById('resetPasswordError');
+        if (pwInput && pwInput.value !== '26716975') {
+            if (pwError) pwError.style.display = 'block';
+            pwInput.focus();
+            return;
+        }
         // Claves a borrar (se conserva: groq_api_key, app_theme, onboarding_date)
         const keysToRemove = [
             'workplace_profiles',

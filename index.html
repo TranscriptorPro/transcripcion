@@ -9,7 +9,7 @@
     <!-- PURGE: auto-purge al detectar nueva versión + ?purge manual. Preserva tema y color -->
     <script>
     (function() {
-        var APP_VERSION = 'v202'; // ← bump esto en cada deploy para forzar auto-purge
+        var APP_VERSION = 'v203'; // ← bump esto en cada deploy para forzar auto-purge
         try { window.APP_VERSION = APP_VERSION; } catch(_) {}
         var params = new URLSearchParams(window.location.search);
         var forcePurge = params.has('purge');
@@ -1476,6 +1476,11 @@
                         <li>Estado de onboarding</li>
                     </ul>
                     <p style="font-size:0.82rem;color:var(--text-secondary);margin:0;"><strong>No se borra:</strong> API Key, tema visual.</p>
+                </div>
+                <div class="modal-body" style="padding:0 1.5rem 1rem;">
+                    <label style="font-size:0.82rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:0.4rem;">Ingresá la contraseña de administrador para confirmar:</label>
+                    <input type="password" id="resetConfirmPassword" placeholder="Contraseña" style="width:100%;padding:0.5rem 0.75rem;border:1.5px solid #ef4444;border-radius:6px;font-size:0.95rem;outline:none;" autocomplete="off">
+                    <p id="resetPasswordError" style="color:#ef4444;font-size:0.78rem;margin-top:0.3rem;display:none;">Contraseña incorrecta.</p>
                 </div>
                 <div class="modal-footer" style="padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:.5rem;justify-content:flex-end;">
                     <button class="btn btn-outline" id="btnCancelResetApp">Cancelar</button>
