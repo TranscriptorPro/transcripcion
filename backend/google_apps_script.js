@@ -1731,7 +1731,8 @@ function doGet(e) {
       for (var i = 1; i < data.length; i++) {
         var rowObj = _clinicStaffRowToObj(headers, data[i]);
         if (String(rowObj.Clinic_ID || '') !== clinicId) continue;
-        if (String(rowObj.Activo || 'true').toLowerCase() === 'false') continue;
+        var activeRaw = rowObj.Activo;
+        if (activeRaw !== '' && activeRaw !== null && activeRaw !== undefined && String(activeRaw).toLowerCase() === 'false') continue;
         result.push(rowObj);
       }
       return createResponse({ success: true, staff: result });
