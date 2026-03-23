@@ -27,24 +27,24 @@ const WAIT_FOR_SUBMIT_MS = Number(process.env.WAIT_FOR_SUBMIT_MS || 45000);
 const FINAL_PAUSE_MS = Number(process.env.FINAL_PAUSE_MS || 12000);
 
 const CLINICA = {
-    nombre: 'Centro Médico Integral San Martín',
-    cuit: '30-71234567-8',
-    email: 'admin@cmisanmartin.demo',
-    telefono: '+54 11 4890-3300',
+    nombre: 'Clinica La Casa Del Arbol',
+    cuit: '30-70011223-9',
+    email: 'admin@lacasadelarbol.demo',
+    telefono: '+54 11 4500-7700',
     sedes: [
         {
-            nombre: 'Sede Central - Palermo',
-            direccion: 'Av. Santa Fe 3421, CABA',
-            telefono: '+54 11 4890-3300',
-            email: 'central@cmisanmartin.demo',
-            footer: 'Centro Medico Integral - Sede Palermo | Tel: (011) 4890-3300'
+            nombre: 'Sede Central - Casa Del Arbol',
+            direccion: 'Av. Del Arbol 1700, CABA',
+            telefono: '+54 11 4500-7700',
+            email: 'central@lacasadelarbol.demo',
+            footer: 'Clinica La Casa Del Arbol - Sede Central | Tel: (011) 4500-7700'
         },
         {
-            nombre: 'Sucursal Villa del Parque',
-            direccion: 'Boyaca 1175, CABA',
-            telefono: '+54 11 4672-5500',
-            email: 'villaparque@cmisanmartin.demo',
-            footer: 'Centro Medico Integral - Sucursal Villa del Parque'
+            nombre: 'Sucursal Arbol Norte',
+            direccion: 'Aranguren 2420, CABA',
+            telefono: '+54 11 4500-7711',
+            email: 'norte@lacasadelarbol.demo',
+            footer: 'Clinica La Casa Del Arbol - Sucursal Norte'
         }
     ],
     profesionales: [
@@ -53,8 +53,8 @@ const CLINICA = {
             nombre: 'Hernan Guillermo Rios',
             matricula: 'MN 87654',
             especialidad: 'Cardiologia',
-            telefono: '+54 11 4890-3301',
-            email: 'h.rios@cmisanmartin.demo',
+            telefono: '+54 11 4500-7701',
+            email: 'h.rios@lacasadelarbol.demo',
             usuario: 'hrios',
             pin: '4521'
         },
@@ -63,8 +63,8 @@ const CLINICA = {
             nombre: 'Valentina Souza',
             matricula: 'MN 43210',
             especialidad: 'Neurologia',
-            telefono: '+54 11 4890-3302',
-            email: 'v.souza@cmisanmartin.demo',
+            telefono: '+54 11 4500-7702',
+            email: 'v.souza@lacasadelarbol.demo',
             usuario: 'vsouza',
             pin: '7890'
         },
@@ -73,8 +73,8 @@ const CLINICA = {
             nombre: 'Lucas Matias Ferreira',
             matricula: 'MN 99001',
             especialidad: 'Diagnostico por Imagenes',
-            telefono: '+54 11 4890-3303',
-            email: 'l.ferreira@cmisanmartin.demo',
+            telefono: '+54 11 4500-7703',
+            email: 'l.ferreira@lacasadelarbol.demo',
             usuario: 'lferreira',
             pin: '1357'
         }
@@ -517,6 +517,27 @@ function basenameList(files) {
         await shot(page, 'paso7_resultado', 'Estado luego del submit, con foco en si el paso 7 y el panel de pagos quedaron visibles.');
         await page.waitForTimeout(2200);
         await shot(page, 'paso7_portal_pago', 'Captura final del portal de pagos o del estado de espera/error posterior al envio.');
+
+        // Intentar subir comprobante con cualquier archivo de prueba disponible.
+        if (step7State.paymentPanelVisible) {
+            const receiptCandidate = workplaceImages[0] || signatureImages[0] || professionalLogoImages[0] || null;
+            if (receiptCandidate) {
+                console.log(`  🧾 Subiendo comprobante de prueba: ${path.basename(receiptCandidate)}`);
+                await page.setInputFiles('#paymentReceiptInput', receiptCandidate);
+                await page.waitForTimeout(350);
+                await page.click('#btnSendReceipt');
+                try {
+                    await page.waitForFunction(() => {
+                        const t = (document.getElementById('paymentUploadStatus')?.innerText || '').toLowerCase();
+                        return t.includes('comprobante') || t.includes('enviado') || t.includes('revision') || t.includes('error');
+                    }, { timeout: 30000 });
+                } catch (_) {}
+                await page.waitForTimeout(800);
+                await shot(page, 'paso7_comprobante_enviado', 'Comprobante de prueba enviado desde el portal de pagos.');
+            } else {
+                console.log('  ⚠️  Sin imagen disponible para comprobante de prueba.');
+            }
+        }
 
         const registerEvent = networkEvents.find(item => item.method === 'POST');
         const portalEvent = networkEvents.find(item => /public_get_payment_portal/.test(item.url));
