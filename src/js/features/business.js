@@ -545,7 +545,15 @@ window.initBusinessSuite = async function () {
         const params = new URLSearchParams(window.location.search);
         const setupIdFromUrl = params.get('id');
         let setupIdFromSession = '';
-        try { setupIdFromSession = sessionStorage.getItem('pending_setup_id') || ''; } catch (_) {}
+        
+        // CRÍTICO: Si la URL ACTUAL no tiene ?id=, SIEMPRE limpiar sessionStorage
+        // para evitar que anteriores clones GIFT desvíen el flujo (issue: crear clon → recargar sin ?id= → sigue abriendo clon)
+        if (!setupIdFromUrl) {
+            try { sessionStorage.removeItem('pending_setup_id'); } catch (_) {}
+        } else {
+            try { setupIdFromSession = sessionStorage.getItem('pending_setup_id') || ''; } catch (_) {}
+        }
+        
         const effectiveSetupId = String(window._PENDING_SETUP_ID || setupIdFromUrl || setupIdFromSession || '').trim();
 
         if (effectiveSetupId) {
