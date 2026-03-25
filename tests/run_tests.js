@@ -8233,6 +8233,12 @@ test('ClinicAuth-F2e — _attemptLogin rama admin llama ClinicAdminPanel.open', 
         '_attemptLogin debe validar contrasena admin y llamar a ClinicAdminPanel.open tras login exitoso');
 });
 
+test('ClinicAuth-F2e2 — login admin persiste _activeProfessional y dispara _onLoginSuccess', () => {
+    assert(clinicAuthCode.includes('_activeProfessional = Object.assign({}, pro)') &&
+           clinicAuthCode.includes('_onLoginSuccess(_activeProfessional)'),
+        'El login admin debe marcar un profesional activo y disparar _onLoginSuccess para evitar re-apertura del PIN');
+});
+
 test('ClinicAuth-F2f — admin no puede bloquearse en _refreshBlockState', () => {
     assert(clinicAuthCode.includes('El administrador no puede bloquearse') ||
            (clinicAuthCode.includes("pro.id === '__admin__'") && clinicAuthCode.includes('enterBtn.disabled = false')),
@@ -8293,6 +8299,14 @@ test('ClinicAdminPanel-F3c — _showForceChangePassModal construye formulario de
         '_showForceChangePassModal debe construir un formulario con campos caaForcePas1 y caaForceConfirm');
 });
 
+test('ClinicAdminPanel-F3d — panel usa layout flex con cierre superior visible', () => {
+    const cap = fs.readFileSync(path.join(root, 'src/js/features/clinicAdminPanel.js'), 'utf-8');
+    assert(cap.includes('#clinicAdminInner{display:flex;flex-direction:column;flex:1;min-height:0;}') &&
+           cap.includes('caaPanelCloseTop') &&
+           cap.includes('#clinicAdminContent{flex:1;min-height:0;overflow-y:auto;'),
+        'El panel admin debe mantener footer visible y un cierre superior aun con listas largas');
+});
+
 test('ClinicAdminPanel-F4a — _addPro pone primerUso:true en el nuevo profesional', () => {
     const cap = fs.readFileSync(path.join(root, 'src/js/features/clinicAdminPanel.js'), 'utf-8');
     assert(cap.includes('primerUso:     true'),
@@ -8309,6 +8323,30 @@ test('ClinicSetup-F1a — businessFactorySetupUtils persiste adminDni/adminPass/
     const bf = fs.readFileSync(path.join(root, 'src/js/features/businessFactorySetupUtils.js'), 'utf-8');
     assert(bf.includes('adminUser') && bf.includes('adminPass') && bf.includes('adminDni'),
         'businessFactorySetupUtils debe mapear adminUser/adminPass/adminDni en workplaceProfiles para CLINIC');
+});
+
+test('ClinicSetup-F1b — businessFactorySetupUtils limpia API key stale cuando el backend no provee una', () => {
+    const bf = fs.readFileSync(path.join(root, 'src/js/features/businessFactorySetupUtils.js'), 'utf-8');
+    assert(bf.includes("window.clearGroqApiKey('factory-setup-no-api-key')") ||
+           (bf.includes("localStorage.removeItem('groq_api_key')") && bf.includes("appDB.set('groq_api_key', '')")),
+        'El factory setup debe limpiar una API key stale cuando el backend no devuelve key para el clon');
+});
+
+test('ClinicUi-F1 — _launchSessionAssistant no abre el asistente para __admin__', () => {
+    const helpers = fs.readFileSync(path.join(root, 'src/js/features/businessUiHelpers.js'), 'utf-8');
+    assert(helpers.includes("activeProfessional.id === '__admin__'") &&
+           helpers.includes("sessionAssistantOverlay") &&
+           helpers.includes('return;'),
+        'businessUiHelpers.js debe bloquear el Session Assistant cuando el perfil activo es Administrador');
+});
+
+test('ClinicUi-F2 — uiApiManagement suprime banner de API key en runtime clone/CLINIC', () => {
+    const code = fs.readFileSync(path.join(root, 'src/js/utils/uiApiManagementUtils.js'), 'utf-8');
+    assert(code.includes('function isClinicManagedRuntime()') &&
+           code.includes("url.searchParams.get('id')") &&
+           code.includes("window.clearGroqApiKey('clinic-invalid-stale-key')") &&
+           code.includes('return; // no mostrar banner en CLINIC/clone'),
+        'uiApiManagementUtils.js debe detectar clones CLINIC y ocultar el banner limpiando keys stale');
 });
 
 test('ClinicAuth-F5a — modal clinicAuth tiene botón de recuperación', () => {

@@ -146,6 +146,17 @@ function _showManualInstallHint() {
 
 // Helper: inicializar y abrir Session Assistant
 function _launchSessionAssistant() {
+    try {
+        const activeProfessional = (typeof window.ClinicAuth !== 'undefined' && typeof window.ClinicAuth.getActiveProfessional === 'function')
+            ? window.ClinicAuth.getActiveProfessional()
+            : null;
+        if (activeProfessional && activeProfessional.id === '__admin__') {
+            const overlay = document.getElementById('sessionAssistantOverlay');
+            if (overlay) overlay.classList.remove('active');
+            return;
+        }
+    } catch (_) {}
+
     if (typeof initSessionAssistant === 'function') initSessionAssistant();
     // Pequeno delay para que la UI se estabilice
     setTimeout(() => {

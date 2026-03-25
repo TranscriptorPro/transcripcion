@@ -247,7 +247,8 @@
             'display:none;align-items:center;justify-content:center;padding:20px;}',
             '#clinicAdminBox{background:var(--bg-card,#fff);border-radius:18px;',
             'box-shadow:0 20px 60px rgba(0,0,0,.5);padding:24px 24px 18px;',
-            'width:100%;max-width:500px;max-height:90vh;display:flex;flex-direction:column;}',
+            'width:100%;max-width:500px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;}',
+            '#clinicAdminInner{display:flex;flex-direction:column;flex:1;min-height:0;}',
             '.caa-title{font-size:1.05rem;font-weight:900;color:var(--text-primary,#0f172a);margin-bottom:3px;}',
             '.caa-sub{font-size:.8rem;color:var(--text-secondary,#64748b);margin-bottom:16px;}',
             '.caa-label{display:block;font-size:.77rem;font-weight:700;color:var(--text-secondary,#475569);margin-bottom:3px;}',
@@ -265,7 +266,7 @@
             '.caa-warn{background:#fef3c7;color:#92400e;}.caa-warn:hover{background:#fde68a;}',
             '.caa-success{background:#dcfce7;color:#166534;}.caa-success:hover{background:#bbf7d0;}',
             '.caa-info{background:#e0f2fe;color:#0369a1;}.caa-info:hover{background:#bae6fd;}',
-            '#clinicAdminContent{flex:1;overflow-y:auto;margin:-4px -4px 0;padding:4px 4px 0;}',
+            '#clinicAdminContent{flex:1;min-height:0;overflow-y:auto;margin:-4px -4px 0;padding:4px 4px 0;}',
             '.caa-pro-card{background:var(--bg-surface,#f8fafc);border:1.5px solid #e2e8f0;',
             'border-radius:12px;padding:14px;margin-bottom:10px;}',
             '.caa-pro-card.inactive{opacity:.55;border-color:#cbd5e1;}',
@@ -273,6 +274,10 @@
             '.caa-pro-meta{font-size:.75rem;color:var(--text-secondary,#64748b);margin-bottom:8px;line-height:1.5;}',
             '.caa-pro-actions{display:flex;gap:6px;flex-wrap:wrap;}',
             '.caa-pro-actions .caa-btn{font-size:.76rem;padding:6px 10px;}',
+            '.caa-head-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px;}',
+            '.caa-head-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}',
+            '.caa-icon-close{width:38px;height:38px;border-radius:999px;border:1.5px solid #e2e8f0;background:#fff;color:#475569;font-size:1.1rem;font-weight:900;cursor:pointer;}',
+            '.caa-icon-close:hover{background:#f8fafc;color:#0f172a;}',
             '.caa-add-btn{width:100%;margin:8px 0 4px;border:2px dashed #94a3b8;background:none;',
             'padding:12px;border-radius:10px;color:#64748b;font-size:.86rem;cursor:pointer;',
             'transition:all .15s;}',
@@ -386,8 +391,15 @@
         var syncMode = _backendSyncEnabled() ? 'Backend activo' : 'Solo local';
 
         inner.innerHTML = [
-            '<div class="caa-title">⚕️ Gestión de Profesionales</div>',
-            '<div class="caa-sub">' + _esc(clinicName) + ' · ' + _esc(syncMode) + '</div>',
+            '<div class="caa-head-row">',
+            '  <div>',
+            '    <div class="caa-title">⚕️ Gestión de Profesionales</div>',
+            '    <div class="caa-sub">' + _esc(clinicName) + ' · ' + _esc(syncMode) + '</div>',
+            '  </div>',
+            '  <div class="caa-head-actions">',
+            '    <button class="caa-icon-close" id="caaPanelCloseTop" aria-label="Cerrar panel">✕</button>',
+            '  </div>',
+            '</div>',
             '<div id="clinicAdminContent"><div id="caaProList"></div></div>',
             '<div class="caa-close-row">',
             '  <span class="caa-limit-badge" id="caaProfCount">' + profs.length + ' / ' + maxProfs + ' profesionales</span>',
@@ -398,6 +410,7 @@
             '</div>',
         ].join('');
 
+    document.getElementById('caaPanelCloseTop').addEventListener('click', close_);
         document.getElementById('caaPanelClose').addEventListener('click', close_);
         document.getElementById('caaPanelCreds').addEventListener('click', _showChangeCredsSection);
 

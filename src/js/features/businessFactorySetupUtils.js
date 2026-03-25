@@ -364,9 +364,13 @@ window.handleFactorySetupCore = async function (medicoId) {
         } else {
             // Sin API Key en el backend: limpiar cualquier key stale de sesiones
             // de testing previas para evitar validaciones falsas (banner "Key inválida").
-            localStorage.removeItem('groq_api_key');
-            if (typeof appDB !== 'undefined') appDB.set('groq_api_key', '');
-            window.GROQ_API_KEY = '';
+            if (typeof window.clearGroqApiKey === 'function') {
+                window.clearGroqApiKey('factory-setup-no-api-key');
+            } else {
+                localStorage.removeItem('groq_api_key');
+                if (typeof appDB !== 'undefined') appDB.set('groq_api_key', '');
+                window.GROQ_API_KEY = '';
+            }
         }
         if (apiKeyB1) {
             if (typeof appDB !== 'undefined') appDB.set('groq_api_key_b1', apiKeyB1);

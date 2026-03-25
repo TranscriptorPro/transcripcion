@@ -5,6 +5,22 @@ window.initApiManagement = function () {
     const apiKeyInput = document.getElementById('apiKeyInput');
     const apiTestResult = document.getElementById('apiTestResult');
 
+    function isClinicManagedRuntime() {
+        try {
+            const url = new URL(window.location.href);
+            if (String(url.searchParams.get('id') || '').trim()) return true;
+        } catch (_) {}
+
+        try {
+            const cfg = JSON.parse(localStorage.getItem('client_config_stored') || '{}') || {};
+            const planCode = String(cfg.planCode || cfg.plan || '').trim().toLowerCase();
+            const type = String(cfg.type || '').trim().toLowerCase();
+            if (planCode === 'clinic' || type === 'clinic' || cfg.canGenerateApps === true) return true;
+        } catch (_) {}
+
+        return false;
+    }
+
     function normalizeKey(key) {
         if (typeof window.normalizeGroqApiKey === 'function') {
             return window.normalizeGroqApiKey(key);
@@ -39,15 +55,18 @@ window.initApiManagement = function () {
                     // (viene del backend), no por el usuario final. Si hay una key
                     // stale inválida, la eliminamos silenciosamente en lugar de
                     // mostrar el banner de configuración al usuario.
-                    try {
-                        const cfg = JSON.parse(localStorage.getItem('client_config_stored') || '{}');
-                        if (cfg.plan === 'CLINIC' || cfg.type === 'CLINIC') {
+                    if (isClinicManagedRuntime()) {
+                        if (typeof window.clearGroqApiKey === 'function') {
+                            window.clearGroqApiKey('clinic-invalid-stale-key');
+                        } else {
                             localStorage.removeItem('groq_api_key');
                             window.GROQ_API_KEY = '';
-                            if (typeof updateApiStatus === 'function') updateApiStatus('');
-                            return; // no mostrar banner en CLINIC
                         }
-                    } catch (_) {}
+                        const banner = document.getElementById('apiKeyWarningBanner');
+                        if (banner) banner.style.display = 'none';
+                        if (typeof updateApiStatus === 'function') updateApiStatus('');
+                        return; // no mostrar banner en CLINIC/clone
+                    }
                     // Key almacenada pero invalida (revocada o expirada)
                     const banner = document.getElementById('apiKeyWarningBanner');
                     if (banner) banner.style.display = 'flex';
