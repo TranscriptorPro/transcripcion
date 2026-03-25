@@ -149,6 +149,12 @@
         }).catch(function() {});
     }
 
+    function _getEffectiveMaxProfs(clinic, profs) {
+        var configured = Number((clinic || {}).maxProfesionales) || 3;
+        var current = Array.isArray(profs) ? profs.length : 0;
+        return Math.max(configured, current, 1);
+    }
+
     function _getAdminCreds() {
         var wp = _getWP();
         var w  = wp[0] || {};
@@ -386,7 +392,7 @@
         var wp        = _getWP();
         var clinic    = wp[0] || {};
         var profs     = Array.isArray(clinic.professionals) ? clinic.professionals : [];
-        var maxProfs  = clinic.maxProfesionales || 3;
+        var maxProfs  = _getEffectiveMaxProfs(clinic, profs);
         var clinicName = clinic.name || 'Clínica';
         var syncMode = _backendSyncEnabled() ? 'Backend activo' : 'Solo local';
 
@@ -425,7 +431,7 @@
         var wp       = _getWP();
         var clinic   = wp[0] || {};
         var profs    = Array.isArray(clinic.professionals) ? clinic.professionals : [];
-        var maxProfs = clinic.maxProfesionales || 3;
+        var maxProfs = _getEffectiveMaxProfs(clinic, profs);
 
         var badge = document.getElementById('caaProfCount');
         if (badge) badge.textContent = profs.length + ' / ' + maxProfs + ' profesionales';
@@ -647,7 +653,7 @@
     function _addPro() {
         var wp       = _getWP();
         var profs    = (wp[0] && wp[0].professionals) || [];
-        var maxProfs = (wp[0] && wp[0].maxProfesionales) || 3;
+        var maxProfs = _getEffectiveMaxProfs((wp[0] || {}), profs);
         if (profs.length >= maxProfs) return;
 
         var newPro = {
