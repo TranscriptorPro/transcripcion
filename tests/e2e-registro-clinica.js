@@ -27,9 +27,9 @@ const WAIT_FOR_SUBMIT_MS = Number(process.env.WAIT_FOR_SUBMIT_MS || 45000);
 const FINAL_PAUSE_MS = Number(process.env.FINAL_PAUSE_MS || 12000);
 
 const CLINICA = {
-    nombre: 'Clinica La Casa Del Arbol',
+    nombre: 'La isla bonita',
     cuit: '30-70011223-9',
-    email: 'admin@lacasadelarbol.demo',
+    email: 'admin@laislabonita.demo',
     telefono: '+54 11 4500-7700',
     sedes: [
         {
@@ -50,11 +50,11 @@ const CLINICA = {
     profesionales: [
         {
             titulo: 'Dr.',
-            nombre: 'Hernan Guillermo Rios',
+            nombre: 'Hernan Rios',
             matricula: 'MN 87654',
             especialidad: 'Cardiologia',
             telefono: '+54 11 4500-7701',
-            email: 'h.rios@lacasadelarbol.demo',
+            email: 'h.rios@laislabonita.demo',
             usuario: 'hrios',
             pin: '4521'
         },
@@ -64,19 +64,29 @@ const CLINICA = {
             matricula: 'MN 43210',
             especialidad: 'Neurologia',
             telefono: '+54 11 4500-7702',
-            email: 'v.souza@lacasadelarbol.demo',
+            email: 'v.souza@laislabonita.demo',
             usuario: 'vsouza',
             pin: '7890'
         },
         {
             titulo: 'Dr.',
-            nombre: 'Lucas Matias Ferreira',
+            nombre: 'Lucas Ferreira',
             matricula: 'MN 99001',
             especialidad: 'Diagnostico por Imagenes',
             telefono: '+54 11 4500-7703',
-            email: 'l.ferreira@lacasadelarbol.demo',
+            email: 'l.ferreira@laislabonita.demo',
             usuario: 'lferreira',
             pin: '1357'
+        },
+        {
+            titulo: 'Dra.',
+            nombre: 'Micaela Torres',
+            matricula: 'MN 55443',
+            especialidad: 'Pediatria',
+            telefono: '+54 11 4500-7704',
+            email: 'm.torres@laislabonita.demo',
+            usuario: 'mtorres',
+            pin: '2468'
         }
     ]
 };
@@ -287,8 +297,8 @@ function basenameList(files) {
 
     const imagePool = listImageFiles(LOGOS_DIR);
     const workplaceImages = pickImages(imagePool, 2, 'logo');
-    const signatureImages = pickImages(imagePool, 3, 'firma');
-    const professionalLogoImages = pickImages(imagePool, 3, 'logo');
+    const signatureImages = pickImages(imagePool, 4, 'firma');
+    const professionalLogoImages = pickImages(imagePool, 4, 'logo');
     const usedImages = basenameList(workplaceImages.concat(signatureImages, professionalLogoImages));
 
     if (!imagePool.length) {
@@ -354,7 +364,7 @@ function basenameList(files) {
 
         console.log('▶ Paso 2 — Especialidades y estudios');
         await shot(page, 'paso2_especialidades', 'Listado inicial de especialidades disponibles.');
-        const especialidades = ['Cardiología', 'Neurología', 'Diagnóstico por Imágenes'];
+        const especialidades = ['Cardiología', 'Neurología', 'Diagnóstico por Imágenes', 'Pediatría'];
         for (const esp of especialidades) {
             const checkbox = page.locator(`.checkbox-item:has-text("${esp}") input`);
             if (await checkbox.count()) {
@@ -367,7 +377,7 @@ function basenameList(files) {
             await btnTodos.click();
             await page.waitForTimeout(350);
         }
-        await shot(page, 'paso2_estudios_seleccionados', 'Especialidades y estudios completos para los tres profesionales.');
+        await shot(page, 'paso2_estudios_seleccionados', 'Especialidades y estudios completos para los cuatro profesionales.');
 
         await page.locator('#step2 .btn-row .btn-primary').click();
         await page.waitForTimeout(850);

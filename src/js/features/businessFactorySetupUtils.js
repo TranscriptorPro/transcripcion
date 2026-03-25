@@ -166,10 +166,17 @@ window.handleFactorySetupCore = async function (medicoId) {
                     localStorage.setItem('workplace_profiles', JSON.stringify(workplaceProfiles));
 
                     // ── CLINIC mode: si vienen profesionales, poblar el primer workplace ──
-                    // regDatos.profesionales (de Registro_Datos) o doctor.Profesionales (campo top-level)
+                    // regDatos.profesionales puede venir como array o string JSON.
                     let clinicProfs = [];
                     try {
-                        clinicProfs = regDatos.profesionales || JSON.parse(doctor.Profesionales || '[]');
+                        const fromRegistro = regDatos.profesionales;
+                        if (Array.isArray(fromRegistro)) {
+                            clinicProfs = fromRegistro;
+                        } else if (typeof fromRegistro === 'string' && fromRegistro.trim()) {
+                            clinicProfs = JSON.parse(fromRegistro);
+                        } else {
+                            clinicProfs = JSON.parse(doctor.Profesionales || '[]');
+                        }
                     } catch(_) {}
                     if (Array.isArray(clinicProfs) && clinicProfs.length >= 1) {
                         workplaceProfiles[0].professionals = clinicProfs.map(function(p, idx) {
