@@ -188,23 +188,47 @@ function _showClientOnboarding() {
         const showQR = document.getElementById('onbToggleQR')?.checked ?? false;
         const activeMargin = document.querySelector('.onb-margin-btn.active')?.dataset.margin || 'normal';
         const marginPx = activeMargin === 'narrow' ? '8px' : activeMargin === 'wide' ? '22px' : '14px';
-        const profName = profData.nombre || 'Dr. Juan Perez';
-        const profMat = profData.matricula || 'MP 12345';
+        const isClinic = (window.CLIENT_CONFIG && String(window.CLIENT_CONFIG.planCode || '').toLowerCase() === 'clinic');
+        // Para CLINIC: el encabezado institucional muestra el nombre de la clínica;
+        // la sección del profesional muestra un médico de ejemplo del equipo.
+        let instName, instAddr, headerName, headerMat;
+        if (isClinic) {
+            // Nombre de la institución: workplace_profiles[0].name o prof_data.nombre
+            try {
+                const wp = JSON.parse(localStorage.getItem('workplace_profiles') || '[]');
+                instName = (wp[0] && wp[0].name) || profData.nombre || 'La Clínica';
+                instAddr = (wp[0] && wp[0].address) || '';
+                // Primer profesional del equipo como ejemplo
+                const firstPro = wp[0] && Array.isArray(wp[0].professionals) && wp[0].professionals[0];
+                headerName = (firstPro && firstPro.nombre) || 'Dr. Juan García';
+                headerMat  = (firstPro && firstPro.matricula) || 'MN 12345';
+            } catch (_) {
+                instName   = profData.nombre || 'La Clínica';
+                instAddr   = '';
+                headerName = 'Dr. Juan García';
+                headerMat  = 'MN 12345';
+            }
+        } else {
+            instName   = 'Centro Medico';
+            instAddr   = 'Av. Ejemplo 1234 • Tel: 0341-4567890';
+            headerName = profData.nombre || 'Dr. Juan Perez';
+            headerMat  = profData.matricula || 'MP 12345';
+        }
         preview.innerHTML = `
             <div class="onb-prev-page" style="padding:${marginPx};">
                 <div class="onb-prev-inst" style="${showLogoInst ? '' : 'opacity:0.25;'}">
                     <div class="onb-prev-inst-logo" style="${showLogoInst ? '' : 'background:#ddd;'}">🏥</div>
                     <div class="onb-prev-inst-text">
-                        <div style="font-weight:700;font-size:6px;color:#333;">Centro Medico</div>
-                        <div style="font-size:4.5px;color:#888;">Av. Ejemplo 1234 • Tel: 0341-4567890</div>
+                        <div style="font-weight:700;font-size:6px;color:#333;">${instName}</div>
+                        <div style="font-size:4.5px;color:#888;">${instAddr}</div>
                     </div>
                 </div>
                 <div class="onb-prev-header" style="border-color:${selectedColor};">
                     <div style="display:flex;align-items:center;gap:4px;">
                         ${showLogoPro ? '<div class="onb-prev-prof-logo">👨‍⚕️</div>' : ''}
                         <div style="flex:1;min-width:0;">
-                            <div style="font-weight:700;font-size:5.5px;color:${selectedColor};">${profName}</div>
-                            <div style="font-size:4.5px;color:#666;">${profMat}</div>
+                            <div style="font-weight:700;font-size:5.5px;color:${selectedColor};">${headerName}</div>
+                            <div style="font-size:4.5px;color:#666;">${headerMat}</div>
                         </div>
                         <div style="font-size:4px;color:#999;">01/03/2026</div>
                     </div>
@@ -233,8 +257,8 @@ function _showClientOnboarding() {
                 <div class="onb-prev-firma" style="${showFirma ? '' : 'opacity:0.2;'}">
                     ${showFirma ? '<div style="font-size:10px;margin-bottom:1px;">✍️</div>' : ''}
                     <div style="width:40px;border-top:1px solid #666;margin:0 auto;"></div>
-                    <div style="font-size:4.5px;color:#555;margin-top:1px;">${profName}</div>
-                    <div style="font-size:4px;color:#888;">${profMat}</div>
+                    <div style="font-size:4.5px;color:#555;margin-top:1px;">${headerName}</div>
+                    <div style="font-size:4px;color:#888;">${headerMat}</div>
                 </div>
                 ${showQR ? '<div class="onb-prev-qr"><div style="width:18px;height:18px;background:#f0f0f0;border:1px solid #ddd;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:9px;">📱</div><div style="font-size:3.5px;color:#aaa;">QR Verificacion</div></div>' : ''}
             </div>

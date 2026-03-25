@@ -9,7 +9,7 @@
     <!-- PURGE: auto-purge al detectar nueva versión + ?purge manual. Preserva tema y color -->
     <script>
     (function() {
-        var APP_VERSION = 'v222'; // ← bump esto en cada deploy para forzar auto-purge
+        var APP_VERSION = 'v223'; // ← bump esto en cada deploy para forzar auto-purge
         try { window.APP_VERSION = APP_VERSION; } catch(_) {}
         var params = new URLSearchParams(window.location.search);
         var forcePurge = params.has('purge');
@@ -3046,20 +3046,7 @@
                 // Report history panel (Etapa 4)
                 if (typeof initReportHistoryPanel === 'function') initReportHistoryPanel();
 
-                // Backup reminder — cada 7 días recordar exportar datos
-                (function backupReminder() {
-                    const BACKUP_KEY = 'last_backup_reminder';
-                    const INTERVAL   = 7 * 24 * 60 * 60 * 1000; // 7 días
-                    const last = parseInt(localStorage.getItem(BACKUP_KEY) || '0', 10);
-                    if (Date.now() - last > INTERVAL) {
-                        setTimeout(function () {
-                            if (typeof showToast === 'function') {
-                                showToast('💾 Recordatorio: exporte sus datos periódicamente desde el panel de historial para tener un respaldo seguro.', 'info', 8000);
-                            }
-                            localStorage.setItem(BACKUP_KEY, String(Date.now()));
-                        }, 15000); // Mostrar 15s después de cargar para no molestar al inicio
-                    }
-                })();
+                // Backup reminder eliminado — era demasiado intrusivo.
             });
         </script>
 

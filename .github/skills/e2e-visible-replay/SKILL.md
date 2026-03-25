@@ -1,4 +1,4 @@
-# E2E Visible Replay Skill
+## E2E Visible Replay Skill
 
 ## Purpose
 Use this skill to run UI end-to-end tests in a way that is easy for users to monitor in real time and review after execution.
