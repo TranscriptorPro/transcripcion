@@ -57,6 +57,13 @@
         }
     }
 
+    function forceSelectProfessional() {
+        switchProfessional();
+        if (!isVisible() && _professionals.length) {
+            _showModal();
+        }
+    }
+
     // Llama a addEventListener en el botón #btnCambiarProfesional del header
     function setupChangeProfButton() {
         const btn = document.getElementById('btnCambiarProfesional');
@@ -640,6 +647,7 @@
         getActiveProfessional: getActiveProfessional,
         isVisible:             isVisible,
         switchProfessional:    switchProfessional,
+        forceSelectProfessional: forceSelectProfessional,
         setupChangeProfButton: setupChangeProfButton,
         resolveProfessionals:  resolveProfessionals,
         _normalizeList:        normalizeList  // expuesto para tests

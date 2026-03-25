@@ -135,6 +135,19 @@ async function readUiSnapshot(page) {
             catch (_) { return {}; }
         })();
 
+        const authDebug = (() => {
+            const overlay = document.getElementById('clinicAuthOverlay');
+            const active = (window.ClinicAuth && typeof window.ClinicAuth.getActiveProfessional === 'function')
+                ? window.ClinicAuth.getActiveProfessional()
+                : null;
+            return {
+                overlayExists: !!overlay,
+                overlayDisplay: overlay ? getComputedStyle(overlay).display : null,
+                overlayVisibility: overlay ? getComputedStyle(overlay).visibility : null,
+                activeId: active ? String(active.id || '') : null
+            };
+        })();
+
         return {
             title: document.title,
             planCode: String(clientCfg.planCode || ''),
@@ -155,6 +168,7 @@ async function readUiSnapshot(page) {
                 const el = card.querySelector('.caa-pro-name');
                 return el ? el.textContent.trim() : '';
             }),
+            authDebug,
             panelGeometry
         };
     });
@@ -292,11 +306,14 @@ async function run() {
 
         await page.screenshot({ path: path.join(OUT_DIR, `clinic-admin-open-${ts}.png`), fullPage: false });
         await page.click('#caaPanelCloseTop');
-        await page.waitForTimeout(400);
+        await page.waitForTimeout(700);
 
         snap = await readUiSnapshot(page);
         if (snap.adminVisible) fail('panel admin cierra correctamente', 'sigue visible');
         logPass('panel admin cierra correctamente');
+
+        if (!snap.authVisible) fail('handoff obligatorio tras cerrar admin', JSON.stringify({ authVisible: snap.authVisible, adminVisible: snap.adminVisible, assistantVisible: snap.assistantVisible, authDebug: snap.authDebug }));
+        logPass('handoff obligatorio tras cerrar admin');
 
         await page.screenshot({ path: path.join(OUT_DIR, `clinic-admin-closed-${ts}.png`), fullPage: false });
         console.log('OK smoke completado');

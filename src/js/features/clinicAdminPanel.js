@@ -181,6 +181,22 @@
     function close_() {
         var ov = document.getElementById(OVERLAY_ID);
         if (ov) ov.style.display = 'none';
+
+        // Forzar handoff al selector de profesional al cerrar administración.
+        // Esto evita que la sesión quede operando como admin por accidente.
+        try {
+            if (window.ClinicAuth && typeof window.ClinicAuth.forceSelectProfessional === 'function') {
+                window.ClinicAuth.forceSelectProfessional();
+                if (typeof showToast === 'function') {
+                    showToast('Seleccioná el profesional que va a trabajar.', 'info');
+                }
+            } else if (window.ClinicAuth && typeof window.ClinicAuth.switchProfessional === 'function') {
+                window.ClinicAuth.switchProfessional();
+                if (typeof showToast === 'function') {
+                    showToast('Seleccioná el profesional que va a trabajar.', 'info');
+                }
+            }
+        } catch (_) {}
     }
     // ── Fase 3: apertura autenticada (desde modal PIN) — omite pantalla de login ─
     function openAuthenticated() {
