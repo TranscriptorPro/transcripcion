@@ -253,7 +253,12 @@
                     throw new Error(data.error);
                 }
 
-                return data.users || [];
+                const users = data.users || [];
+                // Guardar en caché con timestamp para stale-while-revalidate
+                try {
+                    sessionStorage.setItem('_adminUsersCache', JSON.stringify({ ts: Date.now(), users }));
+                } catch (_) {}
+                return users;
             } catch (error) {
                 console.error('Error fetching users:', error);
                 showToast('Error al cargar usuarios. Usando datos de muestra.', 'warning');
@@ -1756,6 +1761,34 @@
         }
 
         async function loadDashboard(silent = false) {
+            // STALE-WHILE-REVALIDATE: mostrar caché al instante, actualizar en background
+            const CACHE_TTL_MS = 3 * 60 * 1000; // 3 minutos
+            let cachedData = null;
+            try {
+                const raw = sessionStorage.getItem('_adminUsersCache');
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed && parsed.users && (Date.now() - parsed.ts) < CACHE_TTL_MS) {
+                        cachedData = parsed.users;
+                    }
+                }
+            } catch (_) {}
+
+            if (cachedData) {
+                // Render inmediato con datos cacheados
+                allUsers = cachedData;
+                updateStats(allUsers);
+                applyFilters();
+                // Actualizar en background sin bloquear la UI
+                fetchUsers().then(freshUsers => {
+                    if (!freshUsers || freshUsers === SAMPLE_USERS) return;
+                    allUsers = freshUsers;
+                    updateStats(allUsers);
+                    applyFilters();
+                }).catch(() => {});
+                return;
+            }
+
             if (!silent) {
                 document.getElementById('tableBody').innerHTML =
                     '<tr><td colspan="8" class="text-center">⏳ Cargando datos...</td></tr>';
@@ -1891,6 +1924,12 @@
 
         /* ── Init ────────────────────────────────────────────────────────────── */
         document.addEventListener('DOMContentLoaded', async () => {
+            // WARM-UP del Google Apps Script en paralelo (dispara el cold start lo antes posible)
+            // Solo un ping, no esperamos la respuesta — reduce el cold start en futuras llamadas
+            if (CONFIG.scriptUrl && CONFIG.scriptUrl !== 'PASTE_APPS_SCRIPT_URL_HERE') {
+                fetch(`${CONFIG.scriptUrl}?action=ping`, { method: 'GET', cache: 'no-cache' }).catch(() => {});
+            }
+
             ensureRegQuickLinkButton();
             ensureLogsClearButton();
             _ensureTemplatesAdminTab();
