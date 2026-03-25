@@ -830,17 +830,28 @@ function doGet(e) {
     if (!auth.authorized) return createResponse({ error: auth.error });
     const result = _setupAllSheets();
     return createResponse({ success: true, result: result });
+  }
 
-    // repair_telefono — repara celdas #ERROR! en columna Telefono de hoja Usuarios
-    if (action === 'repair_telefono') {
-      const auth = _verifyAdminAuth(e.parameter);
-      if (!auth.authorized) return createResponse({ error: auth.error });
-      const repSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-      if (!repSheet) return createResponse({ error: 'Hoja Usuarios no encontrada' });
-      const fixed = _repairTelefonoColumn(repSheet);
-      return createResponse({ success: true, fixed: fixed, message: 'Columna Telefono reparada. Celdas corregidas: ' + fixed });
-    }
+  // repair_telefono — repara celdas #ERROR! y fija formato texto en todas las hojas con Telefono
+  if (action === 'repair_telefono') {
+    const auth = _verifyAdminAuth(e.parameter);
+    if (!auth.authorized) return createResponse({ error: auth.error });
 
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const repUsuarios = ss.getSheetByName(SHEET_NAME);
+    const repRegistros = ss.getSheetByName(SHEET_REGISTROS);
+
+    const fixedUsuarios = repUsuarios ? _repairTelefonoColumn(repUsuarios) : 0;
+    const fixedRegistros = repRegistros ? _repairRegistrosTelefonoColumn(repRegistros) : 0;
+    const fixedTotal = fixedUsuarios + fixedRegistros;
+
+    return createResponse({
+      success: true,
+      fixed: fixedTotal,
+      fixedUsuarios: fixedUsuarios,
+      fixedRegistros: fixedRegistros,
+      message: 'Telefonos reparados. Usuarios: ' + fixedUsuarios + ', Registros: ' + fixedRegistros
+    });
   }
 
   // admin_delete_user — elimina un usuario específico por ID_Medico
@@ -1584,6 +1595,7 @@ function doGet(e) {
 
       // Crear usuario en hoja Usuarios
       const userSheet = ss.getSheetByName(SHEET_NAME);
+      _ensureUsuariosHeaders(userSheet);
       const userHeaders = userSheet.getDataRange().getValues()[0];
 
       const now = new Date().toISOString();
@@ -1636,6 +1648,11 @@ function doGet(e) {
       };
 
       const userRow = userHeaders.map(h => (userData[h] !== undefined ? userData[h] : ''));
+      const telColUser = userHeaders.indexOf('Telefono');
+      if (telColUser !== -1) {
+        const nextRow = userSheet.getLastRow() + 1;
+        userSheet.getRange(nextRow, telColUser + 1, 1, 1).setNumberFormat('@STRING@');
+      }
       userSheet.appendRow(userRow);
 
       // Marcar registro como aprobado
@@ -2641,6 +2658,11 @@ function doPost(e) {
       };
 
       const userRow = userHeaders.map(h => (userData[h] !== undefined ? userData[h] : ''));
+      const telColUserPost = userHeaders.indexOf('Telefono');
+      if (telColUserPost !== -1) {
+        const nextRowPost = userSheet.getLastRow() + 1;
+        userSheet.getRange(nextRowPost, telColUserPost + 1, 1, 1).setNumberFormat('@STRING@');
+      }
       userSheet.appendRow(userRow);
 
       if (estadoCol !== -1) regSheet.getRange(regRow, estadoCol + 1).setValue('aprobado');
@@ -2695,6 +2717,11 @@ function doPost(e) {
 
     // Construir fila siguiendo el orden de los headers
     const row = freshHeaders.map(h => (userData[h] !== undefined ? userData[h] : ''));
+    const telColCreatePost = freshHeaders.indexOf('Telefono');
+    if (telColCreatePost !== -1) {
+      const newRowNumPost = sheet.getLastRow() + 1;
+      sheet.getRange(newRowNumPost, telColCreatePost + 1, 1, 1).setNumberFormat('@STRING@');
+    }
     sheet.appendRow(row);
     appendAdminLog(payload.sessionUser || 'admin', 'create_user', userData.ID_Medico, userData.Nombre || '');
     return createResponse({ success: true, userId: userData.ID_Medico });
@@ -2868,6 +2895,12 @@ function doPost(e) {
         Last_Receipt_At:    ''
       };
       const row = workingHeaders.map(function(h) { return rowData[h] !== undefined ? rowData[h] : ''; });
+
+      const telColReg = workingHeaders.indexOf('Telefono');
+      if (telColReg !== -1) {
+        const nextRegRow = regSheet.getLastRow() + 1;
+        regSheet.getRange(nextRegRow, telColReg + 1, 1, 1).setNumberFormat('@STRING@');
+      }
 
       regSheet.appendRow(row);
 
@@ -3516,6 +3549,37 @@ function _repairTelefonoColumn(sheet) {
   }
   return fixed;
 }
+
+/**
+ * Formatea/repara Telefono en Registros_Pendientes.
+ * Mantiene helper separado para poder invocarlo de forma explícita por hoja.
+ * @param {Sheet} sheet
+ * @returns {number}
+ */
+function _repairRegistrosTelefonoColumn(sheet) {
+  var headers = sheet.getDataRange().getValues()[0];
+  var telCol = headers.indexOf('Telefono');
+  if (telCol === -1) return 0;
+
+  var lastRow = sheet.getLastRow();
+  if (lastRow > 1) {
+    sheet.getRange(2, telCol + 1, lastRow - 1, 1).setNumberFormat('@STRING@');
+  }
+
+  var formulas = sheet.getDataRange().getFormulas();
+  var displays = sheet.getDataRange().getDisplayValues();
+  var fixed = 0;
+  for (var i = 1; i < displays.length; i++) {
+    if (String(displays[i][telCol]).trim() === '#ERROR!') {
+      var rawFormula = String(formulas[i][telCol] || '');
+      var cell = sheet.getRange(i + 1, telCol + 1);
+      cell.setNumberFormat('@STRING@');
+      cell.setValue(rawFormula);
+      fixed++;
+    }
+  }
+  return fixed;
+}
 /**
  * Inicializa (o repara) los headers de todas las hojas del sistema.
  * Ejecutar una vez después de hacer cambios en la estructura.
@@ -3569,6 +3633,7 @@ function _setupAllSheets() {
     result.push('Registros_Pendientes: creada');
   } else {
     _ensureSheetHeaders(regSheet, REGISTROS_HEADERS);
+    _repairRegistrosTelefonoColumn(regSheet);
     result.push('Registros_Pendientes: OK');
   }
 
