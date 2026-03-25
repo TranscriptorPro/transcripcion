@@ -432,25 +432,22 @@
             if (activeBtn) activeBtn.classList.add('active');
 
             // Load data lazily
-            if (tabName === 'registros' && !registrosLoaded) {
+            // Load data — stale-while-revalidate en cada pestaña
+            if (tabName === 'registros') {
                 ensureRegQuickLinkButton();
                 loadRegistrations();
-                registrosLoaded = true;
-            } else if (tabName === 'metricas' && !metricsLoaded) {
+            } else if (tabName === 'metricas') {
                 loadGlobalStats();
-                metricsLoaded = true;
-            } else if (tabName === 'logs' && !logsLoaded) {
+            } else if (tabName === 'logs') {
                 loadLogs();
-                logsLoaded = true;
             } else if (tabName === 'planes') {
                 _initPlansEditor();
             } else if (tabName === 'extras') {
                 _initExtrasEditor();
             } else if (tabName === 'plantillas') {
                 _initTemplatesAdminPanel();
-            } else if (tabName === 'soporte' && !soporteLoaded) {
+            } else if (tabName === 'soporte') {
                 loadSupportRequests();
-                soporteLoaded = true;
             }
         }
 
@@ -1088,11 +1085,7 @@
             const status = document.getElementById('soporteFilter')?.value || 'pendiente';
             const cardsEl = document.getElementById('soporteCards');
             const emptyEl = document.getElementById('soporteEmpty');
-            cardsEl.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:2rem;">⏳ Cargando...</p>';
-            emptyEl.style.display = 'none';
-            try {
-                const data = await API.listSupport(status);
-                const reqs = data.requests || [];
+            const _renderSupport = (reqs) => {
                 if (reqs.length === 0) {
                     cardsEl.innerHTML = '';
                     emptyEl.style.display = 'block';
@@ -1100,13 +1093,26 @@
                     emptyEl.style.display = 'none';
                     cardsEl.innerHTML = reqs.map(r => renderSupportCard(r)).join('');
                 }
-                // Actualizar badge
                 if (status === 'pendiente' || status === 'todos') {
                     const pending = reqs.filter(r => (r.estado || '').toLowerCase() === 'pendiente').length;
                     updateSoporteBadge(status === 'pendiente' ? reqs.length : pending);
                 }
+            };
+            const cacheKey = `_adminSupportCache_${status}`;
+            const cached = sessionStorage.getItem(cacheKey);
+            if (cached) {
+                try { _renderSupport(JSON.parse(cached)); } catch(_) {}
+            } else {
+                cardsEl.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:2rem;">⏳ Cargando...</p>';
+                emptyEl.style.display = 'none';
+            }
+            try {
+                const data = await API.listSupport(status);
+                const reqs = data.requests || [];
+                sessionStorage.setItem(cacheKey, JSON.stringify(reqs));
+                _renderSupport(reqs);
             } catch (err) {
-                cardsEl.innerHTML = `<p style="color:#ef4444;text-align:center;padding:2rem;">Error: ${escapeHtml(err.message)}</p>`;
+                if (!cached) cardsEl.innerHTML = `<p style="color:#ef4444;text-align:center;padding:2rem;">Error: ${escapeHtml(err.message)}</p>`;
             }
         }
 
@@ -1277,11 +1283,9 @@
         }
 
         async function loadGlobalStats() {
-            try {
-                const resp = await API.getGlobalStats();
-                // La API devuelve { stats: {...} } — mapeamos a la estructura que espera renderGlobalStats
+            const _mapStats = (resp) => {
                 const s = resp.stats || resp;
-                const data = {
+                return {
                     transcripciones_mes: s.totalTranscripciones ?? s.transcripciones_mes ?? 0,
                     palabras_mes:        (s.totalTranscripciones ?? 0) * 180,
                     mrr:                 (s.pro ?? 0) * 29 + (s.enterprise ?? 0) * 99,
@@ -1293,9 +1297,17 @@
                     crecimiento_30dias:  s.crecimiento_30dias || buildMockGlobalStats().crecimiento_30dias,
                     top_usuarios:        s.top_usuarios || buildMockGlobalStats().top_usuarios
                 };
+            };
+            const cacheKey = '_adminMetricsCache';
+            const cached = sessionStorage.getItem(cacheKey);
+            if (cached) { try { renderGlobalStats(JSON.parse(cached)); } catch(_) {} }
+            try {
+                const resp = await API.getGlobalStats();
+                const data = _mapStats(resp);
+                sessionStorage.setItem(cacheKey, JSON.stringify(data));
                 renderGlobalStats(data);
             } catch (_) {
-                renderGlobalStats(buildMockGlobalStats());
+                if (!cached) renderGlobalStats(buildMockGlobalStats());
             }
         }
 
@@ -1366,15 +1378,22 @@
         /* ── Logs ────────────────────────────────────────────────────────────── */
         async function loadLogs() {
             const tbody = document.getElementById('logsTableBody');
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center">⏳ Cargando logs...</td></tr>';
             const filterDate = document.getElementById('logFilterDate').value;
             const filterType = document.getElementById('logFilterType').value;
-
+            const cacheKey = `_adminLogsCache_${filterDate}_${filterType}`;
+            const cached = sessionStorage.getItem(cacheKey);
+            if (cached) {
+                try { renderLogs(JSON.parse(cached)); } catch(_) {}
+            } else {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">⏳ Cargando logs...</td></tr>';
+            }
             try {
                 const data = await API.getLogs(filterDate, filterType);
-                renderLogs(data.logs || []);
+                const logs = data.logs || [];
+                sessionStorage.setItem(cacheKey, JSON.stringify(logs));
+                renderLogs(logs);
             } catch (_) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center">Sin logs disponibles</td></tr>';
+                if (!cached) tbody.innerHTML = '<tr><td colspan="5" class="text-center">Sin logs disponibles</td></tr>';
             }
         }
 
@@ -1847,6 +1866,7 @@
         /* ── Event Listeners ─────────────────────────────────────────────────── */
         document.getElementById('btnLogout').addEventListener('click', () => {
             sessionStorage.removeItem('adminSession');
+            ['_adminUsersCache','_adminRegCache','_adminMetricsCache'].forEach(k => sessionStorage.removeItem(k));
             window.location.href = 'login.html';
         });
 
@@ -3833,54 +3853,54 @@
             const emptyState = document.getElementById('registrosEmpty');
             const filterEstado = document.getElementById('regFilterEstado')?.value || 'pendiente';
 
-            container.innerHTML = '<p style="text-align:center;padding:2rem;color:#64748b;">⏳ Cargando registros...</p>';
-            emptyState.style.display = 'none';
-
             // Set registration link
             const regLink = window.location.origin + window.location.pathname.replace('admin.html', 'registro.html');
             const regLinkEl = document.getElementById('regLinkDisplay');
             if (regLinkEl) regLinkEl.textContent = regLink;
 
-            try {
-                const res = await fetch(`${CONFIG.scriptUrl}?action=admin_list_registrations&${_getSessionAuthParams()}`);
-                const data = await res.json();
-
-                if (data.error) throw new Error(data.error);
-
-                allRegistrations = data.registrations || [];
-
-                // Filter by estado
-                let filtered = allRegistrations;
+            const _renderRegs = (registrations) => {
+                allRegistrations = registrations;
+                let filtered = registrations;
                 if (filterEstado) {
                     const fe = filterEstado.toLowerCase();
                     if (fe === 'pendiente') {
-                        filtered = allRegistrations.filter(r => ['pendiente', 'pendiente_pago', 'comprobante_recibido', 'pago_confirmado'].includes(String(r.Estado || '').toLowerCase()));
+                        filtered = registrations.filter(r => ['pendiente', 'pendiente_pago', 'comprobante_recibido', 'pago_confirmado'].includes(String(r.Estado || '').toLowerCase()));
                     } else {
-                        filtered = allRegistrations.filter(r => String(r.Estado || '').toLowerCase() === fe);
+                        filtered = registrations.filter(r => String(r.Estado || '').toLowerCase() === fe);
                     }
                 }
-
-                // Update badge
-                const pendientes = allRegistrations.filter(r => ['pendiente', 'pendiente_pago', 'comprobante_recibido', 'pago_confirmado'].includes(String(r.Estado || '').toLowerCase()));
+                const pendientes = registrations.filter(r => ['pendiente', 'pendiente_pago', 'comprobante_recibido', 'pago_confirmado'].includes(String(r.Estado || '').toLowerCase()));
                 const badge = document.getElementById('regBadge');
                 if (badge) {
-                    if (pendientes.length > 0) {
-                        badge.textContent = pendientes.length;
-                        badge.style.display = 'inline';
-                    } else {
-                        badge.style.display = 'none';
-                    }
+                    badge.textContent = pendientes.length;
+                    badge.style.display = pendientes.length > 0 ? 'inline' : 'none';
                 }
-
                 if (filtered.length === 0) {
                     container.innerHTML = '';
                     emptyState.style.display = 'block';
-                    return;
+                } else {
+                    emptyState.style.display = 'none';
+                    container.innerHTML = filtered.map(reg => renderRegCard(reg)).join('');
                 }
+            };
 
-                container.innerHTML = filtered.map(reg => renderRegCard(reg)).join('');
+            const cacheKey = '_adminRegCache';
+            const cached = sessionStorage.getItem(cacheKey);
+            if (cached) {
+                try { _renderRegs(JSON.parse(cached)); } catch(_) {}
+            } else {
+                container.innerHTML = '<p style="text-align:center;padding:2rem;color:#64748b;">⏳ Cargando registros...</p>';
+                emptyState.style.display = 'none';
+            }
+            try {
+                const res = await fetch(`${CONFIG.scriptUrl}?action=admin_list_registrations&${_getSessionAuthParams()}`);
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                const registrations = data.registrations || [];
+                sessionStorage.setItem(cacheKey, JSON.stringify(registrations));
+                _renderRegs(registrations);
             } catch (err) {
-                container.innerHTML = `<p style="text-align:center;padding:2rem;color:#ef4444;">❌ ${escapeHtml(err.message)}</p>`;
+                if (!cached) container.innerHTML = `<p style="text-align:center;padding:2rem;color:#ef4444;">❌ ${escapeHtml(err.message)}</p>`;
             }
         }
 
