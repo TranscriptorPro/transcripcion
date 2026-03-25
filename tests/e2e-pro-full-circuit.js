@@ -238,6 +238,18 @@ console.log('[CIRCUIT] IIFE start');
     let approveCallReceived  = false;
     let registerPayload      = null;
 
+    // Mock Groq API — evita el banner "API Key inválida" (validación silenciosa a los 2.5s)
+    await context.route('**api.groq.com**', async (route) => {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ object: 'list', data: [
+          { id: 'whisper-large-v3', object: 'model' },
+          { id: 'llama3-8b-8192',   object: 'model' }
+        ]})
+      });
+    });
+
     await context.route('**script.google.com**exec**', async (route) => {
       const req = route.request();
       const url = req.url();
@@ -961,6 +973,21 @@ console.log('[CIRCUIT] IIFE start');
       const errTxt = await clonePage.locator('#factoryErrorOverlay').innerText().catch(() => '');
       fail('Sin #factoryErrorOverlay', errTxt.slice(0,100));
     }
+
+    // Esperar que pase el delay de validación silenciosa (2.5s + buffer)
+    await clonePage.waitForTimeout(4000);
+
+    // ⚠️ VERIFICACIÓN CRÍTICA: el banner "API Key inválida" NO debe aparecer
+    const apiKeyBanner = await clonePage.locator('#apiKeyWarningBanner')
+      .isVisible().catch(() => false);
+    if (!apiKeyBanner) {
+      pass('Sin banner "API Key inválida" (Groq 200 OK mock correcto)');
+    } else {
+      const bannerTxt = await clonePage.locator('#apiKeyWarningBanner').innerText().catch(() => '');
+      fail('Sin banner "API Key inválida"', 'banner visible: ' + bannerTxt.trim());
+    }
+
+    evidence.push(await shot(clonePage, 'f11_apikey_banner_check'));
 
     // ========================================================================
     // FASE 12 — Verificar prof_data y workplaces almacenados en clon
