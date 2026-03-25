@@ -511,6 +511,9 @@
             }
             if (entered === _getAdminPass()) {
                 errorEl.textContent = '';
+                // Marcar al administrador como profesional activo para que el
+                // watchdog no vuelva a mostrar el modal de PIN.
+                _activeProfessional = Object.assign({}, pro);
                 var adminOverlay = document.getElementById('clinicAuthOverlay');
                 if (adminOverlay) adminOverlay.style.display = 'none';
                 if (typeof showToast === 'function') {
@@ -519,6 +522,12 @@
                 if (window.ClinicAdminPanel) {
                     var openFn = window.ClinicAdminPanel.openAuthenticated || window.ClinicAdminPanel.open;
                     if (typeof openFn === 'function') openFn();
+                }
+                // Llamar al callback para que el flujo de la app continúe
+                // (sin esto el watchdog detecta _activeProfessional === null y
+                //  vuelve a abrir el modal en loop).
+                if (typeof _onLoginSuccess === 'function') {
+                    _onLoginSuccess(_activeProfessional);
                 }
             } else {
                 errorEl.textContent = 'Contraseña de administrador incorrecta.';

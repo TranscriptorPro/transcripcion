@@ -34,6 +34,20 @@ window.initApiManagement = function () {
                     headers: { Authorization: 'Bearer ' + savedKey }
                 });
                 if (res.status === 401) {
+                    // Key almacenada pero invalida (revocada o expirada).
+                    // En modo CLINIC la key es gestionada por el admin de la clínica
+                    // (viene del backend), no por el usuario final. Si hay una key
+                    // stale inválida, la eliminamos silenciosamente en lugar de
+                    // mostrar el banner de configuración al usuario.
+                    try {
+                        const cfg = JSON.parse(localStorage.getItem('client_config_stored') || '{}');
+                        if (cfg.plan === 'CLINIC' || cfg.type === 'CLINIC') {
+                            localStorage.removeItem('groq_api_key');
+                            window.GROQ_API_KEY = '';
+                            if (typeof updateApiStatus === 'function') updateApiStatus('');
+                            return; // no mostrar banner en CLINIC
+                        }
+                    } catch (_) {}
                     // Key almacenada pero invalida (revocada o expirada)
                     const banner = document.getElementById('apiKeyWarningBanner');
                     if (banner) banner.style.display = 'flex';

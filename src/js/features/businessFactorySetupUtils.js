@@ -361,6 +361,12 @@ window.handleFactorySetupCore = async function (medicoId) {
                 localStorage.setItem('groq_api_key', apiKey);
                 window.GROQ_API_KEY = apiKey;
             }
+        } else {
+            // Sin API Key en el backend: limpiar cualquier key stale de sesiones
+            // de testing previas para evitar validaciones falsas (banner "Key inválida").
+            localStorage.removeItem('groq_api_key');
+            if (typeof appDB !== 'undefined') appDB.set('groq_api_key', '');
+            window.GROQ_API_KEY = '';
         }
         if (apiKeyB1) {
             if (typeof appDB !== 'undefined') appDB.set('groq_api_key_b1', apiKeyB1);
