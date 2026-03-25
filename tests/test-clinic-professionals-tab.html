@@ -167,7 +167,9 @@ assert('Tab Profesionales existe en el DOM', function() {
 
 assert('Tab Profesionales visible para plan CLINIC', function() {
   var tab = $('.auc-tab[data-tab="profesionales"]');
-  return tab && tab.style.display !== 'none';
+  if (!tab) return false;
+  // Verificar estilo inline explícito (debe ser 'block', no '' ni 'none')
+  return tab.style.display !== '' && tab.style.display !== 'none';
 });
 
 assert('Panel Profesionales existe', function() {

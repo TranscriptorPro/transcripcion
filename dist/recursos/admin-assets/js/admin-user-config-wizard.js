@@ -415,7 +415,8 @@
 
         var proTabBtn = document.querySelector('.auc-tab[data-tab="profesionales"]');
         var isClinic = current.rules.plan === 'clinic';
-        if (proTabBtn) proTabBtn.style.display = isClinic ? '' : 'none';
+        // Usar 'block' explícito para override del CSS rule display:none
+        if (proTabBtn) proTabBtn.style.display = isClinic ? 'block' : 'none';
         if (isClinic) renderProfesionales();
 
         overlay.style.display = 'block';
