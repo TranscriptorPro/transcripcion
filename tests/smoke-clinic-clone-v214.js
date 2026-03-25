@@ -103,13 +103,21 @@ const MOCK_BACKEND_RESPONSE = {
                 body:        JSON.stringify(MOCK_BACKEND_RESPONSE)
             });
         } else if (/action=clinic_get_staff/i.test(url)) {
-            // Retornar lista vacía: _showPanel usa el localStorage que ya fue
-            // poblado por handleFactorySetupCore con los 4 profesionales del mock.
-            console.log('  🔌  Backend mockeado (clinic_get_staff) → sin staff (usar localStorage)');
+            // Devolver staff completo para alinear con _syncFromBackend() actual.
+            console.log('  🔌  Backend mockeado (clinic_get_staff) → staff completo');
             await route.fulfill({
                 status:      200,
                 contentType: 'application/json',
-                body:        JSON.stringify({ success: false, staff: [] })
+                body:        JSON.stringify({
+                    success: true,
+                    staff: [
+                        { Clinic_ID: 'MEDMN62S30P', Staff_ID: '__admin__', Role: 'admin', Nombre: 'Administrador', DNI: '30123456', Activo: 'true' },
+                        { Clinic_ID: 'MEDMN62S30P', Staff_ID: 'p1', Role: 'professional', Nombre: 'Dr. Hernan Rios', DNI: '20111111', Matricula: 'MN 11111', Especialidades: 'Cardiología', Activo: 'true', Primer_Uso: 'false' },
+                        { Clinic_ID: 'MEDMN62S30P', Staff_ID: 'p2', Role: 'professional', Nombre: 'Dra. Valentina Souza', DNI: '20222222', Matricula: 'MN 22222', Especialidades: 'Neurología', Activo: 'true', Primer_Uso: 'false' },
+                        { Clinic_ID: 'MEDMN62S30P', Staff_ID: 'p3', Role: 'professional', Nombre: 'Dr. Lucas Ferreira', DNI: '20333333', Matricula: 'MN 33333', Especialidades: 'Diagnóstico por Imágenes', Activo: 'true', Primer_Uso: 'false' },
+                        { Clinic_ID: 'MEDMN62S30P', Staff_ID: 'p4', Role: 'professional', Nombre: 'Dra. Micaela Torres', DNI: '20444444', Matricula: 'MN 44444', Especialidades: 'Pediatría', Activo: 'true', Primer_Uso: 'false' }
+                    ]
+                })
             });
         } else {
             // Otras acciones pasan libremente
@@ -314,6 +322,16 @@ const MOCK_BACKEND_RESPONSE = {
                 // Esperar a que _syncFromBackend() complete y _showPanel() renderice las tarjetas.
                 // El sync hace una petición al backend (mockeada) → finally → _showPanel() → DOM.
                 await wait(3000);
+
+                // Si aparece el flujo de cambio obligatorio de clave admin, completarlo.
+                const forceBtn = page.locator('#caaForceConfirm');
+                if (await forceBtn.isVisible({ timeout: 1200 }).catch(() => false)) {
+                    await page.locator('#caaForcePas1').fill('clinica');
+                    await page.locator('#caaForcePas2').fill('clinica');
+                    await page.locator('#caaForceDni').fill('30123456');
+                    await forceBtn.click();
+                    await wait(1200);
+                }
 
                 /* ── 9. Los 4 médicos en el panel ────────────────────── */
                 const cards = await page.locator('.caa-pro-card').count();
