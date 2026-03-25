@@ -307,7 +307,62 @@ function basenameList(files) {
 
     const browser = await chromium.launch({ headless: HEADLESS, slowMo: SLOWMO });
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 920 } });
-    const page = await ctx.newPage();
+
+        // ── Mock backends para evitar registros reales en producción ──────────────
+        await ctx.route('**script.google.com**exec**', async (route) => {
+            const url = route.request().url();
+            const method = route.request().method();
+            if (method === 'POST') {
+                // Mock del POST de registro (register_doctor)
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({ success: true, regId: 'E2E_CLINIC_MOCK_001' })
+                });
+            } else if (/action=public_get_payment_portal/i.test(url)) {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        estado: 'pendiente',
+                        kind: 'registro',
+                        nombre: 'La isla bonita (E2E Mock)',
+                        email: 'admin@laislabonita.demo',
+                        totalHoy: 'USD 0,00 (TEST)',
+                        paymentData: {
+                            arsAlias: 'CLINICA.TEST.ALIAS',
+                            arsCvu: '0000003100012345678901',
+                            arsNombre: 'TEST SRL',
+                            usdAlias: 'CLINICA.TEST.USD'
+                        }
+                    })
+                });
+            } else if (/action=public_get_plans_config/i.test(url)) {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({ success: true, plans: {} })
+                });
+            } else {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({ success: true })
+                });
+            }
+        });
+
+        // Mock tipo de cambio para no depender de bluelytics en CI
+        await ctx.route('**bluelytics.com.ar**', async (route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ oficial: { value_sell: 1050 }, blue: { value_sell: 1350 } })
+            });
+        });
+        // ─────────────────────────────────────────────────────────────────────────
+
+        const page = await ctx.newPage();
     const jsErrors = [];
     const networkEvents = [];
     const requestStartByUrl = new Map();
