@@ -775,7 +775,11 @@ function doGet(e) {
       if (String(data[i][idCol]) === String(userId)) {
         Object.keys(updates).forEach(key => {
           const colIndex = headers.indexOf(key);
-          if (colIndex !== -1) sheet.getRange(i + 1, colIndex + 1).setValue(updates[key]);
+          if (colIndex !== -1) {
+            const cell = sheet.getRange(i + 1, colIndex + 1);
+            if (key === 'Telefono') cell.setNumberFormat('@STRING@');
+            cell.setValue(updates[key]);
+          }
         });
         appendAdminLog('admin', 'edit_user', userId, JSON.stringify(updates));
         return createResponse({ success: true, message: 'User updated' });
@@ -809,6 +813,12 @@ function doGet(e) {
 
     // Construir fila siguiendo el orden de los headers
     const row = headers.map(h => (userData[h] !== undefined ? userData[h] : ''));
+    // Asegurar formato texto plano en Telefono antes de escribir (evita #ERROR!)
+    const telColIdx = headers.indexOf('Telefono');
+    if (telColIdx !== -1) {
+      const newRowNum = sheet.getLastRow() + 1;
+      sheet.getRange(newRowNum, telColIdx + 1, 1, 1).setNumberFormat('@STRING@');
+    }
     sheet.appendRow(row);
     appendAdminLog('admin', 'create_user', userData.ID_Medico, userData.Nombre || '');
     return createResponse({ success: true, userId: userData.ID_Medico });
@@ -820,6 +830,17 @@ function doGet(e) {
     if (!auth.authorized) return createResponse({ error: auth.error });
     const result = _setupAllSheets();
     return createResponse({ success: true, result: result });
+
+    // repair_telefono — repara celdas #ERROR! en columna Telefono de hoja Usuarios
+    if (action === 'repair_telefono') {
+      const auth = _verifyAdminAuth(e.parameter);
+      if (!auth.authorized) return createResponse({ error: auth.error });
+      const repSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+      if (!repSheet) return createResponse({ error: 'Hoja Usuarios no encontrada' });
+      const fixed = _repairTelefonoColumn(repSheet);
+      return createResponse({ success: true, fixed: fixed, message: 'Columna Telefono reparada. Celdas corregidas: ' + fixed });
+    }
+
   }
 
   // admin_delete_user — elimina un usuario específico por ID_Medico
@@ -3022,7 +3043,9 @@ function doPost(e) {
         Object.keys(updates).forEach(key => {
           const colIndex = headers.indexOf(key);
           if (colIndex !== -1) {
-            sheet.getRange(i + 1, colIndex + 1).setValue(updates[key]);
+            const cellPost = sheet.getRange(i + 1, colIndex + 1);
+            if (key === 'Telefono') cellPost.setNumberFormat('@STRING@');
+            cellPost.setValue(updates[key]);
           }
         });
         return createResponse({ success: true, message: 'User updated' });
@@ -3456,8 +3479,43 @@ function _ensureUsuariosHeaders(sheet) {
       existing.push(h);
     }
   });
+  // Siempre forzar texto plano en columna Telefono para prevenir #ERROR!
+  _repairTelefonoColumn(sheet);
 }
 
+/**
+ * Formatea la columna Telefono como texto plano (`@STRING@`) y repara celdas #ERROR!.
+ * Google Sheets interpreta "+54..." como fórmula si el formato es "Automático",
+ * resultando en #ERROR!. Este helper previene y corrige ese comportamiento.
+ * @param {Sheet} sheet  Hoja Usuarios ya existente.
+ * @returns {number}     Cantidad de celdas reparadas.
+ */
+function _repairTelefonoColumn(sheet) {
+  var headers = sheet.getDataRange().getValues()[0];
+  var telCol = headers.indexOf('Telefono');
+  if (telCol === -1) return 0;
+
+  // 1. Forzar formato texto plano en toda la columna (filas de datos)
+  var lastRow = sheet.getLastRow();
+  if (lastRow > 1) {
+    sheet.getRange(2, telCol + 1, lastRow - 1, 1).setNumberFormat('@STRING@');
+  }
+
+  // 2. Reparar celdas que ya muestran #ERROR! recuperando el texto de la fórmula
+  var formulas = sheet.getDataRange().getFormulas();
+  var displays = sheet.getDataRange().getDisplayValues();
+  var fixed = 0;
+  for (var i = 1; i < displays.length; i++) {
+    if (String(displays[i][telCol]).trim() === '#ERROR!') {
+      var rawFormula = String(formulas[i][telCol] || '');
+      var cell = sheet.getRange(i + 1, telCol + 1);
+      cell.setNumberFormat('@STRING@');
+      cell.setValue(rawFormula); // Restaura el texto original como valor plano
+      fixed++;
+    }
+  }
+  return fixed;
+}
 /**
  * Inicializa (o repara) los headers de todas las hojas del sistema.
  * Ejecutar una vez después de hacer cambios en la estructura.
