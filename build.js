@@ -156,7 +156,7 @@ async function build() {
 
     // 6. Copiar assets necesarios
     console.log('📁 Copiando archivos estáticos...');
-    const staticFiles = ['manifest.json', 'sw.js'];
+    const staticFiles = ['manifest.json', 'sw.js', 'owner.html'];
     for (const f of staticFiles) {
         if (fs.existsSync(path.join(__dirname, f))) {
             fs.copyFileSync(path.join(__dirname, f), path.join(DIST, f));
