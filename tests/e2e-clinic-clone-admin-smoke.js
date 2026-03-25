@@ -7,6 +7,48 @@ const CLONE_ID = process.env.CLINIC_CLONE_ID || 'MEDMN62S30P';
 const ADMIN_PASS = process.env.CLINIC_ADMIN_PASS || 'clinica';
 const OUT_DIR = path.join(__dirname, '..', 'accesorios', 'logs', 'clinic-clone-smoke');
 
+// Respuesta mock del backend para evitar DEVICE_LIMIT en entornos de test
+const MOCK_VALIDATE_RESPONSE = {
+    ID_Medico:      CLONE_ID,
+    Nombre:         'La Isla Bonita',
+    Matricula:      '',
+    Email:          '',
+    Telefono:       '',
+    Especialidad:   'ALL',
+    Plan:           'clinic',
+    Estado:         'active',
+    Devices_Max:    99,
+    Devices_Logged: '[]',
+    API_Key:        '',
+    API_Key_B1:     '',
+    API_Key_B2:     '',
+    Profesionales:  '[]',
+    Registro_Datos: JSON.stringify({
+        workplace:    { name: 'La Isla Bonita', address: 'Calle Principal 123', phone: '', email: '', footer: '', logo: '' },
+        adminUser:    'admin',
+        adminPass:    'clinica',
+        adminDni:     '',
+        clinicNombre: 'La Isla Bonita',
+        profesionales: [
+            { id: 'p1', nombre: 'Dr. Hernan Rios',       pin: '1234', especialidades: ['Cardiología'],              activo: true, primerUso: false },
+            { id: 'p2', nombre: 'Dra. Valentina Souza',  pin: '1234', especialidades: ['Neurología'],               activo: true, primerUso: false },
+            { id: 'p3', nombre: 'Dr. Lucas Ferreira',    pin: '1234', especialidades: ['Diagnóstico por Imágenes'], activo: true, primerUso: false },
+            { id: 'p4', nombre: 'Dra. Micaela Torres',   pin: '1234', especialidades: ['Pediatría'],                activo: true, primerUso: false }
+        ]
+    })
+};
+
+const MOCK_STAFF_RESPONSE = {
+    success: true,
+    staff: [
+        { Clinic_ID: CLONE_ID, Staff_ID: '__admin__', Role: 'admin',        Nombre: 'Administrador',       DNI: '',         Activo: 'true' },
+        { Clinic_ID: CLONE_ID, Staff_ID: 'p1',        Role: 'professional', Nombre: 'Dr. Hernan Rios',      DNI: '20111111', Matricula: 'MN 11111', Especialidades: 'Cardiología',              Activo: 'true', Primer_Uso: 'false' },
+        { Clinic_ID: CLONE_ID, Staff_ID: 'p2',        Role: 'professional', Nombre: 'Dra. Valentina Souza', DNI: '20222222', Matricula: 'MN 22222', Especialidades: 'Neurología',               Activo: 'true', Primer_Uso: 'false' },
+        { Clinic_ID: CLONE_ID, Staff_ID: 'p3',        Role: 'professional', Nombre: 'Dr. Lucas Ferreira',   DNI: '20333333', Matricula: 'MN 33333', Especialidades: 'Diagnóstico por Imágenes', Activo: 'true', Primer_Uso: 'false' },
+        { Clinic_ID: CLONE_ID, Staff_ID: 'p4',        Role: 'professional', Nombre: 'Dra. Micaela Torres',  DNI: '20444444', Matricula: 'MN 44444', Especialidades: 'Pediatría',                Activo: 'true', Primer_Uso: 'false' }
+    ]
+};
+
 fs.mkdirSync(OUT_DIR, { recursive: true });
 
 function stamp() {
@@ -121,6 +163,36 @@ async function readUiSnapshot(page) {
 async function run() {
     const browser = await chromium.launch({ headless: true });
     const context = await browser.newContext({ viewport: { width: 1440, height: 1100 } });
+
+    // Pre-aceptar onboarding para no quedar bloqueado en el wizard de T&C en cada ejecucion
+    await context.addInitScript(() => {
+        localStorage.setItem('onboarding_accepted', 'true');
+    });
+
+    // Mockear backend GAS para evitar DEVICE_LIMIT
+    await context.route('**script.google.com**exec**', async (route) => {
+        const url = route.request().url();
+        if (/action=validate/i.test(url)) {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify(MOCK_VALIDATE_RESPONSE)
+            });
+        } else if (/action=clinic_get_staff/i.test(url)) {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify(MOCK_STAFF_RESPONSE)
+            });
+        } else {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ success: true })
+            });
+        }
+    });
+
     const page = await context.newPage();
     const ts = stamp();
 
@@ -130,19 +202,16 @@ async function run() {
         }
     });
 
-    try {
-        await page.goto(APP_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
-        await page.evaluate(() => {
-            localStorage.clear();
-            sessionStorage.clear();
-        });
+    // Auto-dismiss dialogs nativos (prompt para recuperar admin)
+    page.on('dialog', async (dialog) => {
+        console.log(`  DIALOG (${dialog.type()}): "${dialog.message().slice(0, 80)}"`);
+        await dialog.accept();
+    });
 
+    try {
         const targetUrl = `${APP_URL.replace(/\/$/, '')}/?id=${encodeURIComponent(CLONE_ID)}&smoke=${Date.now()}`;
         await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
-        await page.waitForTimeout(5000);
-
-        await handleOnboarding(page);
-        await page.waitForTimeout(1500);
+        await page.waitForTimeout(4000);
 
         let snap = await readUiSnapshot(page);
         if (snap.planCode !== 'clinic') fail('planCode clinic', JSON.stringify({ planCode: snap.planCode, type: snap.type }));
@@ -156,12 +225,36 @@ async function run() {
         }
         logPass('toast api key oculto');
 
-        if (!snap.authVisible) fail('modal clinic auth visible', 'no se ve antes del login');
+        // Esperar activamente a que aparezca el modal de auth (el watchdog puede tardar hasta ~10s)
+        try {
+            await page.waitForSelector('#clinicAuthOverlay', { state: 'visible', timeout: 15000 });
+        } catch (_) {
+            fail('modal clinic auth visible', 'timeout 15s — no apareció');
+            return;
+        }
         logPass('modal clinic auth visible');
 
+        // Seleccionar Administrador en el selector de profesionales si existe
+        const selectEl = page.locator('#clinicAuthSelect');
+        if (await selectEl.count() > 0) {
+            await selectEl.selectOption({ index: 0 }); // Administrador siempre primero
+            await page.waitForTimeout(300);
+        }
         await page.fill('#clinicAuthPin', ADMIN_PASS);
         await page.click('#clinicAuthEnterBtn');
         await page.waitForTimeout(2500);
+
+        // Si aparece el modal de cambio forzado de contraseña (clave default 'clinica'),
+        // completarlo para que el panel admin se muestre correctamente
+        const forceBtn = page.locator('#caaForceConfirm');
+        if (await forceBtn.isVisible({ timeout: 1500 }).catch(() => false)) {
+            console.log('  INFO: modal force-change-pass detectado, completando...');
+            await page.locator('#caaForcePas1').fill('clinica');
+            await page.locator('#caaForcePas2').fill('clinica');
+            await page.locator('#caaForceDni').fill('30123456');
+            await forceBtn.click();
+            await page.waitForTimeout(1500);
+        }
 
         snap = await readUiSnapshot(page);
 
