@@ -570,25 +570,8 @@ window.initBusinessSuite = async function () {
         );
 
         if (isOfficialAdminBase && !effectiveSetupId && !window._PENDING_SETUP_ID) {
-            let hasClientConfig = false;
-            try {
-                const storedCfgRaw = localStorage.getItem('client_config_stored');
-                if (storedCfgRaw) {
-                    const storedCfg = JSON.parse(storedCfgRaw);
-                    if (storedCfg && storedCfg.type && storedCfg.type !== 'ADMIN') {
-                        if (typeof window.CLIENT_CONFIG === 'object' && window.CLIENT_CONFIG) {
-                            Object.assign(window.CLIENT_CONFIG, storedCfg);
-                        }
-                        hasClientConfig = true;
-                    }
-                }
-            } catch (_) {}
-
-            if (hasClientConfig) {
-                _initClient();
-                return;
-            }
-
+            // URL oficial sin ?id= → SIEMPRE ADMIN, sin excepción.
+            // Limpiar cualquier config de cliente que haya quedado del generador de clones GIFT.
             try { localStorage.removeItem('client_config_stored'); } catch (_) {}
             try { sessionStorage.removeItem('pending_setup_id'); } catch (_) {}
             if (typeof window.CLIENT_CONFIG === 'object' && window.CLIENT_CONFIG) {
