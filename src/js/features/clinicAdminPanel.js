@@ -172,6 +172,17 @@
 
     function open() {
         _buildOverlay();
+        var inner = document.getElementById('clinicAdminInner');
+        if (inner) {
+            inner.innerHTML = [
+                '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;',
+                'padding:40px 20px;gap:14px;">',
+                '<div style="width:40px;height:40px;border:4px solid #e2e8f0;border-top-color:#0ea5e9;',
+                'border-radius:50%;animation:caaSpinner .8s linear infinite;"></div>',
+                '<div style="font-size:.85rem;color:#64748b;font-weight:600;">Cargando...</div>',
+                '</div>'
+            ].join('');
+        }
         document.getElementById(OVERLAY_ID).style.display = 'flex';
         _syncFromBackend().catch(function() {}).finally(function() {
             _showLoginScreen();
@@ -201,6 +212,26 @@
     // ── Fase 3: apertura autenticada (desde modal PIN) — omite pantalla de login ─
     function openAuthenticated() {
         _buildOverlay();
+        // Mostrar spinner inmediatamente para evitar que se vea la caja vacía
+        // durante la sincronización con el backend.
+        var inner = document.getElementById('clinicAdminInner');
+        if (inner) {
+            inner.innerHTML = [
+                '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;',
+                'padding:40px 20px;gap:14px;">',
+                '<div style="width:40px;height:40px;border:4px solid #e2e8f0;border-top-color:#0ea5e9;',
+                'border-radius:50%;animation:caaSpinner .8s linear infinite;"></div>',
+                '<div style="font-size:.85rem;color:#64748b;font-weight:600;">Cargando panel...</div>',
+                '</div>'
+            ].join('');
+            // Agregar keyframe si no existe
+            if (!document.getElementById('caaSpinnerKf')) {
+                var kfStyle = document.createElement('style');
+                kfStyle.id = 'caaSpinnerKf';
+                kfStyle.textContent = '@keyframes caaSpinner{to{transform:rotate(360deg)}}';
+                document.head.appendChild(kfStyle);
+            }
+        }
         document.getElementById(OVERLAY_ID).style.display = 'flex';
         _syncFromBackend().catch(function() {}).finally(function() {
             var wp        = _getWP();

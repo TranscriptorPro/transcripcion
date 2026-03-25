@@ -1,3 +1,8 @@
+---
+name: e2e-visible-replay
+description: Run UI end-to-end tests in headed (visible) mode with step-by-step screenshots and an HTML replay report. Use when the user wants to watch the browser in real time or needs reproducible visual evidence of a test flow.
+---
+
 ## E2E Visible Replay Skill
 
 ## Purpose
