@@ -281,6 +281,35 @@ async function uploadFile(locator, filePath, label) {
     return true;
 }
 
+async function ensureProfessionalCardExpanded(page, idx) {
+    const card = page.locator(`#prof-${idx}`);
+    await card.waitFor({ state: 'visible', timeout: 12000 });
+    const nameInput = page.locator(`#regProfName${idx}`);
+
+    // Si el input no es visible, abrimos el acordeon tocando el header.
+    if (!(await nameInput.isVisible().catch(() => false))) {
+        const header = card.locator('.wp-header').first();
+        if (await header.count()) {
+            await header.click({ force: true });
+            await page.waitForTimeout(220);
+        }
+    }
+
+    // Fallback duro: asegurar contenido expandido desde DOM.
+    if (!(await nameInput.isVisible().catch(() => false))) {
+        await page.evaluate((i) => {
+            const cardEl = document.getElementById(`prof-${i}`);
+            if (!cardEl) return;
+            cardEl.classList.remove('collapsed');
+            const body = cardEl.querySelector('.wp-body');
+            if (body) body.style.display = 'block';
+        }, idx);
+        await page.waitForTimeout(150);
+    }
+
+    await nameInput.waitFor({ state: 'visible', timeout: 12000 });
+}
+
 function basenameList(files) {
     return files.map(file => path.basename(file));
 }
@@ -475,6 +504,7 @@ function basenameList(files) {
 
             console.log(`  → Profesional ${i + 1}: ${prof.titulo} ${prof.nombre}`);
             const card = page.locator(`#prof-${i}`);
+            await ensureProfessionalCardExpanded(page, i);
             await card.locator(`.titulo-btn[data-t="${prof.titulo}"]`).click();
             await fillAndBlur(page, `#regProfName${i}`, prof.nombre);
             await fillAndBlur(page, `#regProfMatricula${i}`, prof.matricula);
