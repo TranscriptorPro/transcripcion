@@ -130,11 +130,18 @@ async function _lmCallValidate() {
     const url = `${_LM_SCRIPT_URL}?action=validate&id=${encodeURIComponent(medicoId)}&deviceId=${encodeURIComponent(deviceId)}`;
 
     try {
-        const response = await fetch(url);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
         if (!response.ok) throw new Error('HTTP ' + response.status);
         return await response.json();
     } catch (err) {
-        console.warn('[licenseManager] Error de conexión:', err);
+        if (err.name === 'AbortError') {
+            console.warn('[licenseManager] Timeout: el servidor no respondió en 30s');
+        } else {
+            console.warn('[licenseManager] Error de conexión:', err);
+        }
         // Si no hay conexión, usar cache si existe
         const cached = _lmGetCache();
         if (cached) {

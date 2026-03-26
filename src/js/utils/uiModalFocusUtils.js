@@ -30,29 +30,49 @@ window.releaseFocusTrap = function (modal) {
 };
 
 // RB-1: Observer automatico para modales con clase .modal-overlay
+// Almacena observers para cleanup si el modal se remueve del DOM
 (function initModalFocusTrapObserver() {
-    window.addEventListener('DOMContentLoaded', () => {
-        document.querySelectorAll('.modal-overlay').forEach(modal => {
-            // Observer para modales que usan classList.add('active')
-            const observer = new MutationObserver(() => {
-                if (modal.classList.contains('active')) {
-                    window.trapFocusInModal(modal);
-                } else {
-                    window.releaseFocusTrap(modal);
-                }
-            });
-            observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
+    const _modalObservers = new WeakMap();
 
-            // Observer para modales que usan style.display
-            const styleObs = new MutationObserver(() => {
-                const d = modal.style.display;
-                if (d === 'flex' || d === 'block') {
-                    window.trapFocusInModal(modal);
-                } else if (d === 'none' || d === '') {
-                    window.releaseFocusTrap(modal);
-                }
-            });
-            styleObs.observe(modal, { attributes: true, attributeFilter: ['style'] });
+    function _setupModalObservers(modal) {
+        if (_modalObservers.has(modal)) return; // ya observado
+
+        // Observer para modales que usan classList.add('active')
+        const classObs = new MutationObserver(() => {
+            if (modal.classList.contains('active')) {
+                window.trapFocusInModal(modal);
+            } else {
+                window.releaseFocusTrap(modal);
+            }
         });
+        classObs.observe(modal, { attributes: true, attributeFilter: ['class'] });
+
+        // Observer para modales que usan style.display
+        const styleObs = new MutationObserver(() => {
+            const d = modal.style.display;
+            if (d === 'flex' || d === 'block') {
+                window.trapFocusInModal(modal);
+            } else if (d === 'none' || d === '') {
+                window.releaseFocusTrap(modal);
+            }
+        });
+        styleObs.observe(modal, { attributes: true, attributeFilter: ['style'] });
+
+        _modalObservers.set(modal, { classObs, styleObs });
+    }
+
+    // Cleanup: disconnect observers cuando un modal se remueve del DOM
+    window.cleanupModalObservers = function(modal) {
+        const obs = _modalObservers.get(modal);
+        if (obs) {
+            obs.classObs.disconnect();
+            obs.styleObs.disconnect();
+            _modalObservers.delete(modal);
+        }
+        window.releaseFocusTrap(modal);
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.modal-overlay').forEach(_setupModalObservers);
     });
 })();
