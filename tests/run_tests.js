@@ -6671,10 +6671,12 @@ test('Contact-Formato-4 — fallback de soporte usa dominio válido .com', () =>
         'contact.js debe resolver email de soporte desde helper central');
     assert(configCodeContact.includes('DEFAULT_SUPPORT_CONTACT_EMAIL'),
         'config.js debe declarar default de email de soporte');
-    assert(configCodeContact.includes("'aldowagner78@gmail.com'"),
-        'El default de soporte debe ser un correo operativo');
+    assert(configCodeContact.includes("const DEFAULT_SUPPORT_CONTACT_EMAIL = '';"),
+        'El default de soporte debe ser vacío para evitar destinatarios personales por fallback');
     assert(!contactCodeSec.includes("'soporte@transcriptorpro.app'"),
         'contact.js no debe usar dominio .app inexistente para soporte');
+    assert(!configCodeContact.includes("'aldowagner78@gmail.com'"),
+        'config.js no debe hardcodear correos personales en producción');
 });
 
 const pdfPreviewCodeSec = fs.readFileSync(path.join(root, 'src/js/features/pdfPreview.js'), 'utf-8');

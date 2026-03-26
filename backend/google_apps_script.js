@@ -23,6 +23,7 @@ const SHEET_COMPRAS         = 'Compras_Pendientes';
 const PROP_PLANS_CONFIG     = 'PLANS_CONFIG_JSON';
 const PROP_ADDONS_CONFIG    = 'ADDONS_CONFIG_JSON';
 const PROP_PAYMENT_CONFIG   = 'PAYMENT_CONFIG_JSON';
+const PROP_NOTIFY_ADMIN_EMAILS = 'NOTIFY_ADMIN_EMAILS';
 const ADMIN_CACHE_TTL_SEC   = 25;
 
 // SECURITY: Read from Apps Script Script Properties (not hardcoded).
@@ -34,6 +35,15 @@ const ADMIN_KEY = (function() {
     return 'CHANGE_ME_IN_PROPERTIES';
   }
 })();
+
+function _isAdminEmailNotificationsEnabled() {
+  try {
+    const raw = String(PropertiesService.getScriptProperties().getProperty(PROP_NOTIFY_ADMIN_EMAILS) || '').trim().toLowerCase();
+    return raw === '1' || raw === 'true' || raw === 'yes' || raw === 'on';
+  } catch (_) {
+    return false;
+  }
+}
 
 function _defaultPlansConfig() {
   return {
@@ -2187,13 +2197,15 @@ function doPost(e) {
           }
 
           try {
-            const adminEmail = Session.getEffectiveUser().getEmail();
-            if (adminEmail) {
-              GmailApp.sendEmail(
-                adminEmail,
-                'Comprobante recibido: ' + (String(rData[i][nombreCol] || '') || id),
-                'Se subió un nuevo comprobante de pago.\n\nID: ' + id + '\nNombre: ' + String(rData[i][nombreCol] || '') + '\nEmail: ' + String(rData[i][emailCol] || '') + '\nFecha: ' + now + '\n\nRevisá el panel de administración.'
-              );
+            if (_isAdminEmailNotificationsEnabled()) {
+              const adminEmail = Session.getEffectiveUser().getEmail();
+              if (adminEmail) {
+                GmailApp.sendEmail(
+                  adminEmail,
+                  'Comprobante recibido: ' + (String(rData[i][nombreCol] || '') || id),
+                  'Se subió un nuevo comprobante de pago.\n\nID: ' + id + '\nNombre: ' + String(rData[i][nombreCol] || '') + '\nEmail: ' + String(rData[i][emailCol] || '') + '\nFecha: ' + now + '\n\nRevisá el panel de administración.'
+                );
+              }
             }
           } catch (_) {}
 
@@ -2963,17 +2975,19 @@ function doPost(e) {
 
       // Notificar al admin por email (opcional, no bloquea)
       try {
-        const adminEmail = Session.getEffectiveUser().getEmail();
-        if (adminEmail) {
-          GmailApp.sendEmail(adminEmail,
-            'Nuevo registro: ' + (payload.nombre || 'Sin nombre'),
-            'Nuevo profesional registrado:\n' +
-            'Nombre: ' + (payload.nombre || '') + '\n' +
-            'Email: ' + email + '\n' +
-            'Matrícula: ' + (payload.matricula || '') + '\n' +
-            'Especialidades: ' + especialidades + '\n\n' +
-            'Revisá el panel de administración para aprobar o rechazar.'
-          );
+        if (_isAdminEmailNotificationsEnabled()) {
+          const adminEmail = Session.getEffectiveUser().getEmail();
+          if (adminEmail) {
+            GmailApp.sendEmail(adminEmail,
+              'Nuevo registro: ' + (payload.nombre || 'Sin nombre'),
+              'Nuevo profesional registrado:\n' +
+              'Nombre: ' + (payload.nombre || '') + '\n' +
+              'Email: ' + email + '\n' +
+              'Matrícula: ' + (payload.matricula || '') + '\n' +
+              'Especialidades: ' + especialidades + '\n\n' +
+              'Revisá el panel de administración para aprobar o rechazar.'
+            );
+          }
         }
       } catch(emailErr) { /* no bloquear si falla el email */ }
 

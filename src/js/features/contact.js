@@ -28,19 +28,25 @@ window._retryPendingContacts = async function () {
         return String(name || 'Profesional').trim() || 'Profesional';
     };
 
-    const defaultSupportEmail = (typeof window.getResolvedSupportContactEmail === 'function')
+    const resolvedSupportEmail = (typeof window.getResolvedSupportContactEmail === 'function')
         ? window.getResolvedSupportContactEmail()
-        : 'aldowagner78@gmail.com';
+        : '';
+    const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
 
     for (const msg of pending) {
         try {
+            const targetEmail = String(msg.to || resolvedSupportEmail || '').trim();
+            if (!isValidEmail(targetEmail)) {
+                still.push(msg);
+                continue;
+            }
             const senderDisplay = resolveProfessionalName(msg.nombre, msg.sexo);
             const res = await fetch(backendUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify({
                     action: 'send_email',
-                    to: msg.to || defaultSupportEmail,
+                    to: targetEmail,
                     subject: `[Contacto pendiente] ${msg.motivo}`,
                     htmlBody: `<p><b>Motivo:</b> ${(msg.motivo||"").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</p><p>${(msg.detalle||"").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</p><p><small>${senderDisplay.replace(/</g,"&lt;")} - Mat. ${(msg.mat||"").replace(/</g,"&lt;")} - ${msg.date}</small></p>`,
                     senderName: msg.senderName || senderDisplay,
@@ -214,7 +220,15 @@ window.initContact = function () {
                 ? window.getResolvedSupportContactEmail()
                 : ((typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.contactEmail)
                     ? CLIENT_CONFIG.contactEmail
-                    : 'aldowagner78@gmail.com');
+                    : '');
+            const isValidSupportEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(contactEmail || '').trim());
+            if (!isValidSupportEmail) {
+                if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = '📨 Enviar'; }
+                if (typeof showToast === 'function') {
+                    showToast('⚠️ Email de soporte no configurado. Definilo en CLIENT_CONFIG.contactEmail antes de enviar.', 'warning');
+                }
+                return;
+            }
             const senderName = (typeof window.getProfessionalDisplay === 'function')
                 ? window.getProfessionalDisplay(nombre, profData.sexo).fullName
                 : (String(nombre || 'Profesional').trim() || 'Profesional');
