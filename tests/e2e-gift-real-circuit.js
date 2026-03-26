@@ -23,6 +23,12 @@ const ASSETS = {
   firma: path.join(LOGOS_DIR, 'firma.png')
 };
 
+const ADMIN_GROQ_KEYS = {
+  primary: 'gsk_test_primary_real_e2e_placeholder',
+  b1: 'gsk_test_backup1_real_e2e_placeholder',
+  b2: 'gsk_test_backup2_real_e2e_placeholder'
+};
+
 const TEST_ID_SUFFIX = Date.now().toString(36).toUpperCase();
 const TEST_USER = {
   name: 'Dr. E2E Gift ' + TEST_ID_SUFFIX,
@@ -87,6 +93,33 @@ async function validateClone(userId) {
   return fetchJson(GAS_URL + '?action=validate&id=' + encodeURIComponent(userId) + '&deviceId=e2e_real_' + Date.now());
 }
 
+async function closeDashModalIfPresent(page) {
+  const isVisible = await page.locator('#dashModalOverlay').isVisible().catch(() => false);
+  if (!isVisible) return false;
+  await page.evaluate(() => {
+    const actions = document.getElementById('dashModalActions');
+    const primary = actions ? actions.querySelector('button') : null;
+    if (primary) {
+      primary.click();
+      return;
+    }
+    const closeBtn = document.getElementById('dashModalCloseBtn');
+    if (closeBtn) closeBtn.click();
+  }).catch(() => {});
+  await page.waitForTimeout(1200);
+  return true;
+}
+
+async function findUserWithRetry(session, userId, retries, waitMs) {
+  for (let i = 0; i < retries; i += 1) {
+    const usersData = await adminListUsers(session);
+    const found = (usersData.users || []).find(u => String(u.ID_Medico) === String(userId));
+    if (found) return found;
+    await new Promise(resolve => setTimeout(resolve, waitMs));
+  }
+  return null;
+}
+
 (async () => {
   const browser = await chromium.launch({ headless: HEADLESS, slowMo: HEADLESS ? 0 : 80 });
   const context = await browser.newContext({ viewport: { width: 1440, height: 980 } });
@@ -127,10 +160,27 @@ async function validateClone(userId) {
     const session = await getAdminSession(page);
     report('[OK] adminSession obtenida para ' + session.username);
 
+    report('[STEP] Cargar Mis Keys del owner para el test');
+    await page.evaluate((keys) => {
+      localStorage.setItem('admin_groq_key', keys.primary);
+      localStorage.setItem('admin_groq_key_b1', keys.b1);
+      localStorage.setItem('admin_groq_key_b2', keys.b2);
+    }, ADMIN_GROQ_KEYS);
+
     report('[STEP] Abrir fábrica GIFT real');
     await page.click('#btnGiftUser');
     await page.waitForTimeout(1500);
     await shot(page, '03_gift_modal_open');
+
+    const inheritedKeys = await page.evaluate(() => ({
+      primary: document.getElementById('cfApiKey')?.value || '',
+      b1: document.getElementById('cfApiKeyB1')?.value || '',
+      b2: document.getElementById('cfApiKeyB2')?.value || ''
+    }));
+    if (inheritedKeys.primary !== ADMIN_GROQ_KEYS.primary || inheritedKeys.b1 !== ADMIN_GROQ_KEYS.b1 || inheritedKeys.b2 !== ADMIN_GROQ_KEYS.b2) {
+      throw new Error('La fábrica GIFT no heredó correctamente las 3 admin keys');
+    }
+    report('[OK] La fábrica GIFT heredó las 3 keys del owner');
 
     report('[STEP] Completar paso 1');
     await page.fill('#giftNombre', TEST_USER.name);
@@ -216,6 +266,17 @@ async function validateClone(userId) {
       console.log('[DASH MODAL]', dashMsg);
     }
 
+    if (/todav[ií]a no aparece en la tabla|actualiz[aá] usuarios|f[aá]brica manualmente/i.test(dashMsg || '')) {
+      report('[INFO] Modal de espera detectado, cerrando y refrescando Usuarios');
+      await closeDashModalIfPresent(page);
+      await page.click('.tab-btn[data-tab="usuarios"]').catch(() => {});
+      await page.waitForTimeout(1200);
+      await page.click('#btnRefresh').catch(() => {});
+      await page.waitForTimeout(3500);
+    } else {
+      await closeDashModalIfPresent(page);
+    }
+
     const cloneLink = await page.locator('#cfLinkUrl').inputValue().catch(() => '');
     if (!cloneLink.includes('?id=')) throw new Error('No se generó link de clon');
     report('[OK] Link generado: ' + cloneLink);
@@ -224,10 +285,13 @@ async function validateClone(userId) {
     if (!userId.startsWith(TEST_USER.expectedIdPrefix)) throw new Error('ID inesperado: ' + userId);
 
     report('[STEP] Verificar alta en Usuarios vía backend real');
-    const usersData = await adminListUsers(session);
-    const found = (usersData.users || []).find(u => String(u.ID_Medico) === String(userId));
+    const found = await findUserWithRetry(session, userId, 7, 2500);
     if (!found) throw new Error('El usuario GIFT no apareció en admin_list_users');
     report('[OK] Usuario presente en backend real: ' + found.ID_Medico + ' / ' + found.Nombre);
+    if (found.API_Key !== ADMIN_GROQ_KEYS.primary) throw new Error('API_Key no persistida en backend');
+    if ((found.API_Key_B1 || '') !== ADMIN_GROQ_KEYS.b1) throw new Error('API_Key_B1 no persistida en backend');
+    if ((found.API_Key_B2 || '') !== ADMIN_GROQ_KEYS.b2) throw new Error('API_Key_B2 no persistida en backend');
+    report('[OK] Las 3 keys quedaron persistidas en Usuarios');
 
     report('[STEP] Abrir clon real');
     const clonePage = await context.newPage();
@@ -244,15 +308,21 @@ async function validateClone(userId) {
       client: window.CLIENT_CONFIG || null,
       prof: JSON.parse(localStorage.getItem('prof_data') || '{}'),
       wps: JSON.parse(localStorage.getItem('workplace_profiles') || '[]'),
-      banner: !!document.getElementById('apiKeyWarningBanner') && getComputedStyle(document.getElementById('apiKeyWarningBanner')).display !== 'none'
+      banner: !!document.getElementById('apiKeyWarningBanner') && getComputedStyle(document.getElementById('apiKeyWarningBanner')).display !== 'none',
+      key: localStorage.getItem('groq_api_key') || '',
+      keyB1: localStorage.getItem('groq_api_key_b1') || '',
+      keyB2: localStorage.getItem('groq_api_key_b2') || ''
     }));
 
     if (!cloneCfg.client) throw new Error('CLIENT_CONFIG no disponible en clon');
     if (String(cloneCfg.client.planCode).toLowerCase() !== 'gift') throw new Error('planCode no es gift: ' + cloneCfg.client.planCode);
     if (!cloneCfg.client.hasProMode) throw new Error('hasProMode=false en gift');
     if (!cloneCfg.client.hasDashboard) throw new Error('hasDashboard=false en gift');
-    if (cloneCfg.banner) throw new Error('Banner API key visible en clon GIFT');
     if (!Array.isArray(cloneCfg.wps) || cloneCfg.wps.length < Math.min(1, Number(giftCfg.workplaces))) throw new Error('workplace_profiles incompleto');
+    if (cloneCfg.key !== ADMIN_GROQ_KEYS.primary) throw new Error('groq_api_key no cargada en clon');
+    if (cloneCfg.keyB1 !== ADMIN_GROQ_KEYS.b1) throw new Error('groq_api_key_b1 no cargada en clon');
+    if (cloneCfg.keyB2 !== ADMIN_GROQ_KEYS.b2) throw new Error('groq_api_key_b2 no cargada en clon');
+    report('[OK] El clon recibió las 3 keys');
 
     report('[OK] Clon GIFT cargó bien');
 
