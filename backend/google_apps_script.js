@@ -2727,6 +2727,47 @@ function doPost(e) {
     return createResponse({ success: true, userId: userData.ID_Medico });
   }
 
+  // log_client_errors — telemetría mínima de errores JS del cliente
+  if (action === 'log_client_errors') {
+    try {
+      const errors = payload.errors;
+      if (!Array.isArray(errors) || errors.length === 0) {
+        return createResponse({ success: true, logged: 0 });
+      }
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const SHEET_ERRORS = 'Error_Telemetry';
+      let sheet = ss.getSheetByName(SHEET_ERRORS);
+      if (!sheet) {
+        sheet = ss.insertSheet(SHEET_ERRORS);
+        sheet.appendRow(['ID_Error', 'ID_Medico', 'Device_ID', 'Timestamp', 'Type', 'Message', 'Source', 'Line', 'Col', 'Stack', 'URL', 'App_Version']);
+        sheet.setFrozenRows(1);
+      }
+      const userId = String(payload.userId || 'anonymous').substring(0, 100);
+      const deviceId = String(payload.deviceId || '').substring(0, 100);
+      const maxErrors = Math.min(errors.length, 20);
+      for (let i = 0; i < maxErrors; i++) {
+        const e = errors[i];
+        sheet.appendRow([
+          'ERR_' + Date.now() + '_' + i,
+          userId,
+          deviceId,
+          String(e.ts || new Date().toISOString()).substring(0, 30),
+          String(e.type || 'error').substring(0, 30),
+          String(e.message || '').substring(0, 500),
+          String(e.source || '').substring(0, 200),
+          Number(e.line) || 0,
+          Number(e.col) || 0,
+          String(e.stack || '').substring(0, 800),
+          String(e.url || '').substring(0, 200),
+          String(e.version || '').substring(0, 20)
+        ]);
+      }
+      return createResponse({ success: true, logged: maxErrors });
+    } catch (err) {
+      return createResponse({ error: 'Error guardando telemetría: ' + err.message });
+    }
+  }
+
   // save_diagnostic — guarda el diagnóstico del cliente en la hoja Diagnosticos
   if (action === 'save_diagnostic') {
     const id = payload.id || 'unknown';

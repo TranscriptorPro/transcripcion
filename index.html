@@ -9,7 +9,7 @@
     <!-- PURGE: auto-purge al detectar nueva versión + ?purge manual. Preserva tema y color -->
     <script>
     (function() {
-        var APP_VERSION = 'v238'; // ← bump esto en cada deploy para forzar auto-purge
+        var APP_VERSION = 'v239'; // ← bump esto en cada deploy para forzar auto-purge
         try { window.APP_VERSION = APP_VERSION; } catch(_) {}
         var params = new URLSearchParams(window.location.search);
         var forcePurge = params.has('purge');
@@ -2648,6 +2648,7 @@
         <script src="src/js/features/fixedTooltips.js"></script>
         <script src="src/js/features/medDictionary.js"></script>
         <script src="src/js/features/contact.js"></script>
+        <script src="src/js/features/errorTelemetry.js"></script>
         <script src="src/js/features/diagnostic.js"></script>
         <script src="src/js/features/licenseCacheUtils.js"></script>
         <script src="src/js/features/licenseManager.js"></script>
@@ -3021,6 +3022,11 @@
         <!-- Initialization -->
         <script>
             document.addEventListener('DOMContentLoaded', () => {
+                // Error telemetry — captura errores JS no manejados
+                if (typeof initErrorTelemetry === 'function') {
+                    initErrorTelemetry();
+                }
+
                 // License validation (no-op para ADMIN, activo en clones)
                 if (typeof initLicenseManager === 'function') {
                     initLicenseManager();

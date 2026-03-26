@@ -119,6 +119,7 @@ load('src/js/config/templatesCatalogPart4.js');
 load('src/js/config/templates.js');
 load('src/js/features/structurerCoreUtils.js');
 load('src/js/features/structurer.js');
+load('src/js/features/errorTelemetry.js');
 load('src/js/features/patientRegistry.js');
 load('src/js/features/formHandler.js');
 load('src/js/utils/stateManager.js');
@@ -8771,6 +8772,56 @@ test('F1-C2 — clearFieldValue dispara evento input para actualizar estado del 
     assert(fieldModalCode.includes("new Event('input'") &&
            fieldModalCode.includes('clearFieldValue') || fieldModalCode.includes('emptyNode'),
         'clearFieldValue debe disparar event input para actualizar wordCount y autosave');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE TELEMETRY: errorTelemetry.js — P7
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque Telemetry: errorTelemetry.js ────────────────────────');
+
+test('errorTelemetry — initErrorTelemetry existe como función global', () => {
+    assert(typeof window.initErrorTelemetry === 'function', 'initErrorTelemetry debe ser función');
+});
+
+test('errorTelemetry — getErrorTelemetryBuffer existe como función global', () => {
+    assert(typeof window.getErrorTelemetryBuffer === 'function', 'getErrorTelemetryBuffer debe ser función');
+});
+
+test('errorTelemetry — flushErrorTelemetry existe como función global', () => {
+    assert(typeof window.flushErrorTelemetry === 'function', 'flushErrorTelemetry debe ser función');
+});
+
+test('errorTelemetry — buffer inicia vacío', () => {
+    const buf = window.getErrorTelemetryBuffer();
+    assert(Array.isArray(buf), 'Buffer debe ser array');
+    assertEqual(buf.length, 0);
+});
+
+test('errorTelemetry — initErrorTelemetry no lanza error', () => {
+    let threw = false;
+    try {
+        window.initErrorTelemetry();
+    } catch (e) {
+        threw = true;
+    }
+    assert(!threw, 'initErrorTelemetry no debe lanzar error');
+});
+
+test('errorTelemetry — doble init no lanza error (idempotente)', () => {
+    let threw = false;
+    try {
+        window.initErrorTelemetry();
+        window.initErrorTelemetry();
+    } catch (e) {
+        threw = true;
+    }
+    assert(!threw, 'Doble init debe ser idempotente');
+});
+
+test('errorTelemetry — getBuffer devuelve copia (no referencia)', () => {
+    const buf1 = window.getErrorTelemetryBuffer();
+    const buf2 = window.getErrorTelemetryBuffer();
+    assert(buf1 !== buf2, 'Cada llamada debe devolver copia distinta');
 });
 
 // Limpiar estado después de tests
