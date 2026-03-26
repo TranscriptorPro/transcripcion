@@ -5909,6 +5909,20 @@ test('factory setup — persiste planCode en CLIENT_CONFIG', () => {
     assertIncludes(factorySetupCode, 'planCode');
 });
 
+// P3: el plan map es el piso mínimo; regDatos no puede quitar hasProMode/hasDashboard
+test('factory setup — plan map es piso mínimo (upgrade: regDatos no quita hasProMode)', () => {
+    assert(
+        factorySetupCode.includes('pc.hasProMode || (regDatos.hasProMode === true)'),
+        'businessFactorySetupUtils debe usar pc.hasProMode como piso (no dejar que regDatos lo sobrescriba a false)'
+    );
+});
+test('factory setup — plan map es piso mínimo para hasDashboard', () => {
+    assert(
+        factorySetupCode.includes('pc.hasDashboard || (regDatos.hasDashboard === true)'),
+        'businessFactorySetupUtils debe usar pc.hasDashboard como piso'
+    );
+});
+
 test('clinic init — detecta modo clínica aunque falte planCode', () => {
     assertIncludes(businessUiHelpersCode, '_isClinicRuntimeMode');
     assertIncludes(businessUiHelpersCode, 'looksClinicByProfessionals');

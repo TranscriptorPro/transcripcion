@@ -68,10 +68,12 @@ window.handleFactorySetupCore = async function (medicoId) {
             specialties:      specialties,
             maxDevices:       Number(doctor.Devices_Max) || 2,
             trialDays:        plan === 'trial' ? 7 : 0,
-            // regDatos.hasProMode puede venir del admin para override del plan
-            hasProMode:       regDatos.hasProMode !== undefined ? !!regDatos.hasProMode : pc.hasProMode,
-            hasDashboard:     regDatos.hasDashboard !== undefined ? !!regDatos.hasDashboard : pc.hasDashboard,
-            canGenerateApps:  regDatos.canGenerateApps !== undefined ? !!regDatos.canGenerateApps : pc.canGenerateApps,
+            // El plan map es el piso mínimo. regDatos puede AGREGAR permisos (override positivo)
+            // pero NUNCA quitar los que el plan ya otorga (ej: upgrade NORMAL→PRO no debe seguir
+            // leyendo regDatos.hasProMode=false del momento de la aprobación original).
+            hasProMode:       pc.hasProMode || (regDatos.hasProMode === true),
+            hasDashboard:     pc.hasDashboard || (regDatos.hasDashboard === true),
+            canGenerateApps:  pc.canGenerateApps || (regDatos.canGenerateApps === true),
             allowedTemplates: allowedTemplates,
             paymentPortalUrl: String(regDatos.paymentPortalUrl || '').trim(),
             backendUrl:       backendUrl
