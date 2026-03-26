@@ -11,12 +11,15 @@ window.TEMPLATE_CATEGORIES = _sharedTplCats || {
     "Oftalmología": ["campimetria", "oct_retinal", "topografia_corneal", "fondo_ojo", "gonioscopia"],
     "Imágenes": ["tac", "resonancia", "mamografia", "densitometria", "pet_ct", "radiografia", "ecografia_abdominal", "ecografia_renal", "ecografia_tiroidea", "ecografia_mamaria", "eco_doppler"],
     "Endoscopía": ["gastroscopia", "colonoscopia", "broncoscopia", "laringoscopia"],
-    "Cardiología": ["gammagrafia_cardiaca", "holter", "mapa", "cinecoro", "ecg", "eco_stress", "ett"],
-    "Ginecología": ["pap", "colposcopia", "ecografia_obstetrica"],
-    "Neurología": ["electromiografia", "polisomnografia"],
+    "Cardiología": ["gammagrafia_cardiaca", "holter", "mapa", "cinecoro", "ecg", "eco_stress", "ett", "ergometria", "eco_te"],
+    "Ginecología": ["pap", "colposcopia", "ecografia_obstetrica", "eco_gineco", "histeroscopia"],
+    "Neurología": ["electromiografia", "polisomnografia", "eeg", "potenciales_evocados"],
     "ORL": ["naso", "endoscopia_otologica"],
     "Quirúrgico": ["protocolo_quirurgico"],
-    "General": ["nota_evolucion", "epicrisis", "generico"]
+    "General": ["nota_evolucion", "epicrisis", "generico"],
+    "Urología": ["uroflujometria"],
+    "Musculoesquelético": ["artroscopia", "eco_musculoesqueletica"],
+    "Dermatología": ["dermatoscopia"]
 };
 
 window.detectStudyType = function (text) {

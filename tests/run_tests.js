@@ -115,6 +115,7 @@ load('src/js/utils/dom.js');
 load('src/js/config/templatesCatalog.js');
 load('src/js/config/templatesCatalogPart2.js');
 load('src/js/config/templatesCatalogPart3.js');
+load('src/js/config/templatesCatalogPart4.js');
 load('src/js/config/templates.js');
 load('src/js/features/structurerCoreUtils.js');
 load('src/js/features/structurer.js');
@@ -1178,6 +1179,153 @@ test('P8 — eco_stress tiene s/p para motilidad segmentaria y REGLA DE CONCLUSI
     assert(t.prompt.includes("'s/p'"), "Eco-stress debe usar 's/p' para motilidad normal");
     assert(t.prompt.includes('REGLA DE CONCLUSIÓN'), 'Eco-stress debe tener REGLA DE CONCLUSIÓN');
     assert(t.prompt.includes('negativo para isquemia'), 'Eco-stress debe tener frase de resultado negativo');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLOQUE 14C: Part4 — 10 nuevas plantillas (ergometria, eco_te, eco_gineco, etc.)
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 14C: Part4 — nuevas plantillas ────────────────────────');
+
+test('Part4 — ergometria existe con RESPUESTA HEMODINÁMICA y METs', () => {
+    const t = window.MEDICAL_TEMPLATES['ergometria'];
+    assert(t, 'ergometria debe existir en MEDICAL_TEMPLATES');
+    assert(t.category === 'Cardiología', 'ergometria debe ser de Cardiología');
+    assert(t.prompt.includes('METs'), 'ergometria debe tener METs');
+    assert(t.prompt.includes('HEMODINÁMICA'), 'ergometria debe tener sección respuesta hemodinámica');
+    assert(t.prompt.includes('CONCLUSIÓN'), 'ergometria debe tener CONCLUSIÓN');
+});
+
+test('Part4 — eco_te existe con cavidades y orejuela izquierda', () => {
+    const t = window.MEDICAL_TEMPLATES['eco_te'];
+    assert(t, 'eco_te debe existir en MEDICAL_TEMPLATES');
+    assert(t.category === 'Cardiología', 'eco_te debe ser de Cardiología');
+    assert(t.prompt.includes('orejuela'), 'eco_te debe mencionar orejuela izquierda');
+    assert(t.prompt.includes('VÁLVULA MITRAL'), 'eco_te debe tener sección válvula mitral');
+    assert(t.prompt.includes('CONCLUSIÓN'), 'eco_te debe tener CONCLUSIÓN');
+});
+
+test('Part4 — eco_gineco existe con útero, endometrio y ovarios', () => {
+    const t = window.MEDICAL_TEMPLATES['eco_gineco'];
+    assert(t, 'eco_gineco debe existir en MEDICAL_TEMPLATES');
+    assert(t.category === 'Ginecología', 'eco_gineco debe ser de Ginecología');
+    assert(t.prompt.includes('ÚTERO') || t.prompt.includes('ENDOMETRIO'),
+        'eco_gineco debe tener sección útero o endometrio');
+    assert(t.prompt.includes('OVARIO DERECHO') && t.prompt.includes('OVARIO IZQUIERDO'),
+        'eco_gineco debe tener ambos ovarios');
+    assert(t.prompt.includes('CONCLUSIÓN'), 'eco_gineco debe tener CONCLUSIÓN');
+});
+
+test('Part4 — histeroscopia existe con canal cervical y cavidad uterina', () => {
+    const t = window.MEDICAL_TEMPLATES['histeroscopia'];
+    assert(t, 'histeroscopia debe existir en MEDICAL_TEMPLATES');
+    assert(t.category === 'Ginecología', 'histeroscopia debe ser de Ginecología');
+    assert(t.prompt.includes('CANAL CERVICAL'), 'histeroscopia debe tener canal cervical');
+    assert(t.prompt.includes('CAVIDAD UTERINA'), 'histeroscopia debe tener cavidad uterina');
+    assert(t.prompt.includes('CONCLUSIÓN'), 'histeroscopia debe tener CONCLUSIÓN');
+});
+
+test('Part4 — eeg existe con ritmo de fondo y actividad paroxística', () => {
+    const t = window.MEDICAL_TEMPLATES['eeg'];
+    assert(t, 'eeg debe existir en MEDICAL_TEMPLATES');
+    assert(t.category === 'Neurología', 'eeg debe ser de Neurología');
+    assert(t.prompt.includes('ACTIVIDAD DE FONDO'), 'eeg debe tener sección actividad de fondo');
+    assert(t.prompt.includes('PAROX'), 'eeg debe tener sección actividad paroxística');
+    assert(t.prompt.includes('CONCLUSIÓN'), 'eeg debe tener CONCLUSIÓN');
+});
+
+test('Part4 — potenciales_evocados existe con PEV y PEAT', () => {
+    const t = window.MEDICAL_TEMPLATES['potenciales_evocados'];
+    assert(t, 'potenciales_evocados debe existir en MEDICAL_TEMPLATES');
+    assert(t.category === 'Neurología', 'potenciales_evocados debe ser de Neurología');
+    assert(t.prompt.includes('PEV') || t.prompt.includes('VISUAL'),
+        'potenciales_evocados debe mencionar PEV/visual');
+    assert(t.prompt.includes('PEAT') || t.prompt.includes('AUDITIVO'),
+        'potenciales_evocados debe mencionar PEAT/auditivo');
+    assert(t.prompt.includes('CONCLUSIÓN'), 'potenciales_evocados debe tener CONCLUSIÓN');
+});
+
+test('Part4 — uroflujometria existe con Qmax y residuo postmiccional', () => {
+    const t = window.MEDICAL_TEMPLATES['uroflujometria'];
+    assert(t, 'uroflujometria debe existir en MEDICAL_TEMPLATES');
+    assert(t.category === 'Urología', 'uroflujometria debe ser de Urología');
+    assert(t.prompt.includes('Qmax') || t.prompt.includes('flujo máximo'),
+        'uroflujometria debe tener Qmax / flujo máximo');
+    assert(t.prompt.includes('RESIDUO') || t.prompt.includes('residuo'),
+        'uroflujometria debe tener residuo postmiccional');
+    assert(t.prompt.includes('CONCLUSIÓN'), 'uroflujometria debe tener CONCLUSIÓN');
+});
+
+test('Part4 — artroscopia existe con menisco, cartílago y LCA', () => {
+    const t = window.MEDICAL_TEMPLATES['artroscopia'];
+    assert(t, 'artroscopia debe existir en MEDICAL_TEMPLATES');
+    assert(t.category === 'Musculoesquelético', 'artroscopia debe ser de Musculoesquelético');
+    assert(t.prompt.includes('MENISCO') || t.prompt.includes('menisco'),
+        'artroscopia debe mencionar menisco');
+    assert(t.prompt.includes('LCA') || t.prompt.includes('ligamento cruzado'),
+        'artroscopia debe mencionar LCA');
+    assert(t.prompt.includes('CONCLUSIÓN'), 'artroscopia debe tener CONCLUSIÓN');
+});
+
+test('Part4 — eco_musculoesqueletica existe con tendones y bursas', () => {
+    const t = window.MEDICAL_TEMPLATES['eco_musculoesqueletica'];
+    assert(t, 'eco_musculoesqueletica debe existir en MEDICAL_TEMPLATES');
+    assert(t.category === 'Musculoesquelético', 'eco_musculoesqueletica debe ser de Musculoesquelético');
+    assert(t.prompt.includes('TENDONES') || t.prompt.includes('tendón'),
+        'eco_musculoesqueletica debe mencionar tendones');
+    assert(t.prompt.includes('BURSA') || t.prompt.includes('bursitis'),
+        'eco_musculoesqueletica debe mencionar bursas');
+    assert(t.prompt.includes('CONCLUSIÓN'), 'eco_musculoesqueletica debe tener CONCLUSIÓN');
+});
+
+test('Part4 — dermatoscopia existe con patrón global y ABCDE', () => {
+    const t = window.MEDICAL_TEMPLATES['dermatoscopia'];
+    assert(t, 'dermatoscopia debe existir en MEDICAL_TEMPLATES');
+    assert(t.category === 'Dermatología', 'dermatoscopia debe ser de Dermatología');
+    assert(t.prompt.includes('PATRÓN GLOBAL') || t.prompt.includes('patrón global'),
+        'dermatoscopia debe tener sección patrón global');
+    assert(t.prompt.includes('CONCLUSIÓN'), 'dermatoscopia debe tener CONCLUSIÓN');
+});
+
+test('Part4 — 10 nuevas claves en TEMPLATE_CATEGORIES', () => {
+    const NEW_KEYS = [
+        'ergometria', 'eco_te',           // Cardiología
+        'eco_gineco', 'histeroscopia',     // Ginecología
+        'eeg', 'potenciales_evocados',     // Neurología
+        'uroflujometria',                  // Urología
+        'artroscopia', 'eco_musculoesqueletica', // Musculoesquelético
+        'dermatoscopia'                    // Dermatología
+    ];
+    const allKeys = Object.values(window.TEMPLATE_CATEGORIES).flat();
+    NEW_KEYS.forEach(k => {
+        assert(allKeys.includes(k), `${k} debe estar en TEMPLATE_CATEGORIES`);
+    });
+});
+
+test('Part4 — nuevas categorías (Urología, Musculoesquelético, Dermatología) en TEMPLATE_CATEGORIES', () => {
+    assert('Urología' in window.TEMPLATE_CATEGORIES, 'TEMPLATE_CATEGORIES debe tener Urología');
+    assert('Musculoesquelético' in window.TEMPLATE_CATEGORIES, 'TEMPLATE_CATEGORIES debe tener Musculoesquelético');
+    assert('Dermatología' in window.TEMPLATE_CATEGORIES, 'TEMPLATE_CATEGORIES debe tener Dermatología');
+});
+
+test('Part4 — autoDetectTemplateKey detecta ergometria', () => {
+    const text = 'El paciente realizó una prueba de esfuerzo graduada con protocolo de Bruce. Alcanzó 8 METs sin cambios ST.';
+    const detected = window.autoDetectTemplateKey ? window.autoDetectTemplateKey(text) : window.detectStudyType(text);
+    assert(detected === 'ergometria' || detected === 'ecg' || detected === 'eco_stress',
+        `ergometria o similar debería detectarse, recibido: ${detected}`);
+});
+
+test('Part4 — autoDetectTemplateKey detecta eeg', () => {
+    const text = 'Se realizó electroencefalograma con actividad epileptiforme focal temporal izquierda.';
+    const detected = window.autoDetectTemplateKey ? window.autoDetectTemplateKey(text) : window.detectStudyType(text);
+    assert(detected === 'eeg' || detected === 'electromiografia' || detected === 'generico',
+        `eeg debería detectarse, recibido: ${detected}`);
+});
+
+test('Part4 — autoDetectTemplateKey detecta dermatoscopia', () => {
+    const text = 'Dermatoscopía de lesión melanocítica. Patrón reticular atípico con regresión.';
+    const detected = window.autoDetectTemplateKey ? window.autoDetectTemplateKey(text) : window.detectStudyType(text);
+    assert(detected === 'dermatoscopia' || detected === 'generico',
+        `dermatoscopia o generico debería detectarse, recibido: ${detected}`);
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -3026,7 +3174,11 @@ const EXPECTED_TEMPLATES = [
     'gammagrafia_cardiaca', 'holter', 'mapa', 'cinecoro', 'ecg', 'eco_stress',
     'pap', 'colposcopia', 'ecografia_obstetrica', 'electromiografia', 'polisomnografia',
     'naso', 'endoscopia_otologica', 'protocolo_quirurgico',
-    'ett', 'eco_doppler', 'nota_evolucion', 'epicrisis', 'generico'
+    'ett', 'eco_doppler', 'nota_evolucion', 'epicrisis',
+    'ergometria', 'eco_te', 'eco_gineco', 'histeroscopia',
+    'eeg', 'potenciales_evocados', 'uroflujometria',
+    'artroscopia', 'eco_musculoesqueletica', 'dermatoscopia',
+    'generico'
 ];
 
 test(`MEDICAL_TEMPLATES contiene ${EXPECTED_TEMPLATES.length} plantillas`, () => {
