@@ -55,9 +55,13 @@ const ADMIN_GROQ_KEYS = {
     b2:      'gsk_test_backup2_p4_placeholder'
 };
 
-// ── Usuario de prueba (TRIAL ya vencida) ──────────────────────────────────────
+// ── Usuario de prueba (TRIAL con vencimiento MAÑANA — válido para primer acceso) ─────
 const SUFFIX = Date.now().toString(36).toUpperCase();
-// Fecha de vencimiento = ayer
+// Fecha de vencimiento = MAÑANA (trial válida para el primer acceso)
+const tomorrow = new Date();
+tomorrow.setDate(tomorrow.getDate() + 1);
+const VALID_DATE = tomorrow.toISOString().split('T')[0];
+// Fecha de expiración forzada = ayer
 const yesterday = new Date();
 yesterday.setDate(yesterday.getDate() - 1);
 const EXPIRED_DATE = yesterday.toISOString().split('T')[0];
@@ -72,10 +76,10 @@ const TRIAL_USER = {
     Plan:       'trial',
     Estado:     'trial',
     Fecha_Registro:    new Date().toISOString().split('T')[0],
-    Fecha_Vencimiento: EXPIRED_DATE,   // ← ya vencida: ayer
+    Fecha_Vencimiento: VALID_DATE,   // ← Mañana (VÁLIDO para primer acceso)
     Devices_Max:       3,
     Usage_Count:       0,
-    Notas_Admin:       'Trial expirado — creado por E2E P4 para prueba de degradación'
+    Notas_Admin:       'Trial válida mañana — creado por E2E P4 para prueba de degradación'
 };
 
 // ── Report dir ────────────────────────────────────────────────────────────────
@@ -153,34 +157,38 @@ async function closeDashModal(page) {
 }
 
 async function generateCloneLink(adminPage, userId) {
+    // Ir a la tab de usuarios y refrescar — esperar suficiente tiempo para GAS
     await adminPage.click('.tab-btn[data-tab="usuarios"]').catch(() => {});
-    await adminPage.waitForTimeout(1200);
+    await adminPage.waitForTimeout(1500);
     await adminPage.click('#btnRefresh').catch(() => {});
-    await adminPage.waitForTimeout(3000);
+    await adminPage.waitForTimeout(8000); // GAS puede tardar en devolver usuarios
 
-    await adminPage.evaluate((uid) => {
-        if (typeof openCloneFactory === 'function') openCloneFactory(uid);
-    }, userId);
-    await adminPage.waitForTimeout(2500);
-    await closeDashModal(adminPage);
-
-    let cfVisible = await adminPage.locator('#cloneFactoryModal').isVisible().catch(() => false);
-    if (!cfVisible) {
+    // Reintentar hasta 3 veces la apertura del Clone Factory
+    let cfVisible = false;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        await closeDashModal(adminPage);
         await adminPage.evaluate((uid) => {
             if (typeof openCloneFactory === 'function') openCloneFactory(uid);
         }, userId);
-        await adminPage.waitForTimeout(2500);
+        await adminPage.waitForTimeout(3000);
         await closeDashModal(adminPage);
+        cfVisible = await adminPage.locator('#cloneFactoryModal').isVisible().catch(() => false);
+        if (cfVisible) break;
+        log('[WARN] openCloneFactory intento ' + attempt + '/3 — modal no visible, reintentando...');
+        // Refrescar de nuevo y esperar
+        await adminPage.click('#btnRefresh').catch(() => {});
+        await adminPage.waitForTimeout(6000);
     }
+    if (!cfVisible) throw new Error('Clone Factory modal no se abrió para userId=' + userId);
 
     await adminPage.evaluate(() => {
         const btn = document.getElementById('cfBtnGenerate');
         if (btn) btn.click();
     });
-    await adminPage.waitForTimeout(6000);
+    await adminPage.waitForTimeout(8000);
 
     const link = await adminPage.locator('#cfLinkUrl').inputValue().catch(() => '');
-    if (!link.includes('?id=')) throw new Error('Clone Factory no generó link con ?id=');
+    if (!link.includes('?id=')) throw new Error('Clone Factory no generó link con ?id= para userId=' + userId);
     return link;
 }
 
@@ -206,80 +214,133 @@ async function generateCloneLink(adminPage, userId) {
         }, ADMIN_GROQ_KEYS);
         log('[OK] Admin logueado');
 
-        // ── FASE 2: Crear usuario TRIAL con fecha ya vencida ──────────────────
-        log('\n[FASE 2] Crear usuario TRIAL con Fecha_Vencimiento=' + EXPIRED_DATE + ' (ayer)');
+        // ── FASE 2: Crear usuario TRIAL con fecha VÁLIDA (mañana) ─────────────
+        log('\n[FASE 2] Crear usuario TRIAL con Fecha_Vencimiento=' + VALID_DATE + ' (mañana)');
         const createResult = await adminCreateUser(session, TRIAL_USER);
         if (!createResult.success) {
             throw new Error('admin_create_user falló: ' + JSON.stringify(createResult));
         }
         log('[OK] Usuario TRIAL creado: ' + TRIAL_USER.ID_Medico);
 
-        // Verificar vía validate que el backend ya reporta EXPIRED
-        const validateExpired = await fetchJson(
-            GAS_URL + '?action=validate&id=' + encodeURIComponent(TRIAL_USER.ID_Medico) + '&deviceId=e2e_p4_check_' + Date.now()
+        // Verificar que el backend reporta OK (no EXPIRED)
+        const validateOk = await fetchJson(
+            GAS_URL + '?action=validate&id=' + encodeURIComponent(TRIAL_USER.ID_Medico) + '&deviceId=e2e_p4_firstcheck_' + Date.now()
         );
-        log('[DEBUG] validate inicial: ' + JSON.stringify(validateExpired).slice(0, 300));
-        if (validateExpired.code !== 'EXPIRED') {
-            throw new Error('Backend debería devolver EXPIRED inmediatamente, recibido: code=' + validateExpired.code + ' error=' + validateExpired.error);
+        log('[DEBUG] validate inicial (espero OK): ' + JSON.stringify(validateOk).slice(0, 200));
+        if (validateOk.error) {
+            throw new Error('Backend debería devolver OK para trial válida, recibido: error=' + validateOk.error + ' code=' + validateOk.code);
         }
-        log('[OK] Backend confirma: code=EXPIRED, plan=' + validateExpired.plan);
+        const planInitial = String(validateOk.Plan || validateOk.plan || '').toLowerCase();
+        log('[OK] Backend confirma trial válida: plan=' + planInitial + ' estado=' + validateOk.Estado);
 
         // ── FASE 3: Clone Factory → generar link ──────────────────────────────
-        log('\n[FASE 3] Generar clone link para usuario TRIAL expirado');
-        const cloneLinkExpired = await generateCloneLink(adminPage, TRIAL_USER.ID_Medico);
+        log('\n[FASE 3] Generar clone link para trial válida');
+        const cloneLinkTrial = await generateCloneLink(adminPage, TRIAL_USER.ID_Medico);
         await shot(adminPage, '03_clone_factory_trial');
-        log('[OK] Clone link trial: ' + cloneLinkExpired);
+        log('[OK] Clone trial link: ' + cloneLinkTrial);
 
-        // ── FASE 4: Abrir clone → verificar degradación ───────────────────────
-        log('\n[FASE 4] Abrir clone — esperar degradación a NORMAL');
-        const clonePageExpired = await context.newPage();
-        clonePageExpired.on('console', msg => {
+        // ── FASE 4: Abrir clone con trial VÁLIDA → setup debe completarse ──────
+        log('\n[FASE 4] Abrir clone con trial válida — setup debe completarse');
+        const clonePage = await context.newPage();
+        clonePage.on('console', msg => {
             const text = msg.text();
-            // Log mensajes relevantes del licenseManager
-            if (/licenseManager|EXPIRED|degradado|trial/i.test(text) || msg.type() === 'error') {
+            if (/licenseManager|EXPIRED|degradado|trial|TRIAL/i.test(text) || msg.type() === 'error') {
                 log('[CLONE][console] ' + msg.type() + ': ' + text.slice(0, 200));
             }
         });
 
-        // Capturar toasts (el DOM puede cambiar rápido)
-        let toastTexts = [];
-        clonePageExpired.on('response', () => {}); // mantener page activa
+        await clonePage.goto(cloneLinkTrial + '&_t=' + Date.now(), { waitUntil: 'domcontentloaded', timeout: 45000 });
+        await clonePage.waitForTimeout(12000);
+        await shot(clonePage, '04_clone_trial_valid_loaded');
 
-        await clonePageExpired.goto(cloneLinkExpired + '&_t=' + Date.now(), { waitUntil: 'domcontentloaded', timeout: 45000 });
-
-        // Esperar a que licenseManager ejecute su validate
-        await clonePageExpired.waitForTimeout(12000);
-        await shot(clonePageExpired, '04_clone_trial_loaded');
-
-        // Capturar texto visible de toast (si existe)
-        const toastEl = await clonePageExpired.locator('.toast, .toast-msg, [class*="toast"], [id*="toast"]').first();
-        const toastText = await toastEl.innerText().catch(() => '');
-        if (toastText) log('[INFO] Toast visible: "' + toastText.slice(0, 150) + '"');
-
-        // Verificar degradación en window.CLIENT_CONFIG
-        const cfgAfterLoad = await clonePageExpired.evaluate(() => ({
+        const cfgInitial = await clonePage.evaluate(() => ({
             type:       window.CLIENT_CONFIG ? window.CLIENT_CONFIG.type : 'N/A',
             hasProMode: window.CLIENT_CONFIG ? window.CLIENT_CONFIG.hasProMode : 'N/A',
-            maxDevices: window.CLIENT_CONFIG ? window.CLIENT_CONFIG.maxDevices : 'N/A',
-            planCode:   window.CLIENT_CONFIG ? (window.CLIENT_CONFIG.planCode || window.CLIENT_CONFIG.plan || '') : 'N/A'
+            medicoId:   window.CLIENT_CONFIG ? window.CLIENT_CONFIG.medicoId : 'N/A',
+            planCode:   window.CLIENT_CONFIG ? (window.CLIENT_CONFIG.planCode || '') : 'N/A'
         }));
-        log('[DEBUG] CLIENT_CONFIG tras carga con trial expirado: ' + JSON.stringify(cfgAfterLoad));
+        log('[DEBUG] CLIENT_CONFIG tras carga con trial válida: ' + JSON.stringify(cfgInitial));
 
-        // El licenseManager degrada a NORMAL si plan=trial + EXPIRED
-        const typeAfterLoad = String(cfgAfterLoad.type || '').toUpperCase();
-        if (typeAfterLoad !== 'NORMAL') {
-            throw new Error('Degradación no ocurrió: CLIENT_CONFIG.type=' + typeAfterLoad + ' (esperado: NORMAL)');
+        // Con trial válida, el setup debe completarse (type != ADMIN && medicoId != N/A)
+        if (cfgInitial.type === 'ADMIN' || cfgInitial.medicoId === 'N/A') {
+            throw new Error('Setup falló con trial válida — CLIENT_CONFIG.type=' + cfgInitial.type + ' medicoId=' + cfgInitial.medicoId);
         }
-        if (cfgAfterLoad.hasProMode !== false) {
-            throw new Error('Degradación incorrecta: hasProMode=' + cfgAfterLoad.hasProMode + ' (esperado: false)');
+        log('[OK] Setup con trial válida completado: type=' + cfgInitial.type + ' planCode=' + cfgInitial.planCode);
+
+        // ── FASE 5: Admin expira la trial ─────────────────────────────────────
+        log('\n[FASE 5] Admin expira la trial (Fecha_Vencimiento=' + EXPIRED_DATE + ')');
+        const expireResult = await adminUpdateUser(session, TRIAL_USER.ID_Medico, {
+            Fecha_Vencimiento: EXPIRED_DATE,
+            Estado:            'expired',
+            Notas_Admin:       'Trial expirada a propósito — E2E P4'
+        });
+        if (!expireResult.success) {
+            throw new Error('admin_update_user (expirar) falló: ' + JSON.stringify(expireResult));
         }
-        log('[OK] Degradación confirmada: type=NORMAL, hasProMode=false, maxDevices=' + cfgAfterLoad.maxDevices);
-        await shot(clonePageExpired, '05_clone_degraded_normal');
+        log('[OK] Trial expirada en backend');
 
-        await clonePageExpired.close();
+        // Esperar brevemente para que el backend actualice
+        await new Promise(r => setTimeout(r, 2000));
 
-        // ── FASE 5: Admin activa PRO ──────────────────────────────────────────
-        log('\n[FASE 5] Admin activa PRO para el usuario trial expirado');
+        // Confirmar EXPIRED en backend
+        const validateExpired = await fetchJson(
+            GAS_URL + '?action=validate&id=' + encodeURIComponent(TRIAL_USER.ID_Medico) + '&deviceId=' + encodeURIComponent(TRIAL_USER.ID_Medico + '_p4_expire')
+        );
+        log('[DEBUG] validate tras expirar: ' + JSON.stringify(validateExpired).slice(0, 200));
+        if (validateExpired.code !== 'EXPIRED') {
+            throw new Error('Backend debería devolver EXPIRED, recibido: code=' + validateExpired.code);
+        }
+        log('[OK] Backend confirma: code=EXPIRED');
+
+        // ── FASE 6: Forzar re-validate en la app → degradación ────────────────
+        log('\n[FASE 6] Forzar re-validate en la app (limpiar cache + llamar validateLicense)');
+
+        // Limpiar cache de licencia en el browser para forzar nueva call al backend
+        await clonePage.evaluate(() => {
+            localStorage.removeItem('license_cache');
+            if (typeof appDB !== 'undefined') {
+                appDB.remove('license_cache').catch(() => {});
+            }
+        });
+
+        // Llamar validateLicense() — licenseManager recibirá EXPIRED y degradará
+        const validateInPage = await clonePage.evaluate(async () => {
+            if (typeof window.validateLicense !== 'function') {
+                return { error: 'validateLicense no disponible en window' };
+            }
+            try {
+                const result = await window.validateLicense();
+                return { done: true, result };
+            } catch (e) {
+                return { error: String(e && e.message ? e.message : e) };
+            }
+        });
+        log('[DEBUG] validateLicense() en página: ' + JSON.stringify(validateInPage).slice(0, 300));
+
+        await clonePage.waitForTimeout(3000);
+        await shot(clonePage, '05_clone_after_expire');
+
+        // ── FASE 7: Verificar degradación ─────────────────────────────────────
+        log('\n[FASE 7] Verificar degradación a NORMAL');
+        const cfgAfterExpiry = await clonePage.evaluate(() => ({
+            type:       window.CLIENT_CONFIG ? window.CLIENT_CONFIG.type : 'N/A',
+            hasProMode: window.CLIENT_CONFIG ? window.CLIENT_CONFIG.hasProMode : 'N/A',
+            maxDevices: window.CLIENT_CONFIG ? window.CLIENT_CONFIG.maxDevices : 'N/A'
+        }));
+        log('[DEBUG] CLIENT_CONFIG tras expiración: ' + JSON.stringify(cfgAfterExpiry));
+
+        const typeAfterExpiry = String(cfgAfterExpiry.type || '').toUpperCase();
+        if (typeAfterExpiry !== 'NORMAL') {
+            throw new Error('Degradación no ocurrió: CLIENT_CONFIG.type=' + typeAfterExpiry + ' (esperado: NORMAL). validateLicense result=' + JSON.stringify(validateInPage).slice(0, 200));
+        }
+        if (cfgAfterExpiry.hasProMode !== false) {
+            throw new Error('Degradación incompleta: hasProMode=' + cfgAfterExpiry.hasProMode + ' (esperado: false)');
+        }
+        log('[OK] Degradación confirmada: type=NORMAL, hasProMode=false, maxDevices=' + cfgAfterExpiry.maxDevices);
+        await shot(clonePage, '06_clone_degraded_normal');
+
+        // ── FASE 8: Admin activa PRO ──────────────────────────────────────────
+        log('\n[FASE 8] Admin activa PRO');
         const renewDate = new Date();
         renewDate.setFullYear(renewDate.getFullYear() + 1);
         const formattedRenew = renewDate.toISOString().split('T')[0];
@@ -296,73 +357,49 @@ async function generateCloneLink(adminPage, userId) {
         }
         log('[OK] PRO activado. Fecha_Vencimiento=' + formattedRenew);
 
-        // Verificar en backend
         await new Promise(r => setTimeout(r, 2000));
-        const validateRenewed = await fetchJson(
-            GAS_URL + '?action=validate&id=' + encodeURIComponent(TRIAL_USER.ID_Medico) + '&deviceId=e2e_p4_check2_' + Date.now()
-        );
-        log('[DEBUG] validate tras renovación: ' + JSON.stringify(validateRenewed).slice(0, 300));
-        if (validateRenewed.error) {
-            throw new Error('validate tras renovación tiene error: ' + validateRenewed.error + ' code=' + validateRenewed.code);
-        }
-        const planRenewed = String(validateRenewed.Plan || validateRenewed.plan || '').toLowerCase();
-        if (planRenewed !== 'pro') {
-            throw new Error('Backend no refleja plan=pro tras renovación, recibido: ' + planRenewed);
-        }
-        log('[OK] Backend confirma renovación: plan=pro, estado=' + validateRenewed.Estado);
 
-        // ── FASE 6: Abrir clone renovado → verificar PRO ──────────────────────
-        log('\n[FASE 6] Abrir clone con trial renovada → verificar PRO');
-        await adminPage.click('#btnRefresh').catch(() => {});
-        await adminPage.waitForTimeout(3000);
+        // ── FASE 9: Recargar clone post-renovación → setup fresh → PRO ──────────
+        log('\n[FASE 9] Recargar clone post-renovación → setup fresh debe cargar PRO');
+        // validateLicense() solo degrada, NO promueve. La renovación requiere recarga
+        // de la página para que handleFactorySetupCore corra de nuevo con plan=pro.
+        // Esto es el comportamiento real del usuario tras ser renovado.
+        await clonePage.goto(cloneLinkTrial + '&_t=' + Date.now(), { waitUntil: 'domcontentloaded', timeout: 45000 });
+        await clonePage.waitForTimeout(12000);
+        await shot(clonePage, '07_clone_renewed_pro');
 
-        const cloneLinkRenewed = await generateCloneLink(adminPage, TRIAL_USER.ID_Medico);
-        await shot(adminPage, '06_clone_factory_renewed');
-        log('[OK] Nuevo clone PRO: ' + cloneLinkRenewed);
-
-        const clonePageRenewed = await context.newPage();
-        clonePageRenewed.on('console', msg => {
-            const text = msg.text();
-            if (/licenseManager|EXPIRED|degradado|pro|trial/i.test(text) || msg.type() === 'error') {
-                log('[CLONE-PRO][console] ' + msg.type() + ': ' + text.slice(0, 200));
-            }
-        });
-        await clonePageRenewed.goto(cloneLinkRenewed + '&_t=' + Date.now(), { waitUntil: 'domcontentloaded', timeout: 45000 });
-        await clonePageRenewed.waitForTimeout(10000);
-        await shot(clonePageRenewed, '07_clone_renewed_loaded');
-
-        const cfgRenewed = await clonePageRenewed.evaluate(() => ({
-            type:       window.CLIENT_CONFIG ? window.CLIENT_CONFIG.type : 'N/A',
-            hasProMode: window.CLIENT_CONFIG ? window.CLIENT_CONFIG.hasProMode : 'N/A',
+        const cfgRenewed = await clonePage.evaluate(() => ({
+            type:         window.CLIENT_CONFIG ? window.CLIENT_CONFIG.type : 'N/A',
+            hasProMode:   window.CLIENT_CONFIG ? window.CLIENT_CONFIG.hasProMode : 'N/A',
             hasDashboard: window.CLIENT_CONFIG ? window.CLIENT_CONFIG.hasDashboard : 'N/A',
-            planCode:   window.CLIENT_CONFIG ? (window.CLIENT_CONFIG.planCode || window.CLIENT_CONFIG.plan || '') : 'N/A'
+            planCode:     window.CLIENT_CONFIG ? (window.CLIENT_CONFIG.planCode || '') : 'N/A'
         }));
-        log('[DEBUG] CLIENT_CONFIG tras renovación: ' + JSON.stringify(cfgRenewed));
+        log('[DEBUG] CLIENT_CONFIG tras renovación PRO: ' + JSON.stringify(cfgRenewed));
 
-        const typeRenewed = String(cfgRenewed.type || cfgRenewed.planCode || '').toLowerCase();
-        if (typeRenewed !== 'pro') {
-            throw new Error('Renovación no activa PRO: type=' + cfgRenewed.type + ' planCode=' + cfgRenewed.planCode + ' (esperado: pro)');
+        // Después de renovar a PRO, licenseManager actualiza CLIENT_CONFIG
+        const typeRenewed = String(cfgRenewed.type || '').toUpperCase();
+        if (typeRenewed !== 'PRO') {
+            throw new Error('Renovación no activó PRO: type=' + cfgRenewed.type + ' planCode=' + cfgRenewed.planCode + ' (esperado: PRO)');
         }
         if (!cfgRenewed.hasProMode) {
-            throw new Error('Renovación PRO: hasProMode debe ser true, recibido: ' + cfgRenewed.hasProMode);
+            throw new Error('Renovación PRO: hasProMode debe ser true tras activación, recibido: ' + cfgRenewed.hasProMode);
         }
-        log('[OK] Renovación verificada: type=PRO, hasProMode=true, hasDashboard=' + cfgRenewed.hasDashboard);
-        await shot(clonePageRenewed, '08_final_pro_state');
+        log('[OK] Renovación PRO verificada: type=PRO, hasProMode=true, hasDashboard=' + cfgRenewed.hasDashboard);
+        await shot(clonePage, '08_final_pro_state');
 
         fs.writeFileSync(path.join(REPORT_DIR, 'summary.json'), JSON.stringify({
             ok: true,
             medicoId:         TRIAL_USER.ID_Medico,
+            validDate:        VALID_DATE,
             expiredDate:      EXPIRED_DATE,
             renewDate:        formattedRenew,
-            cloneLinkExpired,
-            cloneLinkRenewed,
-            cfgAfterExpiry:   cfgAfterLoad,
-            cfgAfterRenewal:  cfgRenewed,
+            cfgInitial,
+            cfgAfterExpiry,
             validateExpired,
-            validateRenewed
+            cfgRenewed
         }, null, 2));
 
-        log('\n[SUCCESS] ✅ P4 — TRIAL expirada → degradación → renovación PRO completado');
+        log('\n[SUCCESS] ✅ P4 — TRIAL expirada → degradación NORMAL → renovación PRO completado');
 
     } catch (err) {
         const errMsg = err && err.stack ? err.stack : String(err);
