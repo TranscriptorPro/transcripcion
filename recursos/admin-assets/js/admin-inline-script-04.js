@@ -2360,20 +2360,40 @@
 
             // Reset estado — API Key en modo lectura (ya configurada en la aprobación)
             const cfApiKeyInput = document.getElementById('cfApiKey');
-            cfApiKeyInput.value = user.API_Key || '';
-            cfApiKeyInput.readOnly = true;
-            cfApiKeyInput.style.background = '#f8fafc';
-            cfApiKeyInput.style.opacity = '0.75';
-            cfApiKeyInput.style.cursor = 'default';
             const cfHint = document.getElementById('cfApiKeyHint');
-            if (cfHint) cfHint.textContent = user.API_Key
-                ? '✅ Configurada durante la aprobación — solo lectura'
-                : '⚠️ Sin API Key configurada — el usuario deberá ingresarla manualmente';
-            // Backup keys (solo lectura en modo normal)
+            if (user.API_Key) {
+                // Ya tiene key configurada → mostrar en solo-lectura
+                cfApiKeyInput.value    = user.API_Key;
+                cfApiKeyInput.readOnly = true;
+                cfApiKeyInput.style.background = '#f8fafc';
+                cfApiKeyInput.style.opacity    = '0.75';
+                cfApiKeyInput.style.cursor     = 'default';
+                if (cfHint) cfHint.textContent = '✅ Configurada durante la aprobación — solo lectura';
+            } else {
+                // Sin key → editable y pre-rellenado con la key del admin
+                const adminKey = localStorage.getItem('admin_groq_key') || '';
+                cfApiKeyInput.value    = adminKey;
+                cfApiKeyInput.readOnly = false;
+                cfApiKeyInput.style.background = '';
+                cfApiKeyInput.style.opacity    = '';
+                cfApiKeyInput.style.cursor     = '';
+                if (cfHint) cfHint.textContent = adminKey
+                    ? '⚠️ Sin key previa — pre-rellenado con tu key de admin. Podés editarla antes de generar.'
+                    : '⚠️ Sin API Key configurada — ingresá la key antes de generar el link.';
+            }
+            // Backup keys
             const cfB1 = document.getElementById('cfApiKeyB1');
             const cfB2 = document.getElementById('cfApiKeyB2');
-            if (cfB1) { cfB1.value = user.API_Key_B1 || ''; cfB1.readOnly = true; cfB1.style.background = '#f8fafc'; cfB1.style.opacity = '0.75'; cfB1.style.cursor = 'default'; }
-            if (cfB2) { cfB2.value = user.API_Key_B2 || ''; cfB2.readOnly = true; cfB2.style.background = '#f8fafc'; cfB2.style.opacity = '0.75'; cfB2.style.cursor = 'default'; }
+            if (cfB1) {
+                cfB1.value = user.API_Key_B1 || (user.API_Key ? '' : (localStorage.getItem('admin_groq_key_b1') || ''));
+                const locked = !!(user.API_Key_B1 || user.API_Key);
+                cfB1.readOnly = locked; cfB1.style.background = locked ? '#f8fafc' : ''; cfB1.style.opacity = locked ? '0.75' : ''; cfB1.style.cursor = locked ? 'default' : '';
+            }
+            if (cfB2) {
+                cfB2.value = user.API_Key_B2 || (user.API_Key ? '' : (localStorage.getItem('admin_groq_key_b2') || ''));
+                const locked = !!(user.API_Key_B2 || user.API_Key);
+                cfB2.readOnly = locked; cfB2.style.background = locked ? '#f8fafc' : ''; cfB2.style.opacity = locked ? '0.75' : ''; cfB2.style.cursor = locked ? 'default' : '';
+            }
             document.getElementById('cfLinkResult').style.display = 'none';
 
             // Mostrar sección de API keys (visible en modo normal)
@@ -3359,7 +3379,21 @@
                     userName = _cfCurrentUser.Nombre || 'Doctor';
                     userEmail = _cfCurrentUser.Email || '';
 
-                    // API Key ya fue guardada en la aprobación — no se re-escribe desde aquí
+                    // Si el admin editó (o completó) la API key desde Clone Factory → persistir al Sheet
+                    const prevKey = _cfCurrentUser.API_Key || '';
+                    if (apiKey && apiKey !== prevKey) {
+                        const keyUpdates = { API_Key: apiKey };
+                        if (apiKeyB1) keyUpdates.API_Key_B1 = apiKeyB1;
+                        if (apiKeyB2) keyUpdates.API_Key_B2 = apiKeyB2;
+                        const updUrl = `${CONFIG.scriptUrl}?action=admin_update_user&userId=${encodeURIComponent(userId)}&updates=${encodeURIComponent(JSON.stringify(keyUpdates))}&${_getSessionAuthParams()}`;
+                        fetch(updUrl).then(r => r.json()).then(r => {
+                            if (!r.error) {
+                                // Actualizar objeto local para que Clone Factory lo muestre bien si se vuelve a abrir
+                                const u = allUsers.find(u => String(u.ID_Medico) === String(userId));
+                                if (u) { u.API_Key = apiKey; u.API_Key_B1 = apiKeyB1; u.API_Key_B2 = apiKeyB2; }
+                            }
+                        }).catch(() => {});
+                    }
 
                     // Log
                     const logUrl = `${CONFIG.scriptUrl}?action=admin_log_action&${_getSessionAuthParams()}&adminUser=${encodeURIComponent('admin')}&logAction=generate_link&userId=${encodeURIComponent(userId)}&details=${encodeURIComponent('Link generado')}`;
