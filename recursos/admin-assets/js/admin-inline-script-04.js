@@ -2474,6 +2474,15 @@
             if (tplGrid) { tplGrid.style.display = 'none'; tplGrid.innerHTML = ''; }
             updateGiftSummaryBadge();
 
+            // Reset profesionales (CLINIC)
+            _giftProfCounter = 0;
+            _giftProfTituloData = {};
+            const profContainer = document.getElementById('giftProfessionalsContainer');
+            if (profContainer) profContainer.innerHTML = '';
+            const profCard = document.getElementById('giftProfessionalsCard');
+            if (profCard) profCard.style.display = 'none';
+            _updateGiftProfCounter();
+
             // Wizard: empezar en paso 1
             giftGoStep(1);
 
@@ -2540,6 +2549,8 @@
         let _giftWpCounter = 0;
         let _giftWpLogoData = {};
         let _giftImageData = { firma: null, proLogo: null, proLogoSize: 60, firmaSize: 60, instLogoSize: 60 };
+        let _giftProfCounter = 0;
+        let _giftProfTituloData = {};
         var _giftActiveInstWp = 0;  // WP activo para el editor de logo institucional (var para acceso desde inline handlers)
         const _giftImagePreview = { inst: null, prof: null, firma: null };
 
@@ -2615,8 +2626,145 @@
                 socialChk.disabled = !socialPlans.includes(plan);
                 if (!socialPlans.includes(plan)) socialChk.checked = false;
             }
+            // Mostrar sección de profesionales SOLO para CLINIC (C3)
+            const profCard = document.getElementById('giftProfessionalsCard');
+            if (profCard) profCard.style.display = plan === 'CLINIC' ? '' : 'none';
             // Actualizar resumen inline en paso 3
             updateGiftSummaryBadge();
+        }
+
+        // ── C3: Profesionales del equipo (solo CLINIC) en Gift Wizard ─────────
+        function renderGiftProfessional(index) {
+            const container = document.getElementById('giftProfessionalsContainer');
+            if (!container) return;
+            const titu = _giftProfTituloData[index] || 'Dr.';
+            const trustedTituOptions = ['Dr.','Dra.','Lic.','Mg.','Prof.','TM.','Enf.'];
+            const titulosHtml = trustedTituOptions.map(t =>
+                '<option value="' + t + '"' + (t === titu ? ' selected' : '') + '>' + t + '</option>'
+            ).join('');
+            const div = document.createElement('div');
+            div.className = 'gw-wp-accordion';
+            div.id = 'giftProf-' + index;
+            div.innerHTML = [
+                '<div style="display:flex;align-items:center;gap:.5rem;cursor:pointer;padding:.5rem 0;" onclick="this.parentElement.classList.toggle(\'collapsed\');">',
+                    '<span id="giftProfNameDisplay' + index + '" style="flex:1;font-weight:600;font-size:.85rem;">',
+                        '&#129657; Profesional ' + (index + 1),
+                    '</span>',
+                    '<button type="button" onclick="event.stopPropagation();removeGiftProfessional(' + index + ')" style="padding:2px 8px;font-size:.78rem;border:1px solid #fca5a5;border-radius:6px;color:#ef4444;background:#fff8f8;cursor:pointer;">Eliminar</button>',
+                    '<span style="font-size:.7rem;color:#94a3b8;">&#9660;</span>',
+                '</div>',
+                '<div class="gw-wp-body" style="border-top:1px solid #f1f5f9;padding-top:.5rem;margin-top:.2rem;">',
+                    '<div class="gw-field-row">',
+                        '<div class="gw-field-group">',
+                            '<label>Título</label>',
+                            '<select id="giftProfTitulo' + index + '" onchange="_onGiftProfTituloChange(' + index + ')" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.82rem;">',
+                                titulosHtml,
+                            '</select>',
+                        '</div>',
+                        '<div class="gw-field-group" style="flex:2;">',
+                            '<label>Nombre y Apellido <span style="color:red;">*</span></label>',
+                            '<input type="text" id="giftProfNombre' + index + '" placeholder="Juan Pérez" oninput="_updateGiftProfName(' + index + ')" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.82rem;width:100%;">',
+                        '</div>',
+                    '</div>',
+                    '<div class="gw-field-row">',
+                        '<div class="gw-field-group">',
+                            '<label>Especialidad</label>',
+                            '<input type="text" id="giftProfEsp' + index + '" placeholder="Cardiología" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.82rem;width:100%;">',
+                        '</div>',
+                        '<div class="gw-field-group">',
+                            '<label>Matrícula</label>',
+                            '<input type="text" id="giftProfMatricula' + index + '" placeholder="MN 12345" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.82rem;width:100%;">',
+                        '</div>',
+                    '</div>',
+                    '<div class="gw-field-row">',
+                        '<div class="gw-field-group">',
+                            '<label>Usuario (para identificarse)</label>',
+                            '<input type="text" id="giftProfUsuario' + index + '" placeholder="jpérez" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.82rem;width:100%;">',
+                        '</div>',
+                        '<div class="gw-field-group">',
+                            '<label>PIN (4 dígitos)</label>',
+                            '<input type="text" id="giftProfPin' + index + '" placeholder="1234" maxlength="4" pattern="[0-9]{4}" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.82rem;width:100%;font-family:monospace;">',
+                        '</div>',
+                    '</div>',
+                    '<div class="gw-field-group">',
+                        '<label>Email (opcional)</label>',
+                        '<input type="email" id="giftProfEmail' + index + '" placeholder="profesional@clinica.com" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.82rem;width:100%;">',
+                    '</div>',
+                '</div>'
+            ].join('');
+            container.appendChild(div);
+        }
+
+        function _onGiftProfTituloChange(index) {
+            const sel = document.getElementById('giftProfTitulo' + index);
+            if (sel) _giftProfTituloData[index] = sel.value;
+            _updateGiftProfName(index);
+        }
+
+        function _updateGiftProfName(index) {
+            const disp = document.getElementById('giftProfNameDisplay' + index);
+            if (!disp) return;
+            const titu = _giftProfTituloData[index] || document.getElementById('giftProfTitulo' + index)?.value || 'Dr.';
+            const name = (document.getElementById('giftProfNombre' + index)?.value || '').trim();
+            disp.textContent = name ? (titu + ' ' + name) : '\uD83E\uDEC1 Profesional ' + (index + 1);
+        }
+
+        function addGiftProfessional() {
+            const current = document.querySelectorAll('#giftProfessionalsContainer .gw-wp-accordion').length;
+            const maxProf = 10;
+            if (current >= maxProf) { dashAlert('Máximo ' + maxProf + ' profesionales permitidos', '\uD83D\uDC65'); return; }
+            document.querySelectorAll('#giftProfessionalsContainer .gw-wp-accordion').forEach(a => a.classList.add('collapsed'));
+            renderGiftProfessional(_giftProfCounter);
+            _giftProfTituloData[_giftProfCounter] = 'Dr.';
+            _giftProfCounter++;
+            _updateGiftProfCounter();
+        }
+
+        function removeGiftProfessional(index) {
+            const el = document.getElementById('giftProf-' + index);
+            if (el) el.remove();
+            delete _giftProfTituloData[index];
+            _updateGiftProfCounter();
+        }
+
+        function _updateGiftProfCounter() {
+            const count = document.querySelectorAll('#giftProfessionalsContainer .gw-wp-accordion').length;
+            const el = document.getElementById('giftProfCounter');
+            if (el) el.textContent = count ? count + ' profesional(es) configurado(s)' : 'Sin profesionales aún';
+        }
+
+        function _collectGiftProfessionals() {
+            const profs = [];
+            document.querySelectorAll('#giftProfessionalsContainer .gw-wp-accordion').forEach(acc => {
+                const idx = parseInt(acc.id.replace('giftProf-', ''));
+                const titulo = _giftProfTituloData[idx] || 'Dr.';
+                const nombre = ((document.getElementById('giftProfNombre' + idx) || {}).value || '').trim();
+                if (!nombre) return;
+                const esp = ((document.getElementById('giftProfEsp' + idx) || {}).value || '').trim();
+                const mat = ((document.getElementById('giftProfMatricula' + idx) || {}).value || '').trim();
+                const usuario = ((document.getElementById('giftProfUsuario' + idx) || {}).value || '').trim();
+                const pin = ((document.getElementById('giftProfPin' + idx) || {}).value || '').trim() || '1234';
+                const email = ((document.getElementById('giftProfEmail' + idx) || {}).value || '').trim();
+                profs.push({
+                    id: String(Date.now()) + String(Math.floor(Math.random() * 100000)),
+                    nombre: titulo + ' ' + nombre,
+                    matricula: mat,
+                    especialidades: esp ? [esp] : [],
+                    usuario: usuario,
+                    pin: pin,
+                    email: email,
+                    telefono: '',
+                    firma: null,
+                    logo: null,
+                    redesSociales: {},
+                    showPhone: true,
+                    showEmail: true,
+                    showSocial: false,
+                    activo: true,
+                    primerUso: true
+                });
+            });
+            return profs;
         }
 
         function updateGiftSummaryBadge() {
@@ -2668,8 +2816,18 @@
             const email = document.getElementById('giftEmail')?.value || '—';
             const telefono = document.getElementById('giftTelefono')?.value || '';
 
-            // Datos del paso 2: TODOS los workplaces
-            const wpAccordions = document.querySelectorAll('.gw-wp-accordion');
+            // Profesionales (paso 4, solo CLINIC)
+            const giftPlanForSummary = document.getElementById('giftPlan')?.value || 'GIFT';
+            let profsSummaryHtml = '';
+            if (giftPlanForSummary === 'CLINIC') {
+                const profs = _collectGiftProfessionals();
+                profsSummaryHtml = profs.length
+                    ? profs.map(p => p.nombre + (p.especialidades[0] ? ' &mdash; ' + p.especialidades[0] : '')).join('<br>')
+                    : '<span style="color:#94a3b8;">Sin profesionales configurados</span>';
+            }
+
+            // Datos del paso 2: TODOS los workplaces (scoped al container correcto)
+            const wpAccordions = document.querySelectorAll('#giftWorkplacesContainer .gw-wp-accordion');
             let wpSummaryHtml = '';
             if (wpAccordions.length === 0) {
                 wpSummaryHtml = '<span style="color:#94a3b8;">Ninguno configurado</span>';
@@ -2750,6 +2908,10 @@
                   <div style="font-size:.7rem;color:#94a3b8;font-weight:600;text-transform:uppercase;margin-bottom:.3rem;">📋 Contacto en informes</div>
                   <div style="font-size:.78rem;">${contactSummary}</div>
                 </div>
+                ${plan === 'CLINIC' ? `<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:.5rem .7rem;grid-column:1/-1;">
+                  <div style="font-size:.7rem;color:#1d4ed8;font-weight:600;text-transform:uppercase;margin-bottom:.3rem;">👥 Profesionales del equipo</div>
+                  <div style="font-size:.78rem;">${profsSummaryHtml}</div>
+                </div>` : ''}
               </div>
             `;
         }
@@ -2873,7 +3035,7 @@
             const wasCollapsed = acc.classList.contains('collapsed');
             if (wasCollapsed) {
                 // Colapsar todos, expandir este
-                document.querySelectorAll('.gw-wp-accordion').forEach(a => a.classList.add('collapsed'));
+                document.querySelectorAll('#giftWorkplacesContainer .gw-wp-accordion').forEach(a => a.classList.add('collapsed'));
                 acc.classList.remove('collapsed');
             } else {
                 acc.classList.add('collapsed');
@@ -2881,7 +3043,7 @@
         }
 
         function addGiftWorkplace() {
-            document.querySelectorAll('.gw-wp-accordion').forEach(a => a.classList.add('collapsed'));
+            document.querySelectorAll('#giftWorkplacesContainer .gw-wp-accordion').forEach(a => a.classList.add('collapsed'));
             _giftWpCounter++;
             renderGiftWorkplace(_giftWpCounter, false);
             const el = document.getElementById('gw-wp-' + _giftWpCounter);
@@ -3030,7 +3192,7 @@
 
                     // Recoger TODOS los lugares de trabajo del accordion
                     const allWorkplaces = [];
-                    document.querySelectorAll('.gw-wp-accordion').forEach(acc => {
+                    document.querySelectorAll('#giftWorkplacesContainer .gw-wp-accordion').forEach(acc => {
                         const idx = acc.dataset.wpIndex;
                         allWorkplaces.push({
                             name:    (document.getElementById('gwWpName' + idx) || {}).value?.trim() || '',
@@ -3097,6 +3259,9 @@
                     }
 
                     // Datos enriquecidos (workplaces + apariencia + firma + logo) → se precargan en la app
+                    // CLINIC: recoger profesionales del equipo (C3)
+                    const clinicProfessionals = (selectedPlan === 'CLINIC') ? _collectGiftProfessionals() : undefined;
+
                     const registroDatos = {
                         workplace: allWorkplaces[0] || {},
                         extraWorkplaces: allWorkplaces.slice(1),
@@ -3115,7 +3280,8 @@
                         socialMedia,
                         showPhone,
                         showEmail,
-                        showSocial
+                        showSocial,
+                        ...(clinicProfessionals ? { profesionales: clinicProfessionals } : {})
                     };
 
                     const userData = {
@@ -3139,7 +3305,9 @@
                         Devices_Logged: '[]',
                         Diagnostico_Pendiente: 'false',
                         Registro_Datos: JSON.stringify(registroDatos),
-                        Notas_Admin: '🎁 Usuario regalo — creado desde Fábrica de Clones'
+                        Notas_Admin: selectedPlan === 'CLINIC'
+                            ? '🏥 Usuario Clínica — creado desde Fábrica de Clones'
+                            : '🎁 Usuario regalo — creado desde Fábrica de Clones'
                     };
 
                     // Mostrar barra de progreso
