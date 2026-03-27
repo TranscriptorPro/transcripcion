@@ -7420,6 +7420,7 @@ const snapshotsCodeSec = fs.readFileSync(path.join(root, 'src/js/features/editor
 const settingsBackupActionsCodeSec = fs.readFileSync(path.join(root, 'src/js/features/settingsBackupActionsUtils.js'), 'utf-8');
 const pdfMakerSectionCodeSec = fs.readFileSync(path.join(root, 'src/js/features/pdfMakerSectionUtils.js'), 'utf-8');
 const previewCssCodeSec = fs.readFileSync(path.join(root, 'src/css/preview-print.css'), 'utf-8');
+const componentsCssCodeSec = fs.readFileSync(path.join(root, 'src/css/components.css'), 'utf-8');
 
 test('AdminBase-1 — config.js detecta URL oficial /transcripcion', () => {
     assert(configCodeSec.includes("/transcripcion") && configCodeSec.includes('isOfficialAdminBase'),
@@ -7499,6 +7500,23 @@ test('Modal-4 — onboarding y acciones destructivas usan clases coherentes', ()
         'Botón de borrar datos debe usar clase danger temática');
     assert(indexCodeSec.includes('id="btnDeleteFieldSection"') && indexCodeSec.includes('edit-field-danger-btn'),
         'Botón eliminar campo debe usar clase danger temática');
+});
+
+test('Modal-4b — onboarding Gift oculta selector de color fijado por owner', () => {
+    assert(indexCodeSec.includes('id="onbColorCard"'),
+        'index.html debe exponer onbColorCard para controlarlo por plan');
+    assert(onboardingCode.includes('isGiftPlan') && onboardingCode.includes("colorCard.style.display = 'none'"),
+        'businessOnboardingUtils debe ocultar selector de color para clones Gift');
+});
+
+test('Modal-4c — dropdowns del header priorizan visibilidad sobre toolbar/buttons', () => {
+    assert(componentsCssCodeSec.includes('#normalTemplateDropdown') &&
+           componentsCssCodeSec.includes('#downloadDropdown') &&
+           componentsCssCodeSec.includes('z-index: 12050 !important'),
+        'components.css debe elevar z-index de dropdowns del header');
+    assert(componentsCssCodeSec.includes('#editorToolbar') &&
+           componentsCssCodeSec.includes('overflow: visible !important'),
+        'components.css debe permitir overflow visible para evitar solapamiento de desplegables');
 });
 
 test('PreviewPdf-1 — redes sociales en header usan bloque horizontal dedicado', () => {

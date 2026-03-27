@@ -10,6 +10,7 @@ function _showClientOnboarding() {
     const currentType = String((typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type) || 'NORMAL').toUpperCase();
     const currentPlan = String((typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.planCode) || '').toLowerCase();
     const isClinicPlan = currentPlan === 'clinic';
+    const isGiftPlan = currentPlan === 'gift';
     const shouldSkipAdvancedStep = !['PRO', 'ADMIN'].includes(currentType);
 
     function normalizeKey(key) {
@@ -111,23 +112,33 @@ function _showClientOnboarding() {
 
     function _initOnbStep3() {
         const palette = document.getElementById('onbColorPalette');
-        if (!palette || palette.children.length) return;
-        const presetColors = ['#1a56a0', '#0f766e', '#7c3aed', '#dc2626', '#c2410c', '#0369a1', '#1d4ed8', '#374151'];
-        const savedColor = (profData.headerColor || '#1a56a0').toLowerCase();
-        presetColors.forEach(c => {
-            const sw = document.createElement('div');
-            sw.className = 'onb-color-swatch' + (c === savedColor ? ' selected' : '');
-            sw.style.background = c;
-            sw.dataset.color = c;
-            sw.title = c;
-            sw.addEventListener('click', () => {
-                palette.querySelectorAll('.onb-color-swatch').forEach(s => s.classList.remove('selected'));
-                sw.classList.add('selected');
-                _updateOnbPreview();
+        const colorCard = document.getElementById('onbColorCard');
+        if (!palette) return;
+
+        if (isGiftPlan) {
+            if (colorCard) colorCard.style.display = 'none';
+        } else {
+            if (colorCard) colorCard.style.display = '';
+        }
+
+        if (!isGiftPlan && !palette.children.length) {
+            const presetColors = ['#1a56a0', '#0f766e', '#7c3aed', '#dc2626', '#c2410c', '#0369a1', '#1d4ed8', '#374151'];
+            const savedColor = (profData.headerColor || '#1a56a0').toLowerCase();
+            presetColors.forEach(c => {
+                const sw = document.createElement('div');
+                sw.className = 'onb-color-swatch' + (c === savedColor ? ' selected' : '');
+                sw.style.background = c;
+                sw.dataset.color = c;
+                sw.title = c;
+                sw.addEventListener('click', () => {
+                    palette.querySelectorAll('.onb-color-swatch').forEach(s => s.classList.remove('selected'));
+                    sw.classList.add('selected');
+                    _updateOnbPreview();
+                });
+                palette.appendChild(sw);
             });
-            palette.appendChild(sw);
-        });
-        if (!palette.querySelector('.onb-color-swatch.selected')) palette.firstChild?.classList.add('selected');
+            if (!palette.querySelector('.onb-color-swatch.selected')) palette.firstChild?.classList.add('selected');
+        }
         document.querySelectorAll('.onb-margin-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.onb-margin-btn').forEach(b => b.classList.remove('active'));
@@ -181,7 +192,9 @@ function _showClientOnboarding() {
     function _updateOnbPreview() {
         const preview = document.getElementById('onbPdfPreview');
         if (!preview) return;
-        const selectedColor = document.querySelector('#onbColorPalette .onb-color-swatch.selected')?.dataset.color || '#1a56a0';
+        const selectedColor = isGiftPlan
+            ? (profData.headerColor || '#1a56a0')
+            : (document.querySelector('#onbColorPalette .onb-color-swatch.selected')?.dataset.color || '#1a56a0');
         const showFirma = document.getElementById('onbToggleFirma')?.checked ?? true;
         const showLogoPro = document.getElementById('onbToggleLogoProf')?.checked ?? true;
         const showLogoInst = document.getElementById('onbToggleLogoInst')?.checked ?? true;
@@ -267,7 +280,7 @@ function _showClientOnboarding() {
 
     function _saveOnbConfig() {
         const selectedSwatch = document.querySelector('#onbColorPalette .onb-color-swatch.selected');
-        if (selectedSwatch) {
+        if (!isGiftPlan && selectedSwatch) {
             const color = selectedSwatch.dataset.color;
             profData.headerColor = color;
             window._profDataCache = profData;

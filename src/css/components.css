@@ -807,6 +807,23 @@
             z-index: 200;
         }
 
+        /* Mantener visibles los desplegables del header por encima de los botones */
+        .editor-sticky-head,
+        .editor-header,
+        .editor-actions,
+        #editorToolbar,
+        #applyTemplateWrapper,
+        #downloadBtnContainer {
+            overflow: visible !important;
+        }
+
+        #normalTemplateDropdown,
+        #changeTemplateDropdown,
+        #downloadDropdown,
+        #previewDownloadDropdown {
+            z-index: 12050 !important;
+        }
+
         /* Download Dropdown */
         .dropdown {
             position: relative;
