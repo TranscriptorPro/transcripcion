@@ -2055,7 +2055,43 @@
             ]).filter(([, list]) => Array.isArray(list) && list.length)
         );
 
-        const ESPECIALIDADES = Object.keys(TEMPLATE_MAP);
+        let ESPECIALIDADES = Object.keys(TEMPLATE_MAP);
+
+        function _resolveEspecialidades() {
+            const fromTemplateMap = Object.keys(TEMPLATE_MAP || {}).filter(Boolean);
+            if (fromTemplateMap.length) return fromTemplateMap;
+
+            const sharedMap = (window.TP_TEMPLATE_CATEGORY_REGISTRY && window.TP_TEMPLATE_CATEGORY_REGISTRY.templateMapByCategory) || {};
+            const fromSharedRegistry = Object.keys(sharedMap).filter(Boolean);
+            if (fromSharedRegistry.length) return fromSharedRegistry;
+
+            const fromTemplateCategories = Object.keys(window.TEMPLATE_CATEGORIES || {}).filter(Boolean);
+            if (fromTemplateCategories.length) return fromTemplateCategories;
+
+            const fromMedicalSpecialties = Object.keys(window.MEDICAL_SPECIALTIES || {}).filter(Boolean);
+            if (fromMedicalSpecialties.length) return fromMedicalSpecialties;
+
+            // Fallback final para no dejar vacío el paso 1 del wizard GIFT.
+            return [
+                'Cardiología',
+                'Imágenes',
+                'Endoscopía',
+                'Neumonología',
+                'Neurología',
+                'Oftalmología',
+                'Ginecología',
+                'ORL',
+                'General',
+                'Traumatología / Ortopedia',
+                'Urología',
+                'Quirúrgico'
+            ];
+        }
+
+        function _getEspecialidades() {
+            ESPECIALIDADES = _resolveEspecialidades();
+            return ESPECIALIDADES;
+        }
 
         const ESTUDIOS_POR_ESPECIALIDAD = (_sharedTplReg && _sharedTplReg.studiesByCategory) || Object.fromEntries(
             Object.entries(TEMPLATE_MAP).map(([esp, templates]) => [
@@ -2469,7 +2505,7 @@
             const sel = document.getElementById('giftEspecialidad');
             if (sel) {
                 sel.innerHTML = '<option value="">— Seleccioná —</option>';
-                ESPECIALIDADES.forEach(esp => {
+                _getEspecialidades().forEach(esp => {
                     sel.innerHTML += `<option value="${esp}">${esp}</option>`;
                 });
             }
@@ -3669,7 +3705,8 @@
         // Generar grid de especialidades
         function initEspecialidadesGrid() {
             const grid = document.getElementById('especialidadesGrid');
-            grid.innerHTML = ESPECIALIDADES.map(esp => `
+            const especialidades = _getEspecialidades();
+            grid.innerHTML = especialidades.map(esp => `
                 <div class="checkbox-item">
                     <input type="checkbox" id="esp_${esp.replace(/\s+/g, '_')}" value="${esp}">
                     <label for="esp_${esp.replace(/\s+/g, '_')}">${esp}</label>
