@@ -5557,6 +5557,11 @@ test('stateManager — distingue modo pro vs normal', () => {
     assertIncludes(smCode, 'normal');
 });
 
+test('stateManager — Gift fuerza modo Pro al iniciar', () => {
+    assertIncludes(smCode, "planCode === 'gift'");
+    assertIncludes(smCode, "setMode('pro')");
+});
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // Bloque 81: ui.js — Funciones de UI
 // ═══════════════════════════════════════════════════════════════════════════════

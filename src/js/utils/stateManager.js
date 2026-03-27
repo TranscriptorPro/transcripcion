@@ -217,6 +217,19 @@ function setMode(mode, notify = false) {
 function initializeMode() {
     if (typeof CLIENT_CONFIG === 'undefined') return;
 
+    const planCode = String(CLIENT_CONFIG.planCode || '').toLowerCase();
+    const isGiftProfile = planCode === 'gift';
+
+    // Gift debe abrir siempre en Pro aunque exista preferencia previa en localStorage.
+    if (isGiftProfile) {
+        setMode('pro');
+        localStorage.setItem('last_profile_type', 'pro');
+        if (typeof appDB !== 'undefined') appDB.set('last_profile_type', 'pro');
+        window._lastProfileTypeCache = 'pro';
+        if (proToggleContainer) proToggleContainer.style.display = 'none';
+        return;
+    }
+
     // Check saved preference first
     // PRO clones are ALWAYS pro — ignore any saved preference
     if (CLIENT_CONFIG.type === 'PRO') {
