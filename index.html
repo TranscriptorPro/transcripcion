@@ -9,7 +9,7 @@
     <!-- PURGE: auto-purge al detectar nueva versión + ?purge manual. Preserva tema y color -->
     <script>
     (function() {
-        var APP_VERSION = 'v249'; // ← bump esto en cada deploy para forzar auto-purge
+        var APP_VERSION = 'v250'; // ← bump esto en cada deploy para forzar auto-purge
         try { window.APP_VERSION = APP_VERSION; } catch(_) {}
         var params = new URLSearchParams(window.location.search);
         var forcePurge = params.has('purge');
@@ -564,7 +564,7 @@
                                         <li>Copiá la clave (empieza con <code>gsk_</code>)</li>
                                         <li>Pegala arriba y presioná 💾</li>
                                     </ol>
-                                    <p style="margin:8px 0 0;font-style:italic;">💡 <strong>Backup Keys:</strong> Podés configurar hasta 2 claves de respaldo (<code>groq_api_key_b1</code>, <code>groq_api_key_b2</code>) en el backend del Sheet. Si la clave principal falla, el sistema intentará automáticamente con las de respaldo.</p>
+
                                 </div>
                             </details>
                         </div>
