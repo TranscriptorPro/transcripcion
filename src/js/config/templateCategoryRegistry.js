@@ -76,7 +76,7 @@
         'Urología': [
             { key: 'uroflujometria', name: 'Uroflujometría' }
         ],
-        'Musculoesquelético': [
+        'Traumatología / Ortopedia': [
             { key: 'artroscopia', name: 'Artroscopía' },
             { key: 'eco_musculoesqueletica', name: 'Eco Musculoesquelética' }
         ],
@@ -99,11 +99,10 @@
         'Oftalmología': ['Oftalmología'],
         'Cirugía / Quirúrgico': ['Quirúrgico'],
         'Medicina General / Interna': ['General'],
-        'Traumatología / Ortopedia': [],
+        'Traumatología / Ortopedia': ['Traumatología / Ortopedia'],
         'Dermatología': ['Dermatología'],
         'Endocrinología': [],
-        'Urología': ['Urología'],
-        'Traumatología / Ortopedia': ['Musculoesquelético']
+        'Urología': ['Urología']
     };
 
     const runtime = {

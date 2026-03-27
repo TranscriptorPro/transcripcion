@@ -229,10 +229,10 @@ REGLA DE CONCLUSIÓN: Incluir TODOS los hallazgos patológicos dictados con su i
 IMPORTANTE: No inventes datos. Solo estructura lo dictado. Si una medida no fue mencionada, marcar con [No especificado].`
     },
 
-    // ── Musculoesquelético ──────────────────────────────────────────────────
+    // ── Traumatología / Ortopedia ──────────────────────────────────────────
     artroscopia: {
         name: "Artroscopía",
-        category: "Musculoesquelético",
+        category: "Traumatología / Ortopedia",
         keywords: ["artroscopía", "artroscopia", "menisco", "cartílago articular", "ligamento cruzado", "sinovial", "rodilla", "hombro", "cadera", "tobillo", "cirugía artroscópica"],
         prompt: `Actúa como cirujano traumatólogo especializado en artroscopía. Estructura este informe:
 
@@ -270,7 +270,7 @@ IMPORTANTE: No inventes datos. Solo estructura lo dictado.`
 
     eco_musculoesqueletica: {
         name: "Ecografía Musculoesquelética",
-        category: "Musculoesquelético",
+        category: "Traumatología / Ortopedia",
         keywords: ["ecografía musculoesquelética", "tendones", "músculos", "ligamentos", "bursitis", "sinovitis", "colección articular", "rotura tendinosa", "entesitis", "tenosinovitis"],
         prompt: `Actúa como médico especializado en ecografía musculoesquelética. Estructura este informe:
 

@@ -1259,7 +1259,7 @@ test('Part4 — uroflujometria existe con Qmax y residuo postmiccional', () => {
 test('Part4 — artroscopia existe con menisco, cartílago y LCA', () => {
     const t = window.MEDICAL_TEMPLATES['artroscopia'];
     assert(t, 'artroscopia debe existir en MEDICAL_TEMPLATES');
-    assert(t.category === 'Musculoesquelético', 'artroscopia debe ser de Musculoesquelético');
+    assert(t.category === 'Traumatología / Ortopedia', 'artroscopia debe ser de Traumatología / Ortopedia');
     assert(t.prompt.includes('MENISCO') || t.prompt.includes('menisco'),
         'artroscopia debe mencionar menisco');
     assert(t.prompt.includes('LCA') || t.prompt.includes('ligamento cruzado'),
@@ -1270,7 +1270,7 @@ test('Part4 — artroscopia existe con menisco, cartílago y LCA', () => {
 test('Part4 — eco_musculoesqueletica existe con tendones y bursas', () => {
     const t = window.MEDICAL_TEMPLATES['eco_musculoesqueletica'];
     assert(t, 'eco_musculoesqueletica debe existir en MEDICAL_TEMPLATES');
-    assert(t.category === 'Musculoesquelético', 'eco_musculoesqueletica debe ser de Musculoesquelético');
+    assert(t.category === 'Traumatología / Ortopedia', 'eco_musculoesqueletica debe ser de Traumatología / Ortopedia');
     assert(t.prompt.includes('TENDONES') || t.prompt.includes('tendón'),
         'eco_musculoesqueletica debe mencionar tendones');
     assert(t.prompt.includes('BURSA') || t.prompt.includes('bursitis'),
@@ -1293,7 +1293,7 @@ test('Part4 — 10 nuevas claves en TEMPLATE_CATEGORIES', () => {
         'eco_gineco', 'histeroscopia',     // Ginecología
         'eeg', 'potenciales_evocados',     // Neurología
         'uroflujometria',                  // Urología
-        'artroscopia', 'eco_musculoesqueletica', // Musculoesquelético
+        'artroscopia', 'eco_musculoesqueletica', // Traumatología / Ortopedia
         'dermatoscopia'                    // Dermatología
     ];
     const allKeys = Object.values(window.TEMPLATE_CATEGORIES).flat();
@@ -1302,9 +1302,9 @@ test('Part4 — 10 nuevas claves en TEMPLATE_CATEGORIES', () => {
     });
 });
 
-test('Part4 — nuevas categorías (Urología, Musculoesquelético, Dermatología) en TEMPLATE_CATEGORIES', () => {
+test('Part4 — nuevas categorías (Urología, Traumatología / Ortopedia, Dermatología) en TEMPLATE_CATEGORIES', () => {
     assert('Urología' in window.TEMPLATE_CATEGORIES, 'TEMPLATE_CATEGORIES debe tener Urología');
-    assert('Musculoesquelético' in window.TEMPLATE_CATEGORIES, 'TEMPLATE_CATEGORIES debe tener Musculoesquelético');
+    assert('Traumatología / Ortopedia' in window.TEMPLATE_CATEGORIES, 'TEMPLATE_CATEGORIES debe tener Traumatología / Ortopedia');
     assert('Dermatología' in window.TEMPLATE_CATEGORIES, 'TEMPLATE_CATEGORIES debe tener Dermatología');
 });
 
@@ -2931,11 +2931,13 @@ test('stateManager y revisión inline restringen estas funciones a planes avanza
 
 test('registro/admin incluyen Gonioscopía en opción de Oftalmología', () => {
     const registro = fs.readFileSync(path.join(root, 'recursos/registro.html'), 'utf-8');
+    const adminRegistry = fs.readFileSync(path.join(root, 'recursos/admin-assets/js/templateCategoryRegistry.js'), 'utf-8');
     const admin = fs.readFileSync(path.join(root, 'recursos/admin-assets/js/admin-inline-script-04.js'), 'utf-8');
     assert(registro.includes("{ key: 'gonioscopia', name: 'Gonioscopía' }"), 'registro debe mapear plantilla gonioscopia en Oftalmología');
     assert(registro.includes("'Gonioscopía'"), 'registro debe mostrar Gonioscopía en lista de estudios');
-    assert(admin.includes("{ key: 'gonioscopia', name: 'Gonioscopía' }"), 'admin debe mapear plantilla gonioscopia en Oftalmología');
-    assert(admin.includes("'Gonioscopía'"), 'admin debe incluir Gonioscopía en estudios por especialidad');
+    assert(adminRegistry.includes("{ key: 'gonioscopia', name: 'Gonioscopía' }"), 'admin registry debe mapear plantilla gonioscopia en Oftalmología');
+    assert(admin.includes('window.TP_TEMPLATE_CATEGORY_REGISTRY'), 'admin debe consumir el registro compartido para especialidades/estudios');
+    assert(admin.includes('window.TEMPLATE_CATEGORIES || {}'), 'admin debe tener fallback dinámico desde TEMPLATE_CATEGORIES');
 });
 
 test('catálogo compartido de templates: app/admin/registro lo consumen con fallback', () => {

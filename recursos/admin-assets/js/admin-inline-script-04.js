@@ -2041,67 +2041,19 @@
 
         const _sharedTplReg = window.TP_TEMPLATE_CATEGORY_REGISTRY || null;
 
-        // ── Mapeo de template keys agrupados por categoría (sincronizado con templates.js) ──
-        const TEMPLATE_MAP = (_sharedTplReg && _sharedTplReg.templateMapByCategory) || {
-            'Neumología': [
-                { key: 'espirometria', name: 'Espirometría' },
-                { key: 'test_marcha', name: 'Test Marcha 6 min' },
-                { key: 'pletismografia', name: 'Pletismografía' },
-                { key: 'oximetria_nocturna', name: 'Oximetría Nocturna' }
-            ],
-            'Oftalmología': [
-                { key: 'campimetria', name: 'Campimetría' },
-                { key: 'oct_retinal', name: 'OCT Retinal' },
-                { key: 'topografia_corneal', name: 'Topografía Corneal' },
-                { key: 'fondo_ojo', name: 'Fondo de Ojo' },
-                { key: 'gonioscopia', name: 'Gonioscopía' }
-            ],
-            'Imágenes': [
-                { key: 'tac', name: 'TAC' },
-                { key: 'resonancia', name: 'Resonancia' },
-                { key: 'mamografia', name: 'Mamografía' },
-                { key: 'densitometria', name: 'Densitometría' },
-                { key: 'pet_ct', name: 'PET-CT' },
-                { key: 'radiografia', name: 'Radiografía' },
-                { key: 'ecografia_abdominal', name: 'Ecografía Abdominal' },
-                { key: 'eco_doppler', name: 'Eco-Doppler' }
-            ],
-            'Endoscopía': [
-                { key: 'gastroscopia', name: 'Gastroscopía' },
-                { key: 'colonoscopia', name: 'Colonoscopía' },
-                { key: 'broncoscopia', name: 'Broncoscopía' },
-                { key: 'laringoscopia', name: 'Laringoscopía' }
-            ],
-            'Cardiología': [
-                { key: 'gammagrafia_cardiaca', name: 'Gammagrafía Cardíaca' },
-                { key: 'holter', name: 'Holter' },
-                { key: 'mapa', name: 'MAPA' },
-                { key: 'cinecoro', name: 'Cinecoronariografía' },
-                { key: 'ecg', name: 'ECG' },
-                { key: 'eco_stress', name: 'Eco-Stress' },
-                { key: 'ett', name: 'Ecocardiograma TT' }
-            ],
-            'Ginecología': [
-                { key: 'pap', name: 'PAP' },
-                { key: 'colposcopia', name: 'Colposcopía' }
-            ],
-            'Neurología': [
-                { key: 'electromiografia', name: 'Electromiografía' },
-                { key: 'polisomnografia', name: 'Polisomnografía' }
-            ],
-            'ORL': [
-                { key: 'naso', name: 'Nasofibroscopía' },
-                { key: 'endoscopia_otologica', name: 'Endoscopía Otológica' }
-            ],
-            'Quirúrgico': [
-                { key: 'protocolo_quirurgico', name: 'Protocolo Quirúrgico' }
-            ],
-            'General': [
-                { key: 'nota_evolucion', name: 'Nota de Evolución' },
-                { key: 'epicrisis', name: 'Epicrisis' },
-                { key: 'generico', name: 'Informe Genérico' }
-            ]
-        };
+        // ── Mapeo de template keys agrupados por categoría (dinámico por registry compartido) ──
+        const TEMPLATE_MAP = (_sharedTplReg && _sharedTplReg.templateMapByCategory) || Object.fromEntries(
+            Object.entries(window.TEMPLATE_CATEGORIES || {}).map(([category, keys]) => [
+                category,
+                (keys || []).map((key) => {
+                    const tpl = window.MEDICAL_TEMPLATES && window.MEDICAL_TEMPLATES[key];
+                    return {
+                        key,
+                        name: (tpl && tpl.name) || key
+                    };
+                }).filter((tpl) => !!tpl.key && tpl.key !== 'generico')
+            ]).filter(([, list]) => Array.isArray(list) && list.length)
+        );
 
         const ESPECIALIDADES = Object.keys(TEMPLATE_MAP);
 
@@ -2127,10 +2079,10 @@
             'Oftalmología': ['Oftalmología'],
             'Cirugía / Quirúrgico': ['Quirúrgico'],
             'Medicina General / Interna': ['General'],
-            'Traumatología / Ortopedia': [],
-            'Dermatología': [],
+            'Traumatología / Ortopedia': ['Traumatología / Ortopedia'],
+            'Dermatología': ['Dermatología'],
             'Endocrinología': [],
-            'Urología': []
+            'Urología': ['Urología']
         };
 
         // ── Dispositivos por plan (fallback) ──
@@ -2254,12 +2206,11 @@
         }
 
         function _formatGiftProfessionalDisplay(rawName, rawSexo) {
-            const original = String(rawName || '').trim();
-            const cleaned = original
-                .replace(/^(?:\s*(?:dr\.?\s*\/\s*dra\.?|dra\.?|dr\.?))\s+/i, '')
-                .replace(/\s+/g, ' ')
-                .trim();
-            const baseName = cleaned || 'Profesional';
+            const cleaned = _stripGiftProfessionalPrefix(rawName);
+            const normalized = (typeof window.normalizeFieldText === 'function')
+                ? window.normalizeFieldText(cleaned, 'name')
+                : cleaned;
+            const baseName = normalized || 'Profesional';
             const sexo = _normalizeGiftSexo(rawSexo);
             const title = sexo === 'F' ? 'Dra.' : 'Dr.';
             return {
@@ -2273,17 +2224,25 @@
         window._formatGiftProfessionalDisplay = _formatGiftProfessionalDisplay;
 
         function _stripGiftProfessionalPrefix(rawName) {
-            return String(rawName || '')
-                .replace(/^(?:\s*(?:dr\.?\s*\/\s*dra\.?|dra\.?|dr\.?))\s+/i, '')
-                .replace(/\s+/g, ' ')
-                .trim();
+            let value = String(rawName || '').replace(/\s+/g, ' ').trim();
+            let previous;
+            let loops = 0;
+            do {
+                previous = value;
+                value = value.replace(/^(?:\s*(?:dr\.?\s*\/\s*dra\.?|dra\.?|dr\.?))\s+/i, '').trim();
+                loops += 1;
+            } while (value !== previous && loops < 6);
+            return value;
         }
 
         function _sanitizeGiftNameField() {
             const input = document.getElementById('giftNombre');
             if (!input) return;
             const cleaned = _stripGiftProfessionalPrefix(input.value);
-            if (input.value !== cleaned) input.value = cleaned;
+            const normalized = (typeof window.normalizeFieldText === 'function')
+                ? window.normalizeFieldText(cleaned, 'name')
+                : cleaned;
+            if (input.value !== normalized) input.value = normalized;
             if (typeof window._updatePdfSim === 'function') window._updatePdfSim();
         }
 

@@ -460,7 +460,7 @@ window.STUDY_TERMINOLOGY = [
   {
     estudio: "Ecografía Musculoesquelética",
     templateKey: "eco_musculoesqueletica",
-    category: "Musculoesquelético",
+    category: "Traumatología / Ortopedia",
     keywords: ["tendones", "músculos", "ligamentos", "articulaciones", "desgarros", "colecciones líquidas", "bursitis", "sinovitis"],
     abreviaturas: { LCA: "Ligamento Cruzado Anterior", LCP: "Ligamento Cruzado Posterior" },
     clasificaciones: [],
@@ -469,7 +469,7 @@ window.STUDY_TERMINOLOGY = [
   {
     estudio: "Artroscopía",
     templateKey: "artroscopia",
-    category: "Musculoesquelético",
+    category: "Traumatología / Ortopedia",
     keywords: ["procedimiento mínimamente invasivo", "articulación", "cámara", "meniscos", "cartílago articular", "líquido sinovial", "sinovectomía"],
     abreviaturas: { LCA: "Ligamento Cruzado Anterior", CAR: "Cirugía Artroscópica de Rodilla" },
     clasificaciones: [],

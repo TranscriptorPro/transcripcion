@@ -18,7 +18,7 @@ window.TEMPLATE_CATEGORIES = _sharedTplCats || {
     "Quirúrgico": ["protocolo_quirurgico"],
     "General": ["nota_evolucion", "epicrisis", "generico"],
     "Urología": ["uroflujometria"],
-    "Musculoesquelético": ["artroscopia", "eco_musculoesqueletica"],
+    "Traumatología / Ortopedia": ["artroscopia", "eco_musculoesqueletica"],
     "Dermatología": ["dermatoscopia"]
 };
 
@@ -62,7 +62,7 @@ window.populateTemplateDropdown = function () {
         };
         for (const [cat, keys] of Object.entries(window.TEMPLATE_CATEGORIES)) {
             const group = document.createElement('optgroup');
-            group.label = `${catIcons[cat] || ''} ${cat}`;
+            group.label = `${catIcons[cat] || '🏥'} ${cat}`;
             let added = false;
             keys.forEach(key => {
                 if (key === 'generico') return;
@@ -108,7 +108,7 @@ window.populateTemplateDropdown = function () {
             const hasItems = keys.some(key => key !== 'generico' && window.MEDICAL_TEMPLATES[key] && (!_allowed || _allowed.has(key)));
             if (!hasItems) continue;
             const header = document.createElement('li');
-            header.textContent = `${catIcons[cat] || ''} ${cat}`;
+            header.textContent = `${catIcons[cat] || '🏥'} ${cat}`;
             header.className = 'tmpl-list-header';
             normalList.appendChild(header);
             keys.forEach(key => {
