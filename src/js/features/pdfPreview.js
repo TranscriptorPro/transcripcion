@@ -1090,16 +1090,44 @@ window.openPrintPreview = async function () {
             const pvEspArr = (especialidadRaw || '').replace(/^ALL$/i, 'Medicina General')
                 .split(/[,\/]/).map(s => s.replace(/^General$/i, 'Medicina General').trim()).filter(Boolean);
             const pvBadgesHtml = pvEspArr.map(s => `<span class="pvh-badge">${esc(s)}</span>`).join('');
+            const socialIconSvg = (network) => {
+                const iconColor = '#ffffff';
+                const bgByNetwork = {
+                    whatsapp: '#25D366',
+                    instagram: '#E4405F',
+                    facebook: '#1877F2',
+                    x: '#111827',
+                    youtube: '#FF0000'
+                };
+                const bg = bgByNetwork[network] || '#1a56a0';
+                if (network === 'instagram') {
+                    return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="6" ry="6" fill="${bg}"/><circle cx="12" cy="12" r="4" fill="none" stroke="${iconColor}" stroke-width="2"/><circle cx="17.2" cy="6.8" r="1.2" fill="${iconColor}"/></svg>`;
+                }
+                if (network === 'facebook') {
+                    return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="${bg}"/><path d="M13.3 8h2V5.6h-2.4c-2.5 0-4.1 1.5-4.1 4.1V12H7v2.4h1.8v4h2.6v-4h2.4L14.2 12h-2.8V9.9c0-1.1.5-1.9 1.9-1.9Z" fill="${iconColor}"/></svg>`;
+                }
+                if (network === 'x') {
+                    return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="${bg}"/><path d="M7 7h2.4l2.8 4 3-4H17l-3.9 5.2L17 17h-2.4l-3-4.2L8.6 17H7l4-5.4L7 7Z" fill="${iconColor}"/></svg>`;
+                }
+                if (network === 'youtube') {
+                    return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><rect x="2" y="5.5" width="20" height="13" rx="4" ry="4" fill="${bg}"/><path d="M10 9.2v5.6l5-2.8-5-2.8Z" fill="${iconColor}"/></svg>`;
+                }
+                return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="${bg}"/><path d="M8.4 7.8h3.3l.8 1.5-1.2 1.3c.7 1.2 1.7 2.2 2.9 2.9l1.3-1.2 1.5.8v3.3c-4.4.8-9.2-4-8.6-8.2Z" fill="${iconColor}"/></svg>`;
+            };
             // Contact right column
             const pvCItems = [];
             if (showPhone && pvTelefono)  pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#9742;</span>${pvTelefono}</div>`);
             if (showEmail && pvEmail)     pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#9993;</span>${pvEmail}</div>`);
-            if (showSocial && pvWhatsapp)  pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#128241;</span>${pvWhatsapp}</div>`);
-            if (showSocial && pvInstagram) pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">@</span>${pvInstagram}</div>`);
-            if (showSocial && pvFacebook)  pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">f</span>${pvFacebook}</div>`);
-            if (showSocial && pvXSocial)   pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#120143;</span>${pvXSocial}</div>`);
-            if (showSocial && pvYoutube)   pvCItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#9654;</span>${pvYoutube}</div>`);
+            const pvSocialItems = [];
+            if (showSocial && pvWhatsapp)  pvSocialItems.push({ key: 'whatsapp', value: pvWhatsapp });
+            if (showSocial && pvInstagram) pvSocialItems.push({ key: 'instagram', value: pvInstagram });
+            if (showSocial && pvFacebook)  pvSocialItems.push({ key: 'facebook', value: pvFacebook });
+            if (showSocial && pvXSocial)   pvSocialItems.push({ key: 'x', value: pvXSocial });
+            if (showSocial && pvYoutube)   pvSocialItems.push({ key: 'youtube', value: pvYoutube });
             const pvContactHtml = pvCItems.length ? `<div class="pvh-contact">${pvCItems.join('')}</div>` : '';
+            const pvSocialHtml = pvSocialItems.length
+                ? `<div class="pvh-social">${pvSocialItems.map((item) => `<div class="pvh-soc-item"><span class="pvh-soc-icon">${socialIconSvg(item.key)}</span><span class="pvh-soc-val">${item.value}</span></div>`).join('')}</div>`
+                : '';
             headerEl.innerHTML = `
                 <div class="pvh-body" style="display:flex;align-items:center;gap:12px;">
                     ${(showProfLogo && hasProfLogo) ? `<img src="${profLogoSrc}" alt="Logo Prof" style="height:40px;max-height:40px;width:auto;object-fit:contain;flex-shrink:0;background:transparent;border:none;border-radius:0;">` : ''}
@@ -1111,7 +1139,8 @@ window.openPrintPreview = async function () {
                         ${matricula ? `<div class="pvh-mat">Mat. ${matricula}</div>` : ''}
                     </div>
                     ${pvContactHtml}
-                </div>`;
+                </div>
+                ${pvSocialHtml}`;
         }
             }
     }
@@ -1138,20 +1167,17 @@ window.openPrintPreview = async function () {
     const studyEl = document.getElementById('previewStudy');
     if (studyEl) {
         const studyTitle = (studyType && String(studyType).trim()) ? `INFORME DE ${studyType}` : 'INFORME MEDICO';
-        // Fila 1: Informe Nº | Fecha
-        // Fila 2: Solicitante | Motivo
-        let row1 = '';
+        const studyInline = [];
         if (showReportNumber) {
-            row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">INFORME Nº:</span><span class="pvs-val">${reportNum || '—'}</span></div>`;
+            studyInline.push(`<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">INFORME Nº:</span><span class="pvs-val">${reportNum || '—'}</span></div>`);
         }
         if (showStudyDate && (studyDate || studyTime)) {
-            row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">FECHA:</span><span class="pvs-val">${studyDate}${studyTime ? ' ' + studyTime + ' hs.' : ''}</span></div>`;
+            studyInline.push(`<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">FECHA:</span><span class="pvs-val">${studyDate}${studyTime ? ' ' + studyTime + ' hs.' : ''}</span></div>`);
         }
-        let row2 = '';
-        if (refDoctor)   row2 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">SOLICITANTE:</span><span class="pvs-val">${refDoctor}</span></div>`;
-        if (studyReason) row2 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">MOTIVO:</span><span class="pvs-val">${studyReason}</span></div>`;
-        studyEl.innerHTML = `<div style="text-align:center;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--pa,#1a56a0);font-size:13pt;border-bottom:2px solid var(--pa,#1a56a0);padding-bottom:4px;margin:2px 0 10px;">${studyTitle}</div><div class="pvs-grid pvs-3col">${row1}</div>`
-            + (row2 ? `<div class="pvs-grid pvs-2col">${row2}</div>` : '');
+        if (refDoctor)   studyInline.push(`<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">SOLICITANTE:</span><span class="pvs-val">${refDoctor}</span></div>`);
+        if (studyReason) studyInline.push(`<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">MOTIVO:</span><span class="pvs-val">${studyReason}</span></div>`);
+        studyEl.innerHTML = `<div style="text-align:center;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--pa,#1a56a0);font-size:13pt;border-bottom:2px solid var(--pa,#1a56a0);padding-bottom:4px;margin:2px 0 10px;">${studyTitle}</div>`
+            + (studyInline.length ? `<div class="pvs-grid pvs-inline">${studyInline.join('')}</div>` : '');
     }
 
     const contentEl = document.getElementById('previewContent');

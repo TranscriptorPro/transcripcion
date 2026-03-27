@@ -2,20 +2,18 @@ window.PdfMakerSectionUtils = window.PdfMakerSectionUtils || {};
 
 window.PdfMakerSectionUtils.drawStudyInfoSection = function(ctx) {
     const { studyType, reportNum, showReportNumber = true, pDate, studyTime, refDoctor, studyReason, CW, ML, cyStart, doc, accent, ensureSpace, setBlack } = ctx;
-    const row1 = [];
-    if (showReportNumber) row1.push({ label: 'INFORME Nº:', value: reportNum || '—' });
-    row1.push({ label: 'FECHA:', value: `${pDate}${studyTime ? ' ' + studyTime : ''}` });
-
-    const row2 = [];
-    if (refDoctor) row2.push({ label: 'SOLICITANTE:', value: refDoctor });
-    if (studyReason) row2.push({ label: 'MOTIVO:', value: studyReason });
+    const fields = [];
+    if (showReportNumber) fields.push({ label: 'INFORME Nº:', value: reportNum || '—' });
+    if (pDate || studyTime) fields.push({ label: 'FECHA:', value: `${pDate}${studyTime ? ' ' + studyTime + ' hs.' : ''}` });
+    if (refDoctor) fields.push({ label: 'SOLICITANTE:', value: refDoctor });
+    if (studyReason) fields.push({ label: 'MOTIVO:', value: studyReason });
+    if (!fields.length) fields.push({ label: 'INFORME Nº:', value: reportNum || '—' });
 
     const padX = 4.2;
     const padY = 2.6;
     const rowH = 5.5;
     const innerW = CW - 2 * padX;
-    let boxH = padY * 2 + rowH;
-    if (row2.length) boxH += 1 + rowH;
+    const boxH = padY * 2 + rowH;
     const hasStudyTitle = !!(studyType && String(studyType).trim());
     const titleText = hasStudyTitle ? `INFORME DE ${String(studyType).toUpperCase()}` : 'INFORME MEDICO';
     const titleBlockH = 10;
@@ -37,46 +35,31 @@ window.PdfMakerSectionUtils.drawStudyInfoSection = function(ctx) {
     doc.setLineWidth(0.25);
     doc.roundedRect(ML, cy, CW, boxH, 1.2, 1.2, 'FD');
 
-    const col3W = row1.length ? (innerW / row1.length) : innerW;
+    const colW = innerW / fields.length;
     let ry = cy + padY + 3.5;
-    for (let i = 0; i < row1.length; i++) {
-        const cx = ML + padX + i * col3W;
+    for (let i = 0; i < fields.length; i++) {
+        const cx = ML + padX + i * colW;
+        if (i > 0) {
+            doc.setDrawColor(221, 227, 238);
+            doc.setLineWidth(0.15);
+            doc.line(cx - 1.8, cy + 1.6, cx - 1.8, cy + boxH - 1.6);
+        }
         doc.setFontSize(6.5);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(accent.r, accent.g, accent.b);
-        doc.text(row1[i].label, cx, ry);
-        const lblW = doc.getTextWidth(row1[i].label);
+        doc.text(fields[i].label, cx, ry);
+        const lblW = doc.getTextWidth(fields[i].label);
         doc.setFontSize(9);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(34, 34, 34);
-        doc.text(row1[i].value, cx + lblW + 1.5, ry);
-    }
-
-    if (row2.length) {
-        const sepY = cy + padY + rowH + 0.5;
-        doc.setDrawColor(221, 227, 238);
-        doc.setLineWidth(0.2);
-        let dx = ML + padX;
-        const endX = ML + CW - padX;
-        while (dx < endX) {
-            const segEnd = Math.min(dx + 1.5, endX);
-            doc.line(dx, sepY, segEnd, sepY);
-            dx += 3;
+        const maxValueW = Math.max(12, colW - lblW - 3.5);
+        const wrapped = doc.splitTextToSize(String(fields[i].value || ''), maxValueW);
+        let valueText = (wrapped && wrapped.length) ? String(wrapped[0] || '') : '';
+        while (valueText.length > 1 && doc.getTextWidth(valueText + '...') > maxValueW) {
+            valueText = valueText.slice(0, -1);
         }
-        const col2W = innerW / row2.length;
-        ry = sepY + rowH - 0.5;
-        for (let i = 0; i < row2.length; i++) {
-            const cx = ML + padX + i * col2W;
-            doc.setFontSize(6.5);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(accent.r, accent.g, accent.b);
-            doc.text(row2[i].label, cx, ry);
-            const lblW = doc.getTextWidth(row2[i].label);
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(34, 34, 34);
-            doc.text(row2[i].value, cx + lblW + 1.5, ry);
-        }
+        if (wrapped && wrapped.length > 1) valueText += '...';
+        doc.text(valueText, cx + lblW + 1.5, ry);
     }
 
     doc.setDrawColor(0);

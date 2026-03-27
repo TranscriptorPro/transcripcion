@@ -7413,6 +7413,8 @@ const settingsPopulateCodeSec = fs.readFileSync(path.join(root, 'src/js/features
 const editorDialogCodeSec = fs.readFileSync(path.join(root, 'src/js/features/editorDialogUtils.js'), 'utf-8');
 const snapshotsCodeSec = fs.readFileSync(path.join(root, 'src/js/features/editorSnapshotsUtils.js'), 'utf-8');
 const settingsBackupActionsCodeSec = fs.readFileSync(path.join(root, 'src/js/features/settingsBackupActionsUtils.js'), 'utf-8');
+const pdfMakerSectionCodeSec = fs.readFileSync(path.join(root, 'src/js/features/pdfMakerSectionUtils.js'), 'utf-8');
+const previewCssCodeSec = fs.readFileSync(path.join(root, 'src/css/preview-print.css'), 'utf-8');
 
 test('AdminBase-1 — config.js detecta URL oficial /transcripcion', () => {
     assert(configCodeSec.includes("/transcripcion") && configCodeSec.includes('isOfficialAdminBase'),
@@ -7492,6 +7494,31 @@ test('Modal-4 — onboarding y acciones destructivas usan clases coherentes', ()
         'Botón de borrar datos debe usar clase danger temática');
     assert(indexCodeSec.includes('id="btnDeleteFieldSection"') && indexCodeSec.includes('edit-field-danger-btn'),
         'Botón eliminar campo debe usar clase danger temática');
+});
+
+test('PreviewPdf-1 — redes sociales en header usan bloque horizontal dedicado', () => {
+    assert(pdfPreviewCodeSec.includes('pvh-social') && pdfPreviewCodeSec.includes('pvSocialItems'),
+        'pdfPreview.js debe construir bloque horizontal de redes sociales');
+    assert(previewCssCodeSec.includes('.pvh-social') && previewCssCodeSec.includes('.pvh-soc-item'),
+        'preview-print.css debe definir layout horizontal de redes sociales');
+    assert(previewCssCodeSec.includes('flex-wrap: nowrap') && previewCssCodeSec.includes('white-space: nowrap'),
+        'preview-print.css debe forzar redes en una sola linea sin wrapping');
+});
+
+test('PreviewPdf-2 — iconos de redes por plataforma en preview y PDF', () => {
+    assert(pdfPreviewCodeSec.includes("network === 'instagram'") && pdfPreviewCodeSec.includes("network === 'youtube'"),
+        'pdfPreview.js debe mapear iconos por red social');
+    assert(pdfMakerCodeSec.includes('drawSocialIcon') && pdfMakerCodeSec.includes("kind === 'instagram'"),
+        'pdfMaker.js debe dibujar iconos por red social en el PDF final');
+});
+
+test('PreviewPdf-3 — datos del estudio en una sola línea', () => {
+    assert(pdfPreviewCodeSec.includes('pvs-inline') && pdfPreviewCodeSec.includes('studyInline'),
+        'pdfPreview.js debe renderizar datos del estudio en una sola línea');
+    assert(pdfMakerSectionCodeSec.includes('const fields = []') && !pdfMakerSectionCodeSec.includes('const row2 = []'),
+        'pdfMakerSectionUtils.js debe usar una única fila de campos para datos del estudio');
+    assert(previewCssCodeSec.includes('.pvs-grid.pvs-inline'),
+        'preview-print.css debe incluir estilos de línea única para datos del estudio');
 });
 
 test('Struct-NonMedical-1 — fallback general sin conclusion + advertencia contextual', () => {

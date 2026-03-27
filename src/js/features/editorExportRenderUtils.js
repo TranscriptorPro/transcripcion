@@ -474,23 +474,51 @@ ${sigBlock}
         let headerSection = '';
         const isAdminNoProf = (!activePro || !activePro.nombre) && (!profData.nombre || profData.nombre === 'Administrador' || profData.nombre === 'Admin');
         if (!hideReportHeader && !isAdminNoProf && profName) {
+            const socialIconSvg = (network) => {
+                const iconColor = '#ffffff';
+                const bgByNetwork = {
+                    whatsapp: '#25D366',
+                    instagram: '#E4405F',
+                    facebook: '#1877F2',
+                    x: '#111827',
+                    youtube: '#FF0000'
+                };
+                const bg = bgByNetwork[network] || '#1a56a0';
+                if (network === 'instagram') {
+                    return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="6" ry="6" fill="${bg}"/><circle cx="12" cy="12" r="4" fill="none" stroke="${iconColor}" stroke-width="2"/><circle cx="17.2" cy="6.8" r="1.2" fill="${iconColor}"/></svg>`;
+                }
+                if (network === 'facebook') {
+                    return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="${bg}"/><path d="M13.3 8h2V5.6h-2.4c-2.5 0-4.1 1.5-4.1 4.1V12H7v2.4h1.8v4h2.6v-4h2.4L14.2 12h-2.8V9.9c0-1.1.5-1.9 1.9-1.9Z" fill="${iconColor}"/></svg>`;
+                }
+                if (network === 'x') {
+                    return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="${bg}"/><path d="M7 7h2.4l2.8 4 3-4H17l-3.9 5.2L17 17h-2.4l-3-4.2L8.6 17H7l4-5.4L7 7Z" fill="${iconColor}"/></svg>`;
+                }
+                if (network === 'youtube') {
+                    return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><rect x="2" y="5.5" width="20" height="13" rx="4" ry="4" fill="${bg}"/><path d="M10 9.2v5.6l5-2.8-5-2.8Z" fill="${iconColor}"/></svg>`;
+                }
+                return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="${bg}"/><path d="M8.4 7.8h3.3l.8 1.5-1.2 1.3c.7 1.2 1.7 2.2 2.9 2.9l1.3-1.2 1.5.8v3.3c-4.4.8-9.2-4-8.6-8.2Z" fill="${iconColor}"/></svg>`;
+            };
             const espArr = (espRaw || '').replace(/^ALL$/i, 'Medicina General').split(/[,\/]/).map(s => s.replace(/^General$/i, 'Medicina General').trim()).filter(Boolean);
             const espBadgesHtml = espArr.map(s => `<span class="pvh-badge">${esc(s)}</span>`).join('');
             const cItems = [];
             if (profTelefono) cItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#9742;</span>${profTelefono}</div>`);
             if (profEmail) cItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#9993;</span>${profEmail}</div>`);
-            if (profWhatsapp) cItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#128241;</span>${profWhatsapp}</div>`);
-            if (profInstagram) cItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">@</span>${profInstagram}</div>`);
-            if (profFacebook) cItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">f</span>${profFacebook}</div>`);
-            if (profXSocial) cItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#120143;</span>${profXSocial}</div>`);
-            if (profYoutube) cItems.push(`<div class="pvh-ci"><span class="pvh-ci-icon">&#9654;</span>${profYoutube}</div>`);
+            const socialItems = [];
+            if (profWhatsapp) socialItems.push({ key: 'whatsapp', value: profWhatsapp });
+            if (profInstagram) socialItems.push({ key: 'instagram', value: profInstagram });
+            if (profFacebook) socialItems.push({ key: 'facebook', value: profFacebook });
+            if (profXSocial) socialItems.push({ key: 'x', value: profXSocial });
+            if (profYoutube) socialItems.push({ key: 'youtube', value: profYoutube });
             const contactHtml = cItems.length ? `<div class="pvh-contact">${cItems.join('')}</div>` : '';
+            const socialHtml = socialItems.length
+                ? `<div class="pvh-social">${socialItems.map((item) => `<div class="pvh-soc-item"><span class="pvh-soc-icon">${socialIconSvg(item.key)}</span><span class="pvh-soc-val">${item.value}</span></div>`).join('')}</div>`
+                : '';
             headerSection = `<div class="preview-header"><div class="pvh-body">`
                 + ((showProfLogo && hasProfLogo) ? `<img src="${profLogoSrc}" style="height:40px;max-height:40px;width:auto;object-fit:contain;flex-shrink:0;background:transparent;border:none;border-radius:0;">` : '')
                 + `<div class="pvh-info"><div><span class="pvh-name">Estudio realizado por: ${profDispName}</span></div>`
                 + (espBadgesHtml ? `<div class="pvh-badges">${espBadgesHtml}</div>` : '')
                 + (matricula ? `<div class="pvh-mat">Mat. ${matricula}</div>` : '')
-                + `</div>${contactHtml}</div></div>`;
+                + `</div>${contactHtml}</div>${socialHtml}</div>`;
         }
 
         let patientSection = '';
@@ -503,18 +531,17 @@ ${sigBlock}
         if (affiliateNum) pCells.push(`<div class="pvp-cell"><span class="pvp-lbl">Nº Afiliado</span><span class="pvp-val">${affiliateNum}</span></div>`);
         if (pCells.length) patientSection = `<div class="preview-patient"><div class="pvp-grid">${pCells.join('')}</div></div>`;
 
-        let row1 = '';
+        const studyInline = [];
         if (showReportNumber) {
-            row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">INFORME Nº:</span><span class="pvs-val">${reportNum || '—'}</span></div>`;
+            studyInline.push(`<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">INFORME Nº:</span><span class="pvs-val">${reportNum || '—'}</span></div>`);
         }
         if (showStudyDate && (studyDate || studyTime)) {
-            row1 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">FECHA:</span><span class="pvs-val">${studyDate}${studyTime ? ' ' + studyTime + ' hs.' : ''}</span></div>`;
+            studyInline.push(`<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">FECHA:</span><span class="pvs-val">${studyDate}${studyTime ? ' ' + studyTime + ' hs.' : ''}</span></div>`);
         }
-        let row2 = '';
-        if (refDoctor) row2 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">SOLICITANTE:</span><span class="pvs-val">${refDoctor}</span></div>`;
-        if (studyReason) row2 += `<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">MOTIVO:</span><span class="pvs-val">${studyReason}</span></div>`;
+        if (refDoctor) studyInline.push(`<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">SOLICITANTE:</span><span class="pvs-val">${refDoctor}</span></div>`);
+        if (studyReason) studyInline.push(`<div class="pvs-cell" style="flex-direction:row;gap:4px;align-items:baseline;"><span class="pvs-lbl" style="white-space:nowrap;">MOTIVO:</span><span class="pvs-val">${studyReason}</span></div>`);
         const studyTitle = (studyType && String(studyType).trim()) ? `INFORME DE ${studyType}` : 'INFORME MEDICO';
-        const studySection = `<div class="preview-study"><div class="report-h1">${studyTitle}</div><div class="pvs-grid pvs-3col">${row1}</div>` + (row2 ? `<div class="pvs-grid pvs-2col">${row2}</div>` : '') + `</div>`;
+        const studySection = `<div class="preview-study"><div class="report-h1">${studyTitle}</div>` + (studyInline.length ? `<div class="pvs-grid pvs-inline">${studyInline.join('')}</div>` : '') + `</div>`;
 
         let sigSection = '';
         if (!isAdminNoProf && profName) {
@@ -597,6 +624,11 @@ body { font-family: ${fontFamily}; font-size: ${fontSize}pt; line-height: ${line
 .pvh-contact { margin-left: auto; text-align: right; font-size: 8pt; color: #555; font-family: Helvetica, Arial, sans-serif; min-width: 130px; }
 .pvh-ci { display: flex; align-items: center; gap: 5px; justify-content: flex-end; margin-bottom: 3px; white-space: nowrap; }
 .pvh-ci-icon { width: 14px; text-align: center; font-size: 9.5pt; color: var(--pa); flex-shrink: 0; }
+.pvh-social { margin-top: 7px; display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; overflow: hidden; white-space: nowrap; }
+.pvh-soc-item { display: flex; align-items: center; gap: 5px; flex: 0 1 auto; min-width: 0; max-width: 180px; }
+.pvh-soc-icon { width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.pvh-soc-icon svg { width: 14px; height: 14px; display: block; }
+.pvh-soc-val { font-size: 8pt; color: #555; font-family: Helvetica, Arial, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
 .preview-patient { margin-bottom: 10px; }
 .pvp-grid { background: #fafbfc; border: 1px solid #d0d7de; border-left: 4px solid var(--pa); border-radius: 4px; padding: 10px 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 20px; }
 .pvp-cell { display: flex; flex-direction: column; gap: 2px; }
@@ -607,9 +639,12 @@ body { font-family: ${fontFamily}; font-size: ${fontSize}pt; line-height: ${line
 .pvs-grid { display: grid; gap: 6px 24px; font-size: 8.5pt; color: #333; background: #f4f7fb; padding: 10px 16px; border: 1px solid #e3e8ef; font-family: Helvetica, Arial, sans-serif; }
 .pvs-grid.pvs-3col { grid-template-columns: repeat(3, 1fr); border-radius: 4px 4px 0 0; border-bottom: none; }
 .pvs-grid.pvs-2col { grid-template-columns: 1fr 1fr; border-radius: 0 0 4px 4px; border-top: 1px dashed #dde3ee; }
+.pvs-grid.pvs-inline { display: flex; flex-wrap: nowrap; gap: 8px 14px; align-items: baseline; border-radius: 4px; }
+.pvs-grid.pvs-inline .pvs-cell { flex: 1 1 0; min-width: 0; overflow: hidden; }
 .pvs-cell { display: flex; flex-direction: column; gap: 2px; padding: 2px 0; }
 .pvs-lbl { font-size: 6.5pt; text-transform: uppercase; letter-spacing: 0.1em; color: var(--pa); font-weight: 600; opacity: 0.75; }
 .pvs-val { font-size: 9pt; color: #222; font-weight: 700; font-family: Helvetica, Arial, sans-serif; }
+.pvs-grid.pvs-inline .pvs-val { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .preview-content { margin: 8px 0 24px; }
 .preview-content h1,.report-h1 { font-size: 13pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--pa); border-bottom: 2px solid var(--pa); padding-bottom: 4px; margin: 20px 0 10px; text-align: center; }
 .report-h1 { letter-spacing: 0.10em; margin: 18px 0 10px; }

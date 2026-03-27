@@ -263,13 +263,58 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
             const contactItems = [];
             if (showPhone && profPhone) contactItems.push(`Tel: ${profPhone}`);
             if (showEmail && profEmail) contactItems.push(profEmail);
-            if (showSocial && profWhatsapp) contactItems.push(`WhatsApp: ${profWhatsapp}`);
-            if (showSocial && profInstagram) contactItems.push(`Instagram: ${profInstagram}`);
-            if (showSocial && profFacebook) contactItems.push(`Facebook: ${profFacebook}`);
-            if (showSocial && profX) contactItems.push(`X: ${profX}`);
-            if (showSocial && profYoutube) contactItems.push(`YouTube: ${profYoutube}`);
+            const socialItems = [];
+            if (showSocial && profWhatsapp) socialItems.push({ key: 'whatsapp', value: profWhatsapp });
+            if (showSocial && profInstagram) socialItems.push({ key: 'instagram', value: profInstagram });
+            if (showSocial && profFacebook) socialItems.push({ key: 'facebook', value: profFacebook });
+            if (showSocial && profX) socialItems.push({ key: 'x', value: profX });
+            if (showSocial && profYoutube) socialItems.push({ key: 'youtube', value: profYoutube });
             const contactColW = contactItems.length ? 54 : 0;
             const infoRightLimit = contactItems.length ? (PAGE_W - MR - contactColW - 3) : (PAGE_W - MR);
+            const drawSocialIcon = (kind, x, y, size) => {
+                const r = size / 2;
+                if (kind === 'instagram') {
+                    doc.setFillColor(228, 64, 95);
+                    doc.roundedRect(x, y, size, size, 0.9, 0.9, 'F');
+                    doc.setDrawColor(255, 255, 255);
+                    doc.setLineWidth(0.22);
+                    doc.circle(x + r, y + r, size * 0.25, 'S');
+                    doc.setFillColor(255, 255, 255);
+                    doc.circle(x + size * 0.73, y + size * 0.27, size * 0.06, 'F');
+                    return;
+                }
+                if (kind === 'facebook') {
+                    doc.setFillColor(24, 119, 242);
+                    doc.circle(x + r, y + r, r, 'F');
+                    doc.setTextColor(255, 255, 255);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(4.6);
+                    doc.text('f', x + r, y + size * 0.77, { align: 'center' });
+                    return;
+                }
+                if (kind === 'x') {
+                    doc.setFillColor(17, 24, 39);
+                    doc.circle(x + r, y + r, r, 'F');
+                    doc.setDrawColor(255, 255, 255);
+                    doc.setLineWidth(0.28);
+                    doc.line(x + size * 0.28, y + size * 0.28, x + size * 0.72, y + size * 0.72);
+                    doc.line(x + size * 0.72, y + size * 0.28, x + size * 0.28, y + size * 0.72);
+                    return;
+                }
+                if (kind === 'youtube') {
+                    doc.setFillColor(255, 0, 0);
+                    doc.roundedRect(x, y + size * 0.1, size, size * 0.8, 0.8, 0.8, 'F');
+                    doc.setFillColor(255, 255, 255);
+                    doc.triangle(x + size * 0.42, y + size * 0.3, x + size * 0.42, y + size * 0.7, x + size * 0.72, y + size * 0.5, 'F');
+                    return;
+                }
+                doc.setFillColor(37, 211, 102);
+                doc.circle(x + r, y + r, r, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(3.8);
+                doc.text('W', x + r, y + size * 0.72, { align: 'center' });
+            };
             if (showProfLogo) {
                 if (profLogoB64 && profLogoB64 !== instLogoB64) {
                     try {
@@ -333,6 +378,37 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                 doc.text(instLines, infoX, iy);
                 iy += 4;
             }
+            let socialEndY = iy;
+            if (socialItems.length) {
+                const iconSize = 3.2;
+                const iconGap = 1.1;
+                const itemGap = 5;
+                let sx = infoX;
+                let sy = iy + 0.8;
+                doc.setFont(mainFont, 'normal');
+                doc.setFontSize(8);
+                setGray(68);
+                let hiddenCount = 0;
+                for (const social of socialItems.slice(0, 8)) {
+                    const maxTextW = Math.max(18, infoRightLimit - sx - iconSize - iconGap - 1);
+                    const text = truncateForWidth(social.value, Math.min(30, maxTextW));
+                    const itemW = iconSize + iconGap + doc.getTextWidth(text) + itemGap;
+                    if (sx + itemW > infoRightLimit) {
+                        hiddenCount += 1;
+                        continue;
+                    }
+                    drawSocialIcon(social.key, sx, sy - 2.4, iconSize);
+                    doc.setFont(mainFont, 'normal');
+                    setGray(68);
+                    doc.text(text, sx + iconSize + iconGap, sy + 0.2);
+                    sx += itemW;
+                    socialEndY = sy + 2.3;
+                }
+                if (hiddenCount > 0 && (sx + doc.getTextWidth('...') < infoRightLimit)) {
+                    doc.text('...', sx, sy + 0.2);
+                }
+                iy = socialEndY + 1;
+            }
             let contactEndY = cy + 2;
             if (contactItems.length) {
                 const cx = PAGE_W - MR - contactColW;
@@ -347,7 +423,7 @@ async function downloadPDFWrapper(htmlContent, fileName, fecha, fileDate) {
                 }
                 contactEndY = cY;
             }
-            cy = Math.max(iy, profLogoB64 ? cy + 20 : iy, contactEndY) + 3;
+            cy = Math.max(iy, socialEndY, profLogoB64 ? cy + 20 : iy, contactEndY) + 3;
             doc.setDrawColor(accent.r, accent.g, accent.b);
             doc.setLineWidth(0.6);
             doc.line(ML, cy, PAGE_W - MR, cy);
