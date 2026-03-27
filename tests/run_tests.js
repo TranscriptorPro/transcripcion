@@ -8294,6 +8294,13 @@ test('Settings-Fix9 — Gift wizard no expone plan CLINIC', () => {
         'La lógica Gift debe rechazar CLINIC aunque se inyecte manualmente');
 });
 
+    test('Settings-Fix9b — Gift wizard resuelve especialidades con fallback robusto', () => {
+        assert(giftWizardInlineCodeB124.includes('function _resolveEspecialidades()') &&
+           giftWizardInlineCodeB124.includes('function _getEspecialidades()') &&
+           giftWizardInlineCodeB124.includes('_getEspecialidades().forEach(esp =>'),
+        'El paso 1 de Gift debe poblar especialidades desde una resolución dinámica con fallback');
+    });
+
 test('Settings-Fix10 — resumen Gift muestra badge de API sin filtrar fragmentos de key', () => {
     assert(giftWizardInlineCodeB124.includes('● Activa') &&
            giftWizardInlineCodeB124.includes('● Pendiente'),
