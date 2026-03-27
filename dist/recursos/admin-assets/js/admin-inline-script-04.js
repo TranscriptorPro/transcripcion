@@ -2041,67 +2041,19 @@
 
         const _sharedTplReg = window.TP_TEMPLATE_CATEGORY_REGISTRY || null;
 
-        // ── Mapeo de template keys agrupados por categoría (sincronizado con templates.js) ──
-        const TEMPLATE_MAP = (_sharedTplReg && _sharedTplReg.templateMapByCategory) || {
-            'Neumología': [
-                { key: 'espirometria', name: 'Espirometría' },
-                { key: 'test_marcha', name: 'Test Marcha 6 min' },
-                { key: 'pletismografia', name: 'Pletismografía' },
-                { key: 'oximetria_nocturna', name: 'Oximetría Nocturna' }
-            ],
-            'Oftalmología': [
-                { key: 'campimetria', name: 'Campimetría' },
-                { key: 'oct_retinal', name: 'OCT Retinal' },
-                { key: 'topografia_corneal', name: 'Topografía Corneal' },
-                { key: 'fondo_ojo', name: 'Fondo de Ojo' },
-                { key: 'gonioscopia', name: 'Gonioscopía' }
-            ],
-            'Imágenes': [
-                { key: 'tac', name: 'TAC' },
-                { key: 'resonancia', name: 'Resonancia' },
-                { key: 'mamografia', name: 'Mamografía' },
-                { key: 'densitometria', name: 'Densitometría' },
-                { key: 'pet_ct', name: 'PET-CT' },
-                { key: 'radiografia', name: 'Radiografía' },
-                { key: 'ecografia_abdominal', name: 'Ecografía Abdominal' },
-                { key: 'eco_doppler', name: 'Eco-Doppler' }
-            ],
-            'Endoscopía': [
-                { key: 'gastroscopia', name: 'Gastroscopía' },
-                { key: 'colonoscopia', name: 'Colonoscopía' },
-                { key: 'broncoscopia', name: 'Broncoscopía' },
-                { key: 'laringoscopia', name: 'Laringoscopía' }
-            ],
-            'Cardiología': [
-                { key: 'gammagrafia_cardiaca', name: 'Gammagrafía Cardíaca' },
-                { key: 'holter', name: 'Holter' },
-                { key: 'mapa', name: 'MAPA' },
-                { key: 'cinecoro', name: 'Cinecoronariografía' },
-                { key: 'ecg', name: 'ECG' },
-                { key: 'eco_stress', name: 'Eco-Stress' },
-                { key: 'ett', name: 'Ecocardiograma TT' }
-            ],
-            'Ginecología': [
-                { key: 'pap', name: 'PAP' },
-                { key: 'colposcopia', name: 'Colposcopía' }
-            ],
-            'Neurología': [
-                { key: 'electromiografia', name: 'Electromiografía' },
-                { key: 'polisomnografia', name: 'Polisomnografía' }
-            ],
-            'ORL': [
-                { key: 'naso', name: 'Nasofibroscopía' },
-                { key: 'endoscopia_otologica', name: 'Endoscopía Otológica' }
-            ],
-            'Quirúrgico': [
-                { key: 'protocolo_quirurgico', name: 'Protocolo Quirúrgico' }
-            ],
-            'General': [
-                { key: 'nota_evolucion', name: 'Nota de Evolución' },
-                { key: 'epicrisis', name: 'Epicrisis' },
-                { key: 'generico', name: 'Informe Genérico' }
-            ]
-        };
+        // ── Mapeo de template keys agrupados por categoría (dinámico por registry compartido) ──
+        const TEMPLATE_MAP = (_sharedTplReg && _sharedTplReg.templateMapByCategory) || Object.fromEntries(
+            Object.entries(window.TEMPLATE_CATEGORIES || {}).map(([category, keys]) => [
+                category,
+                (keys || []).map((key) => {
+                    const tpl = window.MEDICAL_TEMPLATES && window.MEDICAL_TEMPLATES[key];
+                    return {
+                        key,
+                        name: (tpl && tpl.name) || key
+                    };
+                }).filter((tpl) => !!tpl.key && tpl.key !== 'generico')
+            ]).filter(([, list]) => Array.isArray(list) && list.length)
+        );
 
         const ESPECIALIDADES = Object.keys(TEMPLATE_MAP);
 
@@ -2127,10 +2079,10 @@
             'Oftalmología': ['Oftalmología'],
             'Cirugía / Quirúrgico': ['Quirúrgico'],
             'Medicina General / Interna': ['General'],
-            'Traumatología / Ortopedia': [],
-            'Dermatología': [],
+            'Traumatología / Ortopedia': ['Traumatología / Ortopedia'],
+            'Dermatología': ['Dermatología'],
             'Endocrinología': [],
-            'Urología': []
+            'Urología': ['Urología']
         };
 
         // ── Dispositivos por plan (fallback) ──
@@ -2254,12 +2206,11 @@
         }
 
         function _formatGiftProfessionalDisplay(rawName, rawSexo) {
-            const original = String(rawName || '').trim();
-            const cleaned = original
-                .replace(/^(?:\s*(?:dr\.?\s*\/\s*dra\.?|dra\.?|dr\.?))\s+/i, '')
-                .replace(/\s+/g, ' ')
-                .trim();
-            const baseName = cleaned || 'Profesional';
+            const cleaned = _stripGiftProfessionalPrefix(rawName);
+            const normalized = (typeof window.normalizeFieldText === 'function')
+                ? window.normalizeFieldText(cleaned, 'name')
+                : cleaned;
+            const baseName = normalized || 'Profesional';
             const sexo = _normalizeGiftSexo(rawSexo);
             const title = sexo === 'F' ? 'Dra.' : 'Dr.';
             return {
@@ -2273,17 +2224,25 @@
         window._formatGiftProfessionalDisplay = _formatGiftProfessionalDisplay;
 
         function _stripGiftProfessionalPrefix(rawName) {
-            return String(rawName || '')
-                .replace(/^(?:\s*(?:dr\.?\s*\/\s*dra\.?|dra\.?|dr\.?))\s+/i, '')
-                .replace(/\s+/g, ' ')
-                .trim();
+            let value = String(rawName || '').replace(/\s+/g, ' ').trim();
+            let previous;
+            let loops = 0;
+            do {
+                previous = value;
+                value = value.replace(/^(?:\s*(?:dr\.?\s*\/\s*dra\.?|dra\.?|dr\.?))\s+/i, '').trim();
+                loops += 1;
+            } while (value !== previous && loops < 6);
+            return value;
         }
 
         function _sanitizeGiftNameField() {
             const input = document.getElementById('giftNombre');
             if (!input) return;
             const cleaned = _stripGiftProfessionalPrefix(input.value);
-            if (input.value !== cleaned) input.value = cleaned;
+            const normalized = (typeof window.normalizeFieldText === 'function')
+                ? window.normalizeFieldText(cleaned, 'name')
+                : cleaned;
+            if (input.value !== normalized) input.value = normalized;
             if (typeof window._updatePdfSim === 'function') window._updatePdfSim();
         }
 
@@ -2632,23 +2591,22 @@
                 TRIAL:  { devices: '3',  pro: 'true',  duration: '15' },
                 NORMAL: { devices: '1',  pro: 'false', duration: '365' },
                 PRO:    { devices: '3',  pro: 'true',  duration: '365' },
-                GIFT:   { devices: '2',  pro: 'true',  duration: '90' },
-                CLINIC: { devices: '5',  pro: 'true', duration: '365' }
+                GIFT:   { devices: '2',  pro: 'true',  duration: '90' }
             };
             const d = defaults[plan] || defaults.GIFT;
             devSel.value = d.devices;
             proSel.value = d.pro;
             durSel.value = d.duration;
-            // Gate redes sociales: solo GIFT/PRO/CLINIC
-            const socialPlans = ['GIFT', 'PRO', 'CLINIC'];
+            // Gate redes sociales: solo GIFT/PRO
+            const socialPlans = ['GIFT', 'PRO'];
             const socialChk = document.getElementById('giftShowSocial');
             if (socialChk) {
                 socialChk.disabled = !socialPlans.includes(plan);
                 if (!socialPlans.includes(plan)) socialChk.checked = false;
             }
-            // Mostrar sección de profesionales SOLO para CLINIC (C3)
+            // Gift no admite flujo clínica.
             const profCard = document.getElementById('giftProfessionalsCard');
-            if (profCard) profCard.style.display = plan === 'CLINIC' ? '' : 'none';
+            if (profCard) profCard.style.display = 'none';
             // Actualizar resumen inline en paso 3
             updateGiftSummaryBadge();
         }
@@ -2836,15 +2794,6 @@
             const email = document.getElementById('giftEmail')?.value || '—';
             const telefono = document.getElementById('giftTelefono')?.value || '';
 
-            // Profesionales (paso 4, solo CLINIC)
-            const giftPlanForSummary = document.getElementById('giftPlan')?.value || 'GIFT';
-            let profsSummaryHtml = '';
-            if (giftPlanForSummary === 'CLINIC') {
-                const profs = _collectGiftProfessionals();
-                profsSummaryHtml = profs.length
-                    ? profs.map(p => p.nombre + (p.especialidades[0] ? ' &mdash; ' + p.especialidades[0] : '')).join('<br>')
-                    : '<span style="color:#94a3b8;">Sin profesionales configurados</span>';
-            }
 
             // Datos del paso 2: TODOS los workplaces (scoped al container correcto)
             const wpAccordions = document.querySelectorAll('#giftWorkplacesContainer .gw-wp-accordion');
@@ -2889,7 +2838,9 @@
 
             // API Key
             const apiKey = document.getElementById('cfApiKey')?.value || '';
-            const apiKeyDisplay = apiKey ? '•••' + apiKey.slice(-6) : '<span style="color:#ef4444;">No configurada</span>';
+            const apiKeyDisplay = apiKey
+                ? '<span style="display:inline-flex;align-items:center;gap:.35rem;padding:3px 10px;border-radius:999px;background:#dcfce7;color:#166534;font-weight:700;font-size:.74rem;">● Activa</span>'
+                : '<span style="display:inline-flex;align-items:center;gap:.35rem;padding:3px 10px;border-radius:999px;background:#fef2f2;color:#b91c1c;font-weight:700;font-size:.74rem;">● Pendiente</span>';
 
             const el = document.getElementById('giftFinalSummaryContent');
             if (!el) return;
@@ -2922,16 +2873,12 @@
                 </div>
                 <div style="background:#f8fafc;border-radius:6px;padding:.5rem .7rem;">
                   <div style="font-size:.7rem;color:#94a3b8;font-weight:600;text-transform:uppercase;margin-bottom:.3rem;">🔑 API Key</div>
-                  <div style="font-family:monospace;font-size:.78rem;">${apiKeyDisplay}</div>
+                  <div style="font-size:.78rem;">${apiKeyDisplay}</div>
                 </div>
                 <div style="background:#f8fafc;border-radius:6px;padding:.5rem .7rem;grid-column:1/-1;">
                   <div style="font-size:.7rem;color:#94a3b8;font-weight:600;text-transform:uppercase;margin-bottom:.3rem;">📋 Contacto en informes</div>
                   <div style="font-size:.78rem;">${contactSummary}</div>
                 </div>
-                ${plan === 'CLINIC' ? `<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:.5rem .7rem;grid-column:1/-1;">
-                  <div style="font-size:.7rem;color:#1d4ed8;font-weight:600;text-transform:uppercase;margin-bottom:.3rem;">👥 Profesionales del equipo</div>
-                  <div style="font-size:.78rem;">${profsSummaryHtml}</div>
-                </div>` : ''}
               </div>
             `;
         }
@@ -3266,6 +3213,9 @@
 
                     // Leer opciones de licencia del paso 4
                     selectedPlan     = document.getElementById('giftPlan').value || 'GIFT';
+                    if (selectedPlan === 'CLINIC') {
+                        throw new Error('El flujo Gift no admite plan Clínica.');
+                    }
                     selectedDevices  = parseInt(document.getElementById('giftDevices').value) || 10;
                     selectedDuration = parseInt(document.getElementById('giftDuration').value);
                     selectedProMode  = document.getElementById('giftProMode').value === 'true';
@@ -3279,9 +3229,6 @@
                     }
 
                     // Datos enriquecidos (workplaces + apariencia + firma + logo) → se precargan en la app
-                    // CLINIC: recoger profesionales del equipo (C3)
-                    const clinicProfessionals = (selectedPlan === 'CLINIC') ? _collectGiftProfessionals() : undefined;
-
                     const registroDatos = {
                         workplace: allWorkplaces[0] || {},
                         extraWorkplaces: allWorkplaces.slice(1),
@@ -3300,8 +3247,7 @@
                         socialMedia,
                         showPhone,
                         showEmail,
-                        showSocial,
-                        ...(clinicProfessionals ? { profesionales: clinicProfessionals } : {})
+                        showSocial
                     };
 
                     const userData = {
@@ -3325,9 +3271,7 @@
                         Devices_Logged: '[]',
                         Diagnostico_Pendiente: 'false',
                         Registro_Datos: JSON.stringify(registroDatos),
-                        Notas_Admin: selectedPlan === 'CLINIC'
-                            ? '🏥 Usuario Clínica — creado desde Fábrica de Clones'
-                            : '🎁 Usuario regalo — creado desde Fábrica de Clones'
+                        Notas_Admin: '🎁 Usuario regalo — creado desde Fábrica de Clones'
                     };
 
                     // Mostrar barra de progreso

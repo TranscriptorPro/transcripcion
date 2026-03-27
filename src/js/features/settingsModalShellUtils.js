@@ -64,6 +64,7 @@
         const type = (typeof CLIENT_CONFIG !== 'undefined') ? CLIENT_CONFIG.type : 'ADMIN';
         const isAdmin = type === 'ADMIN';
         const isClinic = typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.canGenerateApps;
+        const isRichNonClinicUser = !isClinic && type === 'PRO';
 
         function isClinicAdminSession() {
             try {
@@ -97,13 +98,20 @@
         }
 
         if (isClinic) {
-            const clinicAllowed = ['cuenta', 'workplace', 'profiles', 'pdf', 'editor', 'tools', 'theme', 'skins', 'stats', 'info'];
-            if (isClinicAdminSession()) clinicAllowed.push('about');
+            const clinicAllowed = isClinicAdminSession()
+                ? ['cuenta', 'apikey', 'workplace', 'profiles', 'pdf', 'editor', 'tools', 'theme', 'skins', 'stats', 'info', 'about']
+                : ['cuenta', 'workplace', 'profiles', 'pdf', 'editor', 'tools', 'theme', 'skins', 'stats', 'info'];
             allSections.forEach((key) => toggleAccordion(key, clinicAllowed.includes(key)));
             return;
         }
 
-        // K2: Cliente final ve solo datos profesionales, lugar de trabajo y soporte.
+        if (isRichNonClinicUser) {
+            const richClientAllowed = ['cuenta', 'apikey', 'workplace', 'pdf', 'editor', 'tools', 'theme', 'skins', 'stats', 'info', 'about'];
+            allSections.forEach((key) => toggleAccordion(key, richClientAllowed.includes(key)));
+            return;
+        }
+
+        // K2: Clientes básicos siguen viendo solo datos mínimos.
         const clientAllowed = ['cuenta', 'workplace', 'info'];
         allSections.forEach((key) => toggleAccordion(key, clientAllowed.includes(key)));
     }

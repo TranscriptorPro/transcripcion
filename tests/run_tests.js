@@ -8205,6 +8205,8 @@ const populateCodeB124 = fs.readFileSync(path.join(root, 'src/js/features/settin
 const actionsCodeB124 = fs.readFileSync(path.join(root, 'src/js/features/settingsModalActionsUtils.js'), 'utf-8');
 const toolsLinksCodeB124 = fs.readFileSync(path.join(root, 'src/js/features/settingsToolsLinksUtils.js'), 'utf-8');
 const accountCodeB124 = fs.readFileSync(path.join(root, 'src/js/features/settingsAccountUtils.js'), 'utf-8');
+const giftWizardHtmlCodeB124 = fs.readFileSync(path.join(root, 'recursos/admin.html'), 'utf-8');
+const giftWizardInlineCodeB124 = fs.readFileSync(path.join(root, 'recursos/admin-assets/js/admin-inline-script-04.js'), 'utf-8');
 
 test('Settings-Fix1 — sección update incluida en allSections (K2)', () => {
     assert(shellUtilsCode.includes("'update'"),
@@ -8232,7 +8234,8 @@ test('Settings-Fix5 — botón Contactar soporte oculto para admin en populateIn
 });
 
 test('Settings-Fix6 — sesión clínica estándar oculta sección Acerca en settings', () => {
-    assert(shellUtilsCode.includes("const clinicAllowed = ['cuenta', 'workplace', 'profiles', 'pdf', 'editor', 'tools', 'theme', 'skins', 'stats', 'info']"),
+    assert(shellUtilsCode.includes("const clinicAllowed = isClinicAdminSession()") &&
+           shellUtilsCode.includes("['cuenta', 'workplace', 'profiles', 'pdf', 'editor', 'tools', 'theme', 'skins', 'stats', 'info']"),
         'En clínica estándar, el menú settings no debe incluir la sección about');
 });
 
@@ -8244,8 +8247,41 @@ test('Settings-Fix7 — sesión clínica estándar oculta botón Gestión de pag
 
 test('Settings-Fix8 — sesión clínica estándar no permite cambiar profesional desde Cuenta', () => {
     assert(accountCodeB124.includes('removeClinicSelector();') &&
-           accountCodeB124.includes('if (!isClinicAdminSession)'),
+           accountCodeB124.includes('const isClinicAdmin = isClinicAdminSession();') &&
+           accountCodeB124.includes('if (!isClinicAdmin)'),
         'Cuenta en clínica debe bloquear el selector de profesional para sesiones no-admin');
+});
+
+test('Settings-Fix9 — Gift wizard no expone plan CLINIC', () => {
+    assert(giftWizardHtmlCodeB124.includes('id="giftPlan"'),
+        'El wizard Gift debe mantener el selector de plan');
+    assert(giftWizardHtmlCodeB124.includes('<select id="giftPlan" onchange="updateGiftPlanDefaults()"><option value="GIFT" selected>🎁 Gift (completo)</option><option value="TRIAL">🕐 Trial</option><option value="NORMAL">📋 Normal</option><option value="PRO">⭐ Pro</option></select>'),
+        'El wizard Gift no debe ofrecer el plan CLINIC en su selector específico');
+    assert(giftWizardInlineCodeB124.includes("if (selectedPlan === 'CLINIC')") &&
+           giftWizardInlineCodeB124.includes('El flujo Gift no admite plan Clínica.'),
+        'La lógica Gift debe rechazar CLINIC aunque se inyecte manualmente');
+});
+
+test('Settings-Fix10 — resumen Gift muestra badge de API sin filtrar fragmentos de key', () => {
+    assert(giftWizardInlineCodeB124.includes('● Activa') &&
+           giftWizardInlineCodeB124.includes('● Pendiente'),
+        'El resumen Gift debe mostrar badges de estado para la API');
+    assert(!giftWizardInlineCodeB124.includes('apiKey.slice(-6)'),
+        'El resumen Gift no debe exponer los últimos caracteres de la API key');
+});
+
+test('Settings-Fix11 — usuarios PRO no clínicos conservan settings ampliado', () => {
+    assert(shellUtilsCode.includes("const isRichNonClinicUser = !isClinic && type === 'PRO';") &&
+           shellUtilsCode.includes("const richClientAllowed = ['cuenta', 'apikey', 'workplace', 'pdf', 'editor', 'tools', 'theme', 'skins', 'stats', 'info', 'about']"),
+        'Los usuarios PRO/Gift no clínicos deben ver el settings ampliado');
+});
+
+test('Settings-Fix12 — admin de clínica puede editar identidad del profesional activo', () => {
+    assert(accountCodeB124.includes("editorMode === 'clinic-admin'") &&
+           accountCodeB124.includes('Admin de clínica: podés editar la identidad del profesional activo') &&
+           accountCodeB124.includes("localStorage.setItem('workplace_profiles'") &&
+           accountCodeB124.includes("localStorage.setItem('pdf_config'"),
+        'Cuenta debe habilitar edición de identidad solo para admin de clínica y persistir workplace_profiles/pdf_config');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════

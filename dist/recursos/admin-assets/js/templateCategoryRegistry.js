@@ -44,16 +44,22 @@
             { key: 'cinecoro', name: 'Cinecoronariografía' },
             { key: 'ecg', name: 'ECG' },
             { key: 'eco_stress', name: 'Eco-Stress' },
-            { key: 'ett', name: 'Ecocardiograma TT' }
+            { key: 'ett', name: 'Ecocardiograma TT' },
+            { key: 'ergometria', name: 'Ergometría' },
+            { key: 'eco_te', name: 'Ecocardiograma TE' }
         ],
         'Ginecología': [
             { key: 'pap', name: 'PAP' },
             { key: 'colposcopia', name: 'Colposcopía' },
-            { key: 'ecografia_obstetrica', name: 'Ecografía Obstétrica' }
+            { key: 'ecografia_obstetrica', name: 'Ecografía Obstétrica' },
+            { key: 'eco_gineco', name: 'Eco Ginecológica (TVS)' },
+            { key: 'histeroscopia', name: 'Histeroscopía' }
         ],
         'Neurología': [
             { key: 'electromiografia', name: 'Electromiografía' },
-            { key: 'polisomnografia', name: 'Polisomnografía' }
+            { key: 'polisomnografia', name: 'Polisomnografía' },
+            { key: 'eeg', name: 'EEG' },
+            { key: 'potenciales_evocados', name: 'Potenciales Evocados' }
         ],
         'ORL': [
             { key: 'naso', name: 'Nasofibroscopía' },
@@ -66,6 +72,16 @@
             { key: 'nota_evolucion', name: 'Nota de Evolución' },
             { key: 'epicrisis', name: 'Epicrisis' },
             { key: 'generico', name: 'Informe Genérico' }
+        ],
+        'Urología': [
+            { key: 'uroflujometria', name: 'Uroflujometría' }
+        ],
+        'Traumatología / Ortopedia': [
+            { key: 'artroscopia', name: 'Artroscopía' },
+            { key: 'eco_musculoesqueletica', name: 'Eco Musculoesquelética' }
+        ],
+        'Dermatología': [
+            { key: 'dermatoscopia', name: 'Dermatoscopía' }
         ]
     };
 
@@ -83,10 +99,10 @@
         'Oftalmología': ['Oftalmología'],
         'Cirugía / Quirúrgico': ['Quirúrgico'],
         'Medicina General / Interna': ['General'],
-        'Traumatología / Ortopedia': [],
-        'Dermatología': [],
+        'Traumatología / Ortopedia': ['Traumatología / Ortopedia'],
+        'Dermatología': ['Dermatología'],
         'Endocrinología': [],
-        'Urología': []
+        'Urología': ['Urología']
     };
 
     const runtime = {

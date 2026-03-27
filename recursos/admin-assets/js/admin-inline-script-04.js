@@ -2591,23 +2591,22 @@
                 TRIAL:  { devices: '3',  pro: 'true',  duration: '15' },
                 NORMAL: { devices: '1',  pro: 'false', duration: '365' },
                 PRO:    { devices: '3',  pro: 'true',  duration: '365' },
-                GIFT:   { devices: '2',  pro: 'true',  duration: '90' },
-                CLINIC: { devices: '5',  pro: 'true', duration: '365' }
+                GIFT:   { devices: '2',  pro: 'true',  duration: '90' }
             };
             const d = defaults[plan] || defaults.GIFT;
             devSel.value = d.devices;
             proSel.value = d.pro;
             durSel.value = d.duration;
-            // Gate redes sociales: solo GIFT/PRO/CLINIC
-            const socialPlans = ['GIFT', 'PRO', 'CLINIC'];
+            // Gate redes sociales: solo GIFT/PRO
+            const socialPlans = ['GIFT', 'PRO'];
             const socialChk = document.getElementById('giftShowSocial');
             if (socialChk) {
                 socialChk.disabled = !socialPlans.includes(plan);
                 if (!socialPlans.includes(plan)) socialChk.checked = false;
             }
-            // Mostrar sección de profesionales SOLO para CLINIC (C3)
+            // Gift no admite flujo clínica.
             const profCard = document.getElementById('giftProfessionalsCard');
-            if (profCard) profCard.style.display = plan === 'CLINIC' ? '' : 'none';
+            if (profCard) profCard.style.display = 'none';
             // Actualizar resumen inline en paso 3
             updateGiftSummaryBadge();
         }
@@ -2795,15 +2794,6 @@
             const email = document.getElementById('giftEmail')?.value || '—';
             const telefono = document.getElementById('giftTelefono')?.value || '';
 
-            // Profesionales (paso 4, solo CLINIC)
-            const giftPlanForSummary = document.getElementById('giftPlan')?.value || 'GIFT';
-            let profsSummaryHtml = '';
-            if (giftPlanForSummary === 'CLINIC') {
-                const profs = _collectGiftProfessionals();
-                profsSummaryHtml = profs.length
-                    ? profs.map(p => p.nombre + (p.especialidades[0] ? ' &mdash; ' + p.especialidades[0] : '')).join('<br>')
-                    : '<span style="color:#94a3b8;">Sin profesionales configurados</span>';
-            }
 
             // Datos del paso 2: TODOS los workplaces (scoped al container correcto)
             const wpAccordions = document.querySelectorAll('#giftWorkplacesContainer .gw-wp-accordion');
@@ -2848,7 +2838,9 @@
 
             // API Key
             const apiKey = document.getElementById('cfApiKey')?.value || '';
-            const apiKeyDisplay = apiKey ? '•••' + apiKey.slice(-6) : '<span style="color:#ef4444;">No configurada</span>';
+            const apiKeyDisplay = apiKey
+                ? '<span style="display:inline-flex;align-items:center;gap:.35rem;padding:3px 10px;border-radius:999px;background:#dcfce7;color:#166534;font-weight:700;font-size:.74rem;">● Activa</span>'
+                : '<span style="display:inline-flex;align-items:center;gap:.35rem;padding:3px 10px;border-radius:999px;background:#fef2f2;color:#b91c1c;font-weight:700;font-size:.74rem;">● Pendiente</span>';
 
             const el = document.getElementById('giftFinalSummaryContent');
             if (!el) return;
@@ -2881,16 +2873,12 @@
                 </div>
                 <div style="background:#f8fafc;border-radius:6px;padding:.5rem .7rem;">
                   <div style="font-size:.7rem;color:#94a3b8;font-weight:600;text-transform:uppercase;margin-bottom:.3rem;">🔑 API Key</div>
-                  <div style="font-family:monospace;font-size:.78rem;">${apiKeyDisplay}</div>
+                  <div style="font-size:.78rem;">${apiKeyDisplay}</div>
                 </div>
                 <div style="background:#f8fafc;border-radius:6px;padding:.5rem .7rem;grid-column:1/-1;">
                   <div style="font-size:.7rem;color:#94a3b8;font-weight:600;text-transform:uppercase;margin-bottom:.3rem;">📋 Contacto en informes</div>
                   <div style="font-size:.78rem;">${contactSummary}</div>
                 </div>
-                ${plan === 'CLINIC' ? `<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:.5rem .7rem;grid-column:1/-1;">
-                  <div style="font-size:.7rem;color:#1d4ed8;font-weight:600;text-transform:uppercase;margin-bottom:.3rem;">👥 Profesionales del equipo</div>
-                  <div style="font-size:.78rem;">${profsSummaryHtml}</div>
-                </div>` : ''}
               </div>
             `;
         }
@@ -3225,6 +3213,9 @@
 
                     // Leer opciones de licencia del paso 4
                     selectedPlan     = document.getElementById('giftPlan').value || 'GIFT';
+                    if (selectedPlan === 'CLINIC') {
+                        throw new Error('El flujo Gift no admite plan Clínica.');
+                    }
                     selectedDevices  = parseInt(document.getElementById('giftDevices').value) || 10;
                     selectedDuration = parseInt(document.getElementById('giftDuration').value);
                     selectedProMode  = document.getElementById('giftProMode').value === 'true';
@@ -3238,9 +3229,6 @@
                     }
 
                     // Datos enriquecidos (workplaces + apariencia + firma + logo) → se precargan en la app
-                    // CLINIC: recoger profesionales del equipo (C3)
-                    const clinicProfessionals = (selectedPlan === 'CLINIC') ? _collectGiftProfessionals() : undefined;
-
                     const registroDatos = {
                         workplace: allWorkplaces[0] || {},
                         extraWorkplaces: allWorkplaces.slice(1),
@@ -3259,8 +3247,7 @@
                         socialMedia,
                         showPhone,
                         showEmail,
-                        showSocial,
-                        ...(clinicProfessionals ? { profesionales: clinicProfessionals } : {})
+                        showSocial
                     };
 
                     const userData = {
@@ -3284,9 +3271,7 @@
                         Devices_Logged: '[]',
                         Diagnostico_Pendiente: 'false',
                         Registro_Datos: JSON.stringify(registroDatos),
-                        Notas_Admin: selectedPlan === 'CLINIC'
-                            ? '🏥 Usuario Clínica — creado desde Fábrica de Clones'
-                            : '🎁 Usuario regalo — creado desde Fábrica de Clones'
+                        Notas_Admin: '🎁 Usuario regalo — creado desde Fábrica de Clones'
                     };
 
                     // Mostrar barra de progreso
