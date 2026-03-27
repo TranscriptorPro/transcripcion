@@ -411,6 +411,14 @@ window.handleFactorySetupCore = async function (medicoId) {
 
         console.info('[Factory] Setup completado para', doctor.Nombre || medicoId, '— Plan:', plan);
 
+        // ── Guardar plans config para el manual (fire-and-forget) ─────────────
+        try {
+            fetch(backendUrl + '?action=public_get_plans_config')
+                .then(function(r){ return r.json(); })
+                .then(function(d){ if (d && d.plans) localStorage.setItem('admin_plans_config', JSON.stringify(d.plans)); })
+                .catch(function(){});
+        } catch(_) {}
+
         // ── Continuar con flujo de cliente (onboarding) ──────────────────────
         _hideSetupLoadingOverlay();
         _initClient(); // mostrará el onboarding con T&C

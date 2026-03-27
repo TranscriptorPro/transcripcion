@@ -7519,6 +7519,27 @@ test('Modal-4c — dropdowns del header priorizan visibilidad sobre toolbar/butt
         'components.css debe permitir overflow visible para evitar solapamiento de desplegables');
 });
 
+// ── Tests tabla de planes dinámica en manual.html ──────────────────────
+const manualHtmlCodeSec = fs.readFileSync(path.join(root, 'recursos/manual.html'), 'utf-8');
+const factorySetupCodeSec = fs.readFileSync(path.join(root, 'src/js/features/businessFactorySetupUtils.js'), 'utf-8');
+
+test('Manual-Plans-1 — tabla de planes sin precios hardcodeados', () => {
+    assert(!manualHtmlCodeSec.includes('USD 15') && !manualHtmlCodeSec.includes('USD 25') && !manualHtmlCodeSec.includes('Personalizado') && !manualHtmlCodeSec.includes('<th>Precio</th>'),
+        'manual.html no debe contener precios hardcodeados ni columna Precio en la tabla');
+});
+
+test('Manual-Plans-2 — tabla de planes usa div dinámico', () => {
+    assert(manualHtmlCodeSec.includes('id="plansTableContainer"'),
+        'manual.html debe tener div#plansTableContainer como placeholder de la tabla');
+    assert(manualHtmlCodeSec.includes('admin_plans_config') && manualHtmlCodeSec.includes('_buildTable'),
+        'manual.html debe renderizar la tabla desde admin_plans_config con _buildTable');
+});
+
+test('Manual-Plans-3 — factory setup guarda plans config para el manual', () => {
+    assert(factorySetupCodeSec.includes('public_get_plans_config') && factorySetupCodeSec.includes('admin_plans_config'),
+        'businessFactorySetupUtils.js debe fetchear y guardar admin_plans_config al finalizar el setup');
+});
+
 test('PreviewPdf-1 — redes sociales en header usan bloque horizontal dedicado', () => {
     assert(pdfPreviewCodeSec.includes('pvh-social') && pdfPreviewCodeSec.includes('pvSocialItems'),
         'pdfPreview.js debe construir bloque horizontal de redes sociales');
