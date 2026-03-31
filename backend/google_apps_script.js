@@ -2689,6 +2689,8 @@ function doPost(e) {
 
       _sendWelcomeEmail(userData.Email, userData.Nombre, medicoId, plan);
 
+      _invalidateAdminReadCaches();
+
       return createResponse({
         success: true, medicoId: medicoId,
         nombre: userData.Nombre, email: userData.Email,
