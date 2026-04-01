@@ -86,34 +86,30 @@ async function main() {
   log('DIAGNÓSTICO COMPRENSIVO — Múltiples Planes');
   log('═'.repeat(70));
 
+  const plans = [
+    { plan: 'NORMAL',     maxDevices: 1,   devices: [{ num: 1, shouldAllow: true }, { num: 2, shouldAllow: false }] },
+    { plan: 'PRO',        maxDevices: 3,   devices: [{ num: 1, shouldAllow: true }, { num: 2, shouldAllow: true }, { num: 3, shouldAllow: true }, { num: 4, shouldAllow: false }] },
+    { plan: 'ENTERPRISE', maxDevices: 999, devices: [{ num: 1, shouldAllow: true }, { num: 2, shouldAllow: true }, { num: 100, shouldAllow: true }] }
+  ];
+
   let totalPassed = 0;
+  let totalExpected = 0;
 
-  // NORMAL: 1 dispositivo
-  totalPassed += await testPlan('NORMAL', 1, [
-    { num: 1, shouldAllow: true },
-    { num: 2, shouldAllow: false }
-  ]);
-
-  // PRO: 3 dispositivos
-  totalPassed += await testPlan('PRO', 3, [
-    { num: 1, shouldAllow: true },
-    { num: 2, shouldAllow: true },
-    { num: 3, shouldAllow: true },
-    { num: 4, shouldAllow: false }
-  ]);
-
-  // ENTERPRISE: 999 dispositivos
-  totalPassed += await testPlan('ENTERPRISE', 999, [
-    { num: 1, shouldAllow: true },
-    { num: 2, shouldAllow: true },
-    { num: 100, shouldAllow: true }
-  ]);
+  for (const { plan, maxDevices, devices } of plans) {
+    totalPassed += await testPlan(plan, maxDevices, devices);
+    totalExpected += 2 + devices.length; // create + list + devices
+  }
 
   log(`\n${'═'.repeat(70)}`);
-  log(`✅ Tests pasados: ${totalPassed}/20`);
+  log(`RESUMEN FINAL: ${totalPassed}/${totalExpected} tests pasados`);
+  if (totalPassed === totalExpected) {
+    log('✅ TODOS LOS TESTS PASARON');
+  } else {
+    log(`❌ FALLOS: ${totalExpected - totalPassed} tests fallaron`);
+  }
   log('═'.repeat(70));
 
-  process.exit(totalPassed === 20 ? 0 : 1);
+  process.exit(totalPassed === totalExpected ? 0 : 1);
 }
 
 main().catch(err => {
