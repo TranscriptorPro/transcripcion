@@ -30,7 +30,7 @@ function _showApiKeyGuidance(message) {
                 }
             }, 7000);
         } else {
-            showToastWithAction('🔑 No pudimos validar tu API Key. Te ayudamos desde soporte.', 'warning', '📧 Contactar', function () {
+            showToastWithAction('🔑 No pudimos validar tu API Key. Contactá a soporte o revisa tu plan.', 'warning', '📧 Contactar', function () {
                 if (typeof window.openContactModal === 'function') {
                     window.openContactModal('Problema con la API Key');
                 } else {

@@ -1,0 +1,1578 @@
+{
+  "source": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills",
+  "output": "C:\\Users\\kengy\\Desktop\\Transcriptor-pro\\.github\\prompts",
+  "allowRisky": false,
+  "imported": [
+    {
+      "promptName": "3d-web-experience",
+      "sourceFolder": "3d-web-experience",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\3d-web-experience",
+      "declaredName": "3d-web-experience",
+      "risky": false
+    },
+    {
+      "promptName": "ab-test-setup",
+      "sourceFolder": "ab-test-setup",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\ab-test-setup",
+      "declaredName": "ab-test-setup",
+      "risky": false
+    },
+    {
+      "promptName": "address-github-comments",
+      "sourceFolder": "address-github-comments",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\address-github-comments",
+      "declaredName": "address-github-comments",
+      "risky": false
+    },
+    {
+      "promptName": "agent-evaluation",
+      "sourceFolder": "agent-evaluation",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\agent-evaluation",
+      "declaredName": "agent-evaluation",
+      "risky": false
+    },
+    {
+      "promptName": "agent-manager-skill",
+      "sourceFolder": "agent-manager-skill",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\agent-manager-skill",
+      "declaredName": "agent-manager-skill",
+      "risky": false
+    },
+    {
+      "promptName": "agent-memory-mcp",
+      "sourceFolder": "agent-memory-mcp",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\agent-memory-mcp",
+      "declaredName": "agent-memory-mcp",
+      "risky": false
+    },
+    {
+      "promptName": "agent-memory-systems",
+      "sourceFolder": "agent-memory-systems",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\agent-memory-systems",
+      "declaredName": "agent-memory-systems",
+      "risky": false
+    },
+    {
+      "promptName": "agent-tool-builder",
+      "sourceFolder": "agent-tool-builder",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\agent-tool-builder",
+      "declaredName": "agent-tool-builder",
+      "risky": false
+    },
+    {
+      "promptName": "ai-agents-architect",
+      "sourceFolder": "ai-agents-architect",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\ai-agents-architect",
+      "declaredName": "ai-agents-architect",
+      "risky": false
+    },
+    {
+      "promptName": "ai-product",
+      "sourceFolder": "ai-product",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\ai-product",
+      "declaredName": "ai-product",
+      "risky": false
+    },
+    {
+      "promptName": "ai-wrapper-product",
+      "sourceFolder": "ai-wrapper-product",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\ai-wrapper-product",
+      "declaredName": "ai-wrapper-product",
+      "risky": false
+    },
+    {
+      "promptName": "algolia-search",
+      "sourceFolder": "algolia-search",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\algolia-search",
+      "declaredName": "algolia-search",
+      "risky": false
+    },
+    {
+      "promptName": "algorithmic-art",
+      "sourceFolder": "algorithmic-art",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\algorithmic-art",
+      "declaredName": "algorithmic-art",
+      "risky": false
+    },
+    {
+      "promptName": "analytics-tracking",
+      "sourceFolder": "analytics-tracking",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\analytics-tracking",
+      "declaredName": "analytics-tracking",
+      "risky": false
+    },
+    {
+      "promptName": "api-documentation-generator",
+      "sourceFolder": "api-documentation-generator",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\api-documentation-generator",
+      "declaredName": "api-documentation-generator",
+      "risky": false
+    },
+    {
+      "promptName": "api-fuzzing-bug-bounty",
+      "sourceFolder": "api-fuzzing-bug-bounty",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\api-fuzzing-bug-bounty",
+      "declaredName": "API Fuzzing for Bug Bounty",
+      "risky": false
+    },
+    {
+      "promptName": "api-patterns",
+      "sourceFolder": "api-patterns",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\api-patterns",
+      "declaredName": "api-patterns",
+      "risky": false
+    },
+    {
+      "promptName": "api-security-best-practices",
+      "sourceFolder": "api-security-best-practices",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\api-security-best-practices",
+      "declaredName": "api-security-best-practices",
+      "risky": false
+    },
+    {
+      "promptName": "app-builder",
+      "sourceFolder": "app-builder",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\app-builder",
+      "declaredName": "app-builder",
+      "risky": false
+    },
+    {
+      "promptName": "app-store-optimization",
+      "sourceFolder": "app-store-optimization",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\app-store-optimization",
+      "declaredName": "app-store-optimization",
+      "risky": false
+    },
+    {
+      "promptName": "architecture",
+      "sourceFolder": "architecture",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\architecture",
+      "declaredName": "architecture",
+      "risky": false
+    },
+    {
+      "promptName": "autonomous-agent-patterns",
+      "sourceFolder": "autonomous-agent-patterns",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\autonomous-agent-patterns",
+      "declaredName": "autonomous-agent-patterns",
+      "risky": false
+    },
+    {
+      "promptName": "autonomous-agents",
+      "sourceFolder": "autonomous-agents",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\autonomous-agents",
+      "declaredName": "autonomous-agents",
+      "risky": false
+    },
+    {
+      "promptName": "avalonia-layout-zafiro",
+      "sourceFolder": "avalonia-layout-zafiro",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\avalonia-layout-zafiro",
+      "declaredName": "avalonia-layout-zafiro",
+      "risky": false
+    },
+    {
+      "promptName": "avalonia-viewmodels-zafiro",
+      "sourceFolder": "avalonia-viewmodels-zafiro",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\avalonia-viewmodels-zafiro",
+      "declaredName": "avalonia-viewmodels-zafiro",
+      "risky": false
+    },
+    {
+      "promptName": "avalonia-zafiro-development",
+      "sourceFolder": "avalonia-zafiro-development",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\avalonia-zafiro-development",
+      "declaredName": "avalonia-zafiro-development",
+      "risky": false
+    },
+    {
+      "promptName": "aws-penetration-testing",
+      "sourceFolder": "aws-penetration-testing",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\aws-penetration-testing",
+      "declaredName": "AWS Penetration Testing",
+      "risky": false
+    },
+    {
+      "promptName": "aws-serverless",
+      "sourceFolder": "aws-serverless",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\aws-serverless",
+      "declaredName": "aws-serverless",
+      "risky": false
+    },
+    {
+      "promptName": "azure-functions",
+      "sourceFolder": "azure-functions",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\azure-functions",
+      "declaredName": "azure-functions",
+      "risky": false
+    },
+    {
+      "promptName": "backend-dev-guidelines",
+      "sourceFolder": "backend-dev-guidelines",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\backend-dev-guidelines",
+      "declaredName": "backend-dev-guidelines",
+      "risky": false
+    },
+    {
+      "promptName": "bash-linux",
+      "sourceFolder": "bash-linux",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\bash-linux",
+      "declaredName": "bash-linux",
+      "risky": false
+    },
+    {
+      "promptName": "behavioral-modes",
+      "sourceFolder": "behavioral-modes",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\behavioral-modes",
+      "declaredName": "behavioral-modes",
+      "risky": false
+    },
+    {
+      "promptName": "blockrun",
+      "sourceFolder": "blockrun",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\blockrun",
+      "declaredName": "blockrun",
+      "risky": false
+    },
+    {
+      "promptName": "brainstorming",
+      "sourceFolder": "brainstorming",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\brainstorming",
+      "declaredName": "brainstorming",
+      "risky": false
+    },
+    {
+      "promptName": "brand-guidelines-anthropic",
+      "sourceFolder": "brand-guidelines-anthropic",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\brand-guidelines-anthropic",
+      "declaredName": "brand-guidelines",
+      "risky": false
+    },
+    {
+      "promptName": "brand-guidelines-community",
+      "sourceFolder": "brand-guidelines-community",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\brand-guidelines-community",
+      "declaredName": "brand-guidelines",
+      "risky": false
+    },
+    {
+      "promptName": "browser-automation",
+      "sourceFolder": "browser-automation",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\browser-automation",
+      "declaredName": "browser-automation",
+      "risky": false
+    },
+    {
+      "promptName": "browser-extension-builder",
+      "sourceFolder": "browser-extension-builder",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\browser-extension-builder",
+      "declaredName": "browser-extension-builder",
+      "risky": false
+    },
+    {
+      "promptName": "bullmq-specialist",
+      "sourceFolder": "bullmq-specialist",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\bullmq-specialist",
+      "declaredName": "bullmq-specialist",
+      "risky": false
+    },
+    {
+      "promptName": "bun-development",
+      "sourceFolder": "bun-development",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\bun-development",
+      "declaredName": "bun-development",
+      "risky": false
+    },
+    {
+      "promptName": "burp-suite-testing",
+      "sourceFolder": "burp-suite-testing",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\burp-suite-testing",
+      "declaredName": "Burp Suite Web Application Testing",
+      "risky": false
+    },
+    {
+      "promptName": "busybox-on-windows",
+      "sourceFolder": "busybox-on-windows",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\busybox-on-windows",
+      "declaredName": "busybox-on-windows",
+      "risky": false
+    },
+    {
+      "promptName": "canvas-design",
+      "sourceFolder": "canvas-design",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\canvas-design",
+      "declaredName": "canvas-design",
+      "risky": false
+    },
+    {
+      "promptName": "cc-skill-backend-patterns",
+      "sourceFolder": "cc-skill-backend-patterns",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\cc-skill-backend-patterns",
+      "declaredName": "backend-patterns",
+      "risky": false
+    },
+    {
+      "promptName": "cc-skill-clickhouse-io",
+      "sourceFolder": "cc-skill-clickhouse-io",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\cc-skill-clickhouse-io",
+      "declaredName": "clickhouse-io",
+      "risky": false
+    },
+    {
+      "promptName": "cc-skill-coding-standards",
+      "sourceFolder": "cc-skill-coding-standards",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\cc-skill-coding-standards",
+      "declaredName": "coding-standards",
+      "risky": false
+    },
+    {
+      "promptName": "cc-skill-continuous-learning",
+      "sourceFolder": "cc-skill-continuous-learning",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\cc-skill-continuous-learning",
+      "declaredName": "cc-skill-continuous-learning",
+      "risky": false
+    },
+    {
+      "promptName": "cc-skill-frontend-patterns",
+      "sourceFolder": "cc-skill-frontend-patterns",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\cc-skill-frontend-patterns",
+      "declaredName": "frontend-patterns",
+      "risky": false
+    },
+    {
+      "promptName": "cc-skill-project-guidelines-example",
+      "sourceFolder": "cc-skill-project-guidelines-example",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\cc-skill-project-guidelines-example",
+      "declaredName": "cc-skill-project-guidelines-example",
+      "risky": false
+    },
+    {
+      "promptName": "cc-skill-security-review",
+      "sourceFolder": "cc-skill-security-review",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\cc-skill-security-review",
+      "declaredName": "security-review",
+      "risky": false
+    },
+    {
+      "promptName": "cc-skill-strategic-compact",
+      "sourceFolder": "cc-skill-strategic-compact",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\cc-skill-strategic-compact",
+      "declaredName": "cc-skill-strategic-compact",
+      "risky": false
+    },
+    {
+      "promptName": "claude-code-guide",
+      "sourceFolder": "claude-code-guide",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\claude-code-guide",
+      "declaredName": "Claude Code Guide",
+      "risky": false
+    },
+    {
+      "promptName": "claude-d3js-skill",
+      "sourceFolder": "claude-d3js-skill",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\claude-d3js-skill",
+      "declaredName": "d3-viz",
+      "risky": false
+    },
+    {
+      "promptName": "clean-code",
+      "sourceFolder": "clean-code",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\clean-code",
+      "declaredName": "clean-code",
+      "risky": false
+    },
+    {
+      "promptName": "clerk-auth",
+      "sourceFolder": "clerk-auth",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\clerk-auth",
+      "declaredName": "clerk-auth",
+      "risky": false
+    },
+    {
+      "promptName": "cloud-penetration-testing",
+      "sourceFolder": "cloud-penetration-testing",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\cloud-penetration-testing",
+      "declaredName": "Cloud Penetration Testing",
+      "risky": false
+    },
+    {
+      "promptName": "code-review-checklist",
+      "sourceFolder": "code-review-checklist",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\code-review-checklist",
+      "declaredName": "code-review-checklist",
+      "risky": false
+    },
+    {
+      "promptName": "codex-review",
+      "sourceFolder": "codex-review",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\codex-review",
+      "declaredName": "codex-review",
+      "risky": false
+    },
+    {
+      "promptName": "competitor-alternatives",
+      "sourceFolder": "competitor-alternatives",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\competitor-alternatives",
+      "declaredName": "competitor-alternatives",
+      "risky": false
+    },
+    {
+      "promptName": "computer-use-agents",
+      "sourceFolder": "computer-use-agents",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\computer-use-agents",
+      "declaredName": "computer-use-agents",
+      "risky": false
+    },
+    {
+      "promptName": "concise-planning",
+      "sourceFolder": "concise-planning",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\concise-planning",
+      "declaredName": "concise-planning",
+      "risky": false
+    },
+    {
+      "promptName": "content-creator",
+      "sourceFolder": "content-creator",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\content-creator",
+      "declaredName": "content-creator",
+      "risky": false
+    },
+    {
+      "promptName": "context-window-management",
+      "sourceFolder": "context-window-management",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\context-window-management",
+      "declaredName": "context-window-management",
+      "risky": false
+    },
+    {
+      "promptName": "context7-auto-research",
+      "sourceFolder": "context7-auto-research",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\context7-auto-research",
+      "declaredName": "context7-auto-research",
+      "risky": false
+    },
+    {
+      "promptName": "conversation-memory",
+      "sourceFolder": "conversation-memory",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\conversation-memory",
+      "declaredName": "conversation-memory",
+      "risky": false
+    },
+    {
+      "promptName": "copy-editing",
+      "sourceFolder": "copy-editing",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\copy-editing",
+      "declaredName": "copy-editing",
+      "risky": false
+    },
+    {
+      "promptName": "copywriting",
+      "sourceFolder": "copywriting",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\copywriting",
+      "declaredName": "copywriting",
+      "risky": false
+    },
+    {
+      "promptName": "core-components",
+      "sourceFolder": "core-components",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\core-components",
+      "declaredName": "core-components",
+      "risky": false
+    },
+    {
+      "promptName": "crewai",
+      "sourceFolder": "crewai",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\crewai",
+      "declaredName": "crewai",
+      "risky": false
+    },
+    {
+      "promptName": "daily-news-report",
+      "sourceFolder": "daily-news-report",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\daily-news-report",
+      "declaredName": "daily-news-report",
+      "risky": false
+    },
+    {
+      "promptName": "database-design",
+      "sourceFolder": "database-design",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\database-design",
+      "declaredName": "database-design",
+      "risky": false
+    },
+    {
+      "promptName": "deployment-procedures",
+      "sourceFolder": "deployment-procedures",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\deployment-procedures",
+      "declaredName": "deployment-procedures",
+      "risky": false
+    },
+    {
+      "promptName": "design-orchestration",
+      "sourceFolder": "design-orchestration",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\design-orchestration",
+      "declaredName": "design-orchestration",
+      "risky": false
+    },
+    {
+      "promptName": "discord-bot-architect",
+      "sourceFolder": "discord-bot-architect",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\discord-bot-architect",
+      "declaredName": "discord-bot-architect",
+      "risky": false
+    },
+    {
+      "promptName": "dispatching-parallel-agents",
+      "sourceFolder": "dispatching-parallel-agents",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\dispatching-parallel-agents",
+      "declaredName": "dispatching-parallel-agents",
+      "risky": false
+    },
+    {
+      "promptName": "doc-coauthoring",
+      "sourceFolder": "doc-coauthoring",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\doc-coauthoring",
+      "declaredName": "doc-coauthoring",
+      "risky": false
+    },
+    {
+      "promptName": "docker-expert",
+      "sourceFolder": "docker-expert",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\docker-expert",
+      "declaredName": "docker-expert",
+      "risky": false
+    },
+    {
+      "promptName": "documentation-templates",
+      "sourceFolder": "documentation-templates",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\documentation-templates",
+      "declaredName": "documentation-templates",
+      "risky": false
+    },
+    {
+      "promptName": "docx-official",
+      "sourceFolder": "docx-official",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\docx-official",
+      "declaredName": "docx",
+      "risky": false
+    },
+    {
+      "promptName": "email-sequence",
+      "sourceFolder": "email-sequence",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\email-sequence",
+      "declaredName": "email-sequence",
+      "risky": false
+    },
+    {
+      "promptName": "email-systems",
+      "sourceFolder": "email-systems",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\email-systems",
+      "declaredName": "email-systems",
+      "risky": false
+    },
+    {
+      "promptName": "environment-setup-guide",
+      "sourceFolder": "environment-setup-guide",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\environment-setup-guide",
+      "declaredName": "environment-setup-guide",
+      "risky": false
+    },
+    {
+      "promptName": "exa-search",
+      "sourceFolder": "exa-search",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\exa-search",
+      "declaredName": "exa-search",
+      "risky": false
+    },
+    {
+      "promptName": "executing-plans",
+      "sourceFolder": "executing-plans",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\executing-plans",
+      "declaredName": "executing-plans",
+      "risky": false
+    },
+    {
+      "promptName": "file-organizer",
+      "sourceFolder": "file-organizer",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\file-organizer",
+      "declaredName": "file-organizer",
+      "risky": false
+    },
+    {
+      "promptName": "file-uploads",
+      "sourceFolder": "file-uploads",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\file-uploads",
+      "declaredName": "file-uploads",
+      "risky": false
+    },
+    {
+      "promptName": "finishing-a-development-branch",
+      "sourceFolder": "finishing-a-development-branch",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\finishing-a-development-branch",
+      "declaredName": "finishing-a-development-branch",
+      "risky": false
+    },
+    {
+      "promptName": "firebase",
+      "sourceFolder": "firebase",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\firebase",
+      "declaredName": "firebase",
+      "risky": false
+    },
+    {
+      "promptName": "firecrawl-scraper",
+      "sourceFolder": "firecrawl-scraper",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\firecrawl-scraper",
+      "declaredName": "firecrawl-scraper",
+      "risky": false
+    },
+    {
+      "promptName": "form-cro",
+      "sourceFolder": "form-cro",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\form-cro",
+      "declaredName": "form-cro",
+      "risky": false
+    },
+    {
+      "promptName": "free-tool-strategy",
+      "sourceFolder": "free-tool-strategy",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\free-tool-strategy",
+      "declaredName": "free-tool-strategy",
+      "risky": false
+    },
+    {
+      "promptName": "frontend-design",
+      "sourceFolder": "frontend-design",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\frontend-design",
+      "declaredName": "frontend-design",
+      "risky": false
+    },
+    {
+      "promptName": "frontend-dev-guidelines",
+      "sourceFolder": "frontend-dev-guidelines",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\frontend-dev-guidelines",
+      "declaredName": "frontend-dev-guidelines",
+      "risky": false
+    },
+    {
+      "promptName": "game-development",
+      "sourceFolder": "game-development",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\game-development",
+      "declaredName": "game-development",
+      "risky": false
+    },
+    {
+      "promptName": "gcp-cloud-run",
+      "sourceFolder": "gcp-cloud-run",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\gcp-cloud-run",
+      "declaredName": "gcp-cloud-run",
+      "risky": false
+    },
+    {
+      "promptName": "geo-fundamentals",
+      "sourceFolder": "geo-fundamentals",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\geo-fundamentals",
+      "declaredName": "geo-fundamentals",
+      "risky": false
+    },
+    {
+      "promptName": "git-pushing",
+      "sourceFolder": "git-pushing",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\git-pushing",
+      "declaredName": "git-pushing",
+      "risky": false
+    },
+    {
+      "promptName": "github-workflow-automation",
+      "sourceFolder": "github-workflow-automation",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\github-workflow-automation",
+      "declaredName": "github-workflow-automation",
+      "risky": false
+    },
+    {
+      "promptName": "graphql",
+      "sourceFolder": "graphql",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\graphql",
+      "declaredName": "graphql",
+      "risky": false
+    },
+    {
+      "promptName": "hubspot-integration",
+      "sourceFolder": "hubspot-integration",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\hubspot-integration",
+      "declaredName": "hubspot-integration",
+      "risky": false
+    },
+    {
+      "promptName": "i18n-localization",
+      "sourceFolder": "i18n-localization",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\i18n-localization",
+      "declaredName": "i18n-localization",
+      "risky": false
+    },
+    {
+      "promptName": "inngest",
+      "sourceFolder": "inngest",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\inngest",
+      "declaredName": "inngest",
+      "risky": false
+    },
+    {
+      "promptName": "interactive-portfolio",
+      "sourceFolder": "interactive-portfolio",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\interactive-portfolio",
+      "declaredName": "interactive-portfolio",
+      "risky": false
+    },
+    {
+      "promptName": "internal-comms-anthropic",
+      "sourceFolder": "internal-comms-anthropic",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\internal-comms-anthropic",
+      "declaredName": "internal-comms",
+      "risky": false
+    },
+    {
+      "promptName": "internal-comms-community",
+      "sourceFolder": "internal-comms-community",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\internal-comms-community",
+      "declaredName": "internal-comms",
+      "risky": false
+    },
+    {
+      "promptName": "javascript-mastery",
+      "sourceFolder": "javascript-mastery",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\javascript-mastery",
+      "declaredName": "javascript-mastery",
+      "risky": false
+    },
+    {
+      "promptName": "kaizen",
+      "sourceFolder": "kaizen",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\kaizen",
+      "declaredName": "kaizen",
+      "risky": false
+    },
+    {
+      "promptName": "langfuse",
+      "sourceFolder": "langfuse",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\langfuse",
+      "declaredName": "langfuse",
+      "risky": false
+    },
+    {
+      "promptName": "langgraph",
+      "sourceFolder": "langgraph",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\langgraph",
+      "declaredName": "langgraph",
+      "risky": false
+    },
+    {
+      "promptName": "last30days",
+      "sourceFolder": "last30days",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\last30days",
+      "declaredName": "last30days",
+      "risky": false
+    },
+    {
+      "promptName": "launch-strategy",
+      "sourceFolder": "launch-strategy",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\launch-strategy",
+      "declaredName": "launch-strategy",
+      "risky": false
+    },
+    {
+      "promptName": "lint-and-validate",
+      "sourceFolder": "lint-and-validate",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\lint-and-validate",
+      "declaredName": "lint-and-validate",
+      "risky": false
+    },
+    {
+      "promptName": "linux-shell-scripting",
+      "sourceFolder": "linux-shell-scripting",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\linux-shell-scripting",
+      "declaredName": "Linux Production Shell Scripts",
+      "risky": false
+    },
+    {
+      "promptName": "llm-app-patterns",
+      "sourceFolder": "llm-app-patterns",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\llm-app-patterns",
+      "declaredName": "llm-app-patterns",
+      "risky": false
+    },
+    {
+      "promptName": "loki-mode",
+      "sourceFolder": "loki-mode",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\loki-mode",
+      "declaredName": "loki-mode",
+      "risky": false
+    },
+    {
+      "promptName": "marketing-ideas",
+      "sourceFolder": "marketing-ideas",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\marketing-ideas",
+      "declaredName": "marketing-ideas",
+      "risky": false
+    },
+    {
+      "promptName": "marketing-psychology",
+      "sourceFolder": "marketing-psychology",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\marketing-psychology",
+      "declaredName": "marketing-psychology",
+      "risky": false
+    },
+    {
+      "promptName": "mcp-builder",
+      "sourceFolder": "mcp-builder",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\mcp-builder",
+      "declaredName": "mcp-builder",
+      "risky": false
+    },
+    {
+      "promptName": "micro-saas-launcher",
+      "sourceFolder": "micro-saas-launcher",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\micro-saas-launcher",
+      "declaredName": "micro-saas-launcher",
+      "risky": false
+    },
+    {
+      "promptName": "mobile-design",
+      "sourceFolder": "mobile-design",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\mobile-design",
+      "declaredName": "mobile-design",
+      "risky": false
+    },
+    {
+      "promptName": "moodle-external-api-development",
+      "sourceFolder": "moodle-external-api-development",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\moodle-external-api-development",
+      "declaredName": "moodle-external-api-development",
+      "risky": false
+    },
+    {
+      "promptName": "multi-agent-brainstorming",
+      "sourceFolder": "multi-agent-brainstorming",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\multi-agent-brainstorming",
+      "declaredName": "multi-agent-brainstorming",
+      "risky": false
+    },
+    {
+      "promptName": "neon-postgres",
+      "sourceFolder": "neon-postgres",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\neon-postgres",
+      "declaredName": "neon-postgres",
+      "risky": false
+    },
+    {
+      "promptName": "nestjs-expert",
+      "sourceFolder": "nestjs-expert",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\nestjs-expert",
+      "declaredName": "nestjs-expert",
+      "risky": false
+    },
+    {
+      "promptName": "network-101",
+      "sourceFolder": "network-101",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\network-101",
+      "declaredName": "Network 101",
+      "risky": false
+    },
+    {
+      "promptName": "nextjs-best-practices",
+      "sourceFolder": "nextjs-best-practices",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\nextjs-best-practices",
+      "declaredName": "nextjs-best-practices",
+      "risky": false
+    },
+    {
+      "promptName": "nextjs-supabase-auth",
+      "sourceFolder": "nextjs-supabase-auth",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\nextjs-supabase-auth",
+      "declaredName": "nextjs-supabase-auth",
+      "risky": false
+    },
+    {
+      "promptName": "nodejs-best-practices",
+      "sourceFolder": "nodejs-best-practices",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\nodejs-best-practices",
+      "declaredName": "nodejs-best-practices",
+      "risky": false
+    },
+    {
+      "promptName": "nosql-expert",
+      "sourceFolder": "nosql-expert",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\nosql-expert",
+      "declaredName": "nosql-expert",
+      "risky": false
+    },
+    {
+      "promptName": "notebooklm",
+      "sourceFolder": "notebooklm",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\notebooklm",
+      "declaredName": "notebooklm",
+      "risky": false
+    },
+    {
+      "promptName": "notion-template-business",
+      "sourceFolder": "notion-template-business",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\notion-template-business",
+      "declaredName": "notion-template-business",
+      "risky": false
+    },
+    {
+      "promptName": "obsidian-clipper-template-creator",
+      "sourceFolder": "obsidian-clipper-template-creator",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\obsidian-clipper-template-creator",
+      "declaredName": "obsidian-clipper-template-creator",
+      "risky": false
+    },
+    {
+      "promptName": "onboarding-cro",
+      "sourceFolder": "onboarding-cro",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\onboarding-cro",
+      "declaredName": "onboarding-cro",
+      "risky": false
+    },
+    {
+      "promptName": "page-cro",
+      "sourceFolder": "page-cro",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\page-cro",
+      "declaredName": "page-cro",
+      "risky": false
+    },
+    {
+      "promptName": "paid-ads",
+      "sourceFolder": "paid-ads",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\paid-ads",
+      "declaredName": "paid-ads",
+      "risky": false
+    },
+    {
+      "promptName": "parallel-agents",
+      "sourceFolder": "parallel-agents",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\parallel-agents",
+      "declaredName": "parallel-agents",
+      "risky": false
+    },
+    {
+      "promptName": "paywall-upgrade-cro",
+      "sourceFolder": "paywall-upgrade-cro",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\paywall-upgrade-cro",
+      "declaredName": "paywall-upgrade-cro",
+      "risky": false
+    },
+    {
+      "promptName": "pdf-official",
+      "sourceFolder": "pdf-official",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\pdf-official",
+      "declaredName": "pdf",
+      "risky": false
+    },
+    {
+      "promptName": "performance-profiling",
+      "sourceFolder": "performance-profiling",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\performance-profiling",
+      "declaredName": "performance-profiling",
+      "risky": false
+    },
+    {
+      "promptName": "personal-tool-builder",
+      "sourceFolder": "personal-tool-builder",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\personal-tool-builder",
+      "declaredName": "personal-tool-builder",
+      "risky": false
+    },
+    {
+      "promptName": "plaid-fintech",
+      "sourceFolder": "plaid-fintech",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\plaid-fintech",
+      "declaredName": "plaid-fintech",
+      "risky": false
+    },
+    {
+      "promptName": "plan-writing",
+      "sourceFolder": "plan-writing",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\plan-writing",
+      "declaredName": "plan-writing",
+      "risky": false
+    },
+    {
+      "promptName": "planning-with-files",
+      "sourceFolder": "planning-with-files",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\planning-with-files",
+      "declaredName": "planning-with-files",
+      "risky": false
+    },
+    {
+      "promptName": "playwright-skill",
+      "sourceFolder": "playwright-skill",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\playwright-skill",
+      "declaredName": "playwright-skill",
+      "risky": false
+    },
+    {
+      "promptName": "popup-cro",
+      "sourceFolder": "popup-cro",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\popup-cro",
+      "declaredName": "popup-cro",
+      "risky": false
+    },
+    {
+      "promptName": "postgres-best-practices",
+      "sourceFolder": "postgres-best-practices",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\postgres-best-practices",
+      "declaredName": "supabase-postgres-best-practices",
+      "risky": false
+    },
+    {
+      "promptName": "powershell-windows",
+      "sourceFolder": "powershell-windows",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\powershell-windows",
+      "declaredName": "powershell-windows",
+      "risky": false
+    },
+    {
+      "promptName": "pptx-official",
+      "sourceFolder": "pptx-official",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\pptx-official",
+      "declaredName": "pptx",
+      "risky": false
+    },
+    {
+      "promptName": "pricing-strategy",
+      "sourceFolder": "pricing-strategy",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\pricing-strategy",
+      "declaredName": "pricing-strategy",
+      "risky": false
+    },
+    {
+      "promptName": "prisma-expert",
+      "sourceFolder": "prisma-expert",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\prisma-expert",
+      "declaredName": "prisma-expert",
+      "risky": false
+    },
+    {
+      "promptName": "product-manager-toolkit",
+      "sourceFolder": "product-manager-toolkit",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\product-manager-toolkit",
+      "declaredName": "product-manager-toolkit",
+      "risky": false
+    },
+    {
+      "promptName": "production-code-audit",
+      "sourceFolder": "production-code-audit",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\production-code-audit",
+      "declaredName": "production-code-audit",
+      "risky": false
+    },
+    {
+      "promptName": "programmatic-seo",
+      "sourceFolder": "programmatic-seo",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\programmatic-seo",
+      "declaredName": "programmatic-seo",
+      "risky": false
+    },
+    {
+      "promptName": "prompt-caching",
+      "sourceFolder": "prompt-caching",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\prompt-caching",
+      "declaredName": "prompt-caching",
+      "risky": false
+    },
+    {
+      "promptName": "prompt-engineer",
+      "sourceFolder": "prompt-engineer",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\prompt-engineer",
+      "declaredName": "prompt-engineer",
+      "risky": false
+    },
+    {
+      "promptName": "prompt-engineering",
+      "sourceFolder": "prompt-engineering",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\prompt-engineering",
+      "declaredName": "prompt-engineering",
+      "risky": false
+    },
+    {
+      "promptName": "prompt-library",
+      "sourceFolder": "prompt-library",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\prompt-library",
+      "declaredName": "prompt-library",
+      "risky": false
+    },
+    {
+      "promptName": "python-patterns",
+      "sourceFolder": "python-patterns",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\python-patterns",
+      "declaredName": "python-patterns",
+      "risky": false
+    },
+    {
+      "promptName": "rag-engineer",
+      "sourceFolder": "rag-engineer",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\rag-engineer",
+      "declaredName": "rag-engineer",
+      "risky": false
+    },
+    {
+      "promptName": "rag-implementation",
+      "sourceFolder": "rag-implementation",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\rag-implementation",
+      "declaredName": "rag-implementation",
+      "risky": false
+    },
+    {
+      "promptName": "react-best-practices",
+      "sourceFolder": "react-best-practices",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\react-best-practices",
+      "declaredName": "vercel-react-best-practices",
+      "risky": false
+    },
+    {
+      "promptName": "react-patterns",
+      "sourceFolder": "react-patterns",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\react-patterns",
+      "declaredName": "react-patterns",
+      "risky": false
+    },
+    {
+      "promptName": "react-ui-patterns",
+      "sourceFolder": "react-ui-patterns",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\react-ui-patterns",
+      "declaredName": "react-ui-patterns",
+      "risky": false
+    },
+    {
+      "promptName": "receiving-code-review",
+      "sourceFolder": "receiving-code-review",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\receiving-code-review",
+      "declaredName": "receiving-code-review",
+      "risky": false
+    },
+    {
+      "promptName": "referral-program",
+      "sourceFolder": "referral-program",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\referral-program",
+      "declaredName": "referral-program",
+      "risky": false
+    },
+    {
+      "promptName": "remotion-best-practices",
+      "sourceFolder": "remotion-best-practices",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\remotion-best-practices",
+      "declaredName": "remotion-best-practices",
+      "risky": false
+    },
+    {
+      "promptName": "requesting-code-review",
+      "sourceFolder": "requesting-code-review",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\requesting-code-review",
+      "declaredName": "requesting-code-review",
+      "risky": false
+    },
+    {
+      "promptName": "research-engineer",
+      "sourceFolder": "research-engineer",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\research-engineer",
+      "declaredName": "research-engineer",
+      "risky": false
+    },
+    {
+      "promptName": "salesforce-development",
+      "sourceFolder": "salesforce-development",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\salesforce-development",
+      "declaredName": "salesforce-development",
+      "risky": false
+    },
+    {
+      "promptName": "schema-markup",
+      "sourceFolder": "schema-markup",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\schema-markup",
+      "declaredName": "schema-markup",
+      "risky": false
+    },
+    {
+      "promptName": "scroll-experience",
+      "sourceFolder": "scroll-experience",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\scroll-experience",
+      "declaredName": "scroll-experience",
+      "risky": false
+    },
+    {
+      "promptName": "segment-cdp",
+      "sourceFolder": "segment-cdp",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\segment-cdp",
+      "declaredName": "segment-cdp",
+      "risky": false
+    },
+    {
+      "promptName": "senior-architect",
+      "sourceFolder": "senior-architect",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\senior-architect",
+      "declaredName": "senior-architect",
+      "risky": false
+    },
+    {
+      "promptName": "senior-fullstack",
+      "sourceFolder": "senior-fullstack",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\senior-fullstack",
+      "declaredName": "senior-fullstack",
+      "risky": false
+    },
+    {
+      "promptName": "seo-audit",
+      "sourceFolder": "seo-audit",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\seo-audit",
+      "declaredName": "seo-audit",
+      "risky": false
+    },
+    {
+      "promptName": "seo-fundamentals",
+      "sourceFolder": "seo-fundamentals",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\seo-fundamentals",
+      "declaredName": "seo-fundamentals",
+      "risky": false
+    },
+    {
+      "promptName": "server-management",
+      "sourceFolder": "server-management",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\server-management",
+      "declaredName": "server-management",
+      "risky": false
+    },
+    {
+      "promptName": "shopify-apps",
+      "sourceFolder": "shopify-apps",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\shopify-apps",
+      "declaredName": "shopify-apps",
+      "risky": false
+    },
+    {
+      "promptName": "shopify-development",
+      "sourceFolder": "shopify-development",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\shopify-development",
+      "declaredName": "shopify-development",
+      "risky": false
+    },
+    {
+      "promptName": "signup-flow-cro",
+      "sourceFolder": "signup-flow-cro",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\signup-flow-cro",
+      "declaredName": "signup-flow-cro",
+      "risky": false
+    },
+    {
+      "promptName": "skill-creator",
+      "sourceFolder": "skill-creator",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\skill-creator",
+      "declaredName": "skill-creator",
+      "risky": false
+    },
+    {
+      "promptName": "skill-developer",
+      "sourceFolder": "skill-developer",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\skill-developer",
+      "declaredName": "skill-developer",
+      "risky": false
+    },
+    {
+      "promptName": "slack-bot-builder",
+      "sourceFolder": "slack-bot-builder",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\slack-bot-builder",
+      "declaredName": "slack-bot-builder",
+      "risky": false
+    },
+    {
+      "promptName": "slack-gif-creator",
+      "sourceFolder": "slack-gif-creator",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\slack-gif-creator",
+      "declaredName": "slack-gif-creator",
+      "risky": false
+    },
+    {
+      "promptName": "social-content",
+      "sourceFolder": "social-content",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\social-content",
+      "declaredName": "social-content",
+      "risky": false
+    },
+    {
+      "promptName": "software-architecture",
+      "sourceFolder": "software-architecture",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\software-architecture",
+      "declaredName": "software-architecture",
+      "risky": false
+    },
+    {
+      "promptName": "stripe-integration",
+      "sourceFolder": "stripe-integration",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\stripe-integration",
+      "declaredName": "stripe-integration",
+      "risky": false
+    },
+    {
+      "promptName": "subagent-driven-development",
+      "sourceFolder": "subagent-driven-development",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\subagent-driven-development",
+      "declaredName": "subagent-driven-development",
+      "risky": false
+    },
+    {
+      "promptName": "systematic-debugging",
+      "sourceFolder": "systematic-debugging",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\systematic-debugging",
+      "declaredName": "systematic-debugging",
+      "risky": false
+    },
+    {
+      "promptName": "tailwind-patterns",
+      "sourceFolder": "tailwind-patterns",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\tailwind-patterns",
+      "declaredName": "tailwind-patterns",
+      "risky": false
+    },
+    {
+      "promptName": "tavily-web",
+      "sourceFolder": "tavily-web",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\tavily-web",
+      "declaredName": "tavily-web",
+      "risky": false
+    },
+    {
+      "promptName": "tdd-workflow",
+      "sourceFolder": "tdd-workflow",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\tdd-workflow",
+      "declaredName": "tdd-workflow",
+      "risky": false
+    },
+    {
+      "promptName": "telegram-bot-builder",
+      "sourceFolder": "telegram-bot-builder",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\telegram-bot-builder",
+      "declaredName": "telegram-bot-builder",
+      "risky": false
+    },
+    {
+      "promptName": "telegram-mini-app",
+      "sourceFolder": "telegram-mini-app",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\telegram-mini-app",
+      "declaredName": "telegram-mini-app",
+      "risky": false
+    },
+    {
+      "promptName": "test-driven-development",
+      "sourceFolder": "test-driven-development",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\test-driven-development",
+      "declaredName": "test-driven-development",
+      "risky": false
+    },
+    {
+      "promptName": "test-fixing",
+      "sourceFolder": "test-fixing",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\test-fixing",
+      "declaredName": "test-fixing",
+      "risky": false
+    },
+    {
+      "promptName": "testing-patterns",
+      "sourceFolder": "testing-patterns",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\testing-patterns",
+      "declaredName": "testing-patterns",
+      "risky": false
+    },
+    {
+      "promptName": "theme-factory",
+      "sourceFolder": "theme-factory",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\theme-factory",
+      "declaredName": "theme-factory",
+      "risky": false
+    },
+    {
+      "promptName": "trigger-dev",
+      "sourceFolder": "trigger-dev",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\trigger-dev",
+      "declaredName": "trigger-dev",
+      "risky": false
+    },
+    {
+      "promptName": "twilio-communications",
+      "sourceFolder": "twilio-communications",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\twilio-communications",
+      "declaredName": "twilio-communications",
+      "risky": false
+    },
+    {
+      "promptName": "typescript-expert",
+      "sourceFolder": "typescript-expert",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\typescript-expert",
+      "declaredName": "typescript-expert",
+      "risky": false
+    },
+    {
+      "promptName": "ui-ux-pro-max",
+      "sourceFolder": "ui-ux-pro-max",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\ui-ux-pro-max",
+      "declaredName": "ui-ux-pro-max",
+      "risky": false
+    },
+    {
+      "promptName": "upstash-qstash",
+      "sourceFolder": "upstash-qstash",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\upstash-qstash",
+      "declaredName": "upstash-qstash",
+      "risky": false
+    },
+    {
+      "promptName": "using-git-worktrees",
+      "sourceFolder": "using-git-worktrees",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\using-git-worktrees",
+      "declaredName": "using-git-worktrees",
+      "risky": false
+    },
+    {
+      "promptName": "using-superpowers",
+      "sourceFolder": "using-superpowers",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\using-superpowers",
+      "declaredName": "using-superpowers",
+      "risky": false
+    },
+    {
+      "promptName": "vercel-deployment",
+      "sourceFolder": "vercel-deployment",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\vercel-deployment",
+      "declaredName": "vercel-deployment",
+      "risky": false
+    },
+    {
+      "promptName": "verification-before-completion",
+      "sourceFolder": "verification-before-completion",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\verification-before-completion",
+      "declaredName": "verification-before-completion",
+      "risky": false
+    },
+    {
+      "promptName": "viral-generator-builder",
+      "sourceFolder": "viral-generator-builder",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\viral-generator-builder",
+      "declaredName": "viral-generator-builder",
+      "risky": false
+    },
+    {
+      "promptName": "voice-agents",
+      "sourceFolder": "voice-agents",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\voice-agents",
+      "declaredName": "voice-agents",
+      "risky": false
+    },
+    {
+      "promptName": "voice-ai-development",
+      "sourceFolder": "voice-ai-development",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\voice-ai-development",
+      "declaredName": "voice-ai-development",
+      "risky": false
+    },
+    {
+      "promptName": "voice-ai-engine-development",
+      "sourceFolder": "voice-ai-engine-development",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\voice-ai-engine-development",
+      "declaredName": "voice-ai-engine-development",
+      "risky": false
+    },
+    {
+      "promptName": "web-artifacts-builder",
+      "sourceFolder": "web-artifacts-builder",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\web-artifacts-builder",
+      "declaredName": "web-artifacts-builder",
+      "risky": false
+    },
+    {
+      "promptName": "web-design-guidelines",
+      "sourceFolder": "web-design-guidelines",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\web-design-guidelines",
+      "declaredName": "web-design-guidelines",
+      "risky": false
+    },
+    {
+      "promptName": "web-performance-optimization",
+      "sourceFolder": "web-performance-optimization",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\web-performance-optimization",
+      "declaredName": "web-performance-optimization",
+      "risky": false
+    },
+    {
+      "promptName": "webapp-testing",
+      "sourceFolder": "webapp-testing",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\webapp-testing",
+      "declaredName": "webapp-testing",
+      "risky": false
+    },
+    {
+      "promptName": "workflow-automation",
+      "sourceFolder": "workflow-automation",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\workflow-automation",
+      "declaredName": "workflow-automation",
+      "risky": false
+    },
+    {
+      "promptName": "writing-plans",
+      "sourceFolder": "writing-plans",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\writing-plans",
+      "declaredName": "writing-plans",
+      "risky": false
+    },
+    {
+      "promptName": "writing-skills",
+      "sourceFolder": "writing-skills",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\writing-skills",
+      "declaredName": "writing-skills",
+      "risky": false
+    },
+    {
+      "promptName": "xlsx-official",
+      "sourceFolder": "xlsx-official",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\xlsx-official",
+      "declaredName": "xlsx",
+      "risky": false
+    },
+    {
+      "promptName": "zapier-make-patterns",
+      "sourceFolder": "zapier-make-patterns",
+      "sourcePath": "C:\\Users\\kengy\\.gemini\\antigravity\\skills\\_incoming\\skills\\zapier-make-patterns",
+      "declaredName": "zapier-make-patterns",
+      "risky": false
+    }
+  ],
+  "skipped": [],
+  "skippedRisky": [
+    "active-directory-attacks",
+    "broken-authentication",
+    "ethical-hacking-methodology",
+    "file-path-traversal",
+    "html-injection-testing",
+    "idor-testing",
+    "linux-privilege-escalation",
+    "metasploit-framework",
+    "pentest-checklist",
+    "pentest-commands",
+    "privilege-escalation-methods",
+    "red-team-tactics",
+    "red-team-tools",
+    "scanning-tools",
+    "shodan-reconnaissance",
+    "smtp-penetration-testing",
+    "sql-injection-testing",
+    "sqlmap-database-pentesting",
+    "ssh-penetration-testing",
+    "top-web-vulnerabilities",
+    "vulnerability-scanner",
+    "windows-privilege-escalation",
+    "wireshark-analysis",
+    "wordpress-penetration-testing",
+    "xss-html-injection"
+  ],
+  "totalFound": 245,
+  "totalImported": 220,
+  "generatedAt": "2026-03-29T14:20:49.114Z"
+}

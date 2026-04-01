@@ -30,8 +30,13 @@ const ADMIN_CACHE_TTL_SEC   = 25;
 // In Apps Script editor: File > Project Properties > Script Properties > Add: ADMIN_KEY = <your-secret>
 const ADMIN_KEY = (function() {
   try {
-    return PropertiesService.getScriptProperties().getProperty('ADMIN_KEY') || 'CHANGE_ME_IN_PROPERTIES';
+    const key = PropertiesService.getScriptProperties().getProperty('ADMIN_KEY') || 'CHANGE_ME_IN_PROPERTIES';
+    if (key === 'CHANGE_ME_IN_PROPERTIES') {
+      Logger.log('[WARN] ADMIN_KEY not configured in project properties');
+    }
+    return key;
   } catch(e) {
+    Logger.log('[ERROR] Failed to load ADMIN_KEY: ' + e);
     return 'CHANGE_ME_IN_PROPERTIES';
   }
 })();

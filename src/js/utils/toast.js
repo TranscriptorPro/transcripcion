@@ -1,14 +1,27 @@
 function showToast(msg, type = 'success', duration = 3000) {
-    const toast = document.getElementById('toast');
-    const toastMessage = document.getElementById('toastMessage');
+    let toast = document.getElementById('toast');
+    let toastMessage = document.getElementById('toastMessage');
 
-    if (toast && toastMessage) {
-        toastMessage.textContent = msg;
-        toast.className = `toast ${type} show`;
-        setTimeout(() => toast.classList.remove('show'), duration);
-    } else {
-        console.warn('Toast elements not found in DOM', msg);
+    // Crear elementos defensivamente si no existen
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast';
+        toast.style.cssText = 'position:fixed;bottom:20px;left:20px;width:300px;max-width:90%;background:#333;color:#fff;padding:15px;border-radius:4px;z-index:9999;display:none;';
+        document.body.appendChild(toast);
     }
+    if (!toastMessage) {
+        toastMessage = document.createElement('span');
+        toastMessage.id = 'toastMessage';
+        toast.insertBefore(toastMessage, toast.firstChild);
+    }
+
+    toastMessage.textContent = msg;
+    toast.className = `toast ${type} show`;
+    toast.style.display = 'block';
+    setTimeout(() => {
+        toast.classList.remove('show');
+        toast.style.display = 'none';
+    }, duration);
 }
 
 // Toast con botón de acción opcional
