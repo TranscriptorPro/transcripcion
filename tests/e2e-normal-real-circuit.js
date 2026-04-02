@@ -32,6 +32,13 @@ const DOCTOR = {
   matricula: 'MN ' + SUFFIX.slice(-6),
   telefono: '+54 11 8100 33' + String(Math.floor(Math.random() * 90 + 10)),
   especialidadLabel: 'Cardiología',
+  socialMedia: {
+    facebook: 'https://facebook.com/dr.e2e.normal.' + SUFFIX.toLowerCase(),
+    instagram: '@dr_e2e_normal_' + SUFFIX.toLowerCase(),
+    youtube: 'https://youtube.com/@dr-e2e-normal-' + SUFFIX.toLowerCase(),
+    x: '@dr_e2e_' + SUFFIX.toLowerCase(),
+    whatsapp: '+54 9 11 5555 ' + String(Math.floor(Math.random() * 9000 + 1000))
+  },
   wp0: {
     nombre: 'Instituto Normal Central ' + SUFFIX,
     address: 'Av. Normal 100, CABA',
@@ -156,7 +163,14 @@ async function findUserRetry(session, email, retries, waitMs) {
     await regPage.fill('#regMatricula', DOCTOR.matricula);
     await regPage.fill('#regEmail', DOCTOR.email);
     await regPage.fill('#regTelefono', DOCTOR.telefono);
+    // Redes sociales
+    await regPage.fill('#regSocialFb', DOCTOR.socialMedia.facebook);
+    await regPage.fill('#regSocialIg', DOCTOR.socialMedia.instagram);
+    await regPage.fill('#regSocialYt', DOCTOR.socialMedia.youtube);
+    await regPage.fill('#regSocialX', DOCTOR.socialMedia.x);
+    await regPage.fill('#regSocialWa', DOCTOR.socialMedia.whatsapp);
     await shot(regPage, '03_reg_step1');
+    log('[OK] Paso 1 completo: datos + redes sociales rellenos');
 
     await regPage.evaluate(() => { if (typeof goStep === 'function') goStep(2); });
     await regPage.waitForTimeout(1000);
@@ -208,8 +222,20 @@ async function findUserRetry(session, email, retries, waitMs) {
     await regPage.waitForTimeout(1000);
     await shot(regPage, '07_reg_step6');
 
-    log('[STEP] Enviar registro real');
+    log('[STEP] Enviar registro real — modal de resumen pre-envío');
     await regPage.click('#btnSubmit');
+    await regPage.waitForTimeout(1500);
+    // El nuevo flujo muestra un modal de resumen antes de enviar
+    const preSubmitVisible = await regPage.locator('#preSubmitOverlay').isVisible().catch(() => false);
+    if (preSubmitVisible) {
+      log('[OK] Modal pre-submit visible, verificando checklist');
+      await shot(regPage, '08a_pre_submit_summary');
+      // Confirmar envío
+      await regPage.click('#btnConfirmSubmit');
+      log('[OK] Confirmado envío desde modal de resumen');
+    } else {
+      log('[WARN] Modal pre-submit no visible, flujo legacy');
+    }
     await regPage.waitForTimeout(7000);
     await shot(regPage, '08_reg_submitted');
 
