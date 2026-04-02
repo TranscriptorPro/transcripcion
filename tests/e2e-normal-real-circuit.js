@@ -160,9 +160,30 @@ async function findUserRetry(session, email, retries, waitMs) {
 
     await regPage.evaluate(() => { if (typeof goStep === 'function') goStep(2); });
     await regPage.waitForTimeout(1000);
-    await regPage.locator('#especialidadesGrid label', { hasText: /cardiolog/i }).first().click().catch(async () => {
-      await regPage.locator('#especialidadesGrid input[type=checkbox]').first().check();
+
+    // [TEST FIX v2] Llamar directamente las funciones de la app para evitar problemas
+    // de visibilidad/eventos DOM con navegación programática vía goStep().
+    // toggleEspecialidad llama internamente a renderEstudios() — mismo flujo que la UI real.
+    // BUG ERA DEL TEST (no de la app): la app bloquea correctamente sin estudios seleccionados.
+    const paso2OK = await regPage.evaluate(() => {
+      try {
+        const esp = Object.keys(ESPECIALIDADES)[0]; // primera especialidad disponible (ej: Cardiología)
+        if (typeof toggleEspecialidad === 'function') {
+          toggleEspecialidad(esp, true); // internamente llama renderEstudios()
+        }
+        const estudios = ESPECIALIDADES[esp] || [];
+        if (estudios.length === 0) return { ok: false, msg: 'Sin estudios para especialidad: ' + esp };
+        // Seleccionar el primer estudio disponible
+        if (typeof toggleEstudio === 'function') {
+          toggleEstudio(estudios[0], esp, true);
+        }
+        return { ok: true, esp, estudio: estudios[0], total: selectedEstudios.length };
+      } catch (e) {
+        return { ok: false, msg: e.message };
+      }
     });
+    if (!paso2OK.ok) throw new Error('[ASSERT FAIL paso2] ' + paso2OK.msg);
+    log(`[OK] Especialidad: ${paso2OK.esp} | Estudio seleccionado: "${paso2OK.estudio}" | total=${paso2OK.total}`);
     await shot(regPage, '04_reg_step2');
 
     await regPage.evaluate(() => { if (typeof goStep === 'function') goStep(3); });
