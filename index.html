@@ -9,7 +9,7 @@
     <!-- PURGE: auto-purge al detectar nueva versión + ?purge manual. Preserva tema y color -->
     <script>
     (function() {
-        var APP_VERSION = 'v254'; // ← bump esto en cada deploy para forzar auto-purge
+        var APP_VERSION = 'v255'; // ← bump esto en cada deploy para forzar auto-purge
         try { window.APP_VERSION = APP_VERSION; } catch(_) {}
         var params = new URLSearchParams(window.location.search);
         var forcePurge = params.has('purge');
@@ -1369,7 +1369,7 @@
                     <h3 id="professionalModalTitle" style="margin:0;">🩺 Profesionales</h3>
                     <button class="modal-close" id="btnCloseProfessionalModal">&times;</button>
                 </div>
-                <div class="modal-body" style="max-height:65vh;overflow-y:auto;padding:1rem 1.25rem;">
+                <div class="modal-body" style="padding:1rem 1.25rem;">
                     <div id="professionalList"></div>
                     <!-- Formulario: oculto por defecto, se muestra al agregar/editar -->
                     <div id="professionalFormSection" style="display:none;border-top:1px solid var(--border);padding-top:1rem;margin-top:0.5rem;">

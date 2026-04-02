@@ -895,7 +895,7 @@
             box-shadow: var(--shadow);
             min-width: 200px;
             z-index: 1100;
-            overflow: hidden;
+            overflow: visible;
         }
 
         .dropdown-content.open {
@@ -2757,6 +2757,9 @@
             width: 100%;
             border-radius: 16px;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
         }
 
         .contact-modal-header {

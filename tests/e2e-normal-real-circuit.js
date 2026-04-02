@@ -264,47 +264,130 @@ async function findUserRetry(session, email, retries, waitMs) {
     if (!reg) throw new Error('El registro NORMAL no apareció en Registros_Pendientes');
     log('[OK] Registro encontrado: ' + reg.ID_Registro + ' estado=' + reg.Estado);
 
-    log('[STEP] Marcar pago y aprobar desde UI real');
+    log('[STEP] Marcar pago desde UI real');
     await adminPage.click('.tab-btn[data-tab="registros"]');
     await adminPage.waitForTimeout(2500);
+
+    // Paso 1: Marcar pago SIN auto-abrir aprobación
     await adminPage.evaluate((regId) => {
       window.dashConfirm = async () => true;
-      if (typeof markRegistrationPaid === 'function') return markRegistrationPaid(regId, true);
+      if (typeof markRegistrationPaid === 'function') return markRegistrationPaid(regId, false);
     }, reg.ID_Registro);
-    await adminPage.waitForTimeout(6000);
+    await adminPage.waitForTimeout(5000);
     await shot(adminPage, '10_pago_marcado');
 
-    log('[STEP] Verificar modal de aprobación');
+    // Paso 2: Refrescar registros y abrir modal de aprobación manualmente
+    log('[STEP] Refrescar y abrir modal de aprobación');
+    await adminPage.evaluate(() => {
+      if (typeof loadRegistrations === 'function') return loadRegistrations();
+    });
+    await adminPage.waitForTimeout(3000);
+
+    await adminPage.evaluate((regId) => {
+      if (typeof openApproveModal === 'function') openApproveModal(regId);
+    }, reg.ID_Registro);
+    await adminPage.waitForTimeout(3000);
+
     let approveVisible = await adminPage.locator('#approveModalOverlay').isVisible().catch(() => false);
     if (!approveVisible) {
-      log('[INFO] Modal aprobación no visible aún, esperando más');
-      await adminPage.waitForTimeout(4000);
+      log('[INFO] Modal aprobación no visible, reintentando');
+      await adminPage.waitForTimeout(3000);
+      await adminPage.evaluate((regId) => {
+        if (typeof openApproveModal === 'function') openApproveModal(regId);
+      }, reg.ID_Registro);
+      await adminPage.waitForTimeout(3000);
       approveVisible = await adminPage.locator('#approveModalOverlay').isVisible().catch(() => false);
     }
-    if (approveVisible) {
-      log('[OK] Modal de aprobación visible');
-    } else {
-      log('[WARN] Modal de aprobación no visible, intentando igual');
+    log(approveVisible ? '[OK] Modal de aprobación visible' : '[WARN] Modal de aprobación no visible');
+
+    // Diagnóstico profundo del modal
+    const modalDiag = await adminPage.evaluate(() => {
+      const section = document.getElementById('approveTemplateSection');
+      const plan = document.getElementById('approvePlan');
+      const espField = document.getElementById('approveRegEspecialidades');
+      return {
+        sectionExists: !!section,
+        sectionHTML: section ? section.innerHTML.slice(0, 500) : 'N/A',
+        planValue: plan ? plan.value : 'N/A',
+        especialidades: espField ? espField.value : 'N/A',
+        templateMapKeys: typeof TEMPLATE_MAP !== 'undefined' ? Object.keys(TEMPLATE_MAP).join(', ') : 'UNDEFINED',
+        tplCbCount: document.querySelectorAll('.approve-tpl-cb').length,
+        packCbCount: document.querySelectorAll('.approve-pack-cb').length,
+        extraCbCount: document.querySelectorAll('.approve-extra-cb').length
+      };
+    });
+    log('[DEBUG] Plan=' + modalDiag.planValue + ' Esp=' + modalDiag.especialidades);
+    log('[DEBUG] TEMPLATE_MAP keys: ' + modalDiag.templateMapKeys);
+    log('[DEBUG] Checkboxes: tpl=' + modalDiag.tplCbCount + ' pack=' + modalDiag.packCbCount + ' extra=' + modalDiag.extraCbCount);
+    log('[DEBUG] Section HTML: ' + modalDiag.sectionHTML.slice(0, 300));
+    await shot(adminPage, '10b_approve_modal');
+
+    // Asegurar API keys
+    await adminPage.evaluate((keys) => {
+      const el = document.getElementById('approveApiKey');
+      const b1 = document.getElementById('approveApiKeyB1');
+      const b2 = document.getElementById('approveApiKeyB2');
+      if (el && !el.value.trim()) el.value = keys.primary;
+      if (b1 && !b1.value.trim()) b1.value = keys.b1;
+      if (b2 && !b2.value.trim()) b2.value = keys.b2;
+    }, ADMIN_GROQ_KEYS);
+
+    // Si templateMode es manual (NORMAL): marcar checkboxes
+    const tplFixInfo = await adminPage.evaluate(() => {
+      const cbs = document.querySelectorAll('.approve-tpl-cb');
+      const checkedBefore = Array.from(cbs).filter(cb => cb.checked).length;
+      if (checkedBefore === 0 && cbs.length > 0) {
+        let marked = 0;
+        cbs.forEach(cb => {
+          if (!cb.disabled && marked < 3) { cb.checked = true; marked++; }
+        });
+        if (typeof onTplChange === 'function') onTplChange(3);
+      }
+      return { total: cbs.length, checkedBefore, checkedNow: Array.from(cbs).filter(cb => cb.checked).length };
+    });
+    log('[DEBUG] Plantillas: total=' + tplFixInfo.total + ' before=' + tplFixInfo.checkedBefore + ' now=' + tplFixInfo.checkedNow);
+
+    // Si no hay checkboxes de plantillas pero el plan es NORMAL, forzar re-render
+    if (tplFixInfo.total === 0) {
+      log('[WARN] Sin checkboxes de plantillas, forzando updateApproveTemplateUI');
+      await adminPage.evaluate(() => {
+        if (typeof updateApproveTemplateUI === 'function') updateApproveTemplateUI();
+      });
+      await adminPage.waitForTimeout(1500);
+      const retryCount = await adminPage.evaluate(() => {
+        const cbs = document.querySelectorAll('.approve-tpl-cb');
+        let marked = 0;
+        cbs.forEach(cb => { if (!cb.disabled && marked < 3) { cb.checked = true; marked++; } });
+        if (typeof onTplChange === 'function' && cbs.length) onTplChange(3);
+        return cbs.length;
+      });
+      log('[DEBUG] Después de re-render: tpl checkboxes=' + retryCount);
     }
-    // Fire-and-forget: no retornar la promise para no colgar evaluate
+
+    // Confirmar aprobación (fire-and-forget)
     await adminPage.evaluate(() => {
       window.dashConfirm = async () => true;
       if (typeof confirmApproval === 'function') confirmApproval();
     });
-    // GAS puede tardar 20-40s en completar la escritura del usuario
-    await adminPage.waitForTimeout(25000);
+    await adminPage.waitForTimeout(30000);
 
     const postMsg = await adminPage.locator('#dashModalMsg').innerText().catch(() => '');
+    log('[DEBUG] postMsg after approval: ' + postMsg.slice(0, 200));
     if (/todav[ií]a no aparece|actualiz[aá] usuarios|f[aá]brica manualmente/i.test(postMsg)) {
-      log('[INFO] Modal de espera detectado, cerrando y refrescando');
+      log('[INFO] Modal de espera detectado, cerrando');
       await closeDashModal(adminPage);
     } else {
       await closeDashModal(adminPage);
     }
+    await shot(adminPage, '11_post_approval');
 
-    // Más reintentos y más espera: GAS escritura es lenta
-    const created = await findUserRetry(session, DOCTOR.email, 12, 5000);
-    if (!created) throw new Error('El usuario NORMAL no apareció en Usuarios');
+    // Verificar estado del registro
+    const regListPost = await adminListRegistrations(session).catch(() => ({ registrations: [] }));
+    const regPost = (regListPost.registrations || []).find(r => String(r.Email || '').toLowerCase() === DOCTOR.email.toLowerCase());
+    log('[DEBUG] Registro post-approval: estado=' + (regPost ? regPost.Estado : 'NO ENCONTRADO'));
+
+    const created = await findUserRetry(session, DOCTOR.email, 20, 5000);
+    if (!created) throw new Error('El usuario NORMAL no apareció en Usuarios (20 reintentos × 5s = 100s)');
     if (String(created.Plan || '').toLowerCase() !== 'normal') throw new Error('Plan no quedó en normal');
     log('[OK] Usuario NORMAL creado: ' + created.ID_Medico);
 
