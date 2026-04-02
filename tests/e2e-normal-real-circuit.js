@@ -265,7 +265,8 @@ async function findUserRetry(session, email, retries, waitMs) {
       window.dashConfirm = async () => true;
       if (typeof confirmApproval === 'function') confirmApproval();
     });
-    await adminPage.waitForTimeout(15000);
+    // GAS puede tardar 20-40s en completar la escritura del usuario
+    await adminPage.waitForTimeout(25000);
 
     const postMsg = await adminPage.locator('#dashModalMsg').innerText().catch(() => '');
     if (/todav[ií]a no aparece|actualiz[aá] usuarios|f[aá]brica manualmente/i.test(postMsg)) {
@@ -275,7 +276,8 @@ async function findUserRetry(session, email, retries, waitMs) {
       await closeDashModal(adminPage);
     }
 
-    const created = await findUserRetry(session, DOCTOR.email, 7, 2500);
+    // Más reintentos y más espera: GAS escritura es lenta
+    const created = await findUserRetry(session, DOCTOR.email, 12, 5000);
     if (!created) throw new Error('El usuario NORMAL no apareció en Usuarios');
     if (String(created.Plan || '').toLowerCase() !== 'normal') throw new Error('Plan no quedó en normal');
     log('[OK] Usuario NORMAL creado: ' + created.ID_Medico);

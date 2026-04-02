@@ -279,6 +279,48 @@
         .form-step { display: none; }
         .form-step.active { display: block; }
 
+        /* ── Validación inline ── */
+        .field-error input,
+        .field-error select,
+        .field-error textarea,
+        .field-error .checkbox-grid {
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 0 2px rgba(239,68,68,.18) !important;
+        }
+        .field-error-msg {
+            color: #ef4444;
+            font-size: .78rem;
+            font-weight: 500;
+            margin-top: 3px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        @keyframes fieldShake {
+            0%,100%{transform:translateX(0)}
+            20%{transform:translateX(-6px)}
+            40%{transform:translateX(6px)}
+            60%{transform:translateX(-4px)}
+            80%{transform:translateX(4px)}
+        }
+        .field-shake { animation: fieldShake .4s ease; }
+
+        /* ── Modal Resumen Pre-Envío ── */
+        .summary-checklist { list-style:none; padding:0; margin:0; }
+        .summary-checklist li {
+            display: flex; align-items: center; gap: .5rem;
+            padding: .5rem .6rem; border-radius: 6px;
+            font-size: .85rem; margin-bottom: .3rem;
+        }
+        .summary-checklist li.ok { background: #f0fdf4; color: #166534; }
+        .summary-checklist li.missing { background: #fef9c3; color: #854d0e; }
+        .summary-checklist li.missing-required { background: #fef2f2; color: #991b1b; }
+        .summary-checklist .go-fix {
+            margin-left: auto; font-size: .75rem; cursor: pointer;
+            background: var(--primary); color: #fff; border: none;
+            border-radius: 4px; padding: 3px 10px; white-space: nowrap;
+        }
+
         /* ── Success state ── */
         .success-card {
             text-align: center;
@@ -1258,7 +1300,7 @@
 
                 <div class="btn-row">
                     <button type="button" class="btn btn-secondary" onclick="goStep(5)">← Volver al carrito</button>
-                    <button type="button" class="btn btn-primary" id="btnSubmit" onclick="submitRegistro()">
+                    <button type="button" class="btn btn-primary" id="btnSubmit" onclick="showPreSubmitSummary()">
                         📨 Confirmar y Enviar Registro
                     </button>
                 </div>
@@ -1310,6 +1352,18 @@
             <div class="modal-msg" id="customModalMsg"></div>
             <div class="modal-actions" id="customModalActions">
                 <button class="btn btn-primary" onclick="closeModal(true)">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════ PRE-SUBMIT SUMMARY MODAL ════ -->
+    <div class="modal-overlay" id="preSubmitOverlay">
+        <div class="modal-box" style="max-width:480px;text-align:left;">
+            <div style="font-size:1.15rem;font-weight:800;text-align:center;margin-bottom:.8rem;">📋 Revisá tu registro antes de enviar</div>
+            <div id="preSubmitChecklist" class="summary-checklist"></div>
+            <div class="modal-actions" style="margin-top:1rem;display:flex;gap:.5rem;justify-content:center;">
+                <button class="btn btn-secondary" onclick="closePreSubmitModal()">Revisar</button>
+                <button class="btn btn-primary" id="btnConfirmSubmit" onclick="closePreSubmitModal(); submitRegistro();">✅ Confirmar y Enviar</button>
             </div>
         </div>
     </div>
@@ -2052,6 +2106,36 @@
             }
             return true;
         }
+
+        // ── Validación Inline: helpers ──────────────────────────────────────
+        function _clearFieldErrors() {
+            document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
+            document.querySelectorAll('.field-error-msg').forEach(el => el.remove());
+        }
+        function _markFieldError(inputEl, msg) {
+            const group = inputEl.closest('.field-group') || inputEl.closest('.card') || inputEl.parentElement;
+            group.classList.add('field-error');
+            inputEl.classList.add('field-shake');
+            setTimeout(() => inputEl.classList.remove('field-shake'), 400);
+            // Agregar mensaje de error debajo
+            if (!group.querySelector('.field-error-msg')) {
+                const errDiv = document.createElement('div');
+                errDiv.className = 'field-error-msg';
+                errDiv.textContent = '⚠ ' + msg;
+                group.appendChild(errDiv);
+            }
+            inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            inputEl.focus();
+        }
+        // Limpiar error al escribir
+        document.addEventListener('input', e => {
+            const group = e.target.closest('.field-group');
+            if (group && group.classList.contains('field-error')) {
+                group.classList.remove('field-error');
+                const errMsg = group.querySelector('.field-error-msg');
+                if (errMsg) errMsg.remove();
+            }
+        });
 
         // ── Cart Functions ──────────────────────────────────────────────────────
         function getDoctorTemplateCats() {
@@ -2981,6 +3065,9 @@
             document.getElementById('customModalOverlay').addEventListener('click', (e) => {
                 if (e.target === e.currentTarget) closeModal(false);
             });
+            document.getElementById('preSubmitOverlay').addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) closePreSubmitModal();
+            });
 
             if (portalId) {
                 _loadPaymentPortal(portalId);
@@ -3147,18 +3234,49 @@
         }
 
         function validateStep1() {
+            _clearFieldErrors();
             const isClinic = selectedPlan === 'CLINIC';
-            const nombre = document.getElementById('regNombre').value.trim();
-            const matricula = document.getElementById('regMatricula').value.trim();
-            const email = document.getElementById('regEmail').value.trim();
-            if (!nombre)   { showAlert(isClinic ? 'Ingresá el nombre de la clínica' : 'Ingresá tu nombre y apellido', isClinic ? '🏥' : '👤'); document.getElementById('regNombre').focus(); return false; }
-            if (!matricula){ showAlert(isClinic ? 'Ingresá el CUIT o número de habilitación' : 'Ingresá tu matrícula', '🪪'); document.getElementById('regMatricula').focus(); return false; }
-            if (!email || !email.includes('@')) { showAlert('Ingresá un email válido', '📧'); document.getElementById('regEmail').focus(); return false; }
+            const nombre = document.getElementById('regNombre');
+            const matricula = document.getElementById('regMatricula');
+            const email = document.getElementById('regEmail');
+            if (!nombre.value.trim())   { _markFieldError(nombre, isClinic ? 'Ingresá el nombre de la clínica' : 'Ingresá tu nombre y apellido'); return false; }
+            if (!matricula.value.trim()){ _markFieldError(matricula, isClinic ? 'Ingresá el CUIT o habilitación' : 'Ingresá tu matrícula'); return false; }
+            if (!email.value.trim() || !email.value.includes('@')) { _markFieldError(email, 'Ingresá un email válido'); return false; }
             return true;
         }
 
         function validateStep2() {
-            if (selectedEspecialidades.length === 0) { showAlert('Seleccioná al menos una especialidad', '🩺'); return false; }
+            _clearFieldErrors();
+            if (selectedEspecialidades.length === 0) {
+                const grid = document.getElementById('especialidadesGrid');
+                const group = grid.closest('.card') || grid.parentElement;
+                group.classList.add('field-error');
+                grid.classList.add('field-shake');
+                setTimeout(() => grid.classList.remove('field-shake'), 400);
+                if (!group.querySelector('.field-error-msg')) {
+                    const errDiv = document.createElement('div');
+                    errDiv.className = 'field-error-msg';
+                    errDiv.textContent = '⚠ Seleccioná al menos una especialidad';
+                    group.appendChild(errDiv);
+                }
+                grid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return false;
+            }
+            if (selectedEstudios.length === 0) {
+                const grid = document.getElementById('estudiosGrid');
+                const group = grid.closest('.card') || grid.parentElement;
+                group.classList.add('field-error');
+                grid.classList.add('field-shake');
+                setTimeout(() => grid.classList.remove('field-shake'), 400);
+                if (!group.querySelector('.field-error-msg')) {
+                    const errDiv = document.createElement('div');
+                    errDiv.className = 'field-error-msg';
+                    errDiv.textContent = '⚠ Seleccioná al menos 1 estudio/plantilla';
+                    group.appendChild(errDiv);
+                }
+                grid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return false;
+            }
             return true;
         }
 
@@ -3214,15 +3332,19 @@
         }
 
         function validateStep3() {
+            _clearFieldErrors();
             const isClinic = selectedPlan === 'CLINIC';
-            const wpName = (document.getElementById('regWpName0') || {}).value || '';
-               // Para CLINIC el nombre de la sede principal viene de regNombre (paso 1)
-               const effectiveName = wpName.trim() || (isClinic ? (document.getElementById('regNombre')?.value?.trim() || '') : '');
-               if (!effectiveName) {
-                   showAlert(isClinic ? 'Ingresá el nombre de la clínica en el Paso 2' : 'Ingresá el nombre de tu lugar de trabajo principal', '🏥');
-                   if (!isClinic) { const el = document.getElementById('regWpName0'); if (el) el.focus(); }
-                   return false;
-               }
+            const wpNameEl = document.getElementById('regWpName0');
+            const wpName = (wpNameEl || {}).value || '';
+            const effectiveName = wpName.trim() || (isClinic ? (document.getElementById('regNombre')?.value?.trim() || '') : '');
+            if (!effectiveName) {
+                if (!isClinic && wpNameEl) {
+                    _markFieldError(wpNameEl, 'Ingresá el nombre de tu lugar de trabajo principal');
+                } else {
+                    showAlert(isClinic ? 'Ingresá el nombre de la clínica en el Paso 2' : 'Ingresá el nombre de tu lugar de trabajo', '🏥');
+                }
+                return false;
+            }
             return true;
         }
 
@@ -3245,6 +3367,44 @@
                 else if (input.id === 'regProLogo') imageData.proLogo = e.target.result;
             };
             reader.readAsDataURL(file);
+        }
+
+        // ── Pre-submit summary ─────────────────────────────────────────────
+        function showPreSubmitSummary() {
+            const cl = document.getElementById('preSubmitChecklist');
+            const nombre    = document.getElementById('regNombre')?.value?.trim() || '';
+            const email     = document.getElementById('regEmail')?.value?.trim()  || '';
+            const matricula = document.getElementById('regMatricula')?.value?.trim() || '';
+            const wpName    = (document.getElementById('regWpName0') || {}).value?.trim() || nombre;
+            const hasFirma  = !!imageData.firma;
+            const hasLogo   = !!imageData.proLogo;
+
+            const items = [
+                { label: 'Plan', value: selectedPlan, ok: true },
+                { label: 'Nombre', value: nombre, ok: !!nombre },
+                { label: 'Email', value: email, ok: !!email },
+                { label: 'Matrícula', value: matricula, ok: !!matricula },
+                { label: 'Especialidades', value: selectedEspecialidades.join(', '), ok: selectedEspecialidades.length > 0 },
+                { label: 'Estudios', value: selectedEstudios.length + ' seleccionados', ok: selectedEstudios.length > 0 },
+                { label: 'Lugar de trabajo', value: wpName, ok: !!wpName },
+                { label: 'Firma', value: hasFirma ? 'Cargada' : 'No cargada (opcional)', ok: hasFirma, optional: true },
+                { label: 'Logo', value: hasLogo ? 'Cargado' : 'No cargado (opcional)', ok: hasLogo, optional: true }
+            ];
+
+            cl.innerHTML = items.map(it => {
+                const icon = it.ok ? '✅' : (it.optional ? '⚠️' : '❌');
+                return `<div class="summary-item" style="display:flex;align-items:center;gap:.5rem;padding:.35rem 0;font-size:.85rem;">
+                    <span>${icon}</span>
+                    <strong>${it.label}:</strong>
+                    <span style="color:${it.ok ? 'var(--text)' : (it.optional ? '#d97706' : '#dc2626')}">${it.value || '—'}</span>
+                </div>`;
+            }).join('');
+
+            document.getElementById('preSubmitOverlay').classList.add('show');
+        }
+
+        function closePreSubmitModal() {
+            document.getElementById('preSubmitOverlay').classList.remove('show');
         }
 
         // ── Submit ──────────────────────────────────────────────────────────────
