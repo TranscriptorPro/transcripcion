@@ -695,23 +695,6 @@
             gap: 5px;
         }
         .pricing-features li .feat-icon { flex-shrink: 0; width: 16px; text-align: center; }
-        .pricing-select-btn {
-            margin-top: .4rem;
-            padding: 5px 10px;
-            border: 2px solid var(--primary);
-            border-radius: 10px;
-            background: transparent;
-            color: var(--primary);
-            font-weight: 700;
-            font-size: .8rem;
-            cursor: pointer;
-            transition: all .2s;
-            font-family: inherit;
-        }
-        .pricing-select-btn:hover, .pricing-card.selected .pricing-select-btn {
-            background: var(--primary);
-            color: white;
-        }
 
         /* ── Cart ── */
         .cart-section { margin-bottom: 1rem; }
@@ -911,7 +894,7 @@
 
                 <div class="pricing-grid">
                     <!-- NORMAL -->
-                    <div class="pricing-card" data-plan="NORMAL" onclick="selectPlan('NORMAL')">
+                    <div class="pricing-card" data-plan="NORMAL" onclick="selectPlan('NORMAL');goStep(1);">
                         <div class="pricing-badge"></div>
                         <div class="pricing-plan-header"><div class="pricing-plan-icon">📋</div><div class="pricing-plan-name">Normal</div></div>
                         <div class="pricing-price">$102<small>.99</small></div>
@@ -929,11 +912,11 @@
                             <li><span class="feat-icon">1️⃣</span> 1 perfil de salida</li>
                             <li><span class="feat-icon">🏥</span> 1 lugar de trabajo</li>
                         </ul>
-                        <button type="button" class="pricing-select-btn" onclick="selectPlan('NORMAL');goStep(1);">Continuar</button>
+
                     </div>
 
                     <!-- PRO -->
-                    <div class="pricing-card popular" data-plan="PRO" onclick="selectPlan('PRO')">
+                    <div class="pricing-card popular" data-plan="PRO" onclick="selectPlan('PRO');goStep(1);">
                         <div class="pricing-badge">⭐ Más popular</div>
                         <div class="pricing-plan-header"><div class="pricing-plan-icon">⭐</div><div class="pricing-plan-name">Pro</div></div>
                         <div class="pricing-price">$152<small>.99</small></div>
@@ -951,11 +934,11 @@
                             <li><span class="feat-icon">🔀</span> Hasta 3 perfiles de salida</li>
                             <li><span class="feat-icon">🏥</span> 2 lugares de trabajo</li>
                         </ul>
-                        <button type="button" class="pricing-select-btn" onclick="selectPlan('PRO');goStep(1);">Continuar</button>
+
                     </div>
 
                     <!-- CLÍNICA -->
-                    <div class="pricing-card" data-plan="CLINIC" onclick="selectPlan('CLINIC')">
+                    <div class="pricing-card" data-plan="CLINIC" onclick="selectPlan('CLINIC');goStep(1);">
                         <div class="pricing-badge"></div>
                         <div class="pricing-plan-header"><div class="pricing-plan-icon">🏥</div><div class="pricing-plan-name">Clínica</div></div>
                         <div class="pricing-price">$352<small>.99</small></div>
@@ -973,7 +956,7 @@
                             <li><span class="feat-icon">📖</span> Diccionario personalizable</li>
                             <li><span class="feat-icon">🔀</span> Múltiples perfiles de salida</li>
                         </ul>
-                        <button type="button" class="pricing-select-btn" onclick="selectPlan('CLINIC');goStep(1);">Continuar</button>
+
                     </div>
                 </div>
 
