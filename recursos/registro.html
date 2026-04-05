@@ -661,12 +661,13 @@
             border-radius: 20px;
             white-space: nowrap;
         }
+        .pricing-plan-header { display:flex; align-items:center; justify-content:center; gap:.35rem; margin-bottom:.25rem; }
         .pricing-plan-name {
             font-size: .95rem;
             font-weight: 700;
-            margin-bottom: .2rem;
+            margin-bottom: 0;
         }
-        .pricing-plan-icon { font-size: 1.5rem; margin-bottom: .3rem; }
+        .pricing-plan-icon { font-size: 1.2rem; margin-bottom: 0; }
         .pricing-price {
             font-size: 1.45rem;
             font-weight: 800;
@@ -900,9 +901,8 @@
 
             <!-- ═══ PASO 0: BIENVENIDA + SELECCIÓN DE PLAN ═══ -->
             <div class="form-step active" id="step0">
-                <div class="card" style="text-align:center;padding:1.2rem 1.2rem .6rem;">
-                    <div style="font-size:2rem;margin-bottom:.3rem;">🩺</div>
-                    <h2 style="font-size:1.15rem;margin-bottom:.3rem;">¡Bienvenido/a a Transcriptor Médico Pro!</h2>
+                <div class="card" style="text-align:center;padding:.7rem 1.2rem .5rem;">
+                    <h2 style="font-size:1.15rem;margin-bottom:.3rem;">🩺 ¡Bienvenido/a a Transcriptor Médico Pro!</h2>
                     <p style="color:var(--text-light);font-size:.82rem;line-height:1.4;max-width:560px;margin:0 auto;">
                         La herramienta que transforma tu voz en informes médicos profesionales.<br>
                         Elegí el plan que mejor se adapte a tu práctica. <b>Pago único + suscripción mensual.</b>
@@ -913,8 +913,7 @@
                     <!-- NORMAL -->
                     <div class="pricing-card" data-plan="NORMAL" onclick="selectPlan('NORMAL')">
                         <div class="pricing-badge"></div>
-                        <div class="pricing-plan-icon">📋</div>
-                        <div class="pricing-plan-name">Normal</div>
+                        <div class="pricing-plan-header"><div class="pricing-plan-icon">📋</div><div class="pricing-plan-name">Normal</div></div>
                         <div class="pricing-price">$102<small>.99</small></div>
                         <div class="pricing-sub">pago único + $10/mes</div>
                         <ul class="pricing-features">
@@ -930,14 +929,13 @@
                             <li><span class="feat-icon">1️⃣</span> 1 perfil de salida</li>
                             <li><span class="feat-icon">🏥</span> 1 lugar de trabajo</li>
                         </ul>
-                        <button type="button" class="pricing-select-btn" onclick="selectPlan('NORMAL')">Elegir Normal</button>
+                        <button type="button" class="pricing-select-btn" onclick="selectPlan('NORMAL');goStep(1);">Continuar</button>
                     </div>
 
                     <!-- PRO -->
                     <div class="pricing-card popular" data-plan="PRO" onclick="selectPlan('PRO')">
                         <div class="pricing-badge">⭐ Más popular</div>
-                        <div class="pricing-plan-icon">⭐</div>
-                        <div class="pricing-plan-name">Pro</div>
+                        <div class="pricing-plan-header"><div class="pricing-plan-icon">⭐</div><div class="pricing-plan-name">Pro</div></div>
                         <div class="pricing-price">$152<small>.99</small></div>
                         <div class="pricing-sub">pago único + $15/mes</div>
                         <ul class="pricing-features">
@@ -953,14 +951,13 @@
                             <li><span class="feat-icon">🔀</span> Hasta 3 perfiles de salida</li>
                             <li><span class="feat-icon">🏥</span> 2 lugares de trabajo</li>
                         </ul>
-                        <button type="button" class="pricing-select-btn" onclick="selectPlan('PRO')">Elegir Pro</button>
+                        <button type="button" class="pricing-select-btn" onclick="selectPlan('PRO');goStep(1);">Continuar</button>
                     </div>
 
                     <!-- CLÍNICA -->
                     <div class="pricing-card" data-plan="CLINIC" onclick="selectPlan('CLINIC')">
                         <div class="pricing-badge"></div>
-                        <div class="pricing-plan-icon">🏥</div>
-                        <div class="pricing-plan-name">Clínica</div>
+                        <div class="pricing-plan-header"><div class="pricing-plan-icon">🏥</div><div class="pricing-plan-name">Clínica</div></div>
                         <div class="pricing-price">$352<small>.99</small></div>
                         <div class="pricing-sub">pago único + $30/mes</div>
                         <ul class="pricing-features">
@@ -976,7 +973,7 @@
                             <li><span class="feat-icon">📖</span> Diccionario personalizable</li>
                             <li><span class="feat-icon">🔀</span> Múltiples perfiles de salida</li>
                         </ul>
-                        <button type="button" class="pricing-select-btn" onclick="selectPlan('CLINIC')">Elegir Clínica</button>
+                        <button type="button" class="pricing-select-btn" onclick="selectPlan('CLINIC');goStep(1);">Continuar</button>
                     </div>
                 </div>
 
@@ -992,9 +989,7 @@
                     <span id="arsRateLabel" style="font-size:.75rem;color:var(--text-light);margin-left:.6rem;display:none;"></span>
                 </div>
 
-                <div class="btn-row" style="justify-content:center;">
-                    <button type="button" class="btn btn-primary" id="btnStep0Next" onclick="goStep(1)" disabled>Seleccioná un plan para continuar</button>
-                </div>
+
             </div>
 
             <!-- ═══ PASO 1: DATOS PERSONALES ═══ -->
@@ -2013,8 +2008,7 @@
                 c.classList.toggle('selected', c.dataset.plan === plan);
             });
             const btn = document.getElementById('btnStep0Next');
-            btn.disabled = false;
-            btn.textContent = `Continuar con plan ${PRICING[plan].label} →`;
+            if (btn) { btn.disabled = false; btn.textContent = `Continuar con plan ${PRICING[plan].label} →`; }
             // Adaptar toda la UI al tipo de usuario
             _applyClinicMode(plan === 'CLINIC');
         }
