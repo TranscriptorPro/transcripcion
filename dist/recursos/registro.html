@@ -1198,9 +1198,9 @@
                         </div>
                     </div>
 
-                    <!-- Add-ons: Branding (logo+color) -->
+                    <!-- Add-ons: PDF Personalizado (logo+color) -->
                     <div class="cart-section" id="cartBrandingSection" style="display:none;">
-                        <div class="cart-section-title">🎨 Pack Branding</div>
+                        <div class="cart-section-title">🎨 PDF Personalizado</div>
                         <div class="cart-item" id="cartBrandingItem">
                             <span class="cart-item-name" id="cartBrandingName">Logo + color en PDF</span>
                             <span class="cart-item-price" id="cartBrandingPrice">$14.99</span>
@@ -1428,8 +1428,8 @@
             device_extra: 8.99,
             workplace_extra: 12.99,
             professional_extra: 19.99,
-            branding_normal: 14.99,  // logo + color para NORMAL
-            branding_pro: 9.99       // color para PRO (ya tiene logo)
+            branding_normal: 9.99,   // logo + color para NORMAL
+            branding_pro: 4.99       // color para PRO (ya tiene logo)
         };
 
         function _syncAdminAddonsConfigFromObject(cfg) {
@@ -2154,21 +2154,21 @@
             // Devices section (hide for CLINIC — already has 5)
             document.getElementById('cartDevicesSection').style.display = selectedPlan === 'CLINIC' ? 'none' : 'block';
 
-            // Workplaces section (show for PRO only — NORMAL=1 fixed, CLINIC=1 fixed)
-            document.getElementById('cartWorkplacesSection').style.display = selectedPlan === 'PRO' ? 'block' : 'none';
+            // Workplaces section (PRO and CLINIC can add extras)
+            document.getElementById('cartWorkplacesSection').style.display = selectedPlan === 'NORMAL' ? 'none' : 'block';
 
             // Professionals section (CLINIC only)
             document.getElementById('cartProfessionalsSection').style.display = selectedPlan === 'CLINIC' ? 'block' : 'none';
 
-            // Branding section (NORMAL gets logo+color, PRO gets color only, CLINIC already has both)
+            // PDF Personalizado (NORMAL y PRO; CLINIC ya lo tiene incluido)
             const brandingSection = document.getElementById('cartBrandingSection');
             if (selectedPlan === 'NORMAL') {
                 brandingSection.style.display = 'block';
-                document.getElementById('cartBrandingName').textContent = 'Logo + color personalizado en PDF';
+                document.getElementById('cartBrandingName').textContent = 'PDF Personalizado (logo + colores)';
                 document.getElementById('cartBrandingPrice').textContent = '$' + ADDON_PRICES.branding_normal.toFixed(2);
             } else if (selectedPlan === 'PRO') {
                 brandingSection.style.display = 'block';
-                document.getElementById('cartBrandingName').textContent = 'Color personalizado en PDF';
+                document.getElementById('cartBrandingName').textContent = 'PDF Personalizado (color de encabezado)';
                 document.getElementById('cartBrandingPrice').textContent = '$' + ADDON_PRICES.branding_pro.toFixed(2);
             } else {
                 brandingSection.style.display = 'none';
@@ -2177,21 +2177,25 @@
             updateCartSummary();
         }
 
+        // En el HTML se muestra como "🎨 PDF Personalizado"
+        document.querySelectorAll('.cart-section-title').forEach(el => {
+            if (el.textContent.includes('Pack Branding')) el.textContent = '🎨 PDF Personalizado';
+        });
+
         function renderCartTemplates() {
             const container = document.getElementById('cartTemplatesList');
             const doctorCats = getDoctorTemplateCats();
             const allCats = Object.keys(TEMPLATE_MAP);
             let html = '';
 
-            if (selectedPlan === 'NORMAL') {
-                // Show templates NOT in their included 3 (from other categories)
-                allCats.forEach(cat => {
-                    if (doctorCats.has(cat)) return; // Their specialty templates are selectable in approval
-                    const templates = TEMPLATE_MAP[cat];
-                    const packPrice = getPackPrice(cat);
-                    const isPack = cartAddons.packs.some(p => p.category === cat);
+            // Helper: render una categoría como pack (si >=3 plantillas) o ítems individuales
+            function _renderCat(cat, showPack) {
+                const templates = TEMPLATE_MAP[cat];
+                const isPack = cartAddons.packs.some(p => p.category === cat);
+                const packPrice = getPackPrice(cat);
+                const isBigEnough = templates.length >= 3;
 
-                    // Pack option
+                if (showPack && isBigEnough) {
                     html += `<div class="cart-item" style="border-left:3px solid var(--accent);">
                         <span class="cart-item-name">📦 Pack ${cat} (${templates.length} plantillas)</span>
                         <span class="cart-item-price">$${packPrice}</span>
@@ -2200,57 +2204,69 @@
                             : `<button type="button" class="cart-add-btn" onclick="addCartPack('${cat}')">+ Agregar</button>`
                         }
                     </div>`;
+                    // si tiene pack, no mostrar individuales
+                    if (isPack) return;
+                }
+                // individuales
+                templates.forEach(t => {
+                    const isAdded = cartAddons.templates.some(a => a.key === t.key);
+                    html += `<div class="cart-item" style="${showPack && isBigEnough ? 'padding-left:1.5rem;' : ''}">
+                        <span class="cart-item-name">${t.name}${!showPack ? ` <small style="color:var(--text-light);">(${cat})</small>` : ''}</span>
+                        <span class="cart-item-price">$${ADDON_PRICES.template_individual}</span>
+                        ${isAdded
+                            ? `<button type="button" class="cart-remove-btn" onclick="removeCartTemplate('${t.key}')">✕</button>`
+                            : `<button type="button" class="cart-add-btn" onclick="addCartTemplate('${t.key}','${t.name}','${cat}')">+ Agregar</button>`
+                        }
+                    </div>`;
+                });
+            }
 
-                    // Individual templates
-                    templates.forEach(t => {
-                        if (isPack) return; // Already in pack
-                        const isAdded = cartAddons.templates.some(a => a.key === t.key);
-                        html += `<div class="cart-item" style="padding-left:1.5rem;">
-                            <span class="cart-item-name">${t.name}</span>
-                            <span class="cart-item-price">$${ADDON_PRICES.template_individual}</span>
-                            ${isAdded
-                                ? `<button type="button" class="cart-remove-btn" onclick="removeCartTemplate('${t.key}')">✕</button>`
-                                : `<button type="button" class="cart-add-btn" onclick="addCartTemplate('${t.key}','${t.name}','${cat}')">+ Agregar</button>`
-                            }
-                        </div>`;
-                    });
+            if (selectedPlan === 'NORMAL') {
+                // Primero: plantillas de SU especialidad que no están en plan base
+                doctorCats.forEach(cat => {
+                    if (cat === 'General') return; // General ya incluido
+                    _renderCat(cat, true);
+                });
+                // Luego: plantillas de otras especialidades
+                allCats.forEach(cat => {
+                    if (doctorCats.has(cat)) return;
+                    _renderCat(cat, true);
                 });
             } else if (selectedPlan === 'PRO') {
-                // Show templates from OTHER specialties (not theirs)
+                // PRO tiene todas las de su especialidad; solo ofrece otras
                 allCats.forEach(cat => {
                     if (doctorCats.has(cat)) return;
-                    const templates = TEMPLATE_MAP[cat];
-                    const isPack = cartAddons.packs.some(p => p.category === cat);
-
-                    templates.forEach(t => {
-                        if (isPack) return;
-                        const isAdded = cartAddons.templates.some(a => a.key === t.key);
-                        html += `<div class="cart-item">
-                            <span class="cart-item-name">${t.name} <small style="color:var(--text-light);">(${cat})</small></span>
-                            <span class="cart-item-price">$${ADDON_PRICES.template_individual}</span>
-                            ${isAdded
-                                ? `<button type="button" class="cart-remove-btn" onclick="removeCartTemplate('${t.key}')">✕</button>`
-                                : `<button type="button" class="cart-add-btn" onclick="addCartTemplate('${t.key}','${t.name}','${cat}')">+ Agregar</button>`
-                            }
-                        </div>`;
-                    });
+                    _renderCat(cat, false);
                 });
             } else {
-                // CLINIC: extra packs (beyond their included 3)
+                // CLINIC: packs extra (más allá de sus 3 incluidos)
                 allCats.forEach(cat => {
                     if (doctorCats.has(cat)) return;
                     const templates = TEMPLATE_MAP[cat];
-                    const packPrice = getPackPrice(cat);
                     const isPack = cartAddons.packs.some(p => p.category === cat);
-
-                    html += `<div class="cart-item" style="border-left:3px solid var(--accent);">
-                        <span class="cart-item-name">📦 Pack ${cat} (${templates.length} plantillas)</span>
-                        <span class="cart-item-price">$${packPrice}</span>
-                        ${isPack
-                            ? `<button type="button" class="cart-remove-btn" onclick="removeCartPack('${cat}')">✕</button>`
-                            : `<button type="button" class="cart-add-btn" onclick="addCartPack('${cat}')">+ Agregar</button>`
-                        }
-                    </div>`;
+                    const packPrice = getPackPrice(cat);
+                    if (templates.length >= 3) {
+                        html += `<div class="cart-item" style="border-left:3px solid var(--accent);">
+                            <span class="cart-item-name">📦 Pack ${cat} (${templates.length} plantillas)</span>
+                            <span class="cart-item-price">$${packPrice}</span>
+                            ${isPack
+                                ? `<button type="button" class="cart-remove-btn" onclick="removeCartPack('${cat}')">✕</button>`
+                                : `<button type="button" class="cart-add-btn" onclick="addCartPack('${cat}')">+ Agregar</button>`
+                            }
+                        </div>`;
+                    } else {
+                        templates.forEach(t => {
+                            const isAdded = cartAddons.templates.some(a => a.key === t.key);
+                            html += `<div class="cart-item">
+                                <span class="cart-item-name">${t.name} <small style="color:var(--text-light);">(${cat})</small></span>
+                                <span class="cart-item-price">$${ADDON_PRICES.template_individual}</span>
+                                ${isAdded
+                                    ? `<button type="button" class="cart-remove-btn" onclick="removeCartTemplate('${t.key}')">✕</button>`
+                                    : `<button type="button" class="cart-add-btn" onclick="addCartTemplate('${t.key}','${t.name}','${cat}')">+ Agregar</button>`
+                                }
+                            </div>`;
+                        });
+                    }
                 });
             }
 
