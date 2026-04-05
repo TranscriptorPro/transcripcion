@@ -38,16 +38,16 @@
         .header {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
-            padding: 2rem 1rem;
+            padding: .7rem 1rem;
             text-align: center;
         }
-        .header h1 { font-size: 1.6rem; margin-bottom: .3rem; }
-        .header p { font-size: .9rem; opacity: .85; }
+        .header h1 { font-size: 1.3rem; margin-bottom: .15rem; }
+        .header p { font-size: .82rem; opacity: .85; }
 
         /* ── Container ── */
         .container {
             max-width: 780px;
-            margin: -2rem auto 2rem;
+            margin: -1.5rem auto .5rem;
             padding: 0 1rem;
         }
 
@@ -56,8 +56,8 @@
             display: flex;
             justify-content: center;
             gap: .5rem;
-            margin-bottom: 1.5rem;
-            padding-top: 1rem;
+            margin-bottom: .6rem;
+            padding-top: .5rem;
         }
         .step {
             display: flex;
@@ -628,14 +628,14 @@
         .pricing-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: .75rem;
-            margin-top: 1rem;
+            gap: .6rem;
+            margin-top: .5rem;
         }
         .pricing-card {
             background: var(--card);
             border-radius: var(--radius);
             border: 2px solid var(--border);
-            padding: 1rem .9rem;
+            padding: .65rem .8rem;
             text-align: center;
             transition: all .3s;
             cursor: pointer;
@@ -669,17 +669,17 @@
         }
         .pricing-plan-icon { font-size: 1.2rem; margin-bottom: 0; }
         .pricing-price {
-            font-size: 1.45rem;
+            font-size: 1.25rem;
             font-weight: 800;
             color: var(--primary-dark);
-            margin: .2rem 0;
+            margin: .1rem 0;
         }
         .pricing-price small { font-size: .6rem; font-weight: 500; color: var(--text-light); }
         .pricing-sub {
-            font-size: .75rem;
+            font-size: .72rem;
             color: var(--text-light);
-            margin-bottom: .5rem;
-            padding-bottom: .5rem;
+            margin-bottom: .3rem;
+            padding-bottom: .3rem;
             border-bottom: 1px solid var(--border);
         }
         .pricing-features {
@@ -689,15 +689,15 @@
             flex: 1;
         }
         .pricing-features li {
-            padding: 2px 0;
+            padding: 1px 0;
             display: flex;
             align-items: flex-start;
             gap: 5px;
         }
         .pricing-features li .feat-icon { flex-shrink: 0; width: 16px; text-align: center; }
         .pricing-select-btn {
-            margin-top: .6rem;
-            padding: 7px 12px;
+            margin-top: .4rem;
+            padding: 5px 10px;
             border: 2px solid var(--primary);
             border-radius: 10px;
             background: transparent;
@@ -977,12 +977,12 @@
                     </div>
                 </div>
 
-                <div style="text-align:center;margin-top:1rem;">
+                <div style="text-align:center;margin-top:.4rem;">
                     <small style="color:var(--text-light);">💡 Todos los planes incluyen actualizaciones gratuitas de por vida. La suscripción cubre: acceso a IA, soporte técnico y almacenamiento.</small>
                 </div>
 
                 <!-- Selector de moneda -->
-                <div style="text-align:center;margin-top:.8rem;" id="currencySelector">
+                <div style="text-align:center;margin-top:.4rem;" id="currencySelector">
                     <span style="font-size:.85rem;color:var(--text-secondary);margin-right:.5rem;">Moneda:</span>
                     <button type="button" class="curr-btn active" data-curr="USD" onclick="setCurrency('USD')">🇺🇸 USD</button>
                     <button type="button" class="curr-btn" data-curr="ARS" onclick="setCurrency('ARS')">🇦🇷 ARS</button>
