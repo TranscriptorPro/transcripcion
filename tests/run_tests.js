@@ -8942,6 +8942,167 @@ test('errorTelemetry — getBuffer devuelve copia (no referencia)', () => {
     assert(buf1 !== buf2, 'Cada llamada debe devolver copia distinta');
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bloque 130: registro.html — Cambios UX v261-v266
+// ═══════════════════════════════════════════════════════════════════════════════
+console.log('\n── Bloque 130: registro.html — UX v261-v266 ─────────────────────');
+
+// rCódigo ya cargado en registroCode (Bloque 91)
+
+// Step 0: selección de plan
+test('R-Step0-1 — Card NORMAL tiene onclick con selectPlan+goStep directos', () => {
+    assert(registroCode.includes("data-plan=\"NORMAL\" onclick=\"selectPlan('NORMAL');goStep(1);\""),
+        'Card NORMAL debe tener onclick="selectPlan(\'NORMAL\');goStep(1);" (sin botón separado)');
+});
+
+test('R-Step0-2 — Card PRO tiene onclick con selectPlan+goStep directos', () => {
+    assert(registroCode.includes("data-plan=\"PRO\" onclick=\"selectPlan('PRO');goStep(1);\"") ||
+           registroCode.includes("data-plan=\"PRO\" class=\"pricing-card popular\" onclick=\"selectPlan('PRO');goStep(1);\"") ||
+           registroCode.match(/data-plan="PRO"[^>]*onclick="selectPlan\('PRO'\);goStep\(1\);"/),
+        'Card PRO debe combinar selectPlan+goStep en onclick directo');
+});
+
+test('R-Step0-3 — Card CLINIC tiene onclick con selectPlan+goStep directos', () => {
+    assert(registroCode.match(/data-plan="CLINIC"[^>]*onclick="selectPlan\('CLINIC'\);goStep\(1\);"/),
+        'Card CLINIC debe combinar selectPlan+goStep en onclick directo');
+});
+
+test('R-Step0-4 — No existe botón standalone "Continuar" en Step 0 con onclick selectPlan sin goStep', () => {
+    // No debe haber un botón aparte que llame a selectPlan sola (ya está integrado en la tarjeta)
+    assert(!registroCode.includes("onclick=\"selectPlan('NORMAL')\""),
+        'selectPlan no debe llamarse sola desde un botón: debe ir junto a goStep(1)');
+});
+
+test('R-Step0-5 — Los botones de moneda usan SVG (no emoji de bandera)', () => {
+    // Los botones USD/ARS deben tener SVG inline, no emojis 🇺🇸 🇦🇷
+    assert(registroCode.includes('<svg width="18" height="12"'),
+        'Los botones de moneda deben usar SVG inline en lugar de emoji de banderas');
+    assert(!registroCode.includes('🇺🇸') && !registroCode.includes('🇦🇷'),
+        'Los botones de moneda NO deben usar emojis de banderas');
+});
+
+// Step 4: upload zones firma y logo profesional
+test('R-Step4-1 — previewImage recibe zoneId como tercer argumento (firma)', () => {
+    assert(registroCode.includes("previewImage(this, 'firmaPreview', 'firmaDropZone')"),
+        'Input de firma debe llamar previewImage con zoneId=firmaDropZone como 3er argumento');
+});
+
+test('R-Step4-2 — previewImage recibe zoneId como tercer argumento (logo profesional)', () => {
+    assert(registroCode.includes("previewImage(this, 'proLogoPreview', 'proLogoDropZone')"),
+        'Input de logo profesional debe llamar previewImage con zoneId=proLogoDropZone como 3er argumento');
+});
+
+test('R-Step4-3 — función _clearImageUpload existe', () => {
+    assert(registroCode.includes('function _clearImageUpload(inputId, previewId, zoneId)'),
+        'Debe existir función _clearImageUpload para resetear una zona de upload');
+});
+
+test('R-Step4-4 — _clearImageUpload restaura visibilidad de la zona de upload', () => {
+    const idx = registroCode.indexOf('function _clearImageUpload(inputId, previewId, zoneId)');
+    assert(idx >= 0, '_clearImageUpload(inputId, previewId, zoneId) debe existir');
+    const fnBody = registroCode.slice(idx, idx + 500);
+    assert(fnBody.includes("style.display = ''"),
+        '_clearImageUpload debe restaurar display del zone (style.display = \'\')');
+});
+
+test('R-Step4-5 — Zona firmaDropZone tiene layout compacto horizontal (display:flex)', () => {
+    const firmaZoneMatch = registroCode.match(/id="firmaDropZone"[^>]*/);
+    assert(firmaZoneMatch && firmaZoneMatch[0].includes('display:flex'),
+        'firmaDropZone debe tener style display:flex para layout compacto horizontal');
+});
+
+test('R-Step4-6 — Zona proLogoDropZone tiene layout compacto horizontal (display:flex)', () => {
+    const proLogoZoneMatch = registroCode.match(/id="proLogoDropZone"[^>]*/);
+    assert(proLogoZoneMatch && proLogoZoneMatch[0].includes('display:flex'),
+        'proLogoDropZone debe tener style display:flex para layout compacto horizontal');
+});
+
+// Step 3: workplace upload
+test('R-Step3-1 — renderWorkplace genera wpLogoZone con ID dinámico por índice', () => {
+    assert(registroCode.includes('id="wpLogoZone${index}"'),
+        'renderWorkplace debe generar id="wpLogoZone${index}" para cada lugar de trabajo');
+});
+
+test('R-Step3-2 — función _clearWpLogo existe', () => {
+    assert(registroCode.includes('function _clearWpLogo(index)'),
+        'Debe existir función _clearWpLogo para resetear el logo de un lugar de trabajo');
+});
+
+test('R-Step3-3 — _clearWpLogo restaura la zona de upload y limpia el preview', () => {
+    const idx = registroCode.indexOf('function _clearWpLogo(index)');
+    assert(idx >= 0, '_clearWpLogo debe existir');
+    const fnBody = registroCode.slice(idx, idx + 500);
+    assert(fnBody.includes('wpLogoZone'),
+        '_clearWpLogo debe operar sobre el elemento wpLogoZone + índice');
+    assert(fnBody.includes("style.display = ''") || fnBody.includes('style.display=""'),
+        '_clearWpLogo debe restaurar display del zone');
+});
+
+test('R-Step3-4 — _applyStep3 no rellena inputs de teléfono/email del workplace para planes no-CLINIC', () => {
+    // Para no-CLINIC: fallbackPhone y fallbackEmail deben ser '' (no el valor del doctor)
+    assert(registroCode.includes("const fallbackEmail = isClinicPlan && isMainWp ? step1Email : ''"),
+        'Para plan no-CLINIC, fallbackEmail debe ser string vacío (no se rellena desde paso 1)');
+    assert(registroCode.includes("const fallbackPhone = isClinicPlan && isMainWp ? step1Phone : ''"),
+        'Para plan no-CLINIC, fallbackPhone debe ser string vacío (no se rellena desde paso 1)');
+});
+
+// Step 6: carrito
+test('R-Cart-1 — ADDON_PRICES tiene branding_normal = 9.99', () => {
+    assert(registroCode.includes('branding_normal: 9.99'),
+        'ADDON_PRICES.branding_normal debe ser 9.99 (precio NORMAL de PDF Personalizado)');
+});
+
+test('R-Cart-2 — ADDON_PRICES tiene branding_pro = 4.99', () => {
+    assert(registroCode.includes('branding_pro: 4.99'),
+        'ADDON_PRICES.branding_pro debe ser 4.99 (precio PRO de PDF Personalizado)');
+});
+
+test('R-Cart-3 — Item de PDF Personalizado en carrito NO se llama "Pack Branding"', () => {
+    assert(!registroCode.includes('Pack Branding'),
+        'El item de branding en el carrito NO debe llamarse "Pack Branding" (fue renombrado)');
+});
+
+test('R-Cart-4 — Item de PDF Personalizado usa texto "PDF Personalizado"', () => {
+    assert(registroCode.includes('PDF Personalizado'),
+        'El item de branding debe llamarse "PDF Personalizado" en el carrito y/o en el HTML estático');
+});
+
+test('R-Cart-5 — renderCartTemplates usa helper interno _renderCat', () => {
+    assert(registroCode.includes('function _renderCat(cat, showPack)'),
+        'renderCartTemplates debe delegar en el helper _renderCat(cat, showPack)');
+});
+
+test('R-Cart-6 — _renderCat distingue entre pack (≥3) y líneas individuales (<3)', () => {
+    const idx = registroCode.indexOf('function _renderCat(cat, showPack)');
+    assert(idx >= 0, '_renderCat(cat, showPack) debe existir');
+    const fnBody = registroCode.slice(idx, idx + 800);
+    assert(fnBody.includes('showPack'),
+        '_renderCat debe usar el parámetro showPack');
+    assert(fnBody.includes('templates.length') || fnBody.includes('isBigEnough'),
+        '_renderCat debe verificar la cantidad de templates (templates.length o isBigEnough)');
+});
+
+test('R-Cart-7 — getDoctorTemplateCats está definida en registro.html', () => {
+    assert(registroCode.includes('function getDoctorTemplateCats()'),
+        'Debe existir función getDoctorTemplateCats() en registro.html');
+});
+
+test('R-Cart-8 — Sección de workplaces del carrito oculta solo para NORMAL', () => {
+    // cartWorkplacesSection se oculta si selectedPlan === 'NORMAL' (PRO y CLINIC la ven)
+    assert(registroCode.includes("selectedPlan === 'NORMAL' ? 'none' : 'block'"),
+        'cartWorkplacesSection debe ocultarse solo para NORMAL, visible para PRO y CLINIC');
+});
+
+test('R-Cart-9 — Sección de branding muestra precio branding_normal para plan NORMAL', () => {
+    assert(registroCode.includes('ADDON_PRICES.branding_normal.toFixed(2)'),
+        'El carrito debe mostrar ADDON_PRICES.branding_normal.toFixed(2) para plan NORMAL');
+});
+
+test('R-Cart-10 — Sección de branding muestra precio branding_pro para plan PRO', () => {
+    assert(registroCode.includes('ADDON_PRICES.branding_pro.toFixed(2)'),
+        'El carrito debe mostrar ADDON_PRICES.branding_pro.toFixed(2) para plan PRO');
+});
+
 // Limpiar estado después de tests
 global.localStorage.clear();
 global._reportHistCache = null;
