@@ -5,8 +5,8 @@
         device_extra:        { key: 'device_extra', label: 'Dispositivo extra',           price: 8.99,  icon: '💻' },
         workplace_extra:     { key: 'workplace_extra', label: 'Lugar de trabajo extra',   price: 12.99, icon: '🏥' },
         professional_extra:  { key: 'professional_extra', label: 'Profesional extra',     price: 19.99, icon: '👨‍⚕️' },
-        branding_normal:     { key: 'branding_normal', label: 'Branding (plan Normal)',   price: 14.99, icon: '🎨' },
-        branding_pro:        { key: 'branding_pro', label: 'Branding (plan Pro)',         price: 9.99,  icon: '🎨' },
+        branding_normal:     { key: 'branding_normal', label: 'Branding (plan Normal)',   price: 9.99,  icon: '🎨' },
+        branding_pro:        { key: 'branding_pro', label: 'Branding (plan Pro)',         price: 4.99,  icon: '🎨' },
         template_individual: { key: 'template_individual', label: 'Plantilla individual', price: 3,     icon: '📄' },
         pack_small:          { key: 'pack_small', label: 'Pack pequeño (5 plantillas)',   price: 7,     icon: '📦' },
         pack_large:          { key: 'pack_large', label: 'Pack grande (todas)',           price: 12,    icon: '📦' }

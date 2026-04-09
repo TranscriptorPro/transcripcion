@@ -896,7 +896,7 @@
                     <!-- NORMAL -->
                     <div class="pricing-card" data-plan="NORMAL" onclick="selectPlan('NORMAL');goStep(1);">
                         <div class="pricing-badge"></div>
-                        <div class="pricing-plan-header"><div class="pricing-plan-icon">📋</div><div class="pricing-plan-name">Normal</div></div>
+                        <div class="pricing-plan-header"><div class="pricing-plan-icon" id="pricingNormalIcon">📋</div><div class="pricing-plan-name" id="pricingNormalName">Normal</div></div>
                         <div class="pricing-price">$102<small>.99</small></div>
                         <div class="pricing-sub">pago único + $10/mes</div>
                         <ul class="pricing-features">
@@ -905,12 +905,12 @@
                             <li><span class="feat-icon">❌</span> <span style="opacity:.6;">Grabar sobre texto editado</span></li>
                             <li><span class="feat-icon">📄</span> 3 plantillas a elección</li>
                             <li><span class="feat-icon">✍️</span> PDF con firma</li>
-                            <li><span class="feat-icon">📂</span> Historial: últimos 10 informes</li>
+                            <li id="pricingNormalHistorial"><span class="feat-icon">📂</span> Historial: últimos 10 informes</li>
                             <li><span class="feat-icon">❌</span> <span style="opacity:.6;">Asistente de sesión IA</span></li>
                             <li><span class="feat-icon">📖</span> Diccionario médico personalizable</li>
                             <li id="pricingNormalDevices"><span class="feat-icon">💻</span> 1 dispositivo</li>
-                            <li><span class="feat-icon">1️⃣</span> 1 perfil de salida</li>
-                            <li><span class="feat-icon">🏥</span> 1 lugar de trabajo</li>
+                            <li id="pricingNormalOutputProfiles"><span class="feat-icon">1️⃣</span> 1 perfil de salida</li>
+                            <li id="pricingNormalWorkplaces"><span class="feat-icon">🏥</span> 1 lugar de trabajo</li>
                         </ul>
 
                     </div>
@@ -918,7 +918,7 @@
                     <!-- PRO -->
                     <div class="pricing-card popular" data-plan="PRO" onclick="selectPlan('PRO');goStep(1);">
                         <div class="pricing-badge">⭐ Más popular</div>
-                        <div class="pricing-plan-header"><div class="pricing-plan-icon">⭐</div><div class="pricing-plan-name">Pro</div></div>
+                        <div class="pricing-plan-header"><div class="pricing-plan-icon" id="pricingProIcon">⭐</div><div class="pricing-plan-name" id="pricingProName">Pro</div></div>
                         <div class="pricing-price">$152<small>.99</small></div>
                         <div class="pricing-sub">pago único + $15/mes</div>
                         <ul class="pricing-features">
@@ -927,12 +927,12 @@
                             <li><span class="feat-icon">✅</span> <b>Grabar sobre texto editado</b></li>
                             <li><span class="feat-icon">📄</span> <b>Todas las plantillas de tu especialidad</b></li>
                             <li><span class="feat-icon">✍️</span> PDF con logo + firma</li>
-                            <li><span class="feat-icon">📂</span> <b>Historial: últimos 30 informes</b></li>
+                            <li id="pricingProHistorial"><span class="feat-icon">📂</span> <b>Historial: últimos 30 informes</b></li>
                             <li><span class="feat-icon">🧠</span> <b>Asistente de sesión IA</b></li>
                             <li><span class="feat-icon">📖</span> Diccionario personalizable</li>
                             <li id="pricingProDevices"><span class="feat-icon">💻</span> 3 dispositivos</li>
-                            <li><span class="feat-icon">🔀</span> Hasta 3 perfiles de salida</li>
-                            <li><span class="feat-icon">🏥</span> 2 lugares de trabajo</li>
+                            <li id="pricingProOutputProfiles"><span class="feat-icon">🔀</span> Hasta 3 perfiles de salida</li>
+                            <li id="pricingProWorkplaces"><span class="feat-icon">🏥</span> 2 lugares de trabajo</li>
                         </ul>
 
                     </div>
@@ -940,16 +940,16 @@
                     <!-- CLÍNICA -->
                     <div class="pricing-card" data-plan="CLINIC" onclick="selectPlan('CLINIC');goStep(1);">
                         <div class="pricing-badge"></div>
-                        <div class="pricing-plan-header"><div class="pricing-plan-icon">🏥</div><div class="pricing-plan-name">Clínica</div></div>
+                        <div class="pricing-plan-header"><div class="pricing-plan-icon" id="pricingClinicIcon">🏥</div><div class="pricing-plan-name" id="pricingClinicName">Clínica</div></div>
                         <div class="pricing-price">$352<small>.99</small></div>
                         <div class="pricing-sub">pago único + $30/mes</div>
                         <ul class="pricing-features">
                             <li><span class="feat-icon">✅</span> Todo lo de Pro, más:</li>
                             <li><span class="feat-icon">📦</span> <b>3 packs completos de especialidad</b></li>
                             <li><span class="feat-icon">🎨</span> <b>PDF con logo + firma + color</b></li>
-                            <li><span class="feat-icon">👥</span> <b>Hasta 5 profesionales</b></li>
+                            <li id="pricingClinicMaxProfessionals"><span class="feat-icon">👥</span> <b>Hasta 5 profesionales</b></li>
                             <li id="pricingClinicDevices"><span class="feat-icon">💻</span> 5 dispositivos</li>
-                            <li><span class="feat-icon">♾️</span> <b>Historial ilimitado</b></li>
+                            <li id="pricingClinicHistorial"><span class="feat-icon">♾️</span> <b>Historial ilimitado</b></li>
                             <li><span class="feat-icon">🤖</span> Estructuración automática con IA</li>
                             <li><span class="feat-icon">✅</span> Grabar sobre texto editado</li>
                             <li><span class="feat-icon">🧠</span> Asistente de sesión IA</li>
@@ -1387,6 +1387,7 @@
                     if (ap.monthly != null) PRICING[pricingKey].monthly = Number(ap.monthly) || PRICING[pricingKey].monthly;
                     if (ap.annual != null) PRICING[pricingKey].annual = Number(ap.annual) || PRICING[pricingKey].annual;
                     if (ap.label) PRICING[pricingKey].label = ap.label;
+                    if (ap.icon)  PRICING[pricingKey].icon  = ap.icon;
                     if (ap.maxDevices != null) PRICING[pricingKey].devices = ap.maxDevices;
                     if (ap.historial != null) PRICING[pricingKey].historial = ap.historial === -1 ? Infinity : ap.historial;
                     if (ap.workplaces != null) PRICING[pricingKey].workplaces = ap.workplaces;
@@ -1972,14 +1973,49 @@
                         subEl.textContent = `pago único + $${plan.monthly}/mes`;
                     }
                 }
+                // Nombre e ícono del plan
+                const nameEl = card.querySelector('.pricing-plan-name');
+                if (nameEl && plan.label) nameEl.textContent = plan.label;
+                const iconEl = card.querySelector('.pricing-plan-icon');
+                if (iconEl && plan.icon) iconEl.textContent = plan.icon;
             }
-            // Actualizar features dinámicas (dispositivos) según PRICING
+            // Actualizar features dinámicas según PRICING
             const devMap = { NORMAL: 'pricingNormalDevices', PRO: 'pricingProDevices', CLINIC: 'pricingClinicDevices' };
             for (const [key, id] of Object.entries(devMap)) {
                 const el = document.getElementById(id);
                 const d = PRICING[key]?.devices;
                 if (el && d != null) el.innerHTML = `<span class="feat-icon">💻</span> ${d} dispositivo${d > 1 ? 's' : ''}`;
             }
+            // Historial por plan
+            const _hist = (v) => v === Infinity || v === -1 ? 'ilimitado' : `últimos ${v} informes`;
+            const histEl = { NORMAL: 'pricingNormalHistorial', PRO: 'pricingProHistorial', CLINIC: 'pricingClinicHistorial' };
+            for (const [key, id] of Object.entries(histEl)) {
+                const el = document.getElementById(id);
+                const h = PRICING[key]?.historial;
+                if (el && h != null) {
+                    const txt = _hist(h);
+                    const bold = key !== 'NORMAL';
+                    el.innerHTML = `<span class="feat-icon">📂</span> ${bold ? '<b>' : ''}Historial: ${txt}${bold ? '</b>' : ''}`;
+                }
+            }
+            // Workplaces (NORMAL y PRO)
+            const wpEl = { NORMAL: 'pricingNormalWorkplaces', PRO: 'pricingProWorkplaces' };
+            for (const [key, id] of Object.entries(wpEl)) {
+                const el = document.getElementById(id);
+                const w = PRICING[key]?.workplaces;
+                if (el && w != null) el.innerHTML = `<span class="feat-icon">🏥</span> ${w} lugar${w > 1 ? 'es' : ''} de trabajo`;
+            }
+            // Perfiles de salida (NORMAL y PRO)
+            const opEl = { NORMAL: 'pricingNormalOutputProfiles', PRO: 'pricingProOutputProfiles' };
+            for (const [key, id] of Object.entries(opEl)) {
+                const el = document.getElementById(id);
+                const op = PRICING[key]?.outputProfiles;
+                if (el && op != null) el.innerHTML = `<span class="feat-icon">🔀</span> ${key === 'NORMAL' ? '' : 'Hasta '}${op} perfil${op > 1 ? 'es' : ''} de salida`;
+            }
+            // Máximo de profesionales (CLINIC)
+            const mpEl = document.getElementById('pricingClinicMaxProfessionals');
+            const mp = PRICING.CLINIC?.maxProfessionals;
+            if (mpEl && mp != null) mpEl.innerHTML = `<span class="feat-icon">👥</span> <b>Hasta ${mp} profesionale${mp > 1 ? 's' : ''}</b>`;
         }
 
         // ── Plan Selection ──────────────────────────────────────────────────────
