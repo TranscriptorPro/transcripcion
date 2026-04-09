@@ -253,10 +253,22 @@
         });
 
         document.getElementById('btnResetExtras')?.addEventListener('click', async () => {
-            localStorage.removeItem('admin_addons_config');
-            _addonsCache = _clone(DEFAULT_ADDONS);
-            _renderExtrasEditor(grid, _clone(DEFAULT_ADDONS));
-            await _saveAddonsToBackend(_clone(DEFAULT_ADDONS));
+            if (!confirm('¿Restaurar todos los extras/add-ons a valores predeterminados? Se perderá la configuración actual.')) return;
+            try {
+                localStorage.removeItem('admin_addons_config');
+                _addonsCache = _clone(DEFAULT_ADDONS);
+                _renderExtrasEditor(grid, _clone(DEFAULT_ADDONS));
+                const backend = await _saveAddonsToBackend(_clone(DEFAULT_ADDONS));
+                const msg = backend.ok
+                    ? '♻️ Extras restaurados a valores predeterminados y guardados en backend'
+                    : '♻️ Extras restaurados a valores predeterminados (guardados solo en este navegador)';
+                if (typeof dashAlert === 'function') dashAlert(msg);
+                else alert(msg);
+            } catch(e) {
+                const errMsg = '❌ Error al restaurar extras: ' + (e && e.message ? e.message : e);
+                if (typeof dashAlert === 'function') dashAlert(errMsg);
+                else alert(errMsg);
+            }
         });
     };
 

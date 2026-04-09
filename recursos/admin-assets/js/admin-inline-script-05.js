@@ -155,11 +155,23 @@
         });
 
         document.getElementById('btnResetPlans')?.addEventListener('click', async () => {
-            localStorage.removeItem('admin_plans_config');
-            _plansCache = _clone(DEFAULT_PLANS);
-            window.__ADMIN_PLANS_CONFIG = _clone(DEFAULT_PLANS);
-            _renderPlansEditor(grid, _clone(DEFAULT_PLANS));
-            await _savePlansToBackend(_clone(DEFAULT_PLANS));
+            if (!confirm('¿Restaurar todos los planes a valores predeterminados? Se perderá la configuración actual.')) return;
+            try {
+                localStorage.removeItem('admin_plans_config');
+                _plansCache = _clone(DEFAULT_PLANS);
+                window.__ADMIN_PLANS_CONFIG = _clone(DEFAULT_PLANS);
+                _renderPlansEditor(grid, _clone(DEFAULT_PLANS));
+                const backend = await _savePlansToBackend(_clone(DEFAULT_PLANS));
+                const msg = backend.ok
+                    ? '♻️ Planes restaurados a valores predeterminados y guardados en backend'
+                    : '♻️ Planes restaurados a valores predeterminados (guardados solo en este navegador)';
+                if (typeof dashAlert === 'function') dashAlert(msg);
+                else alert(msg);
+            } catch(e) {
+                const errMsg = '❌ Error al restaurar planes: ' + (e && e.message ? e.message : e);
+                if (typeof dashAlert === 'function') dashAlert(errMsg);
+                else alert(errMsg);
+            }
         });
     };
 
