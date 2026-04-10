@@ -120,8 +120,9 @@ const INSURANCE_REGEX = /(?:obra\s+social|prepaga)\s*(?::|-)?\s*([^,.;\n]+)/i;
 const AFFILIATE_REGEX = /(?:n[°º]\s*afiliado|afiliad[oa]|nro\.?\s*afiliado)\s*(?::|-)?\s*([A-Za-z0-9.-]{3,30})/i;
 const WEIGHT_REGEX = /(?:peso)\s*(?::|-)?\s*(\d{2,3}(?:[.,]\d{1,2})?)\s*(?:kg|kilogramos?)?/i;
 const HEIGHT_REGEX = /(?:altura|talla)\s*(?::|-)?\s*(\d(?:[.,]\d{1,2})|\d{2,3})\s*(?:m|mts?|cm)?/i;
-const STUDY_DATE_REGEX = /(?:fecha(?:\s+del\s+estudio)?|estudio\s+realizado\s+el)\s*(?::|-)?\s*(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})/i;
-const STUDY_TIME_REGEX = /(?:hora(?:\s+del\s+estudio)?|hs?)\s*(?::|-)?\s*(\d{1,2}:\d{2})/i;
+const STUDY_DATE_REGEX = /(?:fecha(?:\s+del\s+estudio)?|estudio\s+realizado\s+el)\s*(?::|-)?\s*(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})/i;const STUDY_DATE_TEXT_REGEX = /(?:fecha\s+(?:del?\s+)?(?:estudio|examen)|examen\b)\s*:?\s*(\d{1,2})\s+(?:de\s+)?([a-z\u00e1\u00e9\u00ed\u00f3\u00fa]{3,})\s+(?:de\s+)?(\d{2,4})/i;
+const APELLIDO_REGEX = /\bapellido\s*(?:y\s+nombre)?\s*:\s*([A-Za-z\u00C0-\u024F]+(?:\s+[A-Za-z\u00C0-\u024F]+){0,3}?)(?=\s*(?:[a-z]{2,10}\s*:|$))/i;
+const _MONTH_NAME_MAP = { ene:'01',enero:'01',feb:'02',febrero:'02',mar:'03',marzo:'03',abr:'04',abril:'04',may:'05',mayo:'05',jun:'06',junio:'06',jul:'07',julio:'07',ago:'08',agosto:'08',sep:'09',sept:'09',septiembre:'09',oct:'10',octubre:'10',nov:'11',noviembre:'11',dic:'12',diciembre:'12' };const STUDY_TIME_REGEX = /(?:hora(?:\s+del\s+estudio)?|hs?)\s*(?::|-)?\s*(\d{1,2}:\d{2})/i;
 const REFERRING_DOCTOR_REGEX = /(?:m[eé]dico\s+solicitante|solicitado\s+por|derivado\s+por|solicitante)\s*(?::|-)?\s*([^\n.;]{3,90})/i;
 const STUDY_REASON_REGEX = /(?:motivo(?:\s+de\s+(?:consulta|solicitud|estudio))?|indicaci[oó]n(?:\s+cl[ií]nica)?|raz[oó]n\s+del\s+estudio)\s*(?::|-)?\s*([^\n]{3,140})/i;
 const STUDY_TYPE_LINE_REGEX = /(?:tipo\s+de\s+estudio|estudio|pr[aá]ctica)\s*(?::|-)?\s*([^\n.;]{3,90})/i;
@@ -174,10 +175,12 @@ window.extractPatientDataFromText = function (text) {
     const nameMatchComma = normalized.match(PATIENT_NAME_AFTER_COMMA_REGEX);
     const nameMatchAfterAge = normalized.match(PATIENT_NAME_AFTER_AGE_REGEX);
     const nameMatchStart = normalized.match(PATIENT_NAME_AT_START_REGEX);
+    const nameMatchApellido = normalized.match(APELLIDO_REGEX);
     const candidateName = _cleanPatientNameCandidate(nameMatchStart && nameMatchStart[1])
         || _cleanPatientNameCandidate(nameMatchAfterAge && nameMatchAfterAge[1])
         || _cleanPatientNameCandidate(nameMatchComma && nameMatchComma[1])
-        || _cleanPatientNameCandidate(nameMatchDirect && nameMatchDirect[1]);
+        || _cleanPatientNameCandidate(nameMatchDirect && nameMatchDirect[1])
+        || _cleanPatientNameCandidate(nameMatchApellido && nameMatchApellido[1]);
     if (candidateName) data.name = candidateName;
     const dniMatch = text.match(DNI_REGEX);
     if (dniMatch) data.dni = dniMatch[1];
@@ -210,8 +213,20 @@ window.extractPatientDataFromText = function (text) {
                 data.studyDate = `${String(yy).padStart(4, '0')}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
             }
         }
+    }    // Fecha en formato texto: "31 mar 2026" o "fecha examen : 31 marzo 2026"
+    if (!data.studyDate) {
+        const studyDateTextMatch = text.match(STUDY_DATE_TEXT_REGEX);
+        if (studyDateTextMatch) {
+            const dd = parseInt(studyDateTextMatch[1], 10);
+            const monthKey = studyDateTextMatch[2].normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().slice(0, 3);
+            const mmStr = _MONTH_NAME_MAP[monthKey];
+            let yy = parseInt(studyDateTextMatch[3], 10);
+            if (yy < 100) yy += 2000;
+            if (mmStr && dd >= 1 && dd <= 31 && yy >= 2000 && yy <= 2100) {
+                data.studyDate = `${String(yy).padStart(4, '0')}-${mmStr}-${String(dd).padStart(2, '0')}`;
+            }
+        }
     }
-
     const studyTimeMatch = text.match(STUDY_TIME_REGEX);
     if (studyTimeMatch && studyTimeMatch[1]) data.studyTime = studyTimeMatch[1].trim();
 

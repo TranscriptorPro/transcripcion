@@ -586,12 +586,21 @@ window._buildPdfBlobFromPreviewCapture = async function (options) {
             const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
             for (let i = 0; i < pvPages.length; i++) {
                 if (i > 0) doc.addPage();
-                const dataUrl = await lib.toJpeg(pvPages[i], {
-                    quality: 0.92,
-                    pixelRatio: 2,
-                    backgroundColor: '#ffffff',
-                    skipFonts: false
-                });
+                // Fix silentOpen: visibility:hidden en el overlay padre hace que html-to-image
+                // capture páginas en blanco. Forzar visibility:visible en cada página antes de capturar.
+                const savedPageVis = pvPages[i].style.visibility;
+                if (opts.silentOpen) pvPages[i].style.visibility = 'visible';
+                let dataUrl;
+                try {
+                    dataUrl = await lib.toJpeg(pvPages[i], {
+                        quality: 0.92,
+                        pixelRatio: 2,
+                        backgroundColor: '#ffffff',
+                        skipFonts: false
+                    });
+                } finally {
+                    if (opts.silentOpen) pvPages[i].style.visibility = savedPageVis;
+                }
                 doc.addImage(dataUrl, 'JPEG', 0, 0, 210, 297);
             }
             return doc.output('blob');

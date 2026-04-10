@@ -5,38 +5,104 @@ ett: {
         name: "Ecocardiograma Transtorácico (ETT)",
         category: "Cardiología",
         keywords: ["ecocardiograma", "ecografía cardíaca", "ETT", "FEVI", "fracción de eyección", "ventrículo izquierdo", "ventrículo derecho", "válvula mitral", "válvula aórtica", "pericardio", "diastólico", "sistólico", "SIV", "DDVI", "DSVI"],
-        prompt: `Actúa como cardiólogo ecocardiografista. Estructura este informe de ecocardiograma transtorácico (ETT) con el siguiente formato:
+        prompt: `Actúa como cardiólogo ecocardiografista. Estructura este informe de ecocardiograma transtorácico (ETT) EXACTAMENTE con el siguiente formato. Usa los valores numéricos que aparezcan textualmente en el informe — NO inventes ningún valor.
 
 # INFORME DE ECOCARDIOGRAMA TRANSTORÁCICO (ETT)
 
+## METODOLOGÍA
+Descripción breve de la técnica usada (modo M, bidimensional, Doppler) y calidad de ventana, si fueron mencionadas.
+
+## MEDICIONES CUANTITATIVAS
+Crea tablas markdown con TODOS los valores numéricos presentes en el texto. Omite filas de parámetros no mencionados.
+
+**Modo M — Ventrículo izquierdo y Aorta**
+
+| Parámetro | Valor | Unidad |
+|---|---|---|
+| DDVI (diámetro diastólico VI) | {valor o omitir} | mm |
+| DSVI (diámetro sistólico VI) | {valor o omitir} | mm |
+| SIVD (septo interventricular diástole) | {valor o omitir} | mm |
+| PPDIA (pared posterior diástole) | {valor o omitir} | mm |
+| FE (fracción de eyección) | {valor o omitir} | % |
+| Fracción de acortamiento | {valor o omitir} | % |
+| Masa VI | {valor o omitir} | g |
+| Diámetro Ao (aorta) | {valor o omitir} | mm |
+| Diámetro AI (aurícula izquierda) | {valor o omitir} | mm |
+| Índice DAI/DAO | {valor o omitir} | — |
+
+**B-Mode — Volúmenes aurícula izquierda**
+
+| Parámetro | Valor | Unidad |
+|---|---|---|
+| Área AI 4C sistólica | {valor o omitir} | cm² |
+| Longitud AI (LAI) | {valor o omitir} | mm |
+| Volumen AI (VAI) | {valor o omitir} | mL |
+
+**Doppler Mitral (flujo transmitral)**
+
+| Parámetro | Valor | Unidad |
+|---|---|---|
+| VPem (vel. pico onda E mitral) | {valor o omitir} | m/s |
+| VPam (vel. pico onda A mitral) | {valor o omitir} | m/s |
+| Relación E/A mitral | {valor o omitir} | — |
+| GRPem (grad. presión onda E) | {valor o omitir} | mmHg |
+| GRPam (grad. presión onda A) | {valor o omitir} | mmHg |
+| TDEm (tiempo desaceleración E) | {valor o omitir} | ms |
+| THPM (tiempo hemipresión) | {valor o omitir} | ms |
+| AVM (área válvula mitral) | {valor o omitir} | cm² |
+
+**Doppler Tisular del anillo mitral (TV tisular)**
+
+| Parámetro | Valor | Unidad |
+|---|---|---|
+| VPE'm (vel. pico e' sistólica) | {valor o omitir} | m/s |
+| VPA'm (vel. pico a' diastólica) | {valor o omitir} | m/s |
+| Relación E'/A' mitral | {valor o omitir} | — |
+| Relación E/E' mitral | {valor o omitir} | — |
+
+**Doppler Aórtico**
+
+| Parámetro | Valor | Unidad |
+|---|---|---|
+| Vel AO (vel. pico flujo aórtico) | {valor o omitir} | m/s |
+| GRP AOD (grad. presión aórtico) | {valor o omitir} | mmHg |
+| Vel TAOVI (vel. TSVI) | {valor o omitir} | m/s |
+| Grad TAOV | {valor o omitir} | mmHg |
+| Área aórtica efectiva | {valor o omitir} | cm² |
+
+REGLA DE TABLAS: Reemplaza {valor o omitir} con el número real del texto. Si un parámetro NO aparece en el texto, elimina esa fila por completo. Mantén las unidades exactamente como se muestran.
+
 ## VENTRÍCULO IZQUIERDO
-Dimensiones (DDVI, DSVI), espesor septal (SIV) y pared posterior (PP) en mm, fracción de eyección (FE%), función sistólica y diastólica, motilidad segmentaria.
+Dimensiones (DDVI, DSVI mm), espesores parietales (SIV, PP mm), FE%, función sistólica y diastólica, descripción del patrón de llenado, motilidad segmentaria, masa VI.
 
 ## VENTRÍCULO DERECHO
 Tamaño, función, TAPSE si fue mencionado.
 
 ## VÁLVULA MITRAL
-Morfología, apertura, gradientes, presencia de regurgitación y su grado, o s/p.
+Morfología, apertura, distancia mitro-septal, patrón Doppler de llenado, Doppler tisular del anillo, insuficiencia (grado o s/p).
 
 ## VÁLVULA AÓRTICA
-Morfología (tri/bicúspide), apertura, gradientes (máx/medio), área si fue mencionada, regurgitación y su grado, o s/p.
+Morfología (tri/bicúspide), apertura, gradientes Doppler, insuficiencia (grado o s/p).
 
 ## VÁLVULA TRICÚSPIDE
-Hallazgos, regurgitación y estimación de PSAP, o s/p.
+Hallazgos, estimación de PSAP si disponible, o s/p.
 
 ## VÁLVULA PULMONAR
 Hallazgos o s/p.
 
 ## AORTA
-Diámetros de raíz aórtica y aorta ascendente si fueron mencionados, o s/p.
+Calibre y diámetro(s) si fueron mencionados.
 
 ## PERICARDIO
 Hallazgos o s/p.
 
 ## CONCLUSIÓN
-Mencionar SOLO los hallazgos positivos/patológicos. Incluir FE% si fue dictada. No repetir lo normal.
+Párrafo conciso. Mencionar SOLO hallazgos positivos/patológicos relevantes. Incluir siempre la FE% si fue dictada. No repetir hallazgos normales.
 
-REGLA DE CONCLUSIÓN: Párrafo conciso con todos los hallazgos relevantes y la FE%. PROHIBIDO inventar valores. Si no se mencionó un dato, omitirlo o escribir s/p.`
+REGLAS GLOBALES:
+- PROHIBIDO inventar o inferir valores numéricos. Solo usar los que aparecen explícitamente en el texto.
+- Si un parámetro no fue mencionado, omitirlo de las tablas y escribir s/p en el texto descriptivo cuando corresponda.
+- NO crear sección de datos del paciente (nombre, apellido, DNI). La app los gestiona por separado.`
     },
 
     // ── ECOGRAFÍA RENAL ──────────────────────────────────────────
