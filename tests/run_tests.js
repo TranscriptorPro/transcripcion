@@ -9296,6 +9296,33 @@ test('ETT-PDF3 — downloadPDFFromCanvas existe y usa _buildPdfBlobFromPreviewCa
         assert(structCode.includes('rows.length < 2') || structCode.includes('rows.length<2'),
             'debe existir fallback a párrafo cuando hay menos de 2 filas');
     });
+
+    // --- Bloque 132: Edición de celdas de tabla en el editor ---
+    test('TABLE-EDIT1 — initTableResize: onStart NO llama preventDefault antes del drag', () => {
+        const mobileUICode = fs.readFileSync(path.join(__dirname, '../src/js/utils/mobileUI.js'), 'utf8');
+        // pending:true must be set in dragging state (deferred drag pattern)
+        assert(mobileUICode.includes('pending: true'), 'onStart debe añadir pending:true al estado dragging');
+    });
+
+    test('TABLE-EDIT2 — initTableResize: onStart no contiene ev.preventDefault antes del drag', () => {
+        const mobileUICode = fs.readFileSync(path.join(__dirname, '../src/js/utils/mobileUI.js'), 'utf8');
+        // Locate the onStart function body and verify preventDefault was removed from it
+        const onStartMatch = mobileUICode.match(/function onStart\(ev\)\s*\{[\s\S]*?(?=function onMove)/);
+        assert(onStartMatch, 'debe existir función onStart');
+        const onStartBody = onStartMatch[0];
+        assert(!onStartBody.includes('ev.preventDefault()'), 'onStart no debe llamar ev.preventDefault() (impide foco en celda)');
+    });
+
+    test('TABLE-EDIT3 — initTableResize: onMove verifica umbral >4px antes de commitear drag', () => {
+        const mobileUICode = fs.readFileSync(path.join(__dirname, '../src/js/utils/mobileUI.js'), 'utf8');
+        assert(mobileUICode.includes('d.pending') && mobileUICode.includes('d.pending = false'),
+            'onMove debe verificar d.pending y commitearlo cuando hay movimiento suficiente');
+    });
+
+    test('TABLE-EDIT4 — CSS: existe focus ring para #editor td', () => {
+        const cssCode = fs.readFileSync(path.join(__dirname, '../src/css/components.css'), 'utf8');
+        assert(cssCode.includes('#editor td:focus'), 'debe existir estilo focus para celdas de tabla en el editor');
+    });
 }
 
 // Limpiar estado después de tests

@@ -3,7 +3,7 @@
  * Cache-First para el app shell; Network-First para llamadas a la API de Groq.
  */
 
-const CACHE_NAME   = 'transcriptor-pro-app.mnt2cysu';
+const CACHE_NAME   = 'transcriptor-pro-app.mnt2qlxt';
 const GROQ_ORIGIN  = 'api.groq.com';
 
 // Rutas que NUNCA deben cachearse (siempre network-first)
@@ -13,8 +13,8 @@ const NEVER_CACHE = ['/recursos/admin.html', '/recursos/login.html', '/recursos/
 const APP_SHELL = [
     './',
     './index.html',
-    './app.mnt2cysu.min.js',
-    './app.mnt2cytc.min.css',
+    './app.mnt2qlxt.min.js',
+    './app.mnt2qlye.min.css',
     './manifest.json',
     './assets/icon-192.png',
     './assets/icon-512.png'

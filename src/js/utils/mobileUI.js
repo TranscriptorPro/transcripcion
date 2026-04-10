@@ -924,8 +924,8 @@
             var edge = getEdge(hit.td, p.x, p.y);
             if (!edge) return;
 
-            ev.preventDefault();
-            ev.stopPropagation();
+            // Do NOT preventDefault here — the browser must be allowed to focus the cell for
+            // text editing. The drag is committed only after movement exceeds the threshold.
             if (window._cancelTableLongPress) window._cancelTableLongPress();
             dragging = {
                 type: edge.type,
@@ -936,11 +936,9 @@
                 startY: p.y,
                 colWidths: getColWidths(hit.table),
                 rowHeights: getRowHeights(hit.table),
-                tableStartWidth: hit.table.getBoundingClientRect().width
+                tableStartWidth: hit.table.getBoundingClientRect().width,
+                pending: true   // drag committed only after movement threshold
             };
-            hit.table.style.outline = '2px solid var(--primary, #3b82f6)';
-            editor.style.userSelect = 'none';
-            editor.style.webkitUserSelect = 'none';
         }
 
         function onMove(ev) {
@@ -957,9 +955,18 @@
                 return;
             }
 
-            ev.preventDefault();
             var p = pointerPos(ev);
             var d = dragging;
+
+            // Deferred drag commit: don't preventDefault until the user actually drags
+            if (d.pending) {
+                if (Math.abs(p.x - d.startX) < 4 && Math.abs(p.y - d.startY) < 4) return;
+                d.pending = false;
+                d.table.style.outline = '2px solid var(--primary, #3b82f6)';
+                editor.style.userSelect = 'none';
+                editor.style.webkitUserSelect = 'none';
+            }
+            ev.preventDefault();
 
             if (d.type === 'col') {
                 var dx = p.x - d.startX;

@@ -1927,6 +1927,12 @@
             background: var(--bg-secondary);
             font-weight: 600;
         }
+        /* Focus ring when a TD is being edited */
+        #editor td:focus {
+            outline: 2px solid var(--primary, #3b82f6);
+            outline-offset: -1px;
+            background: var(--bg-hover, rgba(59,130,246,.05));
+        }
         /* Espacio antes de cada sección (h2) para respirar, pero no entre párrafos */
         #editor .report-h2 { margin-top: 0.65rem; margin-bottom: 0.15rem; }
         #editor .report-h3 { margin-top: 0.45rem; margin-bottom: 0.1rem; }
