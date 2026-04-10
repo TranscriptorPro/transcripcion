@@ -9247,10 +9247,62 @@ test('ETT-PDF3 — downloadPDFFromCanvas existe y usa _buildPdfBlobFromPreviewCa
         'downloadPDFFromCanvas debe llamar a _buildPdfBlobFromPreviewCapture');
 });
 
+// ── Bloque 132: Markdown table rendering ──────────────────────────────────────
+{
+    const structCode = fs.readFileSync(path.join(__dirname, '../src/js/features/structurerCoreUtils.js'), 'utf8');
+
+    test('ETT-TABLE1 — markdownToHtml detecta bloques de tabla (isTable)', () => {
+        assert(structCode.includes('isTable'), 'debe existir la variable isTable en markdownToHtml');
+    });
+
+    test('ETT-TABLE2 — isTable comprueba que líneas empiecen con |', () => {
+        assert(structCode.includes("startsWith('|')"), "isTable debe usar startsWith('|')");
+    });
+
+    test('ETT-TABLE3 — mergedBlocks incluye type table', () => {
+        assert(structCode.includes("'table'") || structCode.includes('"table"'),
+            "debe existir el type 'table' en mergedBlocks");
+    });
+
+    test('ETT-TABLE4 — renderizado genera <table>', () => {
+        assert(structCode.includes("'<table>'") || structCode.includes('"<table>"') || structCode.includes('`<table>`') || structCode.includes("'<table>'")||structCode.includes('<table>'),
+            'debe generarse el tag <table>');
+    });
+
+    test('ETT-TABLE5 — renderizado genera <thead>', () => {
+        assert(structCode.includes('<thead>'), 'debe generarse <thead>');
+    });
+
+    test('ETT-TABLE6 — renderizado genera <tbody>', () => {
+        assert(structCode.includes('<tbody>'), 'debe generarse <tbody>');
+    });
+
+    test('ETT-TABLE7 — renderizado genera <th> para cabeceras', () => {
+        assert(structCode.includes('<th>') || structCode.includes('`<th>`') || structCode.includes("'<th>'"),
+            'debe generarse <th> para cabeceras');
+    });
+
+    test('ETT-TABLE8 — renderizado genera <td> para celdas de datos', () => {
+        assert(structCode.includes('<td>') || structCode.includes('`<td>`') || structCode.includes("'<td>'"),
+            'debe generarse <td> para celdas');
+    });
+
+    test('ETT-TABLE9 — fila separadora es descartada (isSeparatorRow)', () => {
+        assert(structCode.includes('isSeparatorRow') || structCode.includes('Separator'),
+            'debe existir lógica para detectar y descartar la fila separadora |---|');
+    });
+
+    test('ETT-TABLE10 — tabla vacía o de una sola fila fallback a párrafo', () => {
+        assert(structCode.includes('rows.length < 2') || structCode.includes('rows.length<2'),
+            'debe existir fallback a párrafo cuando hay menos de 2 filas');
+    });
+}
+
 // Limpiar estado después de tests
 global.localStorage.clear();
 global._reportHistCache = null;
 global._registryCache = null;
+
 
 // ── Resumen ───────────────────────────────────────────────────────────────────
 console.log('\n─────────────────────────────────────────────────────────────────');

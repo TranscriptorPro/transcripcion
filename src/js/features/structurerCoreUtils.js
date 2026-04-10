@@ -158,14 +158,16 @@ function markdownToHtml(md) {
         const isHeading = /^#{1,3}\s/.test(t);
         const isList    = /^[-*]\s/.test(t.split('\n')[0].trim());
         const isNumList = /^\d+[.)]\s/.test(t.split('\n')[0].trim());
-        const endsComma = /[,;]\s*$/.test(t.replace(/\[No especificado\]/g, '').trimEnd());
-        if (!isHeading && !isList && !isNumList && endsComma) {
+        const isTable   = !isHeading && !isList && !isNumList &&
+            t.split('\n').filter(l => l.trim()).every(l => l.trim().startsWith('|'));
+        const endsComma = !isTable && /[,;]\s*$/.test(t.replace(/\[No especificado\]/g, '').trimEnd());
+        if (!isHeading && !isList && !isNumList && !isTable && endsComma) {
             if (!enumAcc) enumAcc = [];
             // Añadir todas las líneas no vacías del bloque al acumulador
             t.split('\n').forEach(l => { if (l.trim()) enumAcc.push(l.trim()); });
         } else {
             if (enumAcc) { mergedBlocks.push({ type: 'enum', lines: enumAcc }); enumAcc = null; }
-            mergedBlocks.push({ type: isHeading ? 'heading' : (isList || isNumList) ? 'list' : 'para', raw: t, ordered: isNumList });
+            mergedBlocks.push({ type: isHeading ? 'heading' : isTable ? 'table' : (isList || isNumList) ? 'list' : 'para', raw: t, ordered: isNumList });
         }
     }
     if (enumAcc) mergedBlocks.push({ type: 'enum', lines: enumAcc });
@@ -202,6 +204,29 @@ function markdownToHtml(md) {
                 }
             });
             html.push(`</${tag}>`);
+
+        } else if (mb.type === 'table') {
+            const rows = mb.raw.split('\n').map(l => l.trim()).filter(l => l.startsWith('|'));
+            if (rows.length < 2) {
+                html.push(`<p class="report-p">${capFirst(inlineFormat(mb.raw))}</p>`);
+            } else {
+                const parseRow = (row) =>
+                    row.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+                const isSeparatorRow = (row) => /^[\|\s\-:]+$/.test(row);
+                let headerRow = null;
+                const dataRows = [];
+                let foundSep = false;
+                for (let ri = 0; ri < rows.length; ri++) {
+                    if (ri === 0) { headerRow = parseRow(rows[0]); }
+                    else if (!foundSep && isSeparatorRow(rows[ri])) { foundSep = true; }
+                    else { dataRows.push(parseRow(rows[ri])); }
+                }
+                let tbl = '<table>';
+                if (headerRow) tbl += '<thead><tr>' + headerRow.map(h => `<th>${inlineFormat(h)}</th>`).join('') + '</tr></thead>';
+                if (dataRows.length) tbl += '<tbody>' + dataRows.map(r => '<tr>' + r.map(c => `<td>${inlineFormat(c)}</td>`).join('') + '</tr>').join('') + '</tbody>';
+                tbl += '</table>';
+                html.push(tbl);
+            }
 
         } else {
             // Párrafo normal: múltiples líneas → unir con <br>, capitalizar cada una
