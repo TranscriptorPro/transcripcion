@@ -656,6 +656,8 @@ body { font-family: ${fontFamily}; font-size: ${fontSize}pt; line-height: ${line
 .preview-content ul,.preview-content ol { padding-left: 1.5em; margin: 4px 0 8px; }
 .preview-content li { margin-bottom: 4px; line-height: ${lineSpacing}; }
 .preview-content hr { border: none; border-top: 1px solid #ddd; margin: 14px 0; }
+.report-table-block { break-inside: avoid; page-break-inside: avoid; margin: 6px 0 12px; }
+.report-table-block > .report-p { margin-bottom: 3px; font-weight: 600; }
 .preview-content table { width: 100%; border-collapse: collapse; font-size: 9.5pt; margin: 10px 0 16px; }
 .preview-content thead th { background: var(--pa); color: white; font-weight: 700; padding: 6px 10px; text-align: center; font-family: Helvetica, Arial, sans-serif; font-size: 8.5pt; }
 .preview-content tbody tr:nth-child(even) td { background: #f0f4fb; }

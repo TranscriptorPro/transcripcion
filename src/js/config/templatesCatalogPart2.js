@@ -199,7 +199,17 @@ REGLA DE CONCLUSIÓN: Incluir categoría BI-RADS final si el médico la dictó. 
 Edad gestacional por FUM y por biometría, número de fetos, vitalidad (FCF), presentación.
 
 ## BIOMETRÍA FETAL
-DBP, CC, CA, LF (en mm), peso estimado (en gramos), percentil si fue dictado.
+
+| Parámetro | Valor | Unidad |
+|---|---|---|
+| DBP (diámetro biparietal) | {valor o omitir} | mm |
+| CC (circunferencia cefálica) | {valor o omitir} | mm |
+| CA (circunferencia abdominal) | {valor o omitir} | mm |
+| LF (longitud femoral) | {valor o omitir} | mm |
+| Peso estimado | {valor o omitir} | g |
+| Percentil | {valor o omitir} | — |
+
+REGLA DE TABLAS: Reemplaza {valor o omitir} con el número real. Omite filas no dictadas.
 
 ## ANATOMÍA FETAL
 Cráneo, cara, columna, tórax, corazón, abdomen, extremidades, genitales. Hallazgos o s/p.

@@ -225,7 +225,15 @@ function markdownToHtml(md) {
                 if (headerRow) tbl += '<thead><tr>' + headerRow.map(h => `<th>${inlineFormat(h)}</th>`).join('') + '</tr></thead>';
                 if (dataRows.length) tbl += '<tbody>' + dataRows.map(r => '<tr>' + r.map(c => `<td>${inlineFormat(c)}</td>`).join('') + '</tr>').join('') + '</tbody>';
                 tbl += '</table>';
-                html.push(tbl);
+                // Envolver label-negrita + tabla en un bloque indivisible para el paginador
+                const prev = html.length > 0 ? html[html.length - 1] : '';
+                const isLabelPara = prev.startsWith('<p class="report-p"><strong>') && prev.endsWith('</strong></p>');
+                if (isLabelPara) {
+                    html.pop();
+                    html.push(`<div class="report-table-block">${prev}${tbl}</div>`);
+                } else {
+                    html.push(`<div class="report-table-block">${tbl}</div>`);
+                }
             }
 
         } else {

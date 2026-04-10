@@ -466,6 +466,16 @@
     padding-left: 20px;
 }
 .a4-page .report-list li { margin-bottom: 4px; line-height: 1.5; }
+/* Bloque tabla: nunca cortar entre el sub-título y la tabla ni a mitad de tabla */
+.a4-page .report-table-block {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin: 6px 0 10px;
+}
+.a4-page .report-table-block > .report-p {
+    margin-bottom: 3px;
+    font-weight: 600;
+}
 /* Ocultar botón lápiz y estilo ámbar de campos vacíos en el preview/PDF */
 .a4-page .no-data-field {
     background: none !important;

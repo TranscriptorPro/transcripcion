@@ -21,10 +21,26 @@ window.MEDICAL_TEMPLATES = {
 Nombre, Edad, Sexo, Peso, Talla, IMC.
 
 ## VALORES PRE-BRONCODILATADOR
-Tabla con: CVF (L), VEF1 (L), VEF1/CVF, FEF 25-75 — cada uno con Mejor valor, % Pred, z-score.
+
+| Parámetro | Mejor valor | % Pred | z-score |
+|---|---|---|---|
+| CVF (L) | {valor o omitir} | {valor o omitir} | {valor o omitir} |
+| VEF1 (L) | {valor o omitir} | {valor o omitir} | {valor o omitir} |
+| VEF1/CVF | {valor o omitir} | {valor o omitir} | {valor o omitir} |
+| FEF 25-75 (L/s) | {valor o omitir} | {valor o omitir} | {valor o omitir} |
+
+REGLA DE TABLAS: Reemplaza {valor o omitir} con el número real del texto. Si una celda no fue dictada, colocar —.
 
 ## RESPUESTA POST-BRONCODILATADOR
-(Si se menciona broncodilatador) Tabla con: CVF, VEF1, % Cambio, Variación (ml).
+
+(Solo si el broncodilatador fue mencionado en el texto; omitir esta sección completa si no aplica)
+
+| Parámetro | Pre-BD | Post-BD | % Cambio | Δ mL |
+|---|---|---|---|---|
+| CVF (L) | {valor o omitir} | {valor o omitir} | {valor o omitir} | {valor o omitir} |
+| VEF1 (L) | {valor o omitir} | {valor o omitir} | {valor o omitir} | {valor o omitir} |
+
+REGLA: Omite filas de parámetros no mencionados. Coloca — en celdas sin dato.
 
 ## CALIDAD DEL EXAMEN
 Grado (A-F), Nivel de esfuerzo.
@@ -68,10 +84,24 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
 Nombre, Edad, Sexo, Peso, Talla, IMC.
 
 ## VOLÚMENES PULMONARES
-Tabla con: TLC, FRC, RV, RV/TLC — con valor absoluto, % predicho y z-score.
+
+| Parámetro | Valor absoluto | % Predicho | z-score |
+|---|---|---|---|
+| TLC (L) | {valor o omitir} | {valor o omitir} | {valor o omitir} |
+| FRC (L) | {valor o omitir} | {valor o omitir} | {valor o omitir} |
+| RV (L) | {valor o omitir} | {valor o omitir} | {valor o omitir} |
+| RV/TLC (%) | {valor o omitir} | {valor o omitir} | {valor o omitir} |
+
+REGLA DE TABLAS: Reemplaza {valor o omitir} con el número real. Si una celda no fue dictada, colocar —.
 
 ## CAPACIDAD DE DIFUSIÓN (DLCO)
-DLCO absoluta, % predicho, KCO.
+
+| Parámetro | Valor | % Predicho |
+|---|---|---|
+| DLCO (mmol/min/kPa) | {valor o omitir} | {valor o omitir} |
+| KCO (DLCO/VA) | {valor o omitir} | {valor o omitir} |
+
+REGLA: Si DLCO no fue medida, omitir esta sección.
 
 ## CONCLUSIÓN
 Patrón encontrado, grado de compromiso y correlación clínica.
@@ -115,7 +145,15 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
 Pérdidas de fijación, falsos positivos, falsos negativos, o s/p.
 
 ### RESULTADOS
-MD (dB), PSD (dB), VFI (%), GHT/AGIS si fueron dictados.
+
+| Parámetro | Valor |
+|---|---|
+| MD (dB) | {valor o omitir} |
+| PSD (dB) | {valor o omitir} |
+| VFI (%) | {valor o omitir} |
+| GHT/AGIS | {valor o omitir} |
+
+REGLA: Omite filas de parámetros no dictados.
 
 ### MAPA DE DESVIACIÓN
 Descripción del mapa de desviación total y patrón de defecto (difuso, escotoma, hernia de cuadrante, etc.), o s/p.
@@ -126,7 +164,15 @@ Descripción del mapa de desviación total y patrón de defecto (difuso, escotom
 Pérdidas de fijación, falsos positivos, falsos negativos, o s/p.
 
 ### RESULTADOS
-MD (dB), PSD (dB), VFI (%), GHT/AGIS si fueron dictados.
+
+| Parámetro | Valor |
+|---|---|
+| MD (dB) | {valor o omitir} |
+| PSD (dB) | {valor o omitir} |
+| VFI (%) | {valor o omitir} |
+| GHT/AGIS | {valor o omitir} |
+
+REGLA: Omite filas de parámetros no dictados.
 
 ### MAPA DE DESVIACIÓN
 Descripción del mapa de desviación total y patrón de defecto, o s/p.
@@ -146,16 +192,46 @@ IMPORTANTE: Si solo se evaluó un ojo, omitir la sección del otro o marcar con 
 # INFORME DE TOMOGRAFÍA DE COHERENCIA ÓPTICA (OCT)
 
 ## OJO DERECHO (OD) — MÁCULA
-Grosor macular central (µm), mapa de grosor ETDRS, volumen macular (mm³), hallazgos morfológicos (drusen, líquido sub/intrarretinal, MER, atrofia, desgarros, etc.), o s/p.
+
+| Parámetro | Valor |
+|---|---|
+| Grosor macular central (µm) | {valor o omitir} |
+| Volumen macular (mm³) | {valor o omitir} |
+
+Hallazgos morfológicos: drusen, líquido sub/intrarretinal, MER, atrofia, desgarros, etc., o s/p.
 
 ## OJO DERECHO (OD) — RNFL
-Grosor promedio RNFL (µm), valores por sectores (superior, inferior, nasal, temporal), comparación con normativa de la base de datos del equipo (normal/limítrofe/fuera de límites), o s/p.
+
+| Parámetro | Valor (µm) | Comparación normativa |
+|---|---|---|
+| RNFL promedio | {valor o omitir} | Normal / Limítrofe / Fuera |
+| Sector superior | {valor o omitir} | Normal / Limítrofe / Fuera |
+| Sector inferior | {valor o omitir} | Normal / Limítrofe / Fuera |
+| Sector nasal | {valor o omitir} | Normal / Limítrofe / Fuera |
+| Sector temporal | {valor o omitir} | Normal / Limítrofe / Fuera |
+
+REGLA: Omite filas no dictadas. Reemplaza {valor o omitir} con el número real.
 
 ## OJO IZQUIERDO (OI) — MÁCULA
-Grosor macular central (µm), mapa de grosor ETDRS, volumen macular (mm³), hallazgos morfológicos, o s/p.
+
+| Parámetro | Valor |
+|---|---|
+| Grosor macular central (µm) | {valor o omitir} |
+| Volumen macular (mm³) | {valor o omitir} |
+
+Hallazgos morfológicos: drusen, líquido sub/intrarretinal, MER, atrofia, desgarros, etc., o s/p.
 
 ## OJO IZQUIERDO (OI) — RNFL
-Grosor promedio RNFL (µm), valores por sectores, comparación con normativa, o s/p.
+
+| Parámetro | Valor (µm) | Comparación normativa |
+|---|---|---|
+| RNFL promedio | {valor o omitir} | Normal / Limítrofe / Fuera |
+| Sector superior | {valor o omitir} | Normal / Limítrofe / Fuera |
+| Sector inferior | {valor o omitir} | Normal / Limítrofe / Fuera |
+| Sector nasal | {valor o omitir} | Normal / Limítrofe / Fuera |
+| Sector temporal | {valor o omitir} | Normal / Limítrofe / Fuera |
+
+REGLA: Omite filas no dictadas.
 
 ## CONCLUSIÓN
 Mencionar SOLO los hallazgos positivos o patológicos detectados por ojo. Incluir diagnóstico diferencial si aplica (glaucoma, DMAE, membrana epirretinal, etc.). Si ambos ojos son normales, escribir exactamente: "OCT bilateral dentro de parámetros normales."
@@ -175,10 +251,25 @@ IMPORTANTE: No inventes datos. Solo estructura lo dictado. Si solo se evaluó un
 Ojo examinado, equipo utilizado, calidad de la imagen.
 
 ## QUERATOMETRÍA
-K1, K2, Kmax, eje del astigmatismo, índice de asimetría.
+
+| Parámetro | OD | OI |
+|---|---|---|
+| K1 (D) | {valor o omitir} | {valor o omitir} |
+| K2 (D) | {valor o omitir} | {valor o omitir} |
+| Kmax (D) | {valor o omitir} | {valor o omitir} |
+| Eje del astigmatismo (°) | {valor o omitir} | {valor o omitir} |
+| Índice de asimetría | {valor o omitir} | {valor o omitir} |
+
+Si solo se evaluó un ojo, omitir la columna del otro.
 
 ## PAQUIMETRÍA
-Espesor corneal central, mapa de espesor, punto más delgado.
+
+| Parámetro | OD | OI |
+|---|---|---|
+| Espesor corneal central (µm) | {valor o omitir} | {valor o omitir} |
+| Punto más delgado (µm) | {valor o omitir} | {valor o omitir} |
+
+REGLA DE TABLAS: Reemplaza {valor o omitir} con el número real. Si una celda no fue dictada, colocar —.
 
 ## CONCLUSIÓN
 Patrón topográfico, diagnóstico (normal, astigmatismo, queratocono, etc.) y grado.

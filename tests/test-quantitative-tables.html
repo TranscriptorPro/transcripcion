@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Test — Tablas cuantitativas en plantillas</title>
+<style>
+  body { font-family: sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+  h1 { color: #1a56a0; }
+  h2 { color: #333; border-bottom: 2px solid #1a56a0; padding-bottom: 6px; margin-top: 32px; }
+  .card { background: white; border-radius: 8px; padding: 20px; margin: 16px 0; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+  label { font-weight: 600; display: block; margin-bottom: 6px; color: #555; }
+  textarea { width: 100%; height: 160px; font-size: 13px; border: 1px solid #ccc; border-radius: 6px; padding: 10px; resize: vertical; box-sizing: border-box; }
+  .meta { font-size: 12px; color: #888; margin-top: 4px; }
+  .badge { display: inline-block; background: #1a56a0; color: white; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-bottom: 8px; }
+  .instructions { background: #e8f0fe; border-left: 4px solid #1a56a0; padding: 12px 16px; border-radius: 4px; margin-bottom: 20px; font-size: 14px; }
+</style>
+</head>
+<body>
+<h1>🧪 Textos de prueba — Tablas cuantitativas</h1>
+<div class="instructions">
+  Copia cada texto en la app (campo "Transcripción"), selecciona la plantilla indicada y hace clic en <strong>Estructurar</strong>.
+  El informe generado debe mostrar <strong>tablas HTML</strong> con los valores numéricos, no texto con pipes crudos.
+</div>
+
+<!-- ─── ESPIROMETRÍA ─────────────────────────── -->
+<h2>Espirometría</h2>
+<div class="card">
+  <span class="badge">Plantilla: espirometria</span>
+  <label>Texto de prueba:</label>
+  <textarea readonly>Espirometría realizada en paciente de 52 años, sexo masculino. Con técnica correcta, grado B.
+
+Pre-broncodilatador: CVF 3.42 L (78% del predicho, z-score -1.8), VEF1 2.10 L (62% del predicho, z-score -2.9), VEF1/CVF 0.61, FEF 25-75 1.35 L/s (45% del predicho).
+
+Se administró salbutamol 400 mcg. Post-broncodilatador: CVF 3.60 L (82% del predicho), VEF1 2.45 L (72% del predicho), variación VEF1 +350 mL (+16.7%).
+
+Conclusión: patrón obstructivo moderado con respuesta broncodilatadora significativa.</textarea>
+  <p class="meta">→ Debe generar tabla pre-BD (4 filas) + tabla post-BD (2 filas)</p>
+</div>
+
+<!-- ─── PLETISMOGRAFÍA ─────────────────────── -->
+<h2>Pletismografía</h2>
+<div class="card">
+  <span class="badge">Plantilla: pletismografia</span>
+  <label>Texto de prueba:</label>
+  <textarea readonly>Pletismografía corporal en mujer de 38 años. Volúmenes pulmonares: TLC 4.85 L (92% del predicho, z-score -0.5), FRC 2.90 L (105% del predicho, z-score +0.3), volumen residual RV 1.45 L (98% del predicho, z-score -0.1), RV/TLC 30% (98% del predicho).
+
+Difusión: DLCO 7.2 mmol/min/kPa (68% del predicho), KCO 1.42 mmol/min/kPa/L (82% del predicho).
+
+Conclusión: difusión levemente disminuida, compatible con compromiso vascular pulmonar leve. Volúmenes normales.</textarea>
+  <p class="meta">→ Debe generar tabla volúmenes (4 filas) + tabla DLCO (2 filas)</p>
+</div>
+
+<!-- ─── CAMPIMETRÍA ───────────────────────── -->
+<h2>Campimetría Humphrey</h2>
+<div class="card">
+  <span class="badge">Plantilla: campimetria</span>
+  <label>Texto de prueba:</label>
+  <textarea readonly>Campimetría computarizada 24-2 SITA Standard bilateral.
+
+Ojo derecho: pérdidas de fijación 2/21 (9%), falsos positivos 0%, falsos negativos 8%. MD -6.42 dB, PSD 5.18 dB, VFI 84%. GHT: fuera de límites normales. Defecto arqueado superior que respeta la horizontal, compatible con escalón nasal superior.
+
+Ojo izquierdo: pérdidas de fijación 1/20, falsos positivos 0%, falsos negativos 3%. MD -1.85 dB, PSD 1.74 dB, VFI 96%. GHT dentro de límites normales. Mapa de desviación dentro de parámetros normales.
+
+Conclusión: campimetría con defecto arqueado superior en ojo derecho sugestivo de daño glaucomatoso. Campo visual izquierdo normal.</textarea>
+  <p class="meta">→ Debe generar tabla de resultados por OD y por OI</p>
+</div>
+
+<!-- ─── OCT RETINAL ──────────────────────── -->
+<h2>OCT Retinal</h2>
+<div class="card">
+  <span class="badge">Plantilla: oct_retinal</span>
+  <label>Texto de prueba:</label>
+  <textarea readonly>OCT con equipo Cirrus HD-OCT bilateral.
+
+Ojo derecho — Mácula: grosor macular central 248 µm, volumen macular 9.8 mm³. Sin alteraciones morfológicas. Fóvea conservada.
+
+Ojo derecho — RNFL: promedio 72 µm, sector superior 89 µm (fuera de límites normales), sector inferior 78 µm (límítrofe), sector nasal 62 µm (normal), sector temporal 58 µm (normal).
+
+Ojo izquierdo — Mácula: grosor macular central 258 µm, volumen macular 10.1 mm³. Sin alteraciones.
+
+Ojo izquierdo — RNFL: promedio 88 µm (normal), sector superior 104 µm (normal), sector inferior 97 µm (normal), sector nasal 68 µm (normal), sector temporal 65 µm (normal).
+
+Conclusión: adelgazamiento del RNFL en OD sectores superior e inferior, sugestivo de daño glaucomatoso incipiente. OCT OI dentro de parámetros normales.</textarea>
+  <p class="meta">→ Debe generar tabla mácula + tabla RNFL por 5 sectores, por cada ojo</p>
+</div>
+
+<!-- ─── TOPOGRAFÍA CORNEAL ───────────────── -->
+<h2>Topografía Corneal</h2>
+<div class="card">
+  <span class="badge">Plantilla: topografia_corneal</span>
+  <label>Texto de prueba:</label>
+  <textarea readonly>Topografía corneal con equipo Pentacam bilateral.
+
+Ojo derecho: K1 42.5 D, K2 44.8 D, Kmax 47.2 D, eje del astigmatismo 92°, índice de asimetría 1.38. Paquimetría corneal central 498 µm, punto más delgado 485 µm a 1.2 mm inferotemporal al centro.
+
+Ojo izquierdo: K1 43.1 D, K2 45.0 D, Kmax 46.8 D, eje del astigmatismo 88°, índice de asimetría 1.12. Paquimetría corneal central 512 µm, punto más delgado 502 µm.
+
+Conclusión: patrón topográfico con características de queratocono subclínico en ojo derecho (Kmax > 47 D, adelgazamiento periférico). Ojo izquierdo con patrón compatible con astigmatismo regular.</textarea>
+  <p class="meta">→ Debe generar tabla queratometría (5 filas × 2 columnas OD/OI) + tabla paquimetría</p>
+</div>
+
+<!-- ─── ECOGRAFÍA OBSTÉTRICA ─────────────── -->
+<h2>Ecografía Obstétrica</h2>
+<div class="card">
+  <span class="badge">Plantilla: ecografia_obstetrica</span>
+  <label>Texto de prueba:</label>
+  <textarea readonly>Ecografía obstétrica de control. Embarazo único, cefálico. Frecuencia cardíaca fetal 148 lpm.
+
+Biometría fetal: diámetro biparietal 74 mm, circunferencia cefálica 268 mm, circunferencia abdominal 251 mm, longitud femoral 52 mm. Peso estimado 1.620 gramos, percentil 48.
+
+Placenta posterior, grado I de Grannum. Líquido amniótico: ILA 13.2 cm (normal). Cérvix longitud 38 mm. Doppler de arteria umbilical: relación S/D 2.8 (normal). Arteria cerebral media: índice de pulsatilidad 1.65 (normal).
+
+Conclusión: embarazo de 28 semanas por biometría. Crecimiento fetal normal. Sin hallazgos patológicos.</textarea>
+  <p class="meta">→ Debe generar tabla biometría fetal con 6 filas (DBP, CC, CA, LF, peso, percentil)</p>
+</div>
+
+<!-- ─── HOLTER ECG ──────────────────────── -->
+<h2>Holter ECG 24 horas</h2>
+<div class="card">
+  <span class="badge">Plantilla: holter</span>
+  <label>Texto de prueba:</label>
+  <textarea readonly>Holter ECG de 24 horas. Registro adecuado.
+
+Frecuencia cardíaca media 72 lpm, FC máxima 148 lpm a las 10:35 hs durante actividad física, FC mínima 44 lpm a las 03:12 hs. SDNN 98 ms.
+
+Ectopía ventricular: 248 extrasístoles ventriculares aislados, morfología de BCRIHH, sin formas complejas.
+
+Ectopía supraventricular: 52 extrasístoles supraventriculares aislados. No se detectaron episodios de TSV sostenida ni fibrilación auricular.
+
+Segmento ST: sin cambios significativos durante el registro.
+
+Pausas: no se registraron pausas mayores de 2 segundos.
+
+Conclusión: ectopía ventricular aislada frecuente sin formas complejas. Sin evidencia de isquemia.</textarea>
+  <p class="meta">→ Debe generar tabla FC (4 filas: media, máxima, mínima, SDNN)</p>
+</div>
+
+<!-- ─── MAPA ────────────────────────────── -->
+<h2>MAPA (Monitoreo Ambulatorio de PA)</h2>
+<div class="card">
+  <span class="badge">Plantilla: mapa</span>
+  <label>Texto de prueba:</label>
+  <textarea readonly>MAPA de 24 horas. Total de medidas: 92, válidas: 88 (96%).
+
+PA sistólica media 24h 138 mmHg, PA diastólica media 24h 84 mmHg, FC media 24h 76 lpm.
+
+Período diurno (6:00-22:00): PAS media 142 mmHg, PAD media 88 mmHg. Período nocturno (22:00-6:00): PAS media 136 mmHg, PAD media 82 mmHg.
+
+Patrón dipping: non-dipper (reducción nocturna sistólica 4.2%).
+
+Conclusión: MAPA compatible con hipertensión arterial no controlada. Patrón non-dipper, lo que incrementa el riesgo cardiovascular global.</textarea>
+  <p class="meta">→ Debe generar tabla medidas globales (4 filas) + tabla ciclo circadiano (2 filas)</p>
+</div>
+
+<!-- ─── ECG ─────────────────────────────── -->
+<h2>ECG</h2>
+<div class="card">
+  <span class="badge">Plantilla: ecg</span>
+  <label>Texto de prueba:</label>
+  <textarea readonly>Electrocardiograma de 12 derivaciones.
+
+Ritmo sinusal. Frecuencia cardíaca 78 lpm. Eje eléctrico 62°.
+
+Intervalo PR 178 ms, QRS 102 ms, QT 388 ms, QTc 442 ms (Bazett).
+
+Onda P: normal en morfología y eje. Complejo QRS: sin alteraciones de la conducción. Segmento ST: sin supradesnivel ni infradesnivel significativo. Onda T: negativa simétrica en V1-V3. Sin signos de hipertrofia ventricular.
+
+Conclusión: ECG con QTc levemente prolongado (442 ms) y ondas T negativas en V1-V3. Descartar patología isquémica anterior.</textarea>
+  <p class="meta">→ Debe generar tabla de intervalos (5 filas: FC, PR, QRS, QT, QTc)</p>
+</div>
+
+<!-- ─── ERGOMETRÍA ──────────────────────── -->
+<h2>Ergometría (Prueba de Esfuerzo)</h2>
+<div class="card">
+  <span class="badge">Plantilla: ergometria</span>
+  <label>Texto de prueba:</label>
+  <textarea readonly>Prueba de esfuerzo graduada en cinta rodante, protocolo Bruce modificado.
+
+El paciente logró 9 minutos de ejercicio, alcanzando 8.4 METs. Motivo de finalización: fatiga muscular. Recibía metoprolol 50 mg/día en el momento del estudio.
+
+Respuesta hemodinámica: FC en reposo 62 lpm, FC máxima alcanzada 148 lpm (92% de la FC máxima teórica para la edad). PA en reposo 120/78 mmHg, PA máxima durante el ejercicio 185/84 mmHg. Respuesta presora adecuada. Tiempo de recuperación de FC: 2.5 minutos.
+
+Registro ECG basal: ritmo sinusal, sin alteraciones. Durante el ejercicio: no se observaron cambios del segmento ST ni arritmias significativas. En recuperación: resolución completa.
+
+Sin síntomas durante la prueba.
+
+Conclusión: prueba de esfuerzo negativa para isquemia miocárdica inducible a la carga alcanzada. Capacidad funcional preservada (8.4 METs).</textarea>
+  <p class="meta">→ Debe generar tabla hemodinámica (5 filas × 2 columnas reposo/pico)</p>
+</div>
+
+<!-- ─── ETT (control) ─────────────────── -->
+<h2>ETT — Ecocardiograma Transtorácico (control — ya funciona)</h2>
+<div class="card">
+  <span class="badge">Plantilla: ett</span>
+  <label>Texto de prueba:</label>
+  <textarea readonly>Estudio de buena calidad de ventana. Modo M y bidimensional con Doppler.
+
+Mediciones: DDVI 47 mm, DSVI 31 mm, septo interventricular en diástole 10 mm, PPDIA 10 mm, fracción de eyección 63%, fracción de acortamiento 34%, masa VI 202 g, diámetro aórtico 31 mm, diámetro auricular izquierdo 37.6 mm, índice DAI/DAO 1.21.
+
+Aurícula izquierda por método biplanar: área 15.1 cm², longitud AI 47.2 mm, volumen AI 37.5 mL.
+
+Doppler mitral: VPem 0.71 m/s, VPam 1.03 m/s, relación E/A 0.69, TDEm 210 ms, THPM 78 ms. Doppler tisular anillo mitral lateral: VPE'm 0.082 m/s, VPA'm 0.075 m/s. Relación E/E' 8.6.
+
+Doppler aórtico: velocidad pico 1.42 m/s, gradiente máximo 8 mmHg.
+
+Ventrículo derecho de tamaño normal, función conservada. Válvula mitral: apertura normal, insuficiencia leve. Válvula aórtica tricúspide, apertura normal. Tricúspide: PSAP estimada 32 mmHg. Pericardio sin derrame.
+
+Conclusión: función sistólica del VI conservada (FE 63%). Disfunción diastólica grado I. Insuficiencia mitral leve. Hipertensión pulmonar estimada leve (PSAP 32 mmHg).</textarea>
+  <p class="meta">→ Debe generar 5 tablas: Modo M, B-Mode AI, Doppler Mitral, Doppler Tisular, Doppler Aórtico</p>
+</div>
+
+</body>
+</html>

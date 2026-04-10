@@ -14,7 +14,19 @@ Object.assign(window.MEDICAL_TEMPLATES, {
 Protocolo empleado (ej: Bruce), duración total del ejercicio y METs alcanzados, motivo de finalización (fatiga/disnea/dolor/cambios ECG/arritmia/PA/metaobjetivo), medicación recibida en el momento del estudio.
 
 ## RESPUESTA HEMODINÁMICA
-FC en reposo, FC máxima alcanzada (% de la FC máxima teórica), PA en reposo, PA máxima durante el ejercicio, respuesta presora (adecuada / exagerada / hipotensiva), tiempo de recuperación de FC.
+
+| Parámetro | En reposo | Pico de ejercicio | Unidad |
+|---|---|---|---|
+| Frecuencia cardíaca | {valor o omitir} | {valor o omitir} | lpm |
+| % FC máxima teórica alcanzada | — | {valor o omitir} | % |
+| Presión arterial sistólica | {valor o omitir} | {valor o omitir} | mmHg |
+| Presión arterial diastólica | {valor o omitir} | {valor o omitir} | mmHg |
+| METs alcanzados | — | {valor o omitir} | METs |
+
+**Respuesta presora:** {adecuada / exagerada / hipotensiva, según lo dictado}
+**Tiempo de recuperación FC:** {valor o omitir} min
+
+REGLA DE TABLAS: Reemplaza {valor o omitir} con el número real. Si un valor no fue dictado, colocar —.
 
 ## REGISTRO ELECTROCARDIOGRÁFICO
 ECG basal: ritmo, FC, hallazgos relevantes o s/p.

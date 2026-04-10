@@ -10,7 +10,15 @@ Object.assign(window.MEDICAL_TEMPLATES, {
 # INFORME DE HOLTER ECG
 
 ## FRECUENCIA CARDÍACA
-FC media, FC máxima (hora), FC mínima (hora), variabilidad de la FC (SDNN si fue dictado).
+
+| Parámetro | Valor | Unidad |
+|---|---|---|
+| FC media | {valor o omitir} | lpm |
+| FC máxima | {valor o omitir} | lpm |
+| FC mínima | {valor o omitir} | lpm |
+| SDNN (variabilidad) | {valor o omitir} | ms |
+
+REGLA: Agrega entre paréntesis la hora de FC máx/mín si fue dictada. Omite filas no mencionadas.
 
 ## ECTOPÍA VENTRICULAR
 Número de extrasístoles ventriculares (EV), morfología predominante, formas complejas (pares, tripletes, TV no sostenida/sostenida), o s/p.
@@ -39,10 +47,24 @@ IMPORTANTE: No inventes datos. Solo estructura lo dictado. Si una sección no fu
 # INFORME DE MAPA (MONITOREO AMBULATORIO DE PRESIÓN ARTERIAL)
 
 ## MEDIDAS GLOBALES
-PA sistólica media 24h, PA diastólica media 24h, FC media 24h. Número total de medidas/medidas válidas.
+
+| Parámetro | Valor | Unidad |
+|---|---|---|
+| PA sistólica media 24h | {valor o omitir} | mmHg |
+| PA diastólica media 24h | {valor o omitir} | mmHg |
+| FC media 24h | {valor o omitir} | lpm |
+| Medidas totales / válidas | {valor o omitir} | — |
+
+REGLA: Reemplaza {valor o omitir} con el número real. Si no fue dictado, colocar —.
 
 ## CICLO CIRCADIANO
-PA media diurna (sistólica/diastólica), PA media nocturna, patrón Dipping (dipper/non-dipper/riser).
+
+| Período | PAS media (mmHg) | PAD media (mmHg) |
+|---|---|---|
+| Diurno | {valor o omitir} | {valor o omitir} |
+| Nocturno | {valor o omitir} | {valor o omitir} |
+
+**Patrón Dipping:** {dipper / non-dipper / riser, según lo dictado}
 
 ## CONCLUSIÓN
 Diagnóstico de HTA (controlada/no controlada), patrón circadiano y recomendaciones.
@@ -90,10 +112,19 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
 # INFORME DE ELECTROCARDIOGRAMA (ECG)
 
 ## PARÁMETROS BÁSICOS
-Ritmo, Frecuencia cardíaca, Eje eléctrico.
+Ritmo, Frecuencia cardíaca (lpm), Eje eléctrico (°).
 
 ## INTERVALOS Y DURACIÓN
-PR (ms), QRS (ms), QT (ms), QTc (ms).
+
+| Parámetro | Valor | Unidad |
+|---|---|---|
+| FC | {valor o omitir} | lpm |
+| PR | {valor o omitir} | ms |
+| QRS | {valor o omitir} | ms |
+| QT | {valor o omitir} | ms |
+| QTc | {valor o omitir} | ms |
+
+REGLA: Reemplaza {valor o omitir} con el número real. Omite filas no dictadas.
 
 ## ANÁLISIS DE ONDAS
 Onda P, complejo QRS, segmento ST, onda T, onda U (si aplica).
