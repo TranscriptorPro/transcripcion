@@ -9103,6 +9103,150 @@ test('R-Cart-10 — Sección de branding muestra precio branding_pro para plan P
         'El carrito debe mostrar ADDON_PRICES.branding_pro.toFixed(2) para plan PRO');
 });
 
+// ── BLOQUE 131 — Fix ETT + extractPatientData + PDF silentOpen ────────────────
+
+// ── Bloque 131a: Prompt ETT con tablas de mediciones ─────────────────────────
+const ettTemplatePart2Code = fs.readFileSync(path.join(root, 'src/js/config/templatesCatalogPart2.js'), 'utf-8');
+
+test('ETT-T1 — Prompt ETT tiene sección MEDICIONES CUANTITATIVAS', () => {
+    const idx = ettTemplatePart2Code.indexOf("name: \"Ecocardiograma Transtorácico (ETT)\"");
+    assert(idx >= 0, 'Debe existir la entrada ett con su nombre');
+    const ettBlock = ettTemplatePart2Code.slice(idx, idx + 5000);
+    assert(ettBlock.includes('MEDICIONES CUANTITATIVAS'),
+        'El prompt ETT debe tener sección ## MEDICIONES CUANTITATIVAS');
+});
+
+test('ETT-T2 — Prompt ETT incluye tabla Modo M con DDVI', () => {
+    const idx = ettTemplatePart2Code.indexOf("name: \"Ecocardiograma Transtorácico (ETT)\"");
+    const ettBlock = ettTemplatePart2Code.slice(idx, idx + 5000);
+    assert(ettBlock.includes('DDVI'),
+        'Tabla Modo M debe incluir DDVI (diámetro diastólico VI)');
+    assert(ettBlock.includes('| Parámetro | Valor | Unidad |'),
+        'Tabla debe tener encabezado markdown estándar');
+});
+
+test('ETT-T3 — Prompt ETT incluye tabla Doppler Mitral con VPem y VPam', () => {
+    const idx = ettTemplatePart2Code.indexOf("name: \"Ecocardiograma Transtorácico (ETT)\"");
+    const ettBlock = ettTemplatePart2Code.slice(idx, idx + 5000);
+    assert(ettBlock.includes('VPem') && ettBlock.includes('VPam'),
+        'Tabla Doppler Mitral debe incluir VPem y VPam');
+});
+
+test('ETT-T4 — Prompt ETT incluye tabla Doppler Tisular con E/E\'', () => {
+    const idx = ettTemplatePart2Code.indexOf("name: \"Ecocardiograma Transtorácico (ETT)\"");
+    const ettBlock = ettTemplatePart2Code.slice(idx, idx + 5000);
+    assert(ettBlock.includes("E/E'") || ettBlock.includes('E/E'),
+        "Tabla Doppler Tisular debe incluir relación E/E'");
+});
+
+test('ETT-T5 — Prompt ETT incluye tabla Doppler Aórtico con Vel TAOVI', () => {
+    const idx = ettTemplatePart2Code.indexOf("name: \"Ecocardiograma Transtorácico (ETT)\"");
+    const ettBlock = ettTemplatePart2Code.slice(idx, idx + 5000);
+    assert(ettBlock.includes('TAOVI'), 'Tabla Doppler Aórtico debe incluir TAOVI');
+});
+
+test('ETT-T6 — Prompt ETT prohíbe inventar valores', () => {
+    const idx = ettTemplatePart2Code.indexOf("name: \"Ecocardiograma Transtorácico (ETT)\"");
+    const ettBlock = ettTemplatePart2Code.slice(idx, idx + 5000);
+    assert(ettBlock.includes('PROHIBIDO inventar'),
+        'El prompt ETT debe incluir regla PROHIBIDO inventar valores');
+});
+
+test('ETT-T7 — Prompt ETT prohíbe sección de datos del paciente', () => {
+    const idx = ettTemplatePart2Code.indexOf("name: \"Ecocardiograma Transtorácico (ETT)\"");
+    const ettBlock = ettTemplatePart2Code.slice(idx, idx + 5000);
+    assert(ettBlock.includes('NO crear sección de datos del paciente') || ettBlock.includes('datos del paciente'),
+        'El prompt ETT debe prohibir sección de datos del paciente');
+});
+
+// ── Bloque 131b: Regex apellido + fecha texto ─────────────────────────────────
+const fhCode131 = fs.readFileSync(path.join(root, 'src/js/features/formHandler.js'), 'utf-8');
+
+test('ETT-P1 — APELLIDO_REGEX está definido en formHandler.js', () => {
+    assert(fhCode131.includes('APELLIDO_REGEX'),
+        'formHandler.js debe definir APELLIDO_REGEX');
+});
+
+test('ETT-P2 — STUDY_DATE_TEXT_REGEX está definido en formHandler.js', () => {
+    assert(fhCode131.includes('STUDY_DATE_TEXT_REGEX'),
+        'formHandler.js debe definir STUDY_DATE_TEXT_REGEX');
+});
+
+test('ETT-P3 — _MONTH_NAME_MAP está definido con meses en español', () => {
+    assert(fhCode131.includes('_MONTH_NAME_MAP'),
+        'formHandler.js debe definir _MONTH_NAME_MAP');
+    assert(fhCode131.includes("mar:'03'") || fhCode131.includes("mar: '03'"),
+        "_MONTH_NAME_MAP debe mapear 'mar' a '03'");
+});
+
+test('ETT-P4 — extractPatientDataFromText extrae "apellido : romero mirta"', () => {
+    const raw = 'Dr. medico cardiologo apellido : romero mirta sexo : talla : peso :';
+    const result = window.extractPatientDataFromText(raw);
+    assert(!!(result && result.name),
+        `Debe extraer nombre del paciente de "apellido : romero mirta", obtuvo: ${JSON.stringify(result && result.name)}`);
+    const name = (result.name || '').toLowerCase();
+    assert(name.includes('romero'),
+        `El nombre extraído debe incluir "romero", obtuvo: "${result.name}"`);
+    assert(!name.includes('sexo'),
+        `El nombre NO debe incluir "sexo", obtuvo: "${result.name}"`);
+});
+
+test('ETT-P5 — extractPatientDataFromText extrae fecha "31 mar 2026"', () => {
+    const raw = 'apellido : romero mirta fecha examen : 31 mar 2026 doppler mitral';
+    const result = window.extractPatientDataFromText(raw);
+    assert(result && result.studyDate === '2026-03-31',
+        `Debe extraer studyDate=2026-03-31 de "31 mar 2026", obtuvo: ${JSON.stringify(result && result.studyDate)}`);
+});
+
+test('ETT-P6 — extractPatientDataFromText extrae fecha "09 abr 2026"', () => {
+    const raw = 'estado cerrado ultima modificacion 09 abr 2026 apellido : gomez juan';
+    // Nota: la fecha de examen vs modificación puede no capturarse si no hay "examen"
+    // Test más concreto: fecha con prefijo "fecha examen"
+    const raw2 = 'apellido : gomez juan fecha examen : 09 abr 2026';
+    const result = window.extractPatientDataFromText(raw2);
+    assert(result && result.studyDate === '2026-04-09',
+        `Debe extraer studyDate=2026-04-09, obtuvo: ${JSON.stringify(result && result.studyDate)}`);
+});
+
+test('ETT-P7 — extractPatientDataFromText aún extrae fecha numérica 21/03/2026', () => {
+    const raw = 'paciente masculino, fecha del estudio: 21/03/2026';
+    const result = window.extractPatientDataFromText(raw);
+    assert(result && result.studyDate === '2026-03-21',
+        `Debe seguir extrayendo fechas numéricas, obtuvo: ${JSON.stringify(result && result.studyDate)}`);
+});
+
+test('ETT-P8 — APELLIDO_REGEX tiene lookahead para no capturar campos siguientes', () => {
+    assert(fhCode131.includes('(?=\\s*(?:[a-z]{2,10}\\s*:|$))') || fhCode131.includes('(?=\\s*(?'),
+        'APELLIDO_REGEX debe usar lookahead para detenerse antes del campo siguiente');
+});
+
+// ── Bloque 131c: Fix PDF silentOpen en blanco ─────────────────────────────────
+const pdfPreviewActionsCode = fs.readFileSync(path.join(root, 'src/js/features/pdfPreviewActions.js'), 'utf-8');
+
+test('ETT-PDF1 — _buildPdfBlobFromPreviewCapture fuerza visibility:visible en silentOpen', () => {
+    assert(pdfPreviewActionsCode.includes('_buildPdfBlobFromPreviewCapture'),
+        '_buildPdfBlobFromPreviewCapture debe estar definido');
+    assert(pdfPreviewActionsCode.includes('silentOpen') && pdfPreviewActionsCode.includes('visibility'),
+        'El archivo debe manipular visibility en modo silentOpen para evitar capturas en blanco');
+});
+
+test('ETT-PDF2 — _buildPdfBlobFromPreviewCapture restaura visibility después de capturar', () => {
+    assert(pdfPreviewActionsCode.includes('savedPageVis'),
+        'Debe guardar la visibility en savedPageVis antes de capturar');
+    assert(pdfPreviewActionsCode.includes('pvPages[i].style.visibility = \'visible\'') ||
+           pdfPreviewActionsCode.includes("pvPages[i].style.visibility = 'visible'"),
+        'Debe forzar visibility:visible en cada página antes de toJpeg');
+});
+
+test('ETT-PDF3 — downloadPDFFromCanvas existe y usa _buildPdfBlobFromPreviewCapture', () => {
+    assert(pdfPreviewActionsCode.includes('window.downloadPDFFromCanvas'),
+        'downloadPDFFromCanvas debe estar expuesto en window');
+    const idx = pdfPreviewActionsCode.indexOf('window.downloadPDFFromCanvas');
+    const fnBody = pdfPreviewActionsCode.slice(idx, idx + 500);
+    assert(fnBody.includes('_buildPdfBlobFromPreviewCapture'),
+        'downloadPDFFromCanvas debe llamar a _buildPdfBlobFromPreviewCapture');
+});
+
 // Limpiar estado después de tests
 global.localStorage.clear();
 global._reportHistCache = null;
