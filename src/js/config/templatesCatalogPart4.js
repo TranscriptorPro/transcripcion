@@ -190,19 +190,41 @@ IMPORTANTE: No inventes datos. Solo estructura lo dictado. Si una sección no fu
 Indicar cuál/cuáles de los siguientes: Potenciales Evocados Visuales (PEV), Auditivos de Tronco (PEAT), Somatosensitivos (PESS), Motores (PEM). Indicación clínica.
 
 ## POTENCIALES EVOCADOS VISUALES (PEV) — si fueron realizados
-OD: latencia P100 (ms), amplitud (µV) — Normal / Prolongada / No reproducible.
-OI: latencia P100 (ms), amplitud (µV) — Normal / Prolongada / No reproducible.
+
+| Ojo | Latencia P100 (ms) | Amplitud (µV) | Interpretación |
+|---|---|---|---|
+| OD | {valor o omitir} | {valor o omitir} | Normal / Prolongada / No reproducible |
+| OI | {valor o omitir} | {valor o omitir} | Normal / Prolongada / No reproducible |
+
+REGLA: Reemplaza {valor o omitir} con el número real. Si no se realizó PEV, omitir esta sección.
 Asimetría interojos: si existe, diferencia en ms.
 
 ## POTENCIALES EVOCADOS AUDITIVOS DE TRONCO (PEAT) — si fueron realizados
-OD e OI: latencias de ondas I, III y V (ms), intervalos interpico I-III, III-V, I-V.
-Amplitud relativa V/I. Umbral estimado por PE (dBnHL) si fue solicitado.
-Resultado: Normal / Anormal (hipoacusia/neuropatía auditiva/lesión en tronco).
+
+| Parámetro | OD | OI |
+|---|---|---|
+| Latencia onda I (ms) | {valor o omitir} | {valor o omitir} |
+| Latencia onda III (ms) | {valor o omitir} | {valor o omitir} |
+| Latencia onda V (ms) | {valor o omitir} | {valor o omitir} |
+| Intervalo I-III (ms) | {valor o omitir} | {valor o omitir} |
+| Intervalo III-V (ms) | {valor o omitir} | {valor o omitir} |
+| Intervalo I-V (ms) | {valor o omitir} | {valor o omitir} |
+| Amplitud V/I | {valor o omitir} | {valor o omitir} |
+
+REGLA: Omite filas no dictadas. Si no se realizó PEAT, omitir esta sección.
+Umbral estimado por PE (dBnHL): {valor o s/p}.
+Resultado global PEAT: Normal / Anormal.
 
 ## POTENCIALES EVOCADOS SOMATOSENSITIVOS (PESS) — si fueron realizados
-Estimulación: nervio mediano (miembro superior) y/o tibial posterior (miembro inferior).
-Latencias de picos N20/P40, N13/N9 u otros componentes relevantes. Amplitudes.
-Lado derecho e izquierdo comparados. Resultado: Normal / Prolongado / No reproducible.
+
+| Parámetro | Derecho | Izquierdo |
+|---|---|---|
+| Latencia N20/P40 (ms) | {valor o omitir} | {valor o omitir} |
+| Latencia N13/N9 (ms) | {valor o omitir} | {valor o omitir} |
+| Amplitud (µV) | {valor o omitir} | {valor o omitir} |
+| Interpretación | Normal / Prolongado / No repr. | Normal / Prolongado / No repr. |
+
+REGLA: Omite filas no dictadas. Si no se realizaron PESS, omitir esta sección.
 
 ## CONCLUSIÓN
 Mencionar SOLO los hallazgos patológicos (prolongación de latencias, abolición de ondas, asimetría significativa). Especificar a qué nivel corresponde la alteración (vía visual/auditiva/somatosensitiva, segmento afectado). Si el estudio es normal, consignar: "Potenciales evocados [especificar tipo] dentro de límites normales."
@@ -221,18 +243,25 @@ IMPORTANTE: No inventes datos. Solo estructura lo dictado.`
 # INFORME DE UROFLUJOMETRÍA
 
 ## CONDICIONES DEL ESTUDIO
-Volumen miccional (mL), ganas de orinar al inicio (normal/imperiosa/mínima), micción espontánea (sí/no), artefactos (sí/no).
+Ganas de orinar al inicio (normal/imperiosa/mínima), micción espontánea (sí/no), artefactos (sí/no).
 
 ## PARÁMETROS FLUJOMÉTRICOS
-Qmax — flujo máximo (mL/s): valor obtenido (normal ≥ 15 mL/s en varones; ≥ 20 mL/s en mujeres).
-Qave — flujo promedio (mL/s).
-Tiempo hasta Qmax (s).
-Tiempo total de micción (s).
-Tiempo de flujo (s).
-Morfología de la curva: normal (campana simétrica) / en meseta / bifásica / irregular / suprimida.
+
+| Parámetro | Valor | Referencia |
+|---|---|---|
+| Qmax — flujo máximo (mL/s) | {valor o omitir} | ≥15 (♂) / ≥20 (♀) |
+| Qave — flujo promedio (mL/s) | {valor o omitir} | — |
+| Tiempo hasta Qmax (s) | {valor o omitir} | — |
+| Tiempo total de micción (s) | {valor o omitir} | — |
+| Tiempo de flujo (s) | {valor o omitir} | — |
+| Volumen vaciado (mL) | {valor o omitir} | — |
+
+REGLA DE TABLAS: Omite filas no dictadas. Reemplaza {valor o omitir} con el número real.
+
+**Morfología de la curva:** {normal (campana simétrica) / en meseta / bifásica / irregular / suprimida}
 
 ## RESIDUO POSTMICCIONAL
-Volumen residual por ecografía o cateterismo (mL). Normal (< 50 mL) / Aumentado / Retención.
+Volumen residual por ecografía o cateterismo (mL). Interpretación: Normal (< 50 mL) / Aumentado / Retención.
 
 ## CONCLUSIÓN
 Interpretación clínica: flujo normal / disminuido / patrón obstructivo (infravesical: HPB, estenosis uretral) / patrón miógeno (hipocontractilidad del detrusor) / patrón normal para la edad. Si es normal, consignar: "Uroflujometría dentro de parámetros normales. Residuo postmiccional despreciable."

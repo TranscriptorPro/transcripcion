@@ -9323,6 +9323,72 @@ test('ETT-PDF3 — downloadPDFFromCanvas existe y usa _buildPdfBlobFromPreviewCa
         const cssCode = fs.readFileSync(path.join(__dirname, '../src/css/components.css'), 'utf8');
         assert(cssCode.includes('#editor td:focus'), 'debe existir estilo focus para celdas de tabla en el editor');
     });
+
+    // ── Bloque 133: Regla R1 — tablas cuantitativas en 6 plantillas faltantes ──
+    test('QTABLE-R1a — test_marcha: tiene tabla Markdown de parámetros basales', () => {
+        const catalog = fs.readFileSync(path.join(__dirname, '../src/js/config/templatesCatalog.js'), 'utf8');
+        const idx = catalog.indexOf('test_marcha:');
+        const snippet = catalog.slice(idx, idx + 2000);
+        assert(snippet.includes('| FC (lpm)') || snippet.includes('| FC'), 'test_marcha debe tener tabla con FC');
+        assert(snippet.includes('| SpO2') && snippet.includes('|---|'), 'test_marcha debe tener tabla Markdown con SpO2');
+    });
+
+    test('QTABLE-R1b — test_marcha: tiene tabla Markdown de resultado', () => {
+        const catalog = fs.readFileSync(path.join(__dirname, '../src/js/config/templatesCatalog.js'), 'utf8');
+        const idx = catalog.indexOf('test_marcha:');
+        const snippet = catalog.slice(idx, idx + 2000);
+        assert(snippet.includes('Distancia recorrida') && snippet.includes('|---|'), 'test_marcha debe tener tabla con distancia recorrida');
+    });
+
+    test('QTABLE-R2a — oximetria_nocturna: tiene tabla Markdown de resultados', () => {
+        const catalog = fs.readFileSync(path.join(__dirname, '../src/js/config/templatesCatalog.js'), 'utf8');
+        const idx = catalog.indexOf('oximetria_nocturna:');
+        const snippet = catalog.slice(idx, idx + 1500);
+        assert(snippet.includes('| SpO2') && snippet.includes('|---|'), 'oximetria_nocturna debe tener tabla Markdown con SpO2');
+        assert(snippet.includes('T90') && snippet.includes('ODI'), 'oximetria_nocturna debe incluir T90 y ODI en la tabla');
+    });
+
+    test('QTABLE-R3a — densitometria: tiene tabla Markdown con DMO, T-score, Z-score', () => {
+        const catalog = fs.readFileSync(path.join(__dirname, '../src/js/config/templatesCatalog.js'), 'utf8');
+        const idx = catalog.indexOf('densitometria:');
+        const snippet = catalog.slice(idx, idx + 1500);
+        assert(snippet.includes('| Segmento') && snippet.includes('DMO') && snippet.includes('T-score') && snippet.includes('|---|'), 'densitometria debe tener tabla Markdown con Segmento, DMO y T-score');
+    });
+
+    test('QTABLE-R4a — polisomnografia: tiene tabla Markdown de arquitectura del sueño', () => {
+        const part3 = fs.readFileSync(path.join(__dirname, '../src/js/config/templatesCatalogPart3.js'), 'utf8');
+        const idx = part3.indexOf('polisomnografia:');
+        const snippet = part3.slice(idx, idx + 3000);
+        assert(snippet.includes('| IAH total') && snippet.includes('|---|'), 'polisomnografia debe tener tabla Markdown con IAH total');
+        assert(snippet.includes('Tiempo total de sue') && snippet.includes('|---|'), 'polisomnografia debe tener tabla Markdown de arquitectura del sueño');
+    });
+
+    test('QTABLE-R5a — uroflujometria: tiene tabla Markdown con Qmax y Qave', () => {
+        const part4 = fs.readFileSync(path.join(__dirname, '../src/js/config/templatesCatalogPart4.js'), 'utf8');
+        const idx = part4.indexOf('uroflujometria:');
+        const snippet = part4.slice(idx, idx + 1500);
+        assert(snippet.includes('Qmax') && snippet.includes('Qave') && snippet.includes('|---|'), 'uroflujometria debe tener tabla Markdown con Qmax y Qave');
+    });
+
+    test('QTABLE-R6a — potenciales_evocados: tiene tablas Markdown para PEV, PEAT y PESS', () => {
+        const part4 = fs.readFileSync(path.join(__dirname, '../src/js/config/templatesCatalogPart4.js'), 'utf8');
+        const idx = part4.indexOf('potenciales_evocados:');
+        const snippet = part4.slice(idx, idx + 3000);
+        assert(snippet.includes('| Ojo') && snippet.includes('Latencia P100') && snippet.includes('|---|'), 'potenciales_evocados debe tener tabla PEV con Latencia P100');
+        assert(snippet.includes('Latencia onda I') && snippet.includes('|---|'), 'potenciales_evocados debe tener tabla PEAT con latencias de ondas');
+        assert(snippet.includes('Latencia N20') && snippet.includes('|---|'), 'potenciales_evocados debe tener tabla PESS con N20/P40');
+    });
+
+    test('QTABLE-R7 — CSS: heading seguido de tabla tiene break-before: avoid', () => {
+        const printCss = fs.readFileSync(path.join(__dirname, '../src/css/preview-print.css'), 'utf8');
+        assert(printCss.includes('.report-h2 + .report-table-block') || printCss.includes('.report-h3 + .report-table-block'), 'preview-print.css debe tener break-before:avoid en heading+tabla');
+        assert(printCss.includes('break-before: avoid'), 'debe incluir break-before: avoid');
+    });
+
+    test('QTABLE-R8 — regla general documentada en templatesCatalog.js', () => {
+        const catalog = fs.readFileSync(path.join(__dirname, '../src/js/config/templatesCatalog.js'), 'utf8');
+        assert(catalog.includes('R1 — TABLAS PARA DATOS CUANTITATIVOS') || catalog.includes('REGLAS GENERALES PARA TODAS LAS PLANTILLAS'), 'templatesCatalog.js debe documentar la regla general de tablas cuantitativas');
+    });
 }
 
 // Limpiar estado después de tests

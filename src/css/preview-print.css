@@ -472,6 +472,14 @@
     page-break-inside: avoid;
     margin: 6px 0 10px;
 }
+/* Título seguido de tabla: impide quedar huérfano en el borde de página */
+.a4-page .report-h2 + .report-table-block,
+.a4-page .report-h3 + .report-table-block,
+.a4-page h2 + .report-table-block,
+.a4-page h3 + .report-table-block {
+    break-before: avoid;
+    page-break-before: avoid;
+}
 .a4-page .report-table-block > .report-p {
     margin-bottom: 3px;
     font-weight: 600;

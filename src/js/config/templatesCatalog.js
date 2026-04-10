@@ -1,4 +1,33 @@
 
+// ============================================================
+// REGLAS GENERALES PARA TODAS LAS PLANTILLAS (aplicar siempre)
+// ============================================================
+// R1 — TABLAS PARA DATOS CUANTITATIVOS
+//   Todo conjunto de 2+ valores numéricos con parámetro+unidad debe
+//   expresarse en formato tabla Markdown:
+//     | Parámetro | Valor | Unidad |
+//     |---|---|---|
+//     | Nombre | {valor o omitir} | unidad |
+//   Usar {valor o omitir} como placeholder; la IA lo reemplaza con el
+//   número real dictado. Si no fue dictado → colocar —.
+//   Omitir filas de parámetros no mencionados.
+//
+// R2 — TABLAS NUNCA SE CORTAN EN SALTO DE PÁGINA
+//   El CSS envuelve cada tabla en .report-table-block con
+//   break-inside:avoid. Tablas que superen una página completa sí
+//   pueden cortarse (caso imposible).
+//
+// R3 — TÍTULO Y TABLA SIEMPRE EN LA MISMA PÁGINA
+//   El paginador agrupa cada <h2>/<h3> con su siguiente elemento,
+//   y el CSS agrega break-before:avoid en .report-h2 + .report-table-block.
+//   Nunca usar un párrafo intermedio entre el título y la tabla
+//   si ese párrafo puede separarse visualmente de la tabla.
+//
+// R4 — CELDAS DE TABLA EDITABLES EN EL EDITOR
+//   Las <td> dentro de #editor son editables (contenteditable heredado).
+//   No usar contenteditable="false" en celdas de datos.
+// ============================================================
+
 window.MEDICAL_SPECIALTIES = {
     "Cardiología": ["Ecocardiograma", "ECG", "Eco-Stress", "Cinecoronariografía", "Holter"],
     "Ecografía": ["Abdominal", "Renal", "Partes Blandas", "Eco-Doppler Vascular", "Obstétrica"],
@@ -58,17 +87,35 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
 
 # INFORME DE TEST DE MARCHA DE 6 MINUTOS (TM6M)
 
-## PARÁMETROS INICIALES
-FC basal, SpO2 basal, TA basal, Escala Borg disnea, Escala Borg fatiga.
+## PARÁMETROS BASALES
 
-## DESEMPEÑO
-Distancia recorrida (m), % valor predicho, Número de pausas, Motivo de interrupción (si aplica).
+| Parámetro | Basal | Al finalizar |
+|---|---|---|
+| FC (lpm) | {valor o omitir} | {valor o omitir} |
+| SpO2 (%) | {valor o omitir} | {valor o omitir} |
+| TA (mmHg) | {valor o omitir} | {valor o omitir} |
+| Borg disnea (0-10) | {valor o omitir} | {valor o omitir} |
+| Borg fatiga (0-10) | {valor o omitir} | {valor o omitir} |
 
-## DINÁMICA DE SATURACIÓN
-SpO2 mínima, SpO2 final, Necesidad de O2 suplementario.
+REGLA DE TABLAS: Reemplaza {valor o omitir} con el número real. Si no fue dictado, colocar —.
+
+## RESULTADO DE LA PRUEBA
+
+| Parámetro | Valor |
+|---|---|
+| Distancia recorrida (m) | {valor o omitir} |
+| % del valor predicho | {valor o omitir} |
+| SpO2 mínima (%) | {valor o omitir} |
+| SpO2 final (%) | {valor o omitir} |
+| Número de pausas | {valor o omitir} |
+
+Motivo de interrupción (si aplica): {indicar o omitir}.
+Necesidad de O2 suplementario: {sí/no/no mencionado}.
+
+REGLA: Omite filas de parámetros no dictados.
 
 ## CONCLUSIÓN
-Interpretación funcional, comparativa con valor predicho y significancia clínica.
+Interpretación funcional: distancia alcanzada en relación al valor predicho, comportamiento de SpO2 y limitación funcional observada.
 
 IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
     },
@@ -117,16 +164,26 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
 # INFORME DE OXIMETRÍA NOCTURNA
 
 ## DATOS DEL ESTUDIO
-Fecha, duración del registro, calidad de señal.
+Fecha, duración del registro (h), calidad de señal.
 
-## RESULTADOS
-SpO2 media, SpO2 mínima, T90 (% tiempo con SpO2 < 90%), Índice de desaturación (ODI).
+## RESULTADOS OXIOMÉTRICOS
+
+| Parámetro | Valor |
+|---|---|
+| SpO2 basal (%) | {valor o omitir} |
+| SpO2 media (%) | {valor o omitir} |
+| SpO2 mínima (%) | {valor o omitir} |
+| T90 — % tiempo SpO2 < 90% | {valor o omitir} |
+| ODI — índice desaturación (eventos/h) | {valor o omitir} |
+| IAH estimado (si disponible) | {valor o omitir} |
+
+REGLA DE TABLAS: Reemplaza {valor o omitir} con el número real. Omite filas no dictadas.
 
 ## EVENTOS RESPIRATORIOS
-Número de eventos, índice de eventos por hora.
+Número total de eventos, índice de desaturaciones por hora, patrón (cíclico sugestivo de SAHOS / no cíclico).
 
 ## CONCLUSIÓN
-Interpretación del patrón de oxigenación nocturna y recomendaciones.
+Interpretación del patrón de oxigenación nocturna (normal / desaturación leve-moderada-severa) y orientación diagnóstica.
 
 IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
     },
@@ -428,17 +485,22 @@ IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción
 
 # INFORME DE DENSITOMETRÍA ÓSEA (DXA)
 
-## SEGMENTOS ESTUDIADOS
-Regiones evaluadas: columna lumbar, cadera total, cuello femoral, antebrazo.
-
 ## RESULTADOS
-Tabla con: Segmento, DMO (g/cm²), T-score, Z-score, % respecto a adulto joven.
+
+| Segmento | DMO (g/cm²) | T-score | Z-score |
+|---|---|---|---|
+| Columna lumbar L1-L4 | {valor o omitir} | {valor o omitir} | {valor o omitir} |
+| Cuello femoral | {valor o omitir} | {valor o omitir} | {valor o omitir} |
+| Cadera total | {valor o omitir} | {valor o omitir} | {valor o omitir} |
+| Antebrazo 1/3 distal | {valor o omitir} | {valor o omitir} | {valor o omitir} |
+
+REGLA DE TABLAS: Omite filas de segmentos no evaluados. Reemplaza {valor o omitir} con el número real.
 
 ## CLASIFICACIÓN OMS
-Normal / Osteopenia / Osteoporosis según T-score.
+Normal (T-score > −1,0) / Osteopenia (T-score −1,0 a −2,5) / Osteoporosis (T-score < −2,5). Indicar por sitio de medición.
 
 ## CONCLUSIÓN
-Diagnóstico densitométrico, riesgo fracturario y recomendaciones terapéuticas.
+Diagnóstico densitométrico por segmento, T-score determinante, riesgo fracturario y recomendaciones terapéuticas.
 
 IMPORTANTE: No inventes datos. Solo estructura lo que está en la transcripción. Si falta información, deja el campo con "[No especificado]".`
     },

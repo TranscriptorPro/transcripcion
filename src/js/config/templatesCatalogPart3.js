@@ -230,14 +230,47 @@ REGLAS OBLIGATORIAS:
 # INFORME DE POLISOMNOGRAFÍA (PSG)
 
 ## ARQUITECTURA DEL SUEÑO
-Tiempo total en cama (min), tiempo total de sueño (min), eficiencia del sueño (%), latencia de sueño (min), latencia REM (min).
-Distribución de estadios: N1 (%), N2 (%), N3 (%), REM (%).
-Índice de despertares (por hora), movimientos periódicos de extremidades (PLM index, si mencionado).
+
+| Parámetro | Valor |
+|---|---|
+| Tiempo total en cama (min) | {valor o omitir} |
+| Tiempo total de sueño (min) | {valor o omitir} |
+| Eficiencia del sueño (%) | {valor o omitir} |
+| Latencia de sueño (min) | {valor o omitir} |
+| Latencia REM (min) | {valor o omitir} |
+| Índice de despertares (n/h) | {valor o omitir} |
+
+REGLA DE TABLAS: Reemplaza {valor o omitir} con el número real. Omite filas no dictadas.
+
+Distribución de estadios:
+
+| Estadio | % tiempo total |
+|---|---|
+| N1 (%) | {valor o omitir} |
+| N2 (%) | {valor o omitir} |
+| N3 (%) | {valor o omitir} |
+| REM (%) | {valor o omitir} |
+
+REGLA: Omite filas no dictadas.
+
+Movimientos periódicos de extremidades (PLM index): {valor o s/p}.
 
 ## EVENTOS RESPIRATORIOS
-IAH total, IAH en sueño REM y NREM.
-Índice desglosado: apneas obstructivas, centrales, mixtas, hipopneas.
-SpO2 promedio, SpO2 mínima, % tiempo con SpO2 <90% (T90), registro de ronquidos (si mencionado).
+
+| Parámetro | Valor |
+|---|---|
+| IAH total (eventos/h) | {valor o omitir} |
+| IAH en sueño REM | {valor o omitir} |
+| IAH en sueño NREM | {valor o omitir} |
+| Apneas obstructivas | {valor o omitir} |
+| Apneas centrales | {valor o omitir} |
+| Apneas mixtas | {valor o omitir} |
+| Hipopneas | {valor o omitir} |
+| SpO2 promedio (%) | {valor o omitir} |
+| SpO2 mínima (%) | {valor o omitir} |
+| T90 — % tiempo SpO2 <90% | {valor o omitir} |
+
+REGLA: Omite filas no dictadas. Ronquidos: {s/p o descripción si fue dictado}.
 
 ## REGLA DE CONCLUSIÓN
 • SAHOS leve: IAH 5-14 → indicar grado + segmento predominante (REM/supino).
