@@ -642,9 +642,12 @@
     overflow: hidden;
 }
 
-/* Contenido de la página */
+/* Contenido de la página — flex-shrink:0 evita que el flex encoja el
+   área de contenido y corte elementos a media altura. Si la sección es
+   más alta que el espacio disponible, el clip lo hace el contenedor padre
+   (.pv-real-page con overflow:hidden) al nivel del borde de página. */
 .pv-page-content {
-    overflow: hidden;
+    flex-shrink: 0;
 }
 
 /* Espaciador flex: empuja la zona inferior al borde de la página */

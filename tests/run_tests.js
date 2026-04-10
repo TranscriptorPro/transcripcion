@@ -9389,6 +9389,43 @@ test('ETT-PDF3 — downloadPDFFromCanvas existe y usa _buildPdfBlobFromPreviewCa
         const catalog = fs.readFileSync(path.join(__dirname, '../src/js/config/templatesCatalog.js'), 'utf8');
         assert(catalog.includes('R1 — TABLAS PARA DATOS CUANTITATIVOS') || catalog.includes('REGLAS GENERALES PARA TODAS LAS PLANTILLAS'), 'templatesCatalog.js debe documentar la regla general de tablas cuantitativas');
     });
+
+    // ── PAGINT: Integridad de paginación (heading+tabla nunca separados) ─────
+    test('PAGINT-1 — pdfPreview.js: paginator agrupa heading con TODOS los hijos no-heading (while loop)', () => {
+        const code = fs.readFileSync(path.join(__dirname, '../src/js/features/pdfPreview.js'), 'utf8');
+        // Debe tener un while loop que recorre j hasta el próximo heading
+        assert(/while\s*\(\s*j\s*<\s*rawKids\.length\s*&&\s*!\/\^H\[1-3\]/.test(code) ||
+               /while\s*\(j\s*<\s*rawKids\.length\s*&&/.test(code),
+               'pdfPreview.js debe usar while loop para agrupar heading con todos sus hijos');
+    });
+
+    test('PAGINT-2 — pdfPreview.js: agrupación usa j para recorrer, NO solo rawKids[i+1]', () => {
+        const code = fs.readFileSync(path.join(__dirname, '../src/js/features/pdfPreview.js'), 'utf8');
+        // Verifica que el nuevo algoritmo de agrupación existe (sección completa)
+        assert(code.includes('sección completa') || code.includes('todos los no-heading') || code.includes('grp.push(rawKids[j])'),
+               'pdfPreview.js debe agrupar la sección completa (heading + todos sus hijos)');
+        // Verifica que NO limita a un solo hermano
+        const limitToOne = /grp\.push\(rawKids\[i\s*\+\s*1\]\)/.test(code);
+        assert(!limitToOne, 'pdfPreview.js NO debe agrupar heading con solo rawKids[i+1]; debe usar el while loop');
+    });
+
+    test('PAGINT-3 — CSS: pv-page-content tiene flex-shrink:0 (no overflow:hidden intermedio)', () => {
+        const css = fs.readFileSync(path.join(__dirname, '../src/css/preview-print.css'), 'utf8');
+        assert(css.includes('flex-shrink: 0') || css.includes('flex-shrink:0'),
+               'preview-print.css .pv-page-content debe tener flex-shrink:0');
+    });
+
+    test('PAGINT-4 — CSS: pv-page-content NO tiene overflow:hidden (evita clip prematuro)', () => {
+        const css = fs.readFileSync(path.join(__dirname, '../src/css/preview-print.css'), 'utf8');
+        // Buscar la regla .pv-page-content y verificar que no tiene overflow: hidden dentro
+        const pvMatch = css.match(/\.pv-page-content\s*\{([^}]*)\}/);
+        if (pvMatch) {
+            assert(!pvMatch[1].includes('overflow: hidden') && !pvMatch[1].includes('overflow:hidden'),
+                   '.pv-page-content NO debe tener overflow:hidden (clip prematuro por flex-shrink)');
+        }
+        // Si no matchea, el bloque podría ser diferente — verificamos que flex-shrink:0 está presente
+        assert(css.includes('flex-shrink: 0') || css.includes('flex-shrink:0'), '.pv-page-content debe tener flex-shrink:0');
+    });
 }
 
 // Limpiar estado después de tests

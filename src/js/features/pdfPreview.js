@@ -635,7 +635,10 @@ function _paginatePreview() {
     const hQr = mH(els.qr);
     const hFoot = mH(els.footer);
 
-    // --- AGRUPAR: título + primer bloque de contenido juntos ---
+    // --- AGRUPAR: sección completa (heading + TODOS sus hijos no-heading) ---
+    // Un heading se agrupa con TODOS los elementos que le siguen hasta el próximo
+    // heading. Así heading + párrafo + tabla quedan siempre en el mismo grupo
+    // y el paginador los mueve juntos a una nueva página si no caben.
     const rawKids = Array.from(els.content.children).filter(c =>
         !c.classList.contains('pv-pagebreak-marker')
     );
@@ -643,14 +646,15 @@ function _paginatePreview() {
     for (let i = 0; i < rawKids.length;) {
         const el = rawKids[i];
         if (/^H[1-3]$/i.test(el.tagName)) {
+            // Recoger heading + todos los no-heading siguientes (sección completa)
             const grp = [el];
-            if (i + 1 < rawKids.length && !/^H[1-3]$/i.test(rawKids[i + 1].tagName)) {
-                grp.push(rawKids[i + 1]);
-                i += 2;
-            } else {
-                i++;
+            let j = i + 1;
+            while (j < rawKids.length && !/^H[1-3]$/i.test(rawKids[j].tagName)) {
+                grp.push(rawKids[j]);
+                j++;
             }
             groups.push(grp);
+            i = j;
         } else {
             groups.push([el]);
             i++;
