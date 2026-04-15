@@ -4,7 +4,7 @@
  */
 
 const BASE = 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec';
-const ADMIN_KEY = process.env.ADMIN_KEY || 'ADMIN_SECRET_2026';
+const { loginAdmin, authQuery } = require('./utils/adminSessionAuth');
 
 const PASS = '\x1b[32mPASS\x1b[0m';
 const FAIL = '\x1b[31mFAIL\x1b[0m';
@@ -35,6 +35,7 @@ async function apiGet(params) {
 }
 
 async function run() {
+    const session = await loginAdmin({ base: BASE });
     const suffix = Date.now().toString().slice(-8);
     const clinicId = `E2E_CLINIC_${suffix}`;
     const adminDni = `40${suffix}`.slice(0, 8);
@@ -46,7 +47,8 @@ async function run() {
     console.log(`clinicId: ${clinicId}`);
 
     // 1) Setup de hojas
-    const setup = await apiGet({ action: 'setup_sheets', adminKey: ADMIN_KEY });
+    const setupParams = Object.fromEntries(new URLSearchParams(authQuery(session, { action: 'setup_sheets' })));
+    const setup = await apiGet(setupParams);
     log(setup && setup.success === true, '1.setup_sheets', JSON.stringify(setup && setup.result));
 
     // 2) Alta admin staff

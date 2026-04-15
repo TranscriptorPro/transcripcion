@@ -6,7 +6,7 @@
  */
 
 const base = 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec';
-const adminKey = 'ADMIN_SECRET_2026';
+const { loginAdmin, authParams, authQuery } = require('./utils/adminSessionAuth');
 
 const log = (msg) => console.log(`[${new Date().toISOString().slice(11, 19)}] ${msg}`);
 
@@ -16,6 +16,7 @@ async function fetchJson(url, opts = {}) {
 }
 
 async function testApprovalFlow() {
+  const session = await loginAdmin({ base });
   const testId = Date.now();
   const email = `approved_${testId}@example.com`;
   const nombre = `Dr Aprobado ${testId}`;
@@ -37,7 +38,7 @@ async function testApprovalFlow() {
       telefono: '+54 9 11 1234-5678',
       especialidades: 'General',
       loginKey: `gsk_test_${testId}`,
-      adminKey: adminKey
+      ...authParams(session)
     })
   });
   
@@ -51,7 +52,7 @@ async function testApprovalFlow() {
   
   // PASO 2: Marcar como pagado
   log(`\n[PASO 2] Marcar registro como pagado`);
-  const payRes = await fetchJson(`${base}?action=admin_mark_registration_paid&regId=${encodeURIComponent(regId)}&adminKey=${adminKey}`);
+  const payRes = await fetchJson(`${base}?${authQuery(session, { action: 'admin_mark_registration_paid', regId: regId })}`);
   
   if (payRes.error) {
     log(`❌ Error marcando pago: ${payRes.error}`);
@@ -89,7 +90,7 @@ async function testApprovalFlow() {
     editedShowPhone: true,
     editedShowEmail: true,
     editedShowSocial: false,
-    adminKey: adminKey
+    ...authParams(session)
   };
   
   const approveRes = await fetchJson(base, {
@@ -120,7 +121,7 @@ async function testApprovalFlow() {
   await new Promise(r => setTimeout(r, 2000));
   
   for (let attempt = 1; attempt <= 8; attempt++) {
-    const listRes = await fetchJson(`${base}?action=admin_list_users&adminKey=${adminKey}`);
+    const listRes = await fetchJson(`${base}?${authQuery(session, { action: 'admin_list_users' })}`);
     const users = listRes.users || [];
     const found = users.find(u => u.Email === email);
     
@@ -155,7 +156,7 @@ async function testApprovalFlow() {
   }
   
   log(`\n❌ TEST FALLÓ: Usuario nunca apareció en admin_list_users`);
-  log(`   Total usuarios en lista: ${(await fetchJson(`${base}?action=admin_list_users&adminKey=${adminKey}`)).users.length}`);
+  log(`   Total usuarios en lista: ${(await fetchJson(`${base}?${authQuery(session, { action: 'admin_list_users' })}`)).users.length}`);
   return false;
 }
 

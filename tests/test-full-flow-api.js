@@ -9,7 +9,7 @@
  */
 
 const BASE = 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec';
-const ADMIN_KEY = 'ADMIN_SECRET_2026';
+const { loginAdmin, authParams, authQuery } = require('./utils/adminSessionAuth');
 
 const log = msg => console.log(`[${new Date().toISOString().slice(11,19)}] ${msg}`);
 
@@ -24,9 +24,11 @@ async function testFullFlow() {
   log('═'.repeat(70));
 
   try {
+    const session = await loginAdmin({ base: BASE });
+
     // PASO 1: Listar registros en estado pago_confirmado
     log('\n[PASO 1] Listar registros en estado pago_confirmado');
-    const listRegsRes = await fetchJson(BASE + '?action=admin_list_registrations&adminKey=' + ADMIN_KEY);
+    const listRegsRes = await fetchJson(BASE + '?' + authQuery(session, { action: 'admin_list_registrations' }));
     const registrations = listRegsRes.registrations || [];
     const paidRegs = registrations.filter(r => String(r.Estado || '').toLowerCase() === 'pago_confirmado');
     
@@ -48,7 +50,7 @@ async function testFullFlow() {
     const approveRes = await fetchJson(BASE, {
       method: 'POST',
       body: JSON.stringify({
-        action: 'admin_approve_registration',
+        ...authParams(session, { action: 'admin_approve_registration' }),
         regId: testReg.ID_Registro,
         plan: 'NORMAL',
         apiKey: 'gsk_test_full_' + Date.now(),
@@ -65,8 +67,7 @@ async function testFullFlow() {
         editedExtraWorkplaces: '[]',
         editedHasProMode: false,
         editedHasDashboard: false,
-        editedCanGenerateApps: false,
-        adminKey: ADMIN_KEY
+        editedCanGenerateApps: false
       })
     });
 
@@ -88,7 +89,7 @@ async function testFullFlow() {
     log('\n[PASO 3] Verificar en admin_list_users (búsqueda iterativa)');
     let found = null;
     for (let attempt = 1; attempt <= 5; attempt++) {
-      const listUsersRes = await fetchJson(BASE + '?action=admin_list_users&adminKey=' + ADMIN_KEY);
+      const listUsersRes = await fetchJson(BASE + '?' + authQuery(session, { action: 'admin_list_users' }));
       const users = listUsersRes.users || [];
       found = users.find(u => u.Email === testReg.Email);
 

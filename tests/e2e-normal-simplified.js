@@ -7,7 +7,7 @@
 
 const { chromium } = require('playwright');
 const BASE = 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec';
-const ADMIN_KEY = 'ADMIN_SECRET_2026';
+const { loginAdmin, authParams, authQuery } = require('./utils/adminSessionAuth');
 const REG_URL = 'https://kengygomez.github.io/Transcriptor-pro/';
 
 const HEADLESS = true;
@@ -19,6 +19,7 @@ async function fetchJson(url, opts = {}) {
 }
 
 async function testE2ENormal() {
+  const session = await loginAdmin({ base: BASE });
   const browser = await chromium.launch({ headless: HEADLESS, slowMo: HEADLESS ? 0 : 80 });
   const context = await browser.newContext({ viewport: { width: 1440, height: 980 } });
   const regPage = await context.newPage();
@@ -85,7 +86,7 @@ async function testE2ENormal() {
     // ════════════════════════════════════════════════════════════════════════════════
 
     // Buscar el registro que acabamos de crear
-    const listRegs = await fetchJson(BASE + '?action=admin_list_registrations&adminKey=' + ADMIN_KEY);
+    const listRegs = await fetchJson(BASE + '?' + authQuery(session, { action: 'admin_list_registrations' }));
     const registrations = listRegs.registrations || [];
     const newReg = registrations.find(r => String(r.Email || '').toLowerCase() === email.toLowerCase());
 
@@ -100,7 +101,7 @@ async function testE2ENormal() {
 
     // Marcar como pagado
     log('Marcando como pagado...');
-    const payRes = await fetchJson(BASE + '?action=admin_mark_registration_paid&regId=' + encodeURIComponent(regId) + '&adminKey=' + ADMIN_KEY);
+    const payRes = await fetchJson(BASE + '?' + authQuery(session, { action: 'admin_mark_registration_paid', regId: regId }));
     if (payRes.error) {
       log('❌ Error marcando pago: ' + payRes.error);
       return false;
@@ -131,7 +132,7 @@ async function testE2ENormal() {
         editedHasProMode: false,
         editedHasDashboard: false,
         editedCanGenerateApps: false,
-        adminKey: ADMIN_KEY
+        ...authParams(session)
       })
     });
 
@@ -154,7 +155,7 @@ async function testE2ENormal() {
 
     let found = null;
     for (let attempt = 1; attempt <= 5; attempt++) {
-      const listRes = await fetchJson(BASE + '?action=admin_list_users&adminKey=' + ADMIN_KEY);
+      const listRes = await fetchJson(BASE + '?' + authQuery(session, { action: 'admin_list_users' }));
       const users = listRes.users || [];
       found = users.find(u => u.Email === email);
       

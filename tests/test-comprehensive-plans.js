@@ -6,7 +6,7 @@
  */
 
 const BASE = 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec';
-const ADMIN_KEY = 'ADMIN_SECRET_2026';
+const { loginAdmin, authParams, authQuery } = require('./utils/adminSessionAuth');
 
 const log = msg => console.log(`[${new Date().toISOString().slice(11,19)}] ${msg}`);
 
@@ -30,6 +30,8 @@ async function testPlans() {
   let passedTests = 0;
 
   try {
+    const session = await loginAdmin({ base: BASE });
+
     for (const planConfig of plans) {
       log('\n' + '─'.repeat(80));
       log(`TEST PLAN: ${planConfig.name}`);
@@ -46,8 +48,7 @@ async function testPlans() {
       const createRes = await fetchJson(BASE, {
         method: 'POST',
         body: JSON.stringify({
-          action: 'admin_create_user',
-          adminKey: ADMIN_KEY,
+          ...authParams(session, { action: 'admin_create_user' }),
           userData: {
             ID_Medico: `TEST${planConfig.name[0].toUpperCase()}_${Date.now().toString(36).toUpperCase()}`,
             Nombre: nombre,
@@ -78,7 +79,7 @@ async function testPlans() {
 
       let found = null;
       for (let attempt = 1; attempt <= 3; attempt++) {
-        const listRes = await fetchJson(BASE + '?action=admin_list_users&adminKey=' + ADMIN_KEY);
+        const listRes = await fetchJson(BASE + '?' + authQuery(session, { action: 'admin_list_users' }));
         const users = listRes.users || [];
         found = users.find(u => u.Email === email);
         

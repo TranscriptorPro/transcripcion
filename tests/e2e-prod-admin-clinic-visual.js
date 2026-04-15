@@ -11,11 +11,8 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
 
-const ADMIN_URL = 'https://transcriptorpro.github.io/transcripcion/recursos/admin.html';
 const LOGIN_URL = 'https://transcriptorpro.github.io/transcripcion/recursos/login.html';
-const API_URL = 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec';
 const APP_BASE = 'https://transcriptorpro.github.io/transcripcion/';
-const ADMIN_KEY = 'ADMIN_SECRET_2026';
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASS = process.env.ADMIN_PASS || 'admin2026';
 const HEADLESS = process.env.HEADLESS === '1';

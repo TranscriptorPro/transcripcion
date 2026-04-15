@@ -12,9 +12,8 @@
 // ─── Config ──────────────────────────────────────────────────────────────────
 const BACKEND    = process.env.BACKEND    || 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec';
 const GROQ_KEY   = process.env.GROQ_KEY   || '';
-const ADMIN_USER = 'admin';
+const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASS = process.env.ADMIN_PASS || 'admin2026';
-const ADMIN_KEY  = process.env.ADMIN_KEY  || '';
 const USER_EMAIL = 'aldowagner78@gmail.com'; // tu email real — lo usamos en el usuario GIFT
 
 // ─── Colores ANSI ─────────────────────────────────────────────────────────────
@@ -59,7 +58,7 @@ async function apiPost(payload) {
 
 // ─── Login (obtiene sessionToken) ────────────────────────────────────────────
 async function login() {
-    const data = await apiGet({ action: 'admin_login', username: ADMIN_USER, password: ADMIN_PASS, adminKey: ADMIN_KEY });
+    const data = await apiGet({ action: 'admin_login', username: ADMIN_USER, password: ADMIN_PASS });
     if (data.error) throw new Error('Login falló: ' + data.error);
     return {
         sessionToken:  data.sessionToken,

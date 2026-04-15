@@ -6,9 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE_URL = 'https://transcriptorpro.github.io/transcripcion';
 const LOGIN_URL = BASE_URL + '/recursos/login.html';
-const ADMIN_URL = BASE_URL + '/recursos/admin.html';
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec';
-const ADMIN_KEY = 'ADMIN_SECRET_2026';
 const ADMIN_USER = 'admin';
 const ADMIN_PASS = 'admin2026';
 const HEADLESS = process.env.HEADLESS === '1';

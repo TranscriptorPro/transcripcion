@@ -11,7 +11,8 @@
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec';
 const APP_BASE   = 'https://transcriptorpro.github.io/transcripcion/';
-const ADMIN_KEY  = 'ADMIN_SECRET_2026';
+const { loginAdmin, authParams } = require('./utils/adminSessionAuth');
+let ADMIN_SESSION = null;
 
 // ── Imágenes demo en base64 (SVG minimalistas) ──────────────────────────────
 // Logo cuadrado simple (azul con iniciales)
@@ -67,22 +68,15 @@ const ALL_TEMPLATES = [
 ];
 
 async function createUser(userData, label) {
-    // Para el GET, eliminar imágenes base64 del registroDatos (muy grandes para URL)
-    // — la app carga correctamente sin ellas; el admin puede cargarlas después
-    let userDataClean = { ...userData };
-    try {
-        const rd = JSON.parse(userDataClean.Registro_Datos || '{}');
-        rd.firma   = null;
-        rd.proLogo = null;
-        // Mantener logo institucional como null también (SVG base64 demasiado largo)
-        if (rd.workplace)    rd.workplace.logo    = null;
-        if (rd.extraWorkplaces) rd.extraWorkplaces.forEach(wp => { wp.logo = null; });
-        userDataClean.Registro_Datos = JSON.stringify(rd);
-    } catch(_) {}
-
-    const url = `${SCRIPT_URL}?action=admin_create_user&adminKey=${encodeURIComponent(ADMIN_KEY)}&updates=${encodeURIComponent(JSON.stringify(userDataClean))}`;
-
-    const resp = await fetch(url);
+    if (!ADMIN_SESSION) throw new Error('Sesion admin no inicializada');
+    const resp = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            ...authParams(ADMIN_SESSION, { action: 'admin_create_user' }),
+            userData
+        })
+    });
     const result = await resp.json();
 
     const link = `${APP_BASE}?id=${encodeURIComponent(userData.ID_Medico)}`;
@@ -279,6 +273,7 @@ async function createClinic() {
 // ════════════════════════════════════════════════════════════════════════════
 (async () => {
     console.log('\n🚀 Creando usuarios demo...\n');
+    ADMIN_SESSION = await loginAdmin({ base: SCRIPT_URL });
 
     const results = [];
     for (const fn of [createNormal, createPro, createProDualWp, createClinic]) {
