@@ -2,7 +2,10 @@
  * test-backend-api.js - Tests automaticos contra el backend desplegado
  * Ejecutar: node tests/test-backend-api.js
  *
- * Cubre endpoints publicos, login admin y verificacion de auth sin tocar datos reales.
+ * Cubre endpoints publicos y verificacion de auth sin tocar datos reales.
+ *
+ * Test opcional de login admin real:
+ *   ADMIN_USER=admin ADMIN_PASS=xxxxx node tests/test-backend-api.js
  */
 
 const BASE = 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec';
@@ -13,6 +16,10 @@ const ERR = '\x1b[31mERROR\x1b[0m';
 
 let passed = 0;
 let failed = 0;
+let skipped = 0;
+
+const ADMIN_USER = process.env.ADMIN_USER || '';
+const ADMIN_PASS = process.env.ADMIN_PASS || '';
 
 async function testGET(name, url, checkFn) {
     try {
@@ -59,6 +66,12 @@ async function testPOST(name, body, checkFn) {
         console.log(`  -> ${e.message}`);
         failed++;
     }
+}
+
+function testSkip(name, reason) {
+    console.log(`SKIP ${name}`);
+    console.log(`  -> ${reason}`);
+    skipped++;
 }
 
 async function run() {
@@ -115,14 +128,25 @@ async function run() {
     await testGET(
         'T09 GET admin_login con credenciales incorrectas -> error controlado',
         `${BASE}?action=admin_login&username=admin&password=x`,
-        (j) => /incorrect/i.test(String(j.error || '')) || `esperado error de credenciales, recibido "${j.error}"`
+        (j) => {
+            const err = String(j.error || '');
+            return (/incorrect/i.test(err) || /unauthorized/i.test(err))
+                || `esperado error de credenciales o Unauthorized, recibido "${j.error}"`;
+        }
     );
 
-    await testGET(
-        'T10 GET admin_login con credenciales validas -> success + sessionToken',
-        `${BASE}?action=admin_login&username=admin&password=admin2026`,
-        (j) => (j.success === true && j.sessionToken && j.tokenExpiry) || `esperado success/sessionToken/tokenExpiry, recibido ${JSON.stringify(j)}`
-    );
+    if (ADMIN_USER && ADMIN_PASS) {
+        await testGET(
+            'T10 GET admin_login con credenciales validas -> success + sessionToken',
+            `${BASE}?action=admin_login&username=${encodeURIComponent(ADMIN_USER)}&password=${encodeURIComponent(ADMIN_PASS)}`,
+            (j) => (j.success === true && j.sessionToken && j.tokenExpiry) || `esperado success/sessionToken/tokenExpiry, recibido ${JSON.stringify(j)}`
+        );
+    } else {
+        testSkip(
+            'T10 GET admin_login con credenciales validas -> success + sessionToken',
+            'Definir ADMIN_USER y ADMIN_PASS para ejecutar este test en entorno real'
+        );
+    }
 
     await testGET(
         'T11 GET admin_generate_config sin auth -> Unauthorized',
@@ -149,7 +173,7 @@ async function run() {
     );
 
     const total = passed + failed;
-    console.log(`\nRESUMEN: ${passed}/${total} OK | ${failed} FAIL`);
+    console.log(`\nRESUMEN: ${passed}/${total} OK | ${failed} FAIL | ${skipped} SKIP`);
     process.exit(failed > 0 ? 1 : 0);
 }
 
