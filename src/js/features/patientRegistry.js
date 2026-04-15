@@ -300,19 +300,20 @@ window.initPatientRegistryPanel = function () {
     function renderTable(filter) {
         const tbody = document.getElementById('registryTbody');
         if (!tbody) return;
-        let reg = getRegistry();
+        const registry = getRegistry();
+        let rows = registry.map((p, sourceIdx) => ({ p, sourceIdx }));
         if (filter) {
             const q = _normStr(filter);
-            reg = reg.filter(p =>
+            rows = rows.filter(({ p }) =>
                 (p.name && _normStr(p.name).includes(q)) ||
                 (p.dni  && p.dni.includes(q))
             );
         }
-        if (reg.length === 0) {
+        if (rows.length === 0) {
             tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--text-secondary);">No hay pacientes registrados.</td></tr>';
             return;
         }
-        tbody.innerHTML = reg.map((p, i) => {
+        tbody.innerHTML = rows.map(({ p, sourceIdx }) => {
             const safeName = (p.name || '—').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
             const safeDni  = (p.dni  || '—').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
             const safeAge  = p.age ? String(p.age).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') + ' años' : '—';
@@ -320,7 +321,7 @@ window.initPatientRegistryPanel = function () {
             const reportCount = (typeof getPatientReports === 'function')
                 ? getPatientReports(p.dni || p.name).length : 0;
             return `
-            <tr data-idx="${i}">
+            <tr data-idx="${sourceIdx}">
                 <td>${safeName}</td>
                 <td>${safeDni}</td>
                 <td>${safeAge}</td>
@@ -328,11 +329,11 @@ window.initPatientRegistryPanel = function () {
                 <td>${(p.visits || 1)}</td>
                 <td style="white-space:nowrap;">
                     <button class="btn btn-primary registry-reports-btn" style="padding:.25rem .5rem;font-size:.75rem;${reportCount === 0 ? 'opacity:.45;' : ''}"
-                        data-idx="${i}" title="${reportCount} informe(s)">&#x1F4C4; ${reportCount}</button>
+                        data-idx="${sourceIdx}" title="${reportCount} informe(s)">&#x1F4C4; ${reportCount}</button>
                     <button class="btn btn-secondary registry-edit-btn" style="padding:.25rem .5rem;font-size:.75rem;"
-                        data-idx="${i}">&#9998;</button>
+                        data-idx="${sourceIdx}">&#9998;</button>
                     <button class="btn registry-delete-btn" style="padding:.25rem .5rem;font-size:.75rem;background:var(--error);"
-                        data-idx="${i}">&#x1F5D1;</button>
+                        data-idx="${sourceIdx}">&#x1F5D1;</button>
                 </td>
             </tr>`;
         }).join('');
