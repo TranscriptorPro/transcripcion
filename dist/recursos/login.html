@@ -261,15 +261,13 @@
             
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-            // Admin Key hardcodeada — no depende de localStorage
-            const adminKey = 'ADMIN_SECRET_2026';
 
             errorMessage.classList.remove('show');
             btnLogin.disabled = true;
             btnLogin.innerHTML = 'Verificando...<span class="loading"></span>';
 
             try {
-                const url = `${CONFIG.scriptUrl}?action=admin_login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&adminKey=${encodeURIComponent(adminKey)}`;
+                const url = `${CONFIG.scriptUrl}?action=admin_login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
                 
                 const response = await fetch(url);
                 const data = await response.json();
@@ -300,8 +298,6 @@
             errorMessage.textContent = message;
             errorMessage.classList.add('show');
         }
-
-        // Admin Key hardcodeada — ya no se necesita prompt ni localStorage
 
         // ── Auto-redirect si ya hay sesión válida ───────────────────────────
         const session = sessionStorage.getItem('adminSession');

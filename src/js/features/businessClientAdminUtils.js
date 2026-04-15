@@ -24,6 +24,29 @@ function _initResetApp() {
         if (pwError) pwError.style.display = 'none';
     };
     const closeModal = () => modal.classList.remove('active');
+    const getValidAdminSession = () => {
+        try {
+            const raw = sessionStorage.getItem('adminSession');
+            if (!raw) return null;
+
+            const session = JSON.parse(raw);
+            const tokenExpiry = Number(session.tokenExpiry || 0);
+            const timestamp = Number(session.timestamp || 0);
+            const isExpired = tokenExpiry
+                ? Date.now() > tokenExpiry
+                : !timestamp || ((Date.now() - timestamp) / (1000 * 60 * 60) >= 8);
+
+            if (!session.sessionToken || !session.username || isExpired) {
+                if (isExpired) sessionStorage.removeItem('adminSession');
+                return null;
+            }
+
+            return session;
+        } catch (_) {
+            sessionStorage.removeItem('adminSession');
+            return null;
+        }
+    };
 
     btnOpen?.addEventListener('click', openModal);
     btnClose?.addEventListener('click', closeModal);
@@ -36,6 +59,11 @@ function _initResetApp() {
         if (pwInput && pwInput.value !== '26716975') {
             if (pwError) pwError.style.display = 'block';
             pwInput.focus();
+            return;
+        }
+        const adminSession = getValidAdminSession();
+        if (!adminSession) {
+            if (typeof showToast === 'function') showToast('Sesion de admin invalida o expirada.', 'warning');
             return;
         }
         // Claves a borrar (se conserva: groq_api_key, app_theme, onboarding_date)
@@ -75,8 +103,15 @@ function _initResetApp() {
         const backendUrl = (typeof window.getResolvedBackendUrl === 'function')
             ? window.getResolvedBackendUrl()
             : 'https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec';
-        const params = 'action=admin_reset_all_data_keep_admin&adminKey=ADMIN_SECRET_2026&confirm=RESET_ALL_KEEP_ADMIN';
-        fetch(`${backendUrl}?${params}`)
+        const params = new URLSearchParams({
+            action: 'admin_reset_all_data_keep_admin',
+            sessionToken: adminSession.sessionToken,
+            sessionUser: adminSession.username,
+            sessionNivel: adminSession.nivel || '',
+            sessionExpiry: adminSession.tokenExpiry || '',
+            confirm: 'RESET_ALL_KEEP_ADMIN'
+        });
+        fetch(`${backendUrl}?${params.toString()}`)
             .then(r => r.json())
             .then(data => {
                 if (data && data.success) {

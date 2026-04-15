@@ -35,7 +35,6 @@
                 if (k) base[k] = decodeURIComponent(v || '');
             });
         } catch(_) {}
-        if (!base.adminKey && !base.sessionToken) base.adminKey = 'ADMIN_SECRET_2026';
         return base;
     }
 
@@ -50,7 +49,8 @@
         try {
             const scriptUrl = _getScriptUrl();
             if (!scriptUrl) return null;
-            const auth = (typeof _getSessionAuthParams === 'function') ? _getSessionAuthParams() : 'adminKey=ADMIN_SECRET_2026';
+            const auth = (typeof _getSessionAuthParams === 'function') ? _getSessionAuthParams() : '';
+            if (!auth) return null;
             const res = await fetch(`${scriptUrl}?action=admin_get_addons_config&${auth}`);
             if (!res.ok) return null;
             const data = await res.json();
@@ -101,7 +101,8 @@
     async function _fetchPurchasesFromBackend() {
         const scriptUrl = _getScriptUrl();
         if (!scriptUrl) return [];
-        const auth = (typeof _getSessionAuthParams === 'function') ? _getSessionAuthParams() : 'adminKey=ADMIN_SECRET_2026';
+        const auth = (typeof _getSessionAuthParams === 'function') ? _getSessionAuthParams() : '';
+        if (!auth) return [];
         const res = await fetch(`${scriptUrl}?action=admin_list_purchases&${auth}`);
         if (!res.ok) return [];
         const data = await res.json();

@@ -17,8 +17,7 @@
                     return `sessionToken=${encodeURIComponent(s.sessionToken)}&sessionUser=${encodeURIComponent(s.username)}&sessionNivel=${encodeURIComponent(s.nivel || '')}&sessionExpiry=${encodeURIComponent(s.tokenExpiry || '')}`;
                 }
             } catch(e) {}
-            // Fallback: admin key hardcodeada
-            return `adminKey=${encodeURIComponent('ADMIN_SECRET_2026')}`;
+            return '';
         }
 
         /* ── Authentication (ya verificada en <head>, esto es solo cleanup) ── */

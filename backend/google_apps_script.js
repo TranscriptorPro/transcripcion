@@ -1217,9 +1217,6 @@ function doGet(e) {
 
   // ── admin_login — autenticación del panel de administración ───────────────
   if (action === 'admin_login') {
-    const adminKey = e.parameter.adminKey;
-    if (adminKey !== ADMIN_KEY) return createResponse({ error: 'Unauthorized' });
-
     const username = (e.parameter.username || '').trim();
     const password = (e.parameter.password || '').trim();
 
@@ -2710,7 +2707,6 @@ function doPost(e) {
   if (action === 'admin_create_user') {
     // Auth check: sessionToken, sessionUser, sessionNivel, sessionExpiry from payload
     const authParam = {
-      adminKey:      payload.adminKey      || '',
       sessionToken:  payload.sessionToken  || '',
       sessionUser:   payload.sessionUser   || '',
       sessionNivel:  payload.sessionNivel  || '',
@@ -3164,19 +3160,12 @@ function _signSessionToken(username, nivel, expiry) {
 
 /**
  * Verifica la autorización de un request admin.
- * Acepta DOS métodos (backward compatible):
- *   1. adminKey directo (legacy) — ?adminKey=XXX
- *   2. Token de sesión firmado — ?sessionToken=XXX&sessionUser=YYY&sessionNivel=ZZZ&sessionExpiry=NNN
+ * Acepta token de sesión firmado:
+ *   ?sessionToken=XXX&sessionUser=YYY&sessionNivel=ZZZ&sessionExpiry=NNN
  * @returns {{ authorized: boolean, error: string|null, username: string }}
  */
 function _verifyAdminAuth(params) {
-  // Método 1: adminKey directo (legacy — para scripts y tests)
-  const adminKey = params.adminKey;
-  if (adminKey && adminKey === ADMIN_KEY) {
-    return { authorized: true, error: null, username: params.sessionUser || 'admin-key' };
-  }
-
-  // Método 2: token de sesión firmado
+  // Token de sesión firmado
   const token   = params.sessionToken;
   const user    = (params.sessionUser   || '').toLowerCase();
   const nivel   = params.sessionNivel   || '';

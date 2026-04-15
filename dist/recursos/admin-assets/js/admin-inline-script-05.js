@@ -41,7 +41,6 @@
                 if (k) base[k] = decodeURIComponent(v || '');
             });
         } catch(_) {}
-        if (!base.adminKey && !base.sessionToken) base.adminKey = 'ADMIN_SECRET_2026';
         return base;
     }
 
@@ -56,7 +55,8 @@
         try {
             const scriptUrl = _getScriptUrl();
             if (!scriptUrl) return null;
-            const auth = (typeof _getSessionAuthParams === 'function') ? _getSessionAuthParams() : 'adminKey=ADMIN_SECRET_2026';
+            const auth = (typeof _getSessionAuthParams === 'function') ? _getSessionAuthParams() : '';
+            if (!auth) return null;
             const res = await fetch(`${scriptUrl}?action=admin_get_plans_config&${auth}`);
             if (!res.ok) return null;
             const data = await res.json();
