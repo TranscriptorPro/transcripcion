@@ -141,10 +141,17 @@ function _initClient() {
     // Contacto debe estar disponible para no-admin incluso antes de aceptar onboarding.
     if (typeof initContact === 'function') initContact();
 
-    // K1: el criterio de primer uso es la aceptacion de T&C, NO la ausencia de datos.
-    // Los datos (nombre, matricula, API key) los precarga el admin antes de entregar la app.
+    const resolvedKey = String(
+        (typeof window.getResolvedGroqApiKey === 'function')
+            ? window.getResolvedGroqApiKey()
+            : (window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '')
+    ).trim();
+
+    // K1: primer uso sin API key debe pedirla al usuario final.
+    // Si ya acepto onboarding pero no tiene key, reabrimos onboarding en modo API.
     const accepted = localStorage.getItem('onboarding_accepted');
-    if (!accepted) {
+    if (!accepted || !/^gsk_/i.test(resolvedKey)) {
+        window._forceOnboardingApiStep = !/^gsk_/i.test(resolvedKey);
         _showClientOnboarding();
         return; // los modulos se inicializan dentro del handler de aceptacion
     }

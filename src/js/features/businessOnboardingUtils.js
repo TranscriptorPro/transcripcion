@@ -8,6 +8,7 @@ function _showClientOnboarding() {
     const profData = window._profDataCache || JSON.parse(localStorage.getItem('prof_data') || '{}');
     let currentStep = 1;
     const currentType = String((typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.type) || 'NORMAL').toUpperCase();
+    const isAdmin = currentType === 'ADMIN';
     const currentPlan = String((typeof CLIENT_CONFIG !== 'undefined' && CLIENT_CONFIG.planCode) || '').toLowerCase();
     const isClinicPlan = currentPlan === 'clinic';
     const isGiftPlan = currentPlan === 'gift';
@@ -38,10 +39,25 @@ function _showClientOnboarding() {
         if (displayMatricula) displayMatricula.textContent = profData.matricula || '(no configurado)';
     }
 
-    // En clones, la API key se provisiona desde admin/factory; nunca pedirla al usuario final.
+    const existingKey = normalizeKey(
+        (typeof window.getResolvedGroqApiKey === 'function')
+            ? window.getResolvedGroqApiKey()
+            : (window.GROQ_API_KEY || localStorage.getItem('groq_api_key') || '')
+    );
+    const hasValidExistingKey = /^gsk_/i.test(existingKey);
+    const forceApiStep = !!window._forceOnboardingApiStep;
+    const apiStepVisible = !isAdmin && (forceApiStep || !hasValidExistingKey);
+
+    // K1: para usuario final, si falta API key se debe pedir en onboarding.
     const apiStep = document.getElementById('onboardingApiKeyStep');
     if (apiStep) {
-        apiStep.style.display = 'none';
+        apiStep.style.display = apiStepVisible ? '' : 'none';
+    }
+    if (apiStepVisible) {
+        const onbKeyEl = document.getElementById('onboardingApiKey');
+        if (onbKeyEl && !onbKeyEl.value.trim()) {
+            onbKeyEl.value = existingKey || '';
+        }
     }
 
     // Crear particulas decorativas
@@ -349,8 +365,6 @@ function _showClientOnboarding() {
         submitBtn.addEventListener('click', () => {
             if (!acceptTerms?.checked) return;
 
-            // En clones no se solicita API key en onboarding.
-            const apiStepVisible = false;
             const currentStoredKey = String(
                 (typeof window.getResolvedGroqApiKey === 'function' ? window.getResolvedGroqApiKey() : localStorage.getItem('groq_api_key')) || ''
             ).trim();
@@ -370,6 +384,8 @@ function _showClientOnboarding() {
                 }
                 return;
             }
+
+            window._forceOnboardingApiStep = false;
 
             if (typeof appDB !== 'undefined') appDB.set('onboarding_accepted', 'true');
             localStorage.setItem('onboarding_accepted', 'true');

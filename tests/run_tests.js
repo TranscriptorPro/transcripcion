@@ -8305,9 +8305,9 @@ test('Settings-Fix5 — botón Contactar soporte oculto para admin en populateIn
 });
 
 test('Settings-Fix6 — sesión clínica estándar oculta sección Acerca en settings', () => {
-    assert(shellUtilsCode.includes("const clinicAllowed = isClinicAdminSession()") &&
-           shellUtilsCode.includes("['cuenta', 'workplace', 'profiles', 'pdf', 'editor', 'tools', 'theme', 'skins', 'stats', 'info']"),
-        'En clínica estándar, el menú settings no debe incluir la sección about');
+    assert(shellUtilsCode.includes("const clientAllowed = ['cuenta', 'workplace', 'info']") &&
+           !shellUtilsCode.includes('const clinicAllowed = isClinicAdminSession()'),
+        'En clínica estándar, el menú settings debe limitarse a cuenta/workplace/info (sin about)');
 });
 
 test('Settings-Fix7 — sesión clínica estándar oculta botón Gestión de pagos', () => {
@@ -8348,10 +8348,11 @@ test('Settings-Fix10 — resumen Gift muestra badge de API sin filtrar fragmento
         'El resumen Gift no debe exponer los últimos caracteres de la API key');
 });
 
-test('Settings-Fix11 — usuarios PRO no clínicos conservan settings ampliado', () => {
-    assert(shellUtilsCode.includes("const isRichNonClinicUser = !isClinic && type === 'PRO';") &&
-           shellUtilsCode.includes("const richClientAllowed = ['cuenta', 'apikey', 'workplace', 'pdf', 'editor', 'tools', 'theme', 'skins', 'stats', 'info', 'about']"),
-        'Los usuarios PRO/Gift no clínicos deben ver el settings ampliado');
+test('Settings-Fix11 — usuarios PRO no clínicos usan settings reducido (K2 estricto)', () => {
+    assert(shellUtilsCode.includes("const clientAllowed = ['cuenta', 'workplace', 'info']") &&
+           !shellUtilsCode.includes('isRichNonClinicUser') &&
+           !shellUtilsCode.includes('richClientAllowed'),
+        'Los usuarios PRO/Gift no clínicos deben usar settings reducido (solo cuenta/workplace/info)');
 });
 
 test('Settings-Fix12 — admin de clínica puede editar identidad del profesional activo', () => {
