@@ -99,8 +99,6 @@ transcripcion/
 │   └── GOOGLE_SHEET_SETUP.md        # Instrucciones de configuración del Sheet
 ├── tests/
 │   └── audit_diagnostic.js          # Script de auditoría con Playwright
-└── documentacion/
-    └── CONTEXTO_PROYECTO.md         # Visión y contexto del proyecto
 ```
 
 ## 🛠️ Tecnologías utilizadas
@@ -125,8 +123,8 @@ transcripcion/
 - Datos del profesional bloqueados en informes (anti-piratería)
 - Contraseña para acceso admin
 - Control de dispositivos
-- Sin almacenamiento en servidor (todo en localStorage del navegador)
-- API keys encriptadas en localStorage
+- Los informes y preferencias de trabajo permanecen en el navegador; el backend registra licencias, dispositivos, métricas, solicitudes y comprobantes operativos.
+- Las API keys se almacenan localmente en el navegador; no se deben considerar cifradas ni compartir equipos/perfiles de navegador.
 
 ## 📞 Soporte
 
@@ -134,4 +132,4 @@ Para soporte técnico o consultas comerciales, contactar al administrador.
 
 ## 📄 Licencia
 
-Proyecto privado. Todos los derechos reservados.
+Proyecto propietario de acceso público. Todos los derechos reservados.

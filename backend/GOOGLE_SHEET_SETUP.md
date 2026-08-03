@@ -89,7 +89,7 @@
 | `Estado` | Texto | Estado del admin | `active`, `inactive` |
 | `Ultimo_Login` | Texto | Último inicio de sesión | ISO timestamp |
 
-> **NOTA:** La hoja `Admin_Users` se crea automáticamente en el primer login si no existe, con un usuario admin por defecto (username: `admin`, password: `admin2026`). **Cambiar la contraseña inmediatamente después del primer deploy.**
+> **NOTA DE SEGURIDAD:** La hoja `Admin_Users` puede inicializarse automáticamente si no existe. Antes de habilitar producción, el propietario debe crear o confirmar una credencial administrativa secreta y verificar que ninguna credencial de inicialización conocida permita el acceso.
 
 ### 7. `Registros_Pendientes` — Registros de auto-inscripción de profesionales (NUEVA)
 
@@ -178,7 +178,7 @@
 ### Admin (requiere sessionToken o adminKey)
 | Endpoint | Método | Descripción |
 |----------|--------|-------------|
-| `?action=admin_login` | GET | Autenticación de admin |
+| `action=admin_login` | POST form-urlencoded | Autenticación de admin |
 | `?action=admin_list_users` | GET | Listar todos los usuarios |
 | `?action=admin_update_user` | GET/POST | Actualizar usuario |
 | `?action=admin_create_user` | GET | Crear nuevo usuario |

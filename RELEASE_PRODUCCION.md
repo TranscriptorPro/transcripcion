@@ -19,10 +19,11 @@ Si falla cualquier punto, la salida es NO-GO.
 Ejecutar desde la raiz del repo:
 
 ```powershell
-node tests/run_tests.js
-node tests/e2e-full-qa-playwright.js
-node build.js
-node tests/smoke-postdeploy-version.js
+npm test
+npm run build
+npm run release:verify:local
+# Tras el deploy de GitHub Pages:
+npm run release:verify:remote
 ```
 
 ## 3) Que valida cada prueba automatica
@@ -30,11 +31,11 @@ node tests/smoke-postdeploy-version.js
 1. `node tests/run_tests.js`
 - Regresion funcional amplia (logica, integraciones internas, seguridad basica, plantillas, formatos, PWA, etc).
 
-2. `node tests/e2e-full-qa-playwright.js`
-- Flujo E2E real en navegador y cobertura de casos de estructuracion.
-
-3. `node build.js`
+2. `node build.js`
 - Integridad del empaquetado para produccion en `dist/`.
+
+3. `node scripts/release-verify.js --skip-remote`
+- Ejecuta el E2E local contra `dist` sin repetir el smoke remoto.
 
 4. `node tests/smoke-postdeploy-version.js`
 - Verificacion rapida del deploy publicado (carga/version/rutas base).

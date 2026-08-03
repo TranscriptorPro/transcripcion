@@ -3,13 +3,13 @@
 ## Current Deployment
 - **Deployment ID:** `AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ`
 - **Web App URL:** `https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec`
-- **Last Updated:** 2026-02-26
-- **Version:** 5 (Backend Phase: auth, license validation, metrics, config generation)
+- **Last repository review:** 2026-08-03
+- **Version:** Verify the active Apps Script deployment before changing this file.
 
 ## Configuration
 - **Sheet Name:** `Usuarios`
 - **Admin Key:** Stored in Script Properties (`ADMIN_KEY`). Entered once in browser on first login. Never hardcoded.
-- **Admin Login:** `admin` / `admin2026` (change after first login)
+- **Admin Login:** `POST` form-urlencoded to `action=admin_login`. The production administrator credential must never be documented in this repository.
 - **Access Level:** Anyone, even anonymous (required for web app)
 
 ## CORS Configuration
@@ -38,7 +38,7 @@
 ### Admin (requiere sessionToken o adminKey)
 | Endpoint | Método | Descripción |
 |----------|--------|-------------|
-| `?action=admin_login` | GET | Autenticación con token firmado |
+| `action=admin_login` | POST form-urlencoded | Autenticación con token firmado |
 | `?action=admin_list_users` | GET | Listar todos los usuarios |
 | `?action=admin_update_user` | GET/POST | Actualizar usuario |
 | `?action=admin_create_user` | GET | Crear nuevo usuario |
@@ -50,6 +50,7 @@
 | `?action=admin_generate_config` | GET | Generar config.js para clon |
 
 ## Notes
-- URL changes with each new deployment version
-- After updating the script, create a new version in "Gestionar implementaciones"
-- Copy the new URL and update: `login.html`, `admin.html`, `diagnostic.js`, `licenseManager.js`, `admin_config.json`, this file
+- The deployment URL can change after a new Apps Script deployment.
+- After updating the script, create a new version in "Gestionar implementaciones".
+- If the URL changes, update every frontend reference and this file in one commit.
+- `backend/google_apps_script.js` must be the complete export of the deployed script, not a partial reconstruction.

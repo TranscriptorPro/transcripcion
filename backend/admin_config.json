@@ -1,8 +1,8 @@
 {
-  "sheetName": "Usuarios_Transcriptor",
+  "sheetName": "Usuarios",
   "scriptUrl": "https://script.google.com/macros/s/AKfycbzu7xluvXc0vl2P6lp0EaLeppib6wkTICkHqhgRAFjDsk8Lr2RtriA8uD83IwOKyiKXDQ/exec",
   "endpoints": {
-    "login": "?action=admin_login&username=USER&password=PASS",
+    "login": "POST form-urlencoded: action=admin_login, username, password",
     "listUsers": "?action=admin_list_users",
     "updateUser": "POST with action=admin_update_user",
     "validateUser": "?id=USER_ID&deviceId=DEVICE_ID",
