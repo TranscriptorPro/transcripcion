@@ -2091,8 +2091,26 @@ function doGet(e) {
 }
 
 function doPost(e) {
-  const payload = JSON.parse(e.postData.contents);
-  const action = payload.action; // 'update_usage' o 'admin_update_user'
+  // Handle both JSON (default) and URLSearchParams (for admin_login and form submissions)
+  let payload;
+  let action;
+  
+  try {
+    // Try to parse as JSON first (for standard POST requests)
+    payload = JSON.parse(e.postData.contents);
+    action = payload.action;
+  } catch (err) {
+    // If JSON parsing fails, assume it's URLSearchParams (application/x-www-form-urlencoded)
+    payload = e.parameter;
+    action = e.parameter.action;
+  }
+  
+  // Handle admin_login via POST without duplicating authentication logic.
+  // Credentials arrive in the POST body through e.parameter; doGet is reused
+  // only as the centralized action dispatcher, not as an HTTP GET request.
+  if (action === 'admin_login') {
+    return doGet({ parameter: e.parameter });
+  }
 
   const invalidateCacheActions = {
     public_upload_payment_receipt: true,

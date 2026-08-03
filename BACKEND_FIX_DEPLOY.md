@@ -6,7 +6,7 @@ La función `admin_approve_registration` (POST) crea usuarios correctamente pero
 **Síntoma:** El usuario se crea en la Sheet pero nunca aparece en la lista para el admin (timeout en E2E test).
 
 ## ✅ Fix Aplicado
-Agregué una línea en `backend/google_apps_script.js` línea **2693**:
+La corrección se realiza en el manejador POST de `admin_approve_registration`, inmediatamente antes del retorno exitoso:
 
 ```javascript
 _invalidateAdminReadCaches();
@@ -17,8 +17,8 @@ Esta línea debe ejecutarse **ANTES** de `return createResponse(...)` en la func
 ## Estado
 
 **Archivo:** `backend/google_apps_script.js`  
-**Línea:** 2693  
-**Cambio:** Agregada línea `_invalidateAdminReadCaches();` antes del return en admin_approve_registration
+**Ubicación:** manejador POST de `admin_approve_registration`, inmediatamente antes del retorno exitoso.  
+**Cambio:** llamada a `_invalidateAdminReadCaches();` antes de devolver el usuario creado.
 
 ---
 
