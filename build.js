@@ -108,19 +108,14 @@ async function build() {
     console.log('📄 Generando index.html...');
     let html = sourceIndexHtml;
 
-    // Auto-incrementar APP_VERSION en el fuente y en el HTML generado
+    // Auto-incrementar APP_VERSION solo en el HTML generado.
+    // El build no debe modificar archivos fuente ni ensuciar el árbol de trabajo.
     const verMatch = html.match(/var APP_VERSION = 'v(\d+)'/);
     const nextVersion = verMatch ? parseInt(verMatch[1], 10) + 1 : 1;
     const newVersionTag = `v${nextVersion}`;
     html = html.replace(
         /var APP_VERSION = 'v\d+';/,
         `var APP_VERSION = '${newVersionTag}';`
-    );
-    // Persistir versión incremental en el fuente para el próximo build
-    fs.writeFileSync(
-        sourceIndexPath,
-        sourceIndexHtml.replace(/var APP_VERSION = 'v\d+';/, `var APP_VERSION = '${newVersionTag}';`),
-        'utf8'
     );
     console.log(`   🔖 APP_VERSION → ${newVersionTag}`);
 
