@@ -267,9 +267,18 @@
             btnLogin.innerHTML = 'Verificando...<span class="loading"></span>';
 
             try {
-                const url = `${CONFIG.scriptUrl}?action=admin_login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
+                const body = new URLSearchParams();
+                body.append('action', 'admin_login');
+                body.append('username', username);
+                body.append('password', password);
                 
-                const response = await fetch(url);
+                const response = await fetch(CONFIG.scriptUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: body.toString()
+                });
                 const data = await response.json();
 
                 if (data.success) {
