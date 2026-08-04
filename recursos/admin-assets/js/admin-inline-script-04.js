@@ -2480,8 +2480,8 @@
             // Reset campos gift — Paso 4 (Licencia y Permisos)
             setValue('giftPlan', 'GIFT');
             setValue('giftProMode', 'true');
-            setValue('giftDevices', '2');
-            setValue('giftDuration', '90');
+            setValue('giftDevices', '10');
+            setValue('giftDuration', '365');
             const allTplCheck = document.getElementById('giftAllTemplates');
             if (allTplCheck) { allTplCheck.checked = true; }
             const tplGrid = document.getElementById('giftTemplatesGrid');
@@ -2626,7 +2626,7 @@
                 TRIAL:  { devices: '3',  pro: 'true',  duration: '15' },
                 NORMAL: { devices: '1',  pro: 'false', duration: '365' },
                 PRO:    { devices: '3',  pro: 'true',  duration: '365' },
-                GIFT:   { devices: '2',  pro: 'true',  duration: '90' }
+                GIFT:   { devices: '10', pro: 'true',  duration: '365' }
             };
             const d = defaults[plan] || defaults.GIFT;
             devSel.value = d.devices;
