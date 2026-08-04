@@ -434,6 +434,17 @@ function _resolvePlanConfig(planCode) {
   return plans[key] || plans.trial || _defaultPlansConfig().trial;
 }
 
+function _getApprovedClinicMaxProfessionals(planCode, addonsRaw) {
+  const plan = _resolvePlanConfig(planCode);
+  const included = Math.max(1, Number(plan.maxProfessionals) || 1);
+  let extras = 0;
+  try {
+    const addons = typeof addonsRaw === 'string' ? JSON.parse(addonsRaw || '{}') : (addonsRaw || {});
+    extras = Math.max(0, Number(addons.extraProfessionals) || 0);
+  } catch (_) {}
+  return included + extras;
+}
+
 function _adminReadCacheKeys() {
   return [
     'admin_list_users:all',
@@ -1650,6 +1661,9 @@ function doGet(e) {
           notas:           editedNotas || regData.Notas || '',
           estudios:        regData.Estudios        || '',
           profesionales:   regData.Profesionales   || '',
+          maxProfesionales: String(plan).toLowerCase() === 'clinic'
+            ? _getApprovedClinicMaxProfessionals(plan, regData.Addons_Cart)
+            : 1,
           hasProMode:      editedHasProMode,
           hasDashboard:    editedHasDashboard,
           canGenerateApps: editedCanGenerateApps,
@@ -2094,7 +2108,7 @@ function doPost(e) {
   // Handle both JSON (default) and URLSearchParams (for admin_login and form submissions)
   let payload;
   let action;
-  
+
   try {
     // Try to parse as JSON first (for standard POST requests)
     payload = JSON.parse(e.postData.contents);
@@ -2104,7 +2118,7 @@ function doPost(e) {
     payload = e.parameter;
     action = e.parameter.action;
   }
-  
+
   // Handle admin_login via POST without duplicating authentication logic.
   // Credentials arrive in the POST body through e.parameter; doGet is reused
   // only as the centralized action dispatcher, not as an HTTP GET request.
@@ -2680,6 +2694,9 @@ function doPost(e) {
           notas:           editedNotas || regData.Notas || '',
           estudios:        regData.Estudios        || '',
           profesionales:   regData.Profesionales   || '',
+          maxProfesionales: String(plan).toLowerCase() === 'clinic'
+            ? _getApprovedClinicMaxProfessionals(plan, regData.Addons_Cart)
+            : 1,
           hasProMode:      editedHasProMode,
           hasDashboard:    editedHasDashboard,
           canGenerateApps: editedCanGenerateApps,

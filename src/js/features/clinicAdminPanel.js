@@ -150,7 +150,11 @@
     }
 
     function _getEffectiveMaxProfs(clinic, profs) {
-        var configured = Number((clinic || {}).maxProfesionales) || 3;
+        var isClinicPlan = false;
+        try {
+            isClinicPlan = String((window.CLIENT_CONFIG || {}).planCode || '').toLowerCase() === 'clinic';
+        } catch (_) {}
+        var configured = Number((clinic || {}).maxProfesionales) || (isClinicPlan ? 5 : 3);
         var current = Array.isArray(profs) ? profs.length : 0;
         return Math.max(configured, current, 1);
     }
@@ -235,7 +239,8 @@
         document.getElementById(OVERLAY_ID).style.display = 'flex';
         _syncFromBackend().catch(function() {}).finally(function() {
             var wp        = _getWP();
-            var isDefault = !((wp[0] || {}).adminPass);
+            var clinic    = wp[0] || {};
+            var isDefault = !clinic.adminPass || clinic.adminPass === DEFAULT_PASS || !clinic.adminDni;
             if (isDefault) {
                 _showForceChangePassModal();
             } else {

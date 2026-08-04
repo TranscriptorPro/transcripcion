@@ -139,6 +139,7 @@ window.handleFactorySetupCore = async function (medicoId) {
                         adminUser: String(regDatos.adminUser || 'admin'),
                         adminPass: String(regDatos.adminPass || 'clinica'),
                         adminDni:  String(regDatos.adminDni || regDatos.clinicAdminDni || ''),
+                        maxProfesionales: Number(regDatos.maxProfesionales) || (plan === 'clinic' ? 5 : 1),
                         professionals: [buildProfessional()]
                     }];
 

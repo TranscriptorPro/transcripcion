@@ -2353,6 +2353,7 @@
         function changeExtraProfessionals(delta) {
             cartAddons.extraProfessionals = Math.max(0, Math.min(10, cartAddons.extraProfessionals + delta));
             document.getElementById('extraProfessionalsCount').textContent = cartAddons.extraProfessionals;
+            _updateProfCounter();
             updateCartSummary();
         }
 
@@ -2833,14 +2834,21 @@
                     </div>
                     <div class="field-row">
                         <div class="field-group">
+                            <label>DNI de recuperación *</label>
+                            <input type="text" id="regProfDni${index}" placeholder="12345678" inputmode="numeric" maxlength="12">
+                            <small style="color:#94a3b8;font-size:.75rem;">Se usa únicamente para recuperar el PIN.</small>
+                        </div>
+                        <div class="field-group">
                             <label>Usuario (nombre de login) *</label>
                             <input type="text" id="regProfUsuario${index}" placeholder="jperez" maxlength="30">
                             <small style="color:#94a3b8;font-size:.75rem;">Nombre corto para seleccionar en el acceso a la app.</small>
                         </div>
+                    </div>
+                    <div class="field-row">
                         <div class="field-group">
                             <label>PIN de acceso (4 dígitos)</label>
                             <input type="text" id="regProfPin${index}" placeholder="1234" maxlength="4" value="1234">
-                            <small style="color:#94a3b8;font-size:.75rem;">Default: 1234. El profesional puede cambiarlo desde la app.</small>
+                            <small style="color:#94a3b8;font-size:.75rem;">Si queda en 1234, se pedirá cambiarlo en el primer acceso.</small>
                         </div>
                     </div>
                     <div class="field-group" style="margin-top:.4rem;">
@@ -2896,7 +2904,7 @@
 
         function addProfessional() {
             const currentCount = document.querySelectorAll('#professionalsContainer .wp-accordion').length;
-            const maxProf = PRICING[selectedPlan]?.maxProfessionals || 5;
+            const maxProf = _getClinicProfessionalLimit();
             if (currentCount >= maxProf) {
                 showAlert(`Tu plan permite máximo ${maxProf} profesionales`, '👨‍⚕️');
                 return;
@@ -2968,9 +2976,15 @@
 
         function _updateProfCounter() {
             const count = document.querySelectorAll('#professionalsContainer .wp-accordion').length;
-            const max = PRICING[selectedPlan]?.maxProfessionals || 5;
+            const max = _getClinicProfessionalLimit();
             const el = document.getElementById('profCounter');
             if (el) el.textContent = `${count} de ${max} profesionales`;
+        }
+
+        function _getClinicProfessionalLimit() {
+            const included = Number(PRICING.CLINIC?.maxProfessionals) || 1;
+            const extras = Number(cartAddons?.extraProfessionals) || 0;
+            return included + Math.max(0, extras);
         }
 
         function _collectProfessionals() {
@@ -2980,6 +2994,7 @@
                 const name        = (document.getElementById('regProfName'        + idx) || {}).value || '';
                 const matricula   = (document.getElementById('regProfMatricula'   + idx) || {}).value || '';
                 const especialidad= (document.getElementById('regProfEspecialidad'+ idx) || {}).value || '';
+                const dni         = (document.getElementById('regProfDni'         + idx) || {}).value || '';
                 const telefono    = (document.getElementById('regProfTelefono'    + idx) || {}).value || '';
                 const email       = (document.getElementById('regProfEmail'       + idx) || {}).value || '';
                 const usuario     = (document.getElementById('regProfUsuario'     + idx) || {}).value || '';
@@ -3000,10 +3015,12 @@
                     profs.push({
                         id:            String(Date.now()) + String(Math.floor(Math.random() * 100000)),
                         nombre:        cleanNm ? (titulo + ' ' + cleanNm) : name.trim(),
+                        dni:           dni.replace(/\D+/g, ''),
                         matricula:     matricula.trim(),
                         especialidades: especialidad.trim() ? [especialidad.trim()] : [],
                         usuario:       usuario.trim(),
                         pin:           String(pin).trim() || '1234',
+                        primerUso:     String(pin).trim() === '1234',
                         firma:         profFirmaData[idx] || null,
                         logo:          profLogoData[idx]  || null,
                         email:         email.trim(),
@@ -3372,6 +3389,49 @@
                     showAlert(isClinic ? 'Ingresá el nombre de la clínica en el Paso 2' : 'Ingresá el nombre de tu lugar de trabajo', '🏥');
                 }
                 return false;
+            }
+            if (isClinic && !validateClinicProfessionals()) return false;
+            return true;
+        }
+
+        function validateClinicProfessionals() {
+            const cards = Array.from(document.querySelectorAll('#professionalsContainer .wp-accordion'));
+            if (!cards.length) {
+                showAlert('Agregá al menos un profesional para la clínica.', '👨‍⚕️');
+                return false;
+            }
+
+            const usernames = new Set();
+            const dnis = new Set();
+            for (const card of cards) {
+                const idx = card.id.replace('prof-', '');
+                const fields = {
+                    name: document.getElementById('regProfName' + idx),
+                    matricula: document.getElementById('regProfMatricula' + idx),
+                    especialidad: document.getElementById('regProfEspecialidad' + idx),
+                    dni: document.getElementById('regProfDni' + idx),
+                    usuario: document.getElementById('regProfUsuario' + idx),
+                    pin: document.getElementById('regProfPin' + idx)
+                };
+                const name = String(fields.name?.value || '').trim();
+                const matricula = String(fields.matricula?.value || '').trim();
+                const especialidad = String(fields.especialidad?.value || '').trim();
+                const dni = String(fields.dni?.value || '').replace(/\D+/g, '');
+                const usuario = String(fields.usuario?.value || '').trim();
+                const pin = String(fields.pin?.value || '1234').trim();
+
+                if (!name) { _markFieldError(fields.name, 'Ingresá el nombre del profesional'); return false; }
+                if (!matricula) { _markFieldError(fields.matricula, 'Ingresá la matrícula del profesional'); return false; }
+                if (!especialidad) { _markFieldError(fields.especialidad, 'Ingresá la especialidad del profesional'); return false; }
+                if (dni.length < 7) { _markFieldError(fields.dni, 'Ingresá un DNI válido para recuperar el PIN'); return false; }
+                if (!usuario) { _markFieldError(fields.usuario, 'Ingresá un usuario de acceso'); return false; }
+                if (!/^\d{4}$/.test(pin)) { _markFieldError(fields.pin, 'El PIN debe tener exactamente 4 dígitos'); return false; }
+
+                const usernameKey = usuario.toLowerCase();
+                if (usernames.has(usernameKey)) { _markFieldError(fields.usuario, 'Cada profesional debe tener un usuario distinto'); return false; }
+                if (dnis.has(dni)) { _markFieldError(fields.dni, 'Cada profesional debe tener un DNI distinto'); return false; }
+                usernames.add(usernameKey);
+                dnis.add(dni);
             }
             return true;
         }
