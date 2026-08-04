@@ -445,6 +445,22 @@ function _getApprovedClinicMaxProfessionals(planCode, addonsRaw) {
   return included + extras;
 }
 
+function _parseSocialMedia(value) {
+  try {
+    if (value && typeof value === 'object') return value;
+    const parsed = JSON.parse(String(value || '{}'));
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function _toBoolean(value, fallback) {
+  if (value === undefined || value === null || value === '') return fallback;
+  if (typeof value === 'boolean') return value;
+  return String(value).toLowerCase() === 'true';
+}
+
 function _adminReadCacheKeys() {
   return [
     'admin_list_users:all',
@@ -1660,6 +1676,10 @@ function doGet(e) {
           logo:            regData.Workplace_Logo  ? 'yes' : '',
           notas:           editedNotas || regData.Notas || '',
           estudios:        regData.Estudios        || '',
+          socialMedia:     _parseSocialMedia(regData.Social_Media),
+          showPhone:       _toBoolean(regData.Show_Phone, true),
+          showEmail:       _toBoolean(regData.Show_Email, true),
+          showSocial:      _toBoolean(regData.Show_Social, false),
           profesionales:   regData.Profesionales   || '',
           maxProfesionales: String(plan).toLowerCase() === 'clinic'
             ? _getApprovedClinicMaxProfessionals(plan, regData.Addons_Cart)
@@ -2611,6 +2631,8 @@ function doPost(e) {
     const editedExtraWps    = payload.editedExtraWorkplaces || null;
     const editedFirma       = payload.editedFirma       || null;
     const editedProLogo     = payload.editedProLogo     || null;
+    const hasEditedSocialMedia = payload.editedSocialMedia !== undefined;
+    const editedSocialMedia = _parseSocialMedia(payload.editedSocialMedia);
     const editedHasProMode = payload.editedHasProMode !== undefined ? !!payload.editedHasProMode : null;
     const editedHasDashboard = payload.editedHasDashboard !== undefined ? !!payload.editedHasDashboard : null;
     const editedCanGenerateApps = payload.editedCanGenerateApps !== undefined ? !!payload.editedCanGenerateApps : null;
@@ -2693,6 +2715,10 @@ function doPost(e) {
           logo:            regData.Workplace_Logo ? 'yes' : '',
           notas:           editedNotas || regData.Notas || '',
           estudios:        regData.Estudios        || '',
+          socialMedia:     hasEditedSocialMedia ? editedSocialMedia : _parseSocialMedia(regData.Social_Media),
+          showPhone:       _toBoolean(payload.editedShowPhone, _toBoolean(regData.Show_Phone, true)),
+          showEmail:       _toBoolean(payload.editedShowEmail, _toBoolean(regData.Show_Email, true)),
+          showSocial:      _toBoolean(payload.editedShowSocial, _toBoolean(regData.Show_Social, false)),
           profesionales:   regData.Profesionales   || '',
           maxProfesionales: String(plan).toLowerCase() === 'clinic'
             ? _getApprovedClinicMaxProfessionals(plan, regData.Addons_Cart)
