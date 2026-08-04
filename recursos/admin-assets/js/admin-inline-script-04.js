@@ -3915,8 +3915,27 @@
         // Agregar método al API object
         if (typeof API !== 'undefined') {
             API.createUser = async function(userData) {
-                const updatesJson = encodeURIComponent(JSON.stringify(userData));
-                return await this.call(`?action=admin_create_user&updates=${updatesJson}`);
+                const session = JSON.parse(sessionStorage.getItem('adminSession') || '{}');
+                const response = await fetch(CONFIG.scriptUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({
+                        action: 'admin_create_user',
+                        sessionToken: session.sessionToken || '',
+                        sessionUser: session.username || '',
+                        sessionNivel: session.nivel || '',
+                        sessionExpiry: session.tokenExpiry || '',
+                        userData
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                if (result.error) throw new Error(result.error);
+                return result;
             };
         }
 
