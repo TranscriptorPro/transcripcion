@@ -1780,7 +1780,7 @@
             await loadDashboard();
         }
 
-        async function loadDashboard(silent = false) {
+        async function loadDashboard(silent = false, forceFresh = false) {
             // STALE-WHILE-REVALIDATE: mostrar caché al instante, actualizar en background
             const CACHE_TTL_MS = 3 * 60 * 1000; // 3 minutos
             let cachedData = null;
@@ -1794,7 +1794,7 @@
                 }
             } catch (_) {}
 
-            if (cachedData) {
+            if (cachedData && !forceFresh) {
                 // Render inmediato con datos cacheados
                 allUsers = cachedData;
                 updateStats(allUsers);
@@ -3882,7 +3882,8 @@
 
                 showToast('✅ Usuario creado exitosamente', 'success');
                 closeNewUserModal();
-                loadDashboard(true); // Recargar tabla
+                try { sessionStorage.removeItem('_adminUsersCache'); } catch (_) {}
+                await loadDashboard(true, true); // Recargar tabla desde el servidor
             } catch (error) {
                 console.error('Error creating user:', error);
                 showToast('Error al crear usuario: ' + error.message, 'error');
