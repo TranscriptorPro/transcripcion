@@ -234,7 +234,9 @@
             }
             try {
                 const url = `${CONFIG.scriptUrl}?action=admin_list_users&${_getSessionAuthParams()}`;
-                const response = await fetch(url);
+                    // Las lecturas del panel son operativas: nunca reutilizar una
+                    // respuesta HTTP anterior después de un alta, edición o baja.
+                    const response = await fetch(url, { cache: 'no-store' });
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const data = await response.json();
 
@@ -3895,7 +3897,9 @@
             // Mantener el mismo formato que las altas comerciales, registros y clones.
             // Los IDs secuenciales DR001 eran heredados y no son compatibles con
             // implementaciones de backend que validan el prefijo MED.
-            return `MED${Date.now().toString(36).toUpperCase()}`;
+            const timestamp = Date.now().toString(36).toUpperCase();
+            const random = Math.random().toString(36).slice(2, 7).toUpperCase();
+            return `MED${timestamp}${random}`;
         }
 
         // Agregar método al API object
