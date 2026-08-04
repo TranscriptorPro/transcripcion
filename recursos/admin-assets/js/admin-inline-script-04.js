@@ -3901,25 +3901,11 @@
         // Agregar método al API object
         if (typeof API !== 'undefined') {
             API.createUser = async function(userData) {
-                const session = JSON.parse(sessionStorage.getItem('adminSession') || '{}');
-                const response = await fetch(CONFIG.scriptUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({
-                        action: 'admin_create_user',
-                        sessionToken: session.sessionToken || '',
-                        sessionUser: session.username || '',
-                        sessionNivel: session.nivel || '',
-                        sessionExpiry: session.tokenExpiry || '',
-                        userData
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                const result = await response.json();
+                // El alta Normal no lleva archivos: mantener GET asegura
+                // compatibilidad con implementaciones existentes de Apps Script.
+                // El flujo Regalo sigue usando POST porque puede incluir imágenes.
+                const updatesJson = encodeURIComponent(JSON.stringify(userData));
+                const result = await this.call(`?action=admin_create_user&updates=${updatesJson}`);
                 if (result.error) throw new Error(result.error);
                 if (!result.success) throw new Error('El servidor no confirmó la creación');
 
