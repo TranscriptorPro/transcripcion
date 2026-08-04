@@ -68,7 +68,15 @@ function ts() {
       }
       const byName = users.find(u => norm(u.Nombre).includes(norm(targetName)));
       if (byName) return String(byName.ID_Medico);
-      return users.length ? String(users[0].ID_Medico || '') : '';
+      if (users.length) return String(users[0].ID_Medico || '');
+
+      // `allUsers` may be declared with top-level `let`, which is not exposed
+      // as window.allUsers. The rendered buttons are the authoritative UI state.
+      const ids = Array.from(document.querySelectorAll('[data-action="clone"][data-user-id]'))
+        .map((button) => String(button.dataset.userId || ''))
+        .filter(Boolean);
+      if (targetId && ids.includes(String(targetId))) return String(targetId);
+      return ids[0] || '';
     }, { targetId: TARGET_MEDICO_ID, targetName: TARGET_CLINIC_NAME });
 
     if (!resolvedUserId) {

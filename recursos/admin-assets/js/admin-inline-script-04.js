@@ -3750,7 +3750,7 @@
             const estadoSelect = document.getElementById('newEstado');
 
             const updateExpiration = () => {
-                const plan = planSelect.value;
+                const plan = String(planSelect.value || '').trim().toLowerCase();
                 const today = new Date();
                 let expirationDate;
 
@@ -3758,14 +3758,19 @@
                     expirationDate = new Date(today.getTime());
                     expirationDate.setDate(expirationDate.getDate() + 7);
                     estadoSelect.value = 'trial';
-                } else if (plan === 'pro') {
+                } else if (plan === 'pro' || plan === 'normal' || plan === 'clinic') {
                     expirationDate = new Date(today.getTime());
                     expirationDate.setMonth(expirationDate.getMonth() + 1);
                     estadoSelect.value = 'active';
-                } else if (plan === 'enterprise') {
+                } else if (plan === 'enterprise' || plan === 'gift') {
                     expirationDate = new Date(today.getTime());
                     expirationDate.setFullYear(expirationDate.getFullYear() + 1);
                     estadoSelect.value = 'active';
+                } else {
+                    // Keep the form usable if a new plan is introduced before
+                    // its specific default is configured.
+                    expirationDate = new Date(today.getTime());
+                    expirationDate.setDate(expirationDate.getDate() + 7);
                 }
 
                 const yyyy = expirationDate.getFullYear();
