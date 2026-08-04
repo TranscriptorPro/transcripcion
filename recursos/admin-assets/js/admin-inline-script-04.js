@@ -3892,24 +3892,10 @@
 
         // Generar ID único
         async function generateUserId() {
-            try {
-                const users = await API.getUsers();
-                const existingIds = users.users.map(u => u.ID_Medico);
-                let newId;
-                let counter = 1;
-
-                do {
-                    newId = `DR${String(counter).padStart(3, '0')}`;
-                    counter++;
-                } while (existingIds.includes(newId));
-
-                return newId;
-            } catch (error) {
-                console.error('Error generating user ID:', error);
-                // Fallback: generar ID basado en timestamp + random
-                const rand = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-                return `DR${Date.now().toString().slice(-4)}${rand}`;
-            }
+            // Mantener el mismo formato que las altas comerciales, registros y clones.
+            // Los IDs secuenciales DR001 eran heredados y no son compatibles con
+            // implementaciones de backend que validan el prefijo MED.
+            return `MED${Date.now().toString(36).toUpperCase()}`;
         }
 
         // Agregar método al API object
@@ -3935,6 +3921,17 @@
 
                 const result = await response.json();
                 if (result.error) throw new Error(result.error);
+                if (!result.success) throw new Error('El servidor no confirmó la creación');
+
+                // No cerrar el formulario ni anunciar éxito hasta comprobar que la
+                // cuenta ya está disponible en la fuente de verdad del panel.
+                const usersResult = await this.getUsers();
+                const created = Array.isArray(usersResult.users) && usersResult.users.some(
+                    user => String(user.ID_Medico) === String(userData.ID_Medico)
+                );
+                if (!created) {
+                    throw new Error('El servidor confirmó la solicitud, pero no guardó el usuario. Reintentá cuando el servicio esté disponible.');
+                }
                 return result;
             };
         }
