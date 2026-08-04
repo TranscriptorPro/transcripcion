@@ -855,15 +855,21 @@ function doGet(e) {
 
     // Construir fila siguiendo el orden de los headers
     const row = headers.map(h => (userData[h] !== undefined ? userData[h] : ''));
+    const newRowNum = sheet.getLastRow() + 1;
     // Asegurar formato texto plano en Telefono antes de escribir (evita #ERROR!)
     const telColIdx = headers.indexOf('Telefono');
     if (telColIdx !== -1) {
-      const newRowNum = sheet.getLastRow() + 1;
       sheet.getRange(newRowNum, telColIdx + 1, 1, 1).setNumberFormat('@STRING@');
     }
-    sheet.appendRow(row);
+    sheet.getRange(newRowNum, 1, 1, headers.length).setValues([row]);
+    SpreadsheetApp.flush();
+    const savedId = String(sheet.getRange(newRowNum, headers.indexOf('ID_Medico') + 1).getDisplayValue());
+    if (savedId !== String(userData.ID_Medico)) {
+      return createResponse({ error: 'No se pudo confirmar la persistencia del usuario' });
+    }
+    _invalidateAdminReadCaches();
     appendAdminLog('admin', 'create_user', userData.ID_Medico, userData.Nombre || '');
-    return createResponse({ success: true, userId: userData.ID_Medico });
+    return createResponse({ success: true, userId: userData.ID_Medico, row: newRowNum });
   }
 
   // setup_sheets — inicializa (o repara) las cabeceras de todas las hojas
@@ -2793,14 +2799,20 @@ function doPost(e) {
 
     // Construir fila siguiendo el orden de los headers
     const row = freshHeaders.map(h => (userData[h] !== undefined ? userData[h] : ''));
+    const newRowNumPost = sheet.getLastRow() + 1;
     const telColCreatePost = freshHeaders.indexOf('Telefono');
     if (telColCreatePost !== -1) {
-      const newRowNumPost = sheet.getLastRow() + 1;
       sheet.getRange(newRowNumPost, telColCreatePost + 1, 1, 1).setNumberFormat('@STRING@');
     }
-    sheet.appendRow(row);
+    sheet.getRange(newRowNumPost, 1, 1, freshHeaders.length).setValues([row]);
+    SpreadsheetApp.flush();
+    const savedIdPost = String(sheet.getRange(newRowNumPost, idColPost + 1).getDisplayValue());
+    if (savedIdPost !== String(userData.ID_Medico)) {
+      return createResponse({ error: 'No se pudo confirmar la persistencia del usuario' });
+    }
+    _invalidateAdminReadCaches();
     appendAdminLog(payload.sessionUser || 'admin', 'create_user', userData.ID_Medico, userData.Nombre || '');
-    return createResponse({ success: true, userId: userData.ID_Medico });
+    return createResponse({ success: true, userId: userData.ID_Medico, row: newRowNumPost });
   }
 
   // log_client_errors — telemetría mínima de errores JS del cliente
