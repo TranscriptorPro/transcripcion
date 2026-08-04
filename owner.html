@@ -6,6 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Transcriptor Médico Pro | Audio a Texto</title>
 
+    <!-- Ruta heredada: la aplicación del owner vive en la raíz del sitio. -->
+    <script>
+    (function() {
+        window.location.replace('./' + window.location.search + window.location.hash);
+    })();
+    </script>
+
     <!-- OWNER MODE: Pre-set onboarding as accepted (skip welcome flow) -->
     <script>
     (function() {
