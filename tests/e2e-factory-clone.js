@@ -180,7 +180,7 @@ async function runTests() {
             await clonePage.evaluate(() => localStorage.clear());
 
             await clonePage.goto(`${BASE}/?id=${encodeURIComponent(scenario.id)}`, { waitUntil: 'domcontentloaded', timeout: 15000 });
-            await clonePage.waitForTimeout(3200);
+            await clonePage.waitForFunction(() => { try { const cfg = JSON.parse(localStorage.getItem('client_config_stored') || '{}'); return !!cfg && !!cfg.type && !!cfg.planCode; } catch (_) { return false; } }, { timeout: 15000 });
 
             const snapshot = await clonePage.evaluate(() => {
                 const parse = (k) => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch(_) { return null; } };
