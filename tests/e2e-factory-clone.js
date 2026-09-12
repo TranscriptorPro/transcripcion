@@ -177,9 +177,10 @@ async function runTests() {
         for (const scenario of FACTORY_SCENARIOS) {
             const clonePage = await context.newPage();
             await clonePage.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 15000 });
-            await clonePage.evaluate(() => localStorage.clear());
+                        await clonePage.close();
 
-            await clonePage.goto(`${BASE}/?id=${encodeURIComponent(scenario.id)}`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+            
+                    await clonePage.evaluate(async () => { try { if (window.appDB?.clear) await window.appDB.clear(); } catch (_) {} localStorage.clear(); sessionStorage.clear(); });await clonePage.goto(`${BASE}/?id=${encodeURIComponent(scenario.id)}`, { waitUntil: 'domcontentloaded', timeout: 15000 });
                     const waitForClientConfig = () => clonePage.waitForFunction(() => { try { const cfg = JSON.parse(localStorage.getItem('client_config_stored') || '{}'); return !!cfg && !!cfg.type && !!cfg.planCode; } catch (_) { return false; } }, { timeout: 30000 });
         try { await waitForClientConfig(); } catch (_) { await clonePage.reload({ waitUntil: 'domcontentloaded', timeout: 15000 }); await waitForClientConfig(); }
 
@@ -228,7 +229,8 @@ async function runTests() {
                 log('fail', `Factory ${scenario.plan}: client_config mapeado`, `recibido=${JSON.stringify({ type: sc.type, hasProMode: sc.hasProMode, canGenerateApps: sc.canGenerateApps, maxDevices: sc.maxDevices, planCode: sc.planCode })}`);
             }
 
-            if (snapshot.prof && snapshot.prof.nombre) log('pass', `Factory ${scenario.plan}: prof_data guardado`, snapshot.prof.nombre);
+                        await clonePage.evaluate(async () => { try { if (window.appDB?.clear) await window.appDB.clear(); } catch (_) {} localStorage.clear(); sessionStorage.clear(); });                                                        
+            await clonePage.close();
             else log('fail', `Factory ${scenario.plan}: prof_data guardado`, 'Sin nombre en prof_data');
 
             if (snapshot.hasApiKey) log('pass', `Factory ${scenario.plan}: API key guardada`);
